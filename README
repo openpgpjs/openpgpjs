@@ -1,0 +1,10 @@
+OpenPGP-JS
+
+Common OpenPGP implementation for JavaScript. Based on:
+
+* http://www.hanewin.net/encrypt/
+* https://github.com/seancolyer/gmail-crypt
+* https://github.com/mete0r/openpgp-js
+* http://fitblip.github.com/JSPGP-Stuffs/
+* http://qooxdoo.org/contrib/project/crypto
+* https://github.com/GPGTools/Mobile/wiki/Introduction
