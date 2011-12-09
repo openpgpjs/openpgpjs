@@ -1,0 +1,32 @@
+{
+	"name" : "GPG4Browsers",
+	"version" : "0.1",
+	"description" : "An OpenPGP implementation in javascript",
+	"background_page" : "background.html",
+	"options_page": "options.html",
+	"page_action" :
+	{
+    	"default_icon" : "images/icons/logo.png",
+    	"default_title" : "Create encrypted Message"
+  	},
+	"content_scripts" : [
+    	{
+      		"matches" : [
+        		"https://mail.google.com/*"
+      		],
+      		"js" : ["jquery.min.js", "contentscripts.js", "gmail.js"],
+      		"run_at" : "document_idle",
+      		"all_frames" : false
+    	}
+	],
+	"incoginto": "split",
+    "permissions": [
+    	"https://mail.google.com/*",
+    	"http://keyserver.linux.it/*", 
+    	"unlimitedStorage"
+    ],
+    "icons" : {
+    "48" : "images/icons/logo.png",
+    "128" :  "images/icons/logo.png"
+    }
+}
