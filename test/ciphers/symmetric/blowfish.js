@@ -40,10 +40,10 @@ unittests.register("Blowfish cipher test with test vectors from http://www.schne
 	                   [[0xFE,0xDC,0xBA,0x98,0x76,0x54,0x32,0x10],[0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF],[0x6B,0x5C,0x5A,0x9C,0x5D,0x9E,0x0A,0x5A]]];
 
 	for (var i = 0; i < testvectors.length; i++) {
-		result[i] = new test_result("Testing vectors block "+
+		result[i] = new test_result("Testing vector with block "+
 				util.hexidump(testvectors[i][0])+
-				" with key "+util.hexidump(testvectors[i][1])+
-				" should be "+util.hexidump(testvectors[i][0]),
+				" and key "+util.hexidump(testvectors[i][1])+
+				" should be "+util.hexidump(testvectors[i][2]),
 			test_bf(testvectors[i][1],testvectors[i][0],testvectors[i][2]));
 	}
 	return result;
