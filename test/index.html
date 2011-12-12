@@ -66,8 +66,13 @@
 <script type="text/javascript" src="ciphers/hash/md5.js"></script>
 <script type="text/javascript" src="ciphers/hash/sha.js"></script>
 <script type="text/javascript" src="ciphers/hash/ripe-md.js"></script>
+<script type="text/javascript" src="ciphers/symmetric/aes.js"></script>
+<script type="text/javascript" src="ciphers/symmetric/cast5.js"></script>
+<script type="text/javascript" src="ciphers/symmetric/des.js"></script>
 <script type="text/javascript" src="ciphers/symmetric/blowfish.js"></script>
 <script type="text/javascript" src="ciphers/symmetric/twofish.js"></script>
+
+<script type="text/javascript" src="ciphers/openpgp.crypto.js"></script>
 
 <title>OpenPGP.js testpage</title>
 
@@ -90,8 +95,13 @@
 }
 .failed {
 	background-color: #faa;
-	
 }
+
+#unittests {
+	width: 98%;
+	max-width: 99%;
+}
+
 #unittests tbody tr th {
 	background-color: #eee;
 	border: 1px dotted #aaa;

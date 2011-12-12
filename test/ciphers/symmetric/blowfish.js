@@ -39,12 +39,21 @@ unittests.register("Blowfish cipher test with test vectors from http://www.schne
 	                   [[0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF],[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x24,0x59,0x46,0x88,0x57,0x54,0x36,0x9A]],
 	                   [[0xFE,0xDC,0xBA,0x98,0x76,0x54,0x32,0x10],[0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF],[0x6B,0x5C,0x5A,0x9C,0x5D,0x9E,0x0A,0x5A]]];
 
+	var res = true;
+	var j = 0;
 	for (var i = 0; i < testvectors.length; i++) {
-		result[i] = new test_result("Testing vector with block "+
+		var res2 = test_bf(testvectors[i][1],testvectors[i][0],testvectors[i][2]);
+		res &= res2;
+		if (!res2) {
+			result[j] = new test_result("Testing vector "+i+" with block "+
 				util.hexidump(testvectors[i][0])+
 				" and key "+util.hexidump(testvectors[i][1])+
-				" should be "+util.hexidump(testvectors[i][2]),
-			test_bf(testvectors[i][1],testvectors[i][0],testvectors[i][2]));
+				" should be "+util.hexidump(testvectors[i][2]), false);
+			j++;
+		}
+	}
+	if (res) {
+		result[j] = new test_result("34 test vectors completed ", true);
 	}
 	return result;
 });

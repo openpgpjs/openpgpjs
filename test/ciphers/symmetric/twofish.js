@@ -3,7 +3,7 @@ unittests.register("Twofish test with test vectors from http://www.schneier.com/
 	var result = new Array();
 	var start = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 	var start_short = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-	var ct = [[0x57,0xFF,0x73,0x9D,0x4D,0xC9,0x2C,0x1B,0xD7,0xFC,0x01,0x70,0x0C,0xC8,0x21,0x6F],
+	var testvectors = [[0x57,0xFF,0x73,0x9D,0x4D,0xC9,0x2C,0x1B,0xD7,0xFC,0x01,0x70,0x0C,0xC8,0x21,0x6F],
 	          [0xD4,0x3B,0xB7,0x55,0x6E,0xA3,0x2E,0x46,0xF2,0xA2,0x82,0xB7,0xD4,0x5B,0x4E,0x0D],
 	          [0x90,0xAF,0xE9,0x1B,0xB2,0x88,0x54,0x4F,0x2C,0x32,0xDC,0x23,0x9B,0x26,0x35,0xE6],
 	          [0x6C,0xB4,0x56,0x1C,0x40,0xBF,0x0A,0x97,0x05,0x93,0x1C,0xB6,0xD4,0x08,0xE7,0xFA],
@@ -13,21 +13,45 @@ unittests.register("Twofish test with test vectors from http://www.schneier.com/
 	          [0xDC,0x09,0x6B,0xCD,0x99,0xFC,0x72,0xF7,0x99,0x36,0xD4,0xC7,0x48,0xE7,0x5A,0xF7],
 	          [0xC5,0xA3,0xE7,0xCE,0xE0,0xF1,0xB7,0x26,0x05,0x28,0xA6,0x8F,0xB4,0xEA,0x05,0xF2],
 	          [0x43,0xD5,0xCE,0xC3,0x27,0xB2,0x4A,0xB9,0x0A,0xD3,0x4A,0x79,0xD0,0x46,0x91,0x51]];
-	ct[47] =  [0x43,0x10,0x58,0xF4,0xDB,0xC7,0xF7,0x34,0xDA,0x4F,0x02,0xF0,0x4C,0xC4,0xF4,0x59];
-	ct[48] =  [0x37,0xFE,0x26,0xFF,0x1C,0xF6,0x61,0x75,0xF5,0xDD,0xF4,0xC3,0x3B,0x97,0xA2,0x05];
+	testvectors[47] =  [0x43,0x10,0x58,0xF4,0xDB,0xC7,0xF7,0x34,0xDA,0x4F,0x02,0xF0,0x4C,0xC4,0xF4,0x59];
+	testvectors[48] =  [0x37,0xFE,0x26,0xFF,0x1C,0xF6,0x61,0x75,0xF5,0xDD,0xF4,0xC3,0x3B,0x97,0xA2,0x05];
+	var res = true;
+	var j = 0;
 	for (var i = 0; i < 49; i++) {
-		if (i == 0)
-			result[i] = new test_result("Testing vector with block "+util.hexidump(start_short)+" with key "+ util.hexidump(start) +" should be "+util.hexidump(ct[0]),util.bin2str(TFencrypt(start_short,util.bin2str(start))) == util.bin2str(ct[0]));
-		else if (i == 1) 
-			result[i] = new test_result("Testing vector with block "+util.hexidump(ct[0])+" with key "+ util.hexidump(start) +" should be "+util.hexidump(ct[1]),util.bin2str(TFencrypt(ct[0],util.bin2str(start))) == util.bin2str(ct[1]));
-		else if (i == 2)
-			result[i] = new test_result("Testing vector with block "+util.hexidump(ct[i-1])+" with key "+ util.hexidump(ct[i-2].concat(start_short)) +" should be "+util.hexidump(ct[i]),util.bin2str(TFencrypt(ct[i-1],util.bin2str(ct[i-2].concat(start_short)))) == util.bin2str(ct[i]));
-		else if (i < 10)
-			result[i] = new test_result("Testing vector with block "+util.hexidump(ct[i-1])+" with key "+ util.hexidump(ct[i-2].concat(ct[i-3])) +" should be "+util.hexidump(ct[i]),util.bin2str(TFencrypt(ct[i-1],util.bin2str(ct[i-2].concat(ct[i-3])))) == util.bin2str(ct[i]));
-		else if (i > 46)
-			result[i-37] = new test_result("Testing vector with block "+util.hexidump(ct[i-1])+" with key "+ util.hexidump(ct[i-2].concat(ct[i-3])) +" should be "+util.hexidump(ct[i]),util.bin2str(TFencrypt(ct[i-1],util.bin2str(ct[i-2].concat(ct[i-3])))) == util.bin2str(ct[i]));
-		else 
-			ct[i] = TFencrypt(ct[i-1],util.bin2str(ct[i-2].concat(ct[i-3])));
+		var res2 = false;
+		var blk, key, ct;
+		if (i == 0) {
+			blk = start_short;
+			key = util.bin2str(start);
+			ct = testvectors[0];
+			res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+		} else if (i == 1) {
+			blk = testvectors[0];
+			key = util.bin2str(start);
+			ct = testvectors[1];
+			res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+		} else if (i == 2) {
+			blk = testvectors[i-1];
+			key = util.bin2str(testvectors[i-2].concat(start_short));
+			ct = testvectors[i];
+			res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+		} else if (i < 10 || i > 46) {
+			blk = testvectors[i-1];
+			key = util.bin2str(testvectors[i-2].concat(testvectors[i-3]));
+			ct = testvectors[i];
+			res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+		} else {
+			testvectors[i] = TFencrypt(testvectors[i-1],util.bin2str(testvectors[i-2].concat(testvectors[i-3])));
+			res2 = true;
+		}
+		res &= res2;
+		if (!res2) {
+			result[j] = new test_result("Testing vector with block "+util.hexidump(blk)+" with key "+ util.hexstrdump(key) +" should be "+util.hexidump(ct)+" but is "+util.hexidump(TFencrypt(blk,key)), false);
+			j++;
+		}
+	}
+	if (res) {
+		result[j] = new test_result("49 test vectors completed", true);
 	}
 	return result;
 });

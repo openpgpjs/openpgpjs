@@ -73,11 +73,13 @@ function openpgp_encoding_eme_pkcs1_encode(message, length) {
  * @param message [String] EME-PKCS1 padded message
  * @return [String] decoded message 
  */
-function openpgp_encoding_eme_pkcs1_decode(message) {
+function openpgp_encoding_eme_pkcs1_decode(message, len) {
+	if (message.length < len)
+	    message = String.fromCharCode(0)+message;
 	if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
 		return -1;
 	var i = 2;
-	while (message.charCodeAt(i) != 0 && message.length < i)
+	while (message.charCodeAt(i) != 0 && message.length > i)
 	    i++;
 	return message.substring(i+1, message.length);
 }
