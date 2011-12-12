@@ -178,17 +178,9 @@ function openpgp_packet_encryptedsessionkey() {
 					key.secMPIs, this.MPIs).toMPI();
 			var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
 					.charCodeAt(result.length - 1));
-			// search for zero
-			// FIXME: this is a poor way to decode a padding
-			var i = 0;
-			while (result.charCodeAt(i) != 0 && i < result.length)
-				i++;
-			i++;
-			if (i > result.length) {
-				return null;
-			}
-			var algo = result.charCodeAt(i++);
-			var sesskey = result.substring(i, result.length - 2);
+			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2));
+			var sesskey = decoded.substring(1);
+			var algo = decoded.charCodeAt(0);
 			if (msg.encryptedData.tagType == 18)
 				return msg.encryptedData.decrypt(algo, sesskey);
 			else

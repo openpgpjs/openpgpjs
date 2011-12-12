@@ -69,6 +69,19 @@ function openpgp_encoding_eme_pkcs1_encode(message, length) {
 }
 
 /**
+ * decodes a EME-PKCS1-v1_5 padding (See RFC4880 13.1.2)
+ * @param message [String] EME-PKCS1 padded message
+ * @return [String] decoded message 
+ */
+function openpgp_encoding_eme_pkcs1_decode(message) {
+	if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
+		return -1;
+	var i = 2;
+	while (message.charCodeAt(i) != 0 && message.length < i)
+	    i++;
+	return message.substring(i+1, message.length);
+}
+/**
  * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
  */
 hash_headers = new Array();
