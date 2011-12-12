@@ -447,12 +447,12 @@ function openpgp_crypto_getRandomBigInteger(bits) {
 }
 
 function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
-	if (max < min)
+	if (max.compareTo(min) <= 0)
 		return;
 	var range = max.subtract(min);
 	var r = openpgp_crypto_getRandomBigInteger(range.bitLength());
 	while (r > range) {
 		r = openpgp_crypto_getRandomBigInteger(range.bitLength());
 	}
-	return min.add(r);	
+	return min.add(r);
 }
