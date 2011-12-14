@@ -178,7 +178,7 @@ function openpgp_packet_encryptedsessionkey() {
 					key.secMPIs, this.MPIs).toMPI();
 			var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
 					.charCodeAt(result.length - 1));
-			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2));
+			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2), key.publicKey.MPIs[0].getByteLength());
 			var sesskey = decoded.substring(1);
 			var algo = decoded.charCodeAt(0);
 			if (msg.encryptedData.tagType == 18)
