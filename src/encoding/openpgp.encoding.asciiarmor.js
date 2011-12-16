@@ -98,10 +98,11 @@ function getPGPMessageType(text) {
 }
 
 /**
- * Add additional information to the armor version of an OpenPGP binary packet block
- * @param messagetype type of the message
- * @param data
- * @return
+ * Add additional information to the armor version of an OpenPGP binary
+ * packet block.
+ * @author  Alex
+ * @version 2011-12-16
+ * @return  The header information
  */
 function openpgp_encoding_armor_addheader() {
     var result = "";
