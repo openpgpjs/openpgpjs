@@ -98,6 +98,24 @@ function getPGPMessageType(text) {
 }
 
 /**
+ * Add additional information to the armor version of an OpenPGP binary packet block
+ * @param messagetype type of the message
+ * @param data
+ * @return
+ */
+function openpgp_encoding_armor_addheader() {
+    var result = "";
+	if (openpgp.config.config.show_version) {
+        result += "Version: "+openpgp.config.versionstring+'\r\n';
+    }
+	if (openpgp.config.config.show_comment) {
+        result += "Comment: "+openpgp.config.commentstring+'\r\n';
+    }
+    result += '\r\n';
+    return result;
+}
+
+/**
  * Armor an OpenPGP binary packet block
  * @param messagetype type of the message
  * @param data
@@ -110,20 +128,14 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	switch(messagetype) {
 	case 0:
 		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n';
-		}
-		result += '\r\n';
+		result += openpgp_encoding_armor_addheader();
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
 		break;
 	case 1:
 		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n';
-		}
-		result += '\r\n';
+		result += openpgp_encoding_armor_addheader();
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
@@ -132,39 +144,28 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 		result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: "+data.hash+"\r\n\r\n";
 		result += data.text.replace(/\n-/g,"\n- -");
 		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n';
-        }
-        result += '\r\n';
+		result += openpgp_encoding_armor_addheader();
 		result += openpgp_encoding_base64_encode(data.openpgp);
 		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
 		result += "-----END PGP SIGNATURE-----\r\n";
 		break;
 	case 3:
 		result += "-----BEGIN PGP MESSAGE-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result +="Version: "+ openpgp.config.versionstring+'\r\n';
-		}
-		result += '\r\n';
+		result += openpgp_encoding_armor_addheader();
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE-----\r\n";
 		break;
 	case 4:
 		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n';
-		}
-		result += '\r\n';
+		result += openpgp_encoding_armor_addheader();
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
 		break;
 	case 5:
 		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n';
-		}
+		result += openpgp_encoding_armor_addheader();
 		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
