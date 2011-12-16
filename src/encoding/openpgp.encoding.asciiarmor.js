@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -19,7 +19,7 @@
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
  * @text [String] OpenPGP armored message
  * @return either the bytes of the decoded message or an object with attribute "text" containing the message text
- * and an attribute "openpgp" containing the bytes. 
+ * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
 	var type = getPGPMessageType(text);
@@ -68,8 +68,8 @@ function getPGPMessageType(text) {
 		// Header to be used.
 	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
 		return 1;
-		
-	} else 
+
+	} else
 		// BEGIN PGP SIGNATURE
 		// Used for detached signatures, OpenPGP/MIME signatures, and
 		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
@@ -77,18 +77,18 @@ function getPGPMessageType(text) {
 	if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
 		return 2;
 
-	} else 
+	} else
   	    // BEGIN PGP MESSAGE
 	    // Used for signed, encrypted, or compressed files.
 	if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
 		return 3;
-		
+
 	} else
 		// BEGIN PGP PUBLIC KEY BLOCK
 		// Used for armoring public keys.
 	if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
 		return 4;
-		
+
 	} else
 		// BEGIN PGP PRIVATE KEY BLOCK
 		// Used for armoring private keys.
@@ -111,10 +111,9 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 0:
 		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
+			result += "Version: "+openpgp.config.versionstring+'\r\n';
 		}
+		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
@@ -122,11 +121,9 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 1:
 		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
+			result += "Version: "+openpgp.config.versionstring+'\r\n';
 		}
-
+		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
@@ -136,10 +133,9 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 		result += data.text.replace(/\n-/g,"\n- -");
 		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
-		}
+			result += "Version: "+openpgp.config.versionstring+'\r\n';
+        }
+        result += '\r\n';
 		result += openpgp_encoding_base64_encode(data.openpgp);
 		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
 		result += "-----END PGP SIGNATURE-----\r\n";
@@ -147,11 +143,9 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 3:
 		result += "-----BEGIN PGP MESSAGE-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result +="Version: "+ openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
+			result +="Version: "+ openpgp.config.versionstring+'\r\n';
 		}
-
+		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP MESSAGE-----\r\n";
@@ -159,11 +153,9 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 4:
 		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
+			result += "Version: "+openpgp.config.versionstring+'\r\n';
 		}
-
+		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
@@ -171,16 +163,15 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 5:
 		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
 		if (openpgp.config.config.show_version) {
-			result += "Version: "+openpgp.config.versionstring+'\r\n\r\n';
-		} else {
-			result += '\r\n';
+			result += "Version: "+openpgp.config.versionstring+'\r\n';
 		}
+		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
 		break;
 	}
-	
+
 	return result;
 }
 
