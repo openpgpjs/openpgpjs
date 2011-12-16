@@ -1,0 +1,696 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>OpenPGP.js testpage</title>
+</head>
+<style>
+* {
+	font-family: monospace;
+}
+
+#debug, #testoutput {
+	border: 1px dotted #aaa;
+	background-color: #eee;
+	margin: 5px;
+	padding: 5px;
+}
+</style>
+<style>
+
+#mainDiv {
+  font-size: 0.8125em;
+}
+
+#headingDiv {
+  position: absolute;
+  top: 2.5em;
+  left: 1.5em;
+  right: 1.5em;
+  bottom: 0;
+  line-height: 1.5em;
+}
+
+h1 {
+  float: left;
+  margin: 0;
+  padding-bottom: 0.5em;
+  font-size: 1.3em;
+}
+
+.ProgressBar {
+  float: left;
+  visibility: hidden;
+}
+
+.ProgressPercentage {
+  display: block;
+  float: left;
+  width: 5em;
+  text-align: right;
+}
+
+.ProgressGraph {
+  float: left;
+  width: 100px;
+  height: 10px;
+  border: 1px solid black;
+  margin-top: 0.3em;
+  background-color: #d4d0c8;
+  overflow: hidden;
+}
+
+.ProgressCovered {
+  /* windows system color ActiveCaption or Highlight */
+  background-color: #0a246a;
+  width: 0;
+  height: 10px;
+  overflow: hidden;
+}
+
+#progressLabel {
+  display: block;
+  float: left;
+  padding-left: 0.3em;
+}
+
+#warningDiv {
+  display: none;
+  float: right;
+  background-color: #FFBFBF;
+  border: 1px solid red;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.WarningDialog {
+  display: none;
+  background-color: #FFBFBF;
+  position: absolute;
+  z-index: 10;
+  top: 20%;
+  left: 20%;
+  width: 50%;
+  padding: 5%;
+  border: 1px solid red;
+}
+
+.WarningDialog button {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*******************************************************************************
+browser tab
+*/
+
+input#location, button {
+  border: 1px solid black;
+  margin-left: 1px;
+  margin-right: 1px;
+}
+
+#iframeDiv {
+  position: absolute;
+  top: 3.5em;
+  left: 1em;
+  right: 1em;
+  bottom: 1em;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+}
+
+/*******************************************************************************
+summary tab
+*/
+
+#summaryDiv {
+  position: absolute;
+  top: 5em;
+  left: 1em;
+  right: 1em;
+  bottom: 1em;
+  overflow: auto;
+}
+
+table#summaryTable {
+  width: 100%;
+  margin-left: 0px;
+  margin-right: 0px;
+  border-collapse: collapse;
+  font-size: small;
+}
+
+table#summaryTable th, table#summaryTable td {
+  border-left: 1px solid #d9d9d9;
+}
+
+table#summaryTable th.leftColumn, table#summaryTable td.leftColumn {
+  border-left-width: 0px;
+}
+
+table#summaryTable th, table#summaryTable td {
+  padding: 2px;
+}
+
+th {
+  background-color: #e6ffe6;
+}
+
+td.numeric {
+  text-align: right;
+}
+
+abbr {
+  cursor: help;
+}
+
+tr#summaryTotals td.leftColumn span {
+    float: right;
+}
+tr#summaryTotals td.leftColumn span.title {
+    float: left;
+    font-weight: bold;
+}
+tr#summaryTotals td {
+    background-color: #ffd;
+}
+td.coverage {
+    width: 150px;
+}
+td.coverage span {
+    float: right;
+    margin-right: 5px;
+}
+.pctGraph {
+    width: 100px;
+    height: 10px;
+    float: right;
+    border: 1px solid #000;
+    background-color: #e00000;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.pctGraph .covered {
+    background-color: #00f000;
+    width: 0;
+    height: 10px;
+}
+.pctGraph .skipped {
+    background-color: #d4d0c8;
+    width: 100px;
+    height: 10px;
+}
+tbody#summaryTbody tr.even td {
+    background-color: #e6ffe6;
+}
+
+/*******************************************************************************
+source tab
+*/
+
+#fileDiv {
+  font-size: large;
+  font-weight: bold;
+}
+
+#sourceDiv {
+  position: absolute;
+  top: 5em;
+  left: 1em;
+  right: 1em;
+  bottom: 1em;
+  overflow: auto;
+}
+
+table#sourceTable {
+  border: 0px;
+  border-collapse: collapse;
+  font-size: small;
+}
+
+/*
+IE default behavior is to make <pre> smaller than surrounding text.  Because
+the table already has font-size small, this would make the font-size within the
+<pre> x-small.  So we don't rely on the default.
+*/
+table#sourceTable pre {
+  font-size: medium;
+}
+
+table#sourceTable td {
+  border: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+table#sourceTable pre {
+  border: 0px;
+  margin: 0px;
+}
+
+.g {
+  background-color: #bfffbf;
+}
+
+.y {
+  background-color: #ffffbf;
+}
+
+.r {
+  background-color: #ffbfbf;
+}
+
+/*******************************************************************************
+store tab
+*/
+
+#storeDiv {
+  position: absolute;
+  top: 5em;
+  left: 1em;
+  right: 1em;
+  bottom: 1em;
+  overflow: auto;
+}
+
+/*******************************************************************************
+about tab
+*/
+
+p {
+  margin-top: 0;
+}
+
+/*******************************************************************************
+tabs
+*/
+
+#tabs {
+  position: absolute;
+  top: 5em;
+  left: 1.5em;
+  right: 1.5em;
+  height: 2em;
+}
+
+#tabs div {
+  background-color: white;
+  position: relative;
+  float: left;
+  border: 1px solid black;
+  border-bottom-width: 0;
+  cursor: pointer;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  height: 2em;
+  z-index: 1;
+  line-height: 1.8em;
+}
+
+#tabs div.selected {
+  z-index: 3;
+  cursor: default;
+}
+
+#tabs div.disabled {
+  /* windows system color GrayText */
+  color: #808080;
+  cursor: default;
+}
+
+.TabPage {
+  background-color: white;
+  border: 1px solid black;
+  position: absolute;
+  top: 7em;
+  left: 1.5em;
+  right: 1.5em;
+  bottom: 1.5em;
+  z-index: 2;
+  padding: 1em;
+  display: none;
+}
+
+#tabPages div.selected {
+  display: block;
+}
+
+img {
+  visibility: hidden;
+}
+</style>
+</head>
+<body>
+<a href="index.html">Unit Tests</a> | <a href="parser.html">Parser</a> | <a href="encryption.html">Encryption / Decryption</a> | <a href="coverage.html">Coverage</a>
+
+<div id="mainDiv">
+<div id="headingDiv">
+<h1>JSCoverage (just a preview)</h1>
+<div class="ProgressBar" id="progressBar" style="visibility: hidden; "><span class="ProgressPercentage">100%</span><div class="ProgressGraph"><div class="ProgressCovered" style="width: 100px; "></div></div></div>
+<span id="progressLabel" style="visibility: hidden; "></span>
+<div id="warningDiv"><strong>Warning:</strong> <a href="#" onclick="jscoverage_openWarningDialog(); return false;">loading <code>jscoverage.html</code> using a <code>file:</code> URL is deprecated</a></div>
+</div>
+
+<div id="warningDialog" class="WarningDialog">
+<p>
+Recent web browsers tend to place significant security restrictions on the use
+of <code>file:</code> URLs. These restrictions can prevent JSCoverage from
+working properly. To avoid problems, it is recommended that you do either of the
+following:
+</p>
+<ul>
+<li>If you are using the <code>jscoverage</code> program to instrument your
+JavaScript code, install the instrumented files on a web server.</li>
+<li>Use the <code>jscoverage-server</code> program (which itself acts as a web
+server).</li>
+</ul>
+<p>
+See the
+<a target="_blank" href="http://siliconforks.com/jscoverage/manual.html">manual</a>
+for further details.
+</p>
+<button type="button" onclick="jscoverage_closeWarningDialog();">OK</button>
+</div>
+
+<div id="reportWarningDialog" class="WarningDialog">
+<p>
+Recent web browsers tend to place significant security restrictions on the use
+of <code>file:</code> URLs. These restrictions can prevent JSCoverage from
+working properly. To avoid problems, it is recommended that you view coverage
+reports stored to the filesystem by serving them from a web server.
+</p>
+<p>
+See the
+<a target="_blank" href="http://siliconforks.com/jscoverage/manual.html">manual</a>
+for further details.
+</p>
+<button type="button" onclick="jscoverage_closeWarningDialog();">OK</button>
+</div>
+
+<div id="tabs" class="Tabs">
+  <div id="browserTab" class=""><img src="./coverage_files/jscoverage-throbber.gif" alt=""> Browser <img src="./coverage_files/jscoverage-throbber.gif" alt=""></div>
+  <div id="summaryTab" class="selected"><img id="summaryThrobber" src="./coverage_files/jscoverage-throbber.gif" alt=""> Summary <img src="./coverage_files/jscoverage-throbber.gif" alt=""></div>
+  <div id="sourceTab" class=""><img src="./coverage_files/jscoverage-throbber.gif" alt=""> Source <img src="./coverage_files/jscoverage-throbber.gif" alt=""></div>
+
+  <div id="aboutTab" class=""><img src="./coverage_files/jscoverage-throbber.gif" alt=""> About <img src="./coverage_files/jscoverage-throbber.gif" alt=""></div>
+</div>
+<div id="tabPages" class="TabPages">
+  <div class="TabPage" id="browserTabPage">
+    <div id="locationDiv">
+    URL: <input id="location" type="text" size="70" onkeypress="jscoverage_input_keypress(event)">
+    <button onclick="jscoverage_openInFrameButton_click();" title="open URL in the iframe below [Enter]">Open in frame</button>
+    <button onclick="jscoverage_openInWindowButton_click();" title="open URL in a new window (or tab) [Shift+Enter]">Open in window</button>
+    </div>
+    <div id="iframeDiv">
+    <iframe id="browserIframe" onload="jscoverage_browser_load();"></iframe>
+    </div>
+  </div>
+  <div class="selected TabPage">
+    <input type="checkbox" id="checkbox" onclick="return jscoverage_checkbox_click();"> <label for="checkbox">Show missing statements column</label>
+    <div id="summaryDiv">
+    <div id="summaryErrorDiv"></div>
+    <table id="summaryTable">
+    <thead>
+    <tr id="headerRow">
+    <th class="leftColumn">File</th>
+    <th><abbr title="The total number of executable statements">Statements</abbr></th>
+    <th><abbr title="The number of statements actually executed">Executed</abbr></th>
+    <th><abbr title="Number of executed statements as a percentage of total number of statements">Coverage</abbr></th>
+    </tr>
+    <tr id="summaryTotals">
+        <td class="leftColumn">
+            <span class="title">Total:</span>
+            <span>53</span>
+        </td>
+        <td class="numeric">5209</td>
+        <td class="numeric">2489</td>
+        <td class="coverage">
+            <div class="pctGraph">
+                <div class="covered" style="width: 47px; "></div>
+            </div>
+            <span class="pct">47%</span>
+        </td>
+    </tr>
+
+    </thead>
+    <tbody id="summaryTbody"><tr class="odd"><td class="leftColumn"><a href="#">resources/jquery.min.js</a></td><td class="numeric">3</td><td class="numeric">3</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/asymmetric/dsa.js</a></td><td class="numeric">38</td><td class="numeric">23</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 60px; "></div></div><span class="pct">60%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/asymmetric/elgamal.js</a></td><td class="numeric">16</td><td class="numeric">16</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/asymmetric/jsbn.js</a></td><td class="numeric">375</td><td class="numeric">316</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 84px; "></div></div><span class="pct">84%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/asymmetric/jsbn2.js</a></td><td class="numeric">452</td><td class="numeric">264</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 58px; "></div></div><span class="pct">58%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/asymmetric/rsa.js</a></td><td class="numeric">22</td><td class="numeric">19</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 86px; "></div></div><span class="pct">86%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/hash/md5.js</a></td><td class="numeric">259</td><td class="numeric">256</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 98px; "></div></div><span class="pct">98%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/hash/ripe-md.js</a></td><td class="numeric">134</td><td class="numeric">121</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 90px; "></div></div><span class="pct">90%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/hash/sha.js</a></td><td class="numeric">312</td><td class="numeric">226</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 72px; "></div></div><span class="pct">72%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/openpgp.cfb.js</a></td><td class="numeric">101</td><td class="numeric">56</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 55px; "></div></div><span class="pct">55%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/openpgp.crypto.js</a></td><td class="numeric">191</td><td class="numeric">120</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 62px; "></div></div><span class="pct">62%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/symmetric/aes.js</a></td><td class="numeric">110</td><td class="numeric">108</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 98px; "></div></div><span class="pct">98%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/symmetric/blowfish.js</a></td><td class="numeric">100</td><td class="numeric">87</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 87px; "></div></div><span class="pct">87%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/symmetric/cast5.js</a></td><td class="numeric">179</td><td class="numeric">146</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 81px; "></div></div><span class="pct">81%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/ciphers/symmetric/dessrc.js</a></td><td class="numeric">107</td><td class="numeric">103</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 96px; "></div></div><span class="pct">96%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/ciphers/symmetric/twofish.js</a></td><td class="numeric">182</td><td class="numeric">161</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 88px; "></div></div><span class="pct">88%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/config/openpgp.config.js</a></td><td class="numeric">15</td><td class="numeric">14</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 93px; "></div></div><span class="pct">93%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/encoding/base64.js</a></td><td class="numeric">49</td><td class="numeric">3</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 6px; "></div></div><span class="pct">6%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/encoding/openpgp.encoding.asciiarmor.js</a></td><td class="numeric">101</td><td class="numeric">6</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 5px; "></div></div><span class="pct">5%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/encoding/openpgp.encoding.js</a></td><td class="numeric">60</td><td class="numeric">53</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 88px; "></div></div><span class="pct">88%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/openpgp.js</a></td><td class="numeric">163</td><td class="numeric">21</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 12px; "></div></div><span class="pct">12%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/openpgp.keyring.js</a></td><td class="numeric">100</td><td class="numeric">36</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 36px; "></div></div><span class="pct">36%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/openpgp.msg.message.js</a></td><td class="numeric">73</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 1px; "></div></div><span class="pct">1%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/openpgp.msg.privatekey.js</a></td><td class="numeric">80</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 1px; "></div></div><span class="pct">1%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/openpgp.msg.publickey.js</a></td><td class="numeric">150</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 0px; "></div></div><span class="pct">0%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.compressed.js</a></td><td class="numeric">57</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 3px; "></div></div><span class="pct">3%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.encrypteddata.js</a></td><td class="numeric">26</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 7px; "></div></div><span class="pct">7%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.encryptedintegrityprotecteddata.js</a></td><td class="numeric">44</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 4px; "></div></div><span class="pct">4%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.encryptedsessionkey.js</a></td><td class="numeric">81</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 2px; "></div></div><span class="pct">2%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.js</a></td><td class="numeric">215</td><td class="numeric">10</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 4px; "></div></div><span class="pct">4%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.keymaterial.js</a></td><td class="numeric">333</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 0px; "></div></div><span class="pct">0%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.literaldata.js</a></td><td class="numeric">30</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 3px; "></div></div><span class="pct">3%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.marker.js</a></td><td class="numeric">11</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 9px; "></div></div><span class="pct">9%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.modificationdetectioncode.js</a></td><td class="numeric">15</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 13px; "></div></div><span class="pct">13%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.onepasssignature.js</a></td><td class="numeric">38</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 5px; "></div></div><span class="pct">5%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.signature.js</a></td><td class="numeric">350</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 0px; "></div></div><span class="pct">0%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.userattribute.js</a></td><td class="numeric">71</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 2px; "></div></div><span class="pct">2%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/packet/openpgp.packet.userid.js</a></td><td class="numeric">158</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 0px; "></div></div><span class="pct">0%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/type/openpgp.type.keyid.js</a></td><td class="numeric">9</td><td class="numeric">2</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 22px; "></div></div><span class="pct">22%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/type/openpgp.type.mpi.js</a></td><td class="numeric">43</td><td class="numeric">36</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 83px; "></div></div><span class="pct">83%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">src/type/openpgp.type.s2k.js</a></td><td class="numeric">39</td><td class="numeric">1</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 2px; "></div></div><span class="pct">2%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">src/util/util.js</a></td><td class="numeric">92</td><td class="numeric">46</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 50px; "></div></div><span class="pct">50%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/ciphers/hash/md5.js</a></td><td class="numeric">9</td><td class="numeric">9</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">test/ciphers/hash/ripe-md.js</a></td><td class="numeric">7</td><td class="numeric">7</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/ciphers/hash/sha.js</a></td><td class="numeric">13</td><td class="numeric">13</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">test/ciphers/openpgp.crypto.js</a></td><td class="numeric">60</td><td class="numeric">60</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/ciphers/symmetric/aes.js</a></td><td class="numeric">40</td><td class="numeric">34</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 85px; "></div></div><span class="pct">85%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">test/ciphers/symmetric/blowfish.js</a></td><td class="numeric">17</td><td class="numeric">15</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 88px; "></div></div><span class="pct">88%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/ciphers/symmetric/cast5.js</a></td><td class="numeric">9</td><td class="numeric">9</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">test/ciphers/symmetric/des.js</a></td><td class="numeric">15</td><td class="numeric">14</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 93px; "></div></div><span class="pct">93%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/ciphers/symmetric/twofish.js</a></td><td class="numeric">41</td><td class="numeric">39</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 95px; "></div></div><span class="pct">95%</span></td></tr><tr class="even"><td class="leftColumn"><a href="#">test/example-test.js</a></td><td class="numeric">5</td><td class="numeric">5</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr><tr class="odd"><td class="leftColumn"><a href="#">test/unittest.js</a></td><td class="numeric">9</td><td class="numeric">9</td><td class="coverage"><div class="pctGraph"><div class="covered" style="width: 100px; "></div></div><span class="pct">100%</span></td></tr></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="TabPage">
+    <div id="fileDiv">src/openpgp.keyring.js</div>
+    <div id="sourceDiv"><table id="sourceTable"><tbody><tr><td class="numeric">1</td><td></td><td><pre><span class="c">// GPG4Browsers - An OpenPGP implementation in javascript</span></pre></td></tr>
+<tr><td class="numeric">2</td><td></td><td><pre><span class="c">// Copyright (C) 2011 Recurity Labs GmbH</span></pre></td></tr>
+<tr><td class="numeric">3</td><td></td><td><pre><span class="c">// </span></pre></td></tr>
+<tr><td class="numeric">4</td><td></td><td><pre><span class="c">// This library is free software; you can redistribute it and/or</span></pre></td></tr>
+<tr><td class="numeric">5</td><td></td><td><pre><span class="c">// modify it under the terms of the GNU Lesser General Public</span></pre></td></tr>
+<tr><td class="numeric">6</td><td></td><td><pre><span class="c">// License as published by the Free Software Foundation; either</span></pre></td></tr>
+<tr><td class="numeric">7</td><td></td><td><pre><span class="c">// version 2.1 of the License, or (at your option) any later version.</span></pre></td></tr>
+<tr><td class="numeric">8</td><td></td><td><pre><span class="c">// </span></pre></td></tr>
+<tr><td class="numeric">9</td><td></td><td><pre><span class="c">// This library is distributed in the hope that it will be useful,</span></pre></td></tr>
+<tr><td class="numeric">10</td><td></td><td><pre><span class="c">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span></pre></td></tr>
+<tr><td class="numeric">11</td><td></td><td><pre><span class="c">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span></pre></td></tr>
+<tr><td class="numeric">12</td><td></td><td><pre><span class="c">// Lesser General Public License for more details.</span></pre></td></tr>
+<tr><td class="numeric">13</td><td></td><td><pre><span class="c">// </span></pre></td></tr>
+<tr><td class="numeric">14</td><td></td><td><pre><span class="c">// You should have received a copy of the GNU Lesser General Public</span></pre></td></tr>
+<tr><td class="numeric">15</td><td></td><td><pre><span class="c">// License along with this library; if not, write to the Free Software</span></pre></td></tr>
+<tr><td class="numeric">16</td><td></td><td><pre><span class="c">// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA</span></pre></td></tr>
+<tr><td class="numeric">17</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">18</td><td class="g numeric">1</td><td><pre><span class="k">function</span> openpgp_keyring<span class="k">()</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">19</td><td></td><td><pre>		</pre></td></tr>
+<tr><td class="numeric">20</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">21</td><td></td><td><pre><span class="c">	 * Initialization routine for the keyring. This method reads the </span></pre></td></tr>
+<tr><td class="numeric">22</td><td></td><td><pre><span class="c">	 * keyring from HTML5 local storage and initializes this instance.</span></pre></td></tr>
+<tr><td class="numeric">23</td><td></td><td><pre><span class="c">	 * This method is called by openpgp.init().</span></pre></td></tr>
+<tr><td class="numeric">24</td><td></td><td><pre><span class="c">	 * @return [null] undefined</span></pre></td></tr>
+<tr><td class="numeric">25</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">26</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> init<span class="k">()</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">27</td><td class="g numeric">1</td><td><pre>		<span class="k">var</span> sprivatekeys <span class="k">=</span> JSON<span class="k">.</span>parse<span class="k">(</span>window<span class="k">.</span>localStorage<span class="k">.</span>getItem<span class="k">(</span><span class="s">"privatekeys"</span><span class="k">));</span></pre></td></tr>
+<tr><td class="numeric">28</td><td class="g numeric">1</td><td><pre>		<span class="k">var</span> spublickeys <span class="k">=</span> JSON<span class="k">.</span>parse<span class="k">(</span>window<span class="k">.</span>localStorage<span class="k">.</span>getItem<span class="k">(</span><span class="s">"publickeys"</span><span class="k">));</span></pre></td></tr>
+<tr><td class="numeric">29</td><td class="g numeric">1</td><td><pre>		<span class="k">if</span> <span class="k">(</span>sprivatekeys <span class="k">==</span> <span class="k">null</span> <span class="k">||</span> sprivatekeys<span class="k">.</span>length <span class="k">==</span> <span class="s">0</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">30</td><td class="g numeric">1</td><td><pre>			sprivatekeys <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">31</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">32</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">33</td><td class="g numeric">1</td><td><pre>		<span class="k">if</span> <span class="k">(</span>spublickeys <span class="k">==</span> <span class="k">null</span> <span class="k">||</span> spublickeys<span class="k">.</span>length <span class="k">==</span> <span class="s">0</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">34</td><td class="g numeric">1</td><td><pre>			spublickeys <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">35</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">36</td><td class="g numeric">1</td><td><pre>		<span class="k">this</span><span class="k">.</span>publicKeys <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">37</td><td class="g numeric">1</td><td><pre>		<span class="k">this</span><span class="k">.</span>privateKeys <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">38</td><td class="g numeric">1</td><td><pre>		<span class="k">var</span> k <span class="k">=</span> <span class="s">0</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">39</td><td class="g numeric">1</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> sprivatekeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">40</td><td class="r numeric" id="line-40">0</td><td><pre>			<span class="k">var</span> r <span class="k">=</span> openpgp<span class="k">.</span>read_privateKey<span class="k">(</span>sprivatekeys<span class="k">[</span>i<span class="k">]);</span></pre></td></tr>
+<tr><td class="numeric">41</td><td class="r numeric" id="line-41">0</td><td><pre>			<span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>k<span class="k">]</span> <span class="k">=</span> <span class="k">{</span> armored<span class="k">:</span> sprivatekeys<span class="k">[</span>i<span class="k">],</span> obj<span class="k">:</span> r<span class="k">[</span><span class="s">0</span><span class="k">],</span> keyId<span class="k">:</span> r<span class="k">[</span><span class="s">0</span><span class="k">].</span>getKeyId<span class="k">()</span><span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">42</td><td class="r numeric" id="line-42">0</td><td><pre>			k<span class="k">++;</span></pre></td></tr>
+<tr><td class="numeric">43</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">44</td><td class="g numeric">1</td><td><pre>		k <span class="k">=</span> <span class="s">0</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">45</td><td class="g numeric">1</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> spublickeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">46</td><td class="r numeric" id="line-46">0</td><td><pre>			<span class="k">var</span> r <span class="k">=</span> openpgp<span class="k">.</span>read_publicKey<span class="k">(</span>spublickeys<span class="k">[</span>i<span class="k">]);</span></pre></td></tr>
+<tr><td class="numeric">47</td><td class="r numeric" id="line-47">0</td><td><pre>			<span class="k">if</span> <span class="k">(</span>r<span class="k">[</span><span class="s">0</span><span class="k">]</span> <span class="k">!=</span> <span class="k">null</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">48</td><td class="r numeric" id="line-48">0</td><td><pre>				<span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>k<span class="k">]</span> <span class="k">=</span> <span class="k">{</span> armored<span class="k">:</span> spublickeys<span class="k">[</span>i<span class="k">],</span> obj<span class="k">:</span> r<span class="k">[</span><span class="s">0</span><span class="k">],</span> keyId<span class="k">:</span> r<span class="k">[</span><span class="s">0</span><span class="k">].</span>getKeyId<span class="k">()</span><span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">49</td><td class="r numeric" id="line-49">0</td><td><pre>				k<span class="k">++;</span></pre></td></tr>
+<tr><td class="numeric">50</td><td></td><td><pre>			<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">51</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">52</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">53</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>init <span class="k">=</span> init<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">54</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">55</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">56</td><td></td><td><pre><span class="c">	 * Checks if at least one private key is in the keyring</span></pre></td></tr>
+<tr><td class="numeric">57</td><td></td><td><pre><span class="c">	 * @return</span></pre></td></tr>
+<tr><td class="numeric">58</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">59</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> hasPrivateKey<span class="k">()</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">60</td><td class="r numeric" id="line-60">0</td><td><pre>		<span class="k">return</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">.</span>length <span class="k">&gt;</span> <span class="s">0</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">61</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">62</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>hasPrivateKey <span class="k">=</span> hasPrivateKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">63</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">64</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">65</td><td></td><td><pre><span class="c">	 * Saves the current state of the keyring to HTML5 local storage.</span></pre></td></tr>
+<tr><td class="numeric">66</td><td></td><td><pre><span class="c">	 * The privateKeys array and publicKeys array gets Stringified using JSON</span></pre></td></tr>
+<tr><td class="numeric">67</td><td></td><td><pre><span class="c">	 * @return [null] undefined</span></pre></td></tr>
+<tr><td class="numeric">68</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">69</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> store<span class="k">()</span> <span class="k">{</span> </pre></td></tr>
+<tr><td class="numeric">70</td><td class="r numeric" id="line-70">0</td><td><pre>		<span class="k">var</span> priv <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">71</td><td class="r numeric" id="line-71">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span> <span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">72</td><td class="r numeric" id="line-72">0</td><td><pre>			priv<span class="k">[</span>i<span class="k">]</span> <span class="k">=</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>armored<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">73</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">74</td><td class="r numeric" id="line-74">0</td><td><pre>		<span class="k">var</span> pub <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">75</td><td class="r numeric" id="line-75">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span> <span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">76</td><td class="r numeric" id="line-76">0</td><td><pre>			pub<span class="k">[</span>i<span class="k">]</span> <span class="k">=</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">].</span>armored<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">77</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">78</td><td class="r numeric" id="line-78">0</td><td><pre>		window<span class="k">.</span>localStorage<span class="k">.</span>setItem<span class="k">(</span><span class="s">"privatekeys"</span><span class="k">,</span>JSON<span class="k">.</span>stringify<span class="k">(</span>priv<span class="k">));</span></pre></td></tr>
+<tr><td class="numeric">79</td><td class="r numeric" id="line-79">0</td><td><pre>		window<span class="k">.</span>localStorage<span class="k">.</span>setItem<span class="k">(</span><span class="s">"publickeys"</span><span class="k">,</span>JSON<span class="k">.</span>stringify<span class="k">(</span>pub<span class="k">));</span></pre></td></tr>
+<tr><td class="numeric">80</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">81</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>store <span class="k">=</span> store<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">82</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">83</td><td></td><td><pre><span class="c">	 * searches all public keys in the keyring matching the address or address part of the user ids</span></pre></td></tr>
+<tr><td class="numeric">84</td><td></td><td><pre><span class="c">	 * @param email_address</span></pre></td></tr>
+<tr><td class="numeric">85</td><td></td><td><pre><span class="c">	 * @return</span></pre></td></tr>
+<tr><td class="numeric">86</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">87</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> getPublicKeyForAddress<span class="k">(</span>email_address<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">88</td><td class="r numeric" id="line-88">0</td><td><pre>		<span class="k">var</span> results <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">89</td><td class="r numeric" id="line-89">0</td><td><pre>		<span class="k">var</span> spl <span class="k">=</span> string<span class="k">.</span>split<span class="k">(</span><span class="s">"&lt;"</span><span class="k">);</span></pre></td></tr>
+<tr><td class="numeric">90</td><td class="r numeric" id="line-90">0</td><td><pre>		<span class="k">var</span> email <span class="k">=</span> <span class="s">""</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">91</td><td class="r numeric" id="line-91">0</td><td><pre>		<span class="k">if</span> <span class="k">(</span>spl<span class="k">.</span>length <span class="k">&gt;</span> <span class="s">0</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">92</td><td class="r numeric" id="line-92">0</td><td><pre>			email <span class="k">=</span> spl<span class="k">[</span><span class="s">1</span><span class="k">].</span>split<span class="k">(</span><span class="s">"&gt;"</span><span class="k">)[</span><span class="s">0</span><span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">93</td><td></td><td><pre>		<span class="k">}</span> <span class="k">else</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">94</td><td class="r numeric" id="line-94">0</td><td><pre>			email <span class="k">=</span> string<span class="k">.</span>trim<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">95</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">96</td><td class="r numeric" id="line-96">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">97</td><td></td><td><pre>			</pre></td></tr>
+<tr><td class="numeric">98</td><td class="r numeric" id="line-98">0</td><td><pre>			<span class="k">for</span> <span class="k">(</span><span class="k">var</span> j <span class="k">=</span> <span class="s">0</span><span class="k">;</span> j <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">].</span>userIds<span class="k">;</span> j<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">99</td><td class="r numeric" id="line-99">0</td><td><pre>				<span class="k">if</span> <span class="k">(</span><span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">].</span>userIds<span class="k">[</span>j<span class="k">].</span>indexOf<span class="k">(</span>email<span class="k">)</span> <span class="k">&gt;=</span> <span class="s">0</span><span class="k">)</span></pre></td></tr>
+<tr><td class="numeric">100</td><td class="r numeric" id="line-100">0</td><td><pre>					results<span class="k">[</span>results<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">101</td><td></td><td><pre>			<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">102</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">103</td><td class="r numeric" id="line-103">0</td><td><pre>		<span class="k">return</span> result<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">104</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">105</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">106</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">107</td><td></td><td><pre><span class="c">	 * Searches the keyring for a private key containing the specified email address</span></pre></td></tr>
+<tr><td class="numeric">108</td><td></td><td><pre><span class="c">	 * @param email_address [String] email address to search for</span></pre></td></tr>
+<tr><td class="numeric">109</td><td></td><td><pre><span class="c">	 * @return [Array[openpgp_msg_privatekey] private keys found</span></pre></td></tr>
+<tr><td class="numeric">110</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">111</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> getPrivateKeyForAddress<span class="k">(</span>email_address<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">112</td><td class="r numeric" id="line-112">0</td><td><pre>		<span class="k">var</span> results <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">113</td><td class="r numeric" id="line-113">0</td><td><pre>		<span class="k">var</span> spl <span class="k">=</span> email_address<span class="k">.</span>split<span class="k">(</span><span class="s">"&lt;"</span><span class="k">);</span></pre></td></tr>
+<tr><td class="numeric">114</td><td class="r numeric" id="line-114">0</td><td><pre>		<span class="k">var</span> email <span class="k">=</span> <span class="s">""</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">115</td><td class="r numeric" id="line-115">0</td><td><pre>		<span class="k">if</span> <span class="k">(</span>spl<span class="k">.</span>length <span class="k">&gt;</span> <span class="s">1</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">116</td><td class="r numeric" id="line-116">0</td><td><pre>			email <span class="k">=</span> spl<span class="k">[</span><span class="s">1</span><span class="k">].</span>split<span class="k">(</span><span class="s">"&gt;"</span><span class="k">)[</span><span class="s">0</span><span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">117</td><td></td><td><pre>		<span class="k">}</span> <span class="k">else</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">118</td><td class="r numeric" id="line-118">0</td><td><pre>			email <span class="k">=</span> email_address<span class="k">.</span>trim<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">119</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">120</td><td class="r numeric" id="line-120">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">121</td><td></td><td><pre>			</pre></td></tr>
+<tr><td class="numeric">122</td><td class="r numeric" id="line-122">0</td><td><pre>			<span class="k">for</span> <span class="k">(</span><span class="k">var</span> j <span class="k">=</span> <span class="s">0</span><span class="k">;</span> j <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>userIds<span class="k">.</span>length<span class="k">;</span> j<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">123</td><td class="r numeric" id="line-123">0</td><td><pre>				<span class="k">if</span> <span class="k">(</span><span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>userIds<span class="k">[</span>j<span class="k">].</span>text<span class="k">.</span>indexOf<span class="k">(</span>email<span class="k">)</span> <span class="k">&gt;=</span> <span class="s">0</span><span class="k">)</span></pre></td></tr>
+<tr><td class="numeric">124</td><td class="r numeric" id="line-124">0</td><td><pre>					results<span class="k">[</span>results<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">125</td><td></td><td><pre>			<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">126</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">127</td><td class="r numeric" id="line-127">0</td><td><pre>		<span class="k">return</span> results<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">128</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">129</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">130</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>getPrivateKeyForAddress <span class="k">=</span> getPrivateKeyForAddress<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">131</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">132</td><td></td><td><pre><span class="c">	 * Searches the keyring for public keys having the specified key id</span></pre></td></tr>
+<tr><td class="numeric">133</td><td></td><td><pre><span class="c">	 * @param keyId provided as string of hex number (lowercase)</span></pre></td></tr>
+<tr><td class="numeric">134</td><td></td><td><pre><span class="c">	 * @return Array[openpgp_msg_privatekey] public keys found</span></pre></td></tr>
+<tr><td class="numeric">135</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">136</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> getPublicKeysForKeyId<span class="k">(</span>keyId<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">137</td><td class="r numeric" id="line-137">0</td><td><pre>		<span class="k">var</span> result <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">138</td><td class="r numeric" id="line-138">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i<span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span></pre></td></tr>
+<tr><td class="numeric">139</td><td class="r numeric" id="line-139">0</td><td><pre>			<span class="k">if</span> <span class="k">(</span>keyId <span class="k">==</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>getKeyId<span class="k">())</span></pre></td></tr>
+<tr><td class="numeric">140</td><td class="r numeric" id="line-140">0</td><td><pre>				result<span class="k">[</span>result<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span>i<span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">141</td><td class="r numeric" id="line-141">0</td><td><pre>		<span class="k">return</span> result<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">142</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">143</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>getPublicKeysForKeyId <span class="k">=</span> getPublicKeysForKeyId<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">144</td><td></td><td><pre>	</pre></td></tr>
+<tr><td class="numeric">145</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">146</td><td></td><td><pre><span class="c">	 * Searches the keyring for private keys having the specified key id</span></pre></td></tr>
+<tr><td class="numeric">147</td><td></td><td><pre><span class="c">	 * @param keyId [String] 8 bytes as string containing the key id to look for</span></pre></td></tr>
+<tr><td class="numeric">148</td><td></td><td><pre><span class="c">	 * @return Array[openpgp_msg_privatekey] private keys found</span></pre></td></tr>
+<tr><td class="numeric">149</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">150</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> getPrivateKeyForKeyId<span class="k">(</span>keyId<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">151</td><td class="r numeric" id="line-151">0</td><td><pre>		<span class="k">var</span> result <span class="k">=</span> <span class="k">new</span> Array<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">152</td><td class="r numeric" id="line-152">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i<span class="k">=</span><span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">153</td><td class="r numeric" id="line-153">0</td><td><pre>			<span class="k">if</span> <span class="k">(</span>keyId <span class="k">==</span> util<span class="k">.</span>hexstrdump<span class="k">(</span><span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>getKeyId<span class="k">()))</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">154</td><td class="r numeric" id="line-154">0</td><td><pre>				result<span class="k">[</span>result<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">{</span> key<span class="k">:</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">],</span> keymaterial<span class="k">:</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>privateKeyPacket<span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">155</td><td></td><td><pre>			<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">156</td><td class="r numeric" id="line-156">0</td><td><pre>			<span class="k">if</span> <span class="k">(</span><span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>subKeys <span class="k">!=</span> <span class="k">null</span><span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">157</td><td class="r numeric" id="line-157">0</td><td><pre>				<span class="k">var</span> subkeyids <span class="k">=</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>getSubKeyIds<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">158</td><td class="r numeric" id="line-158">0</td><td><pre>				<span class="k">for</span> <span class="k">(</span><span class="k">var</span> j<span class="k">=</span><span class="s">0</span><span class="k">;</span> j <span class="k">&lt;</span> subkeyids<span class="k">.</span>length<span class="k">;</span> j<span class="k">++)</span></pre></td></tr>
+<tr><td class="numeric">159</td><td class="r numeric" id="line-159">0</td><td><pre>					<span class="k">if</span> <span class="k">(</span>keyId <span class="k">==</span> util<span class="k">.</span>hexstrdump<span class="k">(</span>subkeyids<span class="k">[</span>j<span class="k">]))</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">160</td><td class="r numeric" id="line-160">0</td><td><pre>						result<span class="k">[</span>result<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">{</span> key<span class="k">:</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">],</span> keymaterial<span class="k">:</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>i<span class="k">].</span>obj<span class="k">.</span>subKeys<span class="k">[</span>j<span class="k">]</span><span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">161</td><td></td><td><pre>					<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">162</td><td></td><td><pre>			<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">163</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">164</td><td class="r numeric" id="line-164">0</td><td><pre>		<span class="k">return</span> result<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">165</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">166</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>getPrivateKeyForKeyId <span class="k">=</span> getPrivateKeyForKeyId<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">167</td><td></td><td><pre>	</pre></td></tr>
+<tr><td class="numeric">168</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">169</td><td></td><td><pre><span class="c">	 * Imports a public key from an exported ascii armored message </span></pre></td></tr>
+<tr><td class="numeric">170</td><td></td><td><pre><span class="c">	 * @param armored_text [String] PUBLIC KEY BLOCK message to read the public key from</span></pre></td></tr>
+<tr><td class="numeric">171</td><td></td><td><pre><span class="c">	 * @return [null] nothing</span></pre></td></tr>
+<tr><td class="numeric">172</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">173</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> importPublicKey <span class="k">(</span>armored_text<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">174</td><td class="r numeric" id="line-174">0</td><td><pre>		<span class="k">var</span> result <span class="k">=</span> openpgp<span class="k">.</span>read_publicKey<span class="k">(</span>armored_text<span class="k">);</span></pre></td></tr>
+<tr><td class="numeric">175</td><td class="r numeric" id="line-175">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span> <span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> result<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">176</td><td class="r numeric" id="line-176">0</td><td><pre>			<span class="k">this</span><span class="k">.</span>publicKeys<span class="k">[</span><span class="k">this</span><span class="k">.</span>publicKeys<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">{</span>armored<span class="k">:</span> armored_text<span class="k">,</span> obj<span class="k">:</span> result<span class="k">[</span>i<span class="k">]</span><span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">177</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">178</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">179</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">180</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">181</td><td></td><td><pre><span class="c">	 * Imports a private key from an exported ascii armored message </span></pre></td></tr>
+<tr><td class="numeric">182</td><td></td><td><pre><span class="c">	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from</span></pre></td></tr>
+<tr><td class="numeric">183</td><td></td><td><pre><span class="c">	 * @return [null] nothing</span></pre></td></tr>
+<tr><td class="numeric">184</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">185</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> importPrivateKey <span class="k">(</span>armored_text<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">186</td><td class="r numeric" id="line-186">0</td><td><pre>		<span class="k">var</span> result <span class="k">=</span> openpgp<span class="k">.</span>read_privateKey<span class="k">(</span>armored_text<span class="k">);</span></pre></td></tr>
+<tr><td class="numeric">187</td><td class="r numeric" id="line-187">0</td><td><pre>		<span class="k">for</span> <span class="k">(</span><span class="k">var</span> i <span class="k">=</span> <span class="s">0</span><span class="k">;</span> i <span class="k">&lt;</span> result<span class="k">.</span>length<span class="k">;</span> i<span class="k">++)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">188</td><td class="r numeric" id="line-188">0</td><td><pre>			<span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span><span class="k">this</span><span class="k">.</span>privateKeys<span class="k">.</span>length<span class="k">]</span> <span class="k">=</span> <span class="k">{</span>armored<span class="k">:</span> armored_text<span class="k">,</span> obj<span class="k">:</span> result<span class="k">[</span>i<span class="k">]</span><span class="k">}</span><span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">189</td><td></td><td><pre>		<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">190</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">191</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">192</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>importPublicKey <span class="k">=</span> importPublicKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">193</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>importPrivateKey <span class="k">=</span> importPrivateKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">194</td><td></td><td><pre>	</pre></td></tr>
+<tr><td class="numeric">195</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">196</td><td></td><td><pre><span class="c">	 * returns the PUBLIC KEY BLOCK message representation of the public key at public key ring index  </span></pre></td></tr>
+<tr><td class="numeric">197</td><td></td><td><pre><span class="c">	 * @param index [Integer] the index of the public key within the publicKeys array</span></pre></td></tr>
+<tr><td class="numeric">198</td><td></td><td><pre><span class="c">	 * @return [String] the PUBLIC KEY BLOCK message</span></pre></td></tr>
+<tr><td class="numeric">199</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">200</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> exportPublicKey<span class="k">(</span>index<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">201</td><td class="r numeric" id="line-201">0</td><td><pre>		<span class="k">return</span> <span class="k">this</span><span class="k">.</span>publicKey<span class="k">[</span>index<span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">202</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">203</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>exportPublicKey <span class="k">=</span> exportPublicKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">204</td><td></td><td><pre>		</pre></td></tr>
+<tr><td class="numeric">205</td><td></td><td><pre>	</pre></td></tr>
+<tr><td class="numeric">206</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">207</td><td></td><td><pre><span class="c">	 * Removes a public key from the public key keyring at the specified index </span></pre></td></tr>
+<tr><td class="numeric">208</td><td></td><td><pre><span class="c">	 * @param index [Integer] the index of the public key within the publicKeys array</span></pre></td></tr>
+<tr><td class="numeric">209</td><td></td><td><pre><span class="c">	 * @return [String The public key object which has been removed</span></pre></td></tr>
+<tr><td class="numeric">210</td><td></td><td><pre><span class="c">	 */</span></pre></td></tr>
+<tr><td class="numeric">211</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> removePublicKey<span class="k">(</span>index<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">212</td><td class="r numeric" id="line-212">0</td><td><pre>		<span class="k">var</span> removed <span class="k">=</span> <span class="k">this</span><span class="k">.</span>publicKeys<span class="k">.</span>splice<span class="k">(</span>index<span class="k">,</span><span class="s">1</span><span class="k">);</span></pre></td></tr>
+<tr><td class="numeric">213</td><td class="r numeric" id="line-213">0</td><td><pre>		<span class="k">this</span><span class="k">.</span>store<span class="k">();</span></pre></td></tr>
+<tr><td class="numeric">214</td><td class="r numeric" id="line-214">0</td><td><pre>		<span class="k">return</span> removed<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">215</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">216</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>removePublicKey <span class="k">=</span> removePublicKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">217</td><td></td><td><pre></pre></td></tr>
+<tr><td class="numeric">218</td><td></td><td><pre>	<span class="c">/**</span></pre></td></tr>
+<tr><td class="numeric">219</td><td></td><td><pre><span class="c">	 * returns the PRIVATE KEY BLOCK message representation of the private key at private key ring index  </span></pre></td></tr>
+<tr><td class="numeric">220</td><td></td><td><pre><span class="c">	 * @param index [Integer] the index of the private key within the privateKeys array</span></pre></td></tr>
+<tr><td class="numeric">221</td><td></td><td><pre><span class="c">	 * @return [String] the PRIVATE KEY BLOCK message</span></pre></td></tr>
+<tr><td class="numeric">222</td><td></td><td><pre><span class="c">	 */</span>	</pre></td></tr>
+<tr><td class="numeric">223</td><td class="g numeric">1</td><td><pre>	<span class="k">function</span> exportPrivateKey<span class="k">(</span>index<span class="k">)</span> <span class="k">{</span></pre></td></tr>
+<tr><td class="numeric">224</td><td class="r numeric" id="line-224">0</td><td><pre>		<span class="k">return</span> <span class="k">this</span><span class="k">.</span>privateKeys<span class="k">[</span>index<span class="k">];</span></pre></td></tr>
+<tr><td class="numeric">225</td><td></td><td><pre>	<span class="k">}</span></pre></td></tr>
+<tr><td class="numeric">226</td><td class="g numeric">1</td><td><pre>	<span class="k">this</span><span class="k">.</span>exportPrivateKey <span class="k">=</span> exportPrivateKey<span class="k">;</span></pre></td></tr>
+<tr><td class="numeric">227</td><td></td><td><pre><span class="k">}</span></pre></td></tr>
+</tbody></table></div>
+  </div>
+
+  <div class="TabPage">
+    <p>
+    This is version 0.5.1 of JSCoverage, a program that calculates code
+    coverage statistics for JavaScript.
+    </p>
+    <p>
+    See <a target="_blank" href="http://siliconforks.com/jscoverage/">http://siliconforks.com/jscoverage/</a> for more information.
+    </p>
+    <p>
+    Copyright © 2007, 2008, 2009, 2010 siliconforks.com
+    </p>
+  </div>
+</div>
+</div>
+</body>
+</html>
