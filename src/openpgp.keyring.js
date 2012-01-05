@@ -86,22 +86,23 @@ function openpgp_keyring() {
 	 */
 	function getPublicKeyForAddress(email_address) {
 		var results = new Array();
-		var spl = string.split("<");
+		var spl = email_address.split("<");
 		var email = "";
-		if (spl.length > 0) {
+		if (spl.length > 1) {
 			email = spl[1].split(">")[0];
 		} else {
-			email = string.trim();
+			email = email_address.trim();
 		}
 		for (var i =0; i < this.publicKeys.length; i++) {
 			
-			for (var j = 0; j < this.publicKeys[i].userIds; j++) {
-				if (this.publicKeys[i].userIds[j].indexOf(email) >= 0)
+			for (var j = 0; j < this.publicKeys[i].obj.userIds.length; j++) {
+				if (this.publicKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
 					results[results.length] = this.publicKeys[i];
 			}
 		}
-		return result;
+		return results;
 	}
+	this.getPublicKeyForAddress = getPublicKeyForAddress;
 
 	/**
 	 * Searches the keyring for a private key containing the specified email address
@@ -193,9 +194,9 @@ function openpgp_keyring() {
 	this.importPrivateKey = importPrivateKey;
 	
 	/**
-	 * returns the PUBLIC KEY BLOCK message representation of the public key at public key ring index  
+	 * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
 	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [String] the PUBLIC KEY BLOCK message
+	 * @return [openpgp_msg_privatekey] the public key object
 	 */
 	function exportPublicKey(index) {
 		return this.publicKey[index];
@@ -206,7 +207,7 @@ function openpgp_keyring() {
 	/**
 	 * Removes a public key from the public key keyring at the specified index 
 	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [String The public key object which has been removed
+	 * @return [openpgp_msg_privatekey] The public key object which has been removed
 	 */
 	function removePublicKey(index) {
 		var removed = this.publicKeys.splice(index,1);
@@ -216,12 +217,25 @@ function openpgp_keyring() {
 	this.removePublicKey = removePublicKey;
 
 	/**
-	 * returns the PRIVATE KEY BLOCK message representation of the private key at private key ring index  
+	 * returns the openpgp_msg_privatekey representation of the private key at private key ring index  
 	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [String] the PRIVATE KEY BLOCK message
+	 * @return [openpgp_msg_privatekey] the private key object
 	 */	
 	function exportPrivateKey(index) {
 		return this.privateKeys[index];
 	}
 	this.exportPrivateKey = exportPrivateKey;
+
+	/**
+	 * Removes a private key from the private key keyring at the specified index 
+	 * @param index [Integer] the index of the private key within the privateKeys array
+	 * @return [openpgp_msg_privatekey] The private key object which has been removed
+	 */
+	function removePrivateKey(index) {
+		var removed = this.privateKeys.splice(index,1);
+		this.store();
+		return removed;
+	}
+	this.removePrivateKey = removePrivateKey;
+
 }
