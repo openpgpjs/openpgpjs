@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,7 +21,7 @@ if (window.location.href.indexOf("https://mail.google.com/mail/?view=cm") == 0) 
 } else {
 	// we are running in the normal interface
 	chrome.extension.sendRequest({account: document.getElementsByTagName("script")[4].text.split(",")[10].replace(/"/g,"").trim()}, function(response) {});
-	
+
 }
 
 var current_message_type = -1;
@@ -40,8 +40,8 @@ function find_openpgp(text) {
 			current_pgp_block = text.substring(text.indexOf("-----BEGIN PGP MESSAGE-----"), text.indexOf("-----END PGP MESSAGE-----")+25);
 			current_pgp_block = current_pgp_block.replace(/\n/g,"").replace(/<br>/g,"\n").replace(/<wbr>/g,"");
 			if (pgp_verifyCheckSum(current_pgp_block))
-				show_pgp_alert(); 
-				
+				show_pgp_alert();
+
 		} else if (/-----BEGIN PGP SIGNED MESSAGE-----/.test(text) && /-----END PGP SIGNATURE-----/.test(text)) {
 			current_message= document.location.hash;
 			current_message_type = 1;
@@ -65,8 +65,8 @@ function start_pgp_dialog() {
 	//Gmail does not provide a generic way. to get message data out of the HTML interface so we parse the DOM
 	Gmail.getMail(function(msg) {
 		msg.action = 1;
-	    chrome.extension.sendRequest(msg, function(response) { 
-	    	// hide_pgp_alert(); // hide pgp alert after opening the openpgp window 
+	    chrome.extension.sendRequest(msg, function(response) {
+	    	// hide_pgp_alert(); // hide pgp alert after opening the openpgp window
 	    });
 	});
 }
@@ -90,9 +90,9 @@ function show_pgp_alert() {
 		div.setAttribute("id", "gpg4browsers_alert");
 		div.setAttribute("style","position: fixed; top: 0px; width: 100%; background-color: #eeeeff; border-bottom: 1px solid #aaa;");
 		if (current_message_type == 0)
-			div.appendChild(document.createTextNode("This mail is encrypted. Do you want to open it with GPG4Browsers?"));
+			div.appendChild(document.createTextNode("This mail is encrypted. Do you want to open it with OpenPGP.js?"));
 		else if (current_message_type == 1)
-			div.appendChild(document.createTextNode("This mail is signed. Do you want to open it with GPG4Browsers?"));
+			div.appendChild(document.createTextNode("This mail is signed. Do you want to open it with OpenPGP.js?"));
 		div.appendChild(buttonyes);
 		div.appendChild(buttonno);
 		document.body.appendChild(div);
@@ -123,7 +123,7 @@ window.setInterval(function() {
  * @param text containing the base64 block and the base64 encoded checksum
  * @return true if the checksum was correct, false otherwise
  */
-function pgp_verifyCheckSum(text) {	
+function pgp_verifyCheckSum(text) {
 	var splittedtext = text.split('-----');
 	var data = r2s(splittedtext[2].split('\n\n')[1].split("\n=")[0]);
 	var checksum = splittedtext[2].split('\n\n')[1].split("\n=")[1].replace(/\n/g,"");
@@ -149,7 +149,7 @@ function getCheckSum(data) {
 /**
  * calculation routine for a CRC-24 checksum
  * @param data
- * @return 
+ * @return
  */
 function createcrc24 (data) {
 	var crc = 0xB704CE;

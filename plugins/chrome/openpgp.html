@@ -7,7 +7,7 @@
 <script type="text/javascript" src="js/ciphers/hash/md5.js"></script>
 <script type="text/javascript" src="js/ciphers/hash/ripe-md.js"></script>
 
-<!-- crypto libs -->	
+<!-- crypto libs -->
 <script type="text/javascript" src="js/ciphers/symmetricencryption/aes.js"></script>
 <script type="text/javascript" src="js/ciphers/symmetricencryption/cast5.js"></script>
 <script type="text/javascript" src="js/ciphers/symmetricencryption/dessrc.js"></script>
@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/openpgp.msg.publickey.js"></script>
 <script type="text/javascript" src="js/util.js"></script>
 
-<title>GPG4Browsers</title>
+<title>OpenPGP.js</title>
 </head>
 <style>
 
@@ -71,7 +71,7 @@
   		margin-top: -10px;
   		margin-left: -300px;
 		background-color: #8888FF;
-		z-index:4; 
+		z-index:4;
 		border: 2px solid white;
 		box-shadow: 0px 0px 4px 4px #666;
 		background-color: #fff;
@@ -88,7 +88,7 @@
   		margin-top: -235px;
   		margin-left: -300px;
 		background-color: #8888FF;
-		z-index:4; 
+		z-index:4;
 		border: 2px solid white;
 		box-shadow: 0px 0px 4px 4px #666;
 		background-color: #fff;
@@ -98,19 +98,19 @@
 	#keyselecttable {
 		width: 100%;
 	}
-	
+
 	#keyselecttable th {
 		background-color: #eee;
 		border-bottom: 1px solid #000;
 		padding: 2px;
 		text-align: left;
 	}
-	
+
 	#keyselecttable td {
 		padding: 2px;
 		border-bottom: 1px solid #aaa;
 	}
-	
+
 	#reciepientTable {
 		border: none;
 		border-spacing: 2px;
@@ -141,15 +141,15 @@
 		border-radius: 5px;
 		width: 670px;
 	}
-	
+
 	body {
 		background-color: #EFEFEF;
 	}
-	
+
 	#keyselecttable tbody {
 		overflow: auto;
 	}
-	#displaySender, #displayCC, 
+	#displaySender, #displayCC,
 </style>
 <script language="javascript">
 
@@ -159,7 +159,7 @@ var account_email = null;
 
 function start() {
 	openpgp.init();
-	chrome.extension.sendRequest({}, 
+	chrome.extension.sendRequest({},
 		function(response) {
 		request = response;
 		if (request.action == 0) {  // compose message
@@ -178,7 +178,7 @@ function start() {
 
 function show_compose_window() {
 	$("#composerAddress").html(openpgp_encoding_html_encode(account_email));
-	$("#displayWindow").hide();	
+	$("#displayWindow").hide();
 	$("#composeWindow").show();
 	if (openpgp.config.config.composition_behavior == 0) {
 		$('#sign_message').attr("checked","checked");
@@ -202,7 +202,7 @@ function rfn(result) {
 	else {
 		current_message.decrypted = result;
 		$("#displayMessage").html(openpgp_encoding_html_encode(result));
-	}		
+	}
 }
 
 function show_message_window(request) {
@@ -269,7 +269,7 @@ function add_reciepient() {
 }
 
 function add_reciepient(method, name, isdisabled) {
-	
+
 	$("#reciepientTable").append("<tr class=\"reciepientsRow\"><td><select class=\"reciepientSelect\" "+((isdisabled != null) ? "disabled=\"disabled\" ":"")+"id=\"reciepient_method_"+reciepient_count+"\">"+
 			"<option value=\"0\""+((method == 0) ? " selected=\"selected\"" : "")+">To:</option>"+
 			"<option value=\"1\""+((method == 1) ? " selected=\"selected\"" : "")+">Cc:</option>"+
@@ -277,7 +277,7 @@ function add_reciepient(method, name, isdisabled) {
 			"</select></td><td>"+
 			"<input name=\"recepient_"+reciepient_count+"\" type=\"text\" value=\""+((name != null) ? name : "")+"\"></input>"+
 			"</td><td><input class=\"reciepientAdd\" id=\"reciepientAdd_"+reciepient_count+"\" type=\"button\" value=\"+\" onmousedown=\"add_reciepient();\"></input></td></tr>");
-	
+
 	for (var i =1; i < reciepient_count; i++) $("#reciepientAdd_"+i).remove();
 	reciepient_count++;
 }
@@ -291,7 +291,7 @@ function prepare_send_mail() {
 	}
 	if ($('#encrypt_message').attr('checked') != null)
 		showKeySelection(addr);
-	else 
+	else
 		showEncryptionConfirmation();
 }
 
@@ -299,7 +299,7 @@ function show_reply(reply_all) {
 	if (reply_all) {
 		// adding replys "To"
 		if (current_message.to.length < 2)
-			add_reciepient(0,current_message.to[0], null); 
+			add_reciepient(0,current_message.to[0], null);
 		else for (var i = 0; i < request.to.length; i++)
 			if (!getEmailAddress(request.to[i]).match(account_email)) {
 				add_reciepient(0,current_message.to[i], null);
@@ -316,7 +316,7 @@ function show_reply(reply_all) {
 	$("#messageBody").html(openpgp_encoding_html_encode(quote_message(current_message.from, new Date(current_message.date), current_message.decrypted)));
 	$("#firstto").val(current_message.from);
 	$("#displayWindow").hide();
-	show_compose_window();	
+	show_compose_window();
 }
 
 function quote_message (sender, date, msg) {
@@ -331,7 +331,7 @@ function get_password(key, msg, sessionkey, successfn) {
 	var count = 0;
 	$("#enterPasswordText").html("Please enter password for keyID: 0x"+util.hexstrdump(key.key.obj.getKeyId()));
 	$("#enterPasswordKeyId").html(key.key.obj.userIds[0]);
-	
+
 	$("#enterPasswordSubmit").click(function() {
 		$("#enterPassword").fadeOut(100);
 		$("#enterPasswordSubmit").attr("disabled","disabled");
@@ -354,15 +354,15 @@ function get_password(key, msg, sessionkey, successfn) {
 			$("#enterPasswordSubmit").removeAttr("disabled");
 			$("#enterPasswordInput").removeAttr("disabled");
 			$("#enterPasswordText").html("enterered Password was wrong. try again for keyID: 0x"+util.hexstrdump(key.key.keyId));
-			
+
 			$('#enterPasswordInput').focus();
 			$('#enterPassword').fadeIn(100);
 			count++;
 		}
-			
-	}); 		
+
+	});
 	$("#block-bg").show();
-	$("#enterPassword").show();	
+	$("#enterPassword").show();
 	$('#enterPasswordInput').focus();
 }
 
@@ -447,12 +447,12 @@ function showKeySelection(emailaddresses) {
 			showEncryptionConfirmation();
 		}
 		$('#keyselecttext').empty();
-		
+
 		$('#keyselecttext').append("Select keys for the following email addresses:<br>");
 		for (var i= 0; i < emailaddresses.length; i++) {
 			$('#keyselecttext').append("<i>"+openpgp_encoding_html_encode(emailaddresses[i])+"</i>, ");
 		}
-		
+
 		for (var i=0; i < encryptionkeys.length; i++)
 			$('#keyselecttable').append('<tr class="validkey"><td><input class="keys" value="'+i+'" type="checkbox" checked="checked"></input></td><td></td>'+
 					openpgp_encoding_html_encode(encryptionkeys[i].obj.userIds[0].text)+'<td>valid</td><td>0x'+openpgp_encoding_html_encode(util.hexstrdump(encryptionkeys[i].obj.getKeyId()).substring(8))+'</td></tr>');
@@ -490,7 +490,7 @@ function showEncryptionConfirmation() {
 				alert("no private key found! Go to options and import or create one.");
 				showEncryptioncancel();
 			}
-		
+
 			get_password({ key: privatekey[0], keymaterial: privatekey[0].obj.privateKeyPacket},null,null, function(ret) {
 				if (!(ret < 0))
 					send_mail(openpgp.write_signed_and_encrypted_message(privatekey[0].obj, keys, $('#messageBody').val()));
@@ -513,7 +513,7 @@ function showEncryptionConfirmation() {
 
 function showEncryptionCancel() {
 	$('#keyselect').hide();
-	$('#block-bg').hide();		
+	$('#block-bg').hide();
 }
 
 </script>
@@ -558,7 +558,7 @@ function showEncryptionCancel() {
 	<button type="submit" onmousedown="showEncryptionCancel();">Cancel</button>
 	</div>
 </div>
-<div id="encryptionConfirmation">	
+<div id="encryptionConfirmation">
 </div>
 <div id="block-bg" style=" width: 100%; height: 100%; z-index: 2;  display: none; position: fixed; top: 0px; background-color: black; opacity: 0.5;"></div>
 </body>

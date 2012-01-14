@@ -1,7 +1,7 @@
 {
-	"name" : "GPG4Browsers",
+	"name" : "OpenPGP.js",
 	"version" : "0.1",
-	"description" : "An OpenPGP implementation in javascript",
+	"description" : "OpenPGP.js integration for Google Mail",
 	"background_page" : "background.html",
 	"options_page": "options.html",
 	"page_action" :
@@ -22,7 +22,7 @@
 	"incoginto": "split",
     "permissions": [
     	"https://mail.google.com/*",
-    	"http://keyserver.linux.it/*", 
+    	"http://keyserver.linux.it/*",
     	"unlimitedStorage"
     ],
     "icons" : {

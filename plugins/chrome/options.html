@@ -1,14 +1,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>GPG4Browsers - PGP Message Options</title>
+		<title>OpenPGP.js - PGP Message Options</title>
 	</head>
 <script type="text/javascript" src="jquery.min.js"></script>
 <script type="text/javascript" src="js/ciphers/hash/sha.js"></script>
 <script type="text/javascript" src="js/ciphers/hash/md5.js"></script>
 <script type="text/javascript" src="js/ciphers/hash/ripe-md.js"></script>
 
-<!-- crypto libs -->	
+<!-- crypto libs -->
 <script type="text/javascript" src="js/ciphers/symmetricencryption/aes.js"></script>
 <script type="text/javascript" src="js/ciphers/symmetricencryption/cast5.js"></script>
 <script type="text/javascript" src="js/ciphers/symmetricencryption/dessrc.js"></script>
@@ -68,7 +68,7 @@ function save_options() {
 }
 
 function getAlgorithmString(publicKey) {
-	var result = publicKey.publicKeyPacket.MPIs[0].mpiByteLength*8+"/"; 
+	var result = publicKey.publicKeyPacket.MPIs[0].mpiByteLength*8+"/";
 	switch (publicKey.publicKeyPacket.publicKeyAlgorithm) {
 	case 1:
 		result += "RSA(S/E)";
@@ -106,7 +106,7 @@ function getAlgorithmString(publicKey) {
 			break;
 		}
 	}
-	return result;		
+	return result;
 }
 function encodeForHtml(text) {
 	if (text == null)
@@ -130,7 +130,7 @@ function importPrivateKey(key) {
 function restore_options() {
 	openpgp.init();
 	update_tables();
-	$('#cipher_alg_select').val(""+openpgp.config.config.encryption_cipher); 
+	$('#cipher_alg_select').val(""+openpgp.config.config.encryption_cipher);
 	$('#hash_alg_select').val(""+openpgp.config.config.prefer_hash_algorithm);
 	$('#compression_alg_select').val(""+openpgp.config.config.compression);
 	$('#integrity').attr("checked", openpgp.config.config.integrity_protect);
@@ -148,7 +148,7 @@ function show_userIds(k) {
 			$('#show_ids_'+k).append("<tr style=\"background-color: #fdd\"><td>rev</td><td class=\"uid_revoked\" colspan=\"2\"><s>"+encodeForHtml(publicKey.obj.userIds[i].text)+"</s></td></tr>");
 		else if (certsigs[i].indexOf(5) != -1)
 			$('#show_ids_'+k).append("<tr style=\"background-color: #ffd\"><td>exp</td><td class=\"uid_expired\" colspan=\"2\"><i>"+encodeForHtml(publicKey.obj.userIds[i].text)+"</i></td></tr>");
-		else 
+		else
 			$('#show_ids_'+k).append("<tr style=\"background-color: #dfd\"><td>uid</td><td class=\"uid_normal\" colspan=\"2\"><b>"+encodeForHtml(publicKey.obj.userIds[i].text)+"</b></td></tr>");
 		for (var j = 0; j < publicKey.obj.userIds[i].certificationSignatures.length; j++) {
 			var istr = util.hexstrdump(publicKey.obj.userIds[i].certificationSignatures[j].getIssuer());
@@ -160,12 +160,12 @@ function show_userIds(k) {
 				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td>BAD</td><td class=\"sig_bad\">"+encodeForHtml(istr)+"</td></tr>");
 			if (certsigs[i][j] == 1)
 				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td>exp</td><td class=\"sig_exp\"><i>"+encodeForHtml(istr)+"</i></td></tr>");
-			if (certsigs[i][j] == 2)	
+			if (certsigs[i][j] == 2)
 				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td>unk</td><td class=\"sig_unk\">"+encodeForHtml(istr)+"</td></tr>");
-			if (certsigs[i][j] == 3)	
+			if (certsigs[i][j] == 3)
 				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td>rev</td><td class=\"sig_unk\"><s>"+encodeForHtml(istr)+"</s></td></tr>");
-			if (certsigs[i][j] == 4)	
-				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td></td><td class=\"sig_normal\">"+encodeForHtml(istr)+"</td></tr>");				
+			if (certsigs[i][j] == 4)
+				$('#show_ids_'+k).append("<tr><td>sig"+(sigclass == 0 ? "" : sigclass)+"</td><td></td><td class=\"sig_normal\">"+encodeForHtml(istr)+"</td></tr>");
 		}
 	}
 	$('#show_ids_'+k).toggle();
@@ -289,11 +289,11 @@ function show_search_results() {
 			margin-bottom: 0px;
 			z-index: 1;
 		}
-		
+
 		th {
 			text-align: left;
 		}
-		
+
 		.tabref {
 			background-color: #eee;
 			border: 1px solid #aaa;
@@ -301,7 +301,7 @@ function show_search_results() {
 		#options_header {
 			margin-left: 5px;
 		}
-		
+
 		#publicKeyTable, #privateKeyTable, #searchKeyResults {
 			border: 1px solid #aaa;
 		}
@@ -311,30 +311,30 @@ function show_search_results() {
 			border-bottom: 1px solid #000;
 			padding: 3px;
 		}
-		
+
 		#publicKeyTable td, #privateKeyTable td, #searchKeyResults td {
 			padding: 3px;
 			border-bottom: 1px solid #aaa;
 			vertical-align: top;
 		}
-		
+
 		.tabref-select {
 			background-color: #fff;
 			border-bottom: 1px solid #fff;
 		}
-		
+
 		h2 {
-			
+
 			font: 1.5em;
 			width: 100%;
 			border-bottom: 1px solid #888;
 		}
-		
+
 		h1, h2 {
 			font: 1.5em "Impact";
-			
+
 		}
-		
+
 		#tab_1, #tab_2, #tab_3, #tab_0 {
 			margin-top: 2px;
 			border: 1px solid #aaa;
@@ -346,7 +346,7 @@ function show_search_results() {
 			padding-bottom: 10px;
 			border-radius: 5px;
 		}
-		
+
 	</style>
 	<body onload="restore_options()">
 	<div id="options_header">
@@ -435,7 +435,7 @@ function show_search_results() {
 		</table>
 	</div>
 	<b><a href="#" onclick="$('#pastePrivateKey').toggle();">Paste a private key</a></b><br>
-	<div id="pastePrivateKey" style="display: none; margin-left: 5px; border-left: 1px solid #aaa; padding-left: 5px;">	
+	<div id="pastePrivateKey" style="display: none; margin-left: 5px; border-left: 1px solid #aaa; padding-left: 5px;">
 		<textarea rows="30" cols="80" id="importPrivateKeyTextfield"></textarea>
 		<button onclick="importPrivateKey($('#importPrivateKeyTextfield').val()); $('#generatePrivateKey').toggle();">Import Key</button>
 	</div>
