@@ -1,2 +1,3 @@
 resources/openpgpjs.pem
 build/
+.DS_Store
