@@ -455,8 +455,8 @@ function openpgp_packet_signature() {
 		case 108: // Private or experimental
 		case 109: // Private or experimental
 		case 110: // Private or experimental
-			return subplen+1;
 			util.print_error("openpgp.packet.signature.js\n"+'private or experimental signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
+			return subplen+1;
 			break;	
 		case 0: // Reserved
 		case 1: // Reserved

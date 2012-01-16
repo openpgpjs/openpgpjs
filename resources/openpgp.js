@@ -1495,9 +1495,11 @@ function openpgp_packet_userid() {
 	this.verifyCertificationSignatures = verifyCertificationSignatures;
 	this.verify = verify;
 	this.read_packet = read_packet;
+	this.write_packet = write_packet;
 	this.toString = toString;
 	this.read_nodes = read_nodes;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -3305,16 +3307,79 @@ function openpgp_packet_keymaterial() {
 	 */
 	function getFingerprint() {
 		if (this.version == 4) {
-			var tohash= this.header+this.data;
-		//if (this.tagType == 14) {
-				tohash = String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-				util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
-			//}
+			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
+				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
+			util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
 			return str_sha1(tohash, tohash.length);
 		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
 			return MD5(this.MPIs[0].MPI);
 		}
 	}
+	
+	/*
+     * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_private_key(keyType, key){
+		var tag = 5;
+		var body = String.fromCharCode(4);
+		//TODO make the date into a util function
+		var d = new Date();
+		d = d.getTime()/1000;
+		body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(1);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    var algorithmStart = 6; //6 bits of extra info
+		    //below shows ske/s2k TODO: currently disabled (no pw)
+		    body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
+		    //TODO: if s2k == 255,254 then 1 octet symmetric encryption algo
+		    //TODO: if s2k == 255,254 then s2k specifier
+		    //TODO if s2k, IV of same length as cipher's block
+		    body += key.d.toMPI();
+		    body += key.p.toMPI();
+		    body += key.q.toMPI();
+		    body += key.coeff.toMPI();
+		    break;
+		default :
+			body = "";
+			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+        }
+		body += util.calc_checksum(body.substr(algorithmStart));//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536 
+		var header = openpgp_packet.write_packet_header(tag,body.length);
+		return {string: header+body , header: header, body: body};
+    }
+	
+	/*
+     * same as write_private_key, but has less information because of public key.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_public_key(keyType, key){
+        var tag = 6;
+        var body = String.fromCharCode(4);
+        //TODO make the date into a util function
+        var d = new Date();
+        d = d.getTime()/1000;
+        body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(1);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    break;
+	    default:
+	    	util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+	    }
+        var header = openpgp_packet.write_packet_header(tag,body.length);
+        return {string: header+body , header: header, body: body};
+        }
+
 	
 	this.read_tag5 = read_tag5;
 	this.read_tag6 = read_tag6;
@@ -3328,6 +3393,8 @@ function openpgp_packet_keymaterial() {
 	this.verifyKey = verifyKey;
 	this.getKeyId = getKeyId;
 	this.getFingerprint = getFingerprint;
+	this.write_private_key = write_private_key;
+	this.write_public_key = write_public_key;
 }
 /*
  *  md5.jvs 1.0b 27/06/96
@@ -7168,6 +7235,15 @@ function createTwofish() {
 //
 // RSA implementation
 
+function SecureRandom(){
+    function nextBytes(byteArray){
+        for(var n = 0; n < byteArray.length;n++){
+            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+        }
+    }
+    this.nextBytes = nextBytes;
+}
+
 function RSA() {
 	/**
 	 * This function uses jsbn Big Num library to decrypt RSA
@@ -7218,12 +7294,64 @@ function RSA() {
 	function verify(x,e,n) {
 		return x.modPowInt(e, n);
 	}
+	
+	// "empty" RSA key constructor
+    function keyObject() {
+        this.n = null;
+        this.e = 0;
+        this.ee = null;
+        this.d = null;
+        this.p = null;
+        this.q = null;
+        this.dmp1 = null;
+        this.dmq1 = null;
+        this.coeff = null;
+    }
+	
+	// Generate a new random private key B bits long, using public expt E
+    function generate(B,E) {
+        var key = new keyObject();
+        var rng = new SecureRandom();
+        var qs = B>>1;
+        key.e = parseInt(E,16);
+        key.ee = new BigInteger(E,16);
+        for(;;) {
+            for(;;) {
+                key.p = new BigInteger(B-qs,1,rng);
+                if(key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.p.isProbablePrime(10)) break;
+            }
+            for(;;) {
+                key.q = new BigInteger(qs,1,rng);
+                if(key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.q.isProbablePrime(10)) break;
+            }
+            if(key.p.compareTo(key.q) <= 0) {
+                var t = key.p;
+                key.p = key.q;
+                key.q = t;
+            }
+            var p1 = key.p.subtract(BigInteger.ONE);
+            var q1 = key.q.subtract(BigInteger.ONE);
+            var phi = p1.multiply(q1);
+            if(phi.gcd(key.ee).compareTo(BigInteger.ONE) == 0) {
+                key.n = key.p.multiply(key.q);
+                key.d = key.ee.modInverse(phi);
+                key.dmp1 = key.d.mod(p1);
+                key.dmq1 = key.d.mod(q1);
+                key.coeff = key.q.modInverse(key.p);
+                break;
+            }
+        }
+        return key;
+    }
 		
 	this.encrypt = encrypt;
 	this.decrypt = decrypt;
 	this.verify = verify;
 	this.sign = sign;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+	this.generate = generate;
+	this.keyObject = keyObject;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -9457,6 +9585,29 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 	}
 	return min.add(r);
 }
+
+
+/**
+ * calls the necessary crypto functions to generate a keypair. Called directly by openpgp.js
+ * @keyType [int] follows OpenPGP algorithm convention.
+ * @numBits [int] number of bits to make the key to be generated
+ * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
+ */
+function openpgp_crypto_generateKeyPair(keyType, numBits){
+	var privKeyPacket;
+	var publicKeyPacket;
+	switch(keyType){
+	case 1:
+	    var rsa = new RSA();
+	    var key = rsa.generate(numBits,"10001");
+	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(1, key);
+	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(1, key);
+	    break;
+	default:
+		util.print_error("Unknown keytype "+keyType)
+	}
+	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
+}
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -9536,7 +9687,8 @@ function _openpgp () {
 			}
 			publicKeys[publicKeyCount].data = input.substring(0,mypos);
 			publicKeyCount++;
-		}		
+		}
+		debugger;
 		return publicKeys;
 	}
 	
@@ -9579,7 +9731,14 @@ function _openpgp () {
 	 * returns null
 	 */
 	function read_message(armoredText) {
-		var dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+		var dearmored;
+		try{
+    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+		}
+		catch(e){
+    		util.print_error('no message found!');
+    		return null;
+		}
 		var input = dearmored.openpgp;
 		var messages = new Array();
 		var messageCount = 0;
@@ -9802,6 +9961,40 @@ function _openpgp () {
 		return openpgp_encoding_armor(2,result, null, null)
 	}
 	
+	/**
+	 * generates a new key pair for openpgp. Beta stage. Currently only supports RSA keys, and no subkeys.
+	 * @param keyType [int] to indicate what type of key to make. RSA is 1. Follows algorithms outlined in OpenPGP.
+	 * @param numBits [int] number of bits for the key creation. (should be 1024+, generally)
+	 * @userId [string] assumes already in form of "User Name <username@email.com>"
+	 * @preferredHashAlgorithm [int]
+	 * @return {privateKey: [openpgp_msg_privatekey], privateKeyArmored: [string], publicKeyArmored: [string]}
+	 */
+	function generate_key_pair(keyType, numBits, userId,preferredHashAlgorithm){
+		var userIdPacket = new openpgp_packet_userid();
+		var userIdString = userIdPacket.write_packet(userId);
+		
+		var keyPair = openpgp_crypto_generateKeyPair(keyType,numBits);
+		var privKeyString = keyPair.privateKey;
+		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length-3);
+		var privKey = new openpgp_msg_privatekey();
+		privKey.privateKeyPacket = privKeyPacket;
+		privKey.getPreferredSignatureHashAlgorithm = function(){return preferredHashAlgorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
+		
+		var publicKeyString = privKey.privateKeyPacket.publicKey.data;
+		var hashData = String.fromCharCode(0x99)+ String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) 
+			+ String.fromCharCode((publicKeyString.length) & 0xFF) +publicKeyString+String.fromCharCode(0xB4) +
+			String.fromCharCode((userId.length) >> 24) +String.fromCharCode(((userId.length) >> 16) & 0xFF) 
+			+ String.fromCharCode(((userId.length) >> 8) & 0xFF) + String.fromCharCode((userId.length) & 0xFF) + userId
+		var signature = new openpgp_packet_signature();
+		signature = signature.write_message_signature(16,hashData, privKey);
+		var publicArmored = openpgp_encoding_armor(4, keyPair.publicKey.string + userIdString + signature.openpgp );
+
+		var privArmored = openpgp_encoding_armor(5,privKeyString.string+userIdString+signature.openpgp);
+		
+		return {privateKey : privKey, privateKeyArmored: privArmored, publicKeyArmored: publicArmored}
+	}
+	
+	this.generate_key_pair = generate_key_pair;
 	this.write_signed_message = write_signed_message; 
 	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
 	this.write_encrypted_message = write_encrypted_message;

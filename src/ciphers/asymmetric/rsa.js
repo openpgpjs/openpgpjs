@@ -17,6 +17,15 @@
 //
 // RSA implementation
 
+function SecureRandom(){
+    function nextBytes(byteArray){
+        for(var n = 0; n < byteArray.length;n++){
+            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+        }
+    }
+    this.nextBytes = nextBytes;
+}
+
 function RSA() {
 	/**
 	 * This function uses jsbn Big Num library to decrypt RSA
@@ -67,9 +76,60 @@ function RSA() {
 	function verify(x,e,n) {
 		return x.modPowInt(e, n);
 	}
+	
+	// "empty" RSA key constructor
+    function keyObject() {
+        this.n = null;
+        this.e = 0;
+        this.ee = null;
+        this.d = null;
+        this.p = null;
+        this.q = null;
+        this.dmp1 = null;
+        this.dmq1 = null;
+        this.coeff = null;
+    }
+	
+	// Generate a new random private key B bits long, using public expt E
+    function generate(B,E) {
+        var key = new keyObject();
+        var rng = new SecureRandom();
+        var qs = B>>1;
+        key.e = parseInt(E,16);
+        key.ee = new BigInteger(E,16);
+        for(;;) {
+            for(;;) {
+                key.p = new BigInteger(B-qs,1,rng);
+                if(key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.p.isProbablePrime(10)) break;
+            }
+            for(;;) {
+                key.q = new BigInteger(qs,1,rng);
+                if(key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.q.isProbablePrime(10)) break;
+            }
+            if(key.p.compareTo(key.q) <= 0) {
+                var t = key.p;
+                key.p = key.q;
+                key.q = t;
+            }
+            var p1 = key.p.subtract(BigInteger.ONE);
+            var q1 = key.q.subtract(BigInteger.ONE);
+            var phi = p1.multiply(q1);
+            if(phi.gcd(key.ee).compareTo(BigInteger.ONE) == 0) {
+                key.n = key.p.multiply(key.q);
+                key.d = key.ee.modInverse(phi);
+                key.dmp1 = key.d.mod(p1);
+                key.dmq1 = key.d.mod(q1);
+                key.coeff = key.q.modInverse(key.p);
+                break;
+            }
+        }
+        return key;
+    }
 		
 	this.encrypt = encrypt;
 	this.decrypt = decrypt;
 	this.verify = verify;
 	this.sign = sign;
+	this.generate = generate;
+	this.keyObject = keyObject;
 }

@@ -328,6 +328,7 @@ function openpgp_packet_userid() {
 	this.verifyCertificationSignatures = verifyCertificationSignatures;
 	this.verify = verify;
 	this.read_packet = read_packet;
+	this.write_packet = write_packet;
 	this.toString = toString;
 	this.read_nodes = read_nodes;
 }

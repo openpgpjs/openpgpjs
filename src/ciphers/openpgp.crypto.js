@@ -456,3 +456,26 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 	}
 	return min.add(r);
 }
+
+
+/**
+ * calls the necessary crypto functions to generate a keypair. Called directly by openpgp.js
+ * @keyType [int] follows OpenPGP algorithm convention.
+ * @numBits [int] number of bits to make the key to be generated
+ * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
+ */
+function openpgp_crypto_generateKeyPair(keyType, numBits){
+	var privKeyPacket;
+	var publicKeyPacket;
+	switch(keyType){
+	case 1:
+	    var rsa = new RSA();
+	    var key = rsa.generate(numBits,"10001");
+	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(1, key);
+	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(1, key);
+	    break;
+	default:
+		util.print_error("Unknown keytype "+keyType)
+	}
+	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
+}

@@ -77,7 +77,8 @@ function _openpgp () {
 			}
 			publicKeys[publicKeyCount].data = input.substring(0,mypos);
 			publicKeyCount++;
-		}		
+		}
+		debugger;
 		return publicKeys;
 	}
 	
@@ -120,7 +121,14 @@ function _openpgp () {
 	 * returns null
 	 */
 	function read_message(armoredText) {
-		var dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+		var dearmored;
+		try{
+    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+		}
+		catch(e){
+    		util.print_error('no message found!');
+    		return null;
+		}
 		var input = dearmored.openpgp;
 		var messages = new Array();
 		var messageCount = 0;
@@ -343,6 +351,40 @@ function _openpgp () {
 		return openpgp_encoding_armor(2,result, null, null)
 	}
 	
+	/**
+	 * generates a new key pair for openpgp. Beta stage. Currently only supports RSA keys, and no subkeys.
+	 * @param keyType [int] to indicate what type of key to make. RSA is 1. Follows algorithms outlined in OpenPGP.
+	 * @param numBits [int] number of bits for the key creation. (should be 1024+, generally)
+	 * @userId [string] assumes already in form of "User Name <username@email.com>"
+	 * @preferredHashAlgorithm [int]
+	 * @return {privateKey: [openpgp_msg_privatekey], privateKeyArmored: [string], publicKeyArmored: [string]}
+	 */
+	function generate_key_pair(keyType, numBits, userId,preferredHashAlgorithm){
+		var userIdPacket = new openpgp_packet_userid();
+		var userIdString = userIdPacket.write_packet(userId);
+		
+		var keyPair = openpgp_crypto_generateKeyPair(keyType,numBits);
+		var privKeyString = keyPair.privateKey;
+		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length-3);
+		var privKey = new openpgp_msg_privatekey();
+		privKey.privateKeyPacket = privKeyPacket;
+		privKey.getPreferredSignatureHashAlgorithm = function(){return preferredHashAlgorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
+		
+		var publicKeyString = privKey.privateKeyPacket.publicKey.data;
+		var hashData = String.fromCharCode(0x99)+ String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) 
+			+ String.fromCharCode((publicKeyString.length) & 0xFF) +publicKeyString+String.fromCharCode(0xB4) +
+			String.fromCharCode((userId.length) >> 24) +String.fromCharCode(((userId.length) >> 16) & 0xFF) 
+			+ String.fromCharCode(((userId.length) >> 8) & 0xFF) + String.fromCharCode((userId.length) & 0xFF) + userId
+		var signature = new openpgp_packet_signature();
+		signature = signature.write_message_signature(16,hashData, privKey);
+		var publicArmored = openpgp_encoding_armor(4, keyPair.publicKey.string + userIdString + signature.openpgp );
+
+		var privArmored = openpgp_encoding_armor(5,privKeyString.string+userIdString+signature.openpgp);
+		
+		return {privateKey : privKey, privateKeyArmored: privArmored, publicKeyArmored: publicArmored}
+	}
+	
+	this.generate_key_pair = generate_key_pair;
 	this.write_signed_message = write_signed_message; 
 	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
 	this.write_encrypted_message = write_encrypted_message;

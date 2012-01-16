@@ -663,16 +663,79 @@ function openpgp_packet_keymaterial() {
 	 */
 	function getFingerprint() {
 		if (this.version == 4) {
-			var tohash= this.header+this.data;
-		//if (this.tagType == 14) {
-				tohash = String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-				util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
-			//}
+			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
+				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
+			util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
 			return str_sha1(tohash, tohash.length);
 		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
 			return MD5(this.MPIs[0].MPI);
 		}
 	}
+	
+	/*
+     * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_private_key(keyType, key){
+		var tag = 5;
+		var body = String.fromCharCode(4);
+		//TODO make the date into a util function
+		var d = new Date();
+		d = d.getTime()/1000;
+		body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(1);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    var algorithmStart = 6; //6 bits of extra info
+		    //below shows ske/s2k TODO: currently disabled (no pw)
+		    body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
+		    //TODO: if s2k == 255,254 then 1 octet symmetric encryption algo
+		    //TODO: if s2k == 255,254 then s2k specifier
+		    //TODO if s2k, IV of same length as cipher's block
+		    body += key.d.toMPI();
+		    body += key.p.toMPI();
+		    body += key.q.toMPI();
+		    body += key.coeff.toMPI();
+		    break;
+		default :
+			body = "";
+			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+        }
+		body += util.calc_checksum(body.substr(algorithmStart));//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536 
+		var header = openpgp_packet.write_packet_header(tag,body.length);
+		return {string: header+body , header: header, body: body};
+    }
+	
+	/*
+     * same as write_private_key, but has less information because of public key.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_public_key(keyType, key){
+        var tag = 6;
+        var body = String.fromCharCode(4);
+        //TODO make the date into a util function
+        var d = new Date();
+        d = d.getTime()/1000;
+        body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(1);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    break;
+	    default:
+	    	util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+	    }
+        var header = openpgp_packet.write_packet_header(tag,body.length);
+        return {string: header+body , header: header, body: body};
+        }
+
 	
 	this.read_tag5 = read_tag5;
 	this.read_tag6 = read_tag6;
@@ -686,4 +749,6 @@ function openpgp_packet_keymaterial() {
 	this.verifyKey = verifyKey;
 	this.getKeyId = getKeyId;
 	this.getFingerprint = getFingerprint;
+	this.write_private_key = write_private_key;
+	this.write_public_key = write_public_key;
 }
