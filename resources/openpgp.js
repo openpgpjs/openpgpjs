@@ -635,8 +635,8 @@ function openpgp_packet_signature() {
 		case 108: // Private or experimental
 		case 109: // Private or experimental
 		case 110: // Private or experimental
-			return subplen+1;
 			util.print_error("openpgp.packet.signature.js\n"+'private or experimental signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
+			return subplen+1;
 			break;	
 		case 0: // Reserved
 		case 1: // Reserved
@@ -932,7 +932,8 @@ function openpgp_packet_signature() {
 	this.verify = verify;
     this.read_packet = read_packet;
     this.toString = toString;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -3323,6 +3324,7 @@ function openpgp_packet_keymaterial() {
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_private_key(keyType, key){
+    	debugger;
 		var tag = 5;
 		var body = String.fromCharCode(4);
 		//TODO make the date into a util function
@@ -7310,6 +7312,7 @@ function RSA() {
 	
 	// Generate a new random private key B bits long, using public expt E
     function generate(B,E) {
+    	debugger;
         var key = new keyObject();
         var rng = new SecureRandom();
         var qs = B>>1;
@@ -9676,7 +9679,7 @@ function _openpgp () {
 					mypos += publicKeys[publicKeyCount].publicKeyPacket.packetLength;
 					mypos += publicKeys[publicKeyCount].read_nodes(publicKeys[publicKeyCount].publicKeyPacket, input, mypos, (input.length - mypos));
 				} else {
-					publicKeys[publicKeys.length] = new openpgp_msg_publickey();
+					publicKeys[publicKeyCount] = new openpgp_msg_publickey();
 					publicKeys[publicKeyCount].publicKeyPacket = first_packet;
 					mypos += first_packet.headerLength+first_packet.packetLength;
 					mypos += publicKeys[publicKeyCount].read_nodes(first_packet, input, mypos, input.length -mypos);
@@ -9688,7 +9691,6 @@ function _openpgp () {
 			publicKeys[publicKeyCount].data = input.substring(0,mypos);
 			publicKeyCount++;
 		}
-		debugger;
 		return publicKeys;
 	}
 	
@@ -10056,7 +10058,7 @@ function openpgp_msg_publickey() {
 				case 2: // public key revocation signature
 					if (result.signatureType == 32)
 						this.revocationSignatures[this.revocationSignatures.length] = result;
-					else if (result.signatureType == 19)
+					else if (result.signatureType == 16 || result.signatureType == 17 || result.signatureType == 18  || result.signatureType == 19)
 						this.certificationSignature = result;
 					else if (result.signatureType == 25) {
 						this.bindingSignature = result;
@@ -10258,7 +10260,8 @@ function openpgp_msg_publickey() {
 	this.getFingerprint = getFingerprint;
 	this.getKeyId = getKeyId;
 	this.verifyBasicSignatures = verifyBasicSignatures;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -10304,7 +10307,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="GPG4Browsers 0.1";
+	this.versionstring ="OpenPGP.js v0.1";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -11506,7 +11509,7 @@ function openpgp_keyring() {
 	function importPublicKey (armored_text) {
 		var result = openpgp.read_publicKey(armored_text);
 		for (var i = 0; i < result.length; i++) {
-			this.publicKeys[this.publicKeys.length] = {armored: armored_text, obj: result[i]};
+			this.publicKeys[this.publicKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
 		}
 	}
 
@@ -11518,7 +11521,7 @@ function openpgp_keyring() {
 	function importPrivateKey (armored_text) {
 		var result = openpgp.read_privateKey(armored_text);
 		for (var i = 0; i < result.length; i++) {
-			this.privateKeys[this.privateKeys.length] = {armored: armored_text, obj: result[i]};
+			this.privateKeys[this.privateKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
 		}
 	}
 

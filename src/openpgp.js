@@ -66,7 +66,7 @@ function _openpgp () {
 					mypos += publicKeys[publicKeyCount].publicKeyPacket.packetLength;
 					mypos += publicKeys[publicKeyCount].read_nodes(publicKeys[publicKeyCount].publicKeyPacket, input, mypos, (input.length - mypos));
 				} else {
-					publicKeys[publicKeys.length] = new openpgp_msg_publickey();
+					publicKeys[publicKeyCount] = new openpgp_msg_publickey();
 					publicKeys[publicKeyCount].publicKeyPacket = first_packet;
 					mypos += first_packet.headerLength+first_packet.packetLength;
 					mypos += publicKeys[publicKeyCount].read_nodes(first_packet, input, mypos, input.length -mypos);
@@ -78,7 +78,6 @@ function _openpgp () {
 			publicKeys[publicKeyCount].data = input.substring(0,mypos);
 			publicKeyCount++;
 		}
-		debugger;
 		return publicKeys;
 	}
 	

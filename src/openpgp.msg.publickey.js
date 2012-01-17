@@ -47,7 +47,7 @@ function openpgp_msg_publickey() {
 				case 2: // public key revocation signature
 					if (result.signatureType == 32)
 						this.revocationSignatures[this.revocationSignatures.length] = result;
-					else if (result.signatureType == 19)
+					else if (result.signatureType == 16 || result.signatureType == 17 || result.signatureType == 18  || result.signatureType == 19)
 						this.certificationSignature = result;
 					else if (result.signatureType == 25) {
 						this.bindingSignature = result;
