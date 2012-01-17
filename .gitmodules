@@ -1,0 +1,3 @@
+[submodule "Dependencies/sjcl"]
+	path = Dependencies/sjcl
+	url = git://github.com/bitwiseshiftleft/sjcl.git
