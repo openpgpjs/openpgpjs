@@ -1,11 +1,20 @@
 default: help
 
 help:
+	@echo "update         - get latest sources"
 	@echo "minify         - makes JavaScript download and run faster"
 	@echo "lint           - checks JavaScript files for style issues"
 	@echo "test           - runs JavaScript unit tests"
 	@echo "example        - creates a simple example"
 	@echo "ext-chr-gmail  - creates the Google Chrome / Google Mail extension"
+
+update: update-me update-deps
+
+update-me:
+	@git pull
+
+update-deps:
+	@git submodule foreach git pull
 
 example:
 	@mkdir -p build
