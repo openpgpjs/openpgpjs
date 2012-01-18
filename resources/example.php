@@ -8,7 +8,6 @@ define('LARGE_LIMIT',131072);
 $subject="OpenPGP.js Example";
 $to="alex@openpgpjs.org";
 $headers = "From: OpenPGP.js Example <noreply@openpgpjs.org>\r\n";
-$mail = "$message";
 /* -------------------------------------------------------------------------- */
 
 /* input -------------------------------------------------------------------- */
@@ -25,4 +24,3 @@ mail($to, $subject, $message, $headers);
 /* Redirect browser */
 header("Location: http://openpgpjs.org");
 ?>
-
