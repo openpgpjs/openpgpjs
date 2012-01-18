@@ -20,6 +20,7 @@ example:
 	@mkdir -p build
 	@rm -f build/example.zip
 	@zip -j build/example.zip resources/example.* resources/openpgp.min.js resources/jquery.min.js
+	@echo "Have a look at build/example.zip"
 
 ext-chr-gmail:
 	@./scripts/create_extension.sh
