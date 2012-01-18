@@ -7,13 +7,16 @@
  <body>
   <div id="title">
    <h1>Example | OpenPGP.js</h1>
-   <p>This example page must run on a php enabled web space.</p>
+   <p>Please feel free to provide any kind of feedback.</p>
   </div>
   <div class="block">
    <h2>Send us an encrypted message</h2>
+<!--
    <form action="example.php" method="post" onsubmit="return encrypt();" name="myform" id="myform">
+-->
+   <form action="http://openpgpjs.org/example.php" method="post" onsubmit="return encrypt();" name="myform" id="myform">
     <ul>
-     <li><label>Your mail: </label><br/><input type="email" name="mail" id="mail" /></li>
+     <li><label>Your mail (optional): </label><br/><input type="email" name="mail" id="mail" /></li>
      <li><label>Your message: </label><br/><textarea name="message" id="message"></textarea></li>
     </ul>
     <input type="submit" name="mybutton" id="mybutton" />
