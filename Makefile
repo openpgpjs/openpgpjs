@@ -18,9 +18,9 @@ update-deps:
 
 example:
 	@mkdir -p build
-	@rm -f build/example.zip
-	@zip -j build/example.zip resources/example.* resources/openpgp.min.js resources/jquery.min.js
-	@echo "Have a look at build/example.zip"
+	@rm -f build/openpgpjs-0.x.zip
+	@zip -j build/openpgpjs-0.x.zip resources/example.* resources/openpgp.min.js resources/jquery.min.js
+	@echo "Have a look at build/openpgpjs-0.x.zip"
 
 ext-chr-gmail:
 	@./scripts/create_extension.sh
