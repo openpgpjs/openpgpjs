@@ -355,10 +355,9 @@ function _openpgp () {
 	 * @param keyType [int] to indicate what type of key to make. RSA is 1. Follows algorithms outlined in OpenPGP.
 	 * @param numBits [int] number of bits for the key creation. (should be 1024+, generally)
 	 * @userId [string] assumes already in form of "User Name <username@email.com>"
-	 * @preferredHashAlgorithm [int]
 	 * @return {privateKey: [openpgp_msg_privatekey], privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */
-	function generate_key_pair(keyType, numBits, userId,preferredHashAlgorithm){
+	function generate_key_pair(keyType, numBits, userId){
 		var userIdPacket = new openpgp_packet_userid();
 		var userIdString = userIdPacket.write_packet(userId);
 		
@@ -367,7 +366,7 @@ function _openpgp () {
 		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length-3);
 		var privKey = new openpgp_msg_privatekey();
 		privKey.privateKeyPacket = privKeyPacket;
-		privKey.getPreferredSignatureHashAlgorithm = function(){return preferredHashAlgorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
+		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
 		
 		var publicKeyString = privKey.privateKeyPacket.publicKey.data;
 		var hashData = String.fromCharCode(0x99)+ String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) 

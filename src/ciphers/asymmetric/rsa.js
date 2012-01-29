@@ -87,7 +87,7 @@ function RSA() {
         this.q = null;
         this.dmp1 = null;
         this.dmq1 = null;
-        this.coeff = null;
+        this.u = null;
     }
 	
 	// Generate a new random private key B bits long, using public expt E
@@ -119,7 +119,7 @@ function RSA() {
                 key.d = key.ee.modInverse(phi);
                 key.dmp1 = key.d.mod(p1);
                 key.dmq1 = key.d.mod(q1);
-                key.coeff = key.q.modInverse(key.p);
+                key.u = key.p.modInverse(key.q);
                 break;
             }
         }

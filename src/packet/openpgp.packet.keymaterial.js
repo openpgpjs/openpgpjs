@@ -699,7 +699,7 @@ function openpgp_packet_keymaterial() {
 		    body += key.d.toMPI();
 		    body += key.p.toMPI();
 		    body += key.q.toMPI();
-		    body += key.coeff.toMPI();
+		    body += key.u.toMPI();
 		    break;
 		default :
 			body = "";

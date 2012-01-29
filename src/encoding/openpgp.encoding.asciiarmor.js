@@ -167,7 +167,6 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	case 5:
 		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
 		result += openpgp_encoding_armor_addheader();
-		result += '\r\n';
 		result += openpgp_encoding_base64_encode(data);
 		result += "\r\n="+getCheckSum(data)+"\r\n";
 		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
