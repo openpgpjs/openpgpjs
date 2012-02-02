@@ -8957,10 +8957,13 @@ function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, bloc
 	    //	   that we have finished encrypting the 10 octets of prefixed data.
 	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
 		for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
-
+		var tempCiphertext = ciphertext.substring(0,2*block_size).split('');
+		//var tempCiphertextHeader = ciphertext.substring(0,block_size);
+		var tempCiphertextString = ciphertext.substring(block_size);
 		for(n=block_size; n<plaintext.length; n+=block_size) {
 			// 10. FR is loaded with C11-C18
-			for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n+i);
+			for (var i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
+			tempCiphertextString='';
 			
 			// 11. FR is encrypted to produce FRE.
 			FRE = blockcipherencryptfn(FR, key);
@@ -8968,8 +8971,11 @@ function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, bloc
 			// 12. FRE is xored with the next 8 octets of plaintext, to produce the
 			//     next 8 octets of ciphertext.  These are loaded into FR and the
 			//     process is repeated until the plaintext is used up.
-			for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i));
+			for (var i = 0; i < block_size; i++){ tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i)));
+			tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i));
+			}
 		}
+		ciphertext = tempCiphertext.join('');
 		
 	}
 	return ciphertext;
