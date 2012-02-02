@@ -128,6 +128,25 @@ var Util = function() {
 	};
 	
 	/**
+	 * Helper function to print a debug message. Debug 
+	 * messages are only printed if
+	 * openpgp.config.debug is set to true. The calling
+	 * Javascript context MUST define
+	 * a "showMessages(text)" function. Line feeds ('\n')
+	 * are automatically converted to HTML line feeds '<br/>'
+	 * Different than print_debug because will call hexstrdump iff necessary.
+	 * @param str [String] string of the debug message
+	 * @return [String] an HTML tt entity containing a paragraph with a style attribute where the debug message is HTMLencoded in. 
+	 */
+	this.print_debug_hexstr_dump = function(str,strToHex) {
+		if (openpgp.config.debug) {
+			str = str + this.hexstrdump(strToHex);
+			str = openpgp_encoding_html_encode(str);
+			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+		}
+	};
+	
+	/**
 	 * Helper function to print an error message. 
 	 * The calling Javascript context MUST define
 	 * a "showMessages(text)" function. Line feeds ('\n')

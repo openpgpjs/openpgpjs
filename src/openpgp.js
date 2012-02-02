@@ -247,7 +247,7 @@ function _openpgp () {
 	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
 		var result = "";
 		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug("literal_packet: |"+literal+"|\n"+util.hexstrdump(literal));
+		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		for (var i = 0; i < publickeys.length; i++) {
 			var onepasssignature = new openpgp_packet_onepasssignature();
 			var onepasssigstr = "";
@@ -255,9 +255,9 @@ function _openpgp () {
 				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
 			else
 				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
-			util.print_debug("onepasssigstr: |"+onepasssigstr+"|\n"+util.hexstrdump(onepasssigstr));
+			util.print_debug_hexstr_dump("onepasssigstr: |"+onepasssigstr+"|\n",onepasssigstr);
 			var datasignature = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
-			util.print_debug("datasignature: |"+datasignature.openpgp+"|\n"+util.hexstrdump(datasignature.openpgp));
+			util.print_debug_hexstr_dump("datasignature: |"+datasignature.openpgp+"|\n",datasignature.openpgp);
 			if (i == 0) {
 				result = onepasssigstr+literal+datasignature.openpgp;
 			} else {
@@ -265,7 +265,7 @@ function _openpgp () {
 			}
 		}
 		
-		util.print_debug("signed packet: |"+result+"|\n"+util.hexstrdump(result));
+		util.print_debug_hexstr_dump("signed packet: |"+result+"|\n",result);
 		// signatures done.. now encryption
 		var sessionkey = openpgp_crypto_generateSessionKey(openpgp.config.config.encryption_cipher); 
 		var result2 = "";
@@ -304,7 +304,7 @@ function _openpgp () {
 	function write_encrypted_message(publickeys, messagetext) {
 		var result = "";
 		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug("literal_packet: |"+literal+"|\n"+util.hexstrdump(literal));
+		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		result = literal;
 		
 		// signatures done.. now encryption

@@ -91,12 +91,12 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 		var tohash = data;
 		tohash += String.fromCharCode(0xD3);
 		tohash += String.fromCharCode(0x14);
-		util.print_debug("data to be hashed:"
-				+ util.hexstrdump(prefix + tohash));
+		util.print_debug_hexstr_dump("data to be hashed:"
+				, prefix + tohash);
 		tohash += str_sha1(prefix + tohash);
-		util.print_debug("hash:"
-				+ util.hexstrdump(tohash.substring(tohash.length - 20,
-						tohash.length)));
+		util.print_debug_hexstr_dump("hash:"
+				, tohash.substring(tohash.length - 20,
+						tohash.length));
 		var result = openpgp_crypto_symmetricEncrypt(prefixrandom,
 				symmetric_algorithm, key, tohash, false).substring(0,
 				prefix.length + tohash.length);
@@ -126,7 +126,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 				symmetric_algorithm_type, key, this.encryptedData)
 				+ this.decryptedData.substring(0,
 						this.decryptedData.length - 20));
-		util.print_debug("calc hash = " + util.hexstrdump(this.hash));
+		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 		if (this.hash == this.decryptedData.substring(
 				this.decryptedData.length - 20, this.decryptedData.length))
 			return this.decryptedData;

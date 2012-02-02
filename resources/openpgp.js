@@ -1026,12 +1026,12 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 		var tohash = data;
 		tohash += String.fromCharCode(0xD3);
 		tohash += String.fromCharCode(0x14);
-		util.print_debug("data to be hashed:"
-				+ util.hexstrdump(prefix + tohash));
+		util.print_debug_hexstr_dump("data to be hashed:"
+				, prefix + tohash);
 		tohash += str_sha1(prefix + tohash);
-		util.print_debug("hash:"
-				+ util.hexstrdump(tohash.substring(tohash.length - 20,
-						tohash.length)));
+		util.print_debug_hexstr_dump("hash:"
+				, tohash.substring(tohash.length - 20,
+						tohash.length));
 		var result = openpgp_crypto_symmetricEncrypt(prefixrandom,
 				symmetric_algorithm, key, tohash, false).substring(0,
 				prefix.length + tohash.length);
@@ -1061,7 +1061,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 				symmetric_algorithm_type, key, this.encryptedData)
 				+ this.decryptedData.substring(0,
 						this.decryptedData.length - 20));
-		util.print_debug("calc hash = " + util.hexstrdump(this.hash));
+		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 		if (this.hash == this.decryptedData.substring(
 				this.decryptedData.length - 20, this.decryptedData.length))
 			return this.decryptedData;
@@ -1087,7 +1087,8 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	this.read_packet = read_packet;
 	this.toString = toString;
 	this.decrypt = decrypt;
-};// GPG4Browsers - An OpenPGP implementation in javascript
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -8958,7 +8959,6 @@ function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, bloc
 	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
 		for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
 		var tempCiphertext = ciphertext.substring(0,2*block_size).split('');
-		//var tempCiphertextHeader = ciphertext.substring(0,block_size);
 		var tempCiphertextString = ciphertext.substring(block_size);
 		for(n=block_size; n<plaintext.length; n+=block_size) {
 			// 10. FR is loaded with C11-C18
@@ -9873,7 +9873,7 @@ function _openpgp () {
 	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
 		var result = "";
 		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug("literal_packet: |"+literal+"|\n"+util.hexstrdump(literal));
+		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		for (var i = 0; i < publickeys.length; i++) {
 			var onepasssignature = new openpgp_packet_onepasssignature();
 			var onepasssigstr = "";
@@ -9881,9 +9881,9 @@ function _openpgp () {
 				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
 			else
 				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
-			util.print_debug("onepasssigstr: |"+onepasssigstr+"|\n"+util.hexstrdump(onepasssigstr));
+			util.print_debug_hexstr_dump("onepasssigstr: |"+onepasssigstr+"|\n",onepasssigstr);
 			var datasignature = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
-			util.print_debug("datasignature: |"+datasignature.openpgp+"|\n"+util.hexstrdump(datasignature.openpgp));
+			util.print_debug_hexstr_dump("datasignature: |"+datasignature.openpgp+"|\n",datasignature.openpgp);
 			if (i == 0) {
 				result = onepasssigstr+literal+datasignature.openpgp;
 			} else {
@@ -9891,7 +9891,7 @@ function _openpgp () {
 			}
 		}
 		
-		util.print_debug("signed packet: |"+result+"|\n"+util.hexstrdump(result));
+		util.print_debug_hexstr_dump("signed packet: |"+result+"|\n",result);
 		// signatures done.. now encryption
 		var sessionkey = openpgp_crypto_generateSessionKey(openpgp.config.config.encryption_cipher); 
 		var result2 = "";
@@ -9930,7 +9930,7 @@ function _openpgp () {
 	function write_encrypted_message(publickeys, messagetext) {
 		var result = "";
 		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug("literal_packet: |"+literal+"|\n"+util.hexstrdump(literal));
+		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		result = literal;
 		
 		// signatures done.. now encryption
@@ -11709,6 +11709,25 @@ var Util = function() {
 	 */
 	this.print_debug = function(str) {
 		if (openpgp.config.debug) {
+			str = openpgp_encoding_html_encode(str);
+			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+		}
+	};
+	
+	/**
+	 * Helper function to print a debug message. Debug 
+	 * messages are only printed if
+	 * openpgp.config.debug is set to true. The calling
+	 * Javascript context MUST define
+	 * a "showMessages(text)" function. Line feeds ('\n')
+	 * are automatically converted to HTML line feeds '<br/>'
+	 * Different than print_debug because will call hexstrdump iff necessary.
+	 * @param str [String] string of the debug message
+	 * @return [String] an HTML tt entity containing a paragraph with a style attribute where the debug message is HTMLencoded in. 
+	 */
+	this.print_debug_hexstr_dump = function(str,strToHex) {
+		if (openpgp.config.debug) {
+			str = str + this.hexstrdump(strToHex);
 			str = openpgp_encoding_html_encode(str);
 			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
 		}
