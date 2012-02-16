@@ -3064,7 +3064,7 @@ function openpgp_packet_keymaterial() {
     			str_sha1(cleartextMPIs.substring(0,cleartextMPIs.length - 20)) == 
     				cleartextMPIs.substring(cleartextMPIs.length - 20)) {
     		cleartextMPIslength -= 20;
-    	} else if (this.s2kUsageConcentions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
+    	} else if (this.s2kUsageConventions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
     			(cleartextMPIs.charCodeAt(cleartextMPIs.length -2) << 8 | cleartextMPIs.charCodeAt(cleartextMPIs.length -1))) {
     		cleartextMPIslength -= 2;
     	} else {
@@ -11335,7 +11335,7 @@ function openpgp_type_s2k() {
 			var isp = this.saltValue+passphrase;
 			while (isp.length < this.count)
 				isp += this.saltValue+passphrase; 			
-			if (isp.length < this.count)
+			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
 			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;

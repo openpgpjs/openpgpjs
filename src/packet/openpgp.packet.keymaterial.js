@@ -418,7 +418,7 @@ function openpgp_packet_keymaterial() {
     			str_sha1(cleartextMPIs.substring(0,cleartextMPIs.length - 20)) == 
     				cleartextMPIs.substring(cleartextMPIs.length - 20)) {
     		cleartextMPIslength -= 20;
-    	} else if (this.s2kUsageConcentions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
+    	} else if (this.s2kUsageConventions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
     			(cleartextMPIs.charCodeAt(cleartextMPIs.length -2) << 8 | cleartextMPIs.charCodeAt(cleartextMPIs.length -1))) {
     		cleartextMPIslength -= 2;
     	} else {

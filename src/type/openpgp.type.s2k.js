@@ -87,7 +87,7 @@ function openpgp_type_s2k() {
 			var isp = this.saltValue+passphrase;
 			while (isp.length < this.count)
 				isp += this.saltValue+passphrase; 			
-			if (isp.length < this.count)
+			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
 			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;
