@@ -18,7 +18,7 @@
 var Util = function() {
 	
 	this.hexdump = function(str) {
-	    var r="";
+	    var r=[];
 	    var e=str.length;
 	    var c=0;
 	    var h;
@@ -26,12 +26,12 @@ var Util = function() {
 	    while(c<e){
 	        h=str.charCodeAt(c++).toString(16);
 	        while(h.length<2) h="0"+h;
-	        r+=" "+h;
+	        r.push(" "+h);
 	        i++;
 	        if (i % 32 == 0)
-	        	r+="\n           ";
+	        	r.push("\n           ");
 	    }
-	    return r;
+	    return r.join('');
 	};
 	/**
 	 * create hexstring from a binary
@@ -41,16 +41,16 @@ var Util = function() {
 	this.hexstrdump = function(str) {
 		if (str == null)
 			return "";
-	    var r="";
+	    var r=[];
 	    var e=str.length;
 	    var c=0;
 	    var h;
 	    while(c<e){
 	        h=str[c++].charCodeAt().toString(16);
 	        while(h.length<2) h="0"+h;
-	        r+=""+h;
+	        r.push(""+h);
 	    }
-	    return r;
+	    return r.join('');
 	};
 	/**
 	 * creating a hex string from an binary array of integers (0..255)
@@ -58,16 +58,16 @@ var Util = function() {
 	 * @return [String] hexadecimal representation of the array
 	 */
 	this.hexidump = function(str) {
-	    var r="";
+	    var r=[];
 	    var e=str.length;
 	    var c=0;
 	    var h;
 	    while(c<e){
 	        h=str[c++].toString(16);
 	        while(h.length<2) h="0"+h;
-	        r+=""+h;
+	        r.push(""+h);
 	    }
-	    return r;
+	    return r.join('');
 	};
 	
 	/**
@@ -90,11 +90,11 @@ var Util = function() {
 	 * @return [String] string representation of the array
 	 */
 	this.bin2str = function(bin) {
-		var result = "";
+		var result = [];
 		for (var i = 0; i < bin.length; i++) {
-			result += String.fromCharCode(bin[i]);
+			result.push(String.fromCharCode(bin[i]));
 		}
-		return result;
+		return result.join('');
 	};
 	
 	/**
