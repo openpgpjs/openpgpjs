@@ -39,7 +39,7 @@ function openpgp_msg_message() {
 		var packet;
 		var position = 0;
 		var len = decrypted.length;
-		util.print_debug("openpgp.msg.messge decrypt:\n"+util.hexstrdump(decrypted));
+		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
 
 		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
 			if (packet.tagType == 8) {
@@ -49,7 +49,7 @@ function openpgp_msg_message() {
 			util.print_debug(packet.toString());
 			position += packet.headerLength+packet.packetLength;
 			if (position > 38)
-				util.print_debug("openpgp.msg.messge decrypt:\n"+util.hexstrdump(decrypted.substring(position)));
+				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
 			len = decrypted.length - position;
 			if (packet.tagType == 11) {
 				this.text = packet.data;

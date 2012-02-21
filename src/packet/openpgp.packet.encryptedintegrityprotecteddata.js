@@ -137,6 +137,11 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	}
 
 	function toString() {
+	    var data = '';
+	    if(openpgp.config.debug)
+	        data = '    data: Bytes ['
+				+ util.hexstrdump(this.encryptedData) + ']';
+	    
 		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
 				+ '    length:  '
 				+ this.packetLength
@@ -144,8 +149,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 				+ '    version: '
 				+ this.version
 				+ '\n'
-				+ '    data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']';
+				+ data;
 	}
 
 	this.write_packet = write_packet;

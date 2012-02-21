@@ -179,7 +179,8 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	util.print_debug("resync:"+resync);
 	var iblock = new Array(block_size);
 	var ablock = new Array(block_size);
-	var i, n, text = '';
+	var i, n = '';
+	var text = [];
 
 	// initialisation vector
 	for(i=0; i < block_size; i++) iblock[i] = 0;
@@ -201,7 +202,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
 	{
 		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
-		return text;
+		return text.join('');
 	}
 	
 	/*  RFC4880: Tag 18 and Resync:
@@ -220,7 +221,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 			{
 				iblock[i] = ciphertext.charCodeAt(n+i);
-				text += String.fromCharCode(ablock[i]^iblock[i]); 
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
 			}
 		}
 	} else {
@@ -231,13 +232,13 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 			{
 				iblock[i] = ciphertext.charCodeAt(n+i);
-				text += String.fromCharCode(ablock[i]^iblock[i]); 
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
 			}
 		}
 		
 	}
 	
-	return text;
+	return text.join('');
 }
 
 
@@ -261,7 +262,7 @@ function normal_cfb_encrypt(blockcipherencryptfn, block_size, key, plaintext, iv
 function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) {
 	var blockp ="";
 	var pos = 0;
-	var plaintext = "";
+	var plaintext = [];
 	var offset = 0;
 	if (iv == null)
 		for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
@@ -271,10 +272,10 @@ function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, i
 		var decblock = blockcipherencryptfn(blockp, key);
 		blockp = ciphertext.substring((pos*(block_size))+offset,(pos*(block_size))+(block_size)+offset);
 		for (var i=0; i < blockp.length; i++) {
-			plaintext += String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]);
+			plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
 		}
 		pos++;
 	}
 	
-	return plaintext;
+	return plaintext.join('');
 }

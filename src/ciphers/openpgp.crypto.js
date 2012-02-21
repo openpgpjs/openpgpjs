@@ -152,7 +152,7 @@ function openpgp_crypto_getPrefixRandom(algo) {
  * @return [String] plaintext data
  */
 function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
-	util.print_debug("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:"+util.hexstrdump(data));
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
 	var n = 0;
 	if (!openpgp_cfb)
 		n = 2;
@@ -188,7 +188,7 @@ function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
  * @return [String] plain text data of the prefixed data
  */
 function openpgp_crypto_MDCSystemBytes(algo, key, data) {
-	util.print_debug("openpgp_crypto_symmetricDecrypt:\nencrypteddata:"+util.hexstrdump(data));
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
 	switch(algo) {
 	case 0: // Plaintext or unencrypted data
 		return data;
