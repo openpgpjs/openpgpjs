@@ -176,6 +176,7 @@ function openpgp_keyring() {
 		for (var i = 0; i < result.length; i++) {
 			this.publicKeys[this.publicKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
 		}
+		return true;
 	}
 
 	/**
@@ -183,11 +184,14 @@ function openpgp_keyring() {
 	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from
 	 * @return [null] nothing
 	 */
-	function importPrivateKey (armored_text) {
+	function importPrivateKey (armored_text, password) {
 		var result = openpgp.read_privateKey(armored_text);
+		if(!result[0].decryptSecretMPIs(password))
+		    return false;
 		for (var i = 0; i < result.length; i++) {
 			this.privateKeys[this.privateKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
 		}
+		return true;
 	}
 
 	this.importPublicKey = importPublicKey;
