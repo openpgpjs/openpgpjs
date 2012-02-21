@@ -1072,6 +1072,11 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	}
 
 	function toString() {
+	    var data = '';
+	    if(openpgp.config.debug)
+	        data = '    data: Bytes ['
+				+ util.hexstrdump(this.encryptedData) + ']';
+	    
 		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
 				+ '    length:  '
 				+ this.packetLength
@@ -1079,8 +1084,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 				+ '    version: '
 				+ this.version
 				+ '\n'
-				+ '    data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']';
+				+ data;
 	}
 
 	this.write_packet = write_packet;
@@ -9035,7 +9039,8 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	util.print_debug("resync:"+resync);
 	var iblock = new Array(block_size);
 	var ablock = new Array(block_size);
-	var i, n, text = '';
+	var i, n = '';
+	var text = [];
 
 	// initialisation vector
 	for(i=0; i < block_size; i++) iblock[i] = 0;
@@ -9057,7 +9062,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
 	{
 		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
-		return text;
+		return text.join('');
 	}
 	
 	/*  RFC4880: Tag 18 and Resync:
@@ -9076,7 +9081,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 			{
 				iblock[i] = ciphertext.charCodeAt(n+i);
-				text += String.fromCharCode(ablock[i]^iblock[i]); 
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
 			}
 		}
 	} else {
@@ -9087,13 +9092,13 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 			{
 				iblock[i] = ciphertext.charCodeAt(n+i);
-				text += String.fromCharCode(ablock[i]^iblock[i]); 
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
 			}
 		}
 		
 	}
 	
-	return text;
+	return text.join('');
 }
 
 
@@ -9117,7 +9122,7 @@ function normal_cfb_encrypt(blockcipherencryptfn, block_size, key, plaintext, iv
 function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) {
 	var blockp ="";
 	var pos = 0;
-	var plaintext = "";
+	var plaintext = [];
 	var offset = 0;
 	if (iv == null)
 		for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
@@ -9127,12 +9132,12 @@ function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, i
 		var decblock = blockcipherencryptfn(blockp, key);
 		blockp = ciphertext.substring((pos*(block_size))+offset,(pos*(block_size))+(block_size)+offset);
 		for (var i=0; i < blockp.length; i++) {
-			plaintext += String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]);
+			plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
 		}
 		pos++;
 	}
 	
-	return plaintext;
+	return plaintext.join('');
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -9288,7 +9293,7 @@ function openpgp_crypto_getPrefixRandom(algo) {
  * @return [String] plaintext data
  */
 function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
-	util.print_debug("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:"+util.hexstrdump(data));
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
 	var n = 0;
 	if (!openpgp_cfb)
 		n = 2;
@@ -9324,7 +9329,7 @@ function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
  * @return [String] plain text data of the prefixed data
  */
 function openpgp_crypto_MDCSystemBytes(algo, key, data) {
-	util.print_debug("openpgp_crypto_symmetricDecrypt:\nencrypteddata:"+util.hexstrdump(data));
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
 	switch(algo) {
 	case 0: // Plaintext or unencrypted data
 		return data;
@@ -10995,7 +11000,7 @@ function openpgp_msg_message() {
 		var packet;
 		var position = 0;
 		var len = decrypted.length;
-		util.print_debug("openpgp.msg.messge decrypt:\n"+util.hexstrdump(decrypted));
+		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
 
 		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
 			if (packet.tagType == 8) {
@@ -11005,7 +11010,7 @@ function openpgp_msg_message() {
 			util.print_debug(packet.toString());
 			position += packet.headerLength+packet.packetLength;
 			if (position > 38)
-				util.print_debug("openpgp.msg.messge decrypt:\n"+util.hexstrdump(decrypted.substring(position)));
+				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
 			len = decrypted.length - position;
 			if (packet.tagType == 11) {
 				this.text = packet.data;
@@ -11088,7 +11093,8 @@ function openpgp_msg_message() {
 	this.decrypt = decrypt;
 	this.verifySignature = verifySignature;
 	this.toString = toString;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
