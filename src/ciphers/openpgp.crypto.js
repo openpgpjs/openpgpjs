@@ -473,15 +473,15 @@ function openpgp_crypto_testRSA(key){
  * @numBits [int] number of bits to make the key to be generated
  * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
  */
-function openpgp_crypto_generateKeyPair(keyType, numBits){
+function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
 	var privKeyPacket;
 	var publicKeyPacket;
 	switch(keyType){
 	case 1:
 	    var rsa = new RSA();
 	    var key = rsa.generate(numBits,"10001");
-	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(1, key);
-	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(1, key);
+	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm);
+	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key);
 	    break;
 	default:
 		util.print_error("Unknown keytype "+keyType)

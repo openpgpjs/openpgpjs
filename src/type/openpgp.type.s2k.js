@@ -72,6 +72,21 @@ function openpgp_type_s2k() {
 		}
 		return this;
 	}
+	
+	
+	/**
+	 * writes an s2k hash based on the inputs.
+	 * @return [String] produced key of hashAlgorithm hash length
+	 */
+	function write(type, hash, passphrase, salt, c){
+	    this.type = type;
+	    if(this.type == 3){this.saltValue = salt;
+	        this.hashAlgorithm = hash;
+	        this.count = (16 + (c & 15)) << ((c >> 4) + 6);
+	        this.s2kLength = 10;
+	    }
+	    return this.produce_key(passphrase);
+	}
 
 	/**
 	 * produces a key using the specified passphrase and the defined hashAlgorithm 
@@ -94,5 +109,6 @@ function openpgp_type_s2k() {
 	}
 	
 	this.read = read;
+	this.write = write;
 	this.produce_key = produce_key;
 }

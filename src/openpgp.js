@@ -357,13 +357,15 @@ function _openpgp () {
 	 * @userId [string] assumes already in form of "User Name <username@email.com>"
 	 * @return {privateKey: [openpgp_msg_privatekey], privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */
-	function generate_key_pair(keyType, numBits, userId){
+	function generate_key_pair(keyType, numBits, userId, passphrase){
 		var userIdPacket = new openpgp_packet_userid();
 		var userIdString = userIdPacket.write_packet(userId);
 		
-		var keyPair = openpgp_crypto_generateKeyPair(keyType,numBits);
+		var keyPair = openpgp_crypto_generateKeyPair(keyType,numBits, passphrase, openpgp.config.config.prefer_hash_algorithm, 3);
 		var privKeyString = keyPair.privateKey;
-		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length-3);
+		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length);
+		if(!privKeyPacket.decryptSecretMPIs(passphrase))
+		    util.print_error('Issue creating key. Unable to read resulting private key');
 		var privKey = new openpgp_msg_privatekey();
 		privKey.privateKeyPacket = privKeyPacket;
 		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256

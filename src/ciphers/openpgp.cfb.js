@@ -246,20 +246,23 @@ function normal_cfb_encrypt(blockcipherencryptfn, block_size, key, plaintext, iv
 	var blocki ="";
 	var blockc = "";
 	var pos = 0;
-	var cyphertext = "";
-	blocki[i] = iv.substring(0,block_size);
+	var cyphertext = [];
+	var tempBlock = [];
+	blockc = iv.substring(0,block_size);
 	while (plaintext.length > block_size*pos) {
-		blocka = plaintext.substring((pos*block_size),(pos*block_size)+block_size);
-		var encblock = blockcipherencryptfn(blocki, key);
-		for (var i=0; i < blocka.size; i++)
-			blocki[i] = blocka ^ enblock();
-		cyphertext += blocki;
+		var encblock = blockcipherencryptfn(blockc, key);
+		blocki = plaintext.substring((pos*block_size),(pos*block_size)+block_size);
+		for (var i=0; i < blocki.length; i++)
+		    tempBlock.push(String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]));
+		blockc = tempBlock.join('');
+		tempBlock = [];
+		cyphertext.push(blockc);
 		pos++;
 	}
-	return cyphertext;
+	return cyphertext.join('');
 }
 
-function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) {
+function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) { 
 	var blockp ="";
 	var pos = 0;
 	var plaintext = [];
