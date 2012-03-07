@@ -476,12 +476,15 @@ function openpgp_crypto_testRSA(key){
 function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
 	var privKeyPacket;
 	var publicKeyPacket;
+	var d = new Date();
+	d = d.getTime()/1000;
+	var timePacket = String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
 	switch(keyType){
 	case 1:
 	    var rsa = new RSA();
 	    var key = rsa.generate(numBits,"10001");
-	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm);
-	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key);
+	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm, timePacket);
+	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key, timePacket);
 	    break;
 	default:
 		util.print_error("Unknown keytype "+keyType)

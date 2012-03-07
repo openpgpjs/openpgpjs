@@ -679,14 +679,11 @@ function openpgp_packet_keymaterial() {
      * @param key [RSA.keyObject]
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
-    function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm){
+    function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
         this.symmetricEncryptionAlgorithm = symmetricEncryptionAlgorithm;
 		var tag = 5;
 		var body = String.fromCharCode(4);
-		//TODO make the date into a util function
-		var d = new Date();
-		d = d.getTime()/1000;
-		body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+		body += timePacket;
 		switch(keyType){
 		case 1:
 		    body += String.fromCharCode(keyType);//public key algo
@@ -759,13 +756,10 @@ function openpgp_packet_keymaterial() {
      * @param key [RSA.keyObject]
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
-    function write_public_key(keyType, key){
+    function write_public_key(keyType, key, timePacket){
         var tag = 6;
         var body = String.fromCharCode(4);
-        //TODO make the date into a util function
-        var d = new Date();
-        d = d.getTime()/1000;
-        body += String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+        body += timePacket;
 		switch(keyType){
 		case 1:
 		    body += String.fromCharCode(1);//public key algo
