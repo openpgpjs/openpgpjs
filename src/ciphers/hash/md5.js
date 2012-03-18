@@ -1,12 +1,7 @@
-/*
- *  md5.jvs 1.0b 27/06/96
- *
- * Javascript implementation of the RSA Data Security, Inc. MD5
- * Message-Digest Algorithm.
- *
- * Copyright (c) 1996 Henri Torgemane. All Rights Reserved.
- *
- * Modified by Recurity Labs GmbH (http://www.recurity-labs.com) 
+/**
+ * A fast MD5 JavaScript implementation
+ * Copyright (c) 2012 Joseph Myers
+ * http://www.myersdaily.org/joseph/javascript/md5-text.html
  *
  * Permission to use, copy, modify, and distribute this software
  * and its documentation for any purposes and without
@@ -17,358 +12,193 @@
  * warranty of any kind.
  */
 
-
 function MD5(entree) {
-
-function array(n) {
-  for(i=0;i<n;i++) this[i]=0;
-  this.length=n;
+	var hex = md5(entree);
+	var bin = util.hex2bin(hex);
+	return bin;
 }
 
-/* Some basic logical functions had to be rewritten because of a bug in
- * Javascript.. Just try to compute 0xffffffff >> 4 with it..
- * Of course, these functions are slower than the original would be, but
- * at least, they work!
+function md5cycle(x, k) {
+var a = x[0], b = x[1], c = x[2], d = x[3];
+
+a = ff(a, b, c, d, k[0], 7, -680876936);
+d = ff(d, a, b, c, k[1], 12, -389564586);
+c = ff(c, d, a, b, k[2], 17,  606105819);
+b = ff(b, c, d, a, k[3], 22, -1044525330);
+a = ff(a, b, c, d, k[4], 7, -176418897);
+d = ff(d, a, b, c, k[5], 12,  1200080426);
+c = ff(c, d, a, b, k[6], 17, -1473231341);
+b = ff(b, c, d, a, k[7], 22, -45705983);
+a = ff(a, b, c, d, k[8], 7,  1770035416);
+d = ff(d, a, b, c, k[9], 12, -1958414417);
+c = ff(c, d, a, b, k[10], 17, -42063);
+b = ff(b, c, d, a, k[11], 22, -1990404162);
+a = ff(a, b, c, d, k[12], 7,  1804603682);
+d = ff(d, a, b, c, k[13], 12, -40341101);
+c = ff(c, d, a, b, k[14], 17, -1502002290);
+b = ff(b, c, d, a, k[15], 22,  1236535329);
+
+a = gg(a, b, c, d, k[1], 5, -165796510);
+d = gg(d, a, b, c, k[6], 9, -1069501632);
+c = gg(c, d, a, b, k[11], 14,  643717713);
+b = gg(b, c, d, a, k[0], 20, -373897302);
+a = gg(a, b, c, d, k[5], 5, -701558691);
+d = gg(d, a, b, c, k[10], 9,  38016083);
+c = gg(c, d, a, b, k[15], 14, -660478335);
+b = gg(b, c, d, a, k[4], 20, -405537848);
+a = gg(a, b, c, d, k[9], 5,  568446438);
+d = gg(d, a, b, c, k[14], 9, -1019803690);
+c = gg(c, d, a, b, k[3], 14, -187363961);
+b = gg(b, c, d, a, k[8], 20,  1163531501);
+a = gg(a, b, c, d, k[13], 5, -1444681467);
+d = gg(d, a, b, c, k[2], 9, -51403784);
+c = gg(c, d, a, b, k[7], 14,  1735328473);
+b = gg(b, c, d, a, k[12], 20, -1926607734);
+
+a = hh(a, b, c, d, k[5], 4, -378558);
+d = hh(d, a, b, c, k[8], 11, -2022574463);
+c = hh(c, d, a, b, k[11], 16,  1839030562);
+b = hh(b, c, d, a, k[14], 23, -35309556);
+a = hh(a, b, c, d, k[1], 4, -1530992060);
+d = hh(d, a, b, c, k[4], 11,  1272893353);
+c = hh(c, d, a, b, k[7], 16, -155497632);
+b = hh(b, c, d, a, k[10], 23, -1094730640);
+a = hh(a, b, c, d, k[13], 4,  681279174);
+d = hh(d, a, b, c, k[0], 11, -358537222);
+c = hh(c, d, a, b, k[3], 16, -722521979);
+b = hh(b, c, d, a, k[6], 23,  76029189);
+a = hh(a, b, c, d, k[9], 4, -640364487);
+d = hh(d, a, b, c, k[12], 11, -421815835);
+c = hh(c, d, a, b, k[15], 16,  530742520);
+b = hh(b, c, d, a, k[2], 23, -995338651);
+
+a = ii(a, b, c, d, k[0], 6, -198630844);
+d = ii(d, a, b, c, k[7], 10,  1126891415);
+c = ii(c, d, a, b, k[14], 15, -1416354905);
+b = ii(b, c, d, a, k[5], 21, -57434055);
+a = ii(a, b, c, d, k[12], 6,  1700485571);
+d = ii(d, a, b, c, k[3], 10, -1894986606);
+c = ii(c, d, a, b, k[10], 15, -1051523);
+b = ii(b, c, d, a, k[1], 21, -2054922799);
+a = ii(a, b, c, d, k[8], 6,  1873313359);
+d = ii(d, a, b, c, k[15], 10, -30611744);
+c = ii(c, d, a, b, k[6], 15, -1560198380);
+b = ii(b, c, d, a, k[13], 21,  1309151649);
+a = ii(a, b, c, d, k[4], 6, -145523070);
+d = ii(d, a, b, c, k[11], 10, -1120210379);
+c = ii(c, d, a, b, k[2], 15,  718787259);
+b = ii(b, c, d, a, k[9], 21, -343485551);
+
+x[0] = add32(a, x[0]);
+x[1] = add32(b, x[1]);
+x[2] = add32(c, x[2]);
+x[3] = add32(d, x[3]);
+
+}
+
+function cmn(q, a, b, x, s, t) {
+a = add32(add32(a, q), add32(x, t));
+return add32((a << s) | (a >>> (32 - s)), b);
+}
+
+function ff(a, b, c, d, x, s, t) {
+return cmn((b & c) | ((~b) & d), a, b, x, s, t);
+}
+
+function gg(a, b, c, d, x, s, t) {
+return cmn((b & d) | (c & (~d)), a, b, x, s, t);
+}
+
+function hh(a, b, c, d, x, s, t) {
+return cmn(b ^ c ^ d, a, b, x, s, t);
+}
+
+function ii(a, b, c, d, x, s, t) {
+return cmn(c ^ (b | (~d)), a, b, x, s, t);
+}
+
+function md51(s) {
+txt = '';
+var n = s.length,
+state = [1732584193, -271733879, -1732584194, 271733878], i;
+for (i=64; i<=s.length; i+=64) {
+md5cycle(state, md5blk(s.substring(i-64, i)));
+}
+s = s.substring(i-64);
+var tail = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
+for (i=0; i<s.length; i++)
+tail[i>>2] |= s.charCodeAt(i) << ((i%4) << 3);
+tail[i>>2] |= 0x80 << ((i%4) << 3);
+if (i > 55) {
+md5cycle(state, tail);
+for (i=0; i<16; i++) tail[i] = 0;
+}
+tail[14] = n*8;
+md5cycle(state, tail);
+return state;
+}
+
+/* there needs to be support for Unicode here,
+ * unless we pretend that we can redefine the MD-5
+ * algorithm for multi-byte characters (perhaps
+ * by adding every four 16-bit characters and
+ * shortening the sum to 32 bits). Otherwise
+ * I suggest performing MD-5 as if every character
+ * was two bytes--e.g., 0040 0025 = @%--but then
+ * how will an ordinary MD-5 sum be matched?
+ * There is no way to standardize text to something
+ * like UTF-8 before transformation; speed cost is
+ * utterly prohibitive. The JavaScript standard
+ * itself needs to look at this: it should start
+ * providing access to strings as preformed UTF-8
+ * 8-bit unsigned value arrays.
  */
-
-function integer(n) { return n%(0xffffffff+1); }
-
-function shr(a,b) {
-  a=integer(a);
-  b=integer(b);
-  if (a-0x80000000>=0) {
-    a=a%0x80000000;
-    a>>=b;
-    a+=0x40000000>>(b-1);
-  } else
-    a>>=b;
-  return a;
+function md5blk(s) { /* I figured global was faster.   */
+var md5blks = [], i; /* Andy King said do it this way. */
+for (i=0; i<64; i+=4) {
+md5blks[i>>2] = s.charCodeAt(i)
++ (s.charCodeAt(i+1) << 8)
++ (s.charCodeAt(i+2) << 16)
++ (s.charCodeAt(i+3) << 24);
+}
+return md5blks;
 }
 
-function shl1(a) {
-  a=a%0x80000000;
-  if (a&0x40000000==0x40000000)
-  {
-    a-=0x40000000;
-    a*=2;
-    a+=0x80000000;
-  } else
-    a*=2;
-  return a;
+var hex_chr = '0123456789abcdef'.split('');
+
+function rhex(n)
+{
+var s='', j=0;
+for(; j<4; j++)
+s += hex_chr[(n >> (j * 8 + 4)) & 0x0F]
++ hex_chr[(n >> (j * 8)) & 0x0F];
+return s;
 }
 
-function shl(a,b) {
-  a=integer(a);
-  b=integer(b);
-  for (var i=0;i<b;i++) a=shl1(a);
-  return a;
+function hex(x) {
+for (var i=0; i<x.length; i++)
+x[i] = rhex(x[i]);
+return x.join('');
 }
 
-function and(a,b) {
-  a=integer(a);
-  b=integer(b);
-  var t1=(a-0x80000000);
-  var t2=(b-0x80000000);
-  if (t1>=0)
-    if (t2>=0)
-      return ((t1&t2)+0x80000000);
-    else
-      return (t1&b);
-  else
-    if (t2>=0)
-      return (a&t2);
-    else
-      return (a&b);
+function md5(s) {
+return hex(md51(s));
 }
 
-function or(a,b) {
-  a=integer(a);
-  b=integer(b);
-  var t1=(a-0x80000000);
-  var t2=(b-0x80000000);
-  if (t1>=0)
-    if (t2>=0)
-      return ((t1|t2)+0x80000000);
-    else
-      return ((t1|b)+0x80000000);
-  else
-    if (t2>=0)
-      return ((a|t2)+0x80000000);
-    else
-      return (a|b);
+/* this function is much faster,
+so if possible we use it. Some IEs
+are the only ones I know of that
+need the idiotic second function,
+generated by an if clause.  */
+
+function add32(a, b) {
+return (a + b) & 0xFFFFFFFF;
 }
 
-function xor(a,b) {
-  a=integer(a);
-  b=integer(b);
-  var t1=(a-0x80000000);
-  var t2=(b-0x80000000);
-  if (t1>=0)
-    if (t2>=0)
-      return (t1^t2);
-    else
-      return ((t1^b)+0x80000000);
-  else
-    if (t2>=0)
-      return ((a^t2)+0x80000000);
-    else
-      return (a^b);
+if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
+function add32(x, y) {
+var lsw = (x & 0xFFFF) + (y & 0xFFFF),
+msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+return (msw << 16) | (lsw & 0xFFFF);
 }
-
-function not(a) {
-  a=integer(a);
-  return (0xffffffff-a);
-}
-
-/* Here begin the real algorithm */
-
-    var state = new array(4);
-    var count = new array(2);
-	count[0] = 0;
-	count[1] = 0;
-    var buffer = new array(64);
-    var transformBuffer = new array(16);
-    var digestBits = new array(16);
-
-    var S11 = 7;
-    var S12 = 12;
-    var S13 = 17;
-    var S14 = 22;
-    var S21 = 5;
-    var S22 = 9;
-    var S23 = 14;
-    var S24 = 20;
-    var S31 = 4;
-    var S32 = 11;
-    var S33 = 16;
-    var S34 = 23;
-    var S41 = 6;
-    var S42 = 10;
-    var S43 = 15;
-    var S44 = 21;
-
-    function F(x,y,z) {
-	return or(and(x,y),and(not(x),z));
-    }
-
-    function G(x,y,z) {
-	return or(and(x,z),and(y,not(z)));
-    }
-
-    function H(x,y,z) {
-	return xor(xor(x,y),z);
-    }
-
-    function I(x,y,z) {
-	return xor(y ,or(x , not(z)));
-    }
-
-    function rotateLeft(a,n) {
-	return or(shl(a, n),(shr(a,(32 - n))));
-    }
-
-    function FF(a,b,c,d,x,s,ac) {
-        a = a+F(b, c, d) + x + ac;
-	a = rotateLeft(a, s);
-	a = a+b;
-	return a;
-    }
-
-    function GG(a,b,c,d,x,s,ac) {
-	a = a+G(b, c, d) +x + ac;
-	a = rotateLeft(a, s);
-	a = a+b;
-	return a;
-    }
-
-    function HH(a,b,c,d,x,s,ac) {
-	a = a+H(b, c, d) + x + ac;
-	a = rotateLeft(a, s);
-	a = a+b;
-	return a;
-    }
-
-    function II(a,b,c,d,x,s,ac) {
-	a = a+I(b, c, d) + x + ac;
-	a = rotateLeft(a, s);
-	a = a+b;
-	return a;
-    }
-
-    function transform(buf,offset) {
-	var a=0, b=0, c=0, d=0;
-	var x = transformBuffer;
-
-	a = state[0];
-	b = state[1];
-	c = state[2];
-	d = state[3];
-
-	for (i = 0; i < 16; i++) {
-	    x[i] = and(buf[i*4+offset],0xff);
-	    for (j = 1; j < 4; j++) {
-		x[i]+=shl(and(buf[i*4+j+offset] ,0xff), j * 8);
-	    }
-	}
-
-	/* Round 1 */
-	a = FF ( a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
-	d = FF ( d, a, b, c, x[ 1], S12, 0xe8c7b756); /* 2 */
-	c = FF ( c, d, a, b, x[ 2], S13, 0x242070db); /* 3 */
-	b = FF ( b, c, d, a, x[ 3], S14, 0xc1bdceee); /* 4 */
-	a = FF ( a, b, c, d, x[ 4], S11, 0xf57c0faf); /* 5 */
-	d = FF ( d, a, b, c, x[ 5], S12, 0x4787c62a); /* 6 */
-	c = FF ( c, d, a, b, x[ 6], S13, 0xa8304613); /* 7 */
-	b = FF ( b, c, d, a, x[ 7], S14, 0xfd469501); /* 8 */
-	a = FF ( a, b, c, d, x[ 8], S11, 0x698098d8); /* 9 */
-	d = FF ( d, a, b, c, x[ 9], S12, 0x8b44f7af); /* 10 */
-	c = FF ( c, d, a, b, x[10], S13, 0xffff5bb1); /* 11 */
-	b = FF ( b, c, d, a, x[11], S14, 0x895cd7be); /* 12 */
-	a = FF ( a, b, c, d, x[12], S11, 0x6b901122); /* 13 */
-	d = FF ( d, a, b, c, x[13], S12, 0xfd987193); /* 14 */
-	c = FF ( c, d, a, b, x[14], S13, 0xa679438e); /* 15 */
-	b = FF ( b, c, d, a, x[15], S14, 0x49b40821); /* 16 */
-
-	/* Round 2 */
-	a = GG ( a, b, c, d, x[ 1], S21, 0xf61e2562); /* 17 */
-	d = GG ( d, a, b, c, x[ 6], S22, 0xc040b340); /* 18 */
-	c = GG ( c, d, a, b, x[11], S23, 0x265e5a51); /* 19 */
-	b = GG ( b, c, d, a, x[ 0], S24, 0xe9b6c7aa); /* 20 */
-	a = GG ( a, b, c, d, x[ 5], S21, 0xd62f105d); /* 21 */
-	d = GG ( d, a, b, c, x[10], S22,  0x2441453); /* 22 */
-	c = GG ( c, d, a, b, x[15], S23, 0xd8a1e681); /* 23 */
-	b = GG ( b, c, d, a, x[ 4], S24, 0xe7d3fbc8); /* 24 */
-	a = GG ( a, b, c, d, x[ 9], S21, 0x21e1cde6); /* 25 */
-	d = GG ( d, a, b, c, x[14], S22, 0xc33707d6); /* 26 */
-	c = GG ( c, d, a, b, x[ 3], S23, 0xf4d50d87); /* 27 */
-	b = GG ( b, c, d, a, x[ 8], S24, 0x455a14ed); /* 28 */
-	a = GG ( a, b, c, d, x[13], S21, 0xa9e3e905); /* 29 */
-	d = GG ( d, a, b, c, x[ 2], S22, 0xfcefa3f8); /* 30 */
-	c = GG ( c, d, a, b, x[ 7], S23, 0x676f02d9); /* 31 */
-	b = GG ( b, c, d, a, x[12], S24, 0x8d2a4c8a); /* 32 */
-
-	/* Round 3 */
-	a = HH ( a, b, c, d, x[ 5], S31, 0xfffa3942); /* 33 */
-	d = HH ( d, a, b, c, x[ 8], S32, 0x8771f681); /* 34 */
-	c = HH ( c, d, a, b, x[11], S33, 0x6d9d6122); /* 35 */
-	b = HH ( b, c, d, a, x[14], S34, 0xfde5380c); /* 36 */
-	a = HH ( a, b, c, d, x[ 1], S31, 0xa4beea44); /* 37 */
-	d = HH ( d, a, b, c, x[ 4], S32, 0x4bdecfa9); /* 38 */
-	c = HH ( c, d, a, b, x[ 7], S33, 0xf6bb4b60); /* 39 */
-	b = HH ( b, c, d, a, x[10], S34, 0xbebfbc70); /* 40 */
-	a = HH ( a, b, c, d, x[13], S31, 0x289b7ec6); /* 41 */
-	d = HH ( d, a, b, c, x[ 0], S32, 0xeaa127fa); /* 42 */
-	c = HH ( c, d, a, b, x[ 3], S33, 0xd4ef3085); /* 43 */
-	b = HH ( b, c, d, a, x[ 6], S34,  0x4881d05); /* 44 */
-	a = HH ( a, b, c, d, x[ 9], S31, 0xd9d4d039); /* 45 */
-	d = HH ( d, a, b, c, x[12], S32, 0xe6db99e5); /* 46 */
-	c = HH ( c, d, a, b, x[15], S33, 0x1fa27cf8); /* 47 */
-	b = HH ( b, c, d, a, x[ 2], S34, 0xc4ac5665); /* 48 */
-
-	/* Round 4 */
-	a = II ( a, b, c, d, x[ 0], S41, 0xf4292244); /* 49 */
-	d = II ( d, a, b, c, x[ 7], S42, 0x432aff97); /* 50 */
-	c = II ( c, d, a, b, x[14], S43, 0xab9423a7); /* 51 */
-	b = II ( b, c, d, a, x[ 5], S44, 0xfc93a039); /* 52 */
-	a = II ( a, b, c, d, x[12], S41, 0x655b59c3); /* 53 */
-	d = II ( d, a, b, c, x[ 3], S42, 0x8f0ccc92); /* 54 */
-	c = II ( c, d, a, b, x[10], S43, 0xffeff47d); /* 55 */
-	b = II ( b, c, d, a, x[ 1], S44, 0x85845dd1); /* 56 */
-	a = II ( a, b, c, d, x[ 8], S41, 0x6fa87e4f); /* 57 */
-	d = II ( d, a, b, c, x[15], S42, 0xfe2ce6e0); /* 58 */
-	c = II ( c, d, a, b, x[ 6], S43, 0xa3014314); /* 59 */
-	b = II ( b, c, d, a, x[13], S44, 0x4e0811a1); /* 60 */
-	a = II ( a, b, c, d, x[ 4], S41, 0xf7537e82); /* 61 */
-	d = II ( d, a, b, c, x[11], S42, 0xbd3af235); /* 62 */
-	c = II ( c, d, a, b, x[ 2], S43, 0x2ad7d2bb); /* 63 */
-	b = II ( b, c, d, a, x[ 9], S44, 0xeb86d391); /* 64 */
-
-	state[0] +=a;
-	state[1] +=b;
-	state[2] +=c;
-	state[3] +=d;
-
-    }
-
-    function init() {
-	count[0]=count[1] = 0;
-	state[0] = 0x67452301;
-	state[1] = 0xefcdab89;
-	state[2] = 0x98badcfe;
-	state[3] = 0x10325476;
-	for (i = 0; i < digestBits.length; i++)
-	    digestBits[i] = 0;
-    }
-
-    function update(b) {
-	var index,i;
-
-	index = and(shr(count[0],3) , 0x3f);
-	if (count[0]<0xffffffff-7)
-	  count[0] += 8;
-        else {
-	  count[1]++;
-	  count[0]-=0xffffffff+1;
-          count[0]+=8;
-        }
-	buffer[index] = and(b,0xff);
-	if (index  >= 63) {
-	    transform(buffer, 0);
-	}
-    }
-
-    function finish() {
-	var bits = new array(8);
-	var	padding;
-	var	i=0, index=0, padLen=0;
-
-	for (i = 0; i < 4; i++) {
-	    bits[i] = and(shr(count[0],(i * 8)), 0xff);
-	}
-        for (i = 0; i < 4; i++) {
-	    bits[i+4]=and(shr(count[1],(i * 8)), 0xff);
-	}
-	index = and(shr(count[0], 3) ,0x3f);
-	padLen = (index < 56) ? (56 - index) : (120 - index);
-	padding = new array(64);
-	padding[0] = 0x80;
-        for (i=0;i<padLen;i++)
-	  update(padding[i]);
-        for (i=0;i<8;i++)
-	  update(bits[i]);
-
-	for (i = 0; i < 4; i++) {
-	    for (j = 0; j < 4; j++) {
-		digestBits[i*4+j] = and(shr(state[i], (j * 8)) , 0xff);
-	    }
-	}
-    }
-function binb2str(bin) {
-var str = "";
-var mask = (1 << 8) - 1;
-for(var i = 0; i < bin.length * 32; i += 8)
-    str += String.fromCharCode((bin[i>>5] >>> (32 - 8 - i%32)) & mask);
-return str;
-}
-
-// modified by Recurity Labs GmbH 
- var l,s,k,ka,kb,kc,kd;
-
- init();
- for (k=0;k<entree.length;k++) {
-   l=entree.charCodeAt(k);
-   update(l);
- }
- finish();
- ka=kb=kc=kd=0;
- for (i=0;i<4;i++) ka+=shl(digestBits[15-i], (i*8));
- for (i=4;i<8;i++) kb+=shl(digestBits[15-i], ((i-4)*8));
- for (i=8;i<12;i++) kc+=shl(digestBits[15-i], ((i-8)*8));
- for (i=12;i<16;i++) kd+=shl(digestBits[15-i], ((i-12)*8));
- s= new Array();
- s[0] = kd;
- s[1] = kc;
- s[2] = kb;
- s[3] = ka;
- return binb2str(s);
 }

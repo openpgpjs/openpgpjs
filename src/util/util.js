@@ -33,6 +33,7 @@ var Util = function() {
 	    }
 	    return r.join('');
 	};
+	
 	/**
 	 * create hexstring from a binary
 	 * @param str [String] string to convert
@@ -52,6 +53,19 @@ var Util = function() {
 	    }
 	    return r.join('');
 	};
+	
+	/**
+	 * create binary string from a hex encoded string
+	 * @param str [String] hex string to convert
+	 * @return [String] string containing the binary values
+	 */
+	this.hex2bin = function(hex) {
+	    var str = '';
+	    for (var i = 0; i < hex.length; i += 2)
+	        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+	    return str;
+	};
+	
 	/**
 	 * creating a hex string from an binary array of integers (0..255)
 	 * @param [Array[integer 0..255]] array to convert
