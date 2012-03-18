@@ -13,7 +13,9 @@
  */
 
 function MD5(entree) {
-	return md5(entree);
+	var hex = md5(entree);
+	var bin = util.hex2bin(hex);
+	return bin;
 }
 
 function md5cycle(x, k) {
