@@ -31,6 +31,18 @@ function openpgp_msg_message() {
 	 * @return [String] plaintext of the message or null on error
 	 */
 	function decrypt(private_key, sessionkey) {
+        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+	}
+
+	/**
+	 * Decrypts a message and generates user interface message out of the found.
+	 * MDC will be verified as well as message signatures
+	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
+	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
+	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return [String] plaintext of the message or null on error
+	 */
+	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
 		if (private_key == null || sessionkey == null || sessionkey == "")
 			return null;
 		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
@@ -39,6 +51,7 @@ function openpgp_msg_message() {
 		var packet;
 		var position = 0;
 		var len = decrypted.length;
+		var validSignatures = new Array();
 		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
 
 		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
@@ -59,39 +72,47 @@ function openpgp_msg_message() {
 				// ignore.. we checked that already in a more strict way.
 				continue;
 			if (packet.tagType == 2 && packet.signatureType < 3) {
-				var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
+			    if(!pubkey || pubkey.length == 0 ){
+				    var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
+				}
 				if (pubkey.length == 0) {
 					util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(packet.issuerKeyId)+". Public key not found in keyring.");
+					validSignatures[validSignatures.length] = false;
 				} else {
-					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate())
+					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate()){
 						util.print_info("Found Good Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-					else
+    					validSignatures[validSignatures.length] = true;
+						}
+					else{
 						util.print_error("Signature verification failed: Bad Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-						
+    					validSignatures[validSignatures.length] = false;
+						}
 				}
 			}
 		}
 		if (this.text == "") {
 			this.text = decrypted;
 		}
-		return this.text;
+		return {text:this.text, validSignatures:validSignatures};
 	}
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
 	 * @return [boolean] true if the signature was correct; otherwise false
 	 */
-	function verifySignature() {
+	function verifySignature(pubkey) {
 		var result = false;
 		if (this.type == 2) {
-			var pubkey;
-			if (this.signature.version == 4) {
-				pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
-			} else if (this.signature.version == 3) {
-				pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
-			} else {
-				util.print_error("unknown signature type on message!");
-				return false;
+		    if(!pubkey || pubkey.length == 0){
+			    var pubkey;
+			    if (this.signature.version == 4) {
+				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
+			    } else if (this.signature.version == 3) {
+				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
+			    } else {
+				    util.print_error("unknown signature type on message!");
+				    return false;
+			    }
 			}
 			if (pubkey.length == 0)
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
@@ -130,6 +151,7 @@ function openpgp_msg_message() {
 		return result;
 	}
 	this.decrypt = decrypt;
+	this.decryptAndVerifySignature = decryptAndVerifySignature;
 	this.verifySignature = verifySignature;
 	this.toString = toString;
 }
