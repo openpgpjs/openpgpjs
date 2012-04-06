@@ -21,8 +21,8 @@
  *   - str_sha512
  */
 
-(function ()
-{
+var jsSHA = (function () {
+	
 	/*
 	 * Configurable variables. Defaults typically work
 	 */
@@ -1190,7 +1190,7 @@
 		}
 	};
 
-	window.jsSHA = jsSHA;
+	return jsSHA;
 }());
 
 function str_sha1(str) {
