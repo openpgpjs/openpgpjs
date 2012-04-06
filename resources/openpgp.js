@@ -14,3430 +14,1625 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+// A Digital signature algorithm implementation
 
-/**
- * Implementation of the One-Pass Signature Packets (Tag 4)
- * 
- * RFC4880 5.4:
- * The One-Pass Signature packet precedes the signed data and contains
- * enough information to allow the receiver to begin calculating any
- * hashes needed to verify the signature.  It allows the Signature
- * packet to be placed at the end of the message, so that the signer
- * can compute the entire signed message in one pass.
- */
-function openpgp_packet_onepasssignature() {
-	this.tagType = 4;
-	this.version = null; // A one-octet version number.  The current version is 3.
-	this.type == null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
-	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
-	this.publicKeyAlgorithm = null;	     // A one-octet number describing the public-key algorithm used. (See RFC4880 9.1)
-	this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
-	this.flags = null; 	//  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
-
-	/**
-	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param input [string] payload of a tag 4 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-		var mypos = position;
-		// A one-octet version number.  The current version is 3.
-		this.version = input.charCodeAt(mypos++);
-
-	     // A one-octet signature type.  Signature types are described in
-	     //   Section 5.2.1.
-		this.type = input.charCodeAt(mypos++);
-
-	     // A one-octet number describing the hash algorithm used.
-		this.hashAlgorithm = input.charCodeAt(mypos++);
-
-	     // A one-octet number describing the public-key algorithm used.
-		this.publicKeyAlgorithm = input.charCodeAt(mypos++);
-	     // An eight-octet number holding the Key ID of the signing key.
-		this.signingKeyId = new openpgp_type_keyid();
-		this.signingKeyId.read_packet(input,mypos);
-		mypos += 8;
-		
-	     // A one-octet number holding a flag showing whether the signature
-	     //   is nested.  A zero value indicates that the next packet is
-	     //   another One-Pass Signature packet that describes another
-	     //   signature to be applied to the same message data.
-		this.flags = input.charCodeAt(mypos++);
-		return this;
-	}
-
-	/**
-	 * creates a string representation of a one-pass signature packet
-	 * @param type [integer] Signature types as described in RFC4880 Section 5.2.1.
-	 * @param hashalgorithm [integer] the hash algorithm used within the signature
-	 * @param privatekey [openpgp_msg_privatekey] the private key used to generate the signature
-	 * @param length [integer] length of data to be signed
-	 * @param nested [boolean] boolean showing whether the signature is nested. 
-	 *  "true" indicates that the next packet is another One-Pass Signature packet
-	 *   that describes another signature to be applied to the same message data. 
-	 * @return [String] a string representation of a one-pass signature packet
-	 */
-	function write_packet(type, hashalgorithm, privatekey,length, nested) {
-		var result =""; 
-		
-		result += openpgp_packet.write_packet_header(4,13);
-		result += String.fromCharCode(3);
-		result += String.fromCharCode(type);
-		result += String.fromCharCode(hashalgorithm);
-		result += String.fromCharCode(privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm);
-		result += privatekey.getKeyId();
-		if (nested)
-			result += String.fromCharCode(0);
-		else
-			result += String.fromCharCode(1);
-		
+function DSA() {
+	// s1 = ((g**s) mod p) mod q
+	// s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
+	function sign(hashalgo, m, g, p, q, x) {
+		// If the output size of the chosen hash is larger than the number of
+		// bits of q, the hash result is truncated to fit by taking the number
+		// of leftmost bits equal to the number of bits of q.  This (possibly
+		// truncated) hash function result is treated as a number and used
+		// directly in the DSA signature algorithm.
+		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
+		var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+		var k = openpgp_crypto_getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
+		var s1 = (g.modPow(k,p)).mod(q); 
+		var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
+		var result = new Array();
+		result[0] = s1.toMPI();
+		result[1] = s2.toMPI();
 		return result;
 	}
-	
-	/**
-	 * generates debug output (pretty print)
-	 * @return String which gives some information about the one-pass signature packet
-	 */
-	function toString() {
-		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+
-			   '    length: '+this.packetLength+'\n'+
-			   '    type:   '+this.type+'\n'+
-			   '    keyID:  '+this.signingKeyId.toString()+'\n'+
-			   '    hashA:  '+this.hashAlgorithm+'\n'+
-			   '    pubKeyA:'+this.publicKeyAlgorithm+'\n'+
-			   '    flags:  '+this.flags+'\n'+
-			   '    version:'+this.version+'\n';
+	function select_hash_algorithm(q) {
+		var usersetting = openpgp.config.config.prefer_hash_algorithm;
+		/*
+		 * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
+		 * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
+		 * 2048-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
+		 * 3072-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
+		 */
+		switch (Math.round(q.bitLength() / 8)) {
+		case 20: // 1024 bit
+			if (usersetting != 2 &&
+				usersetting > 11 &&
+				usersetting != 10 &&
+				usersetting < 8)
+				return 2; // prefer sha1
+			return usersetting;
+		case 28: // 2048 bit
+			if (usersetting > 11 &&
+					usersetting < 8)
+					return 11;
+			return usersetting;
+		case 32: // 4096 bit // prefer sha224
+			if (usersetting > 10 &&
+					usersetting < 8)
+					return 8; // prefer sha256
+			return usersetting;
+		default:
+			util.print_debug("DSA select hash algorithm: returning null for an unknown length of q");
+			return null;
+			
+		}
 	}
+	this.select_hash_algorithm = select_hash_algorithm;
 	
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.write_packet = write_packet;
-};// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the strange "Marker packet" (Tag 10)
- * 
- * RFC4880 5.8: An experimental version of PGP used this packet as the Literal
- * packet, but no released version of PGP generated Literal packets with this
- * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
- * the Marker packet.
- * 
- * Such a packet MUST be ignored when received.
- */
-function openpgp_packet_marker() {
-	this.tagType = 10;
-	/**
-	 * parsing function for a literal data packet (tag 10).
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 10 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = 3;
-		if (input[position].charCodeAt() == 0x50 && // P
-				input[position + 1].charCodeAt() == 0x47 && // G
-				input[position + 2].charCodeAt() == 0x50) // P
-			return this;
-		// marker packet does not contain "PGP"
-		return null;
-	}
-
-	/**
-	 * Generates Debug output
-	 * 
-	 * @return String which gives some information about the keymaterial
-	 */
-	function toString() {
-		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"
-				+ "     packet reads: \"PGP\"\n";
-	}
-
-	this.read_packet = read_packet;
-	this.toString = toString;
-}// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Signature Packet (Tag 2)
- * 
- * RFC4480 5.2:
- * A Signature packet describes a binding between some public key and
- * some data.  The most common signatures are a signature of a file or a
- * block of text, and a signature that is a certification of a User ID.
- */
-function openpgp_packet_signature() {
-	this.tagType = 2;
-	this.signatureType = null;
-	this.creationTime = null;
-	this.keyId = null;
-	this.signatureData = null;
-	this.signatureExpirationTime = null;
-	this.signatureNeverExpires = null;
-	this.signedHashValue = null;
-	this.MPIs = null;
-	this.publicKeyAlgorithm = null; 
-	this.hashAlgorithm = null;
-	this.exportable = null;
-	this.trustLevel = null;
-	this.trustAmount = null;
-	this.regular_expression = null;
-	this.revocable = null;
-	this.keyExpirationTime = null;
-	this.keyNeverExpires = null;
-	this.preferredSymmetricAlgorithms = null;
-	this.revocationKeyClass = null;
-	this.revocationKeyAlgorithm = null;
-	this.revocationKeyFingerprint = null;
-	this.issuerKeyId = null;
-	this.notationFlags = null; 
-	this.notationName = null;
-	this.notationValue = null;
-	this.preferredHashAlgorithms = null;
-	this.preferredCompressionAlgorithms = null;
-	this.keyServerPreferences = null;
-	this.preferredKeyServer = null;
-	this.isPrimaryUserID = null;
-	this.policyURI = null;
-	this.keyFlags = null;
-	this.signersUserId = null;
-	this.reasonForRevocationFlag = null;
-	this.reasonForRevocationString = null;
-	this.signatureTargetPublicKeyAlgorithm = null;
-	this.signatureTargetHashAlgorithm = null;
-	this.signatureTargetHash = null;
-	this.embeddedSignature = null;
-	
-
-	/**
-	 * parsing function for a signature packet (tag 2).
-	 * @param input [string] payload of a tag 2 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.data = input.substring	(position, position+len);
-		if (len < 0) {
-			util.print_debug("openpgp.packet.signature.js\n"+"openpgp_packet_signature read_packet length < 0 @:"+position);
+	function verify(hashalgo, s1,s2,m,p,q,g,y) {
+		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
+		var hash = new BigInteger(util.hexstrdump(hashed_data), 16); 
+		if (BigInteger.ZERO.compareTo(s1) > 0 ||
+				s1.compareTo(q) > 0 ||
+				BigInteger.ZERO.compareTo(s2) > 0 ||
+				s2.compareTo(q) > 0) {
+			util.print_error("invalid DSA Signature");
 			return null;
 		}
-		var mypos = position;
-		this.packetLength = len;
-		// alert('starting parsing signature: '+position+' '+this.packetLength);
-		this.version = input[mypos++].charCodeAt();
-		// switch on version (3 and 4)
-		switch (this.version) {
-		case 3:
-			// One-octet length of following hashed material. MUST be 5.
-			if (input[mypos++].charCodeAt() != 5)
-				util.print_debug("openpgp.packet.signature.js\n"+'invalid One-octet length of following hashed material.  MUST be 5. @:'+(mypos-1));
-			var sigpos = mypos;
-			// One-octet signature type.
-			this.signatureType = input[mypos++].charCodeAt();
-
-			// Four-octet creation time.
-			this.creationTime = new Date(((input[mypos++].charCodeAt()) << 24 |
-					(input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8) |
-					input[mypos++].charCodeAt())* 1000);
-			
-			// storing data appended to data which gets verified
-			this.signatureData = input.substring(position, mypos);
-			
-			// Eight-octet Key ID of signer.
-			this.keyId = input.substring(mypos, mypos +8);
-			mypos += 8;
-
-			// One-octet public-key algorithm.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-
-			// One-octet hash algorithm.
-			this.hashAlgorithm = input[mypos++].charCodeAt();
-
-			// Two-octet field holding left 16 bits of signed hash value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
-			var mpicount = 0;
-			// Algorithm-Specific Fields for RSA signatures:
-			// 	    - multiprecision integer (MPI) of RSA signature value m**d mod n.
-			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-				mpicount = 1;
-			//    Algorithm-Specific Fields for DSA signatures:
-			//      - MPI of DSA value r.
-			//      - MPI of DSA value s.
-			else if (this.publicKeyAlgorithm == 17)
-				mpicount = 2;
-			
-			this.MPIs = new Array();
-			for (var i = 0; i < mpicount; i++) {
-				this.MPIs[i] = new openpgp_type_mpi();
-				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
-						!this.packetLength < (mypos-position)) {
-					mypos += this.MPIs[i].packetLength;
-				} else {
-			 		util.print_error('signature contains invalid MPI @:'+mypos);
-				}
-			}
-		break;
-		case 4:
-			this.signatureType = input[mypos++].charCodeAt();
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.hashAlgorithm = input[mypos++].charCodeAt();
-
-			// Two-octet scalar octet count for following hashed subpacket
-			// data.
-			var hashed_subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
-
-			// Hashed subpacket data set (zero or more subpackets)
-			var subpacket_length = 0;
-			while (hashed_subpacket_count != subpacket_length) {
-				if (hashed_subpacket_count < subpacket_length) {
-					util.print_debug("openpgp.packet.signature.js\n"+"hashed missed something: "+mypos+" c:"+hashed_subpacket_count+" l:"+subpacket_length);
-				}
-
-				subpacket_length += this._raw_read_signature_sub_packet(input,
-						mypos + subpacket_length, hashed_subpacket_count
-								- subpacket_length);
-			}
-			
-			mypos += hashed_subpacket_count;
-			this.signatureData = input.substring(position, mypos);
-
-			// alert("signatureData: "+util.hexstrdump(this.signatureData));
-			
-			// Two-octet scalar octet count for the following unhashed subpacket
-			var subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
-				
-			// Unhashed subpacket data set (zero or more subpackets).
-			subpacket_length = 0;
-			while (subpacket_count != subpacket_length) {
-				if (subpacket_count < subpacket_length) {
-					util.print_debug("openpgp.packet.signature.js\n"+"missed something: "+subpacket_length+" c:"+subpacket_count+" "+" l:"+subpacket_length);
-				}
-				subpacket_length += this._raw_read_signature_sub_packet(input,
-						mypos + subpacket_length, subpacket_count
-								- subpacket_length);
-
-			}
-			mypos += subpacket_count;
-			// Two-octet field holding the left 16 bits of the signed hash
-			// value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
-			// One or more multiprecision integers comprising the signature.
-			// This portion is algorithm specific, as described above.
-			var mpicount = 0;
-			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-				mpicount = 1;
-			else if (this.publicKeyAlgorithm == 17)
-				mpicount = 2;
-			
-			this.MPIs = new Array();
-			for (var i = 0; i < mpicount; i++) {
-				this.MPIs[i] = new openpgp_type_mpi();
-				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
-						!this.packetLength < (mypos-position)) {
-					mypos += this.MPIs[i].packetLength;
-				} else {
-			 		util.print_error('signature contains invalid MPI @:'+mypos);
-				}
-			}
-			break;
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+'unknown signature packet version'+this.version);
-			break;
-		}
-		// util.print_message("openpgp.packet.signature.js\n"+"end signature: l: "+this.packetLength+"m: "+mypos+" m-p: "+(mypos-position));
-		return this;
-	}
-	/**
-	 * creates a string representation of a message signature packet (tag 2).
-	 * This can be only used on text data
-	 * @param signature_type [integer] should be 1 (one) 
-	 * @param data [String] data to be signed
-	 * @param privatekey [openpgp_msg_privatekey] private key used to sign the message. (secMPIs MUST be unlocked)
-	 * @return string representation of a signature packet
-	 */
-	function write_message_signature(signature_type, data, privatekey) {
-		var publickey = privatekey.privateKeyPacket.publicKey;
-		var hash_algo = privatekey.getPreferredSignatureHashAlgorithm();
-		var result = String.fromCharCode(4); 
-		result += String.fromCharCode(signature_type);
-		result += String.fromCharCode(publickey.publicKeyAlgorithm);
-		result += String.fromCharCode(hash_algo);
-		var d = Math.round(new Date().getTime() / 1000);
-		var datesubpacket = write_sub_signature_packet(2,""+
-				String.fromCharCode((d >> 24) & 0xFF) + 
-				String.fromCharCode((d >> 16) & 0xFF) +
-				String.fromCharCode((d >> 8) & 0xFF) + 
-				String.fromCharCode(d & 0xFF));
-		var issuersubpacket = write_sub_signature_packet(16, privatekey.getKeyId());
-		result += String.fromCharCode(((datesubpacket.length + issuersubpacket.length) >> 8) & 0xFF);
-		result += String.fromCharCode ((datesubpacket.length + issuersubpacket.length) & 0xFF);
-		result += datesubpacket;
-		result += issuersubpacket;
-		var trailer = '';
-		
-		trailer += String.fromCharCode(4);
-		trailer += String.fromCharCode(0xFF);
-		trailer += String.fromCharCode((result.length) >> 24);
-		trailer += String.fromCharCode(((result.length) >> 16) & 0xFF);
-		trailer += String.fromCharCode(((result.length) >> 8) & 0xFF);
-		trailer += String.fromCharCode((result.length) & 0xFF);
-		var result2 = String.fromCharCode(0);
-		result2 += String.fromCharCode(0);
-		var hash = openpgp_crypto_hashData(hash_algo, data+result+trailer);
-		util.print_debug("DSA Signature is calculated with:|"+data+result+trailer+"|\n"+util.hexstrdump(data+result+trailer)+"\n hash:"+util.hexstrdump(hash));
-		result2 += hash.charAt(0);
-		result2 += hash.charAt(1);
-		result2 += openpgp_crypto_signData(hash_algo,privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm,
-				publickey.MPIs,
-				privatekey.privateKeyPacket.secMPIs,
-				data+result+trailer);
-		return {openpgp: (openpgp_packet.write_packet_header(2, (result+result2).length)+result + result2), 
-				hash: util.get_hashAlgorithmString(hash_algo)};
-	}
-	/**
-	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
-	 * @param type [integer] subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
-	 * @param data [String] data to be included
-	 * @return [String] a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
-	 */
-	function write_sub_signature_packet(type, data) {
-		var result = "";
-		result += openpgp_packet.encode_length(data.length+1);
-		result += String.fromCharCode(type);
-		result += data;
-		return result;
+		var w = s2.modInverse(q);
+		var u1 = hash.multiply(w).mod(q);
+		var u2 = s1.multiply(w).mod(q);
+		return g.modPow(u1,p).multiply(y.modPow(u2,p)).mod(p).mod(q);
 	}
 	
-	// V4 signature sub packets
+	/*
+	 * unused code. This can be used as a start to write a key generator
+	 * function.
 	
-	this._raw_read_signature_sub_packet = function(input, position, len) {
-		if (len < 0)
-			util.print_debug("openpgp.packet.signature.js\n"+"_raw_read_signature_sub_packet length < 0 @:"+position);
-		var mypos = position;
-		var subplen = 0;
-		// alert('starting signature subpackage read at position:'+position+' length:'+len);
-		if (input[mypos].charCodeAt() < 192) {
-			subplen = input[mypos++].charCodeAt();
-		} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-			subplen = ((input[mypos++].charCodeAt() - 192) << 8) + (input[mypos++].charCodeAt()) + 192;
-		} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-			subplen = 1 << (input[mypos++].charCodeAt() & 0x1F);
-		} else if (input[mypos].charCodeAt() < 255) {
-			mypos++;
-			subplen = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					|  (input[mypos++].charCodeAt() << 8) |  input[mypos++].charCodeAt();
-		}
-		
-		var type = input[mypos++].charCodeAt() & 0x7F;
-		// alert('signature subpacket type '+type+" with length: "+subplen);
-		// subpacket type
-		switch (type) {
-		case 2: // Signature Creation Time
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt())*1000);
-			break;
-		case 3: // Signature Expiration Time
-			this.signatureExpirationTime =  (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
-			this.signatureNeverExpires = (this.signature_expiration_time == 0);
-			
-			break;
-		case 4: // Exportable Certification
-			this.exportable = input[mypos++].charCodeAt() == 1;
-			break;
-		case 5: // Trust Signature
-			this.trustLevel = input[mypos++].charCodeAt();
-			this.trustAmount = input[mypos++].charCodeAt();
-			break;
-		case 6: // Regular Expression
-			this.regular_expression = new String();
-			for (var i = 0; i < subplen - 1; i++)
-				this.regular_expression += (input[mypos++]);
-			break;
-		case 7: // Revocable
-			this.revocable = input[mypos++].charCodeAt() == 1;
-			break;
-		case 9: // Key Expiration Time
-			this.keyExpirationTime = (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
-			this.keyNeverExpires = (this.keyExpirationTime == 0);
-			break;
-		case 11: // Preferred Symmetric Algorithms
-			this.preferredSymmetricAlgorithms = new Array();
-			for (var i = 0; i < subplen-1; i++) {
-				this.preferredSymmetricAlgorithms = input[mypos++].charCodeAt();
-			}
-			break;
-		case 12: // Revocation Key
-			// (1 octet of class, 1 octet of public-key algorithm ID, 20
-			// octets of
-			// fingerprint)
-			this.revocationKeyClass = input[mypos++].charCodeAt();
-			this.revocationKeyAlgorithm = input[mypos++].charCodeAt();
-			this.revocationKeyFingerprint = new Array();
-			for ( var i = 0; i < 20; i++) {
-				this.revocationKeyFingerprint = input[mypos++].charCodeAt();
-			}
-			break;
-		case 16: // Issuer
-			this.issuerKeyId = input.substring(mypos,mypos+8);
-			mypos += 8;
-			break;
-		case 20: // Notation Data
-			this.notationFlags = (input[mypos++].charCodeAt() << 24) | 
-								 (input[mypos++].charCodeAt() << 16) |
-								 (input[mypos++].charCodeAt() <<  8) | 
-								 (input[mypos++].charCodeAt());
-			var nameLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
-			var valueLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
-			this.notationName = "";
-			for (var i = 0; i < nameLength; i++) {
-				this.notationName += input[mypos++];
-			}
-			this.notationValue = "";
-			for (var i = 0; i < valueLength; i++) {
-				this.notationValue += input[mypos++];
-			}
-			break;
-		case 21: // Preferred Hash Algorithms
-			this.preferredHashAlgorithms = new Array();
-			for (var i = 0; i < subplen-1; i++) {
-				this.preferredHashAlgorithms = input[mypos++].charCodeAt();
-			}
-			break;
-		case 22: // Preferred Compression Algorithms
-			this.preferredCompressionAlgorithms = new Array();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.preferredCompressionAlgorithms = input[mypos++].charCodeAt();
-			}
-			break;
-		case 23: // Key Server Preferences
-			this.keyServerPreferences = new Array();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.keyServerPreferences = input[mypos++].charCodeAt();
-			}
-			break;
-		case 24: // Preferred Key Server
-			this.preferredKeyServer = new String();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.preferredKeyServer += input[mypos++];
-			}
-			break;
-		case 25: // Primary User ID
-			this.isPrimaryUserID = input[mypos++] != 0;
-			break;
-		case 26: // Policy URI
-			this.policyURI = new String();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.policyURI += input[mypos++];
-			}
-			break;
-		case 27: // Key Flags
-			this.keyFlags = new Array();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.keyFlags = input[mypos++].charCodeAt();
-			}
-			break;
-		case 28: // Signer's User ID
-			this.signersUserId = new String();
-			for ( var i = 0; i < subplen-1; i++) {
-				this.signersUserId += input[mypos++];
-			}
-			break;
-		case 29: // Reason for Revocation
-			this.reasonForRevocationFlag = input[mypos++].charCodeAt();
-			this.reasonForRevocationString = new String();
-			for ( var i = 0; i < subplen -2; i++) {
-				this.reasonForRevocationString += input[mypos++];
-			}
-			break;
-		case 30: // Features
-			// TODO: to be implemented
-			return subplen+1;
-		case 31: // Signature Target
-			// (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
-			this.signatureTargetPublicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.signatureTargetHashAlgorithm = input[mypos++].charCodeAt();
-			var signatureTargetHashAlgorithmLength = 0;
-			switch(this.signatureTargetHashAlgorithm) {
-			case  1: // - MD5 [HAC]                             "MD5"
-			case  2: // - SHA-1 [FIPS180]                       "SHA1"
-				signatureTargetHashAlgorithmLength = 20;
-				break;
-			case  3: // - RIPE-MD/160 [HAC]                     "RIPEMD160"
-			case  8: // - SHA256 [FIPS180]                      "SHA256"
-			case  9: // - SHA384 [FIPS180]                      "SHA384"
-			case 10: // - SHA512 [FIPS180]                      "SHA512"
-			case 11: // - SHA224 [FIPS180]                      "SHA224"
-				break;
-			// 100 to 110 - Private/Experimental algorithm
-	    	default:
-	    		util.print_error("openpgp.packet.signature.js\n"+"unknown signature target hash algorithm:"+this.signatureTargetHashAlgorithm);
-	    		return null;
-			}
-			this.signatureTargetHash = new Array();
-			for (var i = 0; i < signatureTargetHashAlgorithmLength; i++) {
-				this.signatureTargetHash[i] = input[mypos++]; 
-			}
-		case 32: // Embedded Signature
-			this.embeddedSignature = new openpgp_packet_signature();
-			this.embeddedSignature.read_packet(input, mypos, len -(mypos-position));
-			return ((mypos+ this.embeddedSignature.packetLength) - position);
-			break;
-		case 100: // Private or experimental
-		case 101: // Private or experimental
-		case 102: // Private or experimental
-		case 103: // Private or experimental
-		case 104: // Private or experimental
-		case 105: // Private or experimental
-		case 106: // Private or experimental
-		case 107: // Private or experimental
-		case 108: // Private or experimental
-		case 109: // Private or experimental
-		case 110: // Private or experimental
-			util.print_error("openpgp.packet.signature.js\n"+'private or experimental signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
-			return subplen+1;
-			break;	
-		case 0: // Reserved
-		case 1: // Reserved
-		case 8: // Reserved
-		case 10: // Placeholder for backward compatibility
-		case 13: // Reserved
-		case 14: // Reserved
-		case 15: // Reserved
-		case 17: // Reserved
-		case 18: // Reserved
-		case 19: // Reserved
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+'unknown signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
-			return subplen+1;
-			break;
-		}
-		return mypos -position;
-	};
+	function generateKey(bitcount) {
+	    var qi = new BigInteger(bitcount, primeCenterie);
+	    var pi = generateP(q, 512);
+	    var gi = generateG(p, q, bitcount);
+	    var xi;
+	    do {
+	        xi = new BigInteger(q.bitCount(), rand);
+	    } while (x.compareTo(BigInteger.ZERO) != 1 && x.compareTo(q) != -1);
+	    var yi = g.modPow(x, p);
+	    return {x: xi, q: qi, p: pi, g: gi, y: yi};
+	}
+
+	function generateP(q, bitlength, randomfn) {
+	    if (bitlength % 64 != 0) {
+	    	return false;
+	    }
+	    var pTemp;
+	    var pTemp2;
+	    do {
+	        pTemp = randomfn(bitcount, true);
+	        pTemp2 = pTemp.subtract(BigInteger.ONE);
+	        pTemp = pTemp.subtract(pTemp2.remainder(q));
+	    } while (!pTemp.isProbablePrime(primeCenterie) || pTemp.bitLength() != l);
+	    return pTemp;
+	}
+	
+	function generateG(p, q, bitlength, randomfn) {
+	    var aux = p.subtract(BigInteger.ONE);
+	    var pow = aux.divide(q);
+	    var gTemp;
+	    do {
+	        gTemp = randomfn(bitlength);
+	    } while (gTemp.compareTo(aux) != -1 && gTemp.compareTo(BigInteger.ONE) != 1);
+	    return gTemp.modPow(pow, p);
+	}
+
+	function generateK(q, bitlength, randomfn) {
+	    var tempK;
+	    do {
+	        tempK = randomfn(bitlength, false);
+	    } while (tempK.compareTo(q) != -1 && tempK.compareTo(BigInteger.ZERO) != 1);
+	    return tempK;
+	}
+
+	function generateR(q,p) {
+	    k = generateK(q);
+	    var r = g.modPow(k, p).mod(q);
+	    return r;
+	}
+
+	function generateS(hashfn,k,r,m,q,x) {
+        var hash = hashfn(m);
+        s = (k.modInverse(q).multiply(hash.add(x.multiply(r)))).mod(q);
+	    return s;
+	} */
+	this.sign = sign;
+	this.verify = verify;
+	// this.generate = generateKey;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+// ElGamal implementation
+
+function Elgamal() {
+	
+	function encrypt(m,g,p,y) {
+		//  choose k in {2,...,p-2}
+		var two = BigInteger.ONE.add(BigInteger.ONE);
+		var pMinus2 = p.subtract(two);
+		var k = openpgp_crypto_getRandomBigIntegerInRange(two, pMinus2);
+		var k = k.mod(pMinus2).add(BigInteger.ONE);
+		var c = new Array();
+		c[0] = g.modPow(k, p);
+		c[1] = y.modPow(k, p).multiply(m).mod(p).toMPI();
+		c[0] = c[0].toMPI();
+		return c;
+	}
+	
+	function decrypt(c1,c2,p,x) {
+		util.print_debug("Elgamal Decrypt:\nc1:"+util.hexstrdump(c1.toMPI())+"\n"+
+			  "c2:"+util.hexstrdump(c2.toMPI())+"\n"+
+			  "p:"+util.hexstrdump(p.toMPI())+"\n"+
+			  "x:"+util.hexstrdump(x.toMPI()));
+		return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
+		//var c = c1.pow(x).modInverse(p); // c0^-a mod p
+	    //return c.multiply(c2).mod(p);
+	}
+	
+	// signing and signature verification using Elgamal is not required by OpenPGP.
+	this.encrypt = encrypt;
+	this.decrypt = decrypt;
+}/*
+ * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
+ * All Rights Reserved.
+ *
+ * Modified by Recurity Labs GmbH 
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
+ * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
+ * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
+ * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * In addition, the following condition applies:
+ *
+ * All redistributions must retain an intact copy of this copyright notice
+ * and disclaimer.
+ */
+
+// Basic JavaScript BN library - subset useful for RSA encryption.
+
+// Bits per digit
+var dbits;
+
+// JavaScript engine analysis
+var canary = 0xdeadbeefcafe;
+var j_lm = ((canary&0xffffff)==0xefcafe);
+
+// (public) Constructor
+function BigInteger(a,b,c) {
+  if(a != null)
+    if("number" == typeof a) this.fromNumber(a,b,c);
+    else if(b == null && "string" != typeof a) this.fromString(a,256);
+    else this.fromString(a,b);
+}
+
+// return new, unset BigInteger
+function nbi() { return new BigInteger(null); }
+
+// am: Compute w_j += (x*this_i), propagate carries,
+// c is initial carry, returns final carry.
+// c < 3*dvalue, x < 2*dvalue, this_i < dvalue
+// We need to select the fastest one that works in this environment.
+
+// am1: use a single mult and divide to get the high bits,
+// max digit bits should be 26 because
+// max internal value = 2*dvalue^2-2*dvalue (< 2^53)
+function am1(i,x,w,j,c,n) {
+  while(--n >= 0) {
+    var v = x*this[i++]+w[j]+c;
+    c = Math.floor(v/0x4000000);
+    w[j++] = v&0x3ffffff;
+  }
+  return c;
+}
+// am2 avoids a big mult-and-extract completely.
+// Max digit bits should be <= 30 because we do bitwise ops
+// on values up to 2*hdvalue^2-hdvalue-1 (< 2^31)
+function am2(i,x,w,j,c,n) {
+  var xl = x&0x7fff, xh = x>>15;
+  while(--n >= 0) {
+    var l = this[i]&0x7fff;
+    var h = this[i++]>>15;
+    var m = xh*l+h*xl;
+    l = xl*l+((m&0x7fff)<<15)+w[j]+(c&0x3fffffff);
+    c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
+    w[j++] = l&0x3fffffff;
+  }
+  return c;
+}
+// Alternately, set max digit bits to 28 since some
+// browsers slow down when dealing with 32-bit numbers.
+function am3(i,x,w,j,c,n) {
+  var xl = x&0x3fff, xh = x>>14;
+  while(--n >= 0) {
+    var l = this[i]&0x3fff;
+    var h = this[i++]>>14;
+    var m = xh*l+h*xl;
+    l = xl*l+((m&0x3fff)<<14)+w[j]+c;
+    c = (l>>28)+(m>>14)+xh*h;
+    w[j++] = l&0xfffffff;
+  }
+  return c;
+}
+if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
+  BigInteger.prototype.am = am2;
+  dbits = 30;
+}
+else if(j_lm && (navigator.appName != "Netscape")) {
+  BigInteger.prototype.am = am1;
+  dbits = 26;
+}
+else { // Mozilla/Netscape seems to prefer am3
+  BigInteger.prototype.am = am3;
+  dbits = 28;
+}
+
+BigInteger.prototype.DB = dbits;
+BigInteger.prototype.DM = ((1<<dbits)-1);
+BigInteger.prototype.DV = (1<<dbits);
+
+var BI_FP = 52;
+BigInteger.prototype.FV = Math.pow(2,BI_FP);
+BigInteger.prototype.F1 = BI_FP-dbits;
+BigInteger.prototype.F2 = 2*dbits-BI_FP;
+
+// Digit conversions
+var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz";
+var BI_RC = new Array();
+var rr,vv;
+rr = "0".charCodeAt(0);
+for(vv = 0; vv <= 9; ++vv) BI_RC[rr++] = vv;
+rr = "a".charCodeAt(0);
+for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+rr = "A".charCodeAt(0);
+for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+
+function int2char(n) { return BI_RM.charAt(n); }
+function intAt(s,i) {
+  var c = BI_RC[s.charCodeAt(i)];
+  return (c==null)?-1:c;
+}
+
+// (protected) copy this to r
+function bnpCopyTo(r) {
+  for(var i = this.t-1; i >= 0; --i) r[i] = this[i];
+  r.t = this.t;
+  r.s = this.s;
+}
+
+// (protected) set from integer value x, -DV <= x < DV
+function bnpFromInt(x) {
+  this.t = 1;
+  this.s = (x<0)?-1:0;
+  if(x > 0) this[0] = x;
+  else if(x < -1) this[0] = x+DV;
+  else this.t = 0;
+}
+
+// return bigint initialized to value
+function nbv(i) { var r = nbi(); r.fromInt(i); return r; }
+
+// (protected) set from string and radix
+function bnpFromString(s,b) {
+  var k;
+  if(b == 16) k = 4;
+  else if(b == 8) k = 3;
+  else if(b == 256) k = 8; // byte array
+  else if(b == 2) k = 1;
+  else if(b == 32) k = 5;
+  else if(b == 4) k = 2;
+  else { this.fromRadix(s,b); return; }
+  this.t = 0;
+  this.s = 0;
+  var i = s.length, mi = false, sh = 0;
+  while(--i >= 0) {
+    var x = (k==8)?s[i]&0xff:intAt(s,i);
+    if(x < 0) {
+      if(s.charAt(i) == "-") mi = true;
+      continue;
+    }
+    mi = false;
+    if(sh == 0)
+      this[this.t++] = x;
+    else if(sh+k > this.DB) {
+      this[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
+      this[this.t++] = (x>>(this.DB-sh));
+    }
+    else
+      this[this.t-1] |= x<<sh;
+    sh += k;
+    if(sh >= this.DB) sh -= this.DB;
+  }
+  if(k == 8 && (s[0]&0x80) != 0) {
+    this.s = -1;
+    if(sh > 0) this[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
+  }
+  this.clamp();
+  if(mi) BigInteger.ZERO.subTo(this,this);
+}
+
+// (protected) clamp off excess high words
+function bnpClamp() {
+  var c = this.s&this.DM;
+  while(this.t > 0 && this[this.t-1] == c) --this.t;
+}
+
+// (public) return string representation in given radix
+function bnToString(b) {
+  if(this.s < 0) return "-"+this.negate().toString(b);
+  var k;
+  if(b == 16) k = 4;
+  else if(b == 8) k = 3;
+  else if(b == 2) k = 1;
+  else if(b == 32) k = 5;
+  else if(b == 4) k = 2;
+  else return this.toRadix(b);
+  var km = (1<<k)-1, d, m = false, r = "", i = this.t;
+  var p = this.DB-(i*this.DB)%k;
+  if(i-- > 0) {
+    if(p < this.DB && (d = this[i]>>p) > 0) { m = true; r = int2char(d); }
+    while(i >= 0) {
+      if(p < k) {
+        d = (this[i]&((1<<p)-1))<<(k-p);
+        d |= this[--i]>>(p+=this.DB-k);
+      }
+      else {
+        d = (this[i]>>(p-=k))&km;
+        if(p <= 0) { p += this.DB; --i; }
+      }
+      if(d > 0) m = true;
+      if(m) r += int2char(d);
+    }
+  }
+  return m?r:"0";
+}
+
+// (public) -this
+function bnNegate() { var r = nbi(); BigInteger.ZERO.subTo(this,r); return r; }
+
+// (public) |this|
+function bnAbs() { return (this.s<0)?this.negate():this; }
+
+// (public) return + if this > a, - if this < a, 0 if equal
+function bnCompareTo(a) {
+  var r = this.s-a.s;
+  if(r != 0) return r;
+  var i = this.t;
+  r = i-a.t;
+  if(r != 0) return r;
+  while(--i >= 0) if((r=this[i]-a[i]) != 0) return r;
+  return 0;
+}
+
+// returns bit length of the integer x
+function nbits(x) {
+  var r = 1, t;
+  if((t=x>>>16) != 0) { x = t; r += 16; }
+  if((t=x>>8) != 0) { x = t; r += 8; }
+  if((t=x>>4) != 0) { x = t; r += 4; }
+  if((t=x>>2) != 0) { x = t; r += 2; }
+  if((t=x>>1) != 0) { x = t; r += 1; }
+  return r;
+}
+
+// (public) return the number of bits in "this"
+function bnBitLength() {
+  if(this.t <= 0) return 0;
+  return this.DB*(this.t-1)+nbits(this[this.t-1]^(this.s&this.DM));
+}
+
+// (protected) r = this << n*DB
+function bnpDLShiftTo(n,r) {
+  var i;
+  for(i = this.t-1; i >= 0; --i) r[i+n] = this[i];
+  for(i = n-1; i >= 0; --i) r[i] = 0;
+  r.t = this.t+n;
+  r.s = this.s;
+}
+
+// (protected) r = this >> n*DB
+function bnpDRShiftTo(n,r) {
+  for(var i = n; i < this.t; ++i) r[i-n] = this[i];
+  r.t = Math.max(this.t-n,0);
+  r.s = this.s;
+}
+
+// (protected) r = this << n
+function bnpLShiftTo(n,r) {
+  var bs = n%this.DB;
+  var cbs = this.DB-bs;
+  var bm = (1<<cbs)-1;
+  var ds = Math.floor(n/this.DB), c = (this.s<<bs)&this.DM, i;
+  for(i = this.t-1; i >= 0; --i) {
+    r[i+ds+1] = (this[i]>>cbs)|c;
+    c = (this[i]&bm)<<bs;
+  }
+  for(i = ds-1; i >= 0; --i) r[i] = 0;
+  r[ds] = c;
+  r.t = this.t+ds+1;
+  r.s = this.s;
+  r.clamp();
+}
+
+// (protected) r = this >> n
+function bnpRShiftTo(n,r) {
+  r.s = this.s;
+  var ds = Math.floor(n/this.DB);
+  if(ds >= this.t) { r.t = 0; return; }
+  var bs = n%this.DB;
+  var cbs = this.DB-bs;
+  var bm = (1<<bs)-1;
+  r[0] = this[ds]>>bs;
+  for(var i = ds+1; i < this.t; ++i) {
+    r[i-ds-1] |= (this[i]&bm)<<cbs;
+    r[i-ds] = this[i]>>bs;
+  }
+  if(bs > 0) r[this.t-ds-1] |= (this.s&bm)<<cbs;
+  r.t = this.t-ds;
+  r.clamp();
+}
+
+// (protected) r = this - a
+function bnpSubTo(a,r) {
+  var i = 0, c = 0, m = Math.min(a.t,this.t);
+  while(i < m) {
+    c += this[i]-a[i];
+    r[i++] = c&this.DM;
+    c >>= this.DB;
+  }
+  if(a.t < this.t) {
+    c -= a.s;
+    while(i < this.t) {
+      c += this[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c += this.s;
+  }
+  else {
+    c += this.s;
+    while(i < a.t) {
+      c -= a[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c -= a.s;
+  }
+  r.s = (c<0)?-1:0;
+  if(c < -1) r[i++] = this.DV+c;
+  else if(c > 0) r[i++] = c;
+  r.t = i;
+  r.clamp();
+}
+
+// (protected) r = this * a, r != this,a (HAC 14.12)
+// "this" should be the larger one if appropriate.
+function bnpMultiplyTo(a,r) {
+  var x = this.abs(), y = a.abs();
+  var i = x.t;
+  r.t = i+y.t;
+  while(--i >= 0) r[i] = 0;
+  for(i = 0; i < y.t; ++i) r[i+x.t] = x.am(0,y[i],r,i,0,x.t);
+  r.s = 0;
+  r.clamp();
+  if(this.s != a.s) BigInteger.ZERO.subTo(r,r);
+}
+
+// (protected) r = this^2, r != this (HAC 14.16)
+function bnpSquareTo(r) {
+  var x = this.abs();
+  var i = r.t = 2*x.t;
+  while(--i >= 0) r[i] = 0;
+  for(i = 0; i < x.t-1; ++i) {
+    var c = x.am(i,x[i],r,2*i,0,1);
+    if((r[i+x.t]+=x.am(i+1,2*x[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
+      r[i+x.t] -= x.DV;
+      r[i+x.t+1] = 1;
+    }
+  }
+  if(r.t > 0) r[r.t-1] += x.am(i,x[i],r,2*i,0,1);
+  r.s = 0;
+  r.clamp();
+}
+
+// (protected) divide this by m, quotient and remainder to q, r (HAC 14.20)
+// r != q, this != m.  q or r may be null.
+function bnpDivRemTo(m,q,r) {
+  var pm = m.abs();
+  if(pm.t <= 0) return;
+  var pt = this.abs();
+  if(pt.t < pm.t) {
+    if(q != null) q.fromInt(0);
+    if(r != null) this.copyTo(r);
+    return;
+  }
+  if(r == null) r = nbi();
+  var y = nbi(), ts = this.s, ms = m.s;
+  var nsh = this.DB-nbits(pm[pm.t-1]);	// normalize modulus
+  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
+  else { pm.copyTo(y); pt.copyTo(r); }
+  var ys = y.t;
+  var y0 = y[ys-1];
+  if(y0 == 0) return;
+  var yt = y0*(1<<this.F1)+((ys>1)?y[ys-2]>>this.F2:0);
+  var d1 = this.FV/yt, d2 = (1<<this.F1)/yt, e = 1<<this.F2;
+  var i = r.t, j = i-ys, t = (q==null)?nbi():q;
+  y.dlShiftTo(j,t);
+  if(r.compareTo(t) >= 0) {
+    r[r.t++] = 1;
+    r.subTo(t,r);
+  }
+  BigInteger.ONE.dlShiftTo(ys,t);
+  t.subTo(y,y);	// "negative" y so we can replace sub with am later
+  while(y.t < ys) y[y.t++] = 0;
+  while(--j >= 0) {
+    // Estimate quotient digit
+    var qd = (r[--i]==y0)?this.DM:Math.floor(r[i]*d1+(r[i-1]+e)*d2);
+    if((r[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
+      y.dlShiftTo(j,t);
+      r.subTo(t,r);
+      while(r[i] < --qd) r.subTo(t,r);
+    }
+  }
+  if(q != null) {
+    r.drShiftTo(ys,q);
+    if(ts != ms) BigInteger.ZERO.subTo(q,q);
+  }
+  r.t = ys;
+  r.clamp();
+  if(nsh > 0) r.rShiftTo(nsh,r);	// Denormalize remainder
+  if(ts < 0) BigInteger.ZERO.subTo(r,r);
+}
+
+// (public) this mod a
+function bnMod(a) {
+  var r = nbi();
+  this.abs().divRemTo(a,null,r);
+  if(this.s < 0 && r.compareTo(BigInteger.ZERO) > 0) a.subTo(r,r);
+  return r;
+}
+
+// Modular reduction using "classic" algorithm
+function Classic(m) { this.m = m; }
+function cConvert(x) {
+  if(x.s < 0 || x.compareTo(this.m) >= 0) return x.mod(this.m);
+  else return x;
+}
+function cRevert(x) { return x; }
+function cReduce(x) { x.divRemTo(this.m,null,x); }
+function cMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
+function cSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
+
+Classic.prototype.convert = cConvert;
+Classic.prototype.revert = cRevert;
+Classic.prototype.reduce = cReduce;
+Classic.prototype.mulTo = cMulTo;
+Classic.prototype.sqrTo = cSqrTo;
+
+// (protected) return "-1/this % 2^DB"; useful for Mont. reduction
+// justification:
+//         xy == 1 (mod m)
+//         xy =  1+km
+//   xy(2-xy) = (1+km)(1-km)
+// x[y(2-xy)] = 1-k^2m^2
+// x[y(2-xy)] == 1 (mod m^2)
+// if y is 1/x mod m, then y(2-xy) is 1/x mod m^2
+// should reduce x and y(2-xy) by m^2 at each step to keep size bounded.
+// JS multiply "overflows" differently from C/C++, so care is needed here.
+function bnpInvDigit() {
+  if(this.t < 1) return 0;
+  var x = this[0];
+  if((x&1) == 0) return 0;
+  var y = x&3;		// y == 1/x mod 2^2
+  y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
+  y = (y*(2-(x&0xff)*y))&0xff;	// y == 1/x mod 2^8
+  y = (y*(2-(((x&0xffff)*y)&0xffff)))&0xffff;	// y == 1/x mod 2^16
+  // last step - calculate inverse mod DV directly;
+  // assumes 16 < DB <= 32 and assumes ability to handle 48-bit ints
+  y = (y*(2-x*y%this.DV))%this.DV;		// y == 1/x mod 2^dbits
+  // we really want the negative inverse, and -DV < y < DV
+  return (y>0)?this.DV-y:-y;
+}
+
+// Montgomery reduction
+function Montgomery(m) {
+  this.m = m;
+  this.mp = m.invDigit();
+  this.mpl = this.mp&0x7fff;
+  this.mph = this.mp>>15;
+  this.um = (1<<(m.DB-15))-1;
+  this.mt2 = 2*m.t;
+}
+
+// xR mod m
+function montConvert(x) {
+  var r = nbi();
+  x.abs().dlShiftTo(this.m.t,r);
+  r.divRemTo(this.m,null,r);
+  if(x.s < 0 && r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r,r);
+  return r;
+}
+
+// x/R mod m
+function montRevert(x) {
+  var r = nbi();
+  x.copyTo(r);
+  this.reduce(r);
+  return r;
+}
+
+// x = x/R mod m (HAC 14.32)
+function montReduce(x) {
+  while(x.t <= this.mt2)	// pad x so am has enough room later
+    x[x.t++] = 0;
+  for(var i = 0; i < this.m.t; ++i) {
+    // faster way of calculating u0 = x[i]*mp mod DV
+    var j = x[i]&0x7fff;
+    var u0 = (j*this.mpl+(((j*this.mph+(x[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
+    // use am to combine the multiply-shift-add into one call
+    j = i+this.m.t;
+    x[j] += this.m.am(0,u0,x,i,0,this.m.t);
+    // propagate carry
+    while(x[j] >= x.DV) { x[j] -= x.DV; x[++j]++; }
+  }
+  x.clamp();
+  x.drShiftTo(this.m.t,x);
+  if(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
+}
+
+// r = "x^2/R mod m"; x != r
+function montSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
+
+// r = "xy/R mod m"; x,y != r
+function montMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
+
+Montgomery.prototype.convert = montConvert;
+Montgomery.prototype.revert = montRevert;
+Montgomery.prototype.reduce = montReduce;
+Montgomery.prototype.mulTo = montMulTo;
+Montgomery.prototype.sqrTo = montSqrTo;
+
+// (protected) true iff this is even
+function bnpIsEven() { return ((this.t>0)?(this[0]&1):this.s) == 0; }
+
+// (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
+function bnpExp(e,z) {
+  if(e > 0xffffffff || e < 1) return BigInteger.ONE;
+  var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e)-1;
+  g.copyTo(r);
+  while(--i >= 0) {
+    z.sqrTo(r,r2);
+    if((e&(1<<i)) > 0) z.mulTo(r2,g,r);
+    else { var t = r; r = r2; r2 = t; }
+  }
+  return z.revert(r);
+}
+
+// (public) this^e % m, 0 <= e < 2^32
+function bnModPowInt(e,m) {
+  var z;
+  if(e < 256 || m.isEven()) z = new Classic(m); else z = new Montgomery(m);
+  return this.exp(e,z);
+}
+
+// protected
+BigInteger.prototype.copyTo = bnpCopyTo;
+BigInteger.prototype.fromInt = bnpFromInt;
+BigInteger.prototype.fromString = bnpFromString;
+BigInteger.prototype.clamp = bnpClamp;
+BigInteger.prototype.dlShiftTo = bnpDLShiftTo;
+BigInteger.prototype.drShiftTo = bnpDRShiftTo;
+BigInteger.prototype.lShiftTo = bnpLShiftTo;
+BigInteger.prototype.rShiftTo = bnpRShiftTo;
+BigInteger.prototype.subTo = bnpSubTo;
+BigInteger.prototype.multiplyTo = bnpMultiplyTo;
+BigInteger.prototype.squareTo = bnpSquareTo;
+BigInteger.prototype.divRemTo = bnpDivRemTo;
+BigInteger.prototype.invDigit = bnpInvDigit;
+BigInteger.prototype.isEven = bnpIsEven;
+BigInteger.prototype.exp = bnpExp;
+
+// public
+BigInteger.prototype.toString = bnToString;
+BigInteger.prototype.negate = bnNegate;
+BigInteger.prototype.abs = bnAbs;
+BigInteger.prototype.compareTo = bnCompareTo;
+BigInteger.prototype.bitLength = bnBitLength;
+BigInteger.prototype.mod = bnMod;
+BigInteger.prototype.modPowInt = bnModPowInt;
+
+// "constants"
+BigInteger.ZERO = nbv(0);
+BigInteger.ONE = nbv(1);
+
+/*
+ * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
+ * All Rights Reserved.
+ *
+ * Modified by Recurity Labs GmbH
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
+ * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
+ * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
+ * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * In addition, the following condition applies:
+ *
+ * All redistributions must retain an intact copy of this copyright notice
+ * and disclaimer.
+ */
+// Extended JavaScript BN functions, required for RSA private ops.
+
+// Version 1.1: new BigInteger("0", 10) returns "proper" zero
+// Version 1.2: square() API, isProbablePrime fix
+
+// (public)
+function bnClone() { var r = nbi(); this.copyTo(r); return r; }
+
+// (public) return value as integer
+function bnIntValue() {
+  if(this.s < 0) {
+    if(this.t == 1) return this[0]-this.DV;
+    else if(this.t == 0) return -1;
+  }
+  else if(this.t == 1) return this[0];
+  else if(this.t == 0) return 0;
+  // assumes 16 < DB < 32
+  return ((this[1]&((1<<(32-this.DB))-1))<<this.DB)|this[0];
+}
+
+// (public) return value as byte
+function bnByteValue() { return (this.t==0)?this.s:(this[0]<<24)>>24; }
+
+// (public) return value as short (assumes DB>=16)
+function bnShortValue() { return (this.t==0)?this.s:(this[0]<<16)>>16; }
+
+// (protected) return x s.t. r^x < DV
+function bnpChunkSize(r) { return Math.floor(Math.LN2*this.DB/Math.log(r)); }
+
+// (public) 0 if this == 0, 1 if this > 0
+function bnSigNum() {
+  if(this.s < 0) return -1;
+  else if(this.t <= 0 || (this.t == 1 && this[0] <= 0)) return 0;
+  else return 1;
+}
+
+// (protected) convert to radix string
+function bnpToRadix(b) {
+  if(b == null) b = 10;
+  if(this.signum() == 0 || b < 2 || b > 36) return "0";
+  var cs = this.chunkSize(b);
+  var a = Math.pow(b,cs);
+  var d = nbv(a), y = nbi(), z = nbi(), r = "";
+  this.divRemTo(d,y,z);
+  while(y.signum() > 0) {
+    r = (a+z.intValue()).toString(b).substr(1) + r;
+    y.divRemTo(d,y,z);
+  }
+  return z.intValue().toString(b) + r;
+}
+
+// (protected) convert from radix string
+function bnpFromRadix(s,b) {
+  this.fromInt(0);
+  if(b == null) b = 10;
+  var cs = this.chunkSize(b);
+  var d = Math.pow(b,cs), mi = false, j = 0, w = 0;
+  for(var i = 0; i < s.length; ++i) {
+    var x = intAt(s,i);
+    if(x < 0) {
+      if(s.charAt(i) == "-" && this.signum() == 0) mi = true;
+      continue;
+    }
+    w = b*w+x;
+    if(++j >= cs) {
+      this.dMultiply(d);
+      this.dAddOffset(w,0);
+      j = 0;
+      w = 0;
+    }
+  }
+  if(j > 0) {
+    this.dMultiply(Math.pow(b,j));
+    this.dAddOffset(w,0);
+  }
+  if(mi) BigInteger.ZERO.subTo(this,this);
+}
+
+// (protected) alternate constructor
+function bnpFromNumber(a,b,c) {
+  if("number" == typeof b) {
+    // new BigInteger(int,int,RNG)
+    if(a < 2) this.fromInt(1);
+    else {
+      this.fromNumber(a,c);
+      if(!this.testBit(a-1))	// force MSB set
+        this.bitwiseTo(BigInteger.ONE.shiftLeft(a-1),op_or,this);
+      if(this.isEven()) this.dAddOffset(1,0); // force odd
+      while(!this.isProbablePrime(b)) {
+        this.dAddOffset(2,0);
+        if(this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a-1),this);
+      }
+    }
+  }
+  else {
+    // new BigInteger(int,RNG)
+    var x = new Array(), t = a&7;
+    x.length = (a>>3)+1;
+    b.nextBytes(x);
+    if(t > 0) x[0] &= ((1<<t)-1); else x[0] = 0;
+    this.fromString(x,256);
+  }
+}
+
+// (public) convert to bigendian byte array
+function bnToByteArray() {
+  var i = this.t, r = new Array();
+  r[0] = this.s;
+  var p = this.DB-(i*this.DB)%8, d, k = 0;
+  if(i-- > 0) {
+    if(p < this.DB && (d = this[i]>>p) != (this.s&this.DM)>>p)
+      r[k++] = d|(this.s<<(this.DB-p));
+    while(i >= 0) {
+      if(p < 8) {
+        d = (this[i]&((1<<p)-1))<<(8-p);
+        d |= this[--i]>>(p+=this.DB-8);
+      }
+      else {
+        d = (this[i]>>(p-=8))&0xff;
+        if(p <= 0) { p += this.DB; --i; }
+      }
+      //if((d&0x80) != 0) d |= -256;
+      //if(k == 0 && (this.s&0x80) != (d&0x80)) ++k;
+      if(k > 0 || d != this.s) r[k++] = d;
+    }
+  }
+  return r;
+}
+
+function bnEquals(a) { return(this.compareTo(a)==0); }
+function bnMin(a) { return(this.compareTo(a)<0)?this:a; }
+function bnMax(a) { return(this.compareTo(a)>0)?this:a; }
+
+// (protected) r = this op a (bitwise)
+function bnpBitwiseTo(a,op,r) {
+  var i, f, m = Math.min(a.t,this.t);
+  for(i = 0; i < m; ++i) r[i] = op(this[i],a[i]);
+  if(a.t < this.t) {
+    f = a.s&this.DM;
+    for(i = m; i < this.t; ++i) r[i] = op(this[i],f);
+    r.t = this.t;
+  }
+  else {
+    f = this.s&this.DM;
+    for(i = m; i < a.t; ++i) r[i] = op(f,a[i]);
+    r.t = a.t;
+  }
+  r.s = op(this.s,a.s);
+  r.clamp();
+}
+
+// (public) this & a
+function op_and(x,y) { return x&y; }
+function bnAnd(a) { var r = nbi(); this.bitwiseTo(a,op_and,r); return r; }
+
+// (public) this | a
+function op_or(x,y) { return x|y; }
+function bnOr(a) { var r = nbi(); this.bitwiseTo(a,op_or,r); return r; }
+
+// (public) this ^ a
+function op_xor(x,y) { return x^y; }
+function bnXor(a) { var r = nbi(); this.bitwiseTo(a,op_xor,r); return r; }
+
+// (public) this & ~a
+function op_andnot(x,y) { return x&~y; }
+function bnAndNot(a) { var r = nbi(); this.bitwiseTo(a,op_andnot,r); return r; }
+
+// (public) ~this
+function bnNot() {
+  var r = nbi();
+  for(var i = 0; i < this.t; ++i) r[i] = this.DM&~this[i];
+  r.t = this.t;
+  r.s = ~this.s;
+  return r;
+}
+
+// (public) this << n
+function bnShiftLeft(n) {
+  var r = nbi();
+  if(n < 0) this.rShiftTo(-n,r); else this.lShiftTo(n,r);
+  return r;
+}
+
+// (public) this >> n
+function bnShiftRight(n) {
+  var r = nbi();
+  if(n < 0) this.lShiftTo(-n,r); else this.rShiftTo(n,r);
+  return r;
+}
+
+// return index of lowest 1-bit in x, x < 2^31
+function lbit(x) {
+  if(x == 0) return -1;
+  var r = 0;
+  if((x&0xffff) == 0) { x >>= 16; r += 16; }
+  if((x&0xff) == 0) { x >>= 8; r += 8; }
+  if((x&0xf) == 0) { x >>= 4; r += 4; }
+  if((x&3) == 0) { x >>= 2; r += 2; }
+  if((x&1) == 0) ++r;
+  return r;
+}
+
+// (public) returns index of lowest 1-bit (or -1 if none)
+function bnGetLowestSetBit() {
+  for(var i = 0; i < this.t; ++i)
+    if(this[i] != 0) return i*this.DB+lbit(this[i]);
+  if(this.s < 0) return this.t*this.DB;
+  return -1;
+}
+
+// return number of 1 bits in x
+function cbit(x) {
+  var r = 0;
+  while(x != 0) { x &= x-1; ++r; }
+  return r;
+}
+
+// (public) return number of set bits
+function bnBitCount() {
+  var r = 0, x = this.s&this.DM;
+  for(var i = 0; i < this.t; ++i) r += cbit(this[i]^x);
+  return r;
+}
+
+// (public) true iff nth bit is set
+function bnTestBit(n) {
+  var j = Math.floor(n/this.DB);
+  if(j >= this.t) return(this.s!=0);
+  return((this[j]&(1<<(n%this.DB)))!=0);
+}
+
+// (protected) this op (1<<n)
+function bnpChangeBit(n,op) {
+  var r = BigInteger.ONE.shiftLeft(n);
+  this.bitwiseTo(r,op,r);
+  return r;
+}
+
+// (public) this | (1<<n)
+function bnSetBit(n) { return this.changeBit(n,op_or); }
+
+// (public) this & ~(1<<n)
+function bnClearBit(n) { return this.changeBit(n,op_andnot); }
+
+// (public) this ^ (1<<n)
+function bnFlipBit(n) { return this.changeBit(n,op_xor); }
+
+// (protected) r = this + a
+function bnpAddTo(a,r) {
+  var i = 0, c = 0, m = Math.min(a.t,this.t);
+  while(i < m) {
+    c += this[i]+a[i];
+    r[i++] = c&this.DM;
+    c >>= this.DB;
+  }
+  if(a.t < this.t) {
+    c += a.s;
+    while(i < this.t) {
+      c += this[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c += this.s;
+  }
+  else {
+    c += this.s;
+    while(i < a.t) {
+      c += a[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c += a.s;
+  }
+  r.s = (c<0)?-1:0;
+  if(c > 0) r[i++] = c;
+  else if(c < -1) r[i++] = this.DV+c;
+  r.t = i;
+  r.clamp();
+}
+
+// (public) this + a
+function bnAdd(a) { var r = nbi(); this.addTo(a,r); return r; }
+
+// (public) this - a
+function bnSubtract(a) { var r = nbi(); this.subTo(a,r); return r; }
+
+// (public) this * a
+function bnMultiply(a) { var r = nbi(); this.multiplyTo(a,r); return r; }
+
+// (public) this^2
+function bnSquare() { var r = nbi(); this.squareTo(r); return r; }
+
+// (public) this / a
+function bnDivide(a) { var r = nbi(); this.divRemTo(a,r,null); return r; }
+
+// (public) this % a
+function bnRemainder(a) { var r = nbi(); this.divRemTo(a,null,r); return r; }
+
+// (public) [this/a,this%a]
+function bnDivideAndRemainder(a) {
+  var q = nbi(), r = nbi();
+  this.divRemTo(a,q,r);
+  return new Array(q,r);
+}
+
+// (protected) this *= n, this >= 0, 1 < n < DV
+function bnpDMultiply(n) {
+  this[this.t] = this.am(0,n-1,this,0,0,this.t);
+  ++this.t;
+  this.clamp();
+}
+
+// (protected) this += n << w words, this >= 0
+function bnpDAddOffset(n,w) {
+  if(n == 0) return;
+  while(this.t <= w) this[this.t++] = 0;
+  this[w] += n;
+  while(this[w] >= this.DV) {
+    this[w] -= this.DV;
+    if(++w >= this.t) this[this.t++] = 0;
+    ++this[w];
+  }
+}
+
+// A "null" reducer
+function NullExp() {}
+function nNop(x) { return x; }
+function nMulTo(x,y,r) { x.multiplyTo(y,r); }
+function nSqrTo(x,r) { x.squareTo(r); }
+
+NullExp.prototype.convert = nNop;
+NullExp.prototype.revert = nNop;
+NullExp.prototype.mulTo = nMulTo;
+NullExp.prototype.sqrTo = nSqrTo;
+
+// (public) this^e
+function bnPow(e) { return this.exp(e,new NullExp()); }
+
+// (protected) r = lower n words of "this * a", a.t <= n
+// "this" should be the larger one if appropriate.
+function bnpMultiplyLowerTo(a,n,r) {
+  var i = Math.min(this.t+a.t,n);
+  r.s = 0; // assumes a,this >= 0
+  r.t = i;
+  while(i > 0) r[--i] = 0;
+  var j;
+  for(j = r.t-this.t; i < j; ++i) r[i+this.t] = this.am(0,a[i],r,i,0,this.t);
+  for(j = Math.min(a.t,n); i < j; ++i) this.am(0,a[i],r,i,0,n-i);
+  r.clamp();
+}
+
+// (protected) r = "this * a" without lower n words, n > 0
+// "this" should be the larger one if appropriate.
+function bnpMultiplyUpperTo(a,n,r) {
+  --n;
+  var i = r.t = this.t+a.t-n;
+  r.s = 0; // assumes a,this >= 0
+  while(--i >= 0) r[i] = 0;
+  for(i = Math.max(n-this.t,0); i < a.t; ++i)
+    r[this.t+i-n] = this.am(n-i,a[i],r,0,0,this.t+i-n);
+  r.clamp();
+  r.drShiftTo(1,r);
+}
+
+// Barrett modular reduction
+function Barrett(m) {
+  // setup Barrett
+  this.r2 = nbi();
+  this.q3 = nbi();
+  BigInteger.ONE.dlShiftTo(2*m.t,this.r2);
+  this.mu = this.r2.divide(m);
+  this.m = m;
+}
+
+function barrettConvert(x) {
+  if(x.s < 0 || x.t > 2*this.m.t) return x.mod(this.m);
+  else if(x.compareTo(this.m) < 0) return x;
+  else { var r = nbi(); x.copyTo(r); this.reduce(r); return r; }
+}
+
+function barrettRevert(x) { return x; }
+
+// x = x mod m (HAC 14.42)
+function barrettReduce(x) {
+  x.drShiftTo(this.m.t-1,this.r2);
+  if(x.t > this.m.t+1) { x.t = this.m.t+1; x.clamp(); }
+  this.mu.multiplyUpperTo(this.r2,this.m.t+1,this.q3);
+  this.m.multiplyLowerTo(this.q3,this.m.t+1,this.r2);
+  while(x.compareTo(this.r2) < 0) x.dAddOffset(1,this.m.t+1);
+  x.subTo(this.r2,x);
+  while(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
+}
+
+// r = x^2 mod m; x != r
+function barrettSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
+
+// r = x*y mod m; x,y != r
+function barrettMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
+
+Barrett.prototype.convert = barrettConvert;
+Barrett.prototype.revert = barrettRevert;
+Barrett.prototype.reduce = barrettReduce;
+Barrett.prototype.mulTo = barrettMulTo;
+Barrett.prototype.sqrTo = barrettSqrTo;
+
+// (public) this^e % m (HAC 14.85)
+function bnModPow(e,m) {
+  var i = e.bitLength(), k, r = nbv(1), z;
+  if(i <= 0) return r;
+  else if(i < 18) k = 1;
+  else if(i < 48) k = 3;
+  else if(i < 144) k = 4;
+  else if(i < 768) k = 5;
+  else k = 6;
+  if(i < 8)
+    z = new Classic(m);
+  else if(m.isEven())
+    z = new Barrett(m);
+  else
+    z = new Montgomery(m);
+
+  // precomputation
+  var g = new Array(), n = 3, k1 = k-1, km = (1<<k)-1;
+  g[1] = z.convert(this);
+  if(k > 1) {
+    var g2 = nbi();
+    z.sqrTo(g[1],g2);
+    while(n <= km) {
+      g[n] = nbi();
+      z.mulTo(g2,g[n-2],g[n]);
+      n += 2;
+    }
+  }
+
+  var j = e.t-1, w, is1 = true, r2 = nbi(), t;
+  i = nbits(e[j])-1;
+  while(j >= 0) {
+    if(i >= k1) w = (e[j]>>(i-k1))&km;
+    else {
+      w = (e[j]&((1<<(i+1))-1))<<(k1-i);
+      if(j > 0) w |= e[j-1]>>(this.DB+i-k1);
+    }
+
+    n = k;
+    while((w&1) == 0) { w >>= 1; --n; }
+    if((i -= n) < 0) { i += this.DB; --j; }
+    if(is1) {	// ret == 1, don't bother squaring or multiplying it
+      g[w].copyTo(r);
+      is1 = false;
+    }
+    else {
+      while(n > 1) { z.sqrTo(r,r2); z.sqrTo(r2,r); n -= 2; }
+      if(n > 0) z.sqrTo(r,r2); else { t = r; r = r2; r2 = t; }
+      z.mulTo(r2,g[w],r);
+    }
+
+    while(j >= 0 && (e[j]&(1<<i)) == 0) {
+      z.sqrTo(r,r2); t = r; r = r2; r2 = t;
+      if(--i < 0) { i = this.DB-1; --j; }
+    }
+  }
+  return z.revert(r);
+}
+
+// (public) gcd(this,a) (HAC 14.54)
+function bnGCD(a) {
+  var x = (this.s<0)?this.negate():this.clone();
+  var y = (a.s<0)?a.negate():a.clone();
+  if(x.compareTo(y) < 0) { var t = x; x = y; y = t; }
+  var i = x.getLowestSetBit(), g = y.getLowestSetBit();
+  if(g < 0) return x;
+  if(i < g) g = i;
+  if(g > 0) {
+    x.rShiftTo(g,x);
+    y.rShiftTo(g,y);
+  }
+  while(x.signum() > 0) {
+    if((i = x.getLowestSetBit()) > 0) x.rShiftTo(i,x);
+    if((i = y.getLowestSetBit()) > 0) y.rShiftTo(i,y);
+    if(x.compareTo(y) >= 0) {
+      x.subTo(y,x);
+      x.rShiftTo(1,x);
+    }
+    else {
+      y.subTo(x,y);
+      y.rShiftTo(1,y);
+    }
+  }
+  if(g > 0) y.lShiftTo(g,y);
+  return y;
+}
+
+// (protected) this % n, n < 2^26
+function bnpModInt(n) {
+  if(n <= 0) return 0;
+  var d = this.DV%n, r = (this.s<0)?n-1:0;
+  if(this.t > 0)
+    if(d == 0) r = this[0]%n;
+    else for(var i = this.t-1; i >= 0; --i) r = (d*r+this[i])%n;
+  return r;
+}
+
+// (public) 1/this % m (HAC 14.61)
+function bnModInverse(m) {
+  var ac = m.isEven();
+  if((this.isEven() && ac) || m.signum() == 0) return BigInteger.ZERO;
+  var u = m.clone(), v = this.clone();
+  var a = nbv(1), b = nbv(0), c = nbv(0), d = nbv(1);
+  while(u.signum() != 0) {
+    while(u.isEven()) {
+      u.rShiftTo(1,u);
+      if(ac) {
+        if(!a.isEven() || !b.isEven()) { a.addTo(this,a); b.subTo(m,b); }
+        a.rShiftTo(1,a);
+      }
+      else if(!b.isEven()) b.subTo(m,b);
+      b.rShiftTo(1,b);
+    }
+    while(v.isEven()) {
+      v.rShiftTo(1,v);
+      if(ac) {
+        if(!c.isEven() || !d.isEven()) { c.addTo(this,c); d.subTo(m,d); }
+        c.rShiftTo(1,c);
+      }
+      else if(!d.isEven()) d.subTo(m,d);
+      d.rShiftTo(1,d);
+    }
+    if(u.compareTo(v) >= 0) {
+      u.subTo(v,u);
+      if(ac) a.subTo(c,a);
+      b.subTo(d,b);
+    }
+    else {
+      v.subTo(u,v);
+      if(ac) c.subTo(a,c);
+      d.subTo(b,d);
+    }
+  }
+  if(v.compareTo(BigInteger.ONE) != 0) return BigInteger.ZERO;
+  if(d.compareTo(m) >= 0) return d.subtract(m);
+  if(d.signum() < 0) d.addTo(m,d); else return d;
+  if(d.signum() < 0) return d.add(m); else return d;
+}
+
+var lowprimes = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541,547,557,563,569,571,577,587,593,599,601,607,613,617,619,631,641,643,647,653,659,661,673,677,683,691,701,709,719,727,733,739,743,751,757,761,769,773,787,797,809,811,821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,947,953,967,971,977,983,991,997];
+var lplim = (1<<26)/lowprimes[lowprimes.length-1];
+
+// (public) test primality with certainty >= 1-.5^t
+function bnIsProbablePrime(t) {
+  var i, x = this.abs();
+  if(x.t == 1 && x[0] <= lowprimes[lowprimes.length-1]) {
+    for(i = 0; i < lowprimes.length; ++i)
+      if(x[0] == lowprimes[i]) return true;
+    return false;
+  }
+  if(x.isEven()) return false;
+  i = 1;
+  while(i < lowprimes.length) {
+    var m = lowprimes[i], j = i+1;
+    while(j < lowprimes.length && m < lplim) m *= lowprimes[j++];
+    m = x.modInt(m);
+    while(i < j) if(m%lowprimes[i++] == 0) return false;
+  }
+  return x.millerRabin(t);
+}
+
+/* added by Recurity Labs */
+
+function nbits(x) {
+	var n = 1, t;
+	if ((t = x >>> 16) != 0) {
+		x = t;
+		n += 16;
+	}
+	if ((t = x >> 8) != 0) {
+		x = t;
+		n += 8;
+	}
+	if ((t = x >> 4) != 0) {
+		x = t;
+		n += 4;
+	}
+	if ((t = x >> 2) != 0) {
+		x = t;
+		n += 2;
+	}
+	if ((t = x >> 1) != 0) {
+		x = t;
+		n += 1;
+	}
+	return n;
+}
+
+function bnToMPI () {
+	var ba = this.toByteArray();
+	var size = (ba.length-1)*8+nbits(ba[0]);
+	var result = "";
+	result += String.fromCharCode((size & 0xFF00) >> 8);
+	result += String.fromCharCode(size & 0xFF);
+	result += util.bin2str(ba);
+	return result;
+}
+/* END of addition */
+
+// (protected) true if probably prime (HAC 4.24, Miller-Rabin)
+function bnpMillerRabin(t) {
+  var n1 = this.subtract(BigInteger.ONE);
+  var k = n1.getLowestSetBit();
+  if(k <= 0) return false;
+  var r = n1.shiftRight(k);
+  t = (t+1)>>1;
+  if(t > lowprimes.length) t = lowprimes.length;
+  var a = nbi();
+  for(var i = 0; i < t; ++i) {
+    //Pick bases at random, instead of starting at 2
+    a.fromInt(lowprimes[Math.floor(Math.random()*lowprimes.length)]);
+    var y = a.modPow(r,this);
+    if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
+      var j = 1;
+      while(j++ < k && y.compareTo(n1) != 0) {
+        y = y.modPowInt(2,this);
+        if(y.compareTo(BigInteger.ONE) == 0) return false;
+      }
+      if(y.compareTo(n1) != 0) return false;
+    }
+  }
+  return true;
+}
+
+// protected
+BigInteger.prototype.chunkSize = bnpChunkSize;
+BigInteger.prototype.toRadix = bnpToRadix;
+BigInteger.prototype.fromRadix = bnpFromRadix;
+BigInteger.prototype.fromNumber = bnpFromNumber;
+BigInteger.prototype.bitwiseTo = bnpBitwiseTo;
+BigInteger.prototype.changeBit = bnpChangeBit;
+BigInteger.prototype.addTo = bnpAddTo;
+BigInteger.prototype.dMultiply = bnpDMultiply;
+BigInteger.prototype.dAddOffset = bnpDAddOffset;
+BigInteger.prototype.multiplyLowerTo = bnpMultiplyLowerTo;
+BigInteger.prototype.multiplyUpperTo = bnpMultiplyUpperTo;
+BigInteger.prototype.modInt = bnpModInt;
+BigInteger.prototype.millerRabin = bnpMillerRabin;
+
+// public
+BigInteger.prototype.clone = bnClone;
+BigInteger.prototype.intValue = bnIntValue;
+BigInteger.prototype.byteValue = bnByteValue;
+BigInteger.prototype.shortValue = bnShortValue;
+BigInteger.prototype.signum = bnSigNum;
+BigInteger.prototype.toByteArray = bnToByteArray;
+BigInteger.prototype.equals = bnEquals;
+BigInteger.prototype.min = bnMin;
+BigInteger.prototype.max = bnMax;
+BigInteger.prototype.and = bnAnd;
+BigInteger.prototype.or = bnOr;
+BigInteger.prototype.xor = bnXor;
+BigInteger.prototype.andNot = bnAndNot;
+BigInteger.prototype.not = bnNot;
+BigInteger.prototype.shiftLeft = bnShiftLeft;
+BigInteger.prototype.shiftRight = bnShiftRight;
+BigInteger.prototype.getLowestSetBit = bnGetLowestSetBit;
+BigInteger.prototype.bitCount = bnBitCount;
+BigInteger.prototype.testBit = bnTestBit;
+BigInteger.prototype.setBit = bnSetBit;
+BigInteger.prototype.clearBit = bnClearBit;
+BigInteger.prototype.flipBit = bnFlipBit;
+BigInteger.prototype.add = bnAdd;
+BigInteger.prototype.subtract = bnSubtract;
+BigInteger.prototype.multiply = bnMultiply;
+BigInteger.prototype.divide = bnDivide;
+BigInteger.prototype.remainder = bnRemainder;
+BigInteger.prototype.divideAndRemainder = bnDivideAndRemainder;
+BigInteger.prototype.modPow = bnModPow;
+BigInteger.prototype.modInverse = bnModInverse;
+BigInteger.prototype.pow = bnPow;
+BigInteger.prototype.gcd = bnGCD;
+BigInteger.prototype.isProbablePrime = bnIsProbablePrime;
+BigInteger.prototype.toMPI = bnToMPI;
+
+// JSBN-specific extension
+BigInteger.prototype.square = bnSquare;
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+// RSA implementation
+
+function SecureRandom(){
+    function nextBytes(byteArray){
+        for(var n = 0; n < byteArray.length;n++){
+            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+        }
+    }
+    this.nextBytes = nextBytes;
+}
+
+function RSA() {
 	/**
-	 * verifys the signature packet. Note: not signature types are implemented
-	 * @param data [String] data which on the signature applies
-	 * @param key [openpgp_msg_privatekey] the public key to verify the signature
+	 * This function uses jsbn Big Num library to decrypt RSA
+	 * @param m
+	 *            message
+	 * @param d
+	 *            RSA d as BigInteger
+	 * @param p
+	 *            RSA p as BigInteger
+	 * @param q
+	 *            RSA q as BigInteger
+	 * @param u
+	 *            RSA u as BigInteger
 	 * @return
 	 */
-	function verify(data, key) {
-		switch(this.signatureType) {
-		// calculating the trailer
-		case 0: // 0x00: Signature of a binary document.
-			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length & 0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data.substring(i)+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
-			}
+	function decrypt(m, d, p, q, u) {
+		var xp = m.mod(p).modPow(d.mod(p.subtract(BigInteger.ONE)), p);
+		var xq = m.mod(q).modPow(d.mod(q.subtract(BigInteger.ONE)), q);
+		util.print_debug("rsa.js decrypt\nxpn:"+util.hexstrdump(xp.toMPI())+"\nxqn:"+util.hexstrdump(xq.toMPI()));
 
-		case 1: // 0x01: Signature of a canonical text document.
-			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length &0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
-			}
-				
-		case 2: // 0x02: Standalone signature.
-			// This signature is a signature of only its own subpacket contents.
-			// It is calculated identically to a signature over a zero-length
-			// binary document.  Note that it doesn't make sense to have a V3
-			// standalone signature.
-			if (this.version == 3)
-				return false; 
-			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
-		case 16:			
-			// 0x10: Generic certification of a User ID and Public-Key packet.
-			// The issuer of this certification does not make any particular
-			// assertion as to how well the certifier has checked that the owner
-			// of the key is in fact the person described by the User ID.
-		case 17:
-			// 0x11: Persona certification of a User ID and Public-Key packet.
-			// The issuer of this certification has not done any verification of
-			// the claim that the owner of this key is the User ID specified.
-		case 18:
-			// 0x12: Casual certification of a User ID and Public-Key packet.
-			// The issuer of this certification has done some casual
-			// verification of the claim of identity.
-		case 19:
-			// 0x13: Positive certification of a User ID and Public-Key packet.
-			// The issuer of this certification has done substantial
-			// verification of the claim of identity.
-			// 
-			// Most OpenPGP implementations make their "key signatures" as 0x10
-			// certifications.  Some implementations can issue 0x11-0x13
-			// certifications, but few differentiate between the types.
-		case 48:
-			// 0x30: Certification revocation signature
-			// This signature revokes an earlier User ID certification signature
-			// (signature class 0x10 through 0x13) or direct-key signature
-			// (0x1F).  It should be issued by the same key that issued the
-			// revoked signature or an authorized revocation key.  The signature
-			// is computed over the same data as the certificate that it
-			// revokes, and should have a later creation date than that
-			// certificate.
-
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.MPIs, data+this.signatureData+trailer);
-						
-		case 24:
-			// 0x18: Subkey Binding Signature
-			// This signature is a statement by the top-level signing key that
-			// indicates that it owns the subkey.  This signature is calculated
-			// directly on the primary key and subkey, and not on any User ID or
-			// other packets.  A signature that binds a signing subkey MUST have
-			// an Embedded Signature subpacket in this binding signature that
-			// contains a 0x19 signature made by the signing subkey on the
-			// primary key and subkey.
-			if (this.version == 3)
-				return false; 
-			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.MPIs, data+this.signatureData+trailer);
-		case 25:
-			// 0x19: Primary Key Binding Signature
-			// This signature is a statement by a signing subkey, indicating
-			// that it is owned by the primary key and subkey.  This signature
-			// is calculated the same way as a 0x18 signature: directly on the
-			// primary key and subkey, and not on any User ID or other packets.
-			
-			// When a signature is made over a key, the hash data starts with the
-			// octet 0x99, followed by a two-octet length of the key, and then body
-			// of the key packet.  (Note that this is an old-style packet header for
-			// a key packet with two-octet length.)  A subkey binding signature
-			// (type 0x18) or primary key binding signature (type 0x19) then hashes
-			// the subkey using the same format as the main key (also using 0x99 as
-			// the first octet).
-		case 31:
-			// 0x1F: Signature directly on a key
-			// This signature is calculated directly on a key.  It binds the
-			// information in the Signature subpackets to the key, and is
-			// appropriate to be used for subpackets that provide information
-			// about the key, such as the Revocation Key subpacket.  It is also
-			// appropriate for statements that non-self certifiers want to make
-			// about the key itself, rather than the binding between a key and a
-			// name.
-		case 32:
-			// 0x20: Key revocation signature
-			// The signature is calculated directly on the key being revoked.  A
-			// revoked key is not to be used.  Only revocation signatures by the
-			// key being revoked, or by an authorized revocation key, should be
-			// considered valid revocation signatures.
-		case 40:
-			// 0x28: Subkey revocation signature
-			// The signature is calculated directly on the subkey being revoked.
-			// A revoked subkey is not to be used.  Only revocation signatures
-			// by the top-level signature key that is bound to this subkey, or
-			// by an authorized revocation key, should be considered valid
-			// revocation signatures.
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.MPIs, data+this.signatureData+trailer);
-			
-			
-			// Key revocation signatures (types 0x20 and 0x28)
-			// hash only the key being revoked.
-		case 64:
-			// 0x40: Timestamp signature.
-			// This signature is only meaningful for the timestamp contained in
-			// it.
-		case 80:
-			//    0x50: Third-Party Confirmation signature.
-			// This signature is a signature over some other OpenPGP Signature
-			// packet(s).  It is analogous to a notary seal on the signed data.
-			// A third-party signature SHOULD include Signature Target
-			// subpacket(s) to give easy identification.  Note that we really do
-			// mean SHOULD.  There are plausible uses for this (such as a blind
-			// party that only sees the signature, not the key or source
-			// document) that cannot include a target subpacket.
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
-			break;
-		}
-	}
-	/**
-	 * generates debug output (pretty print)
-	 * @return String which gives some information about the signature packet
-	 */
-
-	function toString () {
-		if (this.version == 3) {
-			var result = '5.2. Signature Packet (Tag 2)\n'+
-	          "Packet Length:                     :"+this.packetLength+'\n'+
-	          "Packet version:                    :"+this.version+'\n'+
-	          "One-octet signature type           :"+this.signatureType+'\n'+
-	          "Four-octet creation time.          :"+this.creationTime+'\n'+
-	         "Eight-octet Key ID of signer.       :"+util.hexidump(this.keyId)+'\n'+
-	          "One-octet public-key algorithm.    :"+this.publicKeyAlgorithm+'\n'+
-	          "One-octet hash algorithm.          :"+this.hashAlgorithm+'\n'+
-	          "Two-octet field holding left\n" +
-	          " 16 bits of signed hash value.     :"+this.signedHashValue+'\n';
+		var t = xq.subtract(xp);
+		if (t[0] == 0) {
+			t = xp.subtract(xq);
+			t = t.multiply(u).mod(q);
+			t = q.subtract(t);
 		} else {
-          var result = '5.2. Signature Packet (Tag 2)\n'+
-          "Packet Length:                     :"+this.packetLength+'\n'+
-          "Packet version:                    :"+this.version+'\n'+
-          "One-octet signature type           :"+this.signatureType+'\n'+
-          "One-octet public-key algorithm.    :"+this.publicKeyAlgorithm+'\n'+
-          "One-octet hash algorithm.          :"+this.hashAlgorithm+'\n'+
-          "Two-octet field holding left\n" +
-          " 16 bits of signed hash value.     :"+this.signedHashValue+'\n'+
-          "Signature Creation Time            :"+this.creationTime+'\n'+
-          "Signature Expiration Time          :"+this.signatureExpirationTime+'\n'+
-          "Signature Never Expires            :"+this.signatureNeverExpires+'\n'+
-          "Exportable Certification           :"+this.exportable+'\n'+
-          "Trust Signature level:             :"+this.trustLevel+' amount'+this.trustAmount+'\n'+
-          "Regular Expression                 :"+this.regular_expression+'\n'+
-          "Revocable                          :"+this.revocable+'\n'+
-          "Key Expiration Time                :"+this.keyExpirationTime+" "+this.keyNeverExpires+'\n'+
-          "Preferred Symmetric Algorithms     :"+this.preferredSymmetricAlgorithms+'\n'+
-          "Revocation Key"+'\n'+
-          "   ( 1 octet of class,             :"+this.revocationKeyClass +'\n'+
-          "     1 octet of public-key ID,     :" +this.revocationKeyAlgorithm+'\n'+
-          "    20 octets of fingerprint)      :"+this.revocationKeyFingerprint+'\n'+
-          "Issuer                             :"+util.hexstrdump(this.issuerKeyId)+'\n'+
-          "Preferred Hash Algorithms          :"+this.preferredHashAlgorithms+'\n'+
-          "Preferred Compression Alg.         :"+this.preferredCompressionAlgorithms+'\n'+
-          "Key Server Preferences             :"+this.keyServerPreferences+'\n'+
-          "Preferred Key Server               :"+this.preferredKeyServer+'\n'+
-          "Primary User ID                    :"+this.isPrimaryUserID+'\n'+
-          "Policy URI                         :"+this.policyURI+'\n'+
-          "Key Flags                          :"+this.keyFlags+'\n'+
-          "Signer's User ID                   :"+this.signersUserId+'\n'+
-          "Notation                           :"+this.notationName+" = "+this.notationValue+"\n"+
-          "Reason for Revocation\n"+
-          "      Flag                         :"+this.reasonForRevocationFlag+'\n'+
-          "      Reason                       :"+this.reasonForRevocationString+'\nMPI:\n';
+			t = t.multiply(u).mod(q);
 		}
-          for (var i = 0; i < this.MPIs.length; i++) {
-        	  result += this.MPIs[i].toString();
-          }
-          return result;
-     }
-
-	/**
-	 * gets the issuer key id of this signature
-	 * @return [String] issuer key id as string (8bytes)
-	 */
-	function getIssuer() {
-		 if (this.version == 4)
-			 return this.issuerKeyId;
-		 if (this.verions == 4)
-			 return this.keyId;
-		 return null;
-	}
-
-	/**
-	 * Tries to get the corresponding public key out of the public keyring for the issuer created this signature
-	 * @return {obj: [openpgp_msg_publickey], text: [String]} if found the public key will be returned. null otherwise
-	 */
-	function getIssuerKey() {
-		 var result = null;
-		 if (this.version == 4) {
-			 result = openpgp.keyring.getPublicKeysForKeyId(this.issuerKeyId);
-		 } else if (this.version == 3) {
-			 result = openpgp.keyring.getPublicKeysForKeyId(this.keyId);
-		 } else return null;
-		 if (result.length == 0)
-			 return null;
-		 return result[0];
-	}
-	this.getIssuerKey = getIssuerKey;
-	this.getIssuer = getIssuer;	 
-	this.write_message_signature = write_message_signature;
-	this.verify = verify;
-    this.read_packet = read_packet;
-    this.toString = toString;
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
- * 
- * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
- * a variant of the Symmetrically Encrypted Data packet. It is a new feature
- * created for OpenPGP that addresses the problem of detecting a modification to
- * encrypted data. It is used in combination with a Modification Detection Code
- * packet.
- */
-
-function openpgp_packet_encryptedintegrityprotecteddata() {
-	this.tagType = 18;
-	this.version = null; // integer == 1
-	this.packetLength = null; // integer
-	this.encryptedData = null; // string
-	this.decrytpedData = null; // string
-	this.hash = null; // string
-	/**
-	 * parsing function for the packet.
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 18 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encryptedintegrityprotecteddata] object
-	 *         representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-		// - A one-octet version number. The only currently defined value is
-		// 1.
-		this.version = input[position].charCodeAt();
-		if (this.version != 1) {
-			util
-					.print_error('openpgp.packet.encryptedintegrityprotecteddata.js\nunknown encrypted integrity protected data packet version: '
-							+ this.version
-							+ " , @ "
-							+ position
-							+ "hex:"
-							+ util.hexstrdump(input));
-			return null;
-		}
-		// - Encrypted data, the output of the selected symmetric-key cipher
-		//   operating in Cipher Feedback mode with shift amount equal to the
-		//   block size of the cipher (CFB-n where n is the block size).
-		this.encryptedData = input.substring(position + 1, position + 1 + len);
-		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"
-				+ this.toString());
-		return this;
-	}
-
-	/**
-	 * Creates a string representation of a Sym. Encrypted Integrity Protected
-	 * Data Packet (tag 18) (see RFC4880 5.13)
-	 * 
-	 * @param symmetric_algorithm
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
-	 * @param data
-	 *            plaintext data to be encrypted within the packet
-	 * @return a string representation of the packet
-	 */
-	function write_packet(symmetric_algorithm, key, data) {
-
-		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
-		var prefix = prefixrandom
-				+ prefixrandom.charAt(prefixrandom.length - 2)
-				+ prefixrandom.charAt(prefixrandom.length - 1);
-		var tohash = data;
-		tohash += String.fromCharCode(0xD3);
-		tohash += String.fromCharCode(0x14);
-		util.print_debug_hexstr_dump("data to be hashed:"
-				, prefix + tohash);
-		tohash += str_sha1(prefix + tohash);
-		util.print_debug_hexstr_dump("hash:"
-				, tohash.substring(tohash.length - 20,
-						tohash.length));
-		var result = openpgp_crypto_symmetricEncrypt(prefixrandom,
-				symmetric_algorithm, key, tohash, false).substring(0,
-				prefix.length + tohash.length);
-		var header = openpgp_packet.write_packet_header(18, result.length + 1)
-				+ String.fromCharCode(1);
-		this.encryptedData = result;
-		return header + result;
-	}
-
-	/**
-	 * Decrypts the encrypted data contained in this object read_packet must
-	 * have been called before
-	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
-	 * @return the decrypted data of this packet
-	 */
-	function decrypt(symmetric_algorithm_type, key) {
-		this.decryptedData = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encryptedData, false);
-		// there must be a modification detection code packet as the
-		// last packet and everything gets hashed except the hash itself
-		this.hash = str_sha1(openpgp_crypto_MDCSystemBytes(
-				symmetric_algorithm_type, key, this.encryptedData)
-				+ this.decryptedData.substring(0,
-						this.decryptedData.length - 20));
-		util.print_debug_hexstr_dump("calc hash = ", this.hash);
-		if (this.hash == this.decryptedData.substring(
-				this.decryptedData.length - 20, this.decryptedData.length))
-			return this.decryptedData;
-		else
-			util
-					.print_error("Decryption stopped: discovered a modification of encrypted data.");
-		return null;
-	}
-
-	function toString() {
-	    var data = '';
-	    if(openpgp.config.debug)
-	        data = '    data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']';
-	    
-		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
-				+ '    length:  '
-				+ this.packetLength
-				+ '\n'
-				+ '    version: '
-				+ this.version
-				+ '\n'
-				+ data;
-	}
-
-	this.write_packet = write_packet;
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.decrypt = decrypt;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Modification Detection Code Packet (Tag 19)
- * 
- * RFC4880 5.14: The Modification Detection Code packet contains a SHA-1 hash of
- * plaintext data, which is used to detect message modification. It is only used
- * with a Symmetrically Encrypted Integrity Protected Data packet. The
- * Modification Detection Code packet MUST be the last packet in the plaintext
- * data that is encrypted in the Symmetrically Encrypted Integrity Protected
- * Data packet, and MUST appear in no other place.
- */
-
-function openpgp_packet_modificationdetectioncode() {
-	this.tagType = 19;
-	this.hash = null;
-	/**
-	 * parsing function for a modification detection code packet (tag 19).
-	 * 
-	 * @param input
-	 *            [String] payload of a tag 19 packet
-	 * @param position
-	 *            [Integer] position to start reading from the input string
-	 * @param len
-	 *            [Integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-
-		if (len != 20) {
-			util
-					.print_error("openpgp.packet.modificationdetectioncode.js\n"
-							+ 'invalid length for a modification detection code packet!'
-							+ len);
-			return null;
-		}
-		// - A 20-octet SHA-1 hash of the preceding plaintext data of the
-		// Symmetrically Encrypted Integrity Protected Data packet,
-		// including prefix data, the tag octet, and length octet of the
-		// Modification Detection Code packet.
-		this.hash = input.substring(position, position + 20);
-		return this;
-	}
-
-	/*
-	 * this packet is created within the encryptedintegrityprotected packet
-	 * function write_packet(data) { }
-	 */
-
-	/**
-	 * generates debug output (pretty print)
-	 * 
-	 * @return String which gives some information about the modification
-	 *         detection code
-	 */
-	function toString() {
-		return '5.14 Modification detection code packet\n' + '    bytes ('
-				+ this.hash.length + '): [' + util.hexstrdump(this.hash) + ']';
-	}
-	this.read_packet = read_packet;
-	this.toString = toString;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * A User ID packet consists of UTF-8 text that is intended to represent
- * the name and email address of the key holder.  By convention, it
- * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
- * restrictions on its content.  The packet length in the header
- * specifies the length of the User ID. 
- */
-
-function openpgp_packet_userid() {
-	this.tagType = 13;
-	this.certificationSignatures = new Array();
-	this.certificationRevocationSignatures = new Array();
-	this.revocationSignatures = new Array();
-	this.parentNode = null;
-
-	/**
-	 * parsing function for a user id packet (tag 13).
-	 * @param input [string] payload of a tag 13 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.text = '';
-		this.packetLength = len;
-
-		for ( var i = 0; i < len; i++) {
-			this.text += input[position + i];
-		}
-		return this;
-	}
-
-	/**
-	 * creates a string representation of the user id packet
-	 * @param user_id [String] the user id as string ("John Doe <john.doe@mail.us")
-	 * @return [String] string representation
-	 */
-	function write_packet(user_id) {
-		this.text = user_id;
-		var result = openpgp_packet.write_packet_header(13,this.text.length);
-		result += this.text;
-		return result;
-	}
-
-	/**
-	 * Continue parsing packets belonging to the userid packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		if (parent_node.tagType == 6) { // public key
-			this.parentNode = parent_node;
-			var pos = position;
-			var l = len;
-			while (input.length != pos) {
-				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
-				if (result == null) {
-					util.print_error('[user_id] parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					
-					pos += result.packetLength + result.headerLength;
-					l = input.length - pos;
-					switch (result.tagType) {
-					case 2: // Signature Packet
-						if (result.signatureType > 15
-								&& result.signatureType < 20) { // certification
-							// //
-							// signature
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-							break;
-						} else if (result.signatureType == 48) {// certification revocation signature
-							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-							break;
-						} else if (result.signatureType == 24) { // omg. standalone signature 
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-							break;
-						} else {
-							util.debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
-						}
-					default:
-						this.data = input;
-						this.position = position - parent_node.packetLength;
-						this.len = pos - position -(result.headerLength + result.packetLength);
-						return this.len;
-					}
-				}
-			}
-			this.data = input;
-			this.position = position - parent_node.packetLength;
-			this.len = pos - position -(result.headerLength + result.packetLength);
-			return this.len;
-		} else if (parent_node.tagType == 5) { // secret Key
-			this.parentNode = parent_node;
-			var exit = false;
-			var pos = position;
-			while (input.length != pos) {
-				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
-				if (result == null) {
-					util.print_error('parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					pos += result.packetLength + result.headerLength;
-					l = input.length - pos;
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType > 15
-								&& result.signatureType < 20)
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-						// certification revocation signature
-						else if (result.signatureType == 48)
-							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-					default:
-						this.data = input;
-						this.position = position - parent_node.packetLength;
-						this.len = pos - position -(result.headerLength + result.packetLength);
-						return this.len;
-					}
-				}
-			}
-		} else {
-			util.print_error("unknown parent node for a userId packet "+parent_node.tagType);
-		}
+		return t.multiply(p).add(xp);
 	}
 	
 	/**
-	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user id packet
+	 * encrypt message
+	 * @param m message as BigInteger
+	 * @param e public MPI part as BigInteger
+	 * @param n public MPI part as BigInteger
+	 * @return BigInteger
 	 */
-	function toString() {
-		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
-				+ this.text.length + '): "' + this.text.replace("<", "&lt;")
-				+ '"\n';
-		result +="certification signatures:\n";
-		for (var i = 0; i < this.certificationSignatures.length; i++) {
-			result += "        "+this.certificationSignatures[i].toString();
-		}
-		result +="certification revocation signatures:\n";
-		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
-			result += "        "+this.certificationRevocationSignatures[i].toString();
-		}
-		return result;
+	function encrypt(m,e,n) {
+		return m.modPowInt(e, n);
 	}
-
-	/**
-	 * lookup function to find certification revocation signatures
-	 * @param keyId string containing the key id of the issuer of this signature
-	 * @return a CertificationRevocationSignature if found; otherwise null
-	 */
-	function hasCertificationRevocationSignature(keyId) {
-		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
-			if ((this.certificationRevocationSignatures[i].version == 3 &&
-				 this.certificationRevocationSignatures[i].keyId == keyId) ||
-				(this.certificationRevocationSignatures[i].version == 4 &&
-				 this.certificationRevocationSignatures[i].issuerKeyId == keyId))
-				return this.certificationRevocationSignatures[i];
-		}
-		return null;
+	
+	/* Sign and Verify */
+	function sign(m,d,n) {
+		return m.modPow(d, n);
 	}
-
-	/**
-	 * Verifies all certification signatures. This method does not consider possible revocation signatures.
-	 * @param publicKeyPacket the top level key material
-	 * @return an array of integers corresponding to the array of certification signatures. The meaning of each integer is the following:
-	 * 0 = bad signature
-	 * 1 = signature expired
-	 * 2 = issuer key not available
-	 * 3 = revoked
-	 * 4 = signature valid
-	 * 5 = signature by key owner expired
-	 * 6 = signature by key owner revoked
-	 */
-	function verifyCertificationSignatures(publicKeyPacket) {
-		result = new Array();
-		for (var i = 0 ; i < this.certificationSignatures.length; i++) {
-			// A certification signature (type 0x10 through 0x13) hashes the User
-			// ID being bound to the key into the hash context after the above
-			// data.  A V3 certification hashes the contents of the User ID or
-			// attribute packet packet, without any header.  A V4 certification
-			// hashes the constant 0xB4 for User ID certifications or the constant
-			// 0xD1 for User Attribute certifications, followed by a four-octet
-			// number giving the length of the User ID or User Attribute data, and
-			// then the User ID or User Attribute data.
-
-			if (this.certificationSignatures[i].version == 4) {
-				if (this.certificationSignatures[i].signatureExpirationTime != null &&
-						this.certificationSignatures[i].signatureExpirationTime != null &&
-						this.certificationSignatures[i].signatureExpirationTime != 0 &&
-						!this.certificationSignatures[i].signatureNeverExpires &&
-						new Date(this.certificationSignatures[i].creationTime.getTime() +(this.certificationSignatures[i].signatureExpirationTime*1000)) < new Date()) {
-					if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
-						result[i] = 5;
-					else
-						result[i] = 1;
-					continue;
-				}
-				if (this.certificationSignatures[i].issuerKeyId == null) {
-					result[i] = 0;
-					continue;
-				}
-				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].issuerKeyId);
-				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
-					result[i] = 2;
-					continue;
-				}
-				// TODO: try to verify all returned issuer public keys (key ids are not unique!)
-				var issuerPublicKey = issuerPublicKey[0];
-				var signingKey = issuerPublicKey.obj.getSigningKey();
-				if (signingKey == null) {
-					result[i] = 0;
-					continue;
-				}
-				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].issuerKeyId);
-				if (revocation != null && revocation.creationTime > 
-					this.certificationSignatures[i].creationTime) {
-					var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data+String.fromCharCode(0xB4)+
-					String.fromCharCode((this.text.length >> 24) & 0xFF)+
-					String.fromCharCode((this.text.length >> 16) & 0xFF)+
-					String.fromCharCode((this.text.length >>  8) & 0xFF)+
-					String.fromCharCode((this.text.length) & 0xFF)+
-					this.text;
-					if (revocation.verify(signaturedata, signingKey)) {
-						if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
-							result[i] = 6;
-						else
-							result[i] = 3;
-						continue;
-					}
-				}
-				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-						publicKeyPacket.data+String.fromCharCode(0xB4)+
-						String.fromCharCode((this.text.length >> 24) & 0xFF)+
-						String.fromCharCode((this.text.length >> 16) & 0xFF)+
-						String.fromCharCode((this.text.length >>  8) & 0xFF)+
-						String.fromCharCode((this.text.length) & 0xFF)+
-						this.text;
-				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
-					result[i] = 4;
-				} else
-				result[i] = 0;
-			} else if (this.certificationSignatures[i].version == 3) {
-				if (this.certificationSignatures[i].keyId == null) {
-					result[i] = 0;
-					continue;
-				}
-				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].keyId);
-				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
-					result[i] = 2;
-					continue;
-				}
-				issuerPublicKey = issuerPublicKey[0];
-				var signingKey = publicKey.obj.getSigningKey();
-				if (signingKey == null) {
-					result[i] = 0;
-					continue;
-				}
-				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].keyId);
-				if (revocation != null && revocation.creationTime > 
-					this.certificationSignatures[i].creationTime) {
-					var signaturedata = String.fromCharCode(0x99)+ this.publicKeyPacket.header.substring(1)+
-					this.publicKeyPacket.data+this.text;
-					if (revocation.verify(signaturedata, signingKey)) {
-						if (revocation.keyId == publicKeyPacket.getKeyId())
-							result[i] = 6;
-						else
-							result[i] = 3;
-						continue;
-					}
-				}
-				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data+this.text;
-				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
-					result[i] = 4;
-				} else 
-				result[i] = 0;
-			} else {
-				result[i] = 0;
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * verifies the signatures of the user id
-	 * @return 0 if the userid is valid; 1 = userid expired; 2 = userid revoked
-	 */
-	function verify(publicKeyPacket) {
-		var result = this.verifyCertificationSignatures(publicKeyPacket);
-		if (result.indexOf(6) != -1)
-			return 2;
-		if (result.indexOf(5) != -1)
-			return 1;
-		return 0;
-	}
-
-	// TODO: implementation missing
-	function addCertification(publicKeyPacket, privateKeyPacket) {
 		
-	}
-
-	// TODO: implementation missing
-	function revokeCertification(publicKeyPacket, privateKeyPacket) {
-		
-	}
-
-	this.hasCertificationRevocationSignature = hasCertificationRevocationSignature;
-	this.verifyCertificationSignatures = verifyCertificationSignatures;
-	this.verify = verify;
-	this.read_packet = read_packet;
-	this.write_packet = write_packet;
-	this.toString = toString;
-	this.read_nodes = read_nodes;
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Public-Key Encrypted Session Key Packets (Tag 1)
- * 
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
- * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
- * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
- * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
- * message is encrypted with the session key, and the session key is itself
- * encrypted and stored in the Encrypted Session Key packet(s). The
- * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
- * Session Key packet for each OpenPGP key to which the message is encrypted.
- * The recipient of the message finds a session key that is encrypted to their
- * public key, decrypts the session key, and then uses the session key to
- * decrypt the message.
- */
-function openpgp_packet_encryptedsessionkey() {
-
-	/**
-	 * parsing function for a publickey encrypted session key packet (tag 1).
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_pub_key_packet(input, position, len) {
-		this.tagType = 1;
-		this.packetLength = len;
-		var mypos = position;
-		if (len < 10) {
-			util
-					.print_error("openpgp.packet.encryptedsessionkey.js\n" + 'invalid length');
-			return null;
-		}
-
-		this.version = input[mypos++].charCodeAt();
-		this.keyId = new openpgp_type_keyid();
-		this.keyId.read_packet(input, mypos);
-		mypos += 8;
-		this.publicKeyAlgorithmUsed = input[mypos++].charCodeAt();
-
-		switch (this.publicKeyAlgorithmUsed) {
-		case 1:
-		case 2: // RSA
-			this.MPIs = new Array();
-			this.MPIs[0] = new openpgp_type_mpi();
-			this.MPIs[0].read(input, mypos, mypos - position);
-			break;
-		case 16: // Elgamal
-			this.MPIs = new Array();
-			this.MPIs[0] = new openpgp_type_mpi();
-			this.MPIs[0].read(input, mypos, mypos - position);
-			mypos += this.MPIs[0].packetLength;
-			this.MPIs[1] = new openpgp_type_mpi();
-			this.MPIs[1].read(input, mypos, mypos - position);
-			break;
-		default:
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n"
-					+ "unknown public key packet algorithm type "
-					+ this.publicKeyAlgorithmType);
-			break;
-		}
-		return this;
-	}
-
-	/**
-	 * create a string representation of a tag 1 packet
-	 * 
-	 * @param publicKeyId
-	 *            [String] the public key id corresponding to publicMPIs key as
-	 *            string
-	 * @param publicMPIs
-	 *            [Array[openpgp_type_mpi]] multiprecision integer objects
-	 *            describing the public key
-	 * @param pubalgo
-	 *            [integer] the corresponding public key algorithm // See
-	 *            RFC4880 9.1
-	 * @param symmalgo
-	 *            [integer] the symmetric cipher algorithm used to encrypt the
-	 *            data within an encrypteddatapacket or
-	 *            encryptedintegrityprotecteddatapacket following this packet //
-	 *            See RFC4880 9.2
-	 * @param sessionkey
-	 *            [String] a string of randombytes representing the session key
-	 * @return [String] the string representation
-	 */
-	function write_pub_key_packet(publicKeyId, publicMPIs, pubalgo, symmalgo,
-			sessionkey) {
-		var result = String.fromCharCode(3);
-		var data = String.fromCharCode(symmalgo);
-		data += sessionkey;
-		var checksum = util.calc_checksum(sessionkey);
-		data += String.fromCharCode((checksum >> 8) & 0xFF);
-		data += String.fromCharCode((checksum) & 0xFF);
-		result += publicKeyId;
-		result += String.fromCharCode(pubalgo);
-		var mpi = new openpgp_type_mpi();
-		var mpiresult = openpgp_crypto_asymetricEncrypt(pubalgo, publicMPIs,
-				mpi.create(openpgp_encoding_eme_pkcs1_encode(data,
-						publicMPIs[0].mpiByteLength)));
-		for ( var i = 0; i < mpiresult.length; i++) {
-			result += mpiresult[i];
-		}
-		result = openpgp_packet.write_packet_header(1, result.length) + result;
-		return result;
-	}
-
-	/**
-	 * parsing function for a symmetric encrypted session key packet (tag 3).
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_symmetric_key_packet(input, position, len) {
-		this.tagType = 3;
-		var mypos = position;
-		// A one-octet version number. The only currently defined version is 4.
-		this.version = input[mypos++];
-
-		// A one-octet number describing the symmetric algorithm used.
-		this.symmetricKeyAlgorithmUsed = input[mypos++];
-		// A string-to-key (S2K) specifier, length as defined above.
-		this.s2k = new openpgp_type_s2k();
-		this.s2k.read(input, mypos);
-
-		// Optionally, the encrypted session key itself, which is decrypted
-		// with the string-to-key object.
-		if ((s2k.s2kLength + mypos) < len) {
-			this.encryptedSessionKey = new Array();
-			for ( var i = (mypos - position); i < len; i++) {
-				this.encryptedSessionKey[i] = input[mypos++];
-			}
-		}
-		return this;
-	}
-	/**
-	 * Decrypts the session key (only for public key encrypted session key
-	 * packets (tag 1)
-	 * 
-	 * @param msg
-	 *            [openpgp_msg_message] the message object (with member
-	 *            encryptedData
-	 * @param key
-	 *            [openpgp_msg_privatekey] private key with secMPIs unlocked
-	 * @return [String] the unencrypted session key
-	 */
-	function decrypt(msg, key) {
-		if (this.tagType == 1) {
-			var result = openpgp_crypto_asymetricDecrypt(
-					this.publicKeyAlgorithmUsed, key.publicKey.MPIs,
-					key.secMPIs, this.MPIs).toMPI();
-			var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
-					.charCodeAt(result.length - 1));
-			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2), key.publicKey.MPIs[0].getByteLength());
-			var sesskey = decoded.substring(1);
-			var algo = decoded.charCodeAt(0);
-			if (msg.encryptedData.tagType == 18)
-				return msg.encryptedData.decrypt(algo, sesskey);
-			else
-				return msg.encryptedData.decrypt_sym(algo, sesskey);
-		} else if (this.tagType == 3) {
-			util
-					.print_error("Symmetric encrypted sessionkey is not supported!");
-			return null;
-		}
-	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return the string containing a openpgp description
-	 */
-	function toString() {
-		if (this.tagType == 1) {
-			var result = '5.1.  Public-Key Encrypted Session Key Packets (Tag 1)\n'
-					+ '    KeyId:  '
-					+ this.keyId.toString()
-					+ '\n'
-					+ '    length: '
-					+ this.packetLength
-					+ '\n'
-					+ '    version:'
-					+ this.version
-					+ '\n'
-					+ '    pubAlgUs:'
-					+ this.publicKeyAlgorithmUsed + '\n';
-			for ( var i = 0; i < this.MPIs.length; i++) {
-				result += this.MPIs[i].toString();
-			}
-			return result;
-		} else
-			return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
-					+ '    KeyId:  ' + this.keyId.toString() + '\n'
-					+ '    length: ' + this.packetLength + '\n'
-					+ '    version:' + this.version + '\n' + '    symKeyA:'
-					+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
-					+ this.s2k + '\n';
-	}
-
-	this.read_pub_key_packet = read_pub_key_packet;
-	this.read_symmetric_key_packet = read_symmetric_key_packet;
-	this.write_pub_key_packet = write_pub_key_packet;
-	this.toString = toString;
-	this.decrypt = decrypt;
-};
-
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Literal Data Packet (Tag 11)
- * 
- * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
- * is not to be further interpreted.
- */
-function openpgp_packet_literaldata() {
-	this.tagType = 11;
-
-	/**
-	 * parsing function for a literal data packet (tag 11).
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 11 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-		// - A one-octet field that describes how the data is formatted.
-
-		this.format = input[position];
-		this.filename = input.substr(position + 2, input
-				.charCodeAt(position + 1));
-		this.date = new Date(parseInt(input.substr(position + 2
-				+ input.charCodeAt(position + 1), 4)) * 1000);
-		this.data = input.substring(position + 6
-				+ input.charCodeAt(position + 1));
-		return this;
-	}
-
-	/**
-	 * Creates a string representation of the packet
-	 * 
-	 * @param data
-	 *            [String] the data to be inserted as body
-	 * @return [String] string-representation of the packet
-	 */
-	function write_packet(data) {
-		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
-		this.filename = "msg.txt";
-		this.date = new Date();
-		this.format = 't';
-		var result = openpgp_packet.write_packet_header(11, data.length + 6
-				+ this.filename.length);
-		result += this.format;
-		result += String.fromCharCode(this.filename.length);
-		result += this.filename;
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
-		result += String
-				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
-		result += data;
-		this.data = data;
-		return result;
-	}
-
-	/**
-	 * generates debug output (pretty print)
-	 * 
-	 * @return String which gives some information about the keymaterial
-	 */
-	function toString() {
-		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
-				+ this.packetLength + '\n' + '    format: ' + this.format
-				+ '\n' + '    filename:' + this.filename + '\n'
-				+ '    date:   ' + this.date + '\n' + '    data:  |'
-				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
-	}
-
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.write_packet = write_packet;
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
- * 
- * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
- * with a symmetric-key algorithm. When it has been decrypted, it contains other
- * packets (usually a literal data packet or compressed data packet, but in
- * theory other Symmetrically Encrypted Data packets or sequences of packets
- * that form whole OpenPGP messages).
- */
-
-function openpgp_packet_encrypteddata() {
-	this.tagType = 9;
-	this.packetLength = null;
-	this.encryptedData = null;
-	this.decryptedData = null;
-
-	/**
-	 * parsing function for the packet.
-	 * 
-	 * @param input
-	 *            [string] payload of a tag 9 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
-	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet(input, position, len) {
-		var mypos = position;
-		this.packetLength = len;
-		// - Encrypted data, the output of the selected symmetric-key cipher
-		// operating in OpenPGP's variant of Cipher Feedback (CFB) mode.
-		this.encryptedData = input.substring(position, position + len);
-		return this;
-	}
-
-	/**
-	 * symmetrically decrypt the packet data
-	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
-	 *            algorithm
-	 * @return the decrypted data;
-	 */
-	function decrypt_sym(symmetric_algorithm_type, key) {
-		this.decryptedData = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encryptedData, true);
-		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"+
-				"data: "+util.hexstrdump(this.decryptedData));
-		return this.decryptedData;
-	}
-
-	/**
-	 * Creates a string representation of the packet
-	 * 
-	 * @param algo
-	 *            [Integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
-	 *            algorithm
-	 * @param data
-	 *            [String] data to be
-	 * @return [String] string-representation of the packet
-	 */
-	function write_packet(algo, key, data) {
-		var result = "";
-		result += openpgp_crypto_symmetricEncrypt(
-				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
-		result = openpgp_packet.write_packet_header(9, result.length) + result;
-		return result;
-	}
-
-	function toString() {
-		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
-				+ '    length:  ' + this.packetLength + '\n'
-				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
-				+ '    encrypted data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']\n';
-	}
-	this.decrypt_sym = decrypt_sym;
-	this.toString = toString;
-	this.read_packet = read_packet;
-	this.write_packet = write_packet;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/** 
- *  The User Attribute packet is a variation of the User ID packet.  It
- *  is capable of storing more types of data than the User ID packet,
- *  which is limited to text.  Like the User ID packet, a User Attribute
- *  packet may be certified by the key owner ("self-signed") or any other
- *  key owner who cares to certify it.  Except as noted, a User Attribute
- *  packet may be used anywhere that a User ID packet may be used.
- *
- *  While User Attribute packets are not a required part of the OpenPGP
- *  standard, implementations SHOULD provide at least enough
- *  compatibility to properly handle a certification signature on the
- *  User Attribute packet.  A simple way to do this is by treating the
- *  User Attribute packet as a User ID packet with opaque contents, but
- *  an implementation may use any method desired.
- */
-function openpgp_packet_userattribute() {
-	this.tagType = 17;
-	this.certificationSignatures = new Array();
-	this.certificationRevocationSignatures = new Array();
-	this.revocationSignatures = new Array();
-	this.parentNode = null;
-
-	/**
-	 * parsing function for a user attribute packet (tag 17).
-	 * @param input [string] payload of a tag 17 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
-	 */
-	function read_packet (input, position, len) {
-		var total_len = 0;
-		this.packetLength = len;
-		this.userattributes = new Array();
-		var count = 0;
-		var mypos = position;
-		while (len != total_len) {
-			var current_len = 0;
-			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
-				current_len = 1;
-			// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-					+ (input[mypos++].charCodeAt()) + 192;
-				current_len = 2;
-			// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
-				current_len = 1;
-			// 4.2.2.3. Five-Octet Lengths
-			} else {
-				current_len = 5;
-				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
-			}
-			
-			var subpackettype = input[mypos++].charCodeAt();
-			packet_length--;
-			current_len++;
-			this.userattributes[count] = new Array();
-			this.userattributes[count] = input.substring(mypos, mypos + packet_length);
-			mypos += packet_length;
-			total_len += current_len+packet_length;
-		}
-		this.packetLength = mypos - position;
-		return this;
+	function verify(x,e,n) {
+		return x.modPowInt(e, n);
 	}
 	
-	/**
-	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user attribute packet
-	 */
-	function toString() {
-		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
-		             '    AttributePackets: (count = '+this.userattributes.length+')\n';
-		for (var i = 0; i < this.userattributes.length; i++) {
-			result += '    ('+this.userattributes[i].length+') bytes: ['+util.hexidump(this.userattributes[i])+']\n'; 
-		}
-		return result;
-	}
-	
-	/**
-	 * Continue parsing packets belonging to the user attribute packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		
-		this.parentNode = parent_node;
-		var exit = false;
-		var pos = position;
-		var l = len;
-		while (input.length != pos) {
-			var result = openpgp_packet.read_packet(input, pos, l);
-			if (result == null) {
-				util.print_error("openpgp.packet.userattribute.js\n"+'[user_attr] parsing ends here @:' + pos + " l:" + l);
-				break;
-			} else {
-				switch (result.tagType) {
-				case 2: // Signature Packet
-					if (result.signatureType > 15
-							&& result.signatureType < 20) // certification
-						// //
-						// signature
-						this.certificationSignatures[this.certificationSignatures.length] = result;
-					else if (result.signatureType == 32) // certification revocation signature
-						this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-					pos += result.packetLength + result.headerLength;
-					l = len - (pos - position);
-					break;
-				default:
-					this.data = input;
-					this.position = position - parent_node.packetLength;
-					this.len = pos - position;
-					return this.len;
-					break;
-				}
-			}
-		}
-		this.data = input;
-		this.position = position - parent_node.packetLength;
-		this.len = pos - position;
-		return this.len;
-
-	}
-	
-	this.read_packet = read_packet;
-	this.read_nodes = read_nodes;
-	this.toString = toString;
-	
-};// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-function _openpgp_packet() {
-	/**
-	 * Encodes a given integer of length to the openpgp length specifier to a
-	 * string
-	 * 
-	 * @param length
-	 *            [Integer] of the length to encode
-	 * @return string with openpgp length representation
-	 */
-	function encode_length(length) {
-		result = "";
-		if (length < 192) {
-			result += String.fromCharCode(length);
-		} else if (length > 191 && length < 8384) {
-			/*
-			 * let a = (total data packet length) - 192 let bc = two octet
-			 * representation of a let d = b + 192
-			 */
-			result += String.fromCharCode(((length - 192) >> 8) + 192);
-			result += String.fromCharCode((length - 192) & 0xFF);
-		} else {
-			result += String.fromCharCode(255);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
-		}
-		return result;
-	}
-	this.encode_length = encode_length;
-
-	/**
-	 * Writes a packet header version 4 with the given tag_type and length to a
-	 * string
-	 * 
-	 * @param tag_type
-	 *            integer of tag type
-	 * @param length
-	 *            integer length of the payload
-	 * @return string of the header
-	 */
-	function write_packet_header(tag_type, length) {
-		/* we're only generating v4 packet headers here */
-		var result = "";
-		result += String.fromCharCode(0xC0 | tag_type);
-		result += encode_length(length);
-		return result;
-	}
-
-	/**
-	 * Writes a packet header Version 3 with the given tag_type and length to a
-	 * string
-	 * 
-	 * @param tag_type
-	 *            integer of tag type
-	 * @param length
-	 *            integer length of the payload
-	 * @return string of the header
-	 */
-	function write_old_packet_header(tag_type, length) {
-		var result = "";
-		if (length < 256) {
-			result += String.fromCharCode(0x80 | (tag_type << 2));
-			result += String.fromCharCode(length);
-		} else if (length < 65536) {
-			result += String.fromCharCode(0x80 | (tag_type << 2) | 1);
-			result += String.fromCharCode(length >> 8);
-			result += String.fromCharCode(length & 0xFF);
-		} else {
-			result += String.fromCharCode(0x80 | (tag_type << 2) | 2);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
-		}
-		return result;
-	}
-	this.write_old_packet_header = write_old_packet_header;
-	this.write_packet_header = write_packet_header;
-	/**
-	 * Generic static Packet Parser function
-	 * 
-	 * @param input
-	 *            [String] input stream as string
-	 * @param position
-	 *            [integer] position to start parsing
-	 * @param len
-	 *            [integer] length of the input from position on
-	 * @return [openpgp_packet_*] returns a parsed openpgp_packet
-	 */
-	function read_packet(input, position, len) {
-		// some sanity checks
-		if (input == null || input.length <= position
-				|| input.substring(position).length < 2
-				|| (input[position].charCodeAt() & 0x80) == 0) {
-			util
-					.print_error("Error during parsing. This message / key is propably not containing a valid OpenPGP format.");
-			return null;
-		}
-		var mypos = position;
-		var tag = -1;
-		var format = -1;
-
-		format = 0; // 0 = old format; 1 = new format
-		if ((input[mypos].charCodeAt() & 0x40) != 0) {
-			format = 1;
-		}
-
-		var packet_length_type;
-		if (format) {
-			// new format header
-			tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
-		} else {
-			// old format header
-			tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
-			packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
-		}
-
-		// header octet parsing done
-		mypos++;
-
-		// parsed length from length field
-		var len = 0;
-		var bodydata = null;
-
-		// used for partial body lengths
-		var real_packet_length = -1;
-		if (!format) {
-			// 4.2.1. Old Format Packet Lengths
-			switch (packet_length_type) {
-			case 0: // The packet has a one-octet length. The header is 2 octets
-				// long.
-				packet_length = input[mypos++].charCodeAt();
-				break;
-			case 1: // The packet has a two-octet length. The header is 3 octets
-				// long.
-				packet_length = (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-				break;
-			case 2: // The packet has a four-octet length. The header is 5
-				// octets long.
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-				break;
-			default:
-				// 3 - The packet is of indeterminate length. The header is 1
-				// octet long, and the implementation must determine how long
-				// the packet is. If the packet is in a file, this means that
-				// the packet extends until the end of the file. In general, 
-				// an implementation SHOULD NOT use indeterminate-length 
-				// packets except where the end of the data will be clear 
-				// from the context, and even then it is better to use a 
-				// definite length, or a new format header. The new format 
-				// headers described below have a mechanism for precisely
-				// encoding data of indeterminate length.
-			}
-
-		} else // 4.2.2. New Format Packet Lengths
-		{
-
-			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
-				util.print_debug("1 byte length:" + packet_length);
-				// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192
-					&& input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-						+ (input[mypos++].charCodeAt()) + 192;
-				util.print_debug("2 byte length:" + packet_length);
-				// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223
-					&& input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
-				util.print_debug("4 byte length:" + packet_length);
-				// EEEK, we're reading the full data here...
-				var mypos2 = mypos + packet_length;
-				bodydata = input.substring(mypos, mypos + packet_length);
-				while (true) {
-					if (input[mypos2].charCodeAt() < 192) {
-						var tmplen = input[mypos2++].charCodeAt();
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-						break;
-					} else if (input[mypos2].charCodeAt() >= 192
-							&& input[mypos2].charCodeAt() < 224) {
-						var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8)
-								+ (input[mypos2++].charCodeAt()) + 192;
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-						break;
-					} else if (input[mypos2].charCodeAt() > 223
-							&& input[mypos2].charCodeAt() < 255) {
-						var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-					} else {
-						mypos2++;
-						var tmplen = (input[mypos2++].charCodeAt() << 24)
-								| (input[mypos2++].charCodeAt() << 16)
-								| (input[mypos2++].charCodeAt() << 8)
-								| input[mypos2++].charCodeAt();
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						packet_length += tmplen;
-						mypos2 += tmplen;
-						break;
-					}
-				}
-				real_packet_length = mypos2;
-				// 4.2.2.3. Five-Octet Lengths
-			} else {
-				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-			}
-		}
-
-		// if there was'nt a partial body length: use the specified
-		// packet_length
-		if (real_packet_length == -1) {
-			real_packet_length = packet_length;
-		}
-
-		if (bodydata == null) {
-			bodydata = input.substring(mypos, mypos + real_packet_length);
-		}
-
-		// alert('tag type: '+this.tag+' length: '+packet_length);
-		var version = 1; // (old format; 2= new format)
-		// if (input[mypos++].charCodeAt() > 15)
-		// version = 2;
-
-		switch (tag) {
-		case 0: // Reserved - a packet tag MUST NOT have this value
-			break;
-		case 1: // Public-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_pub_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 2: // Signature Packet
-			var result = new openpgp_packet_signature();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 3: // Symmetric-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_symmetric_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 4: // One-Pass Signature Packet
-			var result = new openpgp_packet_onepasssignature();
-			if (result.read_packet(bodydata, 0, packet_length)) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 5: // Secret-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag5(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 6: // Public-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag6(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 7: // Secret-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			if (result.read_tag7(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 8: // Compressed Data Packet
-			var result = new openpgp_packet_compressed();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 9: // Symmetrically Encrypted Data Packet
-			var result = new openpgp_packet_encrypteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 10: // Marker Packet = PGP (0x50, 0x47, 0x50)
-			var result = new openpgp_packet_marker();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 11: // Literal Data Packet
-			var result = new openpgp_packet_literaldata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.header = input.substring(position, mypos);
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 12: // Trust Packet
-			// TODO: to be implemented
-			break;
-		case 13: // User ID Packet
-			var result = new openpgp_packet_userid();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 14: // Public-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag14(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 17: // User Attribute Packet
-			var result = new openpgp_packet_userattribute();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 18: // Sym. Encrypted and Integrity Protected Data Packet
-			var result = new openpgp_packet_encryptedintegrityprotecteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 19: // Modification Detection Code Packet
-			var result = new openpgp_packet_modificationdetectioncode();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		default:
-			util.print_error("openpgp.packet.js\n"
-					+ "[ERROR] openpgp_packet: failed to parse packet @:"
-					+ mypos + "\nchar:'"
-					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
-					+ util.hexstrdump(input));
-			return null;
-			break;
-		}
-	}
-
-	this.read_packet = read_packet;
-}
-
-var openpgp_packet = new _openpgp_packet();
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Compressed Data Packet (Tag 8)
- * 
- * RFC4880 5.6:
- * The Compressed Data packet contains compressed data.  Typically, this
- * packet is found as the contents of an encrypted packet, or following
- * a Signature or One-Pass Signature packet, and contains a literal data
- * packet.
- */   
-function openpgp_packet_compressed() {
-	this.tagType = 8;
-	
-	/**
-	 * parsing function for the packet.
-	 * @param input [string] payload of a tag 8 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_compressed] object representation
-	 */
-	function read_packet (input, position, len) {
-		this.packetLength = len;
-		var mypos = position;
-		// One octet that gives the algorithm used to compress the packet.
-		this.type = input.charCodeAt(mypos++);
-		// Compressed data, which makes up the remainder of the packet.
-		this.compressedData = input.substring(position+1, position+len);
-		return this;
-	}
-	/**
-	 * decompression method for decompressing the compressed data
-	 * read by read_packet
-	 * @return [String] the decompressed data
-	 */
-	function decompress() {
-		if (this.decompressedData != null)
-			return this.decompressedData;
-
-		if (this.type == null)
-			return null;
-
-		switch (this.type) {
-		case 0: // - Uncompressed
-			this.decompressedData = this.compressedData;
-			break;
-		case 1: // - ZIP [RFC1951]
-			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
-			break;
-		case 2: // - ZLIB [RFC1950]
-			// TODO: need to implement this
-			this.decompressedData = JXG.decompress(s2r(this.compressedData).replace(/\n/g,""));
-			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
-			break;
-		case 3: //  - BZip2 [BZ2]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
-			break;
-		default:
-			util.print_error("Compression algorithm unknown :"+this.type);
-			break;
-		}
-		util.print_debug("decompressed:"+util.hexstrdump(this.decompressedData));
-		return this.decompressedData; 
-	}
-
-	/**
-	 * Compress the packet data (member decompressedData)
-	 * @param type [integer] algorithm to be used // See RFC 4880 9.3
-	 * @param data [String] data to be compressed
-	 * @return [String] The compressed data stored in attribute compressedData
-	 */
-	function compress(type, data) {
-		this.type = type;
-		this.decompressedData = data;
-		switch (this.type) {
-		case 0: // - Uncompressed
-			this.compressedData = this.decompressedData;
-			break;
-		case 1: // - ZIP [RFC1951]
-			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
-			break;
-		case 2: // - ZLIB [RFC1950]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
-			break;
-		case 3: //  - BZip2 [BZ2]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
-			break;
-		default:
-			util.print_error("Compression algorithm unknown :"+this.type);
-			break;
-		}
-		this.packetLength = this.compressedData.length +1;
-		return this.compressedData; 
-	}
-	
-	/**
-	 * creates a string representation of the packet
-	 * @param algorithm [integer] algorithm to be used // See RFC 4880 9.3
-	 * @param data [String] data to be compressed
-	 * @return [String] string-representation of the packet
-	 */
-	function write_packet(algorithm, data) {
-		this.decompressedData = data;
-		if (algorithm == null) {
-			this.type = 1;
-		}
-		var result = String.fromCharCode(this.type)+this.compress(this.type);
-		return openpgp_packet.write_packet_header(8, result.length)+result;
-	}
-	
-	/**
-	 * pretty printing the packet (useful for debug purposes)
-	 * @return [String]
-	 */
-	function toString() {
-		return '5.6.  Compressed Data Packet (Tag 8)\n'+
-		   '    length:  '+this.packetLength+'\n'+
-			   '    Compression Algorithm = '+this.type+'\n'+
-		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressedData)+']\n';
-	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.compress = compress;
-	this.decompress = decompress;
-	this.write_packet = write_packet;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
- *   
- * RFC4480 5.5:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
- */
-function openpgp_packet_keymaterial() {
-	// members:
-	this.publicKeyAlgorithm = null;
-	this.tagType = null;
-	this.creationTime = null;
-	this.version = null;
-	this.expiration  = null;// V3
-	this.MPIs = null;
-	this.secMPIs = null;
-	this.publicKey = null;
-	this.symmetricEncryptionAlgorithm = null;
-	this.s2kUsageConventions = null;
-	this.IVLength  = null;
-    this.encryptedMPIData = null;
-    this.hasUnencryptedSecretKeyData = null;
-    this.checksum = null;
-    this.parentNode = null;
-	this.subKeySignature = null;
-	this.subKeyRevocationSignature = null;
-
-	// 5.5.1. Key Packet Variants
-	
-	// 5.5.1.3. Secret-Key Packet (Tag 5)
-	/**
-	 * This function reads the payload of a secret key packet (Tag 5)
-	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
-	 */
-	function read_tag5(input, position, len) {
-		this.tagType = 5;
-		this.read_priv_key(input, position, len);
-		return this;
-	}
-
-	// 5.5.1.1. Public-Key Packet (Tag 6)
-	/**
-	 * This function reads the payload of a public key packet (Tag 6)
-	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
-	 */
-	function read_tag6(input, position, len) {
-		// A Public-Key packet starts a series of packets that forms an OpenPGP
-		// key (sometimes called an OpenPGP certificate).
-		this.tagType = 6;
-		this.packetLength = len;
-		this.read_pub_key(input, position,len);
-		
-		return this;
-	}
-
-	// 5.5.1.4. Secret-Subkey Packet (Tag 7)
-	/**
-	 * This function reads the payload of a secret key sub packet (Tag 7)
-	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
-	 */
-	function read_tag7(input, position, len) {
-		this.tagType = 7;
-		this.packetLength = len;
-		return this.read_priv_key(input, position, len);
-	}
-
-	// 5.5.1.2. Public-Subkey Packet (Tag 14)
-	/**
-	 * This function reads the payload of a public key sub packet (Tag 14)
-	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
-	 */
-	function read_tag14(input, position, len) {
-		this.subKeySignature = null;
-		this.subKeyRevocationSignature = new Array();
-		this.tagType = 14;
-		this.packetLength = len;
-		this.read_pub_key(input, position,len);
-		return this;
-	}
-	
-	/**
-	 * Internal Parser for public keys as specified in RFC 4880 section 5.5.2 Public-Key Packet Formats
-	 * called by read_tag&lt;num&gt;
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return this object with attributes set by the parser
-	 */  
-	function read_pub_key(input, position, len) {
-		var mypos = position;
-		// A one-octet version number (3 or 4).
-		this.version = input[mypos++].charCodeAt();
-		if (this.version == 3) {
-			// A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-				(input[mypos++].charCodeAt() << 16) |
-				(input[mypos++].charCodeAt() <<  8) |
-				(input[mypos++].charCodeAt()))*1000);
-			
-		    // - A two-octet number denoting the time in days that this key is
-		    //   valid.  If this number is zero, then it does not expire.
-			this.expiration = (input[mypos++].charCodeAt() << 8) & input[mypos++].charCodeAt();
-	
-		    // - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			var mpicount = 0;
-		    // - A series of multiprecision integers comprising the key material:
-			//   Algorithm-Specific Fields for RSA public keys:
-		    //       - a multiprecision integer (MPI) of RSA public modulus n;
-		    //       - an MPI of RSA public encryption exponent e.
-			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-				mpicount = 2;
-			//   Algorithm-Specific Fields for Elgamal public keys:
-			//     - MPI of Elgamal prime p;
-			//     - MPI of Elgamal group generator g;
-			//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-
-			else if (this.publicKeyAlgorithm == 16)
-				mpicount = 3;
-			//   Algorithm-Specific Fields for DSA public keys:
-			//       - MPI of DSA prime p;
-			//       - MPI of DSA group order q (q is a prime divisor of p-1);
-			//       - MPI of DSA group generator g;
-			//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-			else if (this.publicKeyAlgorithm == 17)
-				mpicount = 4;
-
-			this.MPIs = new Array();
-			for (var i = 0; i < mpicount; i++) {
-				this.MPIs[i] = new openpgp_type_mpi();
-				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
-						!this.packetLength < (mypos-position)) {
-					mypos += this.MPIs[i].packetLength;
-				} else {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'error reading MPI @:'+mypos);
-				}
-			}
-			this.packetLength = mypos-position;
-		} else if (this.version == 4) {
-			// - A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-			(input[mypos++].charCodeAt() << 16) |
-			(input[mypos++].charCodeAt() <<  8) |
-			(input[mypos++].charCodeAt()))*1000);
-			
-			// - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			var mpicount = 0;
-		    // - A series of multiprecision integers comprising the key material:
-			//   Algorithm-Specific Fields for RSA public keys:
-		    //       - a multiprecision integer (MPI) of RSA public modulus n;
-		    //       - an MPI of RSA public encryption exponent e.
-			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-					mpicount = 2;
-			//   Algorithm-Specific Fields for Elgamal public keys:
-			//     - MPI of Elgamal prime p;
-			//     - MPI of Elgamal group generator g;
-			//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-			else if (this.publicKeyAlgorithm == 16)
-				mpicount = 3;
-
-			//   Algorithm-Specific Fields for DSA public keys:
-			//       - MPI of DSA prime p;
-			//       - MPI of DSA group order q (q is a prime divisor of p-1);
-			//       - MPI of DSA group generator g;
-			//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-			else if (this.publicKeyAlgorithm == 17)
-				mpicount = 4;
-
-			this.MPIs = new Array();
-			var i = 0;
-			for (var i = 0; i < mpicount; i++) {
-				this.MPIs[i] = new openpgp_type_mpi();
-				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null &&
-						!this.packetLength < (mypos-position)) {
-					mypos += this.MPIs[i].packetLength;
-				} else {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'error reading MPI @:'+mypos);
-				}
-			}
-			this.packetLength = mypos-position;
-		} else {
-			return null;
-		}
-		this.data = input.substring(position, mypos);
-		this.packetdata = input.substring(position, mypos);
-		return this;
-	}
-	
-	// 5.5.3.  Secret-Key Packet Formats
-	
-	/**
-	 * Internal parser for private keys as specified in RFC 4880 section 5.5.3
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return this object with attributes set by the parser
-	 */
-	function read_priv_key(input,position, len) {
-	    // - A Public-Key or Public-Subkey packet, as described above.
-	    this.publicKey = new openpgp_packet_keymaterial();
-		if (this.publicKey.read_pub_key(input,position, len) == null) {
-			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input[position].charCodeAt()+" "+position+" "+len+"\n Aborting here...");
-			return null;
-		}
-		this.publicKey.header = openpgp_packet.write_old_packet_header(6,this.publicKey.packetLength);
-		// this.publicKey.header = String.fromCharCode(0x99) + String.fromCharCode(this.publicKey.packetLength >> 8 & 0xFF)+String.fromCharCode(this.publicKey.packetLength & 0xFF);
-		var mypos = position + this.publicKey.data.length;
-		this.packetLength = len;
-		
-	    // - One octet indicating string-to-key usage conventions.  Zero
-	    //   indicates that the secret-key data is not encrypted.  255 or 254
-	    //   indicates that a string-to-key specifier is being given.  Any
-	    //   other value is a symmetric-key encryption algorithm identifier.
-	    this.s2kUsageConventions = input[mypos++].charCodeAt();
-	    
-	    if (this.s2kUsageConventions == 0)
-	    	this.hasUnencryptedSecretKeyData = true;
-	   
-	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
-	    //   octet symmetric encryption algorithm.
-	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
-	    	this.symmetricEncryptionAlgorithm = input[mypos++].charCodeAt();
-	    }
-	     
-	    // - [Optional] If string-to-key usage octet was 255 or 254, a
-	    //   string-to-key specifier.  The length of the string-to-key
-	    //   specifier is implied by its type, as described above.
-	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
-	    	this.s2k = new openpgp_type_s2k();
-	    	this.s2k.read(input, mypos);
-	    	mypos +=this.s2k.s2kLength;
-	    }
-	    
-	    // - [Optional] If secret data is encrypted (string-to-key usage octet
-	    //   not zero), an Initial Vector (IV) of the same length as the
-	    //   cipher's block size.
-	    this.symkeylength = 0;
-	    if (this.s2kUsageConventions != 0 && this.s2kUsageConventions != 255 &&
-	    		this.s2kUsageConventions != 254) {
-	    	this.symmetricEncryptionAlgorithm = this.s2kUsageConventions;
-	    }
-	    if (this.s2kUsageConventions != 0) {
-	    	this.hasIV = true;
-	    	switch (this.symmetricEncryptionAlgorithm) {
-		    case  1: // - IDEA [IDEA]
-		    	util.print_error("openpgp.packet.keymaterial.js\n"+"symmetric encrytryption algorithim: IDEA is not implemented");
-		    	return null;
-	    	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-	    	case  3: // - CAST5 (128 bit key, as per [RFC2144])
-	    		this.IVLength = 8;
-		    	break;
-		    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		    case  7: // - AES with 128-bit key [AES]
-	    	case  8: // - AES with 192-bit key
-	    	case  9: // - AES with 256-bit key
-	    		this.IVLength = 16;
-		    	break;
-	    	case 10: // - Twofish with 256-bit key [TWOFISH]
-	    		this.IVLength = 32;	    		
-		    	break;
-	    	case  5: // - Reserved
-	    	case  6: // - Reserved
-	    	default:
-	    		util.print_error("openpgp.packet.keymaterial.js\n"+"unknown encryption algorithm for secret key :"+this.symmetricEncryptionAlgorithm);
-	    		return null;
-	    	}
-	    	mypos++; 
-	    	this.IV = input.substring(mypos, mypos+this.IVLength);
-	    	mypos += this.IVLength;
-	    }
-	    // - Plain or encrypted multiprecision integers comprising the secret
-	    //   key data.  These algorithm-specific fields are as described
-	    //   below.
-
-	    //
-	    //
-	    if (!this.hasUnencryptedSecretKeyData) {
-	    	this.encryptedMPIData = input.substring(mypos, len);
-	    	mypos += this.encryptedMPIData.length;
-	    } else {
-	    	if (this.publicKey.publicKeyAlgorithm > 0 && this.publicKey.publicKeyAlgorithm < 4) {
-	    		//   Algorithm-Specific Fields for RSA secret keys:
-	    		//   - multiprecision integer (MPI) of RSA secret exponent d.
-	    		//   - MPI of RSA secret prime value p.
-	    		//   - MPI of RSA secret prime value q (p < q).
-	    		//   - MPI of u, the multiplicative inverse of p, mod q.
-	    		this.secMPIs = new Array();
-	    		this.secMPIs[0] = new openpgp_type_mpi();
-	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[0].packetLength;
-	    		this.secMPIs[1] = new openpgp_type_mpi();
-	    		this.secMPIs[1].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[1].packetLength;
-	    		this.secMPIs[2] = new openpgp_type_mpi();
-	    		this.secMPIs[2].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[2].packetLength;
-	    		this.secMPIs[3] = new openpgp_type_mpi();
-	    		this.secMPIs[3].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[3].packetLength;
-	    	} else if (this.publicKey.publicKeyAlgorithm == 16) {
-	    		// Algorithm-Specific Fields for Elgamal secret keys:
-	    		//   - MPI of Elgamal secret exponent x.
-	    		this.secMPIs = new Array();
-	    		this.secMPIs[0] = new openpgp_type_mpi();
-	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[0].packetLength;
-	    	} else if (this.publicKey.publicKeyAlgorithm == 17) {
-	    		// Algorithm-Specific Fields for DSA secret keys:
-	    		//   - MPI of DSA secret exponent x.
-	    		this.secMPIs = new Array();
-	    		this.secMPIs[0] = new openpgp_type_mpi();
-	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
-	    		mypos += this.secMPIs[0].packetLength;
-	    	}
-	    	// checksum because s2k usage convention is 0
-	        this.checksum = new Array(); 
-		    this.checksum[0] = input[mypos++].charCodeAt();
-		    this.checksum[1] = input[mypos++].charCodeAt();
-	    }
-	    return this;
-	}
-	
-
-	/**
-	 * Decrypts the private key MPIs which are needed to use the key.
-	 * openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be false otherwise
-	 * a call to this function is not needed
-	 * 
-	 * @param str_passphrase the passphrase for this private key as string
-	 * @return true if the passphrase was correct; false if not
-	 */
-	function decryptSecretMPIs(str_passphrase) {
-		if (this.hasUnencryptedSecretKeyData)
-			return this.secMPIs;
-		// creating a key out of the passphrase
-		var key = this.s2k.produce_key(str_passphrase);
-		var cleartextMPIs = "";
-    	switch (this.symmetricEncryptionAlgorithm) {
-	    case  1: // - IDEA [IDEA]
-	    	util.print_error("openpgp.packet.keymaterial.js\n"+"symmetric encryption algorithim: IDEA is not implemented");
-	    	return false;
-    	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-    		cleartextMPIs = normal_cfb_decrypt(function(block, key) {
-    			return des(key, block,1,null,0);
-    		}, this.IVLength, key, this.encryptedMPIData, this.IV);
-    		break;
-    	case  3: // - CAST5 (128 bit key, as per [RFC2144])
-    		cleartextMPIs = normal_cfb_decrypt(function(block, key) {
-        		var cast5 = new openpgp_symenc_cast5();
-        		cast5.setKey(key);
-        		return cast5.encrypt(util.str2bin(block)); 
-    		}, this.IVLength, util.str2bin(key.substring(0,16)), this.encryptedMPIData, this.IV);
-    		break;
-	    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	    	cleartextMPIs = normal_cfb_decrypt(function(block, key) {
-    			var blowfish = new Blowfish(key);
-        		return blowfish.encrypt(block); 
-    		}, this.IVLength, key, this.encryptedMPIData, this.IV);
-    		break;
-	    case  7: // - AES with 128-bit key [AES]
-    	case  8: // - AES with 192-bit key
-    	case  9: // - AES with 256-bit key	    	
-    		cleartextMPIs = normal_cfb_decrypt(AESencrypt,
-    				this.IVLength, keyExpansion(key), this.encryptedMPIData, this.IV);
-	    	break;
-    	case 10: // - Twofish with 256-bit key [TWOFISH]
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"Key material is encrypted with twofish: not implemented");   		
-	    	return false;;
-    	case  5: // - Reserved
-    	case  6: // - Reserved
-    	default:
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"unknown encryption algorithm for secret key :"+this.symmetricEncryptionAlgorithm);
-    		return false;
-    	}
-    	
-    	if (cleartextMPIs == null) {
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"cleartextMPIs was null");
-    		return false;
-    	}
-    	
-    	var cleartextMPIslength = cleartextMPIs.length;
-
-    	if (this.s2kUsageConventions == 254 &&
-    			str_sha1(cleartextMPIs.substring(0,cleartextMPIs.length - 20)) == 
-    				cleartextMPIs.substring(cleartextMPIs.length - 20)) {
-    		cleartextMPIslength -= 20;
-    	} else if (this.s2kUsageConventions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
-    			(cleartextMPIs.charCodeAt(cleartextMPIs.length -2) << 8 | cleartextMPIs.charCodeAt(cleartextMPIs.length -1))) {
-    		cleartextMPIslength -= 2;
-    	} else {
-    		return false;
-    	}
-
-    	if (this.publicKey.publicKeyAlgorithm > 0 && this.publicKey.publicKeyAlgorithm < 4) {
-    		//   Algorithm-Specific Fields for RSA secret keys:
-    		//   - multiprecision integer (MPI) of RSA secret exponent d.
-    		//   - MPI of RSA secret prime value p.
-    		//   - MPI of RSA secret prime value q (p < q).
-    		//   - MPI of u, the multiplicative inverse of p, mod q.
-    		var mypos = 0;
-    		this.secMPIs = new Array();
-    		this.secMPIs[0] = new openpgp_type_mpi();
-    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIslength);
-    		mypos += this.secMPIs[0].packetLength;
-    		this.secMPIs[1] = new openpgp_type_mpi();
-    		this.secMPIs[1].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
-    		mypos += this.secMPIs[1].packetLength;
-    		this.secMPIs[2] = new openpgp_type_mpi();
-    		this.secMPIs[2].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
-    		mypos += this.secMPIs[2].packetLength;
-    		this.secMPIs[3] = new openpgp_type_mpi();
-    		this.secMPIs[3].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
-    		mypos += this.secMPIs[3].packetLength;
-    	} else if (this.publicKey.publicKeyAlgorithm == 16) {
-    		// Algorithm-Specific Fields for Elgamal secret keys:
-    		//   - MPI of Elgamal secret exponent x.
-    		this.secMPIs = new Array();
-    		this.secMPIs[0] = new openpgp_type_mpi();
-    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIs);
-    	} else if (this.publicKey.publicKeyAlgorithm == 17) {
-    		// Algorithm-Specific Fields for DSA secret keys:
-    		//   - MPI of DSA secret exponent x.
-    		this.secMPIs = new Array();
-    		this.secMPIs[0] = new openpgp_type_mpi();
-    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIslength);
-    	}
-    	return true;
-	}
-	
-	/**
-	 * Generates Debug output
-	 * @return String which gives some information about the keymaterial
-	 */
-	function toString() {
-		var result = "";
-		switch (this.tagType) {
-		case 6:
-			 result += '5.5.1.1. Public-Key Packet (Tag 6)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 14:
-			result += '5.5.1.2. Public-Subkey Packet (Tag 14)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 5:
-			result +='5.5.1.3. Secret-Key Packet (Tag 5)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.publicKey.version+'\n'+
-			   '    creation time:      '+this.publicKey.creationTime+'\n'+
-			   '    expiration time:    '+this.publicKey.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKey.publicKeyAlgorithm+'\n';
-			break;
-		case 7:
-			result += '5.5.1.4. Secret-Subkey Packet (Tag 7)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version[1]:         '+(this.version == 4)+'\n'+
-			   '    creationtime[4]:    '+this.creationTime+'\n'+
-			   '    expiration[2]:      '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		default:
-			result += 'unknown key material packet\n';
-		}
-		if (this.MPIs != null) {
-			result += "Public Key MPIs:\n";
-			for (var i = 0; i < this.MPIs.length; i++) {
-      	  	result += this.MPIs[i].toString();
-        	}
-		}
-		if (this.publicKey != null && this.publicKey.MPIs != null) {
-			result += "Public Key MPIs:\n";
-			for (var i = 0; i < this.publicKey.MPIs.length; i++) {
-	      	  	result += this.publicKey.MPIs[i].toString();
-        	}
-		}
-		if (this.secMPIs != null) {
-			result += "Secret Key MPIs:\n";
-			for (var i = 0; i < this.secMPIs.length; i++) {
-		      	  result += this.secMPIs[i].toString();
-		        }
-		}
-		
-		if (this.subKeySignature != null)
-			result += "subKey Signature:\n"+this.subKeySignature.toString();
-		
-		if (this.subKeyRevocationSignature != null )
-			result += "subKey Revocation Signature:\n"+this.subKeyRevocationSignature.toString();
-        return result;
-	}
-	
-	/**
-	 * Continue parsing packets belonging to the key material such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		this.parentNode = parent_node;
-		if (this.tagType == 14) { // public sub-key packet
-			var pos = position;
-			var result = null;
-			while (input.length != pos) {
-				var l = input.length - pos;
-				result = openpgp_packet.read_packet(input, pos, l);
-				if (result == null) {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_pub]parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType == 24)  { // subkey binding signature
-							this.subKeySignature = result;
-							pos += result.packetLength + result.headerLength;
-							break;
-						} else if (result.signatureType == 40) { // subkey revocation signature
-							this.subKeyRevocationSignature = result;
-							pos += result.packetLength + result.headerLength;
-							break;
-						} else {
-							util.print_error("openpgp.packet.keymaterial.js\nunknown signature:"+result.toString());
-						}
-						
-					default:
-						this.data = input;
-						this.position = position - this.parentNode.packetLength;
-						this.len = pos - position;
-						return this.len;
-						break;
-					}
-				}
-			}
-			this.data = input;
-			this.position = position - this.parentNode.packetLength;
-			this.len = pos - position;
-			return this.len;
-		} else if (this.tagType == 7) { // private sub-key packet
-			var pos = position;
-			while (input.length != pos) {
-				var result = openpgp_packet.read_packet(input, pos, len - (pos - position));
-				if (result == null) {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_priv] parsing ends here @:' + pos);
-					break;
-				} else {
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType == 24) // subkey embedded signature
-							this.subKeySignature = result; 
-						else if (result.signatureType == 40) // subkey revocation signature
-							this.subKeyRevocationSignature[this.subKeyRevocationSignature] = result;
-						pos += result.packetLength + result.headerLength;
-						break;
-					default:
-						this.data = input;
-						this.position = position - this.parentNode.packetLength;
-						this.len = pos - position;
-						return this.len;
-					}
-				}
-			}
-			this.data = input;
-			this.position = position - this.parentNode.packetLength;
-			this.len = pos - position;
-			return this.len;
-		} else {
-			util.print_error("openpgp.packet.keymaterial.js\n"+"unknown parent node for a key material packet "+parent_node.tagType);
-		}
-	}
-
-	/**
-	 * Checks the validity for usage of this (sub)key
-	 * @return 0 = bad key, 1 = expired, 2 = revoked, 3 = valid
-	 */
-	function verifyKey() {
-		if (this.tagType == 14) {
-			if (this.subKeySignature == null)
-				return 0;
-			if (this.subKeySignature.version == 4 &&
-				this.subKeySignature.keyNeverExpires != null &&
-				!this.subKeySignature.keyNeverExpires &&
-				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date())
-				return 1;
-			var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
-			String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-			if (!this.subKeySignature.verify(hashdata,this.parentNode)) {
-				return 0;
-			}
-			for (var i = 0; i < this.subKeyRevocationSignature.length; i++) {
-				if (this.subKeyRevocationSignature[i])
-				var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
-				String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-				if (this.subKeyRevocationSignature[i].verify(hashdata, this.parentNode))
-					return 2;
-				else 
-					return 0;
-			}
-		}
-		return 3;
-	}
-
-	/**
-	 * calculates the key id of they key 
-	 * @return [String] a 8 byte key id
-	 */
-	function getKeyId() {
-		if (this.version == 4) {
-			var f = this.getFingerprint();
-			return f.substring(12,20);
-		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
-			var key_id = this.MPIs[0].substring((this.MPIs[0].mpiByteLength-8));
-			util.print_debug("openpgp.msg.publickey read_nodes:\n"+"V3 key ID: "+key_id);
-			return key_id;
-		}
-	}
-	
-	/**
-	 * calculates the fingerprint of the key
-	 * @return [String] a string containing the fingerprint
-	 */
-	function getFingerprint() {
-		if (this.version == 4) {
-			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
-				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
-			util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
-			return str_sha1(tohash, tohash.length);
-		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
-			return MD5(this.MPIs[0].MPI);
-		}
-	}
-	
-	/*
-     * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
-     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
-     */
-    function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
-        this.symmetricEncryptionAlgorithm = symmetricEncryptionAlgorithm;
-		var tag = 5;
-		var body = String.fromCharCode(4);
-		body += timePacket;
-		switch(keyType){
-		case 1:
-		    body += String.fromCharCode(keyType);//public key algo
-		    body += key.n.toMPI();
-		    body += key.ee.toMPI();
-		    var algorithmStart = body.length;
-		    //below shows ske/s2k
-		    if(password){
-		        body += String.fromCharCode(254); //octet of 254 indicates s2k with SHA1
-		        //if s2k == 255,254 then 1 octet symmetric encryption algo
-		        body += String.fromCharCode(this.symmetricEncryptionAlgorithm);
-		        //if s2k == 255,254 then s2k specifier
-		        body += String.fromCharCode(3); //s2k salt+iter
-		        body += String.fromCharCode(s2kHash);
-		        //8 octet salt value
-		        //1 octet count
-		        var cleartextMPIs = key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
-		        var sha1Hash = str_sha1(cleartextMPIs);
-   		        util.print_debug_hexstr_dump('write_private_key sha1: ',sha1Hash);
-		        var salt = openpgp_crypto_getRandomBytes(8);
-		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
-		        body += salt;
-		        var c = openpgp_crypto_getSecureRandomOctet();
-		        body += String.fromCharCode(c);
-		        util.print_debug('write_private_key c: '+ c);
-		        var s2k = new openpgp_type_s2k();
-		        var hashKey = s2k.write(3, s2kHash, password, salt, c);
-		        //if s2k, IV of same length as cipher's block
-		        switch(this.symmetricEncryptionAlgorithm){
-		        case 3:
-		            this.IVLength = 8;
-		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
-            		ciphertextMPIs = normal_cfb_encrypt(function(block, key) {
-                		var cast5 = new openpgp_symenc_cast5();
-                		cast5.setKey(key);
-                		return cast5.encrypt(util.str2bin(block)); 
-            		}, this.IVLength, util.str2bin(hashKey.substring(0,16)), cleartextMPIs + sha1Hash, this.IV);
-            		body += this.IV + ciphertextMPIs;
-		            break;
-		        case 7:
-		        case 8:
-		        case 9:
-		            this.IVLength = 16;
-		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
-		            ciphertextMPIs = normal_cfb_encrypt(AESencrypt,
-            				this.IVLength, hashKey, cleartextMPIs + sha1Hash, this.IV);
-            		body += this.IV + ciphertextMPIs;
-	            	break;
-		        }
-		    }
-		    else{
-		        body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
-		        body += key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
-		        var checksum = util.calc_checksum(key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI());
-        		body += String.fromCharCode(checksum/0x100) + String.fromCharCode(checksum%0x100);//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536
-        		util.print_debug_hexstr_dump('write_private_key basic checksum: '+ checksum);
-		    }
-		    break;
-		default :
-			body = "";
-			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
-        }
-		var header = openpgp_packet.write_packet_header(tag,body.length);
-		return {string: header+body , header: header, body: body};
+	// "empty" RSA key constructor
+    function keyObject() {
+        this.n = null;
+        this.e = 0;
+        this.ee = null;
+        this.d = null;
+        this.p = null;
+        this.q = null;
+        this.dmp1 = null;
+        this.dmq1 = null;
+        this.u = null;
     }
 	
-	/*
-     * same as write_private_key, but has less information because of public key.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
-     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
-     */
-    function write_public_key(keyType, key, timePacket){
-        var tag = 6;
-        var body = String.fromCharCode(4);
-        body += timePacket;
-		switch(keyType){
-		case 1:
-		    body += String.fromCharCode(1);//public key algo
-		    body += key.n.toMPI();
-		    body += key.ee.toMPI();
-		    break;
-	    default:
-	    	util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
-	    }
-        var header = openpgp_packet.write_packet_header(tag,body.length);
-        return {string: header+body , header: header, body: body};
+	// Generate a new random private key B bits long, using public expt E
+    function generate(B,E) {
+        var key = new keyObject();
+        var rng = new SecureRandom();
+        var qs = B>>1;
+        key.e = parseInt(E,16);
+        key.ee = new BigInteger(E,16);
+        for(;;) {
+            for(;;) {
+                key.p = new BigInteger(B-qs,1,rng);
+                if(key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.p.isProbablePrime(10)) break;
+            }
+            for(;;) {
+                key.q = new BigInteger(qs,1,rng);
+                if(key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.q.isProbablePrime(10)) break;
+            }
+            if(key.p.compareTo(key.q) <= 0) {
+                var t = key.p;
+                key.p = key.q;
+                key.q = t;
+            }
+            var p1 = key.p.subtract(BigInteger.ONE);
+            var q1 = key.q.subtract(BigInteger.ONE);
+            var phi = p1.multiply(q1);
+            if(phi.gcd(key.ee).compareTo(BigInteger.ONE) == 0) {
+                key.n = key.p.multiply(key.q);
+                key.d = key.ee.modInverse(phi);
+                key.dmp1 = key.d.mod(p1);
+                key.dmq1 = key.d.mod(q1);
+                key.u = key.p.modInverse(key.q);
+                break;
+            }
         }
-
-	
-	this.read_tag5 = read_tag5;
-	this.read_tag6 = read_tag6;
-	this.read_tag7 = read_tag7;
-	this.read_tag14 = read_tag14;
-	this.toString = toString;
-	this.read_pub_key = read_pub_key;
-	this.read_priv_key = read_priv_key;
-	this.decryptSecretMPIs = decryptSecretMPIs;
-	this.read_nodes = read_nodes;
-	this.verifyKey = verifyKey;
-	this.getKeyId = getKeyId;
-	this.getFingerprint = getFingerprint;
-	this.write_private_key = write_private_key;
-	this.write_public_key = write_public_key;
+        return key;
+    }
+		
+	this.encrypt = encrypt;
+	this.decrypt = decrypt;
+	this.verify = verify;
+	this.sign = sign;
+	this.generate = generate;
+	this.keyObject = keyObject;
 }
 /**
  * A fast MD5 JavaScript implementation
@@ -3643,7 +1838,299 @@ msw = (x >> 16) + (y >> 16) + (lsw >> 16);
 return (msw << 16) | (lsw & 0xFFFF);
 }
 }
-/* A JavaScript implementation of the SHA family of hashes, as defined in FIPS 
+/*
+ * CryptoMX Tools
+ * Copyright (C) 2004 - 2006 Derek Buitenhuis
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+/* Modified by Recurity Labs GmbH
+ */
+
+var RMDsize   = 160;
+var X = new Array();
+
+function ROL(x, n)
+{
+  return new Number ((x << n) | ( x >>> (32 - n)));
+}
+
+function F(x, y, z)
+{
+  return new Number(x ^ y ^ z);
+}
+
+function G(x, y, z)
+{
+  return new Number((x & y) | (~x & z));
+}
+
+function H(x, y, z)
+{
+  return new Number((x | ~y) ^ z);
+}
+
+function I(x, y, z)
+{
+  return new Number((x & z) | (y & ~z));
+}
+
+function J(x, y, z)
+{
+  return new Number(x ^ (y | ~z));
+}
+
+function mixOneRound(a, b, c, d, e, x, s, roundNumber)
+{
+  switch (roundNumber)
+  {
+    case 0 : a += F(b, c, d) + x + 0x00000000; break;
+    case 1 : a += G(b, c, d) + x + 0x5a827999; break;
+    case 2 : a += H(b, c, d) + x + 0x6ed9eba1; break;
+    case 3 : a += I(b, c, d) + x + 0x8f1bbcdc; break;
+    case 4 : a += J(b, c, d) + x + 0xa953fd4e; break;
+    case 5 : a += J(b, c, d) + x + 0x50a28be6; break;
+    case 6 : a += I(b, c, d) + x + 0x5c4dd124; break;
+    case 7 : a += H(b, c, d) + x + 0x6d703ef3; break;
+    case 8 : a += G(b, c, d) + x + 0x7a6d76e9; break;
+    case 9 : a += F(b, c, d) + x + 0x00000000; break;
+    
+    default : document.write("Bogus round number"); break;
+  }  
+  
+  a = ROL(a, s) + e;
+  c = ROL(c, 10);
+
+  a &= 0xffffffff;
+  b &= 0xffffffff;
+  c &= 0xffffffff;
+  d &= 0xffffffff;
+  e &= 0xffffffff;
+
+  var retBlock = new Array();
+  retBlock[0] = a;
+  retBlock[1] = b;
+  retBlock[2] = c;
+  retBlock[3] = d;
+  retBlock[4] = e;
+  retBlock[5] = x;
+  retBlock[6] = s;
+
+  return retBlock;
+}
+
+function MDinit (MDbuf)
+{
+  MDbuf[0] = 0x67452301;
+  MDbuf[1] = 0xefcdab89;
+  MDbuf[2] = 0x98badcfe;
+  MDbuf[3] = 0x10325476;
+  MDbuf[4] = 0xc3d2e1f0;
+}
+
+var ROLs = [
+  [11, 14, 15, 12,  5,  8,  7,  9, 11, 13, 14, 15,  6,  7,  9,  8],
+  [ 7,  6,  8, 13, 11,  9,  7, 15,  7, 12, 15,  9, 11,  7, 13, 12],
+  [11, 13,  6,  7, 14,  9, 13, 15, 14,  8, 13,  6,  5, 12,  7,  5],
+  [11, 12, 14, 15, 14, 15,  9,  8,  9, 14,  5,  6,  8,  6,  5, 12],
+  [ 9, 15,  5, 11,  6,  8, 13, 12,  5, 12, 13, 14, 11,  8,  5,  6],
+  [ 8,  9,  9, 11, 13, 15, 15,  5,  7,  7,  8, 11, 14, 14, 12,  6],
+  [ 9, 13, 15,  7, 12,  8,  9, 11,  7,  7, 12,  7,  6, 15, 13, 11],
+  [ 9,  7, 15, 11,  8,  6,  6, 14, 12, 13,  5, 14, 13, 13,  7,  5],
+  [15,  5,  8, 11, 14, 14,  6, 14,  6,  9, 12,  9, 12,  5, 15,  8],
+  [ 8,  5, 12,  9, 12,  5, 14,  6,  8, 13,  6,  5, 15, 13, 11, 11]
+];
+
+var indexes = [
+  [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15],
+  [ 7,  4, 13,  1, 10,  6, 15,  3, 12,  0,  9,  5,  2, 14, 11,  8],
+  [ 3, 10, 14,  4,  9, 15,  8,  1,  2,  7,  0,  6, 13, 11,  5, 12],
+  [ 1,  9, 11, 10,  0,  8, 12,  4, 13,  3,  7, 15, 14,  5,  6,  2],
+  [ 4,  0,  5,  9,  7, 12,  2, 10, 14,  1,  3,  8, 11,  6, 15, 13],
+  [ 5, 14,  7,  0,  9,  2, 11,  4, 13,  6, 15,  8,  1, 10,  3, 12],
+  [ 6, 11,  3,  7,  0, 13,  5, 10, 14, 15,  8, 12,  4,  9,  1,  2],
+  [15,  5,  1,  3,  7, 14,  6,  9, 11,  8, 12,  2, 10,  0,  4, 13],
+  [ 8,  6,  4,  1,  3, 11, 15,  0,  5, 12,  2, 13,  9,  7, 10, 14],
+  [12, 15, 10,  4,  1,  5,  8,  7,  6,  2, 13, 14,  0,  3,  9, 11]
+];
+
+function compress (MDbuf, X)
+{
+  blockA = new Array();
+  blockB = new Array();
+
+  var retBlock;
+
+  for (var i=0; i < 5; i++)
+  {
+    blockA[i] = new Number(MDbuf[i]);
+    blockB[i] = new Number(MDbuf[i]);
+  }
+
+  var step = 0;
+  for (var j = 0; j < 5; j++)
+  {
+    for (var i = 0; i < 16; i++)
+    {
+      retBlock = mixOneRound(
+        blockA[(step+0) % 5],
+        blockA[(step+1) % 5],   
+        blockA[(step+2) % 5],   
+        blockA[(step+3) % 5],   
+        blockA[(step+4) % 5],  
+        X[indexes[j][i]], 
+        ROLs[j][i],
+        j
+      );
+
+      blockA[(step+0) % 5] = retBlock[0];
+      blockA[(step+1) % 5] = retBlock[1];
+      blockA[(step+2) % 5] = retBlock[2];
+      blockA[(step+3) % 5] = retBlock[3];
+      blockA[(step+4) % 5] = retBlock[4];
+
+      step += 4;
+    }
+  }
+
+  step = 0;
+  for (var j = 5; j < 10; j++)
+  {
+    for (var i = 0; i < 16; i++)
+    {  
+      retBlock = mixOneRound(
+        blockB[(step+0) % 5], 
+        blockB[(step+1) % 5], 
+        blockB[(step+2) % 5], 
+        blockB[(step+3) % 5], 
+        blockB[(step+4) % 5],  
+        X[indexes[j][i]], 
+        ROLs[j][i],
+        j
+      );
+
+      blockB[(step+0) % 5] = retBlock[0];
+      blockB[(step+1) % 5] = retBlock[1];
+      blockB[(step+2) % 5] = retBlock[2];
+      blockB[(step+3) % 5] = retBlock[3];
+      blockB[(step+4) % 5] = retBlock[4];
+
+      step += 4;
+    }
+  }
+
+  blockB[3] += blockA[2] + MDbuf[1];
+  MDbuf[1]  = MDbuf[2] + blockA[3] + blockB[4];
+  MDbuf[2]  = MDbuf[3] + blockA[4] + blockB[0];
+  MDbuf[3]  = MDbuf[4] + blockA[0] + blockB[1];
+  MDbuf[4]  = MDbuf[0] + blockA[1] + blockB[2];
+  MDbuf[0]  = blockB[3];
+}
+
+function zeroX(X)
+{
+  for (var i = 0; i < 16; i++) { X[i] = 0; }
+}
+
+function MDfinish (MDbuf, strptr, lswlen, mswlen)
+{
+  var X = new Array(16);
+  zeroX(X);
+
+  var j = 0;
+  for (var i=0; i < (lswlen & 63); i++)
+  {
+    X[i >>> 2] ^= (strptr.charCodeAt(j++) & 255) << (8 * (i & 3));
+  }
+
+  X[(lswlen >>> 2) & 15] ^= 1 << (8 * (lswlen & 3) + 7);
+
+  if ((lswlen & 63) > 55)
+  {
+    compress(MDbuf, X);
+    var X = new Array(16);
+    zeroX(X);
+  }
+
+  X[14] = lswlen << 3;
+  X[15] = (lswlen >>> 29) | (mswlen << 3);
+
+  compress(MDbuf, X);
+}
+
+function BYTES_TO_DWORD(fourChars)
+{
+  var tmp  = (fourChars.charCodeAt(3) & 255) << 24;
+  tmp   |= (fourChars.charCodeAt(2) & 255) << 16;
+  tmp   |= (fourChars.charCodeAt(1) & 255) << 8;
+  tmp   |= (fourChars.charCodeAt(0) & 255);  
+
+  return tmp;
+}
+
+function RMD(message)
+{
+  var MDbuf   = new Array(RMDsize / 32);
+  var hashcode   = new Array(RMDsize / 8);
+  var length;  
+  var nbytes;
+
+  MDinit(MDbuf);
+  length = message.length;
+
+  var X = new Array(16);
+  zeroX(X);
+
+  var j=0;
+  for (var nbytes=length; nbytes > 63; nbytes -= 64)
+  {
+    for (var i=0; i < 16; i++)
+    {
+      X[i] = BYTES_TO_DWORD(message.substr(j, 4));
+      j += 4;
+    }
+    compress(MDbuf, X);
+  }
+
+  MDfinish(MDbuf, message.substr(j), length, 0);
+
+  for (var i=0; i < RMDsize / 8; i += 4)
+  {
+    hashcode[i]   =  MDbuf[i >>> 2]   & 255;
+    hashcode[i+1] = (MDbuf[i >>> 2] >>> 8)   & 255;
+    hashcode[i+2] = (MDbuf[i >>> 2] >>> 16) & 255;
+    hashcode[i+3] = (MDbuf[i >>> 2] >>> 24) & 255;
+  }
+
+  return hashcode;
+}
+
+
+function RMDstring(message)
+{
+  var hashcode = RMD(message);
+  var retString = "";
+
+  for (var i=0; i < RMDsize/8; i++)
+  {
+    retString += String.fromCharCode(hashcode[i]);
+  }  
+
+  return retString;  
+}/* A JavaScript implementation of the SHA family of hashes, as defined in FIPS 
  * PUB 180-2 as well as the corresponding HMAC implementation as defined in
  * FIPS PUB 198a
  *
@@ -3666,8 +2153,8 @@ return (msw << 16) | (lsw & 0xFFFF);
  *   - str_sha512
  */
 
-(function ()
-{
+var jsSHA = (function () {
+	
 	/*
 	 * Configurable variables. Defaults typically work
 	 */
@@ -4835,7 +3322,7 @@ return (msw << 16) | (lsw & 0xFFFF);
 		}
 	};
 
-	window.jsSHA = jsSHA;
+	return jsSHA;
 }());
 
 function str_sha1(str) {
@@ -4864,299 +3351,1286 @@ function str_sha512(str) {
 	var shaObj = new jsSHA(str, "ASCII");
 	return shaObj.getHash("SHA-512", "ASCII");
 }
-/*
- * CryptoMX Tools
- * Copyright (C) 2004 - 2006 Derek Buitenhuis
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+// Modified by Recurity Labs GmbH 
+
+// modified version of http://www.hanewin.net/encrypt/PGdecode.js:
+
+/* OpenPGP encryption using RSA/AES
+ * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de
+ * version 2.0, check www.haneWIN.de for the latest version
+
+ * This software is provided as-is, without express or implied warranty.  
+ * Permission to use, copy, modify, distribute or sell this software, with or
+ * without fee, for any purpose and by any individual or organization, is hereby
+ * granted, provided that the above copyright notice and this paragraph appear 
+ * in all copies. Distribution as a part of an application or binary must
+ * include the above copyright notice in the documentation and/or other
+ * materials provided with the application or distribution.
  */
 
-/* Modified by Recurity Labs GmbH
+// --------------------------------------
+/**
+ * This function encrypts a given with the specified prefixrandom 
+ * using the specified blockcipher to encrypt a message
+ * @param prefixrandom random bytes of block_size length provided 
+ *  as a string to be used in prefixing the data
+ * @param blockcipherfn the algorithm encrypt function to encrypt
+ *  data in one block_size encryption. The function must be 
+ *  specified as blockcipherfn([integer_array(integers 0..255)] 
+ *  block,[integer_array(integers 0..255)] key) returning an 
+ *  array of bytes (integers 0..255)
+ * @param block_size the block size in bytes of the algorithm used
+ * @param plaintext data to be encrypted provided as a string
+ * @param key key to be used to encrypt the data as 
+ *  integer_array(integers 0..255)]. This will be passed to the 
+ *  blockcipherfn
+ * @param resync a boolean value specifying if a resync of the 
+ *  IV should be used or not. The encrypteddatapacket uses the 
+ *  "old" style with a resync. Encryption within an 
+ *  encryptedintegrityprotecteddata packet is not resyncing the IV.
+ * @return a string with the encrypted data
+ */
+function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, block_size, key, resync) {
+	var FR = new Array(block_size);
+	var FRE = new Array(block_size);
+
+	prefixrandom = prefixrandom + prefixrandom.charAt(block_size-2) +prefixrandom.charAt(block_size-1);
+	util.print_debug("prefixrandom:"+util.hexstrdump(prefixrandom));
+	var ciphertext = "";
+	// 1.  The feedback register (FR) is set to the IV, which is all zeros.
+	for (var i = 0; i < block_size; i++) FR[i] = 0;
+	
+	// 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
+    //     encryption of an all-zero value.
+	FRE = blockcipherencryptfn(FR, key);
+	// 3.  FRE is xored with the first BS octets of random data prefixed to
+    //     the plaintext to produce C[1] through C[BS], the first BS octets
+    //     of ciphertext.
+	for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+	
+	// 4.  FR is loaded with C[1] through C[BS].
+	for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+	
+	// 5.  FR is encrypted to produce FRE, the encryption of the first BS
+    // 	   octets of ciphertext.
+	FRE = blockcipherencryptfn(FR, key);
+
+	// 6.  The left two octets of FRE get xored with the next two octets of
+	//     data that were prefixed to the plaintext.  This produces C[BS+1]
+	//     and C[BS+2], the next two octets of ciphertext.
+	ciphertext += String.fromCharCode(FRE[0] ^ prefixrandom.charCodeAt(block_size));
+	ciphertext += String.fromCharCode(FRE[1] ^ prefixrandom.charCodeAt(block_size+1));
+
+	if (resync) {
+		// 7.  (The resync step) FR is loaded with C3-C10.
+		for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i+2);
+	} else {
+		for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+	}
+	// 8.  FR is encrypted to produce FRE.
+	FRE = blockcipherencryptfn(FR, key);
+	
+	if (resync) {
+		// 9.  FRE is xored with the first 8 octets of the given plaintext, now
+	    //	   that we have finished encrypting the 10 octets of prefixed data.
+	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
+		for (var i = 0; i < block_size; i++)
+			ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+		for(n=block_size+2; n < plaintext.length; n+=block_size) {
+			// 10. FR is loaded with C11-C18
+			for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n+i);
+		
+			// 11. FR is encrypted to produce FRE.
+			FRE = blockcipherencryptfn(FR, key);
+		
+			// 12. FRE is xored with the next 8 octets of plaintext, to produce the
+			// next 8 octets of ciphertext.  These are loaded into FR and the
+			// process is repeated until the plaintext is used up.
+			for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n-2)+i));
+		}
+	}
+	else {
+		plaintext = "  "+plaintext;
+		// 9.  FRE is xored with the first 8 octets of the given plaintext, now
+	    //	   that we have finished encrypting the 10 octets of prefixed data.
+	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
+		for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+		var tempCiphertext = ciphertext.substring(0,2*block_size).split('');
+		var tempCiphertextString = ciphertext.substring(block_size);
+		for(n=block_size; n<plaintext.length; n+=block_size) {
+			// 10. FR is loaded with C11-C18
+			for (var i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
+			tempCiphertextString='';
+			
+			// 11. FR is encrypted to produce FRE.
+			FRE = blockcipherencryptfn(FR, key);
+			
+			// 12. FRE is xored with the next 8 octets of plaintext, to produce the
+			//     next 8 octets of ciphertext.  These are loaded into FR and the
+			//     process is repeated until the plaintext is used up.
+			for (var i = 0; i < block_size; i++){ tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i)));
+			tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i));
+			}
+		}
+		ciphertext = tempCiphertext.join('');
+		
+	}
+	return ciphertext;
+}
+
+/**
+ * decrypts the prefixed data for the Modification Detection Code (MDC) computation
+ * @param blockcipherencryptfn cipher function to use
+ * @param block_size blocksize of the algorithm
+ * @param key the key for encryption
+ * @param ciphertext the encrypted data
+ * @return plaintext data of D(ciphertext) with blocksize length +2
+ */
+function openpgp_cfb_mdc(blockcipherencryptfn, block_size, key, ciphertext) {
+	var iblock = new Array(block_size);
+	var ablock = new Array(block_size);
+	var i;
+
+	// initialisation vector
+	for(i=0; i < block_size; i++) iblock[i] = 0;
+
+	iblock = blockcipherencryptfn(iblock, key);
+	for(i = 0; i < block_size; i++)
+	{
+		ablock[i] = ciphertext.charCodeAt(i);
+		iblock[i] ^= ablock[i];
+	}
+
+	ablock = blockcipherencryptfn(ablock, key);
+
+	return util.bin2str(iblock)+
+		String.fromCharCode(ablock[0]^ciphertext.charCodeAt(block_size))+
+		String.fromCharCode(ablock[1]^ciphertext.charCodeAt(block_size+1));
+}
+/**
+ * This function decrypts a given plaintext using the specified
+ * blockcipher to decrypt a message
+ * @param blockcipherfn the algorithm _encrypt_ function to encrypt
+ *  data in one block_size encryption. The function must be 
+ *  specified as blockcipherfn([integer_array(integers 0..255)] 
+ *  block,[integer_array(integers 0..255)] key) returning an 
+ *  array of bytes (integers 0..255)
+ * @param block_size the block size in bytes of the algorithm used
+ * @param plaintext ciphertext to be decrypted provided as a string
+ * @param key key to be used to decrypt the ciphertext as 
+ *  integer_array(integers 0..255)]. This will be passed to the 
+ *  blockcipherfn
+ * @param resync a boolean value specifying if a resync of the 
+ *  IV should be used or not. The encrypteddatapacket uses the 
+ *  "old" style with a resync. Decryption within an 
+ *  encryptedintegrityprotecteddata packet is not resyncing the IV.
+ * @return a string with the plaintext data
  */
 
-var RMDsize   = 160;
-var X = new Array();
-
-function ROL(x, n)
+function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, resync)
 {
-  return new Number ((x << n) | ( x >>> (32 - n)));
+	util.print_debug("resync:"+resync);
+	var iblock = new Array(block_size);
+	var ablock = new Array(block_size);
+	var i, n = '';
+	var text = [];
+
+	// initialisation vector
+	for(i=0; i < block_size; i++) iblock[i] = 0;
+
+	iblock = blockcipherencryptfn(iblock, key);
+	for(i = 0; i < block_size; i++)
+	{
+		ablock[i] = ciphertext.charCodeAt(i);
+		iblock[i] ^= ablock[i];
+	}
+
+	ablock = blockcipherencryptfn(ablock, key);
+
+	util.print_debug("openpgp_cfb_decrypt:\niblock:"+util.hexidump(iblock)+"\nablock:"+util.hexidump(ablock)+"\n");
+	util.print_debug((ablock[0]^ciphertext.charCodeAt(block_size)).toString(16)+(ablock[1]^ciphertext.charCodeAt(block_size+1)).toString(16));
+	
+	// test check octets
+	if(iblock[block_size-2]!=(ablock[0]^ciphertext.charCodeAt(block_size))
+	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
+	{
+		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
+		return text.join('');
+	}
+	
+	/*  RFC4880: Tag 18 and Resync:
+	 *  [...] Unlike the Symmetrically Encrypted Data Packet, no
+   	 *  special CFB resynchronization is done after encrypting this prefix
+     *  data.  See "OpenPGP CFB Mode" below for more details.
+
+	 */
+	
+	if (resync) {
+	    for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i+2);
+		for(n=block_size+2; n<ciphertext.length; n+=block_size)
+		{
+			ablock = blockcipherencryptfn(iblock, key);
+
+			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
+			{
+				iblock[i] = ciphertext.charCodeAt(n+i);
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
+			}
+		}
+	} else {
+		for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i);
+		for(n=block_size; n<ciphertext.length; n+=block_size)
+		{
+			ablock = blockcipherencryptfn(iblock, key);
+			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
+			{
+				iblock[i] = ciphertext.charCodeAt(n+i);
+				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
+			}
+		}
+		
+	}
+	
+	return text.join('');
 }
 
-function F(x, y, z)
-{
-  return new Number(x ^ y ^ z);
+
+function normal_cfb_encrypt(blockcipherencryptfn, block_size, key, plaintext, iv) {
+	var blocki ="";
+	var blockc = "";
+	var pos = 0;
+	var cyphertext = [];
+	var tempBlock = [];
+	blockc = iv.substring(0,block_size);
+	while (plaintext.length > block_size*pos) {
+		var encblock = blockcipherencryptfn(blockc, key);
+		blocki = plaintext.substring((pos*block_size),(pos*block_size)+block_size);
+		for (var i=0; i < blocki.length; i++)
+		    tempBlock.push(String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]));
+		blockc = tempBlock.join('');
+		tempBlock = [];
+		cyphertext.push(blockc);
+		pos++;
+	}
+	return cyphertext.join('');
 }
 
-function G(x, y, z)
-{
-  return new Number((x & y) | (~x & z));
+function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) { 
+	var blockp ="";
+	var pos = 0;
+	var plaintext = [];
+	var offset = 0;
+	if (iv == null)
+		for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
+	else
+		blockp = iv.substring(0,block_size);
+	while (ciphertext.length > (block_size*pos)) {
+		var decblock = blockcipherencryptfn(blockp, key);
+		blockp = ciphertext.substring((pos*(block_size))+offset,(pos*(block_size))+(block_size)+offset);
+		for (var i=0; i < blockp.length; i++) {
+			plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
+		}
+		pos++;
+	}
+	
+	return plaintext.join('');
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+
+// The GPG4Browsers crypto interface
+
+/**
+ * Encrypts data using the specified public key multiprecision integers 
+ * and the specified algorithm.
+ * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
+ * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers
+ * @param data [openpgp_type_mpi] data to be encrypted as MPI
+ * @return [Object] if RSA an openpgp_type_mpi; if elgamal encryption an array of two
+ * openpgp_type_mpi is returned; otherwise null
+ */
+function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
+	switch(algo) {
+	case 1: // RSA (Encrypt or Sign) [HAC]
+	case 2: // RSA Encrypt-Only [HAC]
+	case 3: // RSA Sign-Only [HAC]
+		var rsa = new RSA();
+		var n = publicMPIs[0].toBigInteger();
+		var e = publicMPIs[1].toBigInteger();
+		var m = data.toBigInteger();
+		return rsa.encrypt(m,e,n).toMPI();
+	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+		var elgamal = new Elgamal();
+		var p = publicMPIs[0].toBigInteger();
+		var g = publicMPIs[1].toBigInteger();
+		var y = publicMPIs[2].toBigInteger();
+		var m = data.toBigInteger();
+		return elgamal.encrypt(m,g,p,y);
+	default:
+		return null;
+	}
 }
 
-function H(x, y, z)
-{
-  return new Number((x | ~y) ^ z);
+/**
+ * Decrypts data using the specified public key multiprecision integers of the private key,
+ * the specified secretMPIs of the private key and the specified algorithm.
+ * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
+ * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the public key part of the private key
+ * @param secretMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the private key used
+ * @param data [openpgp_type_mpi] data to be encrypted as MPI
+ * @return [BigInteger] returns a big integer containing the decrypted data; otherwise null
+ */
+
+function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
+	switch(algo) {
+	case 1: // RSA (Encrypt or Sign) [HAC]  
+	case 2: // RSA Encrypt-Only [HAC]
+	case 3: // RSA Sign-Only [HAC]
+		var rsa = new RSA();
+		var d = secretMPIs[0].toBigInteger();
+		var p = secretMPIs[1].toBigInteger();
+		var q = secretMPIs[2].toBigInteger();
+		var u = secretMPIs[3].toBigInteger();
+		var m = dataMPIs[0].toBigInteger();
+		return rsa.decrypt(m, d, p, q, u);
+	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+		var elgamal = new Elgamal();
+		var x = secretMPIs[0].toBigInteger();
+		var c1 = dataMPIs[0].toBigInteger();
+		var c2 = dataMPIs[1].toBigInteger();
+		var p = publicMPIs[0].toBigInteger();
+		return elgamal.decrypt(c1,c2,p,x);
+	default:
+		return null;
+	}
+	
 }
 
-function I(x, y, z)
-{
-  return new Number((x & z) | (y & ~z));
+/**
+ * generate random byte prefix as string for the specified algorithm
+ * @param algo [Integer] algorithm to use (see RFC4880 9.2)
+ * @return [String] random bytes with length equal to the block
+ * size of the cipher
+ */
+function openpgp_crypto_getPrefixRandom(algo) {
+	switch(algo) {
+	case 2:
+	case 3:
+	case 4:
+		return openpgp_crypto_getRandomBytes(8);
+	case 7:
+	case 8:
+	case 9:
+	case 10:
+		return openpgp_crypto_getRandomBytes(16);
+	default:
+		return null;
+	}
 }
 
-function J(x, y, z)
-{
-  return new Number(x ^ (y | ~z));
+/**
+ * retrieve the MDC prefixed bytes by decrypting them
+ * @param algo [Integer] algorithm to use (see RFC4880 9.2)
+ * @param key [String] key as string. length is depending on the algorithm used
+ * @param data [String] encrypted data where the prefix is decrypted from
+ * @return [String] plain text data of the prefixed data
+ */
+function openpgp_crypto_MDCSystemBytes(algo, key, data) {
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
+	switch(algo) {
+	case 0: // Plaintext or unencrypted data
+		return data;
+	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+		return openpgp_cfb_mdc(desede, 8, key, data, openpgp_cfb);
+	case 3: // CAST5 (128 bit key, as per [RFC2144])
+		return openpgp_cfb_mdc(cast5_encrypt, 8, key, data);
+	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+		return openpgp_cfb_mdc(BFencrypt, 8, key, data);
+	case 7: // AES with 128-bit key [AES]
+	case 8: // AES with 192-bit key
+	case 9: // AES with 256-bit key
+		return openpgp_cfb_mdc(AESencrypt, 16, keyExpansion(key), data);
+	case 10: 
+		return openpgp_cfb_mdc(TFencrypt, 16, key, data);
+	case 1: // IDEA [IDEA]
+		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
+		return null;
+	default:
+	}
+	return null;
+}
+/**
+ * Generating a session key for the specified symmetric algorithm
+ * @param algo [Integer] algorithm to use (see RFC4880 9.2)
+ * @return [String] random bytes as a string to be used as a key
+ */
+function openpgp_crypto_generateSessionKey(algo) {
+	switch (algo) {
+	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+	case 8: // AES with 192-bit key
+		return openpgp_crypto_getRandomBytes(24); 
+	case 3: // CAST5 (128 bit key, as per [RFC2144])
+	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	case 7: // AES with 128-bit key [AES]
+		util.print_debug("length = 16:\n"+util.hexstrdump(openpgp_crypto_getRandomBytes(16)));
+		return openpgp_crypto_getRandomBytes(16);
+	case 9: // AES with 256-bit key
+	case 10:// Twofish with 256-bit key [TWOFISH]
+		return openpgp_crypto_getRandomBytes(32);
+	}
+	return null;
 }
 
-function mixOneRound(a, b, c, d, e, x, s, roundNumber)
+/**
+ * 
+ * @param algo [Integer] public key algorithm
+ * @param hash_algo [Integer] hash algorithm
+ * @param msg_MPIs [Array[openpgp_type_mpi]] signature multiprecision integers
+ * @param publickey_MPIs [Array[openpgp_type_mpi]] public key multiprecision integers 
+ * @param data [String] data on where the signature was computed on.
+ * @return true if signature (sig_data was equal to data over hash)
+ */
+function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
+	var calc_hash = openpgp_crypto_hashData(hash_algo, data);
+	switch(algo) {
+	case 1: // RSA (Encrypt or Sign) [HAC]  
+	case 2: // RSA Encrypt-Only [HAC]
+	case 3: // RSA Sign-Only [HAC]
+		var rsa = new RSA();
+		var n = publickey_MPIs[0].toBigInteger();
+		var e = publickey_MPIs[1].toBigInteger();
+		var x = msg_MPIs[0].toBigInteger();
+		var dopublic = rsa.verify(x,e,n);
+		var hash  = openpgp_encoding_emsa_pkcs1_decode(hash_algo,dopublic.toMPI().substring(2));
+		if (hash == -1) {
+			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
+			return false;
+		}
+		return hash == calc_hash;
+		
+	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+		util.print_error("signing with Elgamal is not defined in the OpenPGP standard.");
+		return null;
+	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
+		var dsa = new DSA();
+		var s1 = msg_MPIs[0].toBigInteger();
+		var s2 = msg_MPIs[1].toBigInteger();
+		var p = publickey_MPIs[0].toBigInteger();
+		var q = publickey_MPIs[1].toBigInteger();
+		var g = publickey_MPIs[2].toBigInteger();
+		var y = publickey_MPIs[3].toBigInteger();
+		var m = data;
+		var dopublic = dsa.verify(hash_algo,s1,s2,m,p,q,g,y);
+		return dopublic.compareTo(s1) == 0;
+	default:
+		return null;
+	}
+	
+}
+   
+/**
+ * Create a signature on data using the specified algorithm
+ * @param hash_algo [Integer] hash algorithm to use (See RFC4880 9.4)
+ * @param algo [Integer] asymmetric cipher algorithm to use (See RFC4880 9.1)
+ * @param publicMPIs [Array[openpgp_type_mpi]] public key multiprecision integers of the private key 
+ * @param secretMPIs [Array[openpgp_type_mpi]] private key multiprecision integers which is used to sign the data
+ * @param data [String] data to be signed
+ * @return [String or openpgp_type_mpi] 
+ */
+function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
+	
+	switch(algo) {
+	case 1: // RSA (Encrypt or Sign) [HAC]  
+	case 2: // RSA Encrypt-Only [HAC]
+	case 3: // RSA Sign-Only [HAC]
+		var rsa = new RSA();
+		var d = secretMPIs[0].toBigInteger();
+		var n = publicMPIs[0].toBigInteger();
+		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].mpiByteLength);
+		util.print_debug("signing using RSA");
+		return rsa.sign(m, d, n).toMPI();
+	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
+		var dsa = new DSA();
+		util.print_debug("DSA Sign: q size in Bytes:"+publicMPIs[1].getByteLength());
+		var p = publicMPIs[0].toBigInteger();
+		var q = publicMPIs[1].toBigInteger();
+		var g = publicMPIs[2].toBigInteger();
+		var y = publicMPIs[3].toBigInteger();
+		var x = secretMPIs[0].toBigInteger();
+		var m = data;
+		var result = dsa.sign(hash_algo,m, g, p, q, x);
+		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));
+		return result[0]+result[1];
+	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+			util.print_debug("signing with Elgamal is not defined in the OpenPGP standard.");
+			return null;
+	default:
+		return null;
+	}	
+}
+
+/**
+ * create a hash on the specified data using the specified algorithm
+ * @param algo [Integer] hash algorithm type (see RFC4880 9.4)
+ * @param data [String] data to be hashed
+ * @return [String] hash value
+ */
+function openpgp_crypto_hashData(algo, data) {
+	var hash = null;
+	switch(algo) {
+	case 1: // - MD5 [HAC]
+		hash = MD5(data);
+		break;
+	case 2: // - SHA-1 [FIPS180]
+		hash = str_sha1(data);
+		break;
+	case 3: // - RIPE-MD/160 [HAC]
+		hash = RMDstring(data);
+		break;
+	case 8: // - SHA256 [FIPS180]
+		hash = str_sha256(data);
+		break;
+	case 9: // - SHA384 [FIPS180]
+		hash = str_sha384(data);
+		break;
+	case 10:// - SHA512 [FIPS180]
+		hash = str_sha512(data);
+		break;
+	case 11:// - SHA224 [FIPS180]
+		hash = str_sha224(data);
+	default:
+		break;
+	}
+	return hash;
+}
+
+/**
+ * returns the hash size in bytes of the specified hash algorithm type
+ * @param algo [Integer] hash algorithm type (See RFC4880 9.4)
+ * @return [Integer] size in bytes of the resulting hash
+ */
+function openpgp_crypto_getHashByteLength(algo) {
+	var hash = null;
+	switch(algo) {
+	case 1: // - MD5 [HAC]
+		return 16;
+	case 2: // - SHA-1 [FIPS180]
+	case 3: // - RIPE-MD/160 [HAC]
+		return 20;
+	case 8: // - SHA256 [FIPS180]
+		return 32;
+	case 9: // - SHA384 [FIPS180]
+		return 48
+	case 10:// - SHA512 [FIPS180]
+		return 64;
+	case 11:// - SHA224 [FIPS180]
+		return 28;
+	}
+	return null;
+}
+
+/**
+ * retrieve secure random byte string of the specified length
+ * @param length [Integer] length in bytes to generate
+ * @return [String] random byte string
+ */
+function openpgp_crypto_getRandomBytes(length) {
+	var result = '';
+	for (var i = 0; i < length; i++) {
+		result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
+	}
+	return result;
+}
+
+/**
+ * return a pseudo-random number in the specified range
+ * @param from [Integer] min of the random number
+ * @param to [Integer] max of the random number (max 32bit)
+ * @return [Integer] a pseudo random number
+ */
+function openpgp_crypto_getPseudoRandom(from, to) {
+	return Math.round(Math.random()*(to-from))+from;
+}
+
+/**
+ * return a secure random number in the specified range
+ * @param from [Integer] min of the random number
+ * @param to [Integer] max of the random number (max 32bit)
+ * @return [Integer] a secure random number
+ */
+function openpgp_crypto_getSecureRandom(from, to) {
+	var buf = new Uint32Array(1);
+	window.crypto.getRandomValues(buf);
+	var bits = ((to-from)).toString(2).length;
+	while ((buf[0] & (Math.pow(2, bits) -1)) > (to-from))
+		window.crypto.getRandomValues(buf);
+	return from+(Math.abs(buf[0] & (Math.pow(2, bits) -1)));
+}
+
+function openpgp_crypto_getSecureRandomOctet() {
+	var buf = new Uint32Array(1);
+	window.crypto.getRandomValues(buf);
+	return buf[0] & 0xFF;
+}
+
+/**
+ * create a secure random big integer of bits length
+ * @param bits [Integer] bit length of the MPI to create
+ * @return [BigInteger] resulting big integer
+ */
+function openpgp_crypto_getRandomBigInteger(bits) {
+	if (bits < 0)
+	   return null;
+	var numBytes = Math.floor((bits+7)/8);
+
+	var randomBits = openpgp_crypto_getRandomBytes(numBytes);
+	if (bits % 8 > 0) {
+		
+		randomBits = String.fromCharCode(
+						(Math.pow(2,bits % 8)-1) &
+						randomBits.charCodeAt(0)) +
+			randomBits.substring(1);
+	}
+	return new openpgp_type_mpi().create(randomBits).toBigInteger();
+}
+
+function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
+	if (max.compareTo(min) <= 0)
+		return;
+	var range = max.subtract(min);
+	var r = openpgp_crypto_getRandomBigInteger(range.bitLength());
+	while (r > range) {
+		r = openpgp_crypto_getRandomBigInteger(range.bitLength());
+	}
+	return min.add(r);
+}
+
+
+//This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
+function openpgp_crypto_testRSA(key){
+	debugger;
+    var rsa = new RSA();
+	var mpi = new openpgp_type_mpi();
+	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
+	var msg = rsa.encrypt(mpi.toBigInteger(),key.ee,key.n);
+	var result = rsa.decrypt(msg, key.d, key.p, key.q, key.u);
+}
+/**
+ * calls the necessary crypto functions to generate a keypair. Called directly by openpgp.js
+ * @keyType [int] follows OpenPGP algorithm convention.
+ * @numBits [int] number of bits to make the key to be generated
+ * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
+ */
+function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
+	var privKeyPacket;
+	var publicKeyPacket;
+	var d = new Date();
+	d = d.getTime()/1000;
+	var timePacket = String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
+	switch(keyType){
+	case 1:
+	    var rsa = new RSA();
+	    var key = rsa.generate(numBits,"10001");
+	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm, timePacket);
+	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key, timePacket);
+	    break;
+	default:
+		util.print_error("Unknown keytype "+keyType)
+	}
+	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+
+// The GPG4Browsers symmetric crypto interface
+
+/**
+ * Symmetrically encrypts data using prefixedrandom, a key with length 
+ * depending on the algorithm in openpgp_cfb mode with or without resync
+ * (MDC style)
+ * @param prefixrandom secure random bytes as string in length equal to the
+ * block size of the algorithm used (use openpgp_crypto_getPrefixRandom(algo)
+ * to retrieve that string
+ * @param algo [Integer] algorithm to use (see RFC4880 9.2)
+ * @param key [String] key as string. length is depending on the algorithm used
+ * @param data [String] data to encrypt
+ * @param openpgp_cfb [boolean]
+ * @return [String] encrypted data
+ */
+function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_cfb) {
+	switch(algo) {
+		case 0: // Plaintext or unencrypted data
+			return data; // blockcipherencryptfn, plaintext, block_size, key
+		case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+			return openpgp_cfb_encrypt(prefixrandom, desede, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+		case 3: // CAST5 (128 bit key, as per [RFC2144])
+			return openpgp_cfb_encrypt(prefixrandom, cast5_encrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+		case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+			return openpgp_cfb_encrypt(prefixrandom, BFencrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+		case 7: // AES with 128-bit key [AES]
+		case 8: // AES with 192-bit key
+		case 9: // AES with 256-bit key
+			return openpgp_cfb_encrypt(prefixrandom, AESencrypt, data, 16, keyExpansion(key), openpgp_cfb).substring(0, data.length + 18);
+		case 10: // Twofish with 256-bit key [TWOFISH]
+			return openpgp_cfb_encrypt(prefixrandom, TFencrypt, data,16, key, openpgp_cfb).substring(0, data.length + 18);
+		case 1: // IDEA [IDEA]
+			util.print_error("IDEA Algorithm not implemented");
+			return null;
+		default:
+			return null;
+	}
+}
+
+/**
+ * Symmetrically decrypts data using a key with length depending on the
+ * algorithm in openpgp_cfb mode with or without resync (MDC style)
+ * @param algo [Integer] algorithm to use (see RFC4880 9.2)
+ * @param key [String] key as string. length is depending on the algorithm used
+ * @param data [String] data to be decrypted
+ * @param openpgp_cfb [boolean] if true use the resync (for encrypteddata); 
+ * otherwise use without the resync (for MDC encrypted data)
+ * @return [String] plaintext data
+ */
+function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
+	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
+	var n = 0;
+	if (!openpgp_cfb)
+		n = 2;
+	switch(algo) {
+	case 0: // Plaintext or unencrypted data
+		return data;
+	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+		return openpgp_cfb_decrypt(desede, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+	case 3: // CAST5 (128 bit key, as per [RFC2144])
+		return openpgp_cfb_decrypt(cast5_encrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+		return openpgp_cfb_decrypt(BFencrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+	case 7: // AES with 128-bit key [AES]
+	case 8: // AES with 192-bit key
+	case 9: // AES with 256-bit key
+		return openpgp_cfb_decrypt(AESencrypt, 16, keyExpansion(key), data, openpgp_cfb).substring(n, (data.length+n)-18);
+	case 10: // Twofish with 256-bit key [TWOFISH]
+		var result = openpgp_cfb_decrypt(TFencrypt, 16, key, data, openpgp_cfb).substring(n, (data.length+n)-18);
+		return result;
+	case 1: // IDEA [IDEA]
+		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
+		return null;
+	default:
+	}
+	return null;
+}
+/* Rijndael (AES) Encryption
+ * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
+ * version 1.1, check www.haneWIN.de for the latest version
+
+ * This software is provided as-is, without express or implied warranty.  
+ * Permission to use, copy, modify, distribute or sell this software, with or
+ * without fee, for any purpose and by any individual or organization, is hereby
+ * granted, provided that the above copyright notice and this paragraph appear 
+ * in all copies. Distribution as a part of an application or binary must
+ * include the above copyright notice in the documentation and/or other
+ * materials provided with the application or distribution.
+ */
+
+// The round constants used in subkey expansion
+var Rcon = [ 
+0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 
+0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 
+0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91 ];
+
+// Precomputed lookup table for the SBox
+var S = [
+ 99, 124, 119, 123, 242, 107, 111, 197,  48,   1, 103,  43, 254, 215, 171, 
+118, 202, 130, 201, 125, 250,  89,  71, 240, 173, 212, 162, 175, 156, 164, 
+114, 192, 183, 253, 147,  38,  54,  63, 247, 204,  52, 165, 229, 241, 113, 
+216,  49,  21,   4, 199,  35, 195,  24, 150,   5, 154,   7,  18, 128, 226, 
+235,  39, 178, 117,   9, 131,  44,  26,  27, 110,  90, 160,  82,  59, 214, 
+179,  41, 227,  47, 132,  83, 209,   0, 237,  32, 252, 177,  91, 106, 203, 
+190,  57,  74,  76,  88, 207, 208, 239, 170, 251,  67,  77,  51, 133,  69, 
+249,   2, 127,  80,  60, 159, 168,  81, 163,  64, 143, 146, 157,  56, 245, 
+188, 182, 218,  33,  16, 255, 243, 210, 205,  12,  19, 236,  95, 151,  68,  
+23,  196, 167, 126,  61, 100,  93,  25, 115,  96, 129,  79, 220,  34,  42, 
+144, 136,  70, 238, 184,  20, 222,  94,  11, 219, 224,  50,  58,  10,  73,
+  6,  36,  92, 194, 211, 172,  98, 145, 149, 228, 121, 231, 200,  55, 109, 
+141, 213,  78, 169, 108,  86, 244, 234, 101, 122, 174,   8, 186, 120,  37,  
+ 46,  28, 166, 180, 198, 232, 221, 116,  31,  75, 189, 139, 138, 112,  62, 
+181, 102,  72,   3, 246,  14,  97,  53,  87, 185, 134, 193,  29, 158, 225,
+248, 152,  17, 105, 217, 142, 148, 155,  30, 135, 233, 206,  85,  40, 223,
+140, 161, 137,  13, 191, 230,  66, 104,  65, 153,  45,  15, 176,  84, 187,  
+ 22 ];
+
+var T1 = [
+0xa56363c6, 0x847c7cf8, 0x997777ee, 0x8d7b7bf6,
+0x0df2f2ff, 0xbd6b6bd6, 0xb16f6fde, 0x54c5c591,
+0x50303060, 0x03010102, 0xa96767ce, 0x7d2b2b56,
+0x19fefee7, 0x62d7d7b5, 0xe6abab4d, 0x9a7676ec,
+0x45caca8f, 0x9d82821f, 0x40c9c989, 0x877d7dfa,
+0x15fafaef, 0xeb5959b2, 0xc947478e, 0x0bf0f0fb,
+0xecadad41, 0x67d4d4b3, 0xfda2a25f, 0xeaafaf45,
+0xbf9c9c23, 0xf7a4a453, 0x967272e4, 0x5bc0c09b,
+0xc2b7b775, 0x1cfdfde1, 0xae93933d, 0x6a26264c,
+0x5a36366c, 0x413f3f7e, 0x02f7f7f5, 0x4fcccc83,
+0x5c343468, 0xf4a5a551, 0x34e5e5d1, 0x08f1f1f9,
+0x937171e2, 0x73d8d8ab, 0x53313162, 0x3f15152a,
+0x0c040408, 0x52c7c795, 0x65232346, 0x5ec3c39d,
+0x28181830, 0xa1969637, 0x0f05050a, 0xb59a9a2f,
+0x0907070e, 0x36121224, 0x9b80801b, 0x3de2e2df,
+0x26ebebcd, 0x6927274e, 0xcdb2b27f, 0x9f7575ea,
+0x1b090912, 0x9e83831d, 0x742c2c58, 0x2e1a1a34,
+0x2d1b1b36, 0xb26e6edc, 0xee5a5ab4, 0xfba0a05b,
+0xf65252a4, 0x4d3b3b76, 0x61d6d6b7, 0xceb3b37d,
+0x7b292952, 0x3ee3e3dd, 0x712f2f5e, 0x97848413,
+0xf55353a6, 0x68d1d1b9, 0x00000000, 0x2cededc1,
+0x60202040, 0x1ffcfce3, 0xc8b1b179, 0xed5b5bb6,
+0xbe6a6ad4, 0x46cbcb8d, 0xd9bebe67, 0x4b393972,
+0xde4a4a94, 0xd44c4c98, 0xe85858b0, 0x4acfcf85,
+0x6bd0d0bb, 0x2aefefc5, 0xe5aaaa4f, 0x16fbfbed,
+0xc5434386, 0xd74d4d9a, 0x55333366, 0x94858511,
+0xcf45458a, 0x10f9f9e9, 0x06020204, 0x817f7ffe,
+0xf05050a0, 0x443c3c78, 0xba9f9f25, 0xe3a8a84b,
+0xf35151a2, 0xfea3a35d, 0xc0404080, 0x8a8f8f05,
+0xad92923f, 0xbc9d9d21, 0x48383870, 0x04f5f5f1,
+0xdfbcbc63, 0xc1b6b677, 0x75dadaaf, 0x63212142,
+0x30101020, 0x1affffe5, 0x0ef3f3fd, 0x6dd2d2bf,
+0x4ccdcd81, 0x140c0c18, 0x35131326, 0x2fececc3,
+0xe15f5fbe, 0xa2979735, 0xcc444488, 0x3917172e,
+0x57c4c493, 0xf2a7a755, 0x827e7efc, 0x473d3d7a,
+0xac6464c8, 0xe75d5dba, 0x2b191932, 0x957373e6,
+0xa06060c0, 0x98818119, 0xd14f4f9e, 0x7fdcdca3,
+0x66222244, 0x7e2a2a54, 0xab90903b, 0x8388880b,
+0xca46468c, 0x29eeeec7, 0xd3b8b86b, 0x3c141428,
+0x79dedea7, 0xe25e5ebc, 0x1d0b0b16, 0x76dbdbad,
+0x3be0e0db, 0x56323264, 0x4e3a3a74, 0x1e0a0a14,
+0xdb494992, 0x0a06060c, 0x6c242448, 0xe45c5cb8,
+0x5dc2c29f, 0x6ed3d3bd, 0xefacac43, 0xa66262c4,
+0xa8919139, 0xa4959531, 0x37e4e4d3, 0x8b7979f2,
+0x32e7e7d5, 0x43c8c88b, 0x5937376e, 0xb76d6dda,
+0x8c8d8d01, 0x64d5d5b1, 0xd24e4e9c, 0xe0a9a949,
+0xb46c6cd8, 0xfa5656ac, 0x07f4f4f3, 0x25eaeacf,
+0xaf6565ca, 0x8e7a7af4, 0xe9aeae47, 0x18080810,
+0xd5baba6f, 0x887878f0, 0x6f25254a, 0x722e2e5c,
+0x241c1c38, 0xf1a6a657, 0xc7b4b473, 0x51c6c697,
+0x23e8e8cb, 0x7cdddda1, 0x9c7474e8, 0x211f1f3e,
+0xdd4b4b96, 0xdcbdbd61, 0x868b8b0d, 0x858a8a0f,
+0x907070e0, 0x423e3e7c, 0xc4b5b571, 0xaa6666cc,
+0xd8484890, 0x05030306, 0x01f6f6f7, 0x120e0e1c,
+0xa36161c2, 0x5f35356a, 0xf95757ae, 0xd0b9b969,
+0x91868617, 0x58c1c199, 0x271d1d3a, 0xb99e9e27,
+0x38e1e1d9, 0x13f8f8eb, 0xb398982b, 0x33111122,
+0xbb6969d2, 0x70d9d9a9, 0x898e8e07, 0xa7949433,
+0xb69b9b2d, 0x221e1e3c, 0x92878715, 0x20e9e9c9,
+0x49cece87, 0xff5555aa, 0x78282850, 0x7adfdfa5,
+0x8f8c8c03, 0xf8a1a159, 0x80898909, 0x170d0d1a,
+0xdabfbf65, 0x31e6e6d7, 0xc6424284, 0xb86868d0,
+0xc3414182, 0xb0999929, 0x772d2d5a, 0x110f0f1e,
+0xcbb0b07b, 0xfc5454a8, 0xd6bbbb6d, 0x3a16162c ];
+
+var T2 = [
+0x6363c6a5, 0x7c7cf884, 0x7777ee99, 0x7b7bf68d,
+0xf2f2ff0d, 0x6b6bd6bd, 0x6f6fdeb1, 0xc5c59154,
+0x30306050, 0x01010203, 0x6767cea9, 0x2b2b567d,
+0xfefee719, 0xd7d7b562, 0xabab4de6, 0x7676ec9a,
+0xcaca8f45, 0x82821f9d, 0xc9c98940, 0x7d7dfa87,
+0xfafaef15, 0x5959b2eb, 0x47478ec9, 0xf0f0fb0b,
+0xadad41ec, 0xd4d4b367, 0xa2a25ffd, 0xafaf45ea,
+0x9c9c23bf, 0xa4a453f7, 0x7272e496, 0xc0c09b5b,
+0xb7b775c2, 0xfdfde11c, 0x93933dae, 0x26264c6a,
+0x36366c5a, 0x3f3f7e41, 0xf7f7f502, 0xcccc834f,
+0x3434685c, 0xa5a551f4, 0xe5e5d134, 0xf1f1f908,
+0x7171e293, 0xd8d8ab73, 0x31316253, 0x15152a3f,
+0x0404080c, 0xc7c79552, 0x23234665, 0xc3c39d5e,
+0x18183028, 0x969637a1, 0x05050a0f, 0x9a9a2fb5,
+0x07070e09, 0x12122436, 0x80801b9b, 0xe2e2df3d,
+0xebebcd26, 0x27274e69, 0xb2b27fcd, 0x7575ea9f,
+0x0909121b, 0x83831d9e, 0x2c2c5874, 0x1a1a342e,
+0x1b1b362d, 0x6e6edcb2, 0x5a5ab4ee, 0xa0a05bfb,
+0x5252a4f6, 0x3b3b764d, 0xd6d6b761, 0xb3b37dce,
+0x2929527b, 0xe3e3dd3e, 0x2f2f5e71, 0x84841397,
+0x5353a6f5, 0xd1d1b968, 0x00000000, 0xededc12c,
+0x20204060, 0xfcfce31f, 0xb1b179c8, 0x5b5bb6ed,
+0x6a6ad4be, 0xcbcb8d46, 0xbebe67d9, 0x3939724b,
+0x4a4a94de, 0x4c4c98d4, 0x5858b0e8, 0xcfcf854a,
+0xd0d0bb6b, 0xefefc52a, 0xaaaa4fe5, 0xfbfbed16,
+0x434386c5, 0x4d4d9ad7, 0x33336655, 0x85851194,
+0x45458acf, 0xf9f9e910, 0x02020406, 0x7f7ffe81,
+0x5050a0f0, 0x3c3c7844, 0x9f9f25ba, 0xa8a84be3,
+0x5151a2f3, 0xa3a35dfe, 0x404080c0, 0x8f8f058a,
+0x92923fad, 0x9d9d21bc, 0x38387048, 0xf5f5f104,
+0xbcbc63df, 0xb6b677c1, 0xdadaaf75, 0x21214263,
+0x10102030, 0xffffe51a, 0xf3f3fd0e, 0xd2d2bf6d,
+0xcdcd814c, 0x0c0c1814, 0x13132635, 0xececc32f,
+0x5f5fbee1, 0x979735a2, 0x444488cc, 0x17172e39,
+0xc4c49357, 0xa7a755f2, 0x7e7efc82, 0x3d3d7a47,
+0x6464c8ac, 0x5d5dbae7, 0x1919322b, 0x7373e695,
+0x6060c0a0, 0x81811998, 0x4f4f9ed1, 0xdcdca37f,
+0x22224466, 0x2a2a547e, 0x90903bab, 0x88880b83,
+0x46468cca, 0xeeeec729, 0xb8b86bd3, 0x1414283c,
+0xdedea779, 0x5e5ebce2, 0x0b0b161d, 0xdbdbad76,
+0xe0e0db3b, 0x32326456, 0x3a3a744e, 0x0a0a141e,
+0x494992db, 0x06060c0a, 0x2424486c, 0x5c5cb8e4,
+0xc2c29f5d, 0xd3d3bd6e, 0xacac43ef, 0x6262c4a6,
+0x919139a8, 0x959531a4, 0xe4e4d337, 0x7979f28b,
+0xe7e7d532, 0xc8c88b43, 0x37376e59, 0x6d6ddab7,
+0x8d8d018c, 0xd5d5b164, 0x4e4e9cd2, 0xa9a949e0,
+0x6c6cd8b4, 0x5656acfa, 0xf4f4f307, 0xeaeacf25,
+0x6565caaf, 0x7a7af48e, 0xaeae47e9, 0x08081018,
+0xbaba6fd5, 0x7878f088, 0x25254a6f, 0x2e2e5c72,
+0x1c1c3824, 0xa6a657f1, 0xb4b473c7, 0xc6c69751,
+0xe8e8cb23, 0xdddda17c, 0x7474e89c, 0x1f1f3e21,
+0x4b4b96dd, 0xbdbd61dc, 0x8b8b0d86, 0x8a8a0f85,
+0x7070e090, 0x3e3e7c42, 0xb5b571c4, 0x6666ccaa,
+0x484890d8, 0x03030605, 0xf6f6f701, 0x0e0e1c12,
+0x6161c2a3, 0x35356a5f, 0x5757aef9, 0xb9b969d0,
+0x86861791, 0xc1c19958, 0x1d1d3a27, 0x9e9e27b9,
+0xe1e1d938, 0xf8f8eb13, 0x98982bb3, 0x11112233,
+0x6969d2bb, 0xd9d9a970, 0x8e8e0789, 0x949433a7,
+0x9b9b2db6, 0x1e1e3c22, 0x87871592, 0xe9e9c920,
+0xcece8749, 0x5555aaff, 0x28285078, 0xdfdfa57a,
+0x8c8c038f, 0xa1a159f8, 0x89890980, 0x0d0d1a17,
+0xbfbf65da, 0xe6e6d731, 0x424284c6, 0x6868d0b8,
+0x414182c3, 0x999929b0, 0x2d2d5a77, 0x0f0f1e11,
+0xb0b07bcb, 0x5454a8fc, 0xbbbb6dd6, 0x16162c3a ];
+
+var T3 = [
+0x63c6a563, 0x7cf8847c, 0x77ee9977, 0x7bf68d7b,
+0xf2ff0df2, 0x6bd6bd6b, 0x6fdeb16f, 0xc59154c5,
+0x30605030, 0x01020301, 0x67cea967, 0x2b567d2b,
+0xfee719fe, 0xd7b562d7, 0xab4de6ab, 0x76ec9a76,
+0xca8f45ca, 0x821f9d82, 0xc98940c9, 0x7dfa877d,
+0xfaef15fa, 0x59b2eb59, 0x478ec947, 0xf0fb0bf0,
+0xad41ecad, 0xd4b367d4, 0xa25ffda2, 0xaf45eaaf,
+0x9c23bf9c, 0xa453f7a4, 0x72e49672, 0xc09b5bc0,
+0xb775c2b7, 0xfde11cfd, 0x933dae93, 0x264c6a26,
+0x366c5a36, 0x3f7e413f, 0xf7f502f7, 0xcc834fcc,
+0x34685c34, 0xa551f4a5, 0xe5d134e5, 0xf1f908f1,
+0x71e29371, 0xd8ab73d8, 0x31625331, 0x152a3f15,
+0x04080c04, 0xc79552c7, 0x23466523, 0xc39d5ec3,
+0x18302818, 0x9637a196, 0x050a0f05, 0x9a2fb59a,
+0x070e0907, 0x12243612, 0x801b9b80, 0xe2df3de2,
+0xebcd26eb, 0x274e6927, 0xb27fcdb2, 0x75ea9f75,
+0x09121b09, 0x831d9e83, 0x2c58742c, 0x1a342e1a,
+0x1b362d1b, 0x6edcb26e, 0x5ab4ee5a, 0xa05bfba0,
+0x52a4f652, 0x3b764d3b, 0xd6b761d6, 0xb37dceb3,
+0x29527b29, 0xe3dd3ee3, 0x2f5e712f, 0x84139784,
+0x53a6f553, 0xd1b968d1, 0x00000000, 0xedc12ced,
+0x20406020, 0xfce31ffc, 0xb179c8b1, 0x5bb6ed5b,
+0x6ad4be6a, 0xcb8d46cb, 0xbe67d9be, 0x39724b39,
+0x4a94de4a, 0x4c98d44c, 0x58b0e858, 0xcf854acf,
+0xd0bb6bd0, 0xefc52aef, 0xaa4fe5aa, 0xfbed16fb,
+0x4386c543, 0x4d9ad74d, 0x33665533, 0x85119485,
+0x458acf45, 0xf9e910f9, 0x02040602, 0x7ffe817f,
+0x50a0f050, 0x3c78443c, 0x9f25ba9f, 0xa84be3a8,
+0x51a2f351, 0xa35dfea3, 0x4080c040, 0x8f058a8f,
+0x923fad92, 0x9d21bc9d, 0x38704838, 0xf5f104f5,
+0xbc63dfbc, 0xb677c1b6, 0xdaaf75da, 0x21426321,
+0x10203010, 0xffe51aff, 0xf3fd0ef3, 0xd2bf6dd2,
+0xcd814ccd, 0x0c18140c, 0x13263513, 0xecc32fec,
+0x5fbee15f, 0x9735a297, 0x4488cc44, 0x172e3917,
+0xc49357c4, 0xa755f2a7, 0x7efc827e, 0x3d7a473d,
+0x64c8ac64, 0x5dbae75d, 0x19322b19, 0x73e69573,
+0x60c0a060, 0x81199881, 0x4f9ed14f, 0xdca37fdc,
+0x22446622, 0x2a547e2a, 0x903bab90, 0x880b8388,
+0x468cca46, 0xeec729ee, 0xb86bd3b8, 0x14283c14,
+0xdea779de, 0x5ebce25e, 0x0b161d0b, 0xdbad76db,
+0xe0db3be0, 0x32645632, 0x3a744e3a, 0x0a141e0a,
+0x4992db49, 0x060c0a06, 0x24486c24, 0x5cb8e45c,
+0xc29f5dc2, 0xd3bd6ed3, 0xac43efac, 0x62c4a662,
+0x9139a891, 0x9531a495, 0xe4d337e4, 0x79f28b79,
+0xe7d532e7, 0xc88b43c8, 0x376e5937, 0x6ddab76d,
+0x8d018c8d, 0xd5b164d5, 0x4e9cd24e, 0xa949e0a9,
+0x6cd8b46c, 0x56acfa56, 0xf4f307f4, 0xeacf25ea,
+0x65caaf65, 0x7af48e7a, 0xae47e9ae, 0x08101808,
+0xba6fd5ba, 0x78f08878, 0x254a6f25, 0x2e5c722e,
+0x1c38241c, 0xa657f1a6, 0xb473c7b4, 0xc69751c6,
+0xe8cb23e8, 0xdda17cdd, 0x74e89c74, 0x1f3e211f,
+0x4b96dd4b, 0xbd61dcbd, 0x8b0d868b, 0x8a0f858a,
+0x70e09070, 0x3e7c423e, 0xb571c4b5, 0x66ccaa66,
+0x4890d848, 0x03060503, 0xf6f701f6, 0x0e1c120e,
+0x61c2a361, 0x356a5f35, 0x57aef957, 0xb969d0b9,
+0x86179186, 0xc19958c1, 0x1d3a271d, 0x9e27b99e,
+0xe1d938e1, 0xf8eb13f8, 0x982bb398, 0x11223311,
+0x69d2bb69, 0xd9a970d9, 0x8e07898e, 0x9433a794,
+0x9b2db69b, 0x1e3c221e, 0x87159287, 0xe9c920e9,
+0xce8749ce, 0x55aaff55, 0x28507828, 0xdfa57adf,
+0x8c038f8c, 0xa159f8a1, 0x89098089, 0x0d1a170d,
+0xbf65dabf, 0xe6d731e6, 0x4284c642, 0x68d0b868,
+0x4182c341, 0x9929b099, 0x2d5a772d, 0x0f1e110f,
+0xb07bcbb0, 0x54a8fc54, 0xbb6dd6bb, 0x162c3a16 ];
+
+var T4 = [
+0xc6a56363, 0xf8847c7c, 0xee997777, 0xf68d7b7b,
+0xff0df2f2, 0xd6bd6b6b, 0xdeb16f6f, 0x9154c5c5,
+0x60503030, 0x02030101, 0xcea96767, 0x567d2b2b,
+0xe719fefe, 0xb562d7d7, 0x4de6abab, 0xec9a7676,
+0x8f45caca, 0x1f9d8282, 0x8940c9c9, 0xfa877d7d,
+0xef15fafa, 0xb2eb5959, 0x8ec94747, 0xfb0bf0f0,
+0x41ecadad, 0xb367d4d4, 0x5ffda2a2, 0x45eaafaf,
+0x23bf9c9c, 0x53f7a4a4, 0xe4967272, 0x9b5bc0c0,
+0x75c2b7b7, 0xe11cfdfd, 0x3dae9393, 0x4c6a2626,
+0x6c5a3636, 0x7e413f3f, 0xf502f7f7, 0x834fcccc,
+0x685c3434, 0x51f4a5a5, 0xd134e5e5, 0xf908f1f1,
+0xe2937171, 0xab73d8d8, 0x62533131, 0x2a3f1515,
+0x080c0404, 0x9552c7c7, 0x46652323, 0x9d5ec3c3,
+0x30281818, 0x37a19696, 0x0a0f0505, 0x2fb59a9a,
+0x0e090707, 0x24361212, 0x1b9b8080, 0xdf3de2e2,
+0xcd26ebeb, 0x4e692727, 0x7fcdb2b2, 0xea9f7575,
+0x121b0909, 0x1d9e8383, 0x58742c2c, 0x342e1a1a,
+0x362d1b1b, 0xdcb26e6e, 0xb4ee5a5a, 0x5bfba0a0,
+0xa4f65252, 0x764d3b3b, 0xb761d6d6, 0x7dceb3b3,
+0x527b2929, 0xdd3ee3e3, 0x5e712f2f, 0x13978484,
+0xa6f55353, 0xb968d1d1, 0x00000000, 0xc12ceded,
+0x40602020, 0xe31ffcfc, 0x79c8b1b1, 0xb6ed5b5b,
+0xd4be6a6a, 0x8d46cbcb, 0x67d9bebe, 0x724b3939,
+0x94de4a4a, 0x98d44c4c, 0xb0e85858, 0x854acfcf,
+0xbb6bd0d0, 0xc52aefef, 0x4fe5aaaa, 0xed16fbfb,
+0x86c54343, 0x9ad74d4d, 0x66553333, 0x11948585,
+0x8acf4545, 0xe910f9f9, 0x04060202, 0xfe817f7f,
+0xa0f05050, 0x78443c3c, 0x25ba9f9f, 0x4be3a8a8,
+0xa2f35151, 0x5dfea3a3, 0x80c04040, 0x058a8f8f,
+0x3fad9292, 0x21bc9d9d, 0x70483838, 0xf104f5f5,
+0x63dfbcbc, 0x77c1b6b6, 0xaf75dada, 0x42632121,
+0x20301010, 0xe51affff, 0xfd0ef3f3, 0xbf6dd2d2,
+0x814ccdcd, 0x18140c0c, 0x26351313, 0xc32fecec,
+0xbee15f5f, 0x35a29797, 0x88cc4444, 0x2e391717,
+0x9357c4c4, 0x55f2a7a7, 0xfc827e7e, 0x7a473d3d,
+0xc8ac6464, 0xbae75d5d, 0x322b1919, 0xe6957373,
+0xc0a06060, 0x19988181, 0x9ed14f4f, 0xa37fdcdc,
+0x44662222, 0x547e2a2a, 0x3bab9090, 0x0b838888,
+0x8cca4646, 0xc729eeee, 0x6bd3b8b8, 0x283c1414,
+0xa779dede, 0xbce25e5e, 0x161d0b0b, 0xad76dbdb,
+0xdb3be0e0, 0x64563232, 0x744e3a3a, 0x141e0a0a,
+0x92db4949, 0x0c0a0606, 0x486c2424, 0xb8e45c5c,
+0x9f5dc2c2, 0xbd6ed3d3, 0x43efacac, 0xc4a66262,
+0x39a89191, 0x31a49595, 0xd337e4e4, 0xf28b7979,
+0xd532e7e7, 0x8b43c8c8, 0x6e593737, 0xdab76d6d,
+0x018c8d8d, 0xb164d5d5, 0x9cd24e4e, 0x49e0a9a9,
+0xd8b46c6c, 0xacfa5656, 0xf307f4f4, 0xcf25eaea,
+0xcaaf6565, 0xf48e7a7a, 0x47e9aeae, 0x10180808,
+0x6fd5baba, 0xf0887878, 0x4a6f2525, 0x5c722e2e,
+0x38241c1c, 0x57f1a6a6, 0x73c7b4b4, 0x9751c6c6,
+0xcb23e8e8, 0xa17cdddd, 0xe89c7474, 0x3e211f1f,
+0x96dd4b4b, 0x61dcbdbd, 0x0d868b8b, 0x0f858a8a,
+0xe0907070, 0x7c423e3e, 0x71c4b5b5, 0xccaa6666,
+0x90d84848, 0x06050303, 0xf701f6f6, 0x1c120e0e,
+0xc2a36161, 0x6a5f3535, 0xaef95757, 0x69d0b9b9,
+0x17918686, 0x9958c1c1, 0x3a271d1d, 0x27b99e9e,
+0xd938e1e1, 0xeb13f8f8, 0x2bb39898, 0x22331111,
+0xd2bb6969, 0xa970d9d9, 0x07898e8e, 0x33a79494,
+0x2db69b9b, 0x3c221e1e, 0x15928787, 0xc920e9e9,
+0x8749cece, 0xaaff5555, 0x50782828, 0xa57adfdf,
+0x038f8c8c, 0x59f8a1a1, 0x09808989, 0x1a170d0d,
+0x65dabfbf, 0xd731e6e6, 0x84c64242, 0xd0b86868,
+0x82c34141, 0x29b09999, 0x5a772d2d, 0x1e110f0f,
+0x7bcbb0b0, 0xa8fc5454, 0x6dd6bbbb, 0x2c3a1616 ];
+
+function B0(x) { return (x&255); }
+function B1(x) { return ((x>>8)&255); }
+function B2(x) { return ((x>>16)&255); }
+function B3(x) { return ((x>>24)&255); }
+
+function F1(x0, x1, x2, x3)
 {
-  switch (roundNumber)
+  return B1(T1[x0&255]) | (B1(T1[(x1>>8)&255])<<8)
+      | (B1(T1[(x2>>16)&255])<<16) | (B1(T1[x3>>>24])<<24);
+}
+
+function packBytes(octets)
+{
+  var i, j;
+  var len=octets.length;
+  var b=new Array(len/4);
+
+  if (!octets || len % 4) return;
+
+  for (i=0, j=0; j<len; j+= 4)
+     b[i++] = octets[j] | (octets[j+1]<<8) | (octets[j+2]<<16) | (octets[j+3]<<24);
+
+  return b;  
+}
+
+function unpackBytes(packed)
+{
+  var j;
+  var i=0, l = packed.length;
+  var r = new Array(l*4);
+
+  for (j=0; j<l; j++)
   {
-    case 0 : a += F(b, c, d) + x + 0x00000000; break;
-    case 1 : a += G(b, c, d) + x + 0x5a827999; break;
-    case 2 : a += H(b, c, d) + x + 0x6ed9eba1; break;
-    case 3 : a += I(b, c, d) + x + 0x8f1bbcdc; break;
-    case 4 : a += J(b, c, d) + x + 0xa953fd4e; break;
-    case 5 : a += J(b, c, d) + x + 0x50a28be6; break;
-    case 6 : a += I(b, c, d) + x + 0x5c4dd124; break;
-    case 7 : a += H(b, c, d) + x + 0x6d703ef3; break;
-    case 8 : a += G(b, c, d) + x + 0x7a6d76e9; break;
-    case 9 : a += F(b, c, d) + x + 0x00000000; break;
-    
-    default : document.write("Bogus round number"); break;
-  }  
-  
-  a = ROL(a, s) + e;
-  c = ROL(c, 10);
-
-  a &= 0xffffffff;
-  b &= 0xffffffff;
-  c &= 0xffffffff;
-  d &= 0xffffffff;
-  e &= 0xffffffff;
-
-  var retBlock = new Array();
-  retBlock[0] = a;
-  retBlock[1] = b;
-  retBlock[2] = c;
-  retBlock[3] = d;
-  retBlock[4] = e;
-  retBlock[5] = x;
-  retBlock[6] = s;
-
-  return retBlock;
+    r[i++] = B0(packed[j]);
+    r[i++] = B1(packed[j]);
+    r[i++] = B2(packed[j]);
+    r[i++] = B3(packed[j]);
+  }
+  return r;
 }
 
-function MDinit (MDbuf)
+// ------------------------------------------------
+
+var maxkc=8;
+var maxrk=14;
+
+function keyExpansion(key)
 {
-  MDbuf[0] = 0x67452301;
-  MDbuf[1] = 0xefcdab89;
-  MDbuf[2] = 0x98badcfe;
-  MDbuf[3] = 0x10325476;
-  MDbuf[4] = 0xc3d2e1f0;
-}
+  var kc, i, j, r, t;
+  var rounds;
+  var keySched=new Array(maxrk+1);
+  var keylen=key.length;
+  var k=new Array(maxkc);
+  var tk=new Array(maxkc);
+  var rconpointer=0;
 
-var ROLs = [
-  [11, 14, 15, 12,  5,  8,  7,  9, 11, 13, 14, 15,  6,  7,  9,  8],
-  [ 7,  6,  8, 13, 11,  9,  7, 15,  7, 12, 15,  9, 11,  7, 13, 12],
-  [11, 13,  6,  7, 14,  9, 13, 15, 14,  8, 13,  6,  5, 12,  7,  5],
-  [11, 12, 14, 15, 14, 15,  9,  8,  9, 14,  5,  6,  8,  6,  5, 12],
-  [ 9, 15,  5, 11,  6,  8, 13, 12,  5, 12, 13, 14, 11,  8,  5,  6],
-  [ 8,  9,  9, 11, 13, 15, 15,  5,  7,  7,  8, 11, 14, 14, 12,  6],
-  [ 9, 13, 15,  7, 12,  8,  9, 11,  7,  7, 12,  7,  6, 15, 13, 11],
-  [ 9,  7, 15, 11,  8,  6,  6, 14, 12, 13,  5, 14, 13, 13,  7,  5],
-  [15,  5,  8, 11, 14, 14,  6, 14,  6,  9, 12,  9, 12,  5, 15,  8],
-  [ 8,  5, 12,  9, 12,  5, 14,  6,  8, 13,  6,  5, 15, 13, 11, 11]
-];
-
-var indexes = [
-  [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15],
-  [ 7,  4, 13,  1, 10,  6, 15,  3, 12,  0,  9,  5,  2, 14, 11,  8],
-  [ 3, 10, 14,  4,  9, 15,  8,  1,  2,  7,  0,  6, 13, 11,  5, 12],
-  [ 1,  9, 11, 10,  0,  8, 12,  4, 13,  3,  7, 15, 14,  5,  6,  2],
-  [ 4,  0,  5,  9,  7, 12,  2, 10, 14,  1,  3,  8, 11,  6, 15, 13],
-  [ 5, 14,  7,  0,  9,  2, 11,  4, 13,  6, 15,  8,  1, 10,  3, 12],
-  [ 6, 11,  3,  7,  0, 13,  5, 10, 14, 15,  8, 12,  4,  9,  1,  2],
-  [15,  5,  1,  3,  7, 14,  6,  9, 11,  8, 12,  2, 10,  0,  4, 13],
-  [ 8,  6,  4,  1,  3, 11, 15,  0,  5, 12,  2, 13,  9,  7, 10, 14],
-  [12, 15, 10,  4,  1,  5,  8,  7,  6,  2, 13, 14,  0,  3,  9, 11]
-];
-
-function compress (MDbuf, X)
-{
-  blockA = new Array();
-  blockB = new Array();
-
-  var retBlock;
-
-  for (var i=0; i < 5; i++)
+  if(keylen==16)
   {
-    blockA[i] = new Number(MDbuf[i]);
-    blockB[i] = new Number(MDbuf[i]);
+   rounds=10;
+   kc=4;
+  }
+  else if(keylen==24)
+  {
+   rounds=12;
+   kc=6;
+  }
+  else if(keylen==32)
+  {
+   rounds=14;
+   kc=8;
+  }
+  else
+  {
+	util.print_error('aes.js: Invalid key-length for AES key:'+keylen);
+   return;
   }
 
-  var step = 0;
-  for (var j = 0; j < 5; j++)
+  for(i=0; i<maxrk+1; i++) keySched[i]=new Array(4);
+
+  for(i=0,j=0; j<keylen; j++,i+=4)
+    k[j] = key.charCodeAt(i) | (key.charCodeAt(i+1)<<8)
+                     | (key.charCodeAt(i+2)<<16) | (key.charCodeAt(i+3)<<24);
+
+  for(j=kc-1; j>=0; j--) tk[j] = k[j];
+
+  r=0;
+  t=0;
+  for(j=0; (j<kc)&&(r<rounds+1); )
   {
-    for (var i = 0; i < 16; i++)
+    for(; (j<kc)&&(t<4); j++,t++)
     {
-      retBlock = mixOneRound(
-        blockA[(step+0) % 5],
-        blockA[(step+1) % 5],   
-        blockA[(step+2) % 5],   
-        blockA[(step+3) % 5],   
-        blockA[(step+4) % 5],  
-        X[indexes[j][i]], 
-        ROLs[j][i],
-        j
-      );
-
-      blockA[(step+0) % 5] = retBlock[0];
-      blockA[(step+1) % 5] = retBlock[1];
-      blockA[(step+2) % 5] = retBlock[2];
-      blockA[(step+3) % 5] = retBlock[3];
-      blockA[(step+4) % 5] = retBlock[4];
-
-      step += 4;
+      keySched[r][t]=tk[j];
     }
-  }
-
-  step = 0;
-  for (var j = 5; j < 10; j++)
-  {
-    for (var i = 0; i < 16; i++)
-    {  
-      retBlock = mixOneRound(
-        blockB[(step+0) % 5], 
-        blockB[(step+1) % 5], 
-        blockB[(step+2) % 5], 
-        blockB[(step+3) % 5], 
-        blockB[(step+4) % 5],  
-        X[indexes[j][i]], 
-        ROLs[j][i],
-        j
-      );
-
-      blockB[(step+0) % 5] = retBlock[0];
-      blockB[(step+1) % 5] = retBlock[1];
-      blockB[(step+2) % 5] = retBlock[2];
-      blockB[(step+3) % 5] = retBlock[3];
-      blockB[(step+4) % 5] = retBlock[4];
-
-      step += 4;
-    }
-  }
-
-  blockB[3] += blockA[2] + MDbuf[1];
-  MDbuf[1]  = MDbuf[2] + blockA[3] + blockB[4];
-  MDbuf[2]  = MDbuf[3] + blockA[4] + blockB[0];
-  MDbuf[3]  = MDbuf[4] + blockA[0] + blockB[1];
-  MDbuf[4]  = MDbuf[0] + blockA[1] + blockB[2];
-  MDbuf[0]  = blockB[3];
-}
-
-function zeroX(X)
-{
-  for (var i = 0; i < 16; i++) { X[i] = 0; }
-}
-
-function MDfinish (MDbuf, strptr, lswlen, mswlen)
-{
-  var X = new Array(16);
-  zeroX(X);
-
-  var j = 0;
-  for (var i=0; i < (lswlen & 63); i++)
-  {
-    X[i >>> 2] ^= (strptr.charCodeAt(j++) & 255) << (8 * (i & 3));
-  }
-
-  X[(lswlen >>> 2) & 15] ^= 1 << (8 * (lswlen & 3) + 7);
-
-  if ((lswlen & 63) > 55)
-  {
-    compress(MDbuf, X);
-    var X = new Array(16);
-    zeroX(X);
-  }
-
-  X[14] = lswlen << 3;
-  X[15] = (lswlen >>> 29) | (mswlen << 3);
-
-  compress(MDbuf, X);
-}
-
-function BYTES_TO_DWORD(fourChars)
-{
-  var tmp  = (fourChars.charCodeAt(3) & 255) << 24;
-  tmp   |= (fourChars.charCodeAt(2) & 255) << 16;
-  tmp   |= (fourChars.charCodeAt(1) & 255) << 8;
-  tmp   |= (fourChars.charCodeAt(0) & 255);  
-
-  return tmp;
-}
-
-function RMD(message)
-{
-  var MDbuf   = new Array(RMDsize / 32);
-  var hashcode   = new Array(RMDsize / 8);
-  var length;  
-  var nbytes;
-
-  MDinit(MDbuf);
-  length = message.length;
-
-  var X = new Array(16);
-  zeroX(X);
-
-  var j=0;
-  for (var nbytes=length; nbytes > 63; nbytes -= 64)
-  {
-    for (var i=0; i < 16; i++)
+    if(t==4)
     {
-      X[i] = BYTES_TO_DWORD(message.substr(j, 4));
-      j += 4;
+      r++;
+      t=0;
     }
-    compress(MDbuf, X);
   }
 
-  MDfinish(MDbuf, message.substr(j), length, 0);
-
-  for (var i=0; i < RMDsize / 8; i += 4)
+  while(r<rounds+1)
   {
-    hashcode[i]   =  MDbuf[i >>> 2]   & 255;
-    hashcode[i+1] = (MDbuf[i >>> 2] >>> 8)   & 255;
-    hashcode[i+2] = (MDbuf[i >>> 2] >>> 16) & 255;
-    hashcode[i+3] = (MDbuf[i >>> 2] >>> 24) & 255;
-  }
+    var temp = tk[kc-1];
 
-  return hashcode;
+    tk[0] ^= S[B1(temp)] | (S[B2(temp)]<<8) | (S[B3(temp)]<<16) | (S[B0(temp)]<<24);
+    tk[0] ^= Rcon[rconpointer++];
+
+    if(kc != 8)
+    {
+      for(j=1; j<kc; j++) tk[j] ^= tk[j-1];
+    }
+    else
+    {
+      for(j=1; j<kc/2; j++) tk[j] ^= tk[j-1];
+ 
+      temp = tk[kc/2-1];
+      tk[kc/2] ^= S[B0(temp)] | (S[B1(temp)]<<8) | (S[B2(temp)]<<16) | (S[B3(temp)]<<24);
+
+      for(j=kc/2+1; j<kc; j++) tk[j] ^= tk[j-1];
+    }
+
+    for(j=0; (j<kc)&&(r<rounds+1); )
+    {
+      for(; (j<kc)&&(t<4); j++,t++)
+      {
+        keySched[r][t]=tk[j];
+      }
+      if(t==4)
+      {
+        r++;
+        t=0;
+      }
+    }
+  }
+  this.rounds = rounds;
+  this.rk = keySched;
+  return this;
 }
 
-
-function RMDstring(message)
+function AESencrypt(block, ctx)
 {
-  var hashcode = RMD(message);
-  var retString = "";
+  var r;
+  var t0,t1,t2,t3;
 
-  for (var i=0; i < RMDsize/8; i++)
+  var b = packBytes(block);
+  var rounds = ctx.rounds;
+  var b0 = b[0];
+  var b1 = b[1];
+  var b2 = b[2];
+  var b3 = b[3];
+
+  for(r=0; r<rounds-1; r++)
   {
-    retString += String.fromCharCode(hashcode[i]);
-  }  
+    t0 = b0 ^ ctx.rk[r][0];
+    t1 = b1 ^ ctx.rk[r][1];
+    t2 = b2 ^ ctx.rk[r][2];
+    t3 = b3 ^ ctx.rk[r][3];
 
-  return retString;  
-}/* Modified by Recurity Labs GmbH 
+    b0 = T1[t0&255] ^ T2[(t1>>8)&255] ^ T3[(t2>>16)&255] ^ T4[t3>>>24];
+    b1 = T1[t1&255] ^ T2[(t2>>8)&255] ^ T3[(t3>>16)&255] ^ T4[t0>>>24];
+    b2 = T1[t2&255] ^ T2[(t3>>8)&255] ^ T3[(t0>>16)&255] ^ T4[t1>>>24];
+    b3 = T1[t3&255] ^ T2[(t0>>8)&255] ^ T3[(t1>>16)&255] ^ T4[t2>>>24];
+  }
+
+  // last round is special
+  r = rounds-1;
+
+  t0 = b0 ^ ctx.rk[r][0];
+  t1 = b1 ^ ctx.rk[r][1];
+  t2 = b2 ^ ctx.rk[r][2];
+  t3 = b3 ^ ctx.rk[r][3];
+
+  b[0] = F1(t0, t1, t2, t3) ^ ctx.rk[rounds][0];
+  b[1] = F1(t1, t2, t3, t0) ^ ctx.rk[rounds][1];
+  b[2] = F1(t2, t3, t0, t1) ^ ctx.rk[rounds][2];
+  b[3] = F1(t3, t0, t1, t2) ^ ctx.rk[rounds][3];
+
+  return unpackBytes(b);
+}
+/* Modified by Recurity Labs GmbH 
  * 
  * Originally written by nklein software (nklein.com)
  */
@@ -5549,214 +5023,6 @@ function BFencrypt(block,key) {
 	bf.init(util.str2bin(key));
 	return bf.encrypt_block(block);
 }
-//Paul Tero, July 2001
-//http://www.tero.co.uk/des/
-//
-//Optimised for performance with large blocks by Michael Hayworth, November 2001
-//http://www.netdealing.com
-//
-// Modified by Recurity Labs GmbH
-
-//THIS SOFTWARE IS PROVIDED "AS IS" AND
-//ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-//IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-//ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-//FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-//DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-//OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-//HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-//OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-//SUCH DAMAGE.
-
-//des
-//this takes the key, the message, and whether to encrypt or decrypt
-
-// added by Recurity Labs
-function desede(block,key) {
-	var key1 = key.substring(0,8);
-	var key2 = key.substring(8,16);
-	var key3 = key.substring(16,24);
-	return util.str2bin(des(des_createKeys(key3),des(des_createKeys(key2),des(des_createKeys(key1),util.bin2str(block), true, 0,null,null), false, 0,null,null), true, 0,null,null));
-}
-
-
-function des (keys, message, encrypt, mode, iv, padding) {
-  //declaring this locally speeds things up a bit
-  var spfunction1 = new Array (0x1010400,0,0x10000,0x1010404,0x1010004,0x10404,0x4,0x10000,0x400,0x1010400,0x1010404,0x400,0x1000404,0x1010004,0x1000000,0x4,0x404,0x1000400,0x1000400,0x10400,0x10400,0x1010000,0x1010000,0x1000404,0x10004,0x1000004,0x1000004,0x10004,0,0x404,0x10404,0x1000000,0x10000,0x1010404,0x4,0x1010000,0x1010400,0x1000000,0x1000000,0x400,0x1010004,0x10000,0x10400,0x1000004,0x400,0x4,0x1000404,0x10404,0x1010404,0x10004,0x1010000,0x1000404,0x1000004,0x404,0x10404,0x1010400,0x404,0x1000400,0x1000400,0,0x10004,0x10400,0,0x1010004);
-  var spfunction2 = new Array (-0x7fef7fe0,-0x7fff8000,0x8000,0x108020,0x100000,0x20,-0x7fefffe0,-0x7fff7fe0,-0x7fffffe0,-0x7fef7fe0,-0x7fef8000,-0x80000000,-0x7fff8000,0x100000,0x20,-0x7fefffe0,0x108000,0x100020,-0x7fff7fe0,0,-0x80000000,0x8000,0x108020,-0x7ff00000,0x100020,-0x7fffffe0,0,0x108000,0x8020,-0x7fef8000,-0x7ff00000,0x8020,0,0x108020,-0x7fefffe0,0x100000,-0x7fff7fe0,-0x7ff00000,-0x7fef8000,0x8000,-0x7ff00000,-0x7fff8000,0x20,-0x7fef7fe0,0x108020,0x20,0x8000,-0x80000000,0x8020,-0x7fef8000,0x100000,-0x7fffffe0,0x100020,-0x7fff7fe0,-0x7fffffe0,0x100020,0x108000,0,-0x7fff8000,0x8020,-0x80000000,-0x7fefffe0,-0x7fef7fe0,0x108000);
-  var spfunction3 = new Array (0x208,0x8020200,0,0x8020008,0x8000200,0,0x20208,0x8000200,0x20008,0x8000008,0x8000008,0x20000,0x8020208,0x20008,0x8020000,0x208,0x8000000,0x8,0x8020200,0x200,0x20200,0x8020000,0x8020008,0x20208,0x8000208,0x20200,0x20000,0x8000208,0x8,0x8020208,0x200,0x8000000,0x8020200,0x8000000,0x20008,0x208,0x20000,0x8020200,0x8000200,0,0x200,0x20008,0x8020208,0x8000200,0x8000008,0x200,0,0x8020008,0x8000208,0x20000,0x8000000,0x8020208,0x8,0x20208,0x20200,0x8000008,0x8020000,0x8000208,0x208,0x8020000,0x20208,0x8,0x8020008,0x20200);
-  var spfunction4 = new Array (0x802001,0x2081,0x2081,0x80,0x802080,0x800081,0x800001,0x2001,0,0x802000,0x802000,0x802081,0x81,0,0x800080,0x800001,0x1,0x2000,0x800000,0x802001,0x80,0x800000,0x2001,0x2080,0x800081,0x1,0x2080,0x800080,0x2000,0x802080,0x802081,0x81,0x800080,0x800001,0x802000,0x802081,0x81,0,0,0x802000,0x2080,0x800080,0x800081,0x1,0x802001,0x2081,0x2081,0x80,0x802081,0x81,0x1,0x2000,0x800001,0x2001,0x802080,0x800081,0x2001,0x2080,0x800000,0x802001,0x80,0x800000,0x2000,0x802080);
-  var spfunction5 = new Array (0x100,0x2080100,0x2080000,0x42000100,0x80000,0x100,0x40000000,0x2080000,0x40080100,0x80000,0x2000100,0x40080100,0x42000100,0x42080000,0x80100,0x40000000,0x2000000,0x40080000,0x40080000,0,0x40000100,0x42080100,0x42080100,0x2000100,0x42080000,0x40000100,0,0x42000000,0x2080100,0x2000000,0x42000000,0x80100,0x80000,0x42000100,0x100,0x2000000,0x40000000,0x2080000,0x42000100,0x40080100,0x2000100,0x40000000,0x42080000,0x2080100,0x40080100,0x100,0x2000000,0x42080000,0x42080100,0x80100,0x42000000,0x42080100,0x2080000,0,0x40080000,0x42000000,0x80100,0x2000100,0x40000100,0x80000,0,0x40080000,0x2080100,0x40000100);
-  var spfunction6 = new Array (0x20000010,0x20400000,0x4000,0x20404010,0x20400000,0x10,0x20404010,0x400000,0x20004000,0x404010,0x400000,0x20000010,0x400010,0x20004000,0x20000000,0x4010,0,0x400010,0x20004010,0x4000,0x404000,0x20004010,0x10,0x20400010,0x20400010,0,0x404010,0x20404000,0x4010,0x404000,0x20404000,0x20000000,0x20004000,0x10,0x20400010,0x404000,0x20404010,0x400000,0x4010,0x20000010,0x400000,0x20004000,0x20000000,0x4010,0x20000010,0x20404010,0x404000,0x20400000,0x404010,0x20404000,0,0x20400010,0x10,0x4000,0x20400000,0x404010,0x4000,0x400010,0x20004010,0,0x20404000,0x20000000,0x400010,0x20004010);
-  var spfunction7 = new Array (0x200000,0x4200002,0x4000802,0,0x800,0x4000802,0x200802,0x4200800,0x4200802,0x200000,0,0x4000002,0x2,0x4000000,0x4200002,0x802,0x4000800,0x200802,0x200002,0x4000800,0x4000002,0x4200000,0x4200800,0x200002,0x4200000,0x800,0x802,0x4200802,0x200800,0x2,0x4000000,0x200800,0x4000000,0x200800,0x200000,0x4000802,0x4000802,0x4200002,0x4200002,0x2,0x200002,0x4000000,0x4000800,0x200000,0x4200800,0x802,0x200802,0x4200800,0x802,0x4000002,0x4200802,0x4200000,0x200800,0,0x2,0x4200802,0,0x200802,0x4200000,0x800,0x4000002,0x4000800,0x800,0x200002);
-  var spfunction8 = new Array (0x10001040,0x1000,0x40000,0x10041040,0x10000000,0x10001040,0x40,0x10000000,0x40040,0x10040000,0x10041040,0x41000,0x10041000,0x41040,0x1000,0x40,0x10040000,0x10000040,0x10001000,0x1040,0x41000,0x40040,0x10040040,0x10041000,0x1040,0,0,0x10040040,0x10000040,0x10001000,0x41040,0x40000,0x41040,0x40000,0x10041000,0x1000,0x40,0x10040040,0x1000,0x41040,0x10001000,0x40,0x10000040,0x10040000,0x10040040,0x10000000,0x40000,0x10001040,0,0x10041040,0x40040,0x10000040,0x10040000,0x10001000,0x10001040,0,0x10041040,0x41000,0x41000,0x1040,0x1040,0x40040,0x10000000,0x10041000);
-
-  //create the 16 or 48 subkeys we will need
-  var m=0, i, j, temp, temp2, right1, right2, left, right, looping;
-  var cbcleft, cbcleft2, cbcright, cbcright2
-  var endloop, loopinc;
-  var len = message.length;
-  var chunk = 0;
-  //set up the loops for single and triple des
-  var iterations = keys.length == 32 ? 3 : 9; //single or triple des
-  if (iterations == 3) {looping = encrypt ? new Array (0, 32, 2) : new Array (30, -2, -2);}
-  else {looping = encrypt ? new Array (0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array (94, 62, -2, 32, 64, 2, 30, -2, -2);}
-
-  //pad the message depending on the padding parameter
-  if (padding == 2) message += "        "; //pad the message with spaces
-  else if (padding == 1) {temp = 8-(len%8); message += String.fromCharCode (temp,temp,temp,temp,temp,temp,temp,temp); if (temp==8) len+=8;} //PKCS7 padding
-  else if (!padding) message += "\0\0\0\0\0\0\0\0"; //pad the message out with null bytes
-
-  //store the result here
-  result = "";
-  tempresult = "";
-
-  if (mode == 1) { //CBC mode
-    cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
-    cbcright = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
-    m=0;
-  }
-
-  //loop through each 64 bit chunk of the message
-  while (m < len) {
-    left = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) | message.charCodeAt(m++);
-    right = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) | message.charCodeAt(m++);
-
-    //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {if (encrypt) {left ^= cbcleft; right ^= cbcright;} else {cbcleft2 = cbcleft; cbcright2 = cbcright; cbcleft = left; cbcright = right;}}
-
-    //first each 64 but chunk of the message must be permuted according to IP
-    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
-    temp = ((left >>> 16) ^ right) & 0x0000ffff; right ^= temp; left ^= (temp << 16);
-    temp = ((right >>> 2) ^ left) & 0x33333333; left ^= temp; right ^= (temp << 2);
-    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
-    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
-
-    left = ((left << 1) | (left >>> 31)); 
-    right = ((right << 1) | (right >>> 31)); 
-
-    //do this either 1 or 3 times for each chunk of the message
-    for (j=0; j<iterations; j+=3) {
-      endloop = looping[j+1];
-      loopinc = looping[j+2];
-      //now go through and perform the encryption or decryption  
-      for (i=looping[j]; i!=endloop; i+=loopinc) { //for efficiency
-        right1 = right ^ keys[i]; 
-        right2 = ((right >>> 4) | (right << 28)) ^ keys[i+1];
-        //the result is attained by passing these bytes through the S selection functions
-        temp = left;
-        left = right;
-        right = temp ^ (spfunction2[(right1 >>> 24) & 0x3f] | spfunction4[(right1 >>> 16) & 0x3f]
-              | spfunction6[(right1 >>>  8) & 0x3f] | spfunction8[right1 & 0x3f]
-              | spfunction1[(right2 >>> 24) & 0x3f] | spfunction3[(right2 >>> 16) & 0x3f]
-              | spfunction5[(right2 >>>  8) & 0x3f] | spfunction7[right2 & 0x3f]);
-      }
-      temp = left; left = right; right = temp; //unreverse left and right
-    } //for either 1 or 3 iterations
-
-    //move then each one bit to the right
-    left = ((left >>> 1) | (left << 31)); 
-    right = ((right >>> 1) | (right << 31)); 
-
-    //now perform IP-1, which is IP in the opposite direction
-    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
-    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
-    temp = ((right >>> 2) ^ left) & 0x33333333; left ^= temp; right ^= (temp << 2);
-    temp = ((left >>> 16) ^ right) & 0x0000ffff; right ^= temp; left ^= (temp << 16);
-    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
-
-    //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {if (encrypt) {cbcleft = left; cbcright = right;} else {left ^= cbcleft2; right ^= cbcright2;}}
-    tempresult += String.fromCharCode ((left>>>24), ((left>>>16) & 0xff), ((left>>>8) & 0xff), (left & 0xff), (right>>>24), ((right>>>16) & 0xff), ((right>>>8) & 0xff), (right & 0xff));
-
-    chunk += 8;
-    if (chunk == 512) {result += tempresult; tempresult = ""; chunk = 0;}
-  } //for every 8 characters, or 64 bits in the message
-
-  //return the result as an array
-  result += tempresult;
-  result = result.replace(/\0*$/g, "");
-  return result;
-} //end of des
-
-
-
-//des_createKeys
-//this takes as input a 64 bit key (even though only 56 bits are used)
-//as an array of 2 integers, and returns 16 48 bit keys
-function des_createKeys (key) {
-  //declaring this locally speeds things up a bit
-  pc2bytes0  = new Array (0,0x4,0x20000000,0x20000004,0x10000,0x10004,0x20010000,0x20010004,0x200,0x204,0x20000200,0x20000204,0x10200,0x10204,0x20010200,0x20010204);
-  pc2bytes1  = new Array (0,0x1,0x100000,0x100001,0x4000000,0x4000001,0x4100000,0x4100001,0x100,0x101,0x100100,0x100101,0x4000100,0x4000101,0x4100100,0x4100101);
-  pc2bytes2  = new Array (0,0x8,0x800,0x808,0x1000000,0x1000008,0x1000800,0x1000808,0,0x8,0x800,0x808,0x1000000,0x1000008,0x1000800,0x1000808);
-  pc2bytes3  = new Array (0,0x200000,0x8000000,0x8200000,0x2000,0x202000,0x8002000,0x8202000,0x20000,0x220000,0x8020000,0x8220000,0x22000,0x222000,0x8022000,0x8222000);
-  pc2bytes4  = new Array (0,0x40000,0x10,0x40010,0,0x40000,0x10,0x40010,0x1000,0x41000,0x1010,0x41010,0x1000,0x41000,0x1010,0x41010);
-  pc2bytes5  = new Array (0,0x400,0x20,0x420,0,0x400,0x20,0x420,0x2000000,0x2000400,0x2000020,0x2000420,0x2000000,0x2000400,0x2000020,0x2000420);
-  pc2bytes6  = new Array (0,0x10000000,0x80000,0x10080000,0x2,0x10000002,0x80002,0x10080002,0,0x10000000,0x80000,0x10080000,0x2,0x10000002,0x80002,0x10080002);
-  pc2bytes7  = new Array (0,0x10000,0x800,0x10800,0x20000000,0x20010000,0x20000800,0x20010800,0x20000,0x30000,0x20800,0x30800,0x20020000,0x20030000,0x20020800,0x20030800);
-  pc2bytes8  = new Array (0,0x40000,0,0x40000,0x2,0x40002,0x2,0x40002,0x2000000,0x2040000,0x2000000,0x2040000,0x2000002,0x2040002,0x2000002,0x2040002);
-  pc2bytes9  = new Array (0,0x10000000,0x8,0x10000008,0,0x10000000,0x8,0x10000008,0x400,0x10000400,0x408,0x10000408,0x400,0x10000400,0x408,0x10000408);
-  pc2bytes10 = new Array (0,0x20,0,0x20,0x100000,0x100020,0x100000,0x100020,0x2000,0x2020,0x2000,0x2020,0x102000,0x102020,0x102000,0x102020);
-  pc2bytes11 = new Array (0,0x1000000,0x200,0x1000200,0x200000,0x1200000,0x200200,0x1200200,0x4000000,0x5000000,0x4000200,0x5000200,0x4200000,0x5200000,0x4200200,0x5200200);
-  pc2bytes12 = new Array (0,0x1000,0x8000000,0x8001000,0x80000,0x81000,0x8080000,0x8081000,0x10,0x1010,0x8000010,0x8001010,0x80010,0x81010,0x8080010,0x8081010);
-  pc2bytes13 = new Array (0,0x4,0x100,0x104,0,0x4,0x100,0x104,0x1,0x5,0x101,0x105,0x1,0x5,0x101,0x105);
-
-  //how many iterations (1 for des, 3 for triple des)
-  var iterations = key.length > 8 ? 3 : 1; //changed by Paul 16/6/2007 to use Triple DES for 9+ byte keys
-  //stores the return keys
-  var keys = new Array (32 * iterations);
-  //now define the left shifts which need to be done
-  var shifts = new Array (0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
-  //other variables
-  var lefttemp, righttemp, m=0, n=0, temp;
-
-  for (var j=0; j<iterations; j++) { //either 1 or 3 iterations
-    left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
-    right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
-
-    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
-    temp = ((right >>> -16) ^ left) & 0x0000ffff; left ^= temp; right ^= (temp << -16);
-    temp = ((left >>> 2) ^ right) & 0x33333333; right ^= temp; left ^= (temp << 2);
-    temp = ((right >>> -16) ^ left) & 0x0000ffff; left ^= temp; right ^= (temp << -16);
-    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
-    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
-    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
-
-    //the right side needs to be shifted and to get the last four bits of the left side
-    temp = (left << 8) | ((right >>> 20) & 0x000000f0);
-    //left needs to be put upside down
-    left = (right << 24) | ((right << 8) & 0xff0000) | ((right >>> 8) & 0xff00) | ((right >>> 24) & 0xf0);
-    right = temp;
-
-    //now go through and perform these shifts on the left and right keys
-    for (i=0; i < shifts.length; i++) {
-      //shift the keys either one or two bits to the left
-      if (shifts[i]) {left = (left << 2) | (left >>> 26); right = (right << 2) | (right >>> 26);}
-      else {left = (left << 1) | (left >>> 27); right = (right << 1) | (right >>> 27);}
-      left &= -0xf; right &= -0xf;
-
-      //now apply PC-2, in such a way that E is easier when encrypting or decrypting
-      //this conversion will look like PC-2 except only the last 6 bits of each byte are used
-      //rather than 48 consecutive bits and the order of lines will be according to 
-      //how the S selection functions will be applied: S2, S4, S6, S8, S1, S3, S5, S7
-      lefttemp = pc2bytes0[left >>> 28] | pc2bytes1[(left >>> 24) & 0xf]
-              | pc2bytes2[(left >>> 20) & 0xf] | pc2bytes3[(left >>> 16) & 0xf]
-              | pc2bytes4[(left >>> 12) & 0xf] | pc2bytes5[(left >>> 8) & 0xf]
-              | pc2bytes6[(left >>> 4) & 0xf];
-      righttemp = pc2bytes7[right >>> 28] | pc2bytes8[(right >>> 24) & 0xf]
-                | pc2bytes9[(right >>> 20) & 0xf] | pc2bytes10[(right >>> 16) & 0xf]
-                | pc2bytes11[(right >>> 12) & 0xf] | pc2bytes12[(right >>> 8) & 0xf]
-                | pc2bytes13[(right >>> 4) & 0xf];
-      temp = ((righttemp >>> 16) ^ lefttemp) & 0x0000ffff; 
-      keys[n++] = lefttemp ^ temp; keys[n++] = righttemp ^ (temp << 16);
-    }
-  } //for each iterations
-  //return the keys we've created
-  return keys;
-} //end of des_createKeys
-
-
 
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -6304,490 +5570,214 @@ function openpgp_symenc_cast5() {
 
 };
 
+//Paul Tero, July 2001
+//http://www.tero.co.uk/des/
+//
+//Optimised for performance with large blocks by Michael Hayworth, November 2001
+//http://www.netdealing.com
+//
+// Modified by Recurity Labs GmbH
 
-/* Rijndael (AES) Encryption
- * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
- * version 1.1, check www.haneWIN.de for the latest version
+//THIS SOFTWARE IS PROVIDED "AS IS" AND
+//ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+//FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+//DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+//OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+//HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+//OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+//SUCH DAMAGE.
 
- * This software is provided as-is, without express or implied warranty.  
- * Permission to use, copy, modify, distribute or sell this software, with or
- * without fee, for any purpose and by any individual or organization, is hereby
- * granted, provided that the above copyright notice and this paragraph appear 
- * in all copies. Distribution as a part of an application or binary must
- * include the above copyright notice in the documentation and/or other
- * materials provided with the application or distribution.
- */
+//des
+//this takes the key, the message, and whether to encrypt or decrypt
 
-// The round constants used in subkey expansion
-var Rcon = [ 
-0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 
-0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 
-0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91 ];
-
-// Precomputed lookup table for the SBox
-var S = [
- 99, 124, 119, 123, 242, 107, 111, 197,  48,   1, 103,  43, 254, 215, 171, 
-118, 202, 130, 201, 125, 250,  89,  71, 240, 173, 212, 162, 175, 156, 164, 
-114, 192, 183, 253, 147,  38,  54,  63, 247, 204,  52, 165, 229, 241, 113, 
-216,  49,  21,   4, 199,  35, 195,  24, 150,   5, 154,   7,  18, 128, 226, 
-235,  39, 178, 117,   9, 131,  44,  26,  27, 110,  90, 160,  82,  59, 214, 
-179,  41, 227,  47, 132,  83, 209,   0, 237,  32, 252, 177,  91, 106, 203, 
-190,  57,  74,  76,  88, 207, 208, 239, 170, 251,  67,  77,  51, 133,  69, 
-249,   2, 127,  80,  60, 159, 168,  81, 163,  64, 143, 146, 157,  56, 245, 
-188, 182, 218,  33,  16, 255, 243, 210, 205,  12,  19, 236,  95, 151,  68,  
-23,  196, 167, 126,  61, 100,  93,  25, 115,  96, 129,  79, 220,  34,  42, 
-144, 136,  70, 238, 184,  20, 222,  94,  11, 219, 224,  50,  58,  10,  73,
-  6,  36,  92, 194, 211, 172,  98, 145, 149, 228, 121, 231, 200,  55, 109, 
-141, 213,  78, 169, 108,  86, 244, 234, 101, 122, 174,   8, 186, 120,  37,  
- 46,  28, 166, 180, 198, 232, 221, 116,  31,  75, 189, 139, 138, 112,  62, 
-181, 102,  72,   3, 246,  14,  97,  53,  87, 185, 134, 193,  29, 158, 225,
-248, 152,  17, 105, 217, 142, 148, 155,  30, 135, 233, 206,  85,  40, 223,
-140, 161, 137,  13, 191, 230,  66, 104,  65, 153,  45,  15, 176,  84, 187,  
- 22 ];
-
-var T1 = [
-0xa56363c6, 0x847c7cf8, 0x997777ee, 0x8d7b7bf6,
-0x0df2f2ff, 0xbd6b6bd6, 0xb16f6fde, 0x54c5c591,
-0x50303060, 0x03010102, 0xa96767ce, 0x7d2b2b56,
-0x19fefee7, 0x62d7d7b5, 0xe6abab4d, 0x9a7676ec,
-0x45caca8f, 0x9d82821f, 0x40c9c989, 0x877d7dfa,
-0x15fafaef, 0xeb5959b2, 0xc947478e, 0x0bf0f0fb,
-0xecadad41, 0x67d4d4b3, 0xfda2a25f, 0xeaafaf45,
-0xbf9c9c23, 0xf7a4a453, 0x967272e4, 0x5bc0c09b,
-0xc2b7b775, 0x1cfdfde1, 0xae93933d, 0x6a26264c,
-0x5a36366c, 0x413f3f7e, 0x02f7f7f5, 0x4fcccc83,
-0x5c343468, 0xf4a5a551, 0x34e5e5d1, 0x08f1f1f9,
-0x937171e2, 0x73d8d8ab, 0x53313162, 0x3f15152a,
-0x0c040408, 0x52c7c795, 0x65232346, 0x5ec3c39d,
-0x28181830, 0xa1969637, 0x0f05050a, 0xb59a9a2f,
-0x0907070e, 0x36121224, 0x9b80801b, 0x3de2e2df,
-0x26ebebcd, 0x6927274e, 0xcdb2b27f, 0x9f7575ea,
-0x1b090912, 0x9e83831d, 0x742c2c58, 0x2e1a1a34,
-0x2d1b1b36, 0xb26e6edc, 0xee5a5ab4, 0xfba0a05b,
-0xf65252a4, 0x4d3b3b76, 0x61d6d6b7, 0xceb3b37d,
-0x7b292952, 0x3ee3e3dd, 0x712f2f5e, 0x97848413,
-0xf55353a6, 0x68d1d1b9, 0x00000000, 0x2cededc1,
-0x60202040, 0x1ffcfce3, 0xc8b1b179, 0xed5b5bb6,
-0xbe6a6ad4, 0x46cbcb8d, 0xd9bebe67, 0x4b393972,
-0xde4a4a94, 0xd44c4c98, 0xe85858b0, 0x4acfcf85,
-0x6bd0d0bb, 0x2aefefc5, 0xe5aaaa4f, 0x16fbfbed,
-0xc5434386, 0xd74d4d9a, 0x55333366, 0x94858511,
-0xcf45458a, 0x10f9f9e9, 0x06020204, 0x817f7ffe,
-0xf05050a0, 0x443c3c78, 0xba9f9f25, 0xe3a8a84b,
-0xf35151a2, 0xfea3a35d, 0xc0404080, 0x8a8f8f05,
-0xad92923f, 0xbc9d9d21, 0x48383870, 0x04f5f5f1,
-0xdfbcbc63, 0xc1b6b677, 0x75dadaaf, 0x63212142,
-0x30101020, 0x1affffe5, 0x0ef3f3fd, 0x6dd2d2bf,
-0x4ccdcd81, 0x140c0c18, 0x35131326, 0x2fececc3,
-0xe15f5fbe, 0xa2979735, 0xcc444488, 0x3917172e,
-0x57c4c493, 0xf2a7a755, 0x827e7efc, 0x473d3d7a,
-0xac6464c8, 0xe75d5dba, 0x2b191932, 0x957373e6,
-0xa06060c0, 0x98818119, 0xd14f4f9e, 0x7fdcdca3,
-0x66222244, 0x7e2a2a54, 0xab90903b, 0x8388880b,
-0xca46468c, 0x29eeeec7, 0xd3b8b86b, 0x3c141428,
-0x79dedea7, 0xe25e5ebc, 0x1d0b0b16, 0x76dbdbad,
-0x3be0e0db, 0x56323264, 0x4e3a3a74, 0x1e0a0a14,
-0xdb494992, 0x0a06060c, 0x6c242448, 0xe45c5cb8,
-0x5dc2c29f, 0x6ed3d3bd, 0xefacac43, 0xa66262c4,
-0xa8919139, 0xa4959531, 0x37e4e4d3, 0x8b7979f2,
-0x32e7e7d5, 0x43c8c88b, 0x5937376e, 0xb76d6dda,
-0x8c8d8d01, 0x64d5d5b1, 0xd24e4e9c, 0xe0a9a949,
-0xb46c6cd8, 0xfa5656ac, 0x07f4f4f3, 0x25eaeacf,
-0xaf6565ca, 0x8e7a7af4, 0xe9aeae47, 0x18080810,
-0xd5baba6f, 0x887878f0, 0x6f25254a, 0x722e2e5c,
-0x241c1c38, 0xf1a6a657, 0xc7b4b473, 0x51c6c697,
-0x23e8e8cb, 0x7cdddda1, 0x9c7474e8, 0x211f1f3e,
-0xdd4b4b96, 0xdcbdbd61, 0x868b8b0d, 0x858a8a0f,
-0x907070e0, 0x423e3e7c, 0xc4b5b571, 0xaa6666cc,
-0xd8484890, 0x05030306, 0x01f6f6f7, 0x120e0e1c,
-0xa36161c2, 0x5f35356a, 0xf95757ae, 0xd0b9b969,
-0x91868617, 0x58c1c199, 0x271d1d3a, 0xb99e9e27,
-0x38e1e1d9, 0x13f8f8eb, 0xb398982b, 0x33111122,
-0xbb6969d2, 0x70d9d9a9, 0x898e8e07, 0xa7949433,
-0xb69b9b2d, 0x221e1e3c, 0x92878715, 0x20e9e9c9,
-0x49cece87, 0xff5555aa, 0x78282850, 0x7adfdfa5,
-0x8f8c8c03, 0xf8a1a159, 0x80898909, 0x170d0d1a,
-0xdabfbf65, 0x31e6e6d7, 0xc6424284, 0xb86868d0,
-0xc3414182, 0xb0999929, 0x772d2d5a, 0x110f0f1e,
-0xcbb0b07b, 0xfc5454a8, 0xd6bbbb6d, 0x3a16162c ];
-
-var T2 = [
-0x6363c6a5, 0x7c7cf884, 0x7777ee99, 0x7b7bf68d,
-0xf2f2ff0d, 0x6b6bd6bd, 0x6f6fdeb1, 0xc5c59154,
-0x30306050, 0x01010203, 0x6767cea9, 0x2b2b567d,
-0xfefee719, 0xd7d7b562, 0xabab4de6, 0x7676ec9a,
-0xcaca8f45, 0x82821f9d, 0xc9c98940, 0x7d7dfa87,
-0xfafaef15, 0x5959b2eb, 0x47478ec9, 0xf0f0fb0b,
-0xadad41ec, 0xd4d4b367, 0xa2a25ffd, 0xafaf45ea,
-0x9c9c23bf, 0xa4a453f7, 0x7272e496, 0xc0c09b5b,
-0xb7b775c2, 0xfdfde11c, 0x93933dae, 0x26264c6a,
-0x36366c5a, 0x3f3f7e41, 0xf7f7f502, 0xcccc834f,
-0x3434685c, 0xa5a551f4, 0xe5e5d134, 0xf1f1f908,
-0x7171e293, 0xd8d8ab73, 0x31316253, 0x15152a3f,
-0x0404080c, 0xc7c79552, 0x23234665, 0xc3c39d5e,
-0x18183028, 0x969637a1, 0x05050a0f, 0x9a9a2fb5,
-0x07070e09, 0x12122436, 0x80801b9b, 0xe2e2df3d,
-0xebebcd26, 0x27274e69, 0xb2b27fcd, 0x7575ea9f,
-0x0909121b, 0x83831d9e, 0x2c2c5874, 0x1a1a342e,
-0x1b1b362d, 0x6e6edcb2, 0x5a5ab4ee, 0xa0a05bfb,
-0x5252a4f6, 0x3b3b764d, 0xd6d6b761, 0xb3b37dce,
-0x2929527b, 0xe3e3dd3e, 0x2f2f5e71, 0x84841397,
-0x5353a6f5, 0xd1d1b968, 0x00000000, 0xededc12c,
-0x20204060, 0xfcfce31f, 0xb1b179c8, 0x5b5bb6ed,
-0x6a6ad4be, 0xcbcb8d46, 0xbebe67d9, 0x3939724b,
-0x4a4a94de, 0x4c4c98d4, 0x5858b0e8, 0xcfcf854a,
-0xd0d0bb6b, 0xefefc52a, 0xaaaa4fe5, 0xfbfbed16,
-0x434386c5, 0x4d4d9ad7, 0x33336655, 0x85851194,
-0x45458acf, 0xf9f9e910, 0x02020406, 0x7f7ffe81,
-0x5050a0f0, 0x3c3c7844, 0x9f9f25ba, 0xa8a84be3,
-0x5151a2f3, 0xa3a35dfe, 0x404080c0, 0x8f8f058a,
-0x92923fad, 0x9d9d21bc, 0x38387048, 0xf5f5f104,
-0xbcbc63df, 0xb6b677c1, 0xdadaaf75, 0x21214263,
-0x10102030, 0xffffe51a, 0xf3f3fd0e, 0xd2d2bf6d,
-0xcdcd814c, 0x0c0c1814, 0x13132635, 0xececc32f,
-0x5f5fbee1, 0x979735a2, 0x444488cc, 0x17172e39,
-0xc4c49357, 0xa7a755f2, 0x7e7efc82, 0x3d3d7a47,
-0x6464c8ac, 0x5d5dbae7, 0x1919322b, 0x7373e695,
-0x6060c0a0, 0x81811998, 0x4f4f9ed1, 0xdcdca37f,
-0x22224466, 0x2a2a547e, 0x90903bab, 0x88880b83,
-0x46468cca, 0xeeeec729, 0xb8b86bd3, 0x1414283c,
-0xdedea779, 0x5e5ebce2, 0x0b0b161d, 0xdbdbad76,
-0xe0e0db3b, 0x32326456, 0x3a3a744e, 0x0a0a141e,
-0x494992db, 0x06060c0a, 0x2424486c, 0x5c5cb8e4,
-0xc2c29f5d, 0xd3d3bd6e, 0xacac43ef, 0x6262c4a6,
-0x919139a8, 0x959531a4, 0xe4e4d337, 0x7979f28b,
-0xe7e7d532, 0xc8c88b43, 0x37376e59, 0x6d6ddab7,
-0x8d8d018c, 0xd5d5b164, 0x4e4e9cd2, 0xa9a949e0,
-0x6c6cd8b4, 0x5656acfa, 0xf4f4f307, 0xeaeacf25,
-0x6565caaf, 0x7a7af48e, 0xaeae47e9, 0x08081018,
-0xbaba6fd5, 0x7878f088, 0x25254a6f, 0x2e2e5c72,
-0x1c1c3824, 0xa6a657f1, 0xb4b473c7, 0xc6c69751,
-0xe8e8cb23, 0xdddda17c, 0x7474e89c, 0x1f1f3e21,
-0x4b4b96dd, 0xbdbd61dc, 0x8b8b0d86, 0x8a8a0f85,
-0x7070e090, 0x3e3e7c42, 0xb5b571c4, 0x6666ccaa,
-0x484890d8, 0x03030605, 0xf6f6f701, 0x0e0e1c12,
-0x6161c2a3, 0x35356a5f, 0x5757aef9, 0xb9b969d0,
-0x86861791, 0xc1c19958, 0x1d1d3a27, 0x9e9e27b9,
-0xe1e1d938, 0xf8f8eb13, 0x98982bb3, 0x11112233,
-0x6969d2bb, 0xd9d9a970, 0x8e8e0789, 0x949433a7,
-0x9b9b2db6, 0x1e1e3c22, 0x87871592, 0xe9e9c920,
-0xcece8749, 0x5555aaff, 0x28285078, 0xdfdfa57a,
-0x8c8c038f, 0xa1a159f8, 0x89890980, 0x0d0d1a17,
-0xbfbf65da, 0xe6e6d731, 0x424284c6, 0x6868d0b8,
-0x414182c3, 0x999929b0, 0x2d2d5a77, 0x0f0f1e11,
-0xb0b07bcb, 0x5454a8fc, 0xbbbb6dd6, 0x16162c3a ];
-
-var T3 = [
-0x63c6a563, 0x7cf8847c, 0x77ee9977, 0x7bf68d7b,
-0xf2ff0df2, 0x6bd6bd6b, 0x6fdeb16f, 0xc59154c5,
-0x30605030, 0x01020301, 0x67cea967, 0x2b567d2b,
-0xfee719fe, 0xd7b562d7, 0xab4de6ab, 0x76ec9a76,
-0xca8f45ca, 0x821f9d82, 0xc98940c9, 0x7dfa877d,
-0xfaef15fa, 0x59b2eb59, 0x478ec947, 0xf0fb0bf0,
-0xad41ecad, 0xd4b367d4, 0xa25ffda2, 0xaf45eaaf,
-0x9c23bf9c, 0xa453f7a4, 0x72e49672, 0xc09b5bc0,
-0xb775c2b7, 0xfde11cfd, 0x933dae93, 0x264c6a26,
-0x366c5a36, 0x3f7e413f, 0xf7f502f7, 0xcc834fcc,
-0x34685c34, 0xa551f4a5, 0xe5d134e5, 0xf1f908f1,
-0x71e29371, 0xd8ab73d8, 0x31625331, 0x152a3f15,
-0x04080c04, 0xc79552c7, 0x23466523, 0xc39d5ec3,
-0x18302818, 0x9637a196, 0x050a0f05, 0x9a2fb59a,
-0x070e0907, 0x12243612, 0x801b9b80, 0xe2df3de2,
-0xebcd26eb, 0x274e6927, 0xb27fcdb2, 0x75ea9f75,
-0x09121b09, 0x831d9e83, 0x2c58742c, 0x1a342e1a,
-0x1b362d1b, 0x6edcb26e, 0x5ab4ee5a, 0xa05bfba0,
-0x52a4f652, 0x3b764d3b, 0xd6b761d6, 0xb37dceb3,
-0x29527b29, 0xe3dd3ee3, 0x2f5e712f, 0x84139784,
-0x53a6f553, 0xd1b968d1, 0x00000000, 0xedc12ced,
-0x20406020, 0xfce31ffc, 0xb179c8b1, 0x5bb6ed5b,
-0x6ad4be6a, 0xcb8d46cb, 0xbe67d9be, 0x39724b39,
-0x4a94de4a, 0x4c98d44c, 0x58b0e858, 0xcf854acf,
-0xd0bb6bd0, 0xefc52aef, 0xaa4fe5aa, 0xfbed16fb,
-0x4386c543, 0x4d9ad74d, 0x33665533, 0x85119485,
-0x458acf45, 0xf9e910f9, 0x02040602, 0x7ffe817f,
-0x50a0f050, 0x3c78443c, 0x9f25ba9f, 0xa84be3a8,
-0x51a2f351, 0xa35dfea3, 0x4080c040, 0x8f058a8f,
-0x923fad92, 0x9d21bc9d, 0x38704838, 0xf5f104f5,
-0xbc63dfbc, 0xb677c1b6, 0xdaaf75da, 0x21426321,
-0x10203010, 0xffe51aff, 0xf3fd0ef3, 0xd2bf6dd2,
-0xcd814ccd, 0x0c18140c, 0x13263513, 0xecc32fec,
-0x5fbee15f, 0x9735a297, 0x4488cc44, 0x172e3917,
-0xc49357c4, 0xa755f2a7, 0x7efc827e, 0x3d7a473d,
-0x64c8ac64, 0x5dbae75d, 0x19322b19, 0x73e69573,
-0x60c0a060, 0x81199881, 0x4f9ed14f, 0xdca37fdc,
-0x22446622, 0x2a547e2a, 0x903bab90, 0x880b8388,
-0x468cca46, 0xeec729ee, 0xb86bd3b8, 0x14283c14,
-0xdea779de, 0x5ebce25e, 0x0b161d0b, 0xdbad76db,
-0xe0db3be0, 0x32645632, 0x3a744e3a, 0x0a141e0a,
-0x4992db49, 0x060c0a06, 0x24486c24, 0x5cb8e45c,
-0xc29f5dc2, 0xd3bd6ed3, 0xac43efac, 0x62c4a662,
-0x9139a891, 0x9531a495, 0xe4d337e4, 0x79f28b79,
-0xe7d532e7, 0xc88b43c8, 0x376e5937, 0x6ddab76d,
-0x8d018c8d, 0xd5b164d5, 0x4e9cd24e, 0xa949e0a9,
-0x6cd8b46c, 0x56acfa56, 0xf4f307f4, 0xeacf25ea,
-0x65caaf65, 0x7af48e7a, 0xae47e9ae, 0x08101808,
-0xba6fd5ba, 0x78f08878, 0x254a6f25, 0x2e5c722e,
-0x1c38241c, 0xa657f1a6, 0xb473c7b4, 0xc69751c6,
-0xe8cb23e8, 0xdda17cdd, 0x74e89c74, 0x1f3e211f,
-0x4b96dd4b, 0xbd61dcbd, 0x8b0d868b, 0x8a0f858a,
-0x70e09070, 0x3e7c423e, 0xb571c4b5, 0x66ccaa66,
-0x4890d848, 0x03060503, 0xf6f701f6, 0x0e1c120e,
-0x61c2a361, 0x356a5f35, 0x57aef957, 0xb969d0b9,
-0x86179186, 0xc19958c1, 0x1d3a271d, 0x9e27b99e,
-0xe1d938e1, 0xf8eb13f8, 0x982bb398, 0x11223311,
-0x69d2bb69, 0xd9a970d9, 0x8e07898e, 0x9433a794,
-0x9b2db69b, 0x1e3c221e, 0x87159287, 0xe9c920e9,
-0xce8749ce, 0x55aaff55, 0x28507828, 0xdfa57adf,
-0x8c038f8c, 0xa159f8a1, 0x89098089, 0x0d1a170d,
-0xbf65dabf, 0xe6d731e6, 0x4284c642, 0x68d0b868,
-0x4182c341, 0x9929b099, 0x2d5a772d, 0x0f1e110f,
-0xb07bcbb0, 0x54a8fc54, 0xbb6dd6bb, 0x162c3a16 ];
-
-var T4 = [
-0xc6a56363, 0xf8847c7c, 0xee997777, 0xf68d7b7b,
-0xff0df2f2, 0xd6bd6b6b, 0xdeb16f6f, 0x9154c5c5,
-0x60503030, 0x02030101, 0xcea96767, 0x567d2b2b,
-0xe719fefe, 0xb562d7d7, 0x4de6abab, 0xec9a7676,
-0x8f45caca, 0x1f9d8282, 0x8940c9c9, 0xfa877d7d,
-0xef15fafa, 0xb2eb5959, 0x8ec94747, 0xfb0bf0f0,
-0x41ecadad, 0xb367d4d4, 0x5ffda2a2, 0x45eaafaf,
-0x23bf9c9c, 0x53f7a4a4, 0xe4967272, 0x9b5bc0c0,
-0x75c2b7b7, 0xe11cfdfd, 0x3dae9393, 0x4c6a2626,
-0x6c5a3636, 0x7e413f3f, 0xf502f7f7, 0x834fcccc,
-0x685c3434, 0x51f4a5a5, 0xd134e5e5, 0xf908f1f1,
-0xe2937171, 0xab73d8d8, 0x62533131, 0x2a3f1515,
-0x080c0404, 0x9552c7c7, 0x46652323, 0x9d5ec3c3,
-0x30281818, 0x37a19696, 0x0a0f0505, 0x2fb59a9a,
-0x0e090707, 0x24361212, 0x1b9b8080, 0xdf3de2e2,
-0xcd26ebeb, 0x4e692727, 0x7fcdb2b2, 0xea9f7575,
-0x121b0909, 0x1d9e8383, 0x58742c2c, 0x342e1a1a,
-0x362d1b1b, 0xdcb26e6e, 0xb4ee5a5a, 0x5bfba0a0,
-0xa4f65252, 0x764d3b3b, 0xb761d6d6, 0x7dceb3b3,
-0x527b2929, 0xdd3ee3e3, 0x5e712f2f, 0x13978484,
-0xa6f55353, 0xb968d1d1, 0x00000000, 0xc12ceded,
-0x40602020, 0xe31ffcfc, 0x79c8b1b1, 0xb6ed5b5b,
-0xd4be6a6a, 0x8d46cbcb, 0x67d9bebe, 0x724b3939,
-0x94de4a4a, 0x98d44c4c, 0xb0e85858, 0x854acfcf,
-0xbb6bd0d0, 0xc52aefef, 0x4fe5aaaa, 0xed16fbfb,
-0x86c54343, 0x9ad74d4d, 0x66553333, 0x11948585,
-0x8acf4545, 0xe910f9f9, 0x04060202, 0xfe817f7f,
-0xa0f05050, 0x78443c3c, 0x25ba9f9f, 0x4be3a8a8,
-0xa2f35151, 0x5dfea3a3, 0x80c04040, 0x058a8f8f,
-0x3fad9292, 0x21bc9d9d, 0x70483838, 0xf104f5f5,
-0x63dfbcbc, 0x77c1b6b6, 0xaf75dada, 0x42632121,
-0x20301010, 0xe51affff, 0xfd0ef3f3, 0xbf6dd2d2,
-0x814ccdcd, 0x18140c0c, 0x26351313, 0xc32fecec,
-0xbee15f5f, 0x35a29797, 0x88cc4444, 0x2e391717,
-0x9357c4c4, 0x55f2a7a7, 0xfc827e7e, 0x7a473d3d,
-0xc8ac6464, 0xbae75d5d, 0x322b1919, 0xe6957373,
-0xc0a06060, 0x19988181, 0x9ed14f4f, 0xa37fdcdc,
-0x44662222, 0x547e2a2a, 0x3bab9090, 0x0b838888,
-0x8cca4646, 0xc729eeee, 0x6bd3b8b8, 0x283c1414,
-0xa779dede, 0xbce25e5e, 0x161d0b0b, 0xad76dbdb,
-0xdb3be0e0, 0x64563232, 0x744e3a3a, 0x141e0a0a,
-0x92db4949, 0x0c0a0606, 0x486c2424, 0xb8e45c5c,
-0x9f5dc2c2, 0xbd6ed3d3, 0x43efacac, 0xc4a66262,
-0x39a89191, 0x31a49595, 0xd337e4e4, 0xf28b7979,
-0xd532e7e7, 0x8b43c8c8, 0x6e593737, 0xdab76d6d,
-0x018c8d8d, 0xb164d5d5, 0x9cd24e4e, 0x49e0a9a9,
-0xd8b46c6c, 0xacfa5656, 0xf307f4f4, 0xcf25eaea,
-0xcaaf6565, 0xf48e7a7a, 0x47e9aeae, 0x10180808,
-0x6fd5baba, 0xf0887878, 0x4a6f2525, 0x5c722e2e,
-0x38241c1c, 0x57f1a6a6, 0x73c7b4b4, 0x9751c6c6,
-0xcb23e8e8, 0xa17cdddd, 0xe89c7474, 0x3e211f1f,
-0x96dd4b4b, 0x61dcbdbd, 0x0d868b8b, 0x0f858a8a,
-0xe0907070, 0x7c423e3e, 0x71c4b5b5, 0xccaa6666,
-0x90d84848, 0x06050303, 0xf701f6f6, 0x1c120e0e,
-0xc2a36161, 0x6a5f3535, 0xaef95757, 0x69d0b9b9,
-0x17918686, 0x9958c1c1, 0x3a271d1d, 0x27b99e9e,
-0xd938e1e1, 0xeb13f8f8, 0x2bb39898, 0x22331111,
-0xd2bb6969, 0xa970d9d9, 0x07898e8e, 0x33a79494,
-0x2db69b9b, 0x3c221e1e, 0x15928787, 0xc920e9e9,
-0x8749cece, 0xaaff5555, 0x50782828, 0xa57adfdf,
-0x038f8c8c, 0x59f8a1a1, 0x09808989, 0x1a170d0d,
-0x65dabfbf, 0xd731e6e6, 0x84c64242, 0xd0b86868,
-0x82c34141, 0x29b09999, 0x5a772d2d, 0x1e110f0f,
-0x7bcbb0b0, 0xa8fc5454, 0x6dd6bbbb, 0x2c3a1616 ];
-
-function B0(x) { return (x&255); }
-function B1(x) { return ((x>>8)&255); }
-function B2(x) { return ((x>>16)&255); }
-function B3(x) { return ((x>>24)&255); }
-
-function F1(x0, x1, x2, x3)
-{
-  return B1(T1[x0&255]) | (B1(T1[(x1>>8)&255])<<8)
-      | (B1(T1[(x2>>16)&255])<<16) | (B1(T1[x3>>>24])<<24);
+// added by Recurity Labs
+function desede(block,key) {
+	var key1 = key.substring(0,8);
+	var key2 = key.substring(8,16);
+	var key3 = key.substring(16,24);
+	return util.str2bin(des(des_createKeys(key3),des(des_createKeys(key2),des(des_createKeys(key1),util.bin2str(block), true, 0,null,null), false, 0,null,null), true, 0,null,null));
 }
 
-function packBytes(octets)
-{
-  var i, j;
-  var len=octets.length;
-  var b=new Array(len/4);
 
-  if (!octets || len % 4) return;
+function des (keys, message, encrypt, mode, iv, padding) {
+  //declaring this locally speeds things up a bit
+  var spfunction1 = new Array (0x1010400,0,0x10000,0x1010404,0x1010004,0x10404,0x4,0x10000,0x400,0x1010400,0x1010404,0x400,0x1000404,0x1010004,0x1000000,0x4,0x404,0x1000400,0x1000400,0x10400,0x10400,0x1010000,0x1010000,0x1000404,0x10004,0x1000004,0x1000004,0x10004,0,0x404,0x10404,0x1000000,0x10000,0x1010404,0x4,0x1010000,0x1010400,0x1000000,0x1000000,0x400,0x1010004,0x10000,0x10400,0x1000004,0x400,0x4,0x1000404,0x10404,0x1010404,0x10004,0x1010000,0x1000404,0x1000004,0x404,0x10404,0x1010400,0x404,0x1000400,0x1000400,0,0x10004,0x10400,0,0x1010004);
+  var spfunction2 = new Array (-0x7fef7fe0,-0x7fff8000,0x8000,0x108020,0x100000,0x20,-0x7fefffe0,-0x7fff7fe0,-0x7fffffe0,-0x7fef7fe0,-0x7fef8000,-0x80000000,-0x7fff8000,0x100000,0x20,-0x7fefffe0,0x108000,0x100020,-0x7fff7fe0,0,-0x80000000,0x8000,0x108020,-0x7ff00000,0x100020,-0x7fffffe0,0,0x108000,0x8020,-0x7fef8000,-0x7ff00000,0x8020,0,0x108020,-0x7fefffe0,0x100000,-0x7fff7fe0,-0x7ff00000,-0x7fef8000,0x8000,-0x7ff00000,-0x7fff8000,0x20,-0x7fef7fe0,0x108020,0x20,0x8000,-0x80000000,0x8020,-0x7fef8000,0x100000,-0x7fffffe0,0x100020,-0x7fff7fe0,-0x7fffffe0,0x100020,0x108000,0,-0x7fff8000,0x8020,-0x80000000,-0x7fefffe0,-0x7fef7fe0,0x108000);
+  var spfunction3 = new Array (0x208,0x8020200,0,0x8020008,0x8000200,0,0x20208,0x8000200,0x20008,0x8000008,0x8000008,0x20000,0x8020208,0x20008,0x8020000,0x208,0x8000000,0x8,0x8020200,0x200,0x20200,0x8020000,0x8020008,0x20208,0x8000208,0x20200,0x20000,0x8000208,0x8,0x8020208,0x200,0x8000000,0x8020200,0x8000000,0x20008,0x208,0x20000,0x8020200,0x8000200,0,0x200,0x20008,0x8020208,0x8000200,0x8000008,0x200,0,0x8020008,0x8000208,0x20000,0x8000000,0x8020208,0x8,0x20208,0x20200,0x8000008,0x8020000,0x8000208,0x208,0x8020000,0x20208,0x8,0x8020008,0x20200);
+  var spfunction4 = new Array (0x802001,0x2081,0x2081,0x80,0x802080,0x800081,0x800001,0x2001,0,0x802000,0x802000,0x802081,0x81,0,0x800080,0x800001,0x1,0x2000,0x800000,0x802001,0x80,0x800000,0x2001,0x2080,0x800081,0x1,0x2080,0x800080,0x2000,0x802080,0x802081,0x81,0x800080,0x800001,0x802000,0x802081,0x81,0,0,0x802000,0x2080,0x800080,0x800081,0x1,0x802001,0x2081,0x2081,0x80,0x802081,0x81,0x1,0x2000,0x800001,0x2001,0x802080,0x800081,0x2001,0x2080,0x800000,0x802001,0x80,0x800000,0x2000,0x802080);
+  var spfunction5 = new Array (0x100,0x2080100,0x2080000,0x42000100,0x80000,0x100,0x40000000,0x2080000,0x40080100,0x80000,0x2000100,0x40080100,0x42000100,0x42080000,0x80100,0x40000000,0x2000000,0x40080000,0x40080000,0,0x40000100,0x42080100,0x42080100,0x2000100,0x42080000,0x40000100,0,0x42000000,0x2080100,0x2000000,0x42000000,0x80100,0x80000,0x42000100,0x100,0x2000000,0x40000000,0x2080000,0x42000100,0x40080100,0x2000100,0x40000000,0x42080000,0x2080100,0x40080100,0x100,0x2000000,0x42080000,0x42080100,0x80100,0x42000000,0x42080100,0x2080000,0,0x40080000,0x42000000,0x80100,0x2000100,0x40000100,0x80000,0,0x40080000,0x2080100,0x40000100);
+  var spfunction6 = new Array (0x20000010,0x20400000,0x4000,0x20404010,0x20400000,0x10,0x20404010,0x400000,0x20004000,0x404010,0x400000,0x20000010,0x400010,0x20004000,0x20000000,0x4010,0,0x400010,0x20004010,0x4000,0x404000,0x20004010,0x10,0x20400010,0x20400010,0,0x404010,0x20404000,0x4010,0x404000,0x20404000,0x20000000,0x20004000,0x10,0x20400010,0x404000,0x20404010,0x400000,0x4010,0x20000010,0x400000,0x20004000,0x20000000,0x4010,0x20000010,0x20404010,0x404000,0x20400000,0x404010,0x20404000,0,0x20400010,0x10,0x4000,0x20400000,0x404010,0x4000,0x400010,0x20004010,0,0x20404000,0x20000000,0x400010,0x20004010);
+  var spfunction7 = new Array (0x200000,0x4200002,0x4000802,0,0x800,0x4000802,0x200802,0x4200800,0x4200802,0x200000,0,0x4000002,0x2,0x4000000,0x4200002,0x802,0x4000800,0x200802,0x200002,0x4000800,0x4000002,0x4200000,0x4200800,0x200002,0x4200000,0x800,0x802,0x4200802,0x200800,0x2,0x4000000,0x200800,0x4000000,0x200800,0x200000,0x4000802,0x4000802,0x4200002,0x4200002,0x2,0x200002,0x4000000,0x4000800,0x200000,0x4200800,0x802,0x200802,0x4200800,0x802,0x4000002,0x4200802,0x4200000,0x200800,0,0x2,0x4200802,0,0x200802,0x4200000,0x800,0x4000002,0x4000800,0x800,0x200002);
+  var spfunction8 = new Array (0x10001040,0x1000,0x40000,0x10041040,0x10000000,0x10001040,0x40,0x10000000,0x40040,0x10040000,0x10041040,0x41000,0x10041000,0x41040,0x1000,0x40,0x10040000,0x10000040,0x10001000,0x1040,0x41000,0x40040,0x10040040,0x10041000,0x1040,0,0,0x10040040,0x10000040,0x10001000,0x41040,0x40000,0x41040,0x40000,0x10041000,0x1000,0x40,0x10040040,0x1000,0x41040,0x10001000,0x40,0x10000040,0x10040000,0x10040040,0x10000000,0x40000,0x10001040,0,0x10041040,0x40040,0x10000040,0x10040000,0x10001000,0x10001040,0,0x10041040,0x41000,0x41000,0x1040,0x1040,0x40040,0x10000000,0x10041000);
 
-  for (i=0, j=0; j<len; j+= 4)
-     b[i++] = octets[j] | (octets[j+1]<<8) | (octets[j+2]<<16) | (octets[j+3]<<24);
+  //create the 16 or 48 subkeys we will need
+  var m=0, i, j, temp, temp2, right1, right2, left, right, looping;
+  var cbcleft, cbcleft2, cbcright, cbcright2
+  var endloop, loopinc;
+  var len = message.length;
+  var chunk = 0;
+  //set up the loops for single and triple des
+  var iterations = keys.length == 32 ? 3 : 9; //single or triple des
+  if (iterations == 3) {looping = encrypt ? new Array (0, 32, 2) : new Array (30, -2, -2);}
+  else {looping = encrypt ? new Array (0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array (94, 62, -2, 32, 64, 2, 30, -2, -2);}
 
-  return b;  
-}
+  //pad the message depending on the padding parameter
+  if (padding == 2) message += "        "; //pad the message with spaces
+  else if (padding == 1) {temp = 8-(len%8); message += String.fromCharCode (temp,temp,temp,temp,temp,temp,temp,temp); if (temp==8) len+=8;} //PKCS7 padding
+  else if (!padding) message += "\0\0\0\0\0\0\0\0"; //pad the message out with null bytes
 
-function unpackBytes(packed)
-{
-  var j;
-  var i=0, l = packed.length;
-  var r = new Array(l*4);
+  //store the result here
+  result = "";
+  tempresult = "";
 
-  for (j=0; j<l; j++)
-  {
-    r[i++] = B0(packed[j]);
-    r[i++] = B1(packed[j]);
-    r[i++] = B2(packed[j]);
-    r[i++] = B3(packed[j]);
-  }
-  return r;
-}
-
-// ------------------------------------------------
-
-var maxkc=8;
-var maxrk=14;
-
-function keyExpansion(key)
-{
-  var kc, i, j, r, t;
-  var rounds;
-  var keySched=new Array(maxrk+1);
-  var keylen=key.length;
-  var k=new Array(maxkc);
-  var tk=new Array(maxkc);
-  var rconpointer=0;
-
-  if(keylen==16)
-  {
-   rounds=10;
-   kc=4;
-  }
-  else if(keylen==24)
-  {
-   rounds=12;
-   kc=6;
-  }
-  else if(keylen==32)
-  {
-   rounds=14;
-   kc=8;
-  }
-  else
-  {
-	util.print_error('aes.js: Invalid key-length for AES key:'+keylen);
-   return;
+  if (mode == 1) { //CBC mode
+    cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
+    cbcright = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
+    m=0;
   }
 
-  for(i=0; i<maxrk+1; i++) keySched[i]=new Array(4);
+  //loop through each 64 bit chunk of the message
+  while (m < len) {
+    left = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) | message.charCodeAt(m++);
+    right = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) | message.charCodeAt(m++);
 
-  for(i=0,j=0; j<keylen; j++,i+=4)
-    k[j] = key.charCodeAt(i) | (key.charCodeAt(i+1)<<8)
-                     | (key.charCodeAt(i+2)<<16) | (key.charCodeAt(i+3)<<24);
+    //for Cipher Block Chaining mode, xor the message with the previous result
+    if (mode == 1) {if (encrypt) {left ^= cbcleft; right ^= cbcright;} else {cbcleft2 = cbcleft; cbcright2 = cbcright; cbcleft = left; cbcright = right;}}
 
-  for(j=kc-1; j>=0; j--) tk[j] = k[j];
+    //first each 64 but chunk of the message must be permuted according to IP
+    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
+    temp = ((left >>> 16) ^ right) & 0x0000ffff; right ^= temp; left ^= (temp << 16);
+    temp = ((right >>> 2) ^ left) & 0x33333333; left ^= temp; right ^= (temp << 2);
+    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
+    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
 
-  r=0;
-  t=0;
-  for(j=0; (j<kc)&&(r<rounds+1); )
-  {
-    for(; (j<kc)&&(t<4); j++,t++)
-    {
-      keySched[r][t]=tk[j];
-    }
-    if(t==4)
-    {
-      r++;
-      t=0;
-    }
-  }
+    left = ((left << 1) | (left >>> 31)); 
+    right = ((right << 1) | (right >>> 31)); 
 
-  while(r<rounds+1)
-  {
-    var temp = tk[kc-1];
-
-    tk[0] ^= S[B1(temp)] | (S[B2(temp)]<<8) | (S[B3(temp)]<<16) | (S[B0(temp)]<<24);
-    tk[0] ^= Rcon[rconpointer++];
-
-    if(kc != 8)
-    {
-      for(j=1; j<kc; j++) tk[j] ^= tk[j-1];
-    }
-    else
-    {
-      for(j=1; j<kc/2; j++) tk[j] ^= tk[j-1];
- 
-      temp = tk[kc/2-1];
-      tk[kc/2] ^= S[B0(temp)] | (S[B1(temp)]<<8) | (S[B2(temp)]<<16) | (S[B3(temp)]<<24);
-
-      for(j=kc/2+1; j<kc; j++) tk[j] ^= tk[j-1];
-    }
-
-    for(j=0; (j<kc)&&(r<rounds+1); )
-    {
-      for(; (j<kc)&&(t<4); j++,t++)
-      {
-        keySched[r][t]=tk[j];
+    //do this either 1 or 3 times for each chunk of the message
+    for (j=0; j<iterations; j+=3) {
+      endloop = looping[j+1];
+      loopinc = looping[j+2];
+      //now go through and perform the encryption or decryption  
+      for (i=looping[j]; i!=endloop; i+=loopinc) { //for efficiency
+        right1 = right ^ keys[i]; 
+        right2 = ((right >>> 4) | (right << 28)) ^ keys[i+1];
+        //the result is attained by passing these bytes through the S selection functions
+        temp = left;
+        left = right;
+        right = temp ^ (spfunction2[(right1 >>> 24) & 0x3f] | spfunction4[(right1 >>> 16) & 0x3f]
+              | spfunction6[(right1 >>>  8) & 0x3f] | spfunction8[right1 & 0x3f]
+              | spfunction1[(right2 >>> 24) & 0x3f] | spfunction3[(right2 >>> 16) & 0x3f]
+              | spfunction5[(right2 >>>  8) & 0x3f] | spfunction7[right2 & 0x3f]);
       }
-      if(t==4)
-      {
-        r++;
-        t=0;
-      }
+      temp = left; left = right; right = temp; //unreverse left and right
+    } //for either 1 or 3 iterations
+
+    //move then each one bit to the right
+    left = ((left >>> 1) | (left << 31)); 
+    right = ((right >>> 1) | (right << 31)); 
+
+    //now perform IP-1, which is IP in the opposite direction
+    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
+    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
+    temp = ((right >>> 2) ^ left) & 0x33333333; left ^= temp; right ^= (temp << 2);
+    temp = ((left >>> 16) ^ right) & 0x0000ffff; right ^= temp; left ^= (temp << 16);
+    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
+
+    //for Cipher Block Chaining mode, xor the message with the previous result
+    if (mode == 1) {if (encrypt) {cbcleft = left; cbcright = right;} else {left ^= cbcleft2; right ^= cbcright2;}}
+    tempresult += String.fromCharCode ((left>>>24), ((left>>>16) & 0xff), ((left>>>8) & 0xff), (left & 0xff), (right>>>24), ((right>>>16) & 0xff), ((right>>>8) & 0xff), (right & 0xff));
+
+    chunk += 8;
+    if (chunk == 512) {result += tempresult; tempresult = ""; chunk = 0;}
+  } //for every 8 characters, or 64 bits in the message
+
+  //return the result as an array
+  result += tempresult;
+  result = result.replace(/\0*$/g, "");
+  return result;
+} //end of des
+
+
+
+//des_createKeys
+//this takes as input a 64 bit key (even though only 56 bits are used)
+//as an array of 2 integers, and returns 16 48 bit keys
+function des_createKeys (key) {
+  //declaring this locally speeds things up a bit
+  pc2bytes0  = new Array (0,0x4,0x20000000,0x20000004,0x10000,0x10004,0x20010000,0x20010004,0x200,0x204,0x20000200,0x20000204,0x10200,0x10204,0x20010200,0x20010204);
+  pc2bytes1  = new Array (0,0x1,0x100000,0x100001,0x4000000,0x4000001,0x4100000,0x4100001,0x100,0x101,0x100100,0x100101,0x4000100,0x4000101,0x4100100,0x4100101);
+  pc2bytes2  = new Array (0,0x8,0x800,0x808,0x1000000,0x1000008,0x1000800,0x1000808,0,0x8,0x800,0x808,0x1000000,0x1000008,0x1000800,0x1000808);
+  pc2bytes3  = new Array (0,0x200000,0x8000000,0x8200000,0x2000,0x202000,0x8002000,0x8202000,0x20000,0x220000,0x8020000,0x8220000,0x22000,0x222000,0x8022000,0x8222000);
+  pc2bytes4  = new Array (0,0x40000,0x10,0x40010,0,0x40000,0x10,0x40010,0x1000,0x41000,0x1010,0x41010,0x1000,0x41000,0x1010,0x41010);
+  pc2bytes5  = new Array (0,0x400,0x20,0x420,0,0x400,0x20,0x420,0x2000000,0x2000400,0x2000020,0x2000420,0x2000000,0x2000400,0x2000020,0x2000420);
+  pc2bytes6  = new Array (0,0x10000000,0x80000,0x10080000,0x2,0x10000002,0x80002,0x10080002,0,0x10000000,0x80000,0x10080000,0x2,0x10000002,0x80002,0x10080002);
+  pc2bytes7  = new Array (0,0x10000,0x800,0x10800,0x20000000,0x20010000,0x20000800,0x20010800,0x20000,0x30000,0x20800,0x30800,0x20020000,0x20030000,0x20020800,0x20030800);
+  pc2bytes8  = new Array (0,0x40000,0,0x40000,0x2,0x40002,0x2,0x40002,0x2000000,0x2040000,0x2000000,0x2040000,0x2000002,0x2040002,0x2000002,0x2040002);
+  pc2bytes9  = new Array (0,0x10000000,0x8,0x10000008,0,0x10000000,0x8,0x10000008,0x400,0x10000400,0x408,0x10000408,0x400,0x10000400,0x408,0x10000408);
+  pc2bytes10 = new Array (0,0x20,0,0x20,0x100000,0x100020,0x100000,0x100020,0x2000,0x2020,0x2000,0x2020,0x102000,0x102020,0x102000,0x102020);
+  pc2bytes11 = new Array (0,0x1000000,0x200,0x1000200,0x200000,0x1200000,0x200200,0x1200200,0x4000000,0x5000000,0x4000200,0x5000200,0x4200000,0x5200000,0x4200200,0x5200200);
+  pc2bytes12 = new Array (0,0x1000,0x8000000,0x8001000,0x80000,0x81000,0x8080000,0x8081000,0x10,0x1010,0x8000010,0x8001010,0x80010,0x81010,0x8080010,0x8081010);
+  pc2bytes13 = new Array (0,0x4,0x100,0x104,0,0x4,0x100,0x104,0x1,0x5,0x101,0x105,0x1,0x5,0x101,0x105);
+
+  //how many iterations (1 for des, 3 for triple des)
+  var iterations = key.length > 8 ? 3 : 1; //changed by Paul 16/6/2007 to use Triple DES for 9+ byte keys
+  //stores the return keys
+  var keys = new Array (32 * iterations);
+  //now define the left shifts which need to be done
+  var shifts = new Array (0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
+  //other variables
+  var lefttemp, righttemp, m=0, n=0, temp;
+
+  for (var j=0; j<iterations; j++) { //either 1 or 3 iterations
+    left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+
+    temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
+    temp = ((right >>> -16) ^ left) & 0x0000ffff; left ^= temp; right ^= (temp << -16);
+    temp = ((left >>> 2) ^ right) & 0x33333333; right ^= temp; left ^= (temp << 2);
+    temp = ((right >>> -16) ^ left) & 0x0000ffff; left ^= temp; right ^= (temp << -16);
+    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
+    temp = ((right >>> 8) ^ left) & 0x00ff00ff; left ^= temp; right ^= (temp << 8);
+    temp = ((left >>> 1) ^ right) & 0x55555555; right ^= temp; left ^= (temp << 1);
+
+    //the right side needs to be shifted and to get the last four bits of the left side
+    temp = (left << 8) | ((right >>> 20) & 0x000000f0);
+    //left needs to be put upside down
+    left = (right << 24) | ((right << 8) & 0xff0000) | ((right >>> 8) & 0xff00) | ((right >>> 24) & 0xf0);
+    right = temp;
+
+    //now go through and perform these shifts on the left and right keys
+    for (i=0; i < shifts.length; i++) {
+      //shift the keys either one or two bits to the left
+      if (shifts[i]) {left = (left << 2) | (left >>> 26); right = (right << 2) | (right >>> 26);}
+      else {left = (left << 1) | (left >>> 27); right = (right << 1) | (right >>> 27);}
+      left &= -0xf; right &= -0xf;
+
+      //now apply PC-2, in such a way that E is easier when encrypting or decrypting
+      //this conversion will look like PC-2 except only the last 6 bits of each byte are used
+      //rather than 48 consecutive bits and the order of lines will be according to 
+      //how the S selection functions will be applied: S2, S4, S6, S8, S1, S3, S5, S7
+      lefttemp = pc2bytes0[left >>> 28] | pc2bytes1[(left >>> 24) & 0xf]
+              | pc2bytes2[(left >>> 20) & 0xf] | pc2bytes3[(left >>> 16) & 0xf]
+              | pc2bytes4[(left >>> 12) & 0xf] | pc2bytes5[(left >>> 8) & 0xf]
+              | pc2bytes6[(left >>> 4) & 0xf];
+      righttemp = pc2bytes7[right >>> 28] | pc2bytes8[(right >>> 24) & 0xf]
+                | pc2bytes9[(right >>> 20) & 0xf] | pc2bytes10[(right >>> 16) & 0xf]
+                | pc2bytes11[(right >>> 12) & 0xf] | pc2bytes12[(right >>> 8) & 0xf]
+                | pc2bytes13[(right >>> 4) & 0xf];
+      temp = ((righttemp >>> 16) ^ lefttemp) & 0x0000ffff; 
+      keys[n++] = lefttemp ^ temp; keys[n++] = righttemp ^ (temp << 16);
     }
-  }
-  this.rounds = rounds;
-  this.rk = keySched;
-  return this;
-}
+  } //for each iterations
+  //return the keys we've created
+  return keys;
+} //end of des_createKeys
 
-function AESencrypt(block, ctx)
-{
-  var r;
-  var t0,t1,t2,t3;
 
-  var b = packBytes(block);
-  var rounds = ctx.rounds;
-  var b0 = b[0];
-  var b1 = b[1];
-  var b2 = b[2];
-  var b3 = b[3];
-
-  for(r=0; r<rounds-1; r++)
-  {
-    t0 = b0 ^ ctx.rk[r][0];
-    t1 = b1 ^ ctx.rk[r][1];
-    t2 = b2 ^ ctx.rk[r][2];
-    t3 = b3 ^ ctx.rk[r][3];
-
-    b0 = T1[t0&255] ^ T2[(t1>>8)&255] ^ T3[(t2>>16)&255] ^ T4[t3>>>24];
-    b1 = T1[t1&255] ^ T2[(t2>>8)&255] ^ T3[(t3>>16)&255] ^ T4[t0>>>24];
-    b2 = T1[t2&255] ^ T2[(t3>>8)&255] ^ T3[(t0>>16)&255] ^ T4[t1>>>24];
-    b3 = T1[t3&255] ^ T2[(t0>>8)&255] ^ T3[(t1>>16)&255] ^ T4[t2>>>24];
-  }
-
-  // last round is special
-  r = rounds-1;
-
-  t0 = b0 ^ ctx.rk[r][0];
-  t1 = b1 ^ ctx.rk[r][1];
-  t2 = b2 ^ ctx.rk[r][2];
-  t3 = b3 ^ ctx.rk[r][3];
-
-  b[0] = F1(t0, t1, t2, t3) ^ ctx.rk[rounds][0];
-  b[1] = F1(t1, t2, t3, t0) ^ ctx.rk[rounds][1];
-  b[2] = F1(t2, t3, t0, t1) ^ ctx.rk[rounds][2];
-  b[3] = F1(t3, t0, t1, t2) ^ ctx.rk[rounds][3];
-
-  return unpackBytes(b);
-}
 /* Modified by Recurity Labs GmbH 
  * 
  * Cipher.js
@@ -7092,1924 +6082,403 @@ function createTwofish() {
 
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-// RSA implementation
 
-function SecureRandom(){
-    function nextBytes(byteArray){
-        for(var n = 0; n < byteArray.length;n++){
-            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
-        }
-    }
-    this.nextBytes = nextBytes;
-}
-
-function RSA() {
-	/**
-	 * This function uses jsbn Big Num library to decrypt RSA
-	 * @param m
-	 *            message
-	 * @param d
-	 *            RSA d as BigInteger
-	 * @param p
-	 *            RSA p as BigInteger
-	 * @param q
-	 *            RSA q as BigInteger
-	 * @param u
-	 *            RSA u as BigInteger
-	 * @return
-	 */
-	function decrypt(m, d, p, q, u) {
-		var xp = m.mod(p).modPow(d.mod(p.subtract(BigInteger.ONE)), p);
-		var xq = m.mod(q).modPow(d.mod(q.subtract(BigInteger.ONE)), q);
-		util.print_debug("rsa.js decrypt\nxpn:"+util.hexstrdump(xp.toMPI())+"\nxqn:"+util.hexstrdump(xq.toMPI()));
-
-		var t = xq.subtract(xp);
-		if (t[0] == 0) {
-			t = xp.subtract(xq);
-			t = t.multiply(u).mod(q);
-			t = q.subtract(t);
-		} else {
-			t = t.multiply(u).mod(q);
-		}
-		return t.multiply(p).add(xp);
-	}
-	
-	/**
-	 * encrypt message
-	 * @param m message as BigInteger
-	 * @param e public MPI part as BigInteger
-	 * @param n public MPI part as BigInteger
-	 * @return BigInteger
-	 */
-	function encrypt(m,e,n) {
-		return m.modPowInt(e, n);
-	}
-	
-	/* Sign and Verify */
-	function sign(m,d,n) {
-		return m.modPow(d, n);
-	}
-		
-	function verify(x,e,n) {
-		return x.modPowInt(e, n);
-	}
-	
-	// "empty" RSA key constructor
-    function keyObject() {
-        this.n = null;
-        this.e = 0;
-        this.ee = null;
-        this.d = null;
-        this.p = null;
-        this.q = null;
-        this.dmp1 = null;
-        this.dmq1 = null;
-        this.u = null;
-    }
-	
-	// Generate a new random private key B bits long, using public expt E
-    function generate(B,E) {
-        var key = new keyObject();
-        var rng = new SecureRandom();
-        var qs = B>>1;
-        key.e = parseInt(E,16);
-        key.ee = new BigInteger(E,16);
-        for(;;) {
-            for(;;) {
-                key.p = new BigInteger(B-qs,1,rng);
-                if(key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.p.isProbablePrime(10)) break;
-            }
-            for(;;) {
-                key.q = new BigInteger(qs,1,rng);
-                if(key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) == 0 && key.q.isProbablePrime(10)) break;
-            }
-            if(key.p.compareTo(key.q) <= 0) {
-                var t = key.p;
-                key.p = key.q;
-                key.q = t;
-            }
-            var p1 = key.p.subtract(BigInteger.ONE);
-            var q1 = key.q.subtract(BigInteger.ONE);
-            var phi = p1.multiply(q1);
-            if(phi.gcd(key.ee).compareTo(BigInteger.ONE) == 0) {
-                key.n = key.p.multiply(key.q);
-                key.d = key.ee.modInverse(phi);
-                key.dmp1 = key.d.mod(p1);
-                key.dmq1 = key.d.mod(q1);
-                key.u = key.p.modInverse(key.q);
-                break;
-            }
-        }
-        return key;
-    }
-		
-	this.encrypt = encrypt;
-	this.decrypt = decrypt;
-	this.verify = verify;
-	this.sign = sign;
-	this.generate = generate;
-	this.keyObject = keyObject;
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-// A Digital signature algorithm implementation
-
-function DSA() {
-	// s1 = ((g**s) mod p) mod q
-	// s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
-	function sign(hashalgo, m, g, p, q, x) {
-		// If the output size of the chosen hash is larger than the number of
-		// bits of q, the hash result is truncated to fit by taking the number
-		// of leftmost bits equal to the number of bits of q.  This (possibly
-		// truncated) hash function result is treated as a number and used
-		// directly in the DSA signature algorithm.
-		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
-		var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-		var k = openpgp_crypto_getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
-		var s1 = (g.modPow(k,p)).mod(q); 
-		var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
-		var result = new Array();
-		result[0] = s1.toMPI();
-		result[1] = s2.toMPI();
-		return result;
-	}
-	function select_hash_algorithm(q) {
-		var usersetting = openpgp.config.config.prefer_hash_algorithm;
-		/*
-		 * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-		 * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-		 * 2048-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-		 * 3072-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-		 */
-		switch (Math.round(q.bitLength() / 8)) {
-		case 20: // 1024 bit
-			if (usersetting != 2 &&
-				usersetting > 11 &&
-				usersetting != 10 &&
-				usersetting < 8)
-				return 2; // prefer sha1
-			return usersetting;
-		case 28: // 2048 bit
-			if (usersetting > 11 &&
-					usersetting < 8)
-					return 11;
-			return usersetting;
-		case 32: // 4096 bit // prefer sha224
-			if (usersetting > 10 &&
-					usersetting < 8)
-					return 8; // prefer sha256
-			return usersetting;
-		default:
-			util.print_debug("DSA select hash algorithm: returning null for an unknown length of q");
-			return null;
-			
-		}
-	}
-	this.select_hash_algorithm = select_hash_algorithm;
-	
-	function verify(hashalgo, s1,s2,m,p,q,g,y) {
-		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
-		var hash = new BigInteger(util.hexstrdump(hashed_data), 16); 
-		if (BigInteger.ZERO.compareTo(s1) > 0 ||
-				s1.compareTo(q) > 0 ||
-				BigInteger.ZERO.compareTo(s2) > 0 ||
-				s2.compareTo(q) > 0) {
-			util.print_error("invalid DSA Signature");
-			return null;
-		}
-		var w = s2.modInverse(q);
-		var u1 = hash.multiply(w).mod(q);
-		var u2 = s1.multiply(w).mod(q);
-		return g.modPow(u1,p).multiply(y.modPow(u2,p)).mod(p).mod(q);
-	}
-	
-	/*
-	 * unused code. This can be used as a start to write a key generator
-	 * function.
-	
-	function generateKey(bitcount) {
-	    var qi = new BigInteger(bitcount, primeCenterie);
-	    var pi = generateP(q, 512);
-	    var gi = generateG(p, q, bitcount);
-	    var xi;
-	    do {
-	        xi = new BigInteger(q.bitCount(), rand);
-	    } while (x.compareTo(BigInteger.ZERO) != 1 && x.compareTo(q) != -1);
-	    var yi = g.modPow(x, p);
-	    return {x: xi, q: qi, p: pi, g: gi, y: yi};
-	}
-
-	function generateP(q, bitlength, randomfn) {
-	    if (bitlength % 64 != 0) {
-	    	return false;
-	    }
-	    var pTemp;
-	    var pTemp2;
-	    do {
-	        pTemp = randomfn(bitcount, true);
-	        pTemp2 = pTemp.subtract(BigInteger.ONE);
-	        pTemp = pTemp.subtract(pTemp2.remainder(q));
-	    } while (!pTemp.isProbablePrime(primeCenterie) || pTemp.bitLength() != l);
-	    return pTemp;
-	}
-	
-	function generateG(p, q, bitlength, randomfn) {
-	    var aux = p.subtract(BigInteger.ONE);
-	    var pow = aux.divide(q);
-	    var gTemp;
-	    do {
-	        gTemp = randomfn(bitlength);
-	    } while (gTemp.compareTo(aux) != -1 && gTemp.compareTo(BigInteger.ONE) != 1);
-	    return gTemp.modPow(pow, p);
-	}
-
-	function generateK(q, bitlength, randomfn) {
-	    var tempK;
-	    do {
-	        tempK = randomfn(bitlength, false);
-	    } while (tempK.compareTo(q) != -1 && tempK.compareTo(BigInteger.ZERO) != 1);
-	    return tempK;
-	}
-
-	function generateR(q,p) {
-	    k = generateK(q);
-	    var r = g.modPow(k, p).mod(q);
-	    return r;
-	}
-
-	function generateS(hashfn,k,r,m,q,x) {
-        var hash = hashfn(m);
-        s = (k.modInverse(q).multiply(hash.add(x.multiply(r)))).mod(q);
-	    return s;
-	} */
-	this.sign = sign;
-	this.verify = verify;
-	// this.generate = generateKey;
-}
-/*
- * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
- * All Rights Reserved.
+/**
+ * Implementation of the GPG4Browsers config object
  *
- * Modified by Recurity Labs GmbH 
- * 
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
+ * This object contains configuration values and implements
+ * storing and retrieving configuration them from HTML5 local storage.
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- *
- * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
- * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
- * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
- * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * In addition, the following condition applies:
- *
- * All redistributions must retain an intact copy of this copyright notice
- * and disclaimer.
+ * This object can be accessed after calling openpgp.init()
+ * using openpgp.config
+ * Stored config parameters can be accessed using
+ * openpgp.config.config
  */
+function openpgp_config() {
+	this.config = null;
 
-// Basic JavaScript BN library - subset useful for RSA encryption.
+	/**
+	 * the default config object which is used if no
+	 * configuration was in place
+	 */
+	this.default_config = {
+			prefer_hash_algorithm: 2,
+			encryption_cipher: 9,
+			compression: 1,
+			show_version: true,
+			show_comment: true,
+			integrity_protect: true,
+			composition_behavior: 0,
+			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
+	};
 
-// Bits per digit
-var dbits;
-
-// JavaScript engine analysis
-var canary = 0xdeadbeefcafe;
-var j_lm = ((canary&0xffffff)==0xefcafe);
-
-// (public) Constructor
-function BigInteger(a,b,c) {
-  if(a != null)
-    if("number" == typeof a) this.fromNumber(a,b,c);
-    else if(b == null && "string" != typeof a) this.fromString(a,256);
-    else this.fromString(a,b);
-}
-
-// return new, unset BigInteger
-function nbi() { return new BigInteger(null); }
-
-// am: Compute w_j += (x*this_i), propagate carries,
-// c is initial carry, returns final carry.
-// c < 3*dvalue, x < 2*dvalue, this_i < dvalue
-// We need to select the fastest one that works in this environment.
-
-// am1: use a single mult and divide to get the high bits,
-// max digit bits should be 26 because
-// max internal value = 2*dvalue^2-2*dvalue (< 2^53)
-function am1(i,x,w,j,c,n) {
-  while(--n >= 0) {
-    var v = x*this[i++]+w[j]+c;
-    c = Math.floor(v/0x4000000);
-    w[j++] = v&0x3ffffff;
-  }
-  return c;
-}
-// am2 avoids a big mult-and-extract completely.
-// Max digit bits should be <= 30 because we do bitwise ops
-// on values up to 2*hdvalue^2-hdvalue-1 (< 2^31)
-function am2(i,x,w,j,c,n) {
-  var xl = x&0x7fff, xh = x>>15;
-  while(--n >= 0) {
-    var l = this[i]&0x7fff;
-    var h = this[i++]>>15;
-    var m = xh*l+h*xl;
-    l = xl*l+((m&0x7fff)<<15)+w[j]+(c&0x3fffffff);
-    c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
-    w[j++] = l&0x3fffffff;
-  }
-  return c;
-}
-// Alternately, set max digit bits to 28 since some
-// browsers slow down when dealing with 32-bit numbers.
-function am3(i,x,w,j,c,n) {
-  var xl = x&0x3fff, xh = x>>14;
-  while(--n >= 0) {
-    var l = this[i]&0x3fff;
-    var h = this[i++]>>14;
-    var m = xh*l+h*xl;
-    l = xl*l+((m&0x3fff)<<14)+w[j]+c;
-    c = (l>>28)+(m>>14)+xh*h;
-    w[j++] = l&0xfffffff;
-  }
-  return c;
-}
-if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
-  BigInteger.prototype.am = am2;
-  dbits = 30;
-}
-else if(j_lm && (navigator.appName != "Netscape")) {
-  BigInteger.prototype.am = am1;
-  dbits = 26;
-}
-else { // Mozilla/Netscape seems to prefer am3
-  BigInteger.prototype.am = am3;
-  dbits = 28;
-}
-
-BigInteger.prototype.DB = dbits;
-BigInteger.prototype.DM = ((1<<dbits)-1);
-BigInteger.prototype.DV = (1<<dbits);
-
-var BI_FP = 52;
-BigInteger.prototype.FV = Math.pow(2,BI_FP);
-BigInteger.prototype.F1 = BI_FP-dbits;
-BigInteger.prototype.F2 = 2*dbits-BI_FP;
-
-// Digit conversions
-var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz";
-var BI_RC = new Array();
-var rr,vv;
-rr = "0".charCodeAt(0);
-for(vv = 0; vv <= 9; ++vv) BI_RC[rr++] = vv;
-rr = "a".charCodeAt(0);
-for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
-rr = "A".charCodeAt(0);
-for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
-
-function int2char(n) { return BI_RM.charAt(n); }
-function intAt(s,i) {
-  var c = BI_RC[s.charCodeAt(i)];
-  return (c==null)?-1:c;
-}
-
-// (protected) copy this to r
-function bnpCopyTo(r) {
-  for(var i = this.t-1; i >= 0; --i) r[i] = this[i];
-  r.t = this.t;
-  r.s = this.s;
-}
-
-// (protected) set from integer value x, -DV <= x < DV
-function bnpFromInt(x) {
-  this.t = 1;
-  this.s = (x<0)?-1:0;
-  if(x > 0) this[0] = x;
-  else if(x < -1) this[0] = x+DV;
-  else this.t = 0;
-}
-
-// return bigint initialized to value
-function nbv(i) { var r = nbi(); r.fromInt(i); return r; }
-
-// (protected) set from string and radix
-function bnpFromString(s,b) {
-  var k;
-  if(b == 16) k = 4;
-  else if(b == 8) k = 3;
-  else if(b == 256) k = 8; // byte array
-  else if(b == 2) k = 1;
-  else if(b == 32) k = 5;
-  else if(b == 4) k = 2;
-  else { this.fromRadix(s,b); return; }
-  this.t = 0;
-  this.s = 0;
-  var i = s.length, mi = false, sh = 0;
-  while(--i >= 0) {
-    var x = (k==8)?s[i]&0xff:intAt(s,i);
-    if(x < 0) {
-      if(s.charAt(i) == "-") mi = true;
-      continue;
-    }
-    mi = false;
-    if(sh == 0)
-      this[this.t++] = x;
-    else if(sh+k > this.DB) {
-      this[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
-      this[this.t++] = (x>>(this.DB-sh));
-    }
-    else
-      this[this.t-1] |= x<<sh;
-    sh += k;
-    if(sh >= this.DB) sh -= this.DB;
-  }
-  if(k == 8 && (s[0]&0x80) != 0) {
-    this.s = -1;
-    if(sh > 0) this[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
-  }
-  this.clamp();
-  if(mi) BigInteger.ZERO.subTo(this,this);
-}
-
-// (protected) clamp off excess high words
-function bnpClamp() {
-  var c = this.s&this.DM;
-  while(this.t > 0 && this[this.t-1] == c) --this.t;
-}
-
-// (public) return string representation in given radix
-function bnToString(b) {
-  if(this.s < 0) return "-"+this.negate().toString(b);
-  var k;
-  if(b == 16) k = 4;
-  else if(b == 8) k = 3;
-  else if(b == 2) k = 1;
-  else if(b == 32) k = 5;
-  else if(b == 4) k = 2;
-  else return this.toRadix(b);
-  var km = (1<<k)-1, d, m = false, r = "", i = this.t;
-  var p = this.DB-(i*this.DB)%k;
-  if(i-- > 0) {
-    if(p < this.DB && (d = this[i]>>p) > 0) { m = true; r = int2char(d); }
-    while(i >= 0) {
-      if(p < k) {
-        d = (this[i]&((1<<p)-1))<<(k-p);
-        d |= this[--i]>>(p+=this.DB-k);
-      }
-      else {
-        d = (this[i]>>(p-=k))&km;
-        if(p <= 0) { p += this.DB; --i; }
-      }
-      if(d > 0) m = true;
-      if(m) r += int2char(d);
-    }
-  }
-  return m?r:"0";
-}
-
-// (public) -this
-function bnNegate() { var r = nbi(); BigInteger.ZERO.subTo(this,r); return r; }
-
-// (public) |this|
-function bnAbs() { return (this.s<0)?this.negate():this; }
-
-// (public) return + if this > a, - if this < a, 0 if equal
-function bnCompareTo(a) {
-  var r = this.s-a.s;
-  if(r != 0) return r;
-  var i = this.t;
-  r = i-a.t;
-  if(r != 0) return r;
-  while(--i >= 0) if((r=this[i]-a[i]) != 0) return r;
-  return 0;
-}
-
-// returns bit length of the integer x
-function nbits(x) {
-  var r = 1, t;
-  if((t=x>>>16) != 0) { x = t; r += 16; }
-  if((t=x>>8) != 0) { x = t; r += 8; }
-  if((t=x>>4) != 0) { x = t; r += 4; }
-  if((t=x>>2) != 0) { x = t; r += 2; }
-  if((t=x>>1) != 0) { x = t; r += 1; }
-  return r;
-}
-
-// (public) return the number of bits in "this"
-function bnBitLength() {
-  if(this.t <= 0) return 0;
-  return this.DB*(this.t-1)+nbits(this[this.t-1]^(this.s&this.DM));
-}
-
-// (protected) r = this << n*DB
-function bnpDLShiftTo(n,r) {
-  var i;
-  for(i = this.t-1; i >= 0; --i) r[i+n] = this[i];
-  for(i = n-1; i >= 0; --i) r[i] = 0;
-  r.t = this.t+n;
-  r.s = this.s;
-}
-
-// (protected) r = this >> n*DB
-function bnpDRShiftTo(n,r) {
-  for(var i = n; i < this.t; ++i) r[i-n] = this[i];
-  r.t = Math.max(this.t-n,0);
-  r.s = this.s;
-}
-
-// (protected) r = this << n
-function bnpLShiftTo(n,r) {
-  var bs = n%this.DB;
-  var cbs = this.DB-bs;
-  var bm = (1<<cbs)-1;
-  var ds = Math.floor(n/this.DB), c = (this.s<<bs)&this.DM, i;
-  for(i = this.t-1; i >= 0; --i) {
-    r[i+ds+1] = (this[i]>>cbs)|c;
-    c = (this[i]&bm)<<bs;
-  }
-  for(i = ds-1; i >= 0; --i) r[i] = 0;
-  r[ds] = c;
-  r.t = this.t+ds+1;
-  r.s = this.s;
-  r.clamp();
-}
-
-// (protected) r = this >> n
-function bnpRShiftTo(n,r) {
-  r.s = this.s;
-  var ds = Math.floor(n/this.DB);
-  if(ds >= this.t) { r.t = 0; return; }
-  var bs = n%this.DB;
-  var cbs = this.DB-bs;
-  var bm = (1<<bs)-1;
-  r[0] = this[ds]>>bs;
-  for(var i = ds+1; i < this.t; ++i) {
-    r[i-ds-1] |= (this[i]&bm)<<cbs;
-    r[i-ds] = this[i]>>bs;
-  }
-  if(bs > 0) r[this.t-ds-1] |= (this.s&bm)<<cbs;
-  r.t = this.t-ds;
-  r.clamp();
-}
-
-// (protected) r = this - a
-function bnpSubTo(a,r) {
-  var i = 0, c = 0, m = Math.min(a.t,this.t);
-  while(i < m) {
-    c += this[i]-a[i];
-    r[i++] = c&this.DM;
-    c >>= this.DB;
-  }
-  if(a.t < this.t) {
-    c -= a.s;
-    while(i < this.t) {
-      c += this[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c += this.s;
-  }
-  else {
-    c += this.s;
-    while(i < a.t) {
-      c -= a[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c -= a.s;
-  }
-  r.s = (c<0)?-1:0;
-  if(c < -1) r[i++] = this.DV+c;
-  else if(c > 0) r[i++] = c;
-  r.t = i;
-  r.clamp();
-}
-
-// (protected) r = this * a, r != this,a (HAC 14.12)
-// "this" should be the larger one if appropriate.
-function bnpMultiplyTo(a,r) {
-  var x = this.abs(), y = a.abs();
-  var i = x.t;
-  r.t = i+y.t;
-  while(--i >= 0) r[i] = 0;
-  for(i = 0; i < y.t; ++i) r[i+x.t] = x.am(0,y[i],r,i,0,x.t);
-  r.s = 0;
-  r.clamp();
-  if(this.s != a.s) BigInteger.ZERO.subTo(r,r);
-}
-
-// (protected) r = this^2, r != this (HAC 14.16)
-function bnpSquareTo(r) {
-  var x = this.abs();
-  var i = r.t = 2*x.t;
-  while(--i >= 0) r[i] = 0;
-  for(i = 0; i < x.t-1; ++i) {
-    var c = x.am(i,x[i],r,2*i,0,1);
-    if((r[i+x.t]+=x.am(i+1,2*x[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
-      r[i+x.t] -= x.DV;
-      r[i+x.t+1] = 1;
-    }
-  }
-  if(r.t > 0) r[r.t-1] += x.am(i,x[i],r,2*i,0,1);
-  r.s = 0;
-  r.clamp();
-}
-
-// (protected) divide this by m, quotient and remainder to q, r (HAC 14.20)
-// r != q, this != m.  q or r may be null.
-function bnpDivRemTo(m,q,r) {
-  var pm = m.abs();
-  if(pm.t <= 0) return;
-  var pt = this.abs();
-  if(pt.t < pm.t) {
-    if(q != null) q.fromInt(0);
-    if(r != null) this.copyTo(r);
-    return;
-  }
-  if(r == null) r = nbi();
-  var y = nbi(), ts = this.s, ms = m.s;
-  var nsh = this.DB-nbits(pm[pm.t-1]);	// normalize modulus
-  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
-  else { pm.copyTo(y); pt.copyTo(r); }
-  var ys = y.t;
-  var y0 = y[ys-1];
-  if(y0 == 0) return;
-  var yt = y0*(1<<this.F1)+((ys>1)?y[ys-2]>>this.F2:0);
-  var d1 = this.FV/yt, d2 = (1<<this.F1)/yt, e = 1<<this.F2;
-  var i = r.t, j = i-ys, t = (q==null)?nbi():q;
-  y.dlShiftTo(j,t);
-  if(r.compareTo(t) >= 0) {
-    r[r.t++] = 1;
-    r.subTo(t,r);
-  }
-  BigInteger.ONE.dlShiftTo(ys,t);
-  t.subTo(y,y);	// "negative" y so we can replace sub with am later
-  while(y.t < ys) y[y.t++] = 0;
-  while(--j >= 0) {
-    // Estimate quotient digit
-    var qd = (r[--i]==y0)?this.DM:Math.floor(r[i]*d1+(r[i-1]+e)*d2);
-    if((r[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
-      y.dlShiftTo(j,t);
-      r.subTo(t,r);
-      while(r[i] < --qd) r.subTo(t,r);
-    }
-  }
-  if(q != null) {
-    r.drShiftTo(ys,q);
-    if(ts != ms) BigInteger.ZERO.subTo(q,q);
-  }
-  r.t = ys;
-  r.clamp();
-  if(nsh > 0) r.rShiftTo(nsh,r);	// Denormalize remainder
-  if(ts < 0) BigInteger.ZERO.subTo(r,r);
-}
-
-// (public) this mod a
-function bnMod(a) {
-  var r = nbi();
-  this.abs().divRemTo(a,null,r);
-  if(this.s < 0 && r.compareTo(BigInteger.ZERO) > 0) a.subTo(r,r);
-  return r;
-}
-
-// Modular reduction using "classic" algorithm
-function Classic(m) { this.m = m; }
-function cConvert(x) {
-  if(x.s < 0 || x.compareTo(this.m) >= 0) return x.mod(this.m);
-  else return x;
-}
-function cRevert(x) { return x; }
-function cReduce(x) { x.divRemTo(this.m,null,x); }
-function cMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
-function cSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
-
-Classic.prototype.convert = cConvert;
-Classic.prototype.revert = cRevert;
-Classic.prototype.reduce = cReduce;
-Classic.prototype.mulTo = cMulTo;
-Classic.prototype.sqrTo = cSqrTo;
-
-// (protected) return "-1/this % 2^DB"; useful for Mont. reduction
-// justification:
-//         xy == 1 (mod m)
-//         xy =  1+km
-//   xy(2-xy) = (1+km)(1-km)
-// x[y(2-xy)] = 1-k^2m^2
-// x[y(2-xy)] == 1 (mod m^2)
-// if y is 1/x mod m, then y(2-xy) is 1/x mod m^2
-// should reduce x and y(2-xy) by m^2 at each step to keep size bounded.
-// JS multiply "overflows" differently from C/C++, so care is needed here.
-function bnpInvDigit() {
-  if(this.t < 1) return 0;
-  var x = this[0];
-  if((x&1) == 0) return 0;
-  var y = x&3;		// y == 1/x mod 2^2
-  y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
-  y = (y*(2-(x&0xff)*y))&0xff;	// y == 1/x mod 2^8
-  y = (y*(2-(((x&0xffff)*y)&0xffff)))&0xffff;	// y == 1/x mod 2^16
-  // last step - calculate inverse mod DV directly;
-  // assumes 16 < DB <= 32 and assumes ability to handle 48-bit ints
-  y = (y*(2-x*y%this.DV))%this.DV;		// y == 1/x mod 2^dbits
-  // we really want the negative inverse, and -DV < y < DV
-  return (y>0)?this.DV-y:-y;
-}
-
-// Montgomery reduction
-function Montgomery(m) {
-  this.m = m;
-  this.mp = m.invDigit();
-  this.mpl = this.mp&0x7fff;
-  this.mph = this.mp>>15;
-  this.um = (1<<(m.DB-15))-1;
-  this.mt2 = 2*m.t;
-}
-
-// xR mod m
-function montConvert(x) {
-  var r = nbi();
-  x.abs().dlShiftTo(this.m.t,r);
-  r.divRemTo(this.m,null,r);
-  if(x.s < 0 && r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r,r);
-  return r;
-}
-
-// x/R mod m
-function montRevert(x) {
-  var r = nbi();
-  x.copyTo(r);
-  this.reduce(r);
-  return r;
-}
-
-// x = x/R mod m (HAC 14.32)
-function montReduce(x) {
-  while(x.t <= this.mt2)	// pad x so am has enough room later
-    x[x.t++] = 0;
-  for(var i = 0; i < this.m.t; ++i) {
-    // faster way of calculating u0 = x[i]*mp mod DV
-    var j = x[i]&0x7fff;
-    var u0 = (j*this.mpl+(((j*this.mph+(x[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
-    // use am to combine the multiply-shift-add into one call
-    j = i+this.m.t;
-    x[j] += this.m.am(0,u0,x,i,0,this.m.t);
-    // propagate carry
-    while(x[j] >= x.DV) { x[j] -= x.DV; x[++j]++; }
-  }
-  x.clamp();
-  x.drShiftTo(this.m.t,x);
-  if(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
-}
-
-// r = "x^2/R mod m"; x != r
-function montSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
-
-// r = "xy/R mod m"; x,y != r
-function montMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
-
-Montgomery.prototype.convert = montConvert;
-Montgomery.prototype.revert = montRevert;
-Montgomery.prototype.reduce = montReduce;
-Montgomery.prototype.mulTo = montMulTo;
-Montgomery.prototype.sqrTo = montSqrTo;
-
-// (protected) true iff this is even
-function bnpIsEven() { return ((this.t>0)?(this[0]&1):this.s) == 0; }
-
-// (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
-function bnpExp(e,z) {
-  if(e > 0xffffffff || e < 1) return BigInteger.ONE;
-  var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e)-1;
-  g.copyTo(r);
-  while(--i >= 0) {
-    z.sqrTo(r,r2);
-    if((e&(1<<i)) > 0) z.mulTo(r2,g,r);
-    else { var t = r; r = r2; r2 = t; }
-  }
-  return z.revert(r);
-}
-
-// (public) this^e % m, 0 <= e < 2^32
-function bnModPowInt(e,m) {
-  var z;
-  if(e < 256 || m.isEven()) z = new Classic(m); else z = new Montgomery(m);
-  return this.exp(e,z);
-}
-
-// protected
-BigInteger.prototype.copyTo = bnpCopyTo;
-BigInteger.prototype.fromInt = bnpFromInt;
-BigInteger.prototype.fromString = bnpFromString;
-BigInteger.prototype.clamp = bnpClamp;
-BigInteger.prototype.dlShiftTo = bnpDLShiftTo;
-BigInteger.prototype.drShiftTo = bnpDRShiftTo;
-BigInteger.prototype.lShiftTo = bnpLShiftTo;
-BigInteger.prototype.rShiftTo = bnpRShiftTo;
-BigInteger.prototype.subTo = bnpSubTo;
-BigInteger.prototype.multiplyTo = bnpMultiplyTo;
-BigInteger.prototype.squareTo = bnpSquareTo;
-BigInteger.prototype.divRemTo = bnpDivRemTo;
-BigInteger.prototype.invDigit = bnpInvDigit;
-BigInteger.prototype.isEven = bnpIsEven;
-BigInteger.prototype.exp = bnpExp;
-
-// public
-BigInteger.prototype.toString = bnToString;
-BigInteger.prototype.negate = bnNegate;
-BigInteger.prototype.abs = bnAbs;
-BigInteger.prototype.compareTo = bnCompareTo;
-BigInteger.prototype.bitLength = bnBitLength;
-BigInteger.prototype.mod = bnMod;
-BigInteger.prototype.modPowInt = bnModPowInt;
-
-// "constants"
-BigInteger.ZERO = nbv(0);
-BigInteger.ONE = nbv(1);
-
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-// ElGamal implementation
-
-function Elgamal() {
-	
-	function encrypt(m,g,p,y) {
-		//  choose k in {2,...,p-2}
-		var two = BigInteger.ONE.add(BigInteger.ONE);
-		var pMinus2 = p.subtract(two);
-		var k = openpgp_crypto_getRandomBigIntegerInRange(two, pMinus2);
-		var k = k.mod(pMinus2).add(BigInteger.ONE);
-		var c = new Array();
-		c[0] = g.modPow(k, p);
-		c[1] = y.modPow(k, p).multiply(m).mod(p).toMPI();
-		c[0] = c[0].toMPI();
-		return c;
+	this.versionstring ="OpenPGP.js v0.1";
+	this.commentstring ="http://openpgpjs.org";
+	/**
+	 * reads the config out of the HTML5 local storage
+	 * and initializes the object config.
+	 * if config is null the default config will be used
+	 * @return [void]
+	 */
+	function read() {
+		var cf = JSON.parse(window.localStorage.getItem("config"));
+		if (cf == null) {
+			this.config = this.default_config;
+			this.write();
+		}
+		else
+			this.config = cf;
 	}
-	
-	function decrypt(c1,c2,p,x) {
-		util.print_debug("Elgamal Decrypt:\nc1:"+util.hexstrdump(c1.toMPI())+"\n"+
-			  "c2:"+util.hexstrdump(c2.toMPI())+"\n"+
-			  "p:"+util.hexstrdump(p.toMPI())+"\n"+
-			  "x:"+util.hexstrdump(x.toMPI()));
-		return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
-		//var c = c1.pow(x).modInverse(p); // c0^-a mod p
-	    //return c.multiply(c2).mod(p);
+
+	/**
+	 * if enabled, debug messages will be printed
+	 */
+	this.debug = false;
+
+	/**
+	 * writes the config to HTML5 local storage
+	 * @return [void]
+	 */
+	function write() {
+		window.localStorage.setItem("config",JSON.stringify(this.config));
 	}
-	
-	// signing and signature verification using Elgamal is not required by OpenPGP.
-	this.encrypt = encrypt;
-	this.decrypt = decrypt;
-}/*
- * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
- * All Rights Reserved.
+
+	this.read = read;
+	this.write = write;
+}
+/* OpenPGP radix-64/base64 string encoding/decoding
+ * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
+ * version 1.0, check www.haneWIN.de for the latest version
  *
- * Modified by Recurity Labs GmbH
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- *
- * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
- * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
- * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
- * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * In addition, the following condition applies:
- *
- * All redistributions must retain an intact copy of this copyright notice
- * and disclaimer.
- */
-// Extended JavaScript BN functions, required for RSA private ops.
-
-// Version 1.1: new BigInteger("0", 10) returns "proper" zero
-// Version 1.2: square() API, isProbablePrime fix
-
-// (public)
-function bnClone() { var r = nbi(); this.copyTo(r); return r; }
-
-// (public) return value as integer
-function bnIntValue() {
-  if(this.s < 0) {
-    if(this.t == 1) return this[0]-this.DV;
-    else if(this.t == 0) return -1;
-  }
-  else if(this.t == 1) return this[0];
-  else if(this.t == 0) return 0;
-  // assumes 16 < DB < 32
-  return ((this[1]&((1<<(32-this.DB))-1))<<this.DB)|this[0];
-}
-
-// (public) return value as byte
-function bnByteValue() { return (this.t==0)?this.s:(this[0]<<24)>>24; }
-
-// (public) return value as short (assumes DB>=16)
-function bnShortValue() { return (this.t==0)?this.s:(this[0]<<16)>>16; }
-
-// (protected) return x s.t. r^x < DV
-function bnpChunkSize(r) { return Math.floor(Math.LN2*this.DB/Math.log(r)); }
-
-// (public) 0 if this == 0, 1 if this > 0
-function bnSigNum() {
-  if(this.s < 0) return -1;
-  else if(this.t <= 0 || (this.t == 1 && this[0] <= 0)) return 0;
-  else return 1;
-}
-
-// (protected) convert to radix string
-function bnpToRadix(b) {
-  if(b == null) b = 10;
-  if(this.signum() == 0 || b < 2 || b > 36) return "0";
-  var cs = this.chunkSize(b);
-  var a = Math.pow(b,cs);
-  var d = nbv(a), y = nbi(), z = nbi(), r = "";
-  this.divRemTo(d,y,z);
-  while(y.signum() > 0) {
-    r = (a+z.intValue()).toString(b).substr(1) + r;
-    y.divRemTo(d,y,z);
-  }
-  return z.intValue().toString(b) + r;
-}
-
-// (protected) convert from radix string
-function bnpFromRadix(s,b) {
-  this.fromInt(0);
-  if(b == null) b = 10;
-  var cs = this.chunkSize(b);
-  var d = Math.pow(b,cs), mi = false, j = 0, w = 0;
-  for(var i = 0; i < s.length; ++i) {
-    var x = intAt(s,i);
-    if(x < 0) {
-      if(s.charAt(i) == "-" && this.signum() == 0) mi = true;
-      continue;
-    }
-    w = b*w+x;
-    if(++j >= cs) {
-      this.dMultiply(d);
-      this.dAddOffset(w,0);
-      j = 0;
-      w = 0;
-    }
-  }
-  if(j > 0) {
-    this.dMultiply(Math.pow(b,j));
-    this.dAddOffset(w,0);
-  }
-  if(mi) BigInteger.ZERO.subTo(this,this);
-}
-
-// (protected) alternate constructor
-function bnpFromNumber(a,b,c) {
-  if("number" == typeof b) {
-    // new BigInteger(int,int,RNG)
-    if(a < 2) this.fromInt(1);
-    else {
-      this.fromNumber(a,c);
-      if(!this.testBit(a-1))	// force MSB set
-        this.bitwiseTo(BigInteger.ONE.shiftLeft(a-1),op_or,this);
-      if(this.isEven()) this.dAddOffset(1,0); // force odd
-      while(!this.isProbablePrime(b)) {
-        this.dAddOffset(2,0);
-        if(this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a-1),this);
-      }
-    }
-  }
-  else {
-    // new BigInteger(int,RNG)
-    var x = new Array(), t = a&7;
-    x.length = (a>>3)+1;
-    b.nextBytes(x);
-    if(t > 0) x[0] &= ((1<<t)-1); else x[0] = 0;
-    this.fromString(x,256);
-  }
-}
-
-// (public) convert to bigendian byte array
-function bnToByteArray() {
-  var i = this.t, r = new Array();
-  r[0] = this.s;
-  var p = this.DB-(i*this.DB)%8, d, k = 0;
-  if(i-- > 0) {
-    if(p < this.DB && (d = this[i]>>p) != (this.s&this.DM)>>p)
-      r[k++] = d|(this.s<<(this.DB-p));
-    while(i >= 0) {
-      if(p < 8) {
-        d = (this[i]&((1<<p)-1))<<(8-p);
-        d |= this[--i]>>(p+=this.DB-8);
-      }
-      else {
-        d = (this[i]>>(p-=8))&0xff;
-        if(p <= 0) { p += this.DB; --i; }
-      }
-      //if((d&0x80) != 0) d |= -256;
-      //if(k == 0 && (this.s&0x80) != (d&0x80)) ++k;
-      if(k > 0 || d != this.s) r[k++] = d;
-    }
-  }
-  return r;
-}
-
-function bnEquals(a) { return(this.compareTo(a)==0); }
-function bnMin(a) { return(this.compareTo(a)<0)?this:a; }
-function bnMax(a) { return(this.compareTo(a)>0)?this:a; }
-
-// (protected) r = this op a (bitwise)
-function bnpBitwiseTo(a,op,r) {
-  var i, f, m = Math.min(a.t,this.t);
-  for(i = 0; i < m; ++i) r[i] = op(this[i],a[i]);
-  if(a.t < this.t) {
-    f = a.s&this.DM;
-    for(i = m; i < this.t; ++i) r[i] = op(this[i],f);
-    r.t = this.t;
-  }
-  else {
-    f = this.s&this.DM;
-    for(i = m; i < a.t; ++i) r[i] = op(f,a[i]);
-    r.t = a.t;
-  }
-  r.s = op(this.s,a.s);
-  r.clamp();
-}
-
-// (public) this & a
-function op_and(x,y) { return x&y; }
-function bnAnd(a) { var r = nbi(); this.bitwiseTo(a,op_and,r); return r; }
-
-// (public) this | a
-function op_or(x,y) { return x|y; }
-function bnOr(a) { var r = nbi(); this.bitwiseTo(a,op_or,r); return r; }
-
-// (public) this ^ a
-function op_xor(x,y) { return x^y; }
-function bnXor(a) { var r = nbi(); this.bitwiseTo(a,op_xor,r); return r; }
-
-// (public) this & ~a
-function op_andnot(x,y) { return x&~y; }
-function bnAndNot(a) { var r = nbi(); this.bitwiseTo(a,op_andnot,r); return r; }
-
-// (public) ~this
-function bnNot() {
-  var r = nbi();
-  for(var i = 0; i < this.t; ++i) r[i] = this.DM&~this[i];
-  r.t = this.t;
-  r.s = ~this.s;
-  return r;
-}
-
-// (public) this << n
-function bnShiftLeft(n) {
-  var r = nbi();
-  if(n < 0) this.rShiftTo(-n,r); else this.lShiftTo(n,r);
-  return r;
-}
-
-// (public) this >> n
-function bnShiftRight(n) {
-  var r = nbi();
-  if(n < 0) this.lShiftTo(-n,r); else this.rShiftTo(n,r);
-  return r;
-}
-
-// return index of lowest 1-bit in x, x < 2^31
-function lbit(x) {
-  if(x == 0) return -1;
-  var r = 0;
-  if((x&0xffff) == 0) { x >>= 16; r += 16; }
-  if((x&0xff) == 0) { x >>= 8; r += 8; }
-  if((x&0xf) == 0) { x >>= 4; r += 4; }
-  if((x&3) == 0) { x >>= 2; r += 2; }
-  if((x&1) == 0) ++r;
-  return r;
-}
-
-// (public) returns index of lowest 1-bit (or -1 if none)
-function bnGetLowestSetBit() {
-  for(var i = 0; i < this.t; ++i)
-    if(this[i] != 0) return i*this.DB+lbit(this[i]);
-  if(this.s < 0) return this.t*this.DB;
-  return -1;
-}
-
-// return number of 1 bits in x
-function cbit(x) {
-  var r = 0;
-  while(x != 0) { x &= x-1; ++r; }
-  return r;
-}
-
-// (public) return number of set bits
-function bnBitCount() {
-  var r = 0, x = this.s&this.DM;
-  for(var i = 0; i < this.t; ++i) r += cbit(this[i]^x);
-  return r;
-}
-
-// (public) true iff nth bit is set
-function bnTestBit(n) {
-  var j = Math.floor(n/this.DB);
-  if(j >= this.t) return(this.s!=0);
-  return((this[j]&(1<<(n%this.DB)))!=0);
-}
-
-// (protected) this op (1<<n)
-function bnpChangeBit(n,op) {
-  var r = BigInteger.ONE.shiftLeft(n);
-  this.bitwiseTo(r,op,r);
-  return r;
-}
-
-// (public) this | (1<<n)
-function bnSetBit(n) { return this.changeBit(n,op_or); }
-
-// (public) this & ~(1<<n)
-function bnClearBit(n) { return this.changeBit(n,op_andnot); }
-
-// (public) this ^ (1<<n)
-function bnFlipBit(n) { return this.changeBit(n,op_xor); }
-
-// (protected) r = this + a
-function bnpAddTo(a,r) {
-  var i = 0, c = 0, m = Math.min(a.t,this.t);
-  while(i < m) {
-    c += this[i]+a[i];
-    r[i++] = c&this.DM;
-    c >>= this.DB;
-  }
-  if(a.t < this.t) {
-    c += a.s;
-    while(i < this.t) {
-      c += this[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c += this.s;
-  }
-  else {
-    c += this.s;
-    while(i < a.t) {
-      c += a[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c += a.s;
-  }
-  r.s = (c<0)?-1:0;
-  if(c > 0) r[i++] = c;
-  else if(c < -1) r[i++] = this.DV+c;
-  r.t = i;
-  r.clamp();
-}
-
-// (public) this + a
-function bnAdd(a) { var r = nbi(); this.addTo(a,r); return r; }
-
-// (public) this - a
-function bnSubtract(a) { var r = nbi(); this.subTo(a,r); return r; }
-
-// (public) this * a
-function bnMultiply(a) { var r = nbi(); this.multiplyTo(a,r); return r; }
-
-// (public) this^2
-function bnSquare() { var r = nbi(); this.squareTo(r); return r; }
-
-// (public) this / a
-function bnDivide(a) { var r = nbi(); this.divRemTo(a,r,null); return r; }
-
-// (public) this % a
-function bnRemainder(a) { var r = nbi(); this.divRemTo(a,null,r); return r; }
-
-// (public) [this/a,this%a]
-function bnDivideAndRemainder(a) {
-  var q = nbi(), r = nbi();
-  this.divRemTo(a,q,r);
-  return new Array(q,r);
-}
-
-// (protected) this *= n, this >= 0, 1 < n < DV
-function bnpDMultiply(n) {
-  this[this.t] = this.am(0,n-1,this,0,0,this.t);
-  ++this.t;
-  this.clamp();
-}
-
-// (protected) this += n << w words, this >= 0
-function bnpDAddOffset(n,w) {
-  if(n == 0) return;
-  while(this.t <= w) this[this.t++] = 0;
-  this[w] += n;
-  while(this[w] >= this.DV) {
-    this[w] -= this.DV;
-    if(++w >= this.t) this[this.t++] = 0;
-    ++this[w];
-  }
-}
-
-// A "null" reducer
-function NullExp() {}
-function nNop(x) { return x; }
-function nMulTo(x,y,r) { x.multiplyTo(y,r); }
-function nSqrTo(x,r) { x.squareTo(r); }
-
-NullExp.prototype.convert = nNop;
-NullExp.prototype.revert = nNop;
-NullExp.prototype.mulTo = nMulTo;
-NullExp.prototype.sqrTo = nSqrTo;
-
-// (public) this^e
-function bnPow(e) { return this.exp(e,new NullExp()); }
-
-// (protected) r = lower n words of "this * a", a.t <= n
-// "this" should be the larger one if appropriate.
-function bnpMultiplyLowerTo(a,n,r) {
-  var i = Math.min(this.t+a.t,n);
-  r.s = 0; // assumes a,this >= 0
-  r.t = i;
-  while(i > 0) r[--i] = 0;
-  var j;
-  for(j = r.t-this.t; i < j; ++i) r[i+this.t] = this.am(0,a[i],r,i,0,this.t);
-  for(j = Math.min(a.t,n); i < j; ++i) this.am(0,a[i],r,i,0,n-i);
-  r.clamp();
-}
-
-// (protected) r = "this * a" without lower n words, n > 0
-// "this" should be the larger one if appropriate.
-function bnpMultiplyUpperTo(a,n,r) {
-  --n;
-  var i = r.t = this.t+a.t-n;
-  r.s = 0; // assumes a,this >= 0
-  while(--i >= 0) r[i] = 0;
-  for(i = Math.max(n-this.t,0); i < a.t; ++i)
-    r[this.t+i-n] = this.am(n-i,a[i],r,0,0,this.t+i-n);
-  r.clamp();
-  r.drShiftTo(1,r);
-}
-
-// Barrett modular reduction
-function Barrett(m) {
-  // setup Barrett
-  this.r2 = nbi();
-  this.q3 = nbi();
-  BigInteger.ONE.dlShiftTo(2*m.t,this.r2);
-  this.mu = this.r2.divide(m);
-  this.m = m;
-}
-
-function barrettConvert(x) {
-  if(x.s < 0 || x.t > 2*this.m.t) return x.mod(this.m);
-  else if(x.compareTo(this.m) < 0) return x;
-  else { var r = nbi(); x.copyTo(r); this.reduce(r); return r; }
-}
-
-function barrettRevert(x) { return x; }
-
-// x = x mod m (HAC 14.42)
-function barrettReduce(x) {
-  x.drShiftTo(this.m.t-1,this.r2);
-  if(x.t > this.m.t+1) { x.t = this.m.t+1; x.clamp(); }
-  this.mu.multiplyUpperTo(this.r2,this.m.t+1,this.q3);
-  this.m.multiplyLowerTo(this.q3,this.m.t+1,this.r2);
-  while(x.compareTo(this.r2) < 0) x.dAddOffset(1,this.m.t+1);
-  x.subTo(this.r2,x);
-  while(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
-}
-
-// r = x^2 mod m; x != r
-function barrettSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
-
-// r = x*y mod m; x,y != r
-function barrettMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
-
-Barrett.prototype.convert = barrettConvert;
-Barrett.prototype.revert = barrettRevert;
-Barrett.prototype.reduce = barrettReduce;
-Barrett.prototype.mulTo = barrettMulTo;
-Barrett.prototype.sqrTo = barrettSqrTo;
-
-// (public) this^e % m (HAC 14.85)
-function bnModPow(e,m) {
-  var i = e.bitLength(), k, r = nbv(1), z;
-  if(i <= 0) return r;
-  else if(i < 18) k = 1;
-  else if(i < 48) k = 3;
-  else if(i < 144) k = 4;
-  else if(i < 768) k = 5;
-  else k = 6;
-  if(i < 8)
-    z = new Classic(m);
-  else if(m.isEven())
-    z = new Barrett(m);
-  else
-    z = new Montgomery(m);
-
-  // precomputation
-  var g = new Array(), n = 3, k1 = k-1, km = (1<<k)-1;
-  g[1] = z.convert(this);
-  if(k > 1) {
-    var g2 = nbi();
-    z.sqrTo(g[1],g2);
-    while(n <= km) {
-      g[n] = nbi();
-      z.mulTo(g2,g[n-2],g[n]);
-      n += 2;
-    }
-  }
-
-  var j = e.t-1, w, is1 = true, r2 = nbi(), t;
-  i = nbits(e[j])-1;
-  while(j >= 0) {
-    if(i >= k1) w = (e[j]>>(i-k1))&km;
-    else {
-      w = (e[j]&((1<<(i+1))-1))<<(k1-i);
-      if(j > 0) w |= e[j-1]>>(this.DB+i-k1);
-    }
-
-    n = k;
-    while((w&1) == 0) { w >>= 1; --n; }
-    if((i -= n) < 0) { i += this.DB; --j; }
-    if(is1) {	// ret == 1, don't bother squaring or multiplying it
-      g[w].copyTo(r);
-      is1 = false;
-    }
-    else {
-      while(n > 1) { z.sqrTo(r,r2); z.sqrTo(r2,r); n -= 2; }
-      if(n > 0) z.sqrTo(r,r2); else { t = r; r = r2; r2 = t; }
-      z.mulTo(r2,g[w],r);
-    }
-
-    while(j >= 0 && (e[j]&(1<<i)) == 0) {
-      z.sqrTo(r,r2); t = r; r = r2; r2 = t;
-      if(--i < 0) { i = this.DB-1; --j; }
-    }
-  }
-  return z.revert(r);
-}
-
-// (public) gcd(this,a) (HAC 14.54)
-function bnGCD(a) {
-  var x = (this.s<0)?this.negate():this.clone();
-  var y = (a.s<0)?a.negate():a.clone();
-  if(x.compareTo(y) < 0) { var t = x; x = y; y = t; }
-  var i = x.getLowestSetBit(), g = y.getLowestSetBit();
-  if(g < 0) return x;
-  if(i < g) g = i;
-  if(g > 0) {
-    x.rShiftTo(g,x);
-    y.rShiftTo(g,y);
-  }
-  while(x.signum() > 0) {
-    if((i = x.getLowestSetBit()) > 0) x.rShiftTo(i,x);
-    if((i = y.getLowestSetBit()) > 0) y.rShiftTo(i,y);
-    if(x.compareTo(y) >= 0) {
-      x.subTo(y,x);
-      x.rShiftTo(1,x);
-    }
-    else {
-      y.subTo(x,y);
-      y.rShiftTo(1,y);
-    }
-  }
-  if(g > 0) y.lShiftTo(g,y);
-  return y;
-}
-
-// (protected) this % n, n < 2^26
-function bnpModInt(n) {
-  if(n <= 0) return 0;
-  var d = this.DV%n, r = (this.s<0)?n-1:0;
-  if(this.t > 0)
-    if(d == 0) r = this[0]%n;
-    else for(var i = this.t-1; i >= 0; --i) r = (d*r+this[i])%n;
-  return r;
-}
-
-// (public) 1/this % m (HAC 14.61)
-function bnModInverse(m) {
-  var ac = m.isEven();
-  if((this.isEven() && ac) || m.signum() == 0) return BigInteger.ZERO;
-  var u = m.clone(), v = this.clone();
-  var a = nbv(1), b = nbv(0), c = nbv(0), d = nbv(1);
-  while(u.signum() != 0) {
-    while(u.isEven()) {
-      u.rShiftTo(1,u);
-      if(ac) {
-        if(!a.isEven() || !b.isEven()) { a.addTo(this,a); b.subTo(m,b); }
-        a.rShiftTo(1,a);
-      }
-      else if(!b.isEven()) b.subTo(m,b);
-      b.rShiftTo(1,b);
-    }
-    while(v.isEven()) {
-      v.rShiftTo(1,v);
-      if(ac) {
-        if(!c.isEven() || !d.isEven()) { c.addTo(this,c); d.subTo(m,d); }
-        c.rShiftTo(1,c);
-      }
-      else if(!d.isEven()) d.subTo(m,d);
-      d.rShiftTo(1,d);
-    }
-    if(u.compareTo(v) >= 0) {
-      u.subTo(v,u);
-      if(ac) a.subTo(c,a);
-      b.subTo(d,b);
-    }
-    else {
-      v.subTo(u,v);
-      if(ac) c.subTo(a,c);
-      d.subTo(b,d);
-    }
-  }
-  if(v.compareTo(BigInteger.ONE) != 0) return BigInteger.ZERO;
-  if(d.compareTo(m) >= 0) return d.subtract(m);
-  if(d.signum() < 0) d.addTo(m,d); else return d;
-  if(d.signum() < 0) return d.add(m); else return d;
-}
-
-var lowprimes = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541,547,557,563,569,571,577,587,593,599,601,607,613,617,619,631,641,643,647,653,659,661,673,677,683,691,701,709,719,727,733,739,743,751,757,761,769,773,787,797,809,811,821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,947,953,967,971,977,983,991,997];
-var lplim = (1<<26)/lowprimes[lowprimes.length-1];
-
-// (public) test primality with certainty >= 1-.5^t
-function bnIsProbablePrime(t) {
-  var i, x = this.abs();
-  if(x.t == 1 && x[0] <= lowprimes[lowprimes.length-1]) {
-    for(i = 0; i < lowprimes.length; ++i)
-      if(x[0] == lowprimes[i]) return true;
-    return false;
-  }
-  if(x.isEven()) return false;
-  i = 1;
-  while(i < lowprimes.length) {
-    var m = lowprimes[i], j = i+1;
-    while(j < lowprimes.length && m < lplim) m *= lowprimes[j++];
-    m = x.modInt(m);
-    while(i < j) if(m%lowprimes[i++] == 0) return false;
-  }
-  return x.millerRabin(t);
-}
-
-/* added by Recurity Labs */
-
-function nbits(x) {
-	var n = 1, t;
-	if ((t = x >>> 16) != 0) {
-		x = t;
-		n += 16;
-	}
-	if ((t = x >> 8) != 0) {
-		x = t;
-		n += 8;
-	}
-	if ((t = x >> 4) != 0) {
-		x = t;
-		n += 4;
-	}
-	if ((t = x >> 2) != 0) {
-		x = t;
-		n += 2;
-	}
-	if ((t = x >> 1) != 0) {
-		x = t;
-		n += 1;
-	}
-	return n;
-}
-
-function bnToMPI () {
-	var ba = this.toByteArray();
-	var size = (ba.length-1)*8+nbits(ba[0]);
-	var result = "";
-	result += String.fromCharCode((size & 0xFF00) >> 8);
-	result += String.fromCharCode(size & 0xFF);
-	result += util.bin2str(ba);
-	return result;
-}
-/* END of addition */
-
-// (protected) true if probably prime (HAC 4.24, Miller-Rabin)
-function bnpMillerRabin(t) {
-  var n1 = this.subtract(BigInteger.ONE);
-  var k = n1.getLowestSetBit();
-  if(k <= 0) return false;
-  var r = n1.shiftRight(k);
-  t = (t+1)>>1;
-  if(t > lowprimes.length) t = lowprimes.length;
-  var a = nbi();
-  for(var i = 0; i < t; ++i) {
-    //Pick bases at random, instead of starting at 2
-    a.fromInt(lowprimes[Math.floor(Math.random()*lowprimes.length)]);
-    var y = a.modPow(r,this);
-    if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
-      var j = 1;
-      while(j++ < k && y.compareTo(n1) != 0) {
-        y = y.modPowInt(2,this);
-        if(y.compareTo(BigInteger.ONE) == 0) return false;
-      }
-      if(y.compareTo(n1) != 0) return false;
-    }
-  }
-  return true;
-}
-
-// protected
-BigInteger.prototype.chunkSize = bnpChunkSize;
-BigInteger.prototype.toRadix = bnpToRadix;
-BigInteger.prototype.fromRadix = bnpFromRadix;
-BigInteger.prototype.fromNumber = bnpFromNumber;
-BigInteger.prototype.bitwiseTo = bnpBitwiseTo;
-BigInteger.prototype.changeBit = bnpChangeBit;
-BigInteger.prototype.addTo = bnpAddTo;
-BigInteger.prototype.dMultiply = bnpDMultiply;
-BigInteger.prototype.dAddOffset = bnpDAddOffset;
-BigInteger.prototype.multiplyLowerTo = bnpMultiplyLowerTo;
-BigInteger.prototype.multiplyUpperTo = bnpMultiplyUpperTo;
-BigInteger.prototype.modInt = bnpModInt;
-BigInteger.prototype.millerRabin = bnpMillerRabin;
-
-// public
-BigInteger.prototype.clone = bnClone;
-BigInteger.prototype.intValue = bnIntValue;
-BigInteger.prototype.byteValue = bnByteValue;
-BigInteger.prototype.shortValue = bnShortValue;
-BigInteger.prototype.signum = bnSigNum;
-BigInteger.prototype.toByteArray = bnToByteArray;
-BigInteger.prototype.equals = bnEquals;
-BigInteger.prototype.min = bnMin;
-BigInteger.prototype.max = bnMax;
-BigInteger.prototype.and = bnAnd;
-BigInteger.prototype.or = bnOr;
-BigInteger.prototype.xor = bnXor;
-BigInteger.prototype.andNot = bnAndNot;
-BigInteger.prototype.not = bnNot;
-BigInteger.prototype.shiftLeft = bnShiftLeft;
-BigInteger.prototype.shiftRight = bnShiftRight;
-BigInteger.prototype.getLowestSetBit = bnGetLowestSetBit;
-BigInteger.prototype.bitCount = bnBitCount;
-BigInteger.prototype.testBit = bnTestBit;
-BigInteger.prototype.setBit = bnSetBit;
-BigInteger.prototype.clearBit = bnClearBit;
-BigInteger.prototype.flipBit = bnFlipBit;
-BigInteger.prototype.add = bnAdd;
-BigInteger.prototype.subtract = bnSubtract;
-BigInteger.prototype.multiply = bnMultiply;
-BigInteger.prototype.divide = bnDivide;
-BigInteger.prototype.remainder = bnRemainder;
-BigInteger.prototype.divideAndRemainder = bnDivideAndRemainder;
-BigInteger.prototype.modPow = bnModPow;
-BigInteger.prototype.modInverse = bnModInverse;
-BigInteger.prototype.pow = bnPow;
-BigInteger.prototype.gcd = bnGCD;
-BigInteger.prototype.isProbablePrime = bnIsProbablePrime;
-BigInteger.prototype.toMPI = bnToMPI;
-
-// JSBN-specific extension
-BigInteger.prototype.square = bnSquare;
-// Modified by Recurity Labs GmbH 
-
-// modified version of http://www.hanewin.net/encrypt/PGdecode.js:
-
-/* OpenPGP encryption using RSA/AES
- * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de
- * version 2.0, check www.haneWIN.de for the latest version
-
  * This software is provided as-is, without express or implied warranty.  
  * Permission to use, copy, modify, distribute or sell this software, with or
  * without fee, for any purpose and by any individual or organization, is hereby
  * granted, provided that the above copyright notice and this paragraph appear 
  * in all copies. Distribution as a part of an application or binary must
- * include the above copyright notice in the documentation and/or other
- * materials provided with the application or distribution.
+ * include the above copyright notice in the documentation and/or other materials
+ * provided with the application or distribution.
  */
 
-// --------------------------------------
-/**
- * This function encrypts a given with the specified prefixrandom 
- * using the specified blockcipher to encrypt a message
- * @param prefixrandom random bytes of block_size length provided 
- *  as a string to be used in prefixing the data
- * @param blockcipherfn the algorithm encrypt function to encrypt
- *  data in one block_size encryption. The function must be 
- *  specified as blockcipherfn([integer_array(integers 0..255)] 
- *  block,[integer_array(integers 0..255)] key) returning an 
- *  array of bytes (integers 0..255)
- * @param block_size the block size in bytes of the algorithm used
- * @param plaintext data to be encrypted provided as a string
- * @param key key to be used to encrypt the data as 
- *  integer_array(integers 0..255)]. This will be passed to the 
- *  blockcipherfn
- * @param resync a boolean value specifying if a resync of the 
- *  IV should be used or not. The encrypteddatapacket uses the 
- *  "old" style with a resync. Encryption within an 
- *  encryptedintegrityprotecteddata packet is not resyncing the IV.
- * @return a string with the encrypted data
- */
-function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, block_size, key, resync) {
-	var FR = new Array(block_size);
-	var FRE = new Array(block_size);
+var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-	prefixrandom = prefixrandom + prefixrandom.charAt(block_size-2) +prefixrandom.charAt(block_size-1);
-	util.print_debug("prefixrandom:"+util.hexstrdump(prefixrandom));
-	var ciphertext = "";
-	// 1.  The feedback register (FR) is set to the IV, which is all zeros.
-	for (var i = 0; i < block_size; i++) FR[i] = 0;
-	
-	// 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
-    //     encryption of an all-zero value.
-	FRE = blockcipherencryptfn(FR, key);
-	// 3.  FRE is xored with the first BS octets of random data prefixed to
-    //     the plaintext to produce C[1] through C[BS], the first BS octets
-    //     of ciphertext.
-	for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
-	
-	// 4.  FR is loaded with C[1] through C[BS].
-	for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
-	
-	// 5.  FR is encrypted to produce FRE, the encryption of the first BS
-    // 	   octets of ciphertext.
-	FRE = blockcipherencryptfn(FR, key);
+function s2r(t) {
+	var a, c, n;
+	var r = '', l = 0, s = 0;
+	var tl = t.length;
 
-	// 6.  The left two octets of FRE get xored with the next two octets of
-	//     data that were prefixed to the plaintext.  This produces C[BS+1]
-	//     and C[BS+2], the next two octets of ciphertext.
-	ciphertext += String.fromCharCode(FRE[0] ^ prefixrandom.charCodeAt(block_size));
-	ciphertext += String.fromCharCode(FRE[1] ^ prefixrandom.charCodeAt(block_size+1));
-
-	if (resync) {
-		// 7.  (The resync step) FR is loaded with C3-C10.
-		for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i+2);
-	} else {
-		for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
-	}
-	// 8.  FR is encrypted to produce FRE.
-	FRE = blockcipherencryptfn(FR, key);
-	
-	if (resync) {
-		// 9.  FRE is xored with the first 8 octets of the given plaintext, now
-	    //	   that we have finished encrypting the 10 octets of prefixed data.
-	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
-		for (var i = 0; i < block_size; i++)
-			ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
-		for(n=block_size+2; n < plaintext.length; n+=block_size) {
-			// 10. FR is loaded with C11-C18
-			for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n+i);
-		
-			// 11. FR is encrypted to produce FRE.
-			FRE = blockcipherencryptfn(FR, key);
-		
-			// 12. FRE is xored with the next 8 octets of plaintext, to produce the
-			// next 8 octets of ciphertext.  These are loaded into FR and the
-			// process is repeated until the plaintext is used up.
-			for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n-2)+i));
+	for (n = 0; n < tl; n++) {
+		c = t.charCodeAt(n);
+		if (s == 0) {
+			r += b64s.charAt((c >> 2) & 63);
+			a = (c & 3) << 4;
+		} else if (s == 1) {
+			r += b64s.charAt((a | (c >> 4) & 15));
+			a = (c & 15) << 2;
+		} else if (s == 2) {
+			r += b64s.charAt(a | ((c >> 6) & 3));
+			l += 1;
+			if ((l % 60) == 0)
+				r += "\n";
+			r += b64s.charAt(c & 63);
 		}
+		l += 1;
+		if ((l % 60) == 0)
+			r += "\n";
+
+		s += 1;
+		if (s == 3)
+			s = 0;
 	}
-	else {
-		plaintext = "  "+plaintext;
-		// 9.  FRE is xored with the first 8 octets of the given plaintext, now
-	    //	   that we have finished encrypting the 10 octets of prefixed data.
-	    // 	   This produces C11-C18, the next 8 octets of ciphertext.
-		for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
-		var tempCiphertext = ciphertext.substring(0,2*block_size).split('');
-		var tempCiphertextString = ciphertext.substring(block_size);
-		for(n=block_size; n<plaintext.length; n+=block_size) {
-			// 10. FR is loaded with C11-C18
-			for (var i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
-			tempCiphertextString='';
-			
-			// 11. FR is encrypted to produce FRE.
-			FRE = blockcipherencryptfn(FR, key);
-			
-			// 12. FRE is xored with the next 8 octets of plaintext, to produce the
-			//     next 8 octets of ciphertext.  These are loaded into FR and the
-			//     process is repeated until the plaintext is used up.
-			for (var i = 0; i < block_size; i++){ tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i)));
-			tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n+i));
-			}
-		}
-		ciphertext = tempCiphertext.join('');
-		
+	if (s > 0) {
+		r += b64s.charAt(a);
+		l += 1;
+		if ((l % 60) == 0)
+			r += "\n";
+		r += '=';
+		l += 1;
 	}
-	return ciphertext;
+	if (s == 1) {
+		if ((l % 60) == 0)
+			r += "\n";
+		r += '=';
+	}
+
+	return r;
 }
+
+function r2s(t) {
+	var c, n;
+	var r = '', s = 0, a = 0;
+	var tl = t.length;
+
+	for (n = 0; n < tl; n++) {
+		c = b64s.indexOf(t.charAt(n));
+		if (c >= 0) {
+			if (s)
+				r += String.fromCharCode(a | (c >> (6 - s)) & 255);
+			s = (s + 2) & 7;
+			a = (c << s) & 255;
+		}
+	}
+	return r;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * decrypts the prefixed data for the Modification Detection Code (MDC) computation
- * @param blockcipherencryptfn cipher function to use
- * @param block_size blocksize of the algorithm
- * @param key the key for encryption
- * @param ciphertext the encrypted data
- * @return plaintext data of D(ciphertext) with blocksize length +2
+ * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
+ * @text [String] OpenPGP armored message
+ * @return either the bytes of the decoded message or an object with attribute "text" containing the message text
+ * and an attribute "openpgp" containing the bytes.
  */
-function openpgp_cfb_mdc(blockcipherencryptfn, block_size, key, ciphertext) {
-	var iblock = new Array(block_size);
-	var ablock = new Array(block_size);
-	var i;
-
-	// initialisation vector
-	for(i=0; i < block_size; i++) iblock[i] = 0;
-
-	iblock = blockcipherencryptfn(iblock, key);
-	for(i = 0; i < block_size; i++)
-	{
-		ablock[i] = ciphertext.charCodeAt(i);
-		iblock[i] ^= ablock[i];
-	}
-
-	ablock = blockcipherencryptfn(ablock, key);
-
-	return util.bin2str(iblock)+
-		String.fromCharCode(ablock[0]^ciphertext.charCodeAt(block_size))+
-		String.fromCharCode(ablock[1]^ciphertext.charCodeAt(block_size+1));
-}
-/**
- * This function decrypts a given plaintext using the specified
- * blockcipher to decrypt a message
- * @param blockcipherfn the algorithm _encrypt_ function to encrypt
- *  data in one block_size encryption. The function must be 
- *  specified as blockcipherfn([integer_array(integers 0..255)] 
- *  block,[integer_array(integers 0..255)] key) returning an 
- *  array of bytes (integers 0..255)
- * @param block_size the block size in bytes of the algorithm used
- * @param plaintext ciphertext to be decrypted provided as a string
- * @param key key to be used to decrypt the ciphertext as 
- *  integer_array(integers 0..255)]. This will be passed to the 
- *  blockcipherfn
- * @param resync a boolean value specifying if a resync of the 
- *  IV should be used or not. The encrypteddatapacket uses the 
- *  "old" style with a resync. Decryption within an 
- *  encryptedintegrityprotecteddata packet is not resyncing the IV.
- * @return a string with the plaintext data
- */
-
-function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, resync)
-{
-	util.print_debug("resync:"+resync);
-	var iblock = new Array(block_size);
-	var ablock = new Array(block_size);
-	var i, n = '';
-	var text = [];
-
-	// initialisation vector
-	for(i=0; i < block_size; i++) iblock[i] = 0;
-
-	iblock = blockcipherencryptfn(iblock, key);
-	for(i = 0; i < block_size; i++)
-	{
-		ablock[i] = ciphertext.charCodeAt(i);
-		iblock[i] ^= ablock[i];
-	}
-
-	ablock = blockcipherencryptfn(ablock, key);
-
-	util.print_debug("openpgp_cfb_decrypt:\niblock:"+util.hexidump(iblock)+"\nablock:"+util.hexidump(ablock)+"\n");
-	util.print_debug((ablock[0]^ciphertext.charCodeAt(block_size)).toString(16)+(ablock[1]^ciphertext.charCodeAt(block_size+1)).toString(16));
-	
-	// test check octets
-	if(iblock[block_size-2]!=(ablock[0]^ciphertext.charCodeAt(block_size))
-	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
-	{
-		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
-		return text.join('');
-	}
-	
-	/*  RFC4880: Tag 18 and Resync:
-	 *  [...] Unlike the Symmetrically Encrypted Data Packet, no
-   	 *  special CFB resynchronization is done after encrypting this prefix
-     *  data.  See "OpenPGP CFB Mode" below for more details.
-
-	 */
-	
-	if (resync) {
-	    for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i+2);
-		for(n=block_size+2; n<ciphertext.length; n+=block_size)
-		{
-			ablock = blockcipherencryptfn(iblock, key);
-
-			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
-			{
-				iblock[i] = ciphertext.charCodeAt(n+i);
-				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
-			}
-		}
-	} else {
-		for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i);
-		for(n=block_size; n<ciphertext.length; n+=block_size)
-		{
-			ablock = blockcipherencryptfn(iblock, key);
-			for(i = 0; i<block_size && i+n < ciphertext.length; i++)
-			{
-				iblock[i] = ciphertext.charCodeAt(n+i);
-				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
-			}
-		}
-		
-	}
-	
-	return text.join('');
-}
-
-
-function normal_cfb_encrypt(blockcipherencryptfn, block_size, key, plaintext, iv) {
-	var blocki ="";
-	var blockc = "";
-	var pos = 0;
-	var cyphertext = [];
-	var tempBlock = [];
-	blockc = iv.substring(0,block_size);
-	while (plaintext.length > block_size*pos) {
-		var encblock = blockcipherencryptfn(blockc, key);
-		blocki = plaintext.substring((pos*block_size),(pos*block_size)+block_size);
-		for (var i=0; i < blocki.length; i++)
-		    tempBlock.push(String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]));
-		blockc = tempBlock.join('');
-		tempBlock = [];
-		cyphertext.push(blockc);
-		pos++;
-	}
-	return cyphertext.join('');
-}
-
-function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, iv) { 
-	var blockp ="";
-	var pos = 0;
-	var plaintext = [];
-	var offset = 0;
-	if (iv == null)
-		for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
+function openpgp_encoding_deArmor(text) {
+	var type = getPGPMessageType(text);
+	if (type != 2) {
+	var splittedtext = text.split('-----');
+	data = { openpgp: openpgp_encoding_base64_decode(splittedtext[2].split('\n\n')[1].split("\n=")[0].replace(/\n- /g,"\n")),
+			type: type};
+	if (verifyCheckSum(data.openpgp, splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]))
+		return data;
 	else
-		blockp = iv.substring(0,block_size);
-	while (ciphertext.length > (block_size*pos)) {
-		var decblock = blockcipherencryptfn(blockp, key);
-		blockp = ciphertext.substring((pos*(block_size))+offset,(pos*(block_size))+(block_size)+offset);
-		for (var i=0; i < blockp.length; i++) {
-			plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
-		}
-		pos++;
+		util.print_error("Ascii armor integrity check on message failed: '"+splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]+"' should be '"+getCheckSum(data))+"'";
+	} else {
+		var splittedtext = text.split('-----');
+		var result = { text: splittedtext[2].replace(/\n- /g,"\n").split("\n\n")[1],
+		               openpgp: openpgp_encoding_base64_decode(splittedtext[4].split("\n\n")[1].split("\n=")[0]),
+		               type: type};
+		if (verifyCheckSum(result.openpgp, splittedtext[4].split("\n\n")[1].split("\n=")[1]))
+				return result;
+		else
+			util.print_error("Ascii armor integrity check on message failed");
 	}
-	
-	return plaintext.join('');
 }
+
+/**
+ * Finds out which Ascii Armoring type is used. This is an internal function
+ * @param text [String] ascii armored text
+ * @return 0 = MESSAGE PART n of m
+ *         1 = MESSAGE PART n
+ *         2 = SIGNED MESSAGE
+ *         3 = PGP MESSAGE
+ *         4 = PUBLIC KEY BLOCK
+ *         5 = PRIVATE KEY BLOCK
+ *         null = unknown
+ */
+function getPGPMessageType(text) {
+	var splittedtext = text.split('-----');
+	// BEGIN PGP MESSAGE, PART X/Y
+	// Used for multi-part messages, where the armor is split amongst Y
+	// parts, and this is the Xth part out of Y.
+	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
+		return 0;
+	} else
+		// BEGIN PGP MESSAGE, PART X
+		// Used for multi-part messages, where this is the Xth part of an
+		// unspecified number of parts. Requires the MESSAGE-ID Armor
+		// Header to be used.
+	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
+		return 1;
+
+	} else
+		// BEGIN PGP SIGNATURE
+		// Used for detached signatures, OpenPGP/MIME signatures, and
+		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
+		// for detached signatures.
+	if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
+		return 2;
+
+	} else
+  	    // BEGIN PGP MESSAGE
+	    // Used for signed, encrypted, or compressed files.
+	if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
+		return 3;
+
+	} else
+		// BEGIN PGP PUBLIC KEY BLOCK
+		// Used for armoring public keys.
+	if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
+		return 4;
+
+	} else
+		// BEGIN PGP PRIVATE KEY BLOCK
+		// Used for armoring private keys.
+	if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
+		return 5;
+	}
+}
+
+/**
+ * Add additional information to the armor version of an OpenPGP binary
+ * packet block.
+ * @author  Alex
+ * @version 2011-12-16
+ * @return  The header information
+ */
+function openpgp_encoding_armor_addheader() {
+    var result = "";
+	if (openpgp.config.config.show_version) {
+        result += "Version: "+openpgp.config.versionstring+'\r\n';
+    }
+	if (openpgp.config.config.show_comment) {
+        result += "Comment: "+openpgp.config.commentstring+'\r\n';
+    }
+    result += '\r\n';
+    return result;
+}
+
+/**
+ * Armor an OpenPGP binary packet block
+ * @param messagetype type of the message
+ * @param data
+ * @param partindex
+ * @param parttotal
+ * @return
+ */
+function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
+	var result = "";
+	switch(messagetype) {
+	case 0:
+		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
+		break;
+	case 1:
+		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
+		break;
+	case 2:
+		result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: "+data.hash+"\r\n\r\n";
+		result += data.text.replace(/\n-/g,"\n- -");
+		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data.openpgp);
+		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
+		result += "-----END PGP SIGNATURE-----\r\n";
+		break;
+	case 3:
+		result += "-----BEGIN PGP MESSAGE-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE-----\r\n";
+		break;
+	case 4:
+		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
+		break;
+	case 5:
+		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
+		result += openpgp_encoding_armor_addheader();
+		result += openpgp_encoding_base64_encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
+		break;
+	}
+
+	return result;
+}
+
+/**
+ * Calculates a checksum over the given data and returns it base64 encoded
+ * @param data [String] data to create a CRC-24 checksum for
+ * @return [String] base64 encoded checksum
+ */
+function getCheckSum(data) {
+	var c = createcrc24(data);
+	var str = "" + String.fromCharCode(c >> 16)+
+				   String.fromCharCode((c >> 8) & 0xFF)+
+				   String.fromCharCode(c & 0xFF);
+	return openpgp_encoding_base64_encode(str);
+}
+
+/**
+ * Calculates the checksum over the given data and compares it with the given base64 encoded checksum
+ * @param data [String] data to create a CRC-24 checksum for
+ * @param checksum [String] base64 encoded checksum
+ * @return true if the given checksum is correct; otherwise false
+ */
+function verifyCheckSum(data, checksum) {
+	var c = getCheckSum(data);
+	var d = checksum;
+	return c[0] == d[0] && c[1] == d[1] && c[2] == d[2];
+}
+/**
+ * Internal function to calculate a CRC-24 checksum over a given string (data)
+ * @param data [String] data to create a CRC-24 checksum for
+ * @return [Integer] the CRC-24 checksum as number
+ */
+var crc_table = [
+0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139, 0x0727cdc2, 0x062b5434, 0x06ad18cf, 0x043267d8, 0x04b42b23, 0x05b8b2d5, 0x053efe2e, 0x0fc54e89, 0x0f430272, 0x0e4f9b84, 0x0ec9d77f, 0x0c56a868, 0x0cd0e493, 0x0ddc7d65, 0x0d5a319e, 0x0864cfb0, 0x08e2834b, 0x09ee1abd, 0x09685646, 0x0bf72951, 0x0b7165aa, 0x0a7dfc5c, 0x0afbb0a7, 0x1f0cd1e9, 0x1f8a9d12, 0x1e8604e4, 0x1e00481f, 0x1c9f3708, 0x1c197bf3, 0x1d15e205, 0x1d93aefe, 0x18ad50d0, 0x182b1c2b, 0x192785dd, 0x19a1c926, 0x1b3eb631, 0x1bb8faca, 0x1ab4633c, 0x1a322fc7, 0x10c99f60, 0x104fd39b, 0x11434a6d, 0x11c50696, 0x135a7981, 0x13dc357a, 0x12d0ac8c, 0x1256e077, 0x17681e59, 0x17ee52a2, 0x16e2cb54, 0x166487af, 0x14fbf8b8, 0x147db443, 0x15712db5, 0x15f7614e, 0x3e19a3d2, 0x3e9fef29, 0x3f9376df, 0x3f153a24, 0x3d8a4533, 0x3d0c09c8, 0x3c00903e, 0x3c86dcc5, 0x39b822eb, 0x393e6e10, 0x3832f7e6, 0x38b4bb1d, 0x3a2bc40a, 0x3aad88f1, 0x3ba11107, 0x3b275dfc, 0x31dced5b, 0x315aa1a0,
+0x30563856, 0x30d074ad, 0x324f0bba, 0x32c94741, 0x33c5deb7, 0x3343924c, 0x367d6c62, 0x36fb2099, 0x37f7b96f, 0x3771f594, 0x35ee8a83, 0x3568c678, 0x34645f8e, 0x34e21375, 0x2115723b, 0x21933ec0, 0x209fa736, 0x2019ebcd, 0x228694da, 0x2200d821, 0x230c41d7, 0x238a0d2c, 0x26b4f302, 0x2632bff9, 0x273e260f, 0x27b86af4, 0x252715e3, 0x25a15918, 0x24adc0ee, 0x242b8c15, 0x2ed03cb2, 0x2e567049, 0x2f5ae9bf, 0x2fdca544, 0x2d43da53, 0x2dc596a8, 0x2cc90f5e, 0x2c4f43a5, 0x2971bd8b, 0x29f7f170, 0x28fb6886, 0x287d247d, 0x2ae25b6a, 0x2a641791, 0x2b688e67, 0x2beec29c, 0x7c3347a4, 0x7cb50b5f, 0x7db992a9, 0x7d3fde52, 0x7fa0a145, 0x7f26edbe, 0x7e2a7448, 0x7eac38b3, 0x7b92c69d, 0x7b148a66, 0x7a181390, 0x7a9e5f6b, 0x7801207c, 0x78876c87, 0x798bf571, 0x790db98a, 0x73f6092d, 0x737045d6, 0x727cdc20, 0x72fa90db, 0x7065efcc, 0x70e3a337, 0x71ef3ac1, 0x7169763a, 0x74578814, 0x74d1c4ef, 0x75dd5d19, 0x755b11e2, 0x77c46ef5, 0x7742220e, 0x764ebbf8, 0x76c8f703, 0x633f964d, 0x63b9dab6, 0x62b54340, 0x62330fbb,
+0x60ac70ac, 0x602a3c57, 0x6126a5a1, 0x61a0e95a, 0x649e1774, 0x64185b8f, 0x6514c279, 0x65928e82, 0x670df195, 0x678bbd6e, 0x66872498, 0x66016863, 0x6cfad8c4, 0x6c7c943f, 0x6d700dc9, 0x6df64132, 0x6f693e25, 0x6fef72de, 0x6ee3eb28, 0x6e65a7d3, 0x6b5b59fd, 0x6bdd1506, 0x6ad18cf0, 0x6a57c00b, 0x68c8bf1c, 0x684ef3e7, 0x69426a11, 0x69c426ea, 0x422ae476, 0x42aca88d, 0x43a0317b, 0x43267d80, 0x41b90297, 0x413f4e6c, 0x4033d79a, 0x40b59b61, 0x458b654f, 0x450d29b4, 0x4401b042, 0x4487fcb9, 0x461883ae, 0x469ecf55, 0x479256a3, 0x47141a58, 0x4defaaff, 0x4d69e604, 0x4c657ff2, 0x4ce33309, 0x4e7c4c1e, 0x4efa00e5, 0x4ff69913, 0x4f70d5e8, 0x4a4e2bc6, 0x4ac8673d, 0x4bc4fecb, 0x4b42b230, 0x49ddcd27, 0x495b81dc, 0x4857182a, 0x48d154d1, 0x5d26359f, 0x5da07964, 0x5cace092, 0x5c2aac69, 0x5eb5d37e, 0x5e339f85, 0x5f3f0673, 0x5fb94a88, 0x5a87b4a6, 0x5a01f85d, 0x5b0d61ab, 0x5b8b2d50, 0x59145247, 0x59921ebc, 0x589e874a, 0x5818cbb1, 0x52e37b16, 0x526537ed, 0x5369ae1b, 0x53efe2e0, 0x51709df7, 0x51f6d10c,
+0x50fa48fa, 0x507c0401, 0x5542fa2f, 0x55c4b6d4, 0x54c82f22, 0x544e63d9, 0x56d11cce, 0x56575035, 0x575bc9c3, 0x57dd8538];
+
+function createcrc24(input) {
+  var crc = 0xB704CE;
+  var index = 0;
+
+  while((input.length - index) > 16)  {
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+1)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+2)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+3)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+4)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+5)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+6)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+7)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+8)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+9)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+10)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+11)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+12)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+13)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+14)) & 0xff];
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+15)) & 0xff];
+   index += 16;
+  }
+
+  for(var j = index; j < input.length; j++) {
+   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff]
+  }
+  return crc & 0xffffff;
+}
+
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -9025,485 +6494,131 @@ function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, i
 // 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
-
-// The GPG4Browsers crypto interface
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Encrypts data using the specified public key multiprecision integers 
- * and the specified algorithm.
- * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers
- * @param data [openpgp_type_mpi] data to be encrypted as MPI
- * @return [Object] if RSA an openpgp_type_mpi; if elgamal encryption an array of two
- * openpgp_type_mpi is returned; otherwise null
+ * Wrapper function for the base64 codec. 
+ * This function encodes a String (message) in base64 (radix-64)
+ * @param message [String] the message to encode
+ * @return [String] the base64 encoded data
  */
-function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var n = publicMPIs[0].toBigInteger();
-		var e = publicMPIs[1].toBigInteger();
-		var m = data.toBigInteger();
-		return rsa.encrypt(m,e,n).toMPI();
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var p = publicMPIs[0].toBigInteger();
-		var g = publicMPIs[1].toBigInteger();
-		var y = publicMPIs[2].toBigInteger();
-		var m = data.toBigInteger();
-		return elgamal.encrypt(m,g,p,y);
-	default:
-		return null;
-	}
+function openpgp_encoding_base64_encode(message) {
+	return s2r(message);
+}
+
+
+/**
+ * Wrapper function for the base64 codec.
+ * This function decodes a String(message) in base64 (radix-64)
+ * @param message [String] base64 encoded data
+ * @return [String] raw data after decoding
+ */
+function openpgp_encoding_base64_decode(message) {
+	return r2s(message);
 }
 
 /**
- * Decrypts data using the specified public key multiprecision integers of the private key,
- * the specified secretMPIs of the private key and the specified algorithm.
- * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the public key part of the private key
- * @param secretMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the private key used
- * @param data [openpgp_type_mpi] data to be encrypted as MPI
- * @return [BigInteger] returns a big integer containing the decrypted data; otherwise null
+ * Wrapper function for jquery library.
+ * This function escapes HTML characters within a string. This is used to prevent XSS.
+ * @param message [String] message to escape
+ * @return [String] html encoded string
  */
-
-function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var p = secretMPIs[1].toBigInteger();
-		var q = secretMPIs[2].toBigInteger();
-		var u = secretMPIs[3].toBigInteger();
-		var m = dataMPIs[0].toBigInteger();
-		return rsa.decrypt(m, d, p, q, u);
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var x = secretMPIs[0].toBigInteger();
-		var c1 = dataMPIs[0].toBigInteger();
-		var c2 = dataMPIs[1].toBigInteger();
-		var p = publicMPIs[0].toBigInteger();
-		return elgamal.decrypt(c1,c2,p,x);
-	default:
-		return null;
-	}
-	
+function openpgp_encoding_html_encode(message) {
+	if (message == null)
+		return "";
+	return $('<div/>').text(message).html();
 }
 
 /**
- * Symmetrically encrypts data using prefixedrandom, a key with length 
- * depending on the algorithm in openpgp_cfb mode with or without resync
- * (MDC style)
- * @param prefixrandom secure random bytes as string in length equal to the
- * block size of the algorithm used (use openpgp_crypto_getPrefixRandom(algo)
- * to retrieve that string
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] data to encrypt
- * @param openpgp_cfb [boolean]
- * @return [String] encrypted data
+ * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)
+ * @param message [String] message to be padded
+ * @param length [Integer] length to the resulting message
+ * @return [String] EME-PKCS1 padded message
  */
-function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_cfb) {
-	switch(algo) {
-		case 0: // Plaintext or unencrypted data
-			return data; // blockcipherencryptfn, plaintext, block_size, key
-		case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-			return openpgp_cfb_encrypt(prefixrandom, desede, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 3: // CAST5 (128 bit key, as per [RFC2144])
-			return openpgp_cfb_encrypt(prefixrandom, cast5_encrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-			return openpgp_cfb_encrypt(prefixrandom, BFencrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 7: // AES with 128-bit key [AES]
-		case 8: // AES with 192-bit key
-		case 9: // AES with 256-bit key
-			return openpgp_cfb_encrypt(prefixrandom, AESencrypt, data, 16, keyExpansion(key), openpgp_cfb).substring(0, data.length + 18);
-		case 10: // Twofish with 256-bit key [TWOFISH]
-			return openpgp_cfb_encrypt(prefixrandom, TFencrypt, data,16, key, openpgp_cfb).substring(0, data.length + 18);
-		case 1: // IDEA [IDEA]
-			util.print_error("IDEA Algorithm not implemented");
-			return null;
-		default:
-			return null;
+function openpgp_encoding_eme_pkcs1_encode(message, length) {
+	if (message.length > length-11)
+		return -1;
+	var result = "";
+	result += String.fromCharCode(0);
+	result += String.fromCharCode(2);
+	for (var i = 0; i < length - message.length - 3; i++) {
+		result += String.fromCharCode(openpgp_crypto_getPseudoRandom(1,255));
 	}
-}
-
-/**
- * generate random byte prefix as string for the specified algorithm
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @return [String] random bytes with length equal to the block
- * size of the cipher
- */
-function openpgp_crypto_getPrefixRandom(algo) {
-	switch(algo) {
-	case 2:
-	case 3:
-	case 4:
-		return openpgp_crypto_getRandomBytes(8);
-	case 7:
-	case 8:
-	case 9:
-	case 10:
-		return openpgp_crypto_getRandomBytes(16);
-	default:
-		return null;
-	}
-}
-/**
- * Symmetrically decrypts data using a key with length depending on the
- * algorithm in openpgp_cfb mode with or without resync (MDC style)
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] data to be decrypted
- * @param openpgp_cfb [boolean] if true use the resync (for encrypteddata); 
- * otherwise use without the resync (for MDC encrypted data)
- * @return [String] plaintext data
- */
-function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
-	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
-	var n = 0;
-	if (!openpgp_cfb)
-		n = 2;
-	switch(algo) {
-	case 0: // Plaintext or unencrypted data
-		return data;
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-		return openpgp_cfb_decrypt(desede, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
-		return openpgp_cfb_decrypt(cast5_encrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		return openpgp_cfb_decrypt(BFencrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 7: // AES with 128-bit key [AES]
-	case 8: // AES with 192-bit key
-	case 9: // AES with 256-bit key
-		return openpgp_cfb_decrypt(AESencrypt, 16, keyExpansion(key), data, openpgp_cfb).substring(n, (data.length+n)-18);
-	case 10: // Twofish with 256-bit key [TWOFISH]
-		var result = openpgp_cfb_decrypt(TFencrypt, 16, key, data, openpgp_cfb).substring(n, (data.length+n)-18);
-		return result;
-	case 1: // IDEA [IDEA]
-		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
-		return null;
-	default:
-	}
-	return null;
-}
-
-/**
- * retrieve the MDC prefixed bytes by decrypting them
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] encrypted data where the prefix is decrypted from
- * @return [String] plain text data of the prefixed data
- */
-function openpgp_crypto_MDCSystemBytes(algo, key, data) {
-	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
-	switch(algo) {
-	case 0: // Plaintext or unencrypted data
-		return data;
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-		return openpgp_cfb_mdc(desede, 8, key, data, openpgp_cfb);
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
-		return openpgp_cfb_mdc(cast5_encrypt, 8, key, data);
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		return openpgp_cfb_mdc(BFencrypt, 8, key, data);
-	case 7: // AES with 128-bit key [AES]
-	case 8: // AES with 192-bit key
-	case 9: // AES with 256-bit key
-		return openpgp_cfb_mdc(AESencrypt, 16, keyExpansion(key), data);
-	case 10: 
-		return openpgp_cfb_mdc(TFencrypt, 16, key, data);
-	case 1: // IDEA [IDEA]
-		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
-		return null;
-	default:
-	}
-	return null;
-}
-/**
- * Generating a session key for the specified symmetric algorithm
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @return [String] random bytes as a string to be used as a key
- */
-function openpgp_crypto_generateSessionKey(algo) {
-	switch (algo) {
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-	case 8: // AES with 192-bit key
-		return openpgp_crypto_getRandomBytes(24); 
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	case 7: // AES with 128-bit key [AES]
-		util.print_debug("length = 16:\n"+util.hexstrdump(openpgp_crypto_getRandomBytes(16)));
-		return openpgp_crypto_getRandomBytes(16);
-	case 9: // AES with 256-bit key
-	case 10:// Twofish with 256-bit key [TWOFISH]
-		return openpgp_crypto_getRandomBytes(32);
-	}
-	return null;
-}
-
-/**
- * 
- * @param algo [Integer] public key algorithm
- * @param hash_algo [Integer] hash algorithm
- * @param msg_MPIs [Array[openpgp_type_mpi]] signature multiprecision integers
- * @param publickey_MPIs [Array[openpgp_type_mpi]] public key multiprecision integers 
- * @param data [String] data on where the signature was computed on.
- * @return true if signature (sig_data was equal to data over hash)
- */
-function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-	var calc_hash = openpgp_crypto_hashData(hash_algo, data);
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var n = publickey_MPIs[0].toBigInteger();
-		var e = publickey_MPIs[1].toBigInteger();
-		var x = msg_MPIs[0].toBigInteger();
-		var dopublic = rsa.verify(x,e,n);
-		var hash  = openpgp_encoding_emsa_pkcs1_decode(hash_algo,dopublic.toMPI().substring(2));
-		if (hash == -1) {
-			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
-			return false;
-		}
-		return hash == calc_hash;
-		
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		util.print_error("signing with Elgamal is not defined in the OpenPGP standard.");
-		return null;
-	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-		var dsa = new DSA();
-		var s1 = msg_MPIs[0].toBigInteger();
-		var s2 = msg_MPIs[1].toBigInteger();
-		var p = publickey_MPIs[0].toBigInteger();
-		var q = publickey_MPIs[1].toBigInteger();
-		var g = publickey_MPIs[2].toBigInteger();
-		var y = publickey_MPIs[3].toBigInteger();
-		var m = data;
-		var dopublic = dsa.verify(hash_algo,s1,s2,m,p,q,g,y);
-		return dopublic.compareTo(s1) == 0;
-	default:
-		return null;
-	}
-	
-}
-   
-/**
- * Create a signature on data using the specified algorithm
- * @param hash_algo [Integer] hash algorithm to use (See RFC4880 9.4)
- * @param algo [Integer] asymmetric cipher algorithm to use (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] public key multiprecision integers of the private key 
- * @param secretMPIs [Array[openpgp_type_mpi]] private key multiprecision integers which is used to sign the data
- * @param data [String] data to be signed
- * @return [String or openpgp_type_mpi] 
- */
-function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
-	
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var n = publicMPIs[0].toBigInteger();
-		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].mpiByteLength);
-		util.print_debug("signing using RSA");
-		return rsa.sign(m, d, n).toMPI();
-	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-		var dsa = new DSA();
-		util.print_debug("DSA Sign: q size in Bytes:"+publicMPIs[1].getByteLength());
-		var p = publicMPIs[0].toBigInteger();
-		var q = publicMPIs[1].toBigInteger();
-		var g = publicMPIs[2].toBigInteger();
-		var y = publicMPIs[3].toBigInteger();
-		var x = secretMPIs[0].toBigInteger();
-		var m = data;
-		var result = dsa.sign(hash_algo,m, g, p, q, x);
-		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));
-		return result[0]+result[1];
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-			util.print_debug("signing with Elgamal is not defined in the OpenPGP standard.");
-			return null;
-	default:
-		return null;
-	}	
-}
-
-/**
- * create a hash on the specified data using the specified algorithm
- * @param algo [Integer] hash algorithm type (see RFC4880 9.4)
- * @param data [String] data to be hashed
- * @return [String] hash value
- */
-function openpgp_crypto_hashData(algo, data) {
-	var hash = null;
-	switch(algo) {
-	case 1: // - MD5 [HAC]
-		hash = MD5(data);
-		break;
-	case 2: // - SHA-1 [FIPS180]
-		hash = str_sha1(data);
-		break;
-	case 3: // - RIPE-MD/160 [HAC]
-		hash = RMDstring(data);
-		break;
-	case 8: // - SHA256 [FIPS180]
-		hash = str_sha256(data);
-		break;
-	case 9: // - SHA384 [FIPS180]
-		hash = str_sha384(data);
-		break;
-	case 10:// - SHA512 [FIPS180]
-		hash = str_sha512(data);
-		break;
-	case 11:// - SHA224 [FIPS180]
-		hash = str_sha224(data);
-	default:
-		break;
-	}
-	return hash;
-}
-
-/**
- * returns the hash size in bytes of the specified hash algorithm type
- * @param algo [Integer] hash algorithm type (See RFC4880 9.4)
- * @return [Integer] size in bytes of the resulting hash
- */
-function openpgp_crypto_getHashByteLength(algo) {
-	var hash = null;
-	switch(algo) {
-	case 1: // - MD5 [HAC]
-		return 16;
-	case 2: // - SHA-1 [FIPS180]
-	case 3: // - RIPE-MD/160 [HAC]
-		return 20;
-	case 8: // - SHA256 [FIPS180]
-		return 32;
-	case 9: // - SHA384 [FIPS180]
-		return 48
-	case 10:// - SHA512 [FIPS180]
-		return 64;
-	case 11:// - SHA224 [FIPS180]
-		return 28;
-	}
-	return null;
-}
-
-/**
- * retrieve secure random byte string of the specified length
- * @param length [Integer] length in bytes to generate
- * @return [String] random byte string
- */
-function openpgp_crypto_getRandomBytes(length) {
-	var result = '';
-	for (var i = 0; i < length; i++) {
-		result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
-	}
+	result += String.fromCharCode(0);
+	result += message;
 	return result;
 }
 
 /**
- * return a pseudo-random number in the specified range
- * @param from [Integer] min of the random number
- * @param to [Integer] max of the random number (max 32bit)
- * @return [Integer] a pseudo random number
+ * decodes a EME-PKCS1-v1_5 padding (See RFC4880 13.1.2)
+ * @param message [String] EME-PKCS1 padded message
+ * @return [String] decoded message 
  */
-function openpgp_crypto_getPseudoRandom(from, to) {
-	return Math.round(Math.random()*(to-from))+from;
+function openpgp_encoding_eme_pkcs1_decode(message, len) {
+	if (message.length < len)
+	    message = String.fromCharCode(0)+message;
+	if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
+		return -1;
+	var i = 2;
+	while (message.charCodeAt(i) != 0 && message.length > i)
+	    i++;
+	return message.substring(i+1, message.length);
+}
+/**
+ * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
+ */
+hash_headers = new Array();
+hash_headers[1]  = [0x30,0x20,0x30,0x0c,0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x05,0x05,0x00,0x04,0x10];
+hash_headers[3]  = [0x30,0x21,0x30,0x09,0x06,0x05,0x2B,0x24,0x03,0x02,0x01,0x05,0x00,0x04,0x14];
+hash_headers[2]  = [0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x05,0x00,0x04,0x14];
+hash_headers[8]  = [0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20];
+hash_headers[9]  = [0x30,0x41,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02,0x05,0x00,0x04,0x30];
+hash_headers[10] = [0x30,0x51,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03,0x05,0x00,0x04,0x40];
+hash_headers[11] = [0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x04,0x05,0x00,0x04,0x1C];
+
+/**
+ * create a EMSA-PKCS1-v1_5 padding (See RFC4880 13.1.3)
+ * @param algo [Integer] hash algorithm type used
+ * @param data [String] data to be hashed
+ * @param keylength [Integer] key size of the public mpi in bytes
+ * @return the [String] hashcode with pkcs1padding as string
+ */
+function openpgp_encoding_emsa_pkcs1_encode(algo, data, keylength) {
+	var data2 = "";
+	data2 += String.fromCharCode(0x00);
+	data2 += String.fromCharCode(0x01);
+	for (var i = 0; i < (keylength - hash_headers[algo].length - 3 - openpgp_crypto_getHashByteLength(algo)); i++)
+		data2 += String.fromCharCode(0xff);
+	data2 += String.fromCharCode(0x00);
+	
+	for (var i = 0; i < hash_headers[algo].length; i++)
+		data2 += String.fromCharCode(hash_headers[algo][i]);
+	
+	data2 += openpgp_crypto_hashData(algo, data);
+	return new BigInteger(util.hexstrdump(data2),16);
 }
 
 /**
- * return a secure random number in the specified range
- * @param from [Integer] min of the random number
- * @param to [Integer] max of the random number (max 32bit)
- * @return [Integer] a secure random number
+ * extract the hash out of an EMSA-PKCS1-v1.5 padding (See RFC4880 13.1.3) 
+ * @param data [String] hash in pkcs1 encoding
+ * @return the hash as string
  */
-function openpgp_crypto_getSecureRandom(from, to) {
-	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
-	var bits = ((to-from)).toString(2).length;
-	while ((buf[0] & (Math.pow(2, bits) -1)) > (to-from))
-		window.crypto.getRandomValues(buf);
-	return from+(Math.abs(buf[0] & (Math.pow(2, bits) -1)));
-}
+function openpgp_encoding_emsa_pkcs1_decode(algo, data) { 
+	var i = 0;
+	if (data.charCodeAt(0) == 0) i++;
+	else if (data.charCodeAt(0) != 1) return -1;
+	else i++;
 
-function openpgp_crypto_getSecureRandomOctet() {
-	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
-	return buf[0] & 0xFF;
-}
-
-/**
- * create a secure random big integer of bits length
- * @param bits [Integer] bit length of the MPI to create
- * @return [BigInteger] resulting big integer
- */
-function openpgp_crypto_getRandomBigInteger(bits) {
-	if (bits < 0)
-	   return null;
-	var numBytes = Math.floor((bits+7)/8);
-
-	var randomBits = openpgp_crypto_getRandomBytes(numBytes);
-	if (bits % 8 > 0) {
-		
-		randomBits = String.fromCharCode(
-						(Math.pow(2,bits % 8)-1) &
-						randomBits.charCodeAt(0)) +
-			randomBits.substring(1);
+	while (data.charCodeAt(i) == 0xFF) i++;
+	if (data.charCodeAt(i++) != 0) return -1;
+	var j = 0;
+	for (j = 0; j < hash_headers[algo].length && j+i < data.length; j++) {
+		if (data.charCodeAt(j+i) != hash_headers[algo][j]) return -1;
 	}
-	return new openpgp_type_mpi().create(randomBits).toBigInteger();
-}
-
-function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
-	if (max.compareTo(min) <= 0)
-		return;
-	var range = max.subtract(min);
-	var r = openpgp_crypto_getRandomBigInteger(range.bitLength());
-	while (r > range) {
-		r = openpgp_crypto_getRandomBigInteger(range.bitLength());
-	}
-	return min.add(r);
-}
-
-
-//This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
-function openpgp_crypto_testRSA(key){
-	debugger;
-    var rsa = new RSA();
-	var mpi = new openpgp_type_mpi();
-	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
-	var msg = rsa.encrypt(mpi.toBigInteger(),key.ee,key.n);
-	var result = rsa.decrypt(msg, key.d, key.p, key.q, key.u);
-}
-/**
- * calls the necessary crypto functions to generate a keypair. Called directly by openpgp.js
- * @keyType [int] follows OpenPGP algorithm convention.
- * @numBits [int] number of bits to make the key to be generated
- * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
- */
-function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
-	var privKeyPacket;
-	var publicKeyPacket;
-	var d = new Date();
-	d = d.getTime()/1000;
-	var timePacket = String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
-	switch(keyType){
-	case 1:
-	    var rsa = new RSA();
-	    var key = rsa.generate(numBits,"10001");
-	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm, timePacket);
-	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key, timePacket);
-	    break;
-	default:
-		util.print_error("Unknown keytype "+keyType)
-	}
-	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
+	i+= j;	
+	if (data.substring(i).length < openpgp_crypto_getHashByteLength(algo)) return -1;
+	return data.substring(i);
+}// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -9919,6 +7034,551 @@ var openpgp = new _openpgp();
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+function openpgp_keyring() {
+		
+	/**
+	 * Initialization routine for the keyring. This method reads the 
+	 * keyring from HTML5 local storage and initializes this instance.
+	 * This method is called by openpgp.init().
+	 * @return [null] undefined
+	 */
+	function init() {
+		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
+		var spublickeys = JSON.parse(window.localStorage.getItem("publickeys"));
+		if (sprivatekeys == null || sprivatekeys.length == 0) {
+			sprivatekeys = new Array();
+		}
+
+		if (spublickeys == null || spublickeys.length == 0) {
+			spublickeys = new Array();
+		}
+		this.publicKeys = new Array();
+		this.privateKeys = new Array();
+		var k = 0;
+		for (var i =0; i < sprivatekeys.length; i++) {
+			var r = openpgp.read_privateKey(sprivatekeys[i]);
+			this.privateKeys[k] = { armored: sprivatekeys[i], obj: r[0], keyId: r[0].getKeyId()};
+			k++;
+		}
+		k = 0;
+		for (var i =0; i < spublickeys.length; i++) {
+			var r = openpgp.read_publicKey(spublickeys[i]);
+			if (r[0] != null) {
+				this.publicKeys[k] = { armored: spublickeys[i], obj: r[0], keyId: r[0].getKeyId()};
+				k++;
+			}
+		}
+	}
+	this.init = init;
+
+	/**
+	 * Checks if at least one private key is in the keyring
+	 * @return
+	 */
+	function hasPrivateKey() {
+		return this.privateKeys.length > 0;
+	}
+	this.hasPrivateKey = hasPrivateKey;
+
+	/**
+	 * Saves the current state of the keyring to HTML5 local storage.
+	 * The privateKeys array and publicKeys array gets Stringified using JSON
+	 * @return [null] undefined
+	 */
+	function store() { 
+		var priv = new Array();
+		for (var i = 0; i < this.privateKeys.length; i++) {
+			priv[i] = this.privateKeys[i].armored;
+		}
+		var pub = new Array();
+		for (var i = 0; i < this.publicKeys.length; i++) {
+			pub[i] = this.publicKeys[i].armored;
+		}
+		window.localStorage.setItem("privatekeys",JSON.stringify(priv));
+		window.localStorage.setItem("publickeys",JSON.stringify(pub));
+	}
+	this.store = store;
+	/**
+	 * searches all public keys in the keyring matching the address or address part of the user ids
+	 * @param email_address
+	 * @return
+	 */
+	function getPublicKeyForAddress(email_address) {
+		var results = new Array();
+		var spl = email_address.split("<");
+		var email = "";
+		if (spl.length > 1) {
+			email = spl[1].split(">")[0];
+		} else {
+			email = email_address.trim();
+		}
+		for (var i =0; i < this.publicKeys.length; i++) {
+			
+			for (var j = 0; j < this.publicKeys[i].obj.userIds.length; j++) {
+				if (this.publicKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
+					results[results.length] = this.publicKeys[i];
+			}
+		}
+		return results;
+	}
+	this.getPublicKeyForAddress = getPublicKeyForAddress;
+
+	/**
+	 * Searches the keyring for a private key containing the specified email address
+	 * @param email_address [String] email address to search for
+	 * @return [Array[openpgp_msg_privatekey] private keys found
+	 */
+	function getPrivateKeyForAddress(email_address) {
+		var results = new Array();
+		var spl = email_address.split("<");
+		var email = "";
+		if (spl.length > 1) {
+			email = spl[1].split(">")[0];
+		} else {
+			email = email_address.trim();
+		}
+		for (var i =0; i < this.privateKeys.length; i++) {
+			
+			for (var j = 0; j < this.privateKeys[i].obj.userIds.length; j++) {
+				if (this.privateKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
+					results[results.length] = this.privateKeys[i];
+			}
+		}
+		return results;
+	}
+
+	this.getPrivateKeyForAddress = getPrivateKeyForAddress;
+	/**
+	 * Searches the keyring for public keys having the specified key id
+	 * @param keyId provided as string of hex number (lowercase)
+	 * @return Array[openpgp_msg_privatekey] public keys found
+	 */
+	function getPublicKeysForKeyId(keyId) {
+		var result = new Array();
+		for (var i=0; i < this.publicKeys.length; i++)
+			if (keyId == this.publicKeys[i].obj.getKeyId())
+				result[result.length] = this.publicKeys[i];
+		return result;
+	}
+	this.getPublicKeysForKeyId = getPublicKeysForKeyId;
+	
+	/**
+	 * Searches the keyring for private keys having the specified key id
+	 * @param keyId [String] 8 bytes as string containing the key id to look for
+	 * @return Array[openpgp_msg_privatekey] private keys found
+	 */
+	function getPrivateKeyForKeyId(keyId) {
+		var result = new Array();
+		for (var i=0; i < this.privateKeys.length; i++) {
+			if (keyId == util.hexstrdump(this.privateKeys[i].obj.getKeyId())) {
+				result[result.length] = { key: this.privateKeys[i], keymaterial: this.privateKeys[i].obj.privateKeyPacket};
+			}
+			if (this.privateKeys[i].obj.subKeys != null) {
+				var subkeyids = this.privateKeys[i].obj.getSubKeyIds();
+				for (var j=0; j < subkeyids.length; j++)
+					if (keyId == util.hexstrdump(subkeyids[j])) {
+						result[result.length] = { key: this.privateKeys[i], keymaterial: this.privateKeys[i].obj.subKeys[j]};
+					}
+			}
+		}
+		return result;
+	}
+	this.getPrivateKeyForKeyId = getPrivateKeyForKeyId;
+	
+	/**
+	 * Imports a public key from an exported ascii armored message 
+	 * @param armored_text [String] PUBLIC KEY BLOCK message to read the public key from
+	 * @return [null] nothing
+	 */
+	function importPublicKey (armored_text) {
+		var result = openpgp.read_publicKey(armored_text);
+		for (var i = 0; i < result.length; i++) {
+			this.publicKeys[this.publicKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
+		}
+		return true;
+	}
+
+	/**
+	 * Imports a private key from an exported ascii armored message 
+	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from
+	 * @return [null] nothing
+	 */
+	function importPrivateKey (armored_text, password) {
+		var result = openpgp.read_privateKey(armored_text);
+		if(!result[0].decryptSecretMPIs(password))
+		    return false;
+		for (var i = 0; i < result.length; i++) {
+			this.privateKeys[this.privateKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
+		}
+		return true;
+	}
+
+	this.importPublicKey = importPublicKey;
+	this.importPrivateKey = importPrivateKey;
+	
+	/**
+	 * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
+	 * @param index [Integer] the index of the public key within the publicKeys array
+	 * @return [openpgp_msg_privatekey] the public key object
+	 */
+	function exportPublicKey(index) {
+		return this.publicKey[index];
+	}
+	this.exportPublicKey = exportPublicKey;
+		
+	
+	/**
+	 * Removes a public key from the public key keyring at the specified index 
+	 * @param index [Integer] the index of the public key within the publicKeys array
+	 * @return [openpgp_msg_privatekey] The public key object which has been removed
+	 */
+	function removePublicKey(index) {
+		var removed = this.publicKeys.splice(index,1);
+		this.store();
+		return removed;
+	}
+	this.removePublicKey = removePublicKey;
+
+	/**
+	 * returns the openpgp_msg_privatekey representation of the private key at private key ring index  
+	 * @param index [Integer] the index of the private key within the privateKeys array
+	 * @return [openpgp_msg_privatekey] the private key object
+	 */	
+	function exportPrivateKey(index) {
+		return this.privateKeys[index];
+	}
+	this.exportPrivateKey = exportPrivateKey;
+
+	/**
+	 * Removes a private key from the private key keyring at the specified index 
+	 * @param index [Integer] the index of the private key within the privateKeys array
+	 * @return [openpgp_msg_privatekey] The private key object which has been removed
+	 */
+	function removePrivateKey(index) {
+		var removed = this.privateKeys.splice(index,1);
+		this.store();
+		return removed;
+	}
+	this.removePrivateKey = removePrivateKey;
+
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+function openpgp_msg_message() {
+	
+	// -1 = no valid passphrase submitted
+	// -2 = no private key found
+	// -3 = decryption error
+	// text = valid decryption
+	this.text = "";
+	
+	/**
+	 * Decrypts a message and generates user interface message out of the found.
+	 * MDC will be verified as well as message signatures
+	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
+	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
+	 * @return [String] plaintext of the message or null on error
+	 */
+	function decrypt(private_key, sessionkey) {
+        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+	}
+
+	/**
+	 * Decrypts a message and generates user interface message out of the found.
+	 * MDC will be verified as well as message signatures
+	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
+	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
+	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return [String] plaintext of the message or null on error
+	 */
+	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
+		if (private_key == null || sessionkey == null || sessionkey == "")
+			return null;
+		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
+		if (decrypted == null)
+			return null;
+		var packet;
+		var position = 0;
+		var len = decrypted.length;
+		var validSignatures = new Array();
+		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
+
+		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
+			if (packet.tagType == 8) {
+				this.text = packet.decompress();
+				decrypted = packet.decompress();
+			}
+			util.print_debug(packet.toString());
+			position += packet.headerLength+packet.packetLength;
+			if (position > 38)
+				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
+			len = decrypted.length - position;
+			if (packet.tagType == 11) {
+				this.text = packet.data;
+				util.print_info("message successfully decrypted");
+			}
+			if (packet.tagType == 19)
+				// ignore.. we checked that already in a more strict way.
+				continue;
+			if (packet.tagType == 2 && packet.signatureType < 3) {
+			    if(!pubkey || pubkey.length == 0 ){
+				    var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
+				}
+				if (pubkey.length == 0) {
+					util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(packet.issuerKeyId)+". Public key not found in keyring.");
+					validSignatures[validSignatures.length] = false;
+				} else {
+					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate()){
+						util.print_info("Found Good Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
+    					validSignatures[validSignatures.length] = true;
+						}
+					else{
+						util.print_error("Signature verification failed: Bad Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
+    					validSignatures[validSignatures.length] = false;
+						}
+				}
+			}
+		}
+		if (this.text == "") {
+			this.text = decrypted;
+		}
+		return {text:this.text, validSignatures:validSignatures};
+	}
+	
+	/**
+	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
+	 * @return [boolean] true if the signature was correct; otherwise false
+	 */
+	function verifySignature(pubkey) {
+		var result = false;
+		if (this.type == 2) {
+		    if(!pubkey || pubkey.length == 0){
+			    var pubkey;
+			    if (this.signature.version == 4) {
+				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
+			    } else if (this.signature.version == 3) {
+				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
+			    } else {
+				    util.print_error("unknown signature type on message!");
+				    return false;
+			    }
+			}
+			if (pubkey.length == 0)
+				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
+			else {
+				for (var i = 0 ; i < pubkey.length; i++) {
+					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
+					if (this.signature.verify(tohash.substring(0, tohash.length -2), pubkey[i])) {
+						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[i].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
+						result = true;
+					} else {
+						util.print_error("Signature verification failed: Bad Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	function toString() {
+		var result = "Session Keys:\n";
+		if (this.sessionKeys !=null)
+		for (var i = 0; i < this.sessionKeys.length; i++) {
+			result += this.sessionKeys[i].toString();
+		}
+		result += "\n\n EncryptedData:\n";
+		if(this.encryptedData != null)
+		result += this.encryptedData.toString();
+		
+		result += "\n\n Signature:\n";
+		if(this.signature != null)
+		result += this.signature.toString();
+		
+		result += "\n\n Text:\n"
+		if(this.signature != null)
+			result += this.text;
+		return result;
+	}
+	this.decrypt = decrypt;
+	this.decryptAndVerifySignature = decryptAndVerifySignature;
+	this.verifySignature = verifySignature;
+	this.toString = toString;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+function openpgp_msg_privatekey() {
+	this.subKeys = new Array();
+	this.privateKeyPacket = null;
+	this.userIds = new Array();
+	this.userAttributes = new Array();
+	this.revocationSignatures = new Array();
+	this.subKeys = new Array();
+
+	/**
+	 * 
+	 * @return last position
+	 */
+	function read_nodes(parent_node, input, position, len) {
+		this.privateKeyPacket = parent_node;
+		
+		var pos = position;
+		while (input.length > pos) {
+			var result = openpgp_packet.read_packet(input, pos, input.length - pos);
+			if (result == null) {
+				util.print_error("openpgp.msg.messge decrypt:\n"+'[pub/priv_key]parsing ends here @:' + pos + " l:" + len);
+				break;
+			} else {
+				switch (result.tagType) {
+				case 2: // public key revocation signature
+					if (result.signatureType == 32)
+						this.revocationSignatures[this.revocationSignatures.length] = result;
+					else if (result.signatureType > 15 && result.signatureType < 20) {
+						if (this.certificationsignatures == null)
+							this.certificationSignatures = new Array();
+						this.certificationSignatures[this.certificationSignatures.length] = result;
+					} else
+						util.print_error("openpgp.msg.messge decrypt:\n"+"unknown signature type directly on key "+result.signatureType+" @"+pos);
+					pos += result.packetLength + result.headerLength;
+					break;
+				case 7: // PrivateSubkey Packet
+					this.subKeys[this.subKeys.length] = result;
+					pos += result.packetLength + result.headerLength;
+					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
+					break;
+				case 17: // User Attribute Packet
+					this.userAttributes[this.userAttributes.length] = result;
+					pos += result.packetLength + result.headerLength;
+					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
+					break;
+				case 13: // User ID Packet
+					this.userIds[this.userIds.length] = result;
+					pos += result.packetLength + result.headerLength;
+					pos += result.read_nodes(this.privateKeyPacket, input, pos, input.length - pos);
+					break;
+				default:
+					this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
+					this.len = pos - position;
+					return this.len;
+				}
+			}
+		}
+		this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
+		this.len = pos - position;
+		
+		return this.len;
+	}
+	
+	function getKeyId() {
+		return this.privateKeyPacket.publicKey.getKeyId();
+	}
+	
+	
+	function getSubKeyIds() {
+		if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
+		var result = new Array();
+		for (var i = 0; i < this.subKeys.length; i++) {
+			result[i] = str_sha1(this.subKeys[i].publicKey.header+this.subKeys[i].publicKey.data).substring(12,20);
+		}
+		return result;
+	}
+	
+	
+	function getSigningKey() {
+		if ((this.privateKeyPacket.publicKey.publicKeyAlgorithm == 17 ||
+			 this.privateKeyPacket.publicKey.publicKeyAlgorithm != 2)
+			&& this.privateKeyPacket.publicKey.verifyKey() == 3)
+			return this.privateKeyPacket;
+		else if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
+			for (var j = 0; j < this.privateKeyPacket.subKeys.length; j++) {
+				if ((this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm == 17 ||
+					 this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm != 2) &&
+					 this.privateKeyPacket.subKeys[j].publicKey.verifyKey() == 3)
+					return this.privateKeyPacket.subKeys[j];
+			}
+		return null;
+	}
+	
+	function getPreferredSignatureHashAlgorithm() {
+		var pkey = this.getSigningKey();
+		if (pkey == null) {
+			util.print_error("private key is for encryption only! Cannot create a signature.")
+			return null;
+		}
+		if (pkey.publicKey.publicKeyAlgorithm == 17) {
+			var dsa = new DSA();
+			return dsa.select_hash_algorithm(pkey.publicKey.MPIs[1].toBigInteger()); // q
+		}
+		return openpgp.config.config.prefer_hash_algorithm;
+			
+	}
+
+	function decryptSecretMPIs(str_passphrase) {
+		return this.privateKeyPacket.decryptSecretMPIs(str_passphrase);
+	}
+	
+	function getFingerprint() {
+		return this.privateKeyPacket.publicKey.getFingerprint();
+	}
+
+	// TODO need to implement this
+	function revoke() {
+		
+	}
+	this.getSigningKey = getSigningKey;
+	this.getFingerprint = getFingerprint;
+	this.getPreferredSignatureHashAlgorithm = getPreferredSignatureHashAlgorithm;
+	this.read_nodes = read_nodes;
+	this.decryptSecretMPIs = decryptSecretMPIs;
+	this.getSubKeyIds = getSubKeyIds;
+	this.getKeyId = getKeyId;
+	
+}// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 function openpgp_msg_publickey() {
 	this.data;
 	this.position;
@@ -10156,83 +7816,1845 @@ function openpgp_msg_publickey() {
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-//
+// 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-//
+// 
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the GPG4Browsers config object
- *
- * This object contains configuration values and implements
- * storing and retrieving configuration them from HTML5 local storage.
- *
- * This object can be accessed after calling openpgp.init()
- * using openpgp.config
- * Stored config parameters can be accessed using
- * openpgp.config.config
- */
-function openpgp_config() {
-	this.config = null;
-
+ * Implementation of the Compressed Data Packet (Tag 8)
+ * 
+ * RFC4880 5.6:
+ * The Compressed Data packet contains compressed data.  Typically, this
+ * packet is found as the contents of an encrypted packet, or following
+ * a Signature or One-Pass Signature packet, and contains a literal data
+ * packet.
+ */   
+function openpgp_packet_compressed() {
+	this.tagType = 8;
+	
 	/**
-	 * the default config object which is used if no
-	 * configuration was in place
+	 * parsing function for the packet.
+	 * @param input [string] payload of a tag 8 packet
+	 * @param position [integer] position to start reading from the input string
+	 * @param len [integer] length of the packet or the remaining length of input at position
+	 * @return [openpgp_packet_compressed] object representation
 	 */
-	this.default_config = {
-			prefer_hash_algorithm: 2,
-			encryption_cipher: 9,
-			compression: 1,
-			show_version: true,
-			show_comment: true,
-			integrity_protect: true,
-			composition_behavior: 0,
-			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
-	};
-
-	this.versionstring ="OpenPGP.js v0.1";
-	this.commentstring ="http://openpgpjs.org";
+	function read_packet (input, position, len) {
+		this.packetLength = len;
+		var mypos = position;
+		// One octet that gives the algorithm used to compress the packet.
+		this.type = input.charCodeAt(mypos++);
+		// Compressed data, which makes up the remainder of the packet.
+		this.compressedData = input.substring(position+1, position+len);
+		return this;
+	}
 	/**
-	 * reads the config out of the HTML5 local storage
-	 * and initializes the object config.
-	 * if config is null the default config will be used
-	 * @return [void]
+	 * decompression method for decompressing the compressed data
+	 * read by read_packet
+	 * @return [String] the decompressed data
 	 */
-	function read() {
-		var cf = JSON.parse(window.localStorage.getItem("config"));
-		if (cf == null) {
-			this.config = this.default_config;
-			this.write();
+	function decompress() {
+		if (this.decompressedData != null)
+			return this.decompressedData;
+
+		if (this.type == null)
+			return null;
+
+		switch (this.type) {
+		case 0: // - Uncompressed
+			this.decompressedData = this.compressedData;
+			break;
+		case 1: // - ZIP [RFC1951]
+			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
+			break;
+		case 2: // - ZLIB [RFC1950]
+			// TODO: need to implement this
+			this.decompressedData = JXG.decompress(s2r(this.compressedData).replace(/\n/g,""));
+			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
+			break;
+		case 3: //  - BZip2 [BZ2]
+			// TODO: need to implement this
+			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+			break;
+		default:
+			util.print_error("Compression algorithm unknown :"+this.type);
+			break;
 		}
+		util.print_debug("decompressed:"+util.hexstrdump(this.decompressedData));
+		return this.decompressedData; 
+	}
+
+	/**
+	 * Compress the packet data (member decompressedData)
+	 * @param type [integer] algorithm to be used // See RFC 4880 9.3
+	 * @param data [String] data to be compressed
+	 * @return [String] The compressed data stored in attribute compressedData
+	 */
+	function compress(type, data) {
+		this.type = type;
+		this.decompressedData = data;
+		switch (this.type) {
+		case 0: // - Uncompressed
+			this.compressedData = this.decompressedData;
+			break;
+		case 1: // - ZIP [RFC1951]
+			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
+			break;
+		case 2: // - ZLIB [RFC1950]
+			// TODO: need to implement this
+			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
+			break;
+		case 3: //  - BZip2 [BZ2]
+			// TODO: need to implement this
+			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+			break;
+		default:
+			util.print_error("Compression algorithm unknown :"+this.type);
+			break;
+		}
+		this.packetLength = this.compressedData.length +1;
+		return this.compressedData; 
+	}
+	
+	/**
+	 * creates a string representation of the packet
+	 * @param algorithm [integer] algorithm to be used // See RFC 4880 9.3
+	 * @param data [String] data to be compressed
+	 * @return [String] string-representation of the packet
+	 */
+	function write_packet(algorithm, data) {
+		this.decompressedData = data;
+		if (algorithm == null) {
+			this.type = 1;
+		}
+		var result = String.fromCharCode(this.type)+this.compress(this.type);
+		return openpgp_packet.write_packet_header(8, result.length)+result;
+	}
+	
+	/**
+	 * pretty printing the packet (useful for debug purposes)
+	 * @return [String]
+	 */
+	function toString() {
+		return '5.6.  Compressed Data Packet (Tag 8)\n'+
+		   '    length:  '+this.packetLength+'\n'+
+			   '    Compression Algorithm = '+this.type+'\n'+
+		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressedData)+']\n';
+	}
+	
+	this.read_packet = read_packet;
+	this.toString = toString;
+	this.compress = compress;
+	this.decompress = decompress;
+	this.write_packet = write_packet;
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ * 
+ * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
+ * with a symmetric-key algorithm. When it has been decrypted, it contains other
+ * packets (usually a literal data packet or compressed data packet, but in
+ * theory other Symmetrically Encrypted Data packets or sequences of packets
+ * that form whole OpenPGP messages).
+ */
+
+function openpgp_packet_encrypteddata() {
+	this.tagType = 9;
+	this.packetLength = null;
+	this.encryptedData = null;
+	this.decryptedData = null;
+
+	/**
+	 * parsing function for the packet.
+	 * 
+	 * @param input
+	 *            [string] payload of a tag 9 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		var mypos = position;
+		this.packetLength = len;
+		// - Encrypted data, the output of the selected symmetric-key cipher
+		// operating in OpenPGP's variant of Cipher Feedback (CFB) mode.
+		this.encryptedData = input.substring(position, position + len);
+		return this;
+	}
+
+	/**
+	 * symmetrically decrypt the packet data
+	 * 
+	 * @param symmetric_algorithm_type
+	 *            [integer] symmetric key algorithm to use // See RFC4880 9.2
+	 * @param key
+	 *            [String] key as string with the corresponding length to the
+	 *            algorithm
+	 * @return the decrypted data;
+	 */
+	function decrypt_sym(symmetric_algorithm_type, key) {
+		this.decryptedData = openpgp_crypto_symmetricDecrypt(
+				symmetric_algorithm_type, key, this.encryptedData, true);
+		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"+
+				"data: "+util.hexstrdump(this.decryptedData));
+		return this.decryptedData;
+	}
+
+	/**
+	 * Creates a string representation of the packet
+	 * 
+	 * @param algo
+	 *            [Integer] symmetric key algorithm to use // See RFC4880 9.2
+	 * @param key
+	 *            [String] key as string with the corresponding length to the
+	 *            algorithm
+	 * @param data
+	 *            [String] data to be
+	 * @return [String] string-representation of the packet
+	 */
+	function write_packet(algo, key, data) {
+		var result = "";
+		result += openpgp_crypto_symmetricEncrypt(
+				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
+		result = openpgp_packet.write_packet_header(9, result.length) + result;
+		return result;
+	}
+
+	function toString() {
+		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
+				+ '    length:  ' + this.packetLength + '\n'
+				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
+				+ '    encrypted data: Bytes ['
+				+ util.hexstrdump(this.encryptedData) + ']\n';
+	}
+	this.decrypt_sym = decrypt_sym;
+	this.toString = toString;
+	this.read_packet = read_packet;
+	this.write_packet = write_packet;
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ * 
+ * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
+ * a variant of the Symmetrically Encrypted Data packet. It is a new feature
+ * created for OpenPGP that addresses the problem of detecting a modification to
+ * encrypted data. It is used in combination with a Modification Detection Code
+ * packet.
+ */
+
+function openpgp_packet_encryptedintegrityprotecteddata() {
+	this.tagType = 18;
+	this.version = null; // integer == 1
+	this.packetLength = null; // integer
+	this.encryptedData = null; // string
+	this.decrytpedData = null; // string
+	this.hash = null; // string
+	/**
+	 * parsing function for the packet.
+	 * 
+	 * @param input
+	 *            [string] payload of a tag 18 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encryptedintegrityprotecteddata] object
+	 *         representation
+	 */
+	function read_packet(input, position, len) {
+		this.packetLength = len;
+		// - A one-octet version number. The only currently defined value is
+		// 1.
+		this.version = input[position].charCodeAt();
+		if (this.version != 1) {
+			util
+					.print_error('openpgp.packet.encryptedintegrityprotecteddata.js\nunknown encrypted integrity protected data packet version: '
+							+ this.version
+							+ " , @ "
+							+ position
+							+ "hex:"
+							+ util.hexstrdump(input));
+			return null;
+		}
+		// - Encrypted data, the output of the selected symmetric-key cipher
+		//   operating in Cipher Feedback mode with shift amount equal to the
+		//   block size of the cipher (CFB-n where n is the block size).
+		this.encryptedData = input.substring(position + 1, position + 1 + len);
+		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"
+				+ this.toString());
+		return this;
+	}
+
+	/**
+	 * Creates a string representation of a Sym. Encrypted Integrity Protected
+	 * Data Packet (tag 18) (see RFC4880 5.13)
+	 * 
+	 * @param symmetric_algorithm
+	 *            [integer] the selected symmetric encryption algorithm to be
+	 *            used
+	 * @param key
+	 *            [String] the key of cipher blocksize length to be used
+	 * @param data
+	 *            plaintext data to be encrypted within the packet
+	 * @return a string representation of the packet
+	 */
+	function write_packet(symmetric_algorithm, key, data) {
+
+		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
+		var prefix = prefixrandom
+				+ prefixrandom.charAt(prefixrandom.length - 2)
+				+ prefixrandom.charAt(prefixrandom.length - 1);
+		var tohash = data;
+		tohash += String.fromCharCode(0xD3);
+		tohash += String.fromCharCode(0x14);
+		util.print_debug_hexstr_dump("data to be hashed:"
+				, prefix + tohash);
+		tohash += str_sha1(prefix + tohash);
+		util.print_debug_hexstr_dump("hash:"
+				, tohash.substring(tohash.length - 20,
+						tohash.length));
+		var result = openpgp_crypto_symmetricEncrypt(prefixrandom,
+				symmetric_algorithm, key, tohash, false).substring(0,
+				prefix.length + tohash.length);
+		var header = openpgp_packet.write_packet_header(18, result.length + 1)
+				+ String.fromCharCode(1);
+		this.encryptedData = result;
+		return header + result;
+	}
+
+	/**
+	 * Decrypts the encrypted data contained in this object read_packet must
+	 * have been called before
+	 * 
+	 * @param symmetric_algorithm_type
+	 *            [integer] the selected symmetric encryption algorithm to be
+	 *            used
+	 * @param key
+	 *            [String] the key of cipher blocksize length to be used
+	 * @return the decrypted data of this packet
+	 */
+	function decrypt(symmetric_algorithm_type, key) {
+		this.decryptedData = openpgp_crypto_symmetricDecrypt(
+				symmetric_algorithm_type, key, this.encryptedData, false);
+		// there must be a modification detection code packet as the
+		// last packet and everything gets hashed except the hash itself
+		this.hash = str_sha1(openpgp_crypto_MDCSystemBytes(
+				symmetric_algorithm_type, key, this.encryptedData)
+				+ this.decryptedData.substring(0,
+						this.decryptedData.length - 20));
+		util.print_debug_hexstr_dump("calc hash = ", this.hash);
+		if (this.hash == this.decryptedData.substring(
+				this.decryptedData.length - 20, this.decryptedData.length))
+			return this.decryptedData;
 		else
-			this.config = cf;
+			util
+					.print_error("Decryption stopped: discovered a modification of encrypted data.");
+		return null;
+	}
+
+	function toString() {
+	    var data = '';
+	    if(openpgp.config.debug)
+	        data = '    data: Bytes ['
+				+ util.hexstrdump(this.encryptedData) + ']';
+	    
+		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
+				+ '    length:  '
+				+ this.packetLength
+				+ '\n'
+				+ '    version: '
+				+ this.version
+				+ '\n'
+				+ data;
+	}
+
+	this.write_packet = write_packet;
+	this.read_packet = read_packet;
+	this.toString = toString;
+	this.decrypt = decrypt;
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ * 
+ * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
+ * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
+ * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
+ * message is encrypted with the session key, and the session key is itself
+ * encrypted and stored in the Encrypted Session Key packet(s). The
+ * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
+ * Session Key packet for each OpenPGP key to which the message is encrypted.
+ * The recipient of the message finds a session key that is encrypted to their
+ * public key, decrypts the session key, and then uses the session key to
+ * decrypt the message.
+ */
+function openpgp_packet_encryptedsessionkey() {
+
+	/**
+	 * parsing function for a publickey encrypted session key packet (tag 1).
+	 * 
+	 * @param input
+	 *            [string] payload of a tag 1 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_pub_key_packet(input, position, len) {
+		this.tagType = 1;
+		this.packetLength = len;
+		var mypos = position;
+		if (len < 10) {
+			util
+					.print_error("openpgp.packet.encryptedsessionkey.js\n" + 'invalid length');
+			return null;
+		}
+
+		this.version = input[mypos++].charCodeAt();
+		this.keyId = new openpgp_type_keyid();
+		this.keyId.read_packet(input, mypos);
+		mypos += 8;
+		this.publicKeyAlgorithmUsed = input[mypos++].charCodeAt();
+
+		switch (this.publicKeyAlgorithmUsed) {
+		case 1:
+		case 2: // RSA
+			this.MPIs = new Array();
+			this.MPIs[0] = new openpgp_type_mpi();
+			this.MPIs[0].read(input, mypos, mypos - position);
+			break;
+		case 16: // Elgamal
+			this.MPIs = new Array();
+			this.MPIs[0] = new openpgp_type_mpi();
+			this.MPIs[0].read(input, mypos, mypos - position);
+			mypos += this.MPIs[0].packetLength;
+			this.MPIs[1] = new openpgp_type_mpi();
+			this.MPIs[1].read(input, mypos, mypos - position);
+			break;
+		default:
+			util.print_error("openpgp.packet.encryptedsessionkey.js\n"
+					+ "unknown public key packet algorithm type "
+					+ this.publicKeyAlgorithmType);
+			break;
+		}
+		return this;
 	}
 
 	/**
-	 * if enabled, debug messages will be printed
+	 * create a string representation of a tag 1 packet
+	 * 
+	 * @param publicKeyId
+	 *            [String] the public key id corresponding to publicMPIs key as
+	 *            string
+	 * @param publicMPIs
+	 *            [Array[openpgp_type_mpi]] multiprecision integer objects
+	 *            describing the public key
+	 * @param pubalgo
+	 *            [integer] the corresponding public key algorithm // See
+	 *            RFC4880 9.1
+	 * @param symmalgo
+	 *            [integer] the symmetric cipher algorithm used to encrypt the
+	 *            data within an encrypteddatapacket or
+	 *            encryptedintegrityprotecteddatapacket following this packet //
+	 *            See RFC4880 9.2
+	 * @param sessionkey
+	 *            [String] a string of randombytes representing the session key
+	 * @return [String] the string representation
 	 */
-	this.debug = false;
-
-	/**
-	 * writes the config to HTML5 local storage
-	 * @return [void]
-	 */
-	function write() {
-		window.localStorage.setItem("config",JSON.stringify(this.config));
+	function write_pub_key_packet(publicKeyId, publicMPIs, pubalgo, symmalgo,
+			sessionkey) {
+		var result = String.fromCharCode(3);
+		var data = String.fromCharCode(symmalgo);
+		data += sessionkey;
+		var checksum = util.calc_checksum(sessionkey);
+		data += String.fromCharCode((checksum >> 8) & 0xFF);
+		data += String.fromCharCode((checksum) & 0xFF);
+		result += publicKeyId;
+		result += String.fromCharCode(pubalgo);
+		var mpi = new openpgp_type_mpi();
+		var mpiresult = openpgp_crypto_asymetricEncrypt(pubalgo, publicMPIs,
+				mpi.create(openpgp_encoding_eme_pkcs1_encode(data,
+						publicMPIs[0].mpiByteLength)));
+		for ( var i = 0; i < mpiresult.length; i++) {
+			result += mpiresult[i];
+		}
+		result = openpgp_packet.write_packet_header(1, result.length) + result;
+		return result;
 	}
 
-	this.read = read;
-	this.write = write;
+	/**
+	 * parsing function for a symmetric encrypted session key packet (tag 3).
+	 * 
+	 * @param input
+	 *            [string] payload of a tag 1 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_symmetric_key_packet(input, position, len) {
+		this.tagType = 3;
+		var mypos = position;
+		// A one-octet version number. The only currently defined version is 4.
+		this.version = input[mypos++];
+
+		// A one-octet number describing the symmetric algorithm used.
+		this.symmetricKeyAlgorithmUsed = input[mypos++];
+		// A string-to-key (S2K) specifier, length as defined above.
+		this.s2k = new openpgp_type_s2k();
+		this.s2k.read(input, mypos);
+
+		// Optionally, the encrypted session key itself, which is decrypted
+		// with the string-to-key object.
+		if ((s2k.s2kLength + mypos) < len) {
+			this.encryptedSessionKey = new Array();
+			for ( var i = (mypos - position); i < len; i++) {
+				this.encryptedSessionKey[i] = input[mypos++];
+			}
+		}
+		return this;
+	}
+	/**
+	 * Decrypts the session key (only for public key encrypted session key
+	 * packets (tag 1)
+	 * 
+	 * @param msg
+	 *            [openpgp_msg_message] the message object (with member
+	 *            encryptedData
+	 * @param key
+	 *            [openpgp_msg_privatekey] private key with secMPIs unlocked
+	 * @return [String] the unencrypted session key
+	 */
+	function decrypt(msg, key) {
+		if (this.tagType == 1) {
+			var result = openpgp_crypto_asymetricDecrypt(
+					this.publicKeyAlgorithmUsed, key.publicKey.MPIs,
+					key.secMPIs, this.MPIs).toMPI();
+			var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
+					.charCodeAt(result.length - 1));
+			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2), key.publicKey.MPIs[0].getByteLength());
+			var sesskey = decoded.substring(1);
+			var algo = decoded.charCodeAt(0);
+			if (msg.encryptedData.tagType == 18)
+				return msg.encryptedData.decrypt(algo, sesskey);
+			else
+				return msg.encryptedData.decrypt_sym(algo, sesskey);
+		} else if (this.tagType == 3) {
+			util
+					.print_error("Symmetric encrypted sessionkey is not supported!");
+			return null;
+		}
+	}
+
+	/**
+	 * Creates a string representation of this object (useful for debug
+	 * purposes)
+	 * 
+	 * @return the string containing a openpgp description
+	 */
+	function toString() {
+		if (this.tagType == 1) {
+			var result = '5.1.  Public-Key Encrypted Session Key Packets (Tag 1)\n'
+					+ '    KeyId:  '
+					+ this.keyId.toString()
+					+ '\n'
+					+ '    length: '
+					+ this.packetLength
+					+ '\n'
+					+ '    version:'
+					+ this.version
+					+ '\n'
+					+ '    pubAlgUs:'
+					+ this.publicKeyAlgorithmUsed + '\n';
+			for ( var i = 0; i < this.MPIs.length; i++) {
+				result += this.MPIs[i].toString();
+			}
+			return result;
+		} else
+			return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
+					+ '    KeyId:  ' + this.keyId.toString() + '\n'
+					+ '    length: ' + this.packetLength + '\n'
+					+ '    version:' + this.version + '\n' + '    symKeyA:'
+					+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
+					+ this.s2k + '\n';
+	}
+
+	this.read_pub_key_packet = read_pub_key_packet;
+	this.read_symmetric_key_packet = read_symmetric_key_packet;
+	this.write_pub_key_packet = write_pub_key_packet;
+	this.toString = toString;
+	this.decrypt = decrypt;
+};
+
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+function _openpgp_packet() {
+	/**
+	 * Encodes a given integer of length to the openpgp length specifier to a
+	 * string
+	 * 
+	 * @param length
+	 *            [Integer] of the length to encode
+	 * @return string with openpgp length representation
+	 */
+	function encode_length(length) {
+		result = "";
+		if (length < 192) {
+			result += String.fromCharCode(length);
+		} else if (length > 191 && length < 8384) {
+			/*
+			 * let a = (total data packet length) - 192 let bc = two octet
+			 * representation of a let d = b + 192
+			 */
+			result += String.fromCharCode(((length - 192) >> 8) + 192);
+			result += String.fromCharCode((length - 192) & 0xFF);
+		} else {
+			result += String.fromCharCode(255);
+			result += String.fromCharCode((length >> 24) & 0xFF);
+			result += String.fromCharCode((length >> 16) & 0xFF);
+			result += String.fromCharCode((length >> 8) & 0xFF);
+			result += String.fromCharCode(length & 0xFF);
+		}
+		return result;
+	}
+	this.encode_length = encode_length;
+
+	/**
+	 * Writes a packet header version 4 with the given tag_type and length to a
+	 * string
+	 * 
+	 * @param tag_type
+	 *            integer of tag type
+	 * @param length
+	 *            integer length of the payload
+	 * @return string of the header
+	 */
+	function write_packet_header(tag_type, length) {
+		/* we're only generating v4 packet headers here */
+		var result = "";
+		result += String.fromCharCode(0xC0 | tag_type);
+		result += encode_length(length);
+		return result;
+	}
+
+	/**
+	 * Writes a packet header Version 3 with the given tag_type and length to a
+	 * string
+	 * 
+	 * @param tag_type
+	 *            integer of tag type
+	 * @param length
+	 *            integer length of the payload
+	 * @return string of the header
+	 */
+	function write_old_packet_header(tag_type, length) {
+		var result = "";
+		if (length < 256) {
+			result += String.fromCharCode(0x80 | (tag_type << 2));
+			result += String.fromCharCode(length);
+		} else if (length < 65536) {
+			result += String.fromCharCode(0x80 | (tag_type << 2) | 1);
+			result += String.fromCharCode(length >> 8);
+			result += String.fromCharCode(length & 0xFF);
+		} else {
+			result += String.fromCharCode(0x80 | (tag_type << 2) | 2);
+			result += String.fromCharCode((length >> 24) & 0xFF);
+			result += String.fromCharCode((length >> 16) & 0xFF);
+			result += String.fromCharCode((length >> 8) & 0xFF);
+			result += String.fromCharCode(length & 0xFF);
+		}
+		return result;
+	}
+	this.write_old_packet_header = write_old_packet_header;
+	this.write_packet_header = write_packet_header;
+	/**
+	 * Generic static Packet Parser function
+	 * 
+	 * @param input
+	 *            [String] input stream as string
+	 * @param position
+	 *            [integer] position to start parsing
+	 * @param len
+	 *            [integer] length of the input from position on
+	 * @return [openpgp_packet_*] returns a parsed openpgp_packet
+	 */
+	function read_packet(input, position, len) {
+		// some sanity checks
+		if (input == null || input.length <= position
+				|| input.substring(position).length < 2
+				|| (input[position].charCodeAt() & 0x80) == 0) {
+			util
+					.print_error("Error during parsing. This message / key is propably not containing a valid OpenPGP format.");
+			return null;
+		}
+		var mypos = position;
+		var tag = -1;
+		var format = -1;
+
+		format = 0; // 0 = old format; 1 = new format
+		if ((input[mypos].charCodeAt() & 0x40) != 0) {
+			format = 1;
+		}
+
+		var packet_length_type;
+		if (format) {
+			// new format header
+			tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
+		} else {
+			// old format header
+			tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
+			packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
+		}
+
+		// header octet parsing done
+		mypos++;
+
+		// parsed length from length field
+		var len = 0;
+		var bodydata = null;
+
+		// used for partial body lengths
+		var real_packet_length = -1;
+		if (!format) {
+			// 4.2.1. Old Format Packet Lengths
+			switch (packet_length_type) {
+			case 0: // The packet has a one-octet length. The header is 2 octets
+				// long.
+				packet_length = input[mypos++].charCodeAt();
+				break;
+			case 1: // The packet has a two-octet length. The header is 3 octets
+				// long.
+				packet_length = (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+				break;
+			case 2: // The packet has a four-octet length. The header is 5
+				// octets long.
+				packet_length = (input[mypos++].charCodeAt() << 24)
+						| (input[mypos++].charCodeAt() << 16)
+						| (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+				break;
+			default:
+				// 3 - The packet is of indeterminate length. The header is 1
+				// octet long, and the implementation must determine how long
+				// the packet is. If the packet is in a file, this means that
+				// the packet extends until the end of the file. In general, 
+				// an implementation SHOULD NOT use indeterminate-length 
+				// packets except where the end of the data will be clear 
+				// from the context, and even then it is better to use a 
+				// definite length, or a new format header. The new format 
+				// headers described below have a mechanism for precisely
+				// encoding data of indeterminate length.
+			}
+
+		} else // 4.2.2. New Format Packet Lengths
+		{
+
+			// 4.2.2.1. One-Octet Lengths
+			if (input[mypos].charCodeAt() < 192) {
+				packet_length = input[mypos++].charCodeAt();
+				util.print_debug("1 byte length:" + packet_length);
+				// 4.2.2.2. Two-Octet Lengths
+			} else if (input[mypos].charCodeAt() >= 192
+					&& input[mypos].charCodeAt() < 224) {
+				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
+						+ (input[mypos++].charCodeAt()) + 192;
+				util.print_debug("2 byte length:" + packet_length);
+				// 4.2.2.4. Partial Body Lengths
+			} else if (input[mypos].charCodeAt() > 223
+					&& input[mypos].charCodeAt() < 255) {
+				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+				util.print_debug("4 byte length:" + packet_length);
+				// EEEK, we're reading the full data here...
+				var mypos2 = mypos + packet_length;
+				bodydata = input.substring(mypos, mypos + packet_length);
+				while (true) {
+					if (input[mypos2].charCodeAt() < 192) {
+						var tmplen = input[mypos2++].charCodeAt();
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+						break;
+					} else if (input[mypos2].charCodeAt() >= 192
+							&& input[mypos2].charCodeAt() < 224) {
+						var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8)
+								+ (input[mypos2++].charCodeAt()) + 192;
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+						break;
+					} else if (input[mypos2].charCodeAt() > 223
+							&& input[mypos2].charCodeAt() < 255) {
+						var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+					} else {
+						mypos2++;
+						var tmplen = (input[mypos2++].charCodeAt() << 24)
+								| (input[mypos2++].charCodeAt() << 16)
+								| (input[mypos2++].charCodeAt() << 8)
+								| input[mypos2++].charCodeAt();
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						packet_length += tmplen;
+						mypos2 += tmplen;
+						break;
+					}
+				}
+				real_packet_length = mypos2;
+				// 4.2.2.3. Five-Octet Lengths
+			} else {
+				mypos++;
+				packet_length = (input[mypos++].charCodeAt() << 24)
+						| (input[mypos++].charCodeAt() << 16)
+						| (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+			}
+		}
+
+		// if there was'nt a partial body length: use the specified
+		// packet_length
+		if (real_packet_length == -1) {
+			real_packet_length = packet_length;
+		}
+
+		if (bodydata == null) {
+			bodydata = input.substring(mypos, mypos + real_packet_length);
+		}
+
+		// alert('tag type: '+this.tag+' length: '+packet_length);
+		var version = 1; // (old format; 2= new format)
+		// if (input[mypos++].charCodeAt() > 15)
+		// version = 2;
+
+		switch (tag) {
+		case 0: // Reserved - a packet tag MUST NOT have this value
+			break;
+		case 1: // Public-Key Encrypted Session Key Packet
+			var result = new openpgp_packet_encryptedsessionkey();
+			if (result.read_pub_key_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 2: // Signature Packet
+			var result = new openpgp_packet_signature();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 3: // Symmetric-Key Encrypted Session Key Packet
+			var result = new openpgp_packet_encryptedsessionkey();
+			if (result.read_symmetric_key_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 4: // One-Pass Signature Packet
+			var result = new openpgp_packet_onepasssignature();
+			if (result.read_packet(bodydata, 0, packet_length)) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 5: // Secret-Key Packet
+			var result = new openpgp_packet_keymaterial();
+			result.header = input.substring(position, mypos);
+			if (result.read_tag5(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 6: // Public-Key Packet
+			var result = new openpgp_packet_keymaterial();
+			result.header = input.substring(position, mypos);
+			if (result.read_tag6(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 7: // Secret-Subkey Packet
+			var result = new openpgp_packet_keymaterial();
+			if (result.read_tag7(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 8: // Compressed Data Packet
+			var result = new openpgp_packet_compressed();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 9: // Symmetrically Encrypted Data Packet
+			var result = new openpgp_packet_encrypteddata();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 10: // Marker Packet = PGP (0x50, 0x47, 0x50)
+			var result = new openpgp_packet_marker();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 11: // Literal Data Packet
+			var result = new openpgp_packet_literaldata();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.header = input.substring(position, mypos);
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 12: // Trust Packet
+			// TODO: to be implemented
+			break;
+		case 13: // User ID Packet
+			var result = new openpgp_packet_userid();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 14: // Public-Subkey Packet
+			var result = new openpgp_packet_keymaterial();
+			result.header = input.substring(position, mypos);
+			if (result.read_tag14(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 17: // User Attribute Packet
+			var result = new openpgp_packet_userattribute();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 18: // Sym. Encrypted and Integrity Protected Data Packet
+			var result = new openpgp_packet_encryptedintegrityprotecteddata();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		case 19: // Modification Detection Code Packet
+			var result = new openpgp_packet_modificationdetectioncode();
+			if (result.read_packet(bodydata, 0, packet_length) != null) {
+				result.headerLength = mypos - position;
+				result.packetLength = real_packet_length;
+				return result;
+			}
+			break;
+		default:
+			util.print_error("openpgp.packet.js\n"
+					+ "[ERROR] openpgp_packet: failed to parse packet @:"
+					+ mypos + "\nchar:'"
+					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
+					+ util.hexstrdump(input));
+			return null;
+			break;
+		}
+	}
+
+	this.read_packet = read_packet;
+}
+
+var openpgp_packet = new _openpgp_packet();
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ *   
+ * RFC4480 5.5:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.  Consequently, this section is complex.
+ */
+function openpgp_packet_keymaterial() {
+	// members:
+	this.publicKeyAlgorithm = null;
+	this.tagType = null;
+	this.creationTime = null;
+	this.version = null;
+	this.expiration  = null;// V3
+	this.MPIs = null;
+	this.secMPIs = null;
+	this.publicKey = null;
+	this.symmetricEncryptionAlgorithm = null;
+	this.s2kUsageConventions = null;
+	this.IVLength  = null;
+    this.encryptedMPIData = null;
+    this.hasUnencryptedSecretKeyData = null;
+    this.checksum = null;
+    this.parentNode = null;
+	this.subKeySignature = null;
+	this.subKeyRevocationSignature = null;
+
+	// 5.5.1. Key Packet Variants
+	
+	// 5.5.1.3. Secret-Key Packet (Tag 5)
+	/**
+	 * This function reads the payload of a secret key packet (Tag 5)
+	 * and initializes the openpgp_packet_keymaterial
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return openpgp_packet_keymaterial object
+	 */
+	function read_tag5(input, position, len) {
+		this.tagType = 5;
+		this.read_priv_key(input, position, len);
+		return this;
+	}
+
+	// 5.5.1.1. Public-Key Packet (Tag 6)
+	/**
+	 * This function reads the payload of a public key packet (Tag 6)
+	 * and initializes the openpgp_packet_keymaterial
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return openpgp_packet_keymaterial object
+	 */
+	function read_tag6(input, position, len) {
+		// A Public-Key packet starts a series of packets that forms an OpenPGP
+		// key (sometimes called an OpenPGP certificate).
+		this.tagType = 6;
+		this.packetLength = len;
+		this.read_pub_key(input, position,len);
+		
+		return this;
+	}
+
+	// 5.5.1.4. Secret-Subkey Packet (Tag 7)
+	/**
+	 * This function reads the payload of a secret key sub packet (Tag 7)
+	 * and initializes the openpgp_packet_keymaterial
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return openpgp_packet_keymaterial object
+	 */
+	function read_tag7(input, position, len) {
+		this.tagType = 7;
+		this.packetLength = len;
+		return this.read_priv_key(input, position, len);
+	}
+
+	// 5.5.1.2. Public-Subkey Packet (Tag 14)
+	/**
+	 * This function reads the payload of a public key sub packet (Tag 14)
+	 * and initializes the openpgp_packet_keymaterial
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return openpgp_packet_keymaterial object
+	 */
+	function read_tag14(input, position, len) {
+		this.subKeySignature = null;
+		this.subKeyRevocationSignature = new Array();
+		this.tagType = 14;
+		this.packetLength = len;
+		this.read_pub_key(input, position,len);
+		return this;
+	}
+	
+	/**
+	 * Internal Parser for public keys as specified in RFC 4880 section 5.5.2 Public-Key Packet Formats
+	 * called by read_tag&lt;num&gt;
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return this object with attributes set by the parser
+	 */  
+	function read_pub_key(input, position, len) {
+		var mypos = position;
+		// A one-octet version number (3 or 4).
+		this.version = input[mypos++].charCodeAt();
+		if (this.version == 3) {
+			// A four-octet number denoting the time that the key was created.
+			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
+				(input[mypos++].charCodeAt() << 16) |
+				(input[mypos++].charCodeAt() <<  8) |
+				(input[mypos++].charCodeAt()))*1000);
+			
+		    // - A two-octet number denoting the time in days that this key is
+		    //   valid.  If this number is zero, then it does not expire.
+			this.expiration = (input[mypos++].charCodeAt() << 8) & input[mypos++].charCodeAt();
+	
+		    // - A one-octet number denoting the public-key algorithm of this key.
+			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			var mpicount = 0;
+		    // - A series of multiprecision integers comprising the key material:
+			//   Algorithm-Specific Fields for RSA public keys:
+		    //       - a multiprecision integer (MPI) of RSA public modulus n;
+		    //       - an MPI of RSA public encryption exponent e.
+			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+				mpicount = 2;
+			//   Algorithm-Specific Fields for Elgamal public keys:
+			//     - MPI of Elgamal prime p;
+			//     - MPI of Elgamal group generator g;
+			//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
+
+			else if (this.publicKeyAlgorithm == 16)
+				mpicount = 3;
+			//   Algorithm-Specific Fields for DSA public keys:
+			//       - MPI of DSA prime p;
+			//       - MPI of DSA group order q (q is a prime divisor of p-1);
+			//       - MPI of DSA group generator g;
+			//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
+			else if (this.publicKeyAlgorithm == 17)
+				mpicount = 4;
+
+			this.MPIs = new Array();
+			for (var i = 0; i < mpicount; i++) {
+				this.MPIs[i] = new openpgp_type_mpi();
+				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
+						!this.packetLength < (mypos-position)) {
+					mypos += this.MPIs[i].packetLength;
+				} else {
+					util.print_error("openpgp.packet.keymaterial.js\n"+'error reading MPI @:'+mypos);
+				}
+			}
+			this.packetLength = mypos-position;
+		} else if (this.version == 4) {
+			// - A four-octet number denoting the time that the key was created.
+			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
+			(input[mypos++].charCodeAt() << 16) |
+			(input[mypos++].charCodeAt() <<  8) |
+			(input[mypos++].charCodeAt()))*1000);
+			
+			// - A one-octet number denoting the public-key algorithm of this key.
+			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			var mpicount = 0;
+		    // - A series of multiprecision integers comprising the key material:
+			//   Algorithm-Specific Fields for RSA public keys:
+		    //       - a multiprecision integer (MPI) of RSA public modulus n;
+		    //       - an MPI of RSA public encryption exponent e.
+			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+					mpicount = 2;
+			//   Algorithm-Specific Fields for Elgamal public keys:
+			//     - MPI of Elgamal prime p;
+			//     - MPI of Elgamal group generator g;
+			//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
+			else if (this.publicKeyAlgorithm == 16)
+				mpicount = 3;
+
+			//   Algorithm-Specific Fields for DSA public keys:
+			//       - MPI of DSA prime p;
+			//       - MPI of DSA group order q (q is a prime divisor of p-1);
+			//       - MPI of DSA group generator g;
+			//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
+			else if (this.publicKeyAlgorithm == 17)
+				mpicount = 4;
+
+			this.MPIs = new Array();
+			var i = 0;
+			for (var i = 0; i < mpicount; i++) {
+				this.MPIs[i] = new openpgp_type_mpi();
+				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null &&
+						!this.packetLength < (mypos-position)) {
+					mypos += this.MPIs[i].packetLength;
+				} else {
+					util.print_error("openpgp.packet.keymaterial.js\n"+'error reading MPI @:'+mypos);
+				}
+			}
+			this.packetLength = mypos-position;
+		} else {
+			return null;
+		}
+		this.data = input.substring(position, mypos);
+		this.packetdata = input.substring(position, mypos);
+		return this;
+	}
+	
+	// 5.5.3.  Secret-Key Packet Formats
+	
+	/**
+	 * Internal parser for private keys as specified in RFC 4880 section 5.5.3
+	 * @param input input string to read the packet from
+	 * @param position start position for the parser
+	 * @param len length of the packet or remaining length of input
+	 * @return this object with attributes set by the parser
+	 */
+	function read_priv_key(input,position, len) {
+	    // - A Public-Key or Public-Subkey packet, as described above.
+	    this.publicKey = new openpgp_packet_keymaterial();
+		if (this.publicKey.read_pub_key(input,position, len) == null) {
+			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input[position].charCodeAt()+" "+position+" "+len+"\n Aborting here...");
+			return null;
+		}
+		this.publicKey.header = openpgp_packet.write_old_packet_header(6,this.publicKey.packetLength);
+		// this.publicKey.header = String.fromCharCode(0x99) + String.fromCharCode(this.publicKey.packetLength >> 8 & 0xFF)+String.fromCharCode(this.publicKey.packetLength & 0xFF);
+		var mypos = position + this.publicKey.data.length;
+		this.packetLength = len;
+		
+	    // - One octet indicating string-to-key usage conventions.  Zero
+	    //   indicates that the secret-key data is not encrypted.  255 or 254
+	    //   indicates that a string-to-key specifier is being given.  Any
+	    //   other value is a symmetric-key encryption algorithm identifier.
+	    this.s2kUsageConventions = input[mypos++].charCodeAt();
+	    
+	    if (this.s2kUsageConventions == 0)
+	    	this.hasUnencryptedSecretKeyData = true;
+	   
+	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
+	    //   octet symmetric encryption algorithm.
+	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
+	    	this.symmetricEncryptionAlgorithm = input[mypos++].charCodeAt();
+	    }
+	     
+	    // - [Optional] If string-to-key usage octet was 255 or 254, a
+	    //   string-to-key specifier.  The length of the string-to-key
+	    //   specifier is implied by its type, as described above.
+	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
+	    	this.s2k = new openpgp_type_s2k();
+	    	this.s2k.read(input, mypos);
+	    	mypos +=this.s2k.s2kLength;
+	    }
+	    
+	    // - [Optional] If secret data is encrypted (string-to-key usage octet
+	    //   not zero), an Initial Vector (IV) of the same length as the
+	    //   cipher's block size.
+	    this.symkeylength = 0;
+	    if (this.s2kUsageConventions != 0 && this.s2kUsageConventions != 255 &&
+	    		this.s2kUsageConventions != 254) {
+	    	this.symmetricEncryptionAlgorithm = this.s2kUsageConventions;
+	    }
+	    if (this.s2kUsageConventions != 0) {
+	    	this.hasIV = true;
+	    	switch (this.symmetricEncryptionAlgorithm) {
+		    case  1: // - IDEA [IDEA]
+		    	util.print_error("openpgp.packet.keymaterial.js\n"+"symmetric encrytryption algorithim: IDEA is not implemented");
+		    	return null;
+	    	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+	    	case  3: // - CAST5 (128 bit key, as per [RFC2144])
+	    		this.IVLength = 8;
+		    	break;
+		    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+		    case  7: // - AES with 128-bit key [AES]
+	    	case  8: // - AES with 192-bit key
+	    	case  9: // - AES with 256-bit key
+	    		this.IVLength = 16;
+		    	break;
+	    	case 10: // - Twofish with 256-bit key [TWOFISH]
+	    		this.IVLength = 32;	    		
+		    	break;
+	    	case  5: // - Reserved
+	    	case  6: // - Reserved
+	    	default:
+	    		util.print_error("openpgp.packet.keymaterial.js\n"+"unknown encryption algorithm for secret key :"+this.symmetricEncryptionAlgorithm);
+	    		return null;
+	    	}
+	    	mypos++; 
+	    	this.IV = input.substring(mypos, mypos+this.IVLength);
+	    	mypos += this.IVLength;
+	    }
+	    // - Plain or encrypted multiprecision integers comprising the secret
+	    //   key data.  These algorithm-specific fields are as described
+	    //   below.
+
+	    //
+	    //
+	    if (!this.hasUnencryptedSecretKeyData) {
+	    	this.encryptedMPIData = input.substring(mypos, len);
+	    	mypos += this.encryptedMPIData.length;
+	    } else {
+	    	if (this.publicKey.publicKeyAlgorithm > 0 && this.publicKey.publicKeyAlgorithm < 4) {
+	    		//   Algorithm-Specific Fields for RSA secret keys:
+	    		//   - multiprecision integer (MPI) of RSA secret exponent d.
+	    		//   - MPI of RSA secret prime value p.
+	    		//   - MPI of RSA secret prime value q (p < q).
+	    		//   - MPI of u, the multiplicative inverse of p, mod q.
+	    		this.secMPIs = new Array();
+	    		this.secMPIs[0] = new openpgp_type_mpi();
+	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[0].packetLength;
+	    		this.secMPIs[1] = new openpgp_type_mpi();
+	    		this.secMPIs[1].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[1].packetLength;
+	    		this.secMPIs[2] = new openpgp_type_mpi();
+	    		this.secMPIs[2].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[2].packetLength;
+	    		this.secMPIs[3] = new openpgp_type_mpi();
+	    		this.secMPIs[3].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[3].packetLength;
+	    	} else if (this.publicKey.publicKeyAlgorithm == 16) {
+	    		// Algorithm-Specific Fields for Elgamal secret keys:
+	    		//   - MPI of Elgamal secret exponent x.
+	    		this.secMPIs = new Array();
+	    		this.secMPIs[0] = new openpgp_type_mpi();
+	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[0].packetLength;
+	    	} else if (this.publicKey.publicKeyAlgorithm == 17) {
+	    		// Algorithm-Specific Fields for DSA secret keys:
+	    		//   - MPI of DSA secret exponent x.
+	    		this.secMPIs = new Array();
+	    		this.secMPIs[0] = new openpgp_type_mpi();
+	    		this.secMPIs[0].read(input, mypos, len-2- (mypos - position));
+	    		mypos += this.secMPIs[0].packetLength;
+	    	}
+	    	// checksum because s2k usage convention is 0
+	        this.checksum = new Array(); 
+		    this.checksum[0] = input[mypos++].charCodeAt();
+		    this.checksum[1] = input[mypos++].charCodeAt();
+	    }
+	    return this;
+	}
+	
+
+	/**
+	 * Decrypts the private key MPIs which are needed to use the key.
+	 * openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be false otherwise
+	 * a call to this function is not needed
+	 * 
+	 * @param str_passphrase the passphrase for this private key as string
+	 * @return true if the passphrase was correct; false if not
+	 */
+	function decryptSecretMPIs(str_passphrase) {
+		if (this.hasUnencryptedSecretKeyData)
+			return this.secMPIs;
+		// creating a key out of the passphrase
+		var key = this.s2k.produce_key(str_passphrase);
+		var cleartextMPIs = "";
+    	switch (this.symmetricEncryptionAlgorithm) {
+	    case  1: // - IDEA [IDEA]
+	    	util.print_error("openpgp.packet.keymaterial.js\n"+"symmetric encryption algorithim: IDEA is not implemented");
+	    	return false;
+    	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+    		cleartextMPIs = normal_cfb_decrypt(function(block, key) {
+    			return des(key, block,1,null,0);
+    		}, this.IVLength, key, this.encryptedMPIData, this.IV);
+    		break;
+    	case  3: // - CAST5 (128 bit key, as per [RFC2144])
+    		cleartextMPIs = normal_cfb_decrypt(function(block, key) {
+        		var cast5 = new openpgp_symenc_cast5();
+        		cast5.setKey(key);
+        		return cast5.encrypt(util.str2bin(block)); 
+    		}, this.IVLength, util.str2bin(key.substring(0,16)), this.encryptedMPIData, this.IV);
+    		break;
+	    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	    	cleartextMPIs = normal_cfb_decrypt(function(block, key) {
+    			var blowfish = new Blowfish(key);
+        		return blowfish.encrypt(block); 
+    		}, this.IVLength, key, this.encryptedMPIData, this.IV);
+    		break;
+	    case  7: // - AES with 128-bit key [AES]
+    	case  8: // - AES with 192-bit key
+    	case  9: // - AES with 256-bit key	    	
+    		cleartextMPIs = normal_cfb_decrypt(AESencrypt,
+    				this.IVLength, keyExpansion(key), this.encryptedMPIData, this.IV);
+	    	break;
+    	case 10: // - Twofish with 256-bit key [TWOFISH]
+    		util.print_error("openpgp.packet.keymaterial.js\n"+"Key material is encrypted with twofish: not implemented");   		
+	    	return false;;
+    	case  5: // - Reserved
+    	case  6: // - Reserved
+    	default:
+    		util.print_error("openpgp.packet.keymaterial.js\n"+"unknown encryption algorithm for secret key :"+this.symmetricEncryptionAlgorithm);
+    		return false;
+    	}
+    	
+    	if (cleartextMPIs == null) {
+    		util.print_error("openpgp.packet.keymaterial.js\n"+"cleartextMPIs was null");
+    		return false;
+    	}
+    	
+    	var cleartextMPIslength = cleartextMPIs.length;
+
+    	if (this.s2kUsageConventions == 254 &&
+    			str_sha1(cleartextMPIs.substring(0,cleartextMPIs.length - 20)) == 
+    				cleartextMPIs.substring(cleartextMPIs.length - 20)) {
+    		cleartextMPIslength -= 20;
+    	} else if (this.s2kUsageConventions != 254 && util.calc_checksum(cleartextMPIs.substring(0,cleartextMPIs.length - 2)) == 
+    			(cleartextMPIs.charCodeAt(cleartextMPIs.length -2) << 8 | cleartextMPIs.charCodeAt(cleartextMPIs.length -1))) {
+    		cleartextMPIslength -= 2;
+    	} else {
+    		return false;
+    	}
+
+    	if (this.publicKey.publicKeyAlgorithm > 0 && this.publicKey.publicKeyAlgorithm < 4) {
+    		//   Algorithm-Specific Fields for RSA secret keys:
+    		//   - multiprecision integer (MPI) of RSA secret exponent d.
+    		//   - MPI of RSA secret prime value p.
+    		//   - MPI of RSA secret prime value q (p < q).
+    		//   - MPI of u, the multiplicative inverse of p, mod q.
+    		var mypos = 0;
+    		this.secMPIs = new Array();
+    		this.secMPIs[0] = new openpgp_type_mpi();
+    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIslength);
+    		mypos += this.secMPIs[0].packetLength;
+    		this.secMPIs[1] = new openpgp_type_mpi();
+    		this.secMPIs[1].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
+    		mypos += this.secMPIs[1].packetLength;
+    		this.secMPIs[2] = new openpgp_type_mpi();
+    		this.secMPIs[2].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
+    		mypos += this.secMPIs[2].packetLength;
+    		this.secMPIs[3] = new openpgp_type_mpi();
+    		this.secMPIs[3].read(cleartextMPIs, mypos, cleartextMPIslength-mypos);
+    		mypos += this.secMPIs[3].packetLength;
+    	} else if (this.publicKey.publicKeyAlgorithm == 16) {
+    		// Algorithm-Specific Fields for Elgamal secret keys:
+    		//   - MPI of Elgamal secret exponent x.
+    		this.secMPIs = new Array();
+    		this.secMPIs[0] = new openpgp_type_mpi();
+    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIs);
+    	} else if (this.publicKey.publicKeyAlgorithm == 17) {
+    		// Algorithm-Specific Fields for DSA secret keys:
+    		//   - MPI of DSA secret exponent x.
+    		this.secMPIs = new Array();
+    		this.secMPIs[0] = new openpgp_type_mpi();
+    		this.secMPIs[0].read(cleartextMPIs, 0, cleartextMPIslength);
+    	}
+    	return true;
+	}
+	
+	/**
+	 * Generates Debug output
+	 * @return String which gives some information about the keymaterial
+	 */
+	function toString() {
+		var result = "";
+		switch (this.tagType) {
+		case 6:
+			 result += '5.5.1.1. Public-Key Packet (Tag 6)\n'+
+			   '    length:             '+this.packetLength+'\n'+
+			   '    version:            '+this.version+'\n'+
+			   '    creation time:      '+this.creationTime+'\n'+
+			   '    expiration time:    '+this.expiration+'\n'+
+			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
+			break;
+		case 14:
+			result += '5.5.1.2. Public-Subkey Packet (Tag 14)\n'+
+			   '    length:             '+this.packetLength+'\n'+
+			   '    version:            '+this.version+'\n'+
+			   '    creation time:      '+this.creationTime+'\n'+
+			   '    expiration time:    '+this.expiration+'\n'+
+			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
+			break;
+		case 5:
+			result +='5.5.1.3. Secret-Key Packet (Tag 5)\n'+
+			   '    length:             '+this.packetLength+'\n'+
+			   '    version:            '+this.publicKey.version+'\n'+
+			   '    creation time:      '+this.publicKey.creationTime+'\n'+
+			   '    expiration time:    '+this.publicKey.expiration+'\n'+
+			   '    publicKeyAlgorithm: '+this.publicKey.publicKeyAlgorithm+'\n';
+			break;
+		case 7:
+			result += '5.5.1.4. Secret-Subkey Packet (Tag 7)\n'+
+			   '    length:             '+this.packetLength+'\n'+
+			   '    version[1]:         '+(this.version == 4)+'\n'+
+			   '    creationtime[4]:    '+this.creationTime+'\n'+
+			   '    expiration[2]:      '+this.expiration+'\n'+
+			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
+			break;
+		default:
+			result += 'unknown key material packet\n';
+		}
+		if (this.MPIs != null) {
+			result += "Public Key MPIs:\n";
+			for (var i = 0; i < this.MPIs.length; i++) {
+      	  	result += this.MPIs[i].toString();
+        	}
+		}
+		if (this.publicKey != null && this.publicKey.MPIs != null) {
+			result += "Public Key MPIs:\n";
+			for (var i = 0; i < this.publicKey.MPIs.length; i++) {
+	      	  	result += this.publicKey.MPIs[i].toString();
+        	}
+		}
+		if (this.secMPIs != null) {
+			result += "Secret Key MPIs:\n";
+			for (var i = 0; i < this.secMPIs.length; i++) {
+		      	  result += this.secMPIs[i].toString();
+		        }
+		}
+		
+		if (this.subKeySignature != null)
+			result += "subKey Signature:\n"+this.subKeySignature.toString();
+		
+		if (this.subKeyRevocationSignature != null )
+			result += "subKey Revocation Signature:\n"+this.subKeyRevocationSignature.toString();
+        return result;
+	}
+	
+	/**
+	 * Continue parsing packets belonging to the key material such as signatures
+	 * @param parent_node [openpgp_*] the parent object
+	 * @param input [String] input string to read the packet(s) from
+	 * @param position [integer] start position for the parser
+	 * @param len [integer] length of the packet(s) or remaining length of input
+	 * @return [integer] length of nodes read
+	 */
+	function read_nodes(parent_node, input, position, len) {
+		this.parentNode = parent_node;
+		if (this.tagType == 14) { // public sub-key packet
+			var pos = position;
+			var result = null;
+			while (input.length != pos) {
+				var l = input.length - pos;
+				result = openpgp_packet.read_packet(input, pos, l);
+				if (result == null) {
+					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_pub]parsing ends here @:' + pos + " l:" + l);
+					break;
+				} else {
+					
+					switch (result.tagType) {
+					case 2: // Signature Packet certification signature
+						if (result.signatureType == 24)  { // subkey binding signature
+							this.subKeySignature = result;
+							pos += result.packetLength + result.headerLength;
+							break;
+						} else if (result.signatureType == 40) { // subkey revocation signature
+							this.subKeyRevocationSignature = result;
+							pos += result.packetLength + result.headerLength;
+							break;
+						} else {
+							util.print_error("openpgp.packet.keymaterial.js\nunknown signature:"+result.toString());
+						}
+						
+					default:
+						this.data = input;
+						this.position = position - this.parentNode.packetLength;
+						this.len = pos - position;
+						return this.len;
+						break;
+					}
+				}
+			}
+			this.data = input;
+			this.position = position - this.parentNode.packetLength;
+			this.len = pos - position;
+			return this.len;
+		} else if (this.tagType == 7) { // private sub-key packet
+			var pos = position;
+			while (input.length != pos) {
+				var result = openpgp_packet.read_packet(input, pos, len - (pos - position));
+				if (result == null) {
+					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_priv] parsing ends here @:' + pos);
+					break;
+				} else {
+					switch (result.tagType) {
+					case 2: // Signature Packet certification signature
+						if (result.signatureType == 24) // subkey embedded signature
+							this.subKeySignature = result; 
+						else if (result.signatureType == 40) // subkey revocation signature
+							this.subKeyRevocationSignature[this.subKeyRevocationSignature] = result;
+						pos += result.packetLength + result.headerLength;
+						break;
+					default:
+						this.data = input;
+						this.position = position - this.parentNode.packetLength;
+						this.len = pos - position;
+						return this.len;
+					}
+				}
+			}
+			this.data = input;
+			this.position = position - this.parentNode.packetLength;
+			this.len = pos - position;
+			return this.len;
+		} else {
+			util.print_error("openpgp.packet.keymaterial.js\n"+"unknown parent node for a key material packet "+parent_node.tagType);
+		}
+	}
+
+	/**
+	 * Checks the validity for usage of this (sub)key
+	 * @return 0 = bad key, 1 = expired, 2 = revoked, 3 = valid
+	 */
+	function verifyKey() {
+		if (this.tagType == 14) {
+			if (this.subKeySignature == null)
+				return 0;
+			if (this.subKeySignature.version == 4 &&
+				this.subKeySignature.keyNeverExpires != null &&
+				!this.subKeySignature.keyNeverExpires &&
+				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date())
+				return 1;
+			var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
+			String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
+			if (!this.subKeySignature.verify(hashdata,this.parentNode)) {
+				return 0;
+			}
+			for (var i = 0; i < this.subKeyRevocationSignature.length; i++) {
+				if (this.subKeyRevocationSignature[i])
+				var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
+				String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
+				if (this.subKeyRevocationSignature[i].verify(hashdata, this.parentNode))
+					return 2;
+				else 
+					return 0;
+			}
+		}
+		return 3;
+	}
+
+	/**
+	 * calculates the key id of they key 
+	 * @return [String] a 8 byte key id
+	 */
+	function getKeyId() {
+		if (this.version == 4) {
+			var f = this.getFingerprint();
+			return f.substring(12,20);
+		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
+			var key_id = this.MPIs[0].substring((this.MPIs[0].mpiByteLength-8));
+			util.print_debug("openpgp.msg.publickey read_nodes:\n"+"V3 key ID: "+key_id);
+			return key_id;
+		}
+	}
+	
+	/**
+	 * calculates the fingerprint of the key
+	 * @return [String] a string containing the fingerprint
+	 */
+	function getFingerprint() {
+		if (this.version == 4) {
+			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
+				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
+			util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
+			return str_sha1(tohash, tohash.length);
+		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
+			return MD5(this.MPIs[0].MPI);
+		}
+	}
+	
+	/*
+     * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
+        this.symmetricEncryptionAlgorithm = symmetricEncryptionAlgorithm;
+		var tag = 5;
+		var body = String.fromCharCode(4);
+		body += timePacket;
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(keyType);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    var algorithmStart = body.length;
+		    //below shows ske/s2k
+		    if(password){
+		        body += String.fromCharCode(254); //octet of 254 indicates s2k with SHA1
+		        //if s2k == 255,254 then 1 octet symmetric encryption algo
+		        body += String.fromCharCode(this.symmetricEncryptionAlgorithm);
+		        //if s2k == 255,254 then s2k specifier
+		        body += String.fromCharCode(3); //s2k salt+iter
+		        body += String.fromCharCode(s2kHash);
+		        //8 octet salt value
+		        //1 octet count
+		        var cleartextMPIs = key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var sha1Hash = str_sha1(cleartextMPIs);
+   		        util.print_debug_hexstr_dump('write_private_key sha1: ',sha1Hash);
+		        var salt = openpgp_crypto_getRandomBytes(8);
+		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
+		        body += salt;
+		        var c = openpgp_crypto_getSecureRandomOctet();
+		        body += String.fromCharCode(c);
+		        util.print_debug('write_private_key c: '+ c);
+		        var s2k = new openpgp_type_s2k();
+		        var hashKey = s2k.write(3, s2kHash, password, salt, c);
+		        //if s2k, IV of same length as cipher's block
+		        switch(this.symmetricEncryptionAlgorithm){
+		        case 3:
+		            this.IVLength = 8;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+            		ciphertextMPIs = normal_cfb_encrypt(function(block, key) {
+                		var cast5 = new openpgp_symenc_cast5();
+                		cast5.setKey(key);
+                		return cast5.encrypt(util.str2bin(block)); 
+            		}, this.IVLength, util.str2bin(hashKey.substring(0,16)), cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+		            break;
+		        case 7:
+		        case 8:
+		        case 9:
+		            this.IVLength = 16;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+		            ciphertextMPIs = normal_cfb_encrypt(AESencrypt,
+            				this.IVLength, hashKey, cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+	            	break;
+		        }
+		    }
+		    else{
+		        body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
+		        body += key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var checksum = util.calc_checksum(key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI());
+        		body += String.fromCharCode(checksum/0x100) + String.fromCharCode(checksum%0x100);//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536
+        		util.print_debug_hexstr_dump('write_private_key basic checksum: '+ checksum);
+		    }
+		    break;
+		default :
+			body = "";
+			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+        }
+		var header = openpgp_packet.write_packet_header(tag,body.length);
+		return {string: header+body , header: header, body: body};
+    }
+	
+	/*
+     * same as write_private_key, but has less information because of public key.
+     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param key [RSA.keyObject]
+     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     */
+    function write_public_key(keyType, key, timePacket){
+        var tag = 6;
+        var body = String.fromCharCode(4);
+        body += timePacket;
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(1);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    break;
+	    default:
+	    	util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+	    }
+        var header = openpgp_packet.write_packet_header(tag,body.length);
+        return {string: header+body , header: header, body: body};
+        }
+
+	
+	this.read_tag5 = read_tag5;
+	this.read_tag6 = read_tag6;
+	this.read_tag7 = read_tag7;
+	this.read_tag14 = read_tag14;
+	this.toString = toString;
+	this.read_pub_key = read_pub_key;
+	this.read_priv_key = read_priv_key;
+	this.decryptSecretMPIs = decryptSecretMPIs;
+	this.read_nodes = read_nodes;
+	this.verifyKey = verifyKey;
+	this.getKeyId = getKeyId;
+	this.getFingerprint = getFingerprint;
+	this.write_private_key = write_private_key;
+	this.write_public_key = write_public_key;
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -10251,132 +9673,151 @@ function openpgp_config() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-function openpgp_msg_privatekey() {
-	this.subKeys = new Array();
-	this.privateKeyPacket = null;
-	this.userIds = new Array();
-	this.userAttributes = new Array();
-	this.revocationSignatures = new Array();
-	this.subKeys = new Array();
+/**
+ * Implementation of the Literal Data Packet (Tag 11)
+ * 
+ * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
+ * is not to be further interpreted.
+ */
+function openpgp_packet_literaldata() {
+	this.tagType = 11;
 
 	/**
+	 * parsing function for a literal data packet (tag 11).
 	 * 
-	 * @return last position
+	 * @param input
+	 *            [string] payload of a tag 11 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
 	 */
-	function read_nodes(parent_node, input, position, len) {
-		this.privateKeyPacket = parent_node;
-		
-		var pos = position;
-		while (input.length > pos) {
-			var result = openpgp_packet.read_packet(input, pos, input.length - pos);
-			if (result == null) {
-				util.print_error("openpgp.msg.messge decrypt:\n"+'[pub/priv_key]parsing ends here @:' + pos + " l:" + len);
-				break;
-			} else {
-				switch (result.tagType) {
-				case 2: // public key revocation signature
-					if (result.signatureType == 32)
-						this.revocationSignatures[this.revocationSignatures.length] = result;
-					else if (result.signatureType > 15 && result.signatureType < 20) {
-						if (this.certificationsignatures == null)
-							this.certificationSignatures = new Array();
-						this.certificationSignatures[this.certificationSignatures.length] = result;
-					} else
-						util.print_error("openpgp.msg.messge decrypt:\n"+"unknown signature type directly on key "+result.signatureType+" @"+pos);
-					pos += result.packetLength + result.headerLength;
-					break;
-				case 7: // PrivateSubkey Packet
-					this.subKeys[this.subKeys.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 17: // User Attribute Packet
-					this.userAttributes[this.userAttributes.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 13: // User ID Packet
-					this.userIds[this.userIds.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket, input, pos, input.length - pos);
-					break;
-				default:
-					this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-					this.len = pos - position;
-					return this.len;
-				}
-			}
-		}
-		this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-		this.len = pos - position;
-		
-		return this.len;
+	function read_packet(input, position, len) {
+		this.packetLength = len;
+		// - A one-octet field that describes how the data is formatted.
+
+		this.format = input[position];
+		this.filename = input.substr(position + 2, input
+				.charCodeAt(position + 1));
+		this.date = new Date(parseInt(input.substr(position + 2
+				+ input.charCodeAt(position + 1), 4)) * 1000);
+		this.data = input.substring(position + 6
+				+ input.charCodeAt(position + 1));
+		return this;
 	}
-	
-	function getKeyId() {
-		return this.privateKeyPacket.publicKey.getKeyId();
-	}
-	
-	
-	function getSubKeyIds() {
-		if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-		var result = new Array();
-		for (var i = 0; i < this.subKeys.length; i++) {
-			result[i] = str_sha1(this.subKeys[i].publicKey.header+this.subKeys[i].publicKey.data).substring(12,20);
-		}
+
+	/**
+	 * Creates a string representation of the packet
+	 * 
+	 * @param data
+	 *            [String] the data to be inserted as body
+	 * @return [String] string-representation of the packet
+	 */
+	function write_packet(data) {
+		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+		this.filename = "msg.txt";
+		this.date = new Date();
+		this.format = 't';
+		var result = openpgp_packet.write_packet_header(11, data.length + 6
+				+ this.filename.length);
+		result += this.format;
+		result += String.fromCharCode(this.filename.length);
+		result += this.filename;
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
+		result += String
+				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
+		result += data;
+		this.data = data;
 		return result;
 	}
-	
-	
-	function getSigningKey() {
-		if ((this.privateKeyPacket.publicKey.publicKeyAlgorithm == 17 ||
-			 this.privateKeyPacket.publicKey.publicKeyAlgorithm != 2)
-			&& this.privateKeyPacket.publicKey.verifyKey() == 3)
-			return this.privateKeyPacket;
-		else if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-			for (var j = 0; j < this.privateKeyPacket.subKeys.length; j++) {
-				if ((this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm == 17 ||
-					 this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm != 2) &&
-					 this.privateKeyPacket.subKeys[j].publicKey.verifyKey() == 3)
-					return this.privateKeyPacket.subKeys[j];
-			}
+
+	/**
+	 * generates debug output (pretty print)
+	 * 
+	 * @return String which gives some information about the keymaterial
+	 */
+	function toString() {
+		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
+				+ this.packetLength + '\n' + '    format: ' + this.format
+				+ '\n' + '    filename:' + this.filename + '\n'
+				+ '    date:   ' + this.date + '\n' + '    data:  |'
+				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
+	}
+
+	this.read_packet = read_packet;
+	this.toString = toString;
+	this.write_packet = write_packet;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the strange "Marker packet" (Tag 10)
+ * 
+ * RFC4880 5.8: An experimental version of PGP used this packet as the Literal
+ * packet, but no released version of PGP generated Literal packets with this
+ * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
+ * the Marker packet.
+ * 
+ * Such a packet MUST be ignored when received.
+ */
+function openpgp_packet_marker() {
+	this.tagType = 10;
+	/**
+	 * parsing function for a literal data packet (tag 10).
+	 * 
+	 * @param input
+	 *            [string] payload of a tag 10 packet
+	 * @param position
+	 *            [integer] position to start reading from the input string
+	 * @param len
+	 *            [integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		this.packetLength = 3;
+		if (input[position].charCodeAt() == 0x50 && // P
+				input[position + 1].charCodeAt() == 0x47 && // G
+				input[position + 2].charCodeAt() == 0x50) // P
+			return this;
+		// marker packet does not contain "PGP"
 		return null;
 	}
-	
-	function getPreferredSignatureHashAlgorithm() {
-		var pkey = this.getSigningKey();
-		if (pkey == null) {
-			util.print_error("private key is for encryption only! Cannot create a signature.")
-			return null;
-		}
-		if (pkey.publicKey.publicKeyAlgorithm == 17) {
-			var dsa = new DSA();
-			return dsa.select_hash_algorithm(pkey.publicKey.MPIs[1].toBigInteger()); // q
-		}
-		return openpgp.config.config.prefer_hash_algorithm;
-			
+
+	/**
+	 * Generates Debug output
+	 * 
+	 * @return String which gives some information about the keymaterial
+	 */
+	function toString() {
+		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"
+				+ "     packet reads: \"PGP\"\n";
 	}
 
-	function decryptSecretMPIs(str_passphrase) {
-		return this.privateKeyPacket.decryptSecretMPIs(str_passphrase);
-	}
-	
-	function getFingerprint() {
-		return this.privateKeyPacket.publicKey.getFingerprint();
-	}
-
-	// TODO need to implement this
-	function revoke() {
-		
-	}
-	this.getSigningKey = getSigningKey;
-	this.getFingerprint = getFingerprint;
-	this.getPreferredSignatureHashAlgorithm = getPreferredSignatureHashAlgorithm;
-	this.read_nodes = read_nodes;
-	this.decryptSecretMPIs = decryptSecretMPIs;
-	this.getSubKeyIds = getSubKeyIds;
-	this.getKeyId = getKeyId;
-	
+	this.read_packet = read_packet;
+	this.toString = toString;
 }// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -10395,446 +9836,939 @@ function openpgp_msg_privatekey() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Wrapper function for the base64 codec. 
- * This function encodes a String (message) in base64 (radix-64)
- * @param message [String] the message to encode
- * @return [String] the base64 encoded data
- */
-function openpgp_encoding_base64_encode(message) {
-	return s2r(message);
-}
-
-
-/**
- * Wrapper function for the base64 codec.
- * This function decodes a String(message) in base64 (radix-64)
- * @param message [String] base64 encoded data
- * @return [String] raw data after decoding
- */
-function openpgp_encoding_base64_decode(message) {
-	return r2s(message);
-}
-
-/**
- * Wrapper function for jquery library.
- * This function escapes HTML characters within a string. This is used to prevent XSS.
- * @param message [String] message to escape
- * @return [String] html encoded string
- */
-function openpgp_encoding_html_encode(message) {
-	if (message == null)
-		return "";
-	return $('<div/>').text(message).html();
-}
-
-/**
- * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)
- * @param message [String] message to be padded
- * @param length [Integer] length to the resulting message
- * @return [String] EME-PKCS1 padded message
- */
-function openpgp_encoding_eme_pkcs1_encode(message, length) {
-	if (message.length > length-11)
-		return -1;
-	var result = "";
-	result += String.fromCharCode(0);
-	result += String.fromCharCode(2);
-	for (var i = 0; i < length - message.length - 3; i++) {
-		result += String.fromCharCode(openpgp_crypto_getPseudoRandom(1,255));
-	}
-	result += String.fromCharCode(0);
-	result += message;
-	return result;
-}
-
-/**
- * decodes a EME-PKCS1-v1_5 padding (See RFC4880 13.1.2)
- * @param message [String] EME-PKCS1 padded message
- * @return [String] decoded message 
- */
-function openpgp_encoding_eme_pkcs1_decode(message, len) {
-	if (message.length < len)
-	    message = String.fromCharCode(0)+message;
-	if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
-		return -1;
-	var i = 2;
-	while (message.charCodeAt(i) != 0 && message.length > i)
-	    i++;
-	return message.substring(i+1, message.length);
-}
-/**
- * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
- */
-hash_headers = new Array();
-hash_headers[1]  = [0x30,0x20,0x30,0x0c,0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x05,0x05,0x00,0x04,0x10];
-hash_headers[3]  = [0x30,0x21,0x30,0x09,0x06,0x05,0x2B,0x24,0x03,0x02,0x01,0x05,0x00,0x04,0x14];
-hash_headers[2]  = [0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x05,0x00,0x04,0x14];
-hash_headers[8]  = [0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20];
-hash_headers[9]  = [0x30,0x41,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02,0x05,0x00,0x04,0x30];
-hash_headers[10] = [0x30,0x51,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03,0x05,0x00,0x04,0x40];
-hash_headers[11] = [0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x04,0x05,0x00,0x04,0x1C];
-
-/**
- * create a EMSA-PKCS1-v1_5 padding (See RFC4880 13.1.3)
- * @param algo [Integer] hash algorithm type used
- * @param data [String] data to be hashed
- * @param keylength [Integer] key size of the public mpi in bytes
- * @return the [String] hashcode with pkcs1padding as string
- */
-function openpgp_encoding_emsa_pkcs1_encode(algo, data, keylength) {
-	var data2 = "";
-	data2 += String.fromCharCode(0x00);
-	data2 += String.fromCharCode(0x01);
-	for (var i = 0; i < (keylength - hash_headers[algo].length - 3 - openpgp_crypto_getHashByteLength(algo)); i++)
-		data2 += String.fromCharCode(0xff);
-	data2 += String.fromCharCode(0x00);
-	
-	for (var i = 0; i < hash_headers[algo].length; i++)
-		data2 += String.fromCharCode(hash_headers[algo][i]);
-	
-	data2 += openpgp_crypto_hashData(algo, data);
-	return new BigInteger(util.hexstrdump(data2),16);
-}
-
-/**
- * extract the hash out of an EMSA-PKCS1-v1.5 padding (See RFC4880 13.1.3) 
- * @param data [String] hash in pkcs1 encoding
- * @return the hash as string
- */
-function openpgp_encoding_emsa_pkcs1_decode(algo, data) { 
-	var i = 0;
-	if (data.charCodeAt(0) == 0) i++;
-	else if (data.charCodeAt(0) != 1) return -1;
-	else i++;
-
-	while (data.charCodeAt(i) == 0xFF) i++;
-	if (data.charCodeAt(i++) != 0) return -1;
-	var j = 0;
-	for (j = 0; j < hash_headers[algo].length && j+i < data.length; j++) {
-		if (data.charCodeAt(j+i) != hash_headers[algo][j]) return -1;
-	}
-	i+= j;	
-	if (data.substring(i).length < openpgp_crypto_getHashByteLength(algo)) return -1;
-	return data.substring(i);
-}/* OpenPGP radix-64/base64 string encoding/decoding
- * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
- * version 1.0, check www.haneWIN.de for the latest version
- *
- * This software is provided as-is, without express or implied warranty.  
- * Permission to use, copy, modify, distribute or sell this software, with or
- * without fee, for any purpose and by any individual or organization, is hereby
- * granted, provided that the above copyright notice and this paragraph appear 
- * in all copies. Distribution as a part of an application or binary must
- * include the above copyright notice in the documentation and/or other materials
- * provided with the application or distribution.
+ * Implementation of the Modification Detection Code Packet (Tag 19)
+ * 
+ * RFC4880 5.14: The Modification Detection Code packet contains a SHA-1 hash of
+ * plaintext data, which is used to detect message modification. It is only used
+ * with a Symmetrically Encrypted Integrity Protected Data packet. The
+ * Modification Detection Code packet MUST be the last packet in the plaintext
+ * data that is encrypted in the Symmetrically Encrypted Integrity Protected
+ * Data packet, and MUST appear in no other place.
  */
 
-var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function openpgp_packet_modificationdetectioncode() {
+	this.tagType = 19;
+	this.hash = null;
+	/**
+	 * parsing function for a modification detection code packet (tag 19).
+	 * 
+	 * @param input
+	 *            [String] payload of a tag 19 packet
+	 * @param position
+	 *            [Integer] position to start reading from the input string
+	 * @param len
+	 *            [Integer] length of the packet or the remaining length of
+	 *            input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		this.packetLength = len;
 
-function s2r(t) {
-	var a, c, n;
-	var r = '', l = 0, s = 0;
-	var tl = t.length;
-
-	for (n = 0; n < tl; n++) {
-		c = t.charCodeAt(n);
-		if (s == 0) {
-			r += b64s.charAt((c >> 2) & 63);
-			a = (c & 3) << 4;
-		} else if (s == 1) {
-			r += b64s.charAt((a | (c >> 4) & 15));
-			a = (c & 15) << 2;
-		} else if (s == 2) {
-			r += b64s.charAt(a | ((c >> 6) & 3));
-			l += 1;
-			if ((l % 60) == 0)
-				r += "\n";
-			r += b64s.charAt(c & 63);
+		if (len != 20) {
+			util
+					.print_error("openpgp.packet.modificationdetectioncode.js\n"
+							+ 'invalid length for a modification detection code packet!'
+							+ len);
+			return null;
 		}
-		l += 1;
-		if ((l % 60) == 0)
-			r += "\n";
-
-		s += 1;
-		if (s == 3)
-			s = 0;
-	}
-	if (s > 0) {
-		r += b64s.charAt(a);
-		l += 1;
-		if ((l % 60) == 0)
-			r += "\n";
-		r += '=';
-		l += 1;
-	}
-	if (s == 1) {
-		if ((l % 60) == 0)
-			r += "\n";
-		r += '=';
+		// - A 20-octet SHA-1 hash of the preceding plaintext data of the
+		// Symmetrically Encrypted Integrity Protected Data packet,
+		// including prefix data, the tag octet, and length octet of the
+		// Modification Detection Code packet.
+		this.hash = input.substring(position, position + 20);
+		return this;
 	}
 
-	return r;
-}
+	/*
+	 * this packet is created within the encryptedintegrityprotected packet
+	 * function write_packet(data) { }
+	 */
 
-function r2s(t) {
-	var c, n;
-	var r = '', s = 0, a = 0;
-	var tl = t.length;
-
-	for (n = 0; n < tl; n++) {
-		c = b64s.indexOf(t.charAt(n));
-		if (c >= 0) {
-			if (s)
-				r += String.fromCharCode(a | (c >> (6 - s)) & 255);
-			s = (s + 2) & 7;
-			a = (c << s) & 255;
-		}
+	/**
+	 * generates debug output (pretty print)
+	 * 
+	 * @return String which gives some information about the modification
+	 *         detection code
+	 */
+	function toString() {
+		return '5.14 Modification detection code packet\n' + '    bytes ('
+				+ this.hash.length + '): [' + util.hexstrdump(this.hash) + ']';
 	}
-	return r;
-}
+	this.read_packet = read_packet;
+	this.toString = toString;
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-//
+// 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-//
+// 
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
- * @text [String] OpenPGP armored message
- * @return either the bytes of the decoded message or an object with attribute "text" containing the message text
- * and an attribute "openpgp" containing the bytes.
+ * Implementation of the One-Pass Signature Packets (Tag 4)
+ * 
+ * RFC4880 5.4:
+ * The One-Pass Signature packet precedes the signed data and contains
+ * enough information to allow the receiver to begin calculating any
+ * hashes needed to verify the signature.  It allows the Signature
+ * packet to be placed at the end of the message, so that the signer
+ * can compute the entire signed message in one pass.
  */
-function openpgp_encoding_deArmor(text) {
-	var type = getPGPMessageType(text);
-	if (type != 2) {
-	var splittedtext = text.split('-----');
-	data = { openpgp: openpgp_encoding_base64_decode(splittedtext[2].split('\n\n')[1].split("\n=")[0].replace(/\n- /g,"\n")),
-			type: type};
-	if (verifyCheckSum(data.openpgp, splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]))
-		return data;
-	else
-		util.print_error("Ascii armor integrity check on message failed: '"+splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]+"' should be '"+getCheckSum(data))+"'";
-	} else {
-		var splittedtext = text.split('-----');
-		var result = { text: splittedtext[2].replace(/\n- /g,"\n").split("\n\n")[1],
-		               openpgp: openpgp_encoding_base64_decode(splittedtext[4].split("\n\n")[1].split("\n=")[0]),
-		               type: type};
-		if (verifyCheckSum(result.openpgp, splittedtext[4].split("\n\n")[1].split("\n=")[1]))
-				return result;
+function openpgp_packet_onepasssignature() {
+	this.tagType = 4;
+	this.version = null; // A one-octet version number.  The current version is 3.
+	this.type == null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
+	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
+	this.publicKeyAlgorithm = null;	     // A one-octet number describing the public-key algorithm used. (See RFC4880 9.1)
+	this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
+	this.flags = null; 	//  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
+
+	/**
+	 * parsing function for a one-pass signature packet (tag 4).
+	 * @param input [string] payload of a tag 4 packet
+	 * @param position [integer] position to start reading from the input string
+	 * @param len [integer] length of the packet or the remaining length of input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		this.packetLength = len;
+		var mypos = position;
+		// A one-octet version number.  The current version is 3.
+		this.version = input.charCodeAt(mypos++);
+
+	     // A one-octet signature type.  Signature types are described in
+	     //   Section 5.2.1.
+		this.type = input.charCodeAt(mypos++);
+
+	     // A one-octet number describing the hash algorithm used.
+		this.hashAlgorithm = input.charCodeAt(mypos++);
+
+	     // A one-octet number describing the public-key algorithm used.
+		this.publicKeyAlgorithm = input.charCodeAt(mypos++);
+	     // An eight-octet number holding the Key ID of the signing key.
+		this.signingKeyId = new openpgp_type_keyid();
+		this.signingKeyId.read_packet(input,mypos);
+		mypos += 8;
+		
+	     // A one-octet number holding a flag showing whether the signature
+	     //   is nested.  A zero value indicates that the next packet is
+	     //   another One-Pass Signature packet that describes another
+	     //   signature to be applied to the same message data.
+		this.flags = input.charCodeAt(mypos++);
+		return this;
+	}
+
+	/**
+	 * creates a string representation of a one-pass signature packet
+	 * @param type [integer] Signature types as described in RFC4880 Section 5.2.1.
+	 * @param hashalgorithm [integer] the hash algorithm used within the signature
+	 * @param privatekey [openpgp_msg_privatekey] the private key used to generate the signature
+	 * @param length [integer] length of data to be signed
+	 * @param nested [boolean] boolean showing whether the signature is nested. 
+	 *  "true" indicates that the next packet is another One-Pass Signature packet
+	 *   that describes another signature to be applied to the same message data. 
+	 * @return [String] a string representation of a one-pass signature packet
+	 */
+	function write_packet(type, hashalgorithm, privatekey,length, nested) {
+		var result =""; 
+		
+		result += openpgp_packet.write_packet_header(4,13);
+		result += String.fromCharCode(3);
+		result += String.fromCharCode(type);
+		result += String.fromCharCode(hashalgorithm);
+		result += String.fromCharCode(privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm);
+		result += privatekey.getKeyId();
+		if (nested)
+			result += String.fromCharCode(0);
 		else
-			util.print_error("Ascii armor integrity check on message failed");
+			result += String.fromCharCode(1);
+		
+		return result;
 	}
-}
-
-/**
- * Finds out which Ascii Armoring type is used. This is an internal function
- * @param text [String] ascii armored text
- * @return 0 = MESSAGE PART n of m
- *         1 = MESSAGE PART n
- *         2 = SIGNED MESSAGE
- *         3 = PGP MESSAGE
- *         4 = PUBLIC KEY BLOCK
- *         5 = PRIVATE KEY BLOCK
- *         null = unknown
- */
-function getPGPMessageType(text) {
-	var splittedtext = text.split('-----');
-	// BEGIN PGP MESSAGE, PART X/Y
-	// Used for multi-part messages, where the armor is split amongst Y
-	// parts, and this is the Xth part out of Y.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
-		return 0;
-	} else
-		// BEGIN PGP MESSAGE, PART X
-		// Used for multi-part messages, where this is the Xth part of an
-		// unspecified number of parts. Requires the MESSAGE-ID Armor
-		// Header to be used.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
-		return 1;
-
-	} else
-		// BEGIN PGP SIGNATURE
-		// Used for detached signatures, OpenPGP/MIME signatures, and
-		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
-		// for detached signatures.
-	if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
-		return 2;
-
-	} else
-  	    // BEGIN PGP MESSAGE
-	    // Used for signed, encrypted, or compressed files.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
-		return 3;
-
-	} else
-		// BEGIN PGP PUBLIC KEY BLOCK
-		// Used for armoring public keys.
-	if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
-		return 4;
-
-	} else
-		// BEGIN PGP PRIVATE KEY BLOCK
-		// Used for armoring private keys.
-	if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
-		return 5;
+	
+	/**
+	 * generates debug output (pretty print)
+	 * @return String which gives some information about the one-pass signature packet
+	 */
+	function toString() {
+		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+
+			   '    length: '+this.packetLength+'\n'+
+			   '    type:   '+this.type+'\n'+
+			   '    keyID:  '+this.signingKeyId.toString()+'\n'+
+			   '    hashA:  '+this.hashAlgorithm+'\n'+
+			   '    pubKeyA:'+this.publicKeyAlgorithm+'\n'+
+			   '    flags:  '+this.flags+'\n'+
+			   '    version:'+this.version+'\n';
 	}
-}
+	
+	this.read_packet = read_packet;
+	this.toString = toString;
+	this.write_packet = write_packet;
+};// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Add additional information to the armor version of an OpenPGP binary
- * packet block.
- * @author  Alex
- * @version 2011-12-16
- * @return  The header information
+ * Implementation of the Signature Packet (Tag 2)
+ * 
+ * RFC4480 5.2:
+ * A Signature packet describes a binding between some public key and
+ * some data.  The most common signatures are a signature of a file or a
+ * block of text, and a signature that is a certification of a User ID.
  */
-function openpgp_encoding_armor_addheader() {
-    var result = "";
-	if (openpgp.config.config.show_version) {
-        result += "Version: "+openpgp.config.versionstring+'\r\n';
-    }
-	if (openpgp.config.config.show_comment) {
-        result += "Comment: "+openpgp.config.commentstring+'\r\n';
-    }
-    result += '\r\n';
-    return result;
-}
+function openpgp_packet_signature() {
+	this.tagType = 2;
+	this.signatureType = null;
+	this.creationTime = null;
+	this.keyId = null;
+	this.signatureData = null;
+	this.signatureExpirationTime = null;
+	this.signatureNeverExpires = null;
+	this.signedHashValue = null;
+	this.MPIs = null;
+	this.publicKeyAlgorithm = null; 
+	this.hashAlgorithm = null;
+	this.exportable = null;
+	this.trustLevel = null;
+	this.trustAmount = null;
+	this.regular_expression = null;
+	this.revocable = null;
+	this.keyExpirationTime = null;
+	this.keyNeverExpires = null;
+	this.preferredSymmetricAlgorithms = null;
+	this.revocationKeyClass = null;
+	this.revocationKeyAlgorithm = null;
+	this.revocationKeyFingerprint = null;
+	this.issuerKeyId = null;
+	this.notationFlags = null; 
+	this.notationName = null;
+	this.notationValue = null;
+	this.preferredHashAlgorithms = null;
+	this.preferredCompressionAlgorithms = null;
+	this.keyServerPreferences = null;
+	this.preferredKeyServer = null;
+	this.isPrimaryUserID = null;
+	this.policyURI = null;
+	this.keyFlags = null;
+	this.signersUserId = null;
+	this.reasonForRevocationFlag = null;
+	this.reasonForRevocationString = null;
+	this.signatureTargetPublicKeyAlgorithm = null;
+	this.signatureTargetHashAlgorithm = null;
+	this.signatureTargetHash = null;
+	this.embeddedSignature = null;
+	
 
-/**
- * Armor an OpenPGP binary packet block
- * @param messagetype type of the message
- * @param data
- * @param partindex
- * @param parttotal
- * @return
- */
-function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
-	var result = "";
-	switch(messagetype) {
-	case 0:
-		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
+	/**
+	 * parsing function for a signature packet (tag 2).
+	 * @param input [string] payload of a tag 2 packet
+	 * @param position [integer] position to start reading from the input string
+	 * @param len [integer] length of the packet or the remaining length of input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		this.data = input.substring	(position, position+len);
+		if (len < 0) {
+			util.print_debug("openpgp.packet.signature.js\n"+"openpgp_packet_signature read_packet length < 0 @:"+position);
+			return null;
+		}
+		var mypos = position;
+		this.packetLength = len;
+		// alert('starting parsing signature: '+position+' '+this.packetLength);
+		this.version = input[mypos++].charCodeAt();
+		// switch on version (3 and 4)
+		switch (this.version) {
+		case 3:
+			// One-octet length of following hashed material. MUST be 5.
+			if (input[mypos++].charCodeAt() != 5)
+				util.print_debug("openpgp.packet.signature.js\n"+'invalid One-octet length of following hashed material.  MUST be 5. @:'+(mypos-1));
+			var sigpos = mypos;
+			// One-octet signature type.
+			this.signatureType = input[mypos++].charCodeAt();
+
+			// Four-octet creation time.
+			this.creationTime = new Date(((input[mypos++].charCodeAt()) << 24 |
+					(input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8) |
+					input[mypos++].charCodeAt())* 1000);
+			
+			// storing data appended to data which gets verified
+			this.signatureData = input.substring(position, mypos);
+			
+			// Eight-octet Key ID of signer.
+			this.keyId = input.substring(mypos, mypos +8);
+			mypos += 8;
+
+			// One-octet public-key algorithm.
+			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+
+			// One-octet hash algorithm.
+			this.hashAlgorithm = input[mypos++].charCodeAt();
+
+			// Two-octet field holding left 16 bits of signed hash value.
+			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			var mpicount = 0;
+			// Algorithm-Specific Fields for RSA signatures:
+			// 	    - multiprecision integer (MPI) of RSA signature value m**d mod n.
+			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+				mpicount = 1;
+			//    Algorithm-Specific Fields for DSA signatures:
+			//      - MPI of DSA value r.
+			//      - MPI of DSA value s.
+			else if (this.publicKeyAlgorithm == 17)
+				mpicount = 2;
+			
+			this.MPIs = new Array();
+			for (var i = 0; i < mpicount; i++) {
+				this.MPIs[i] = new openpgp_type_mpi();
+				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
+						!this.packetLength < (mypos-position)) {
+					mypos += this.MPIs[i].packetLength;
+				} else {
+			 		util.print_error('signature contains invalid MPI @:'+mypos);
+				}
+			}
 		break;
-	case 1:
-		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
-		break;
-	case 2:
-		result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: "+data.hash+"\r\n\r\n";
-		result += data.text.replace(/\n-/g,"\n- -");
-		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data.openpgp);
-		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
-		result += "-----END PGP SIGNATURE-----\r\n";
-		break;
-	case 3:
-		result += "-----BEGIN PGP MESSAGE-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE-----\r\n";
-		break;
-	case 4:
-		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
-		break;
-	case 5:
-		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
-		break;
+		case 4:
+			this.signatureType = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input[mypos++].charCodeAt();
+
+			// Two-octet scalar octet count for following hashed subpacket
+			// data.
+			var hashed_subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+
+			// Hashed subpacket data set (zero or more subpackets)
+			var subpacket_length = 0;
+			while (hashed_subpacket_count != subpacket_length) {
+				if (hashed_subpacket_count < subpacket_length) {
+					util.print_debug("openpgp.packet.signature.js\n"+"hashed missed something: "+mypos+" c:"+hashed_subpacket_count+" l:"+subpacket_length);
+				}
+
+				subpacket_length += this._raw_read_signature_sub_packet(input,
+						mypos + subpacket_length, hashed_subpacket_count
+								- subpacket_length);
+			}
+			
+			mypos += hashed_subpacket_count;
+			this.signatureData = input.substring(position, mypos);
+
+			// alert("signatureData: "+util.hexstrdump(this.signatureData));
+			
+			// Two-octet scalar octet count for the following unhashed subpacket
+			var subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+				
+			// Unhashed subpacket data set (zero or more subpackets).
+			subpacket_length = 0;
+			while (subpacket_count != subpacket_length) {
+				if (subpacket_count < subpacket_length) {
+					util.print_debug("openpgp.packet.signature.js\n"+"missed something: "+subpacket_length+" c:"+subpacket_count+" "+" l:"+subpacket_length);
+				}
+				subpacket_length += this._raw_read_signature_sub_packet(input,
+						mypos + subpacket_length, subpacket_count
+								- subpacket_length);
+
+			}
+			mypos += subpacket_count;
+			// Two-octet field holding the left 16 bits of the signed hash
+			// value.
+			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			// One or more multiprecision integers comprising the signature.
+			// This portion is algorithm specific, as described above.
+			var mpicount = 0;
+			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+				mpicount = 1;
+			else if (this.publicKeyAlgorithm == 17)
+				mpicount = 2;
+			
+			this.MPIs = new Array();
+			for (var i = 0; i < mpicount; i++) {
+				this.MPIs[i] = new openpgp_type_mpi();
+				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
+						!this.packetLength < (mypos-position)) {
+					mypos += this.MPIs[i].packetLength;
+				} else {
+			 		util.print_error('signature contains invalid MPI @:'+mypos);
+				}
+			}
+			break;
+		default:
+			util.print_error("openpgp.packet.signature.js\n"+'unknown signature packet version'+this.version);
+			break;
+		}
+		// util.print_message("openpgp.packet.signature.js\n"+"end signature: l: "+this.packetLength+"m: "+mypos+" m-p: "+(mypos-position));
+		return this;
+	}
+	/**
+	 * creates a string representation of a message signature packet (tag 2).
+	 * This can be only used on text data
+	 * @param signature_type [integer] should be 1 (one) 
+	 * @param data [String] data to be signed
+	 * @param privatekey [openpgp_msg_privatekey] private key used to sign the message. (secMPIs MUST be unlocked)
+	 * @return string representation of a signature packet
+	 */
+	function write_message_signature(signature_type, data, privatekey) {
+		var publickey = privatekey.privateKeyPacket.publicKey;
+		var hash_algo = privatekey.getPreferredSignatureHashAlgorithm();
+		var result = String.fromCharCode(4); 
+		result += String.fromCharCode(signature_type);
+		result += String.fromCharCode(publickey.publicKeyAlgorithm);
+		result += String.fromCharCode(hash_algo);
+		var d = Math.round(new Date().getTime() / 1000);
+		var datesubpacket = write_sub_signature_packet(2,""+
+				String.fromCharCode((d >> 24) & 0xFF) + 
+				String.fromCharCode((d >> 16) & 0xFF) +
+				String.fromCharCode((d >> 8) & 0xFF) + 
+				String.fromCharCode(d & 0xFF));
+		var issuersubpacket = write_sub_signature_packet(16, privatekey.getKeyId());
+		result += String.fromCharCode(((datesubpacket.length + issuersubpacket.length) >> 8) & 0xFF);
+		result += String.fromCharCode ((datesubpacket.length + issuersubpacket.length) & 0xFF);
+		result += datesubpacket;
+		result += issuersubpacket;
+		var trailer = '';
+		
+		trailer += String.fromCharCode(4);
+		trailer += String.fromCharCode(0xFF);
+		trailer += String.fromCharCode((result.length) >> 24);
+		trailer += String.fromCharCode(((result.length) >> 16) & 0xFF);
+		trailer += String.fromCharCode(((result.length) >> 8) & 0xFF);
+		trailer += String.fromCharCode((result.length) & 0xFF);
+		var result2 = String.fromCharCode(0);
+		result2 += String.fromCharCode(0);
+		var hash = openpgp_crypto_hashData(hash_algo, data+result+trailer);
+		util.print_debug("DSA Signature is calculated with:|"+data+result+trailer+"|\n"+util.hexstrdump(data+result+trailer)+"\n hash:"+util.hexstrdump(hash));
+		result2 += hash.charAt(0);
+		result2 += hash.charAt(1);
+		result2 += openpgp_crypto_signData(hash_algo,privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm,
+				publickey.MPIs,
+				privatekey.privateKeyPacket.secMPIs,
+				data+result+trailer);
+		return {openpgp: (openpgp_packet.write_packet_header(2, (result+result2).length)+result + result2), 
+				hash: util.get_hashAlgorithmString(hash_algo)};
+	}
+	/**
+	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
+	 * @param type [integer] subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
+	 * @param data [String] data to be included
+	 * @return [String] a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
+	 */
+	function write_sub_signature_packet(type, data) {
+		var result = "";
+		result += openpgp_packet.encode_length(data.length+1);
+		result += String.fromCharCode(type);
+		result += data;
+		return result;
+	}
+	
+	// V4 signature sub packets
+	
+	this._raw_read_signature_sub_packet = function(input, position, len) {
+		if (len < 0)
+			util.print_debug("openpgp.packet.signature.js\n"+"_raw_read_signature_sub_packet length < 0 @:"+position);
+		var mypos = position;
+		var subplen = 0;
+		// alert('starting signature subpackage read at position:'+position+' length:'+len);
+		if (input[mypos].charCodeAt() < 192) {
+			subplen = input[mypos++].charCodeAt();
+		} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
+			subplen = ((input[mypos++].charCodeAt() - 192) << 8) + (input[mypos++].charCodeAt()) + 192;
+		} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
+			subplen = 1 << (input[mypos++].charCodeAt() & 0x1F);
+		} else if (input[mypos].charCodeAt() < 255) {
+			mypos++;
+			subplen = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
+					|  (input[mypos++].charCodeAt() << 8) |  input[mypos++].charCodeAt();
+		}
+		
+		var type = input[mypos++].charCodeAt() & 0x7F;
+		// alert('signature subpacket type '+type+" with length: "+subplen);
+		// subpacket type
+		switch (type) {
+		case 2: // Signature Creation Time
+			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
+					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt())*1000);
+			break;
+		case 3: // Signature Expiration Time
+			this.signatureExpirationTime =  (input[mypos++].charCodeAt() << 24)
+					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
+					| input[mypos++].charCodeAt();
+			this.signatureNeverExpires = (this.signature_expiration_time == 0);
+			
+			break;
+		case 4: // Exportable Certification
+			this.exportable = input[mypos++].charCodeAt() == 1;
+			break;
+		case 5: // Trust Signature
+			this.trustLevel = input[mypos++].charCodeAt();
+			this.trustAmount = input[mypos++].charCodeAt();
+			break;
+		case 6: // Regular Expression
+			this.regular_expression = new String();
+			for (var i = 0; i < subplen - 1; i++)
+				this.regular_expression += (input[mypos++]);
+			break;
+		case 7: // Revocable
+			this.revocable = input[mypos++].charCodeAt() == 1;
+			break;
+		case 9: // Key Expiration Time
+			this.keyExpirationTime = (input[mypos++].charCodeAt() << 24)
+					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
+					| input[mypos++].charCodeAt();
+			this.keyNeverExpires = (this.keyExpirationTime == 0);
+			break;
+		case 11: // Preferred Symmetric Algorithms
+			this.preferredSymmetricAlgorithms = new Array();
+			for (var i = 0; i < subplen-1; i++) {
+				this.preferredSymmetricAlgorithms = input[mypos++].charCodeAt();
+			}
+			break;
+		case 12: // Revocation Key
+			// (1 octet of class, 1 octet of public-key algorithm ID, 20
+			// octets of
+			// fingerprint)
+			this.revocationKeyClass = input[mypos++].charCodeAt();
+			this.revocationKeyAlgorithm = input[mypos++].charCodeAt();
+			this.revocationKeyFingerprint = new Array();
+			for ( var i = 0; i < 20; i++) {
+				this.revocationKeyFingerprint = input[mypos++].charCodeAt();
+			}
+			break;
+		case 16: // Issuer
+			this.issuerKeyId = input.substring(mypos,mypos+8);
+			mypos += 8;
+			break;
+		case 20: // Notation Data
+			this.notationFlags = (input[mypos++].charCodeAt() << 24) | 
+								 (input[mypos++].charCodeAt() << 16) |
+								 (input[mypos++].charCodeAt() <<  8) | 
+								 (input[mypos++].charCodeAt());
+			var nameLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
+			var valueLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
+			this.notationName = "";
+			for (var i = 0; i < nameLength; i++) {
+				this.notationName += input[mypos++];
+			}
+			this.notationValue = "";
+			for (var i = 0; i < valueLength; i++) {
+				this.notationValue += input[mypos++];
+			}
+			break;
+		case 21: // Preferred Hash Algorithms
+			this.preferredHashAlgorithms = new Array();
+			for (var i = 0; i < subplen-1; i++) {
+				this.preferredHashAlgorithms = input[mypos++].charCodeAt();
+			}
+			break;
+		case 22: // Preferred Compression Algorithms
+			this.preferredCompressionAlgorithms = new Array();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.preferredCompressionAlgorithms = input[mypos++].charCodeAt();
+			}
+			break;
+		case 23: // Key Server Preferences
+			this.keyServerPreferences = new Array();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.keyServerPreferences = input[mypos++].charCodeAt();
+			}
+			break;
+		case 24: // Preferred Key Server
+			this.preferredKeyServer = new String();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.preferredKeyServer += input[mypos++];
+			}
+			break;
+		case 25: // Primary User ID
+			this.isPrimaryUserID = input[mypos++] != 0;
+			break;
+		case 26: // Policy URI
+			this.policyURI = new String();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.policyURI += input[mypos++];
+			}
+			break;
+		case 27: // Key Flags
+			this.keyFlags = new Array();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.keyFlags = input[mypos++].charCodeAt();
+			}
+			break;
+		case 28: // Signer's User ID
+			this.signersUserId = new String();
+			for ( var i = 0; i < subplen-1; i++) {
+				this.signersUserId += input[mypos++];
+			}
+			break;
+		case 29: // Reason for Revocation
+			this.reasonForRevocationFlag = input[mypos++].charCodeAt();
+			this.reasonForRevocationString = new String();
+			for ( var i = 0; i < subplen -2; i++) {
+				this.reasonForRevocationString += input[mypos++];
+			}
+			break;
+		case 30: // Features
+			// TODO: to be implemented
+			return subplen+1;
+		case 31: // Signature Target
+			// (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
+			this.signatureTargetPublicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.signatureTargetHashAlgorithm = input[mypos++].charCodeAt();
+			var signatureTargetHashAlgorithmLength = 0;
+			switch(this.signatureTargetHashAlgorithm) {
+			case  1: // - MD5 [HAC]                             "MD5"
+			case  2: // - SHA-1 [FIPS180]                       "SHA1"
+				signatureTargetHashAlgorithmLength = 20;
+				break;
+			case  3: // - RIPE-MD/160 [HAC]                     "RIPEMD160"
+			case  8: // - SHA256 [FIPS180]                      "SHA256"
+			case  9: // - SHA384 [FIPS180]                      "SHA384"
+			case 10: // - SHA512 [FIPS180]                      "SHA512"
+			case 11: // - SHA224 [FIPS180]                      "SHA224"
+				break;
+			// 100 to 110 - Private/Experimental algorithm
+	    	default:
+	    		util.print_error("openpgp.packet.signature.js\n"+"unknown signature target hash algorithm:"+this.signatureTargetHashAlgorithm);
+	    		return null;
+			}
+			this.signatureTargetHash = new Array();
+			for (var i = 0; i < signatureTargetHashAlgorithmLength; i++) {
+				this.signatureTargetHash[i] = input[mypos++]; 
+			}
+		case 32: // Embedded Signature
+			this.embeddedSignature = new openpgp_packet_signature();
+			this.embeddedSignature.read_packet(input, mypos, len -(mypos-position));
+			return ((mypos+ this.embeddedSignature.packetLength) - position);
+			break;
+		case 100: // Private or experimental
+		case 101: // Private or experimental
+		case 102: // Private or experimental
+		case 103: // Private or experimental
+		case 104: // Private or experimental
+		case 105: // Private or experimental
+		case 106: // Private or experimental
+		case 107: // Private or experimental
+		case 108: // Private or experimental
+		case 109: // Private or experimental
+		case 110: // Private or experimental
+			util.print_error("openpgp.packet.signature.js\n"+'private or experimental signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
+			return subplen+1;
+			break;	
+		case 0: // Reserved
+		case 1: // Reserved
+		case 8: // Reserved
+		case 10: // Placeholder for backward compatibility
+		case 13: // Reserved
+		case 14: // Reserved
+		case 15: // Reserved
+		case 17: // Reserved
+		case 18: // Reserved
+		case 19: // Reserved
+		default:
+			util.print_error("openpgp.packet.signature.js\n"+'unknown signature subpacket type '+type+" @:"+mypos+" subplen:"+subplen+" len:"+len);
+			return subplen+1;
+			break;
+		}
+		return mypos -position;
+	};
+	/**
+	 * verifys the signature packet. Note: not signature types are implemented
+	 * @param data [String] data which on the signature applies
+	 * @param key [openpgp_msg_privatekey] the public key to verify the signature
+	 * @return
+	 */
+	function verify(data, key) {
+		switch(this.signatureType) {
+		// calculating the trailer
+		case 0: // 0x00: Signature of a binary document.
+			if (this.version == 4) {
+				var trailer = '';
+				trailer += String.fromCharCode(this.version);
+				trailer += String.fromCharCode(0xFF);
+				trailer += String.fromCharCode(this.signatureData.length >> 24);
+				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+				trailer += String.fromCharCode(this.signatureData.length & 0xFF);
+				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data.substring(i)+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				return false;
+			}
+
+		case 1: // 0x01: Signature of a canonical text document.
+			if (this.version == 4) {
+				var trailer = '';
+				trailer += String.fromCharCode(this.version);
+				trailer += String.fromCharCode(0xFF);
+				trailer += String.fromCharCode(this.signatureData.length >> 24);
+				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+				trailer += String.fromCharCode(this.signatureData.length &0xFF);
+				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				return false;
+			}
+				
+		case 2: // 0x02: Standalone signature.
+			// This signature is a signature of only its own subpacket contents.
+			// It is calculated identically to a signature over a zero-length
+			// binary document.  Note that it doesn't make sense to have a V3
+			// standalone signature.
+			if (this.version == 3)
+				return false; 
+			
+			var trailer = '';
+			trailer += String.fromCharCode(this.version);
+			trailer += String.fromCharCode(0xFF);
+			trailer += String.fromCharCode(this.signatureData.length >> 24);
+			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+			trailer += String.fromCharCode(this.signatureData.length &0xFF);
+			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+		case 16:			
+			// 0x10: Generic certification of a User ID and Public-Key packet.
+			// The issuer of this certification does not make any particular
+			// assertion as to how well the certifier has checked that the owner
+			// of the key is in fact the person described by the User ID.
+		case 17:
+			// 0x11: Persona certification of a User ID and Public-Key packet.
+			// The issuer of this certification has not done any verification of
+			// the claim that the owner of this key is the User ID specified.
+		case 18:
+			// 0x12: Casual certification of a User ID and Public-Key packet.
+			// The issuer of this certification has done some casual
+			// verification of the claim of identity.
+		case 19:
+			// 0x13: Positive certification of a User ID and Public-Key packet.
+			// The issuer of this certification has done substantial
+			// verification of the claim of identity.
+			// 
+			// Most OpenPGP implementations make their "key signatures" as 0x10
+			// certifications.  Some implementations can issue 0x11-0x13
+			// certifications, but few differentiate between the types.
+		case 48:
+			// 0x30: Certification revocation signature
+			// This signature revokes an earlier User ID certification signature
+			// (signature class 0x10 through 0x13) or direct-key signature
+			// (0x1F).  It should be issued by the same key that issued the
+			// revoked signature or an authorized revocation key.  The signature
+			// is computed over the same data as the certificate that it
+			// revokes, and should have a later creation date than that
+			// certificate.
+
+			var trailer = '';
+			trailer += String.fromCharCode(this.version);
+			trailer += String.fromCharCode(0xFF);
+			trailer += String.fromCharCode(this.signatureData.length >> 24);
+			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+			trailer += String.fromCharCode(this.signatureData.length &0xFF);
+			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+						
+		case 24:
+			// 0x18: Subkey Binding Signature
+			// This signature is a statement by the top-level signing key that
+			// indicates that it owns the subkey.  This signature is calculated
+			// directly on the primary key and subkey, and not on any User ID or
+			// other packets.  A signature that binds a signing subkey MUST have
+			// an Embedded Signature subpacket in this binding signature that
+			// contains a 0x19 signature made by the signing subkey on the
+			// primary key and subkey.
+			if (this.version == 3)
+				return false; 
+			
+			var trailer = '';
+			trailer += String.fromCharCode(this.version);
+			trailer += String.fromCharCode(0xFF);
+			trailer += String.fromCharCode(this.signatureData.length >> 24);
+			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+			trailer += String.fromCharCode(this.signatureData.length &0xFF);
+			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+		case 25:
+			// 0x19: Primary Key Binding Signature
+			// This signature is a statement by a signing subkey, indicating
+			// that it is owned by the primary key and subkey.  This signature
+			// is calculated the same way as a 0x18 signature: directly on the
+			// primary key and subkey, and not on any User ID or other packets.
+			
+			// When a signature is made over a key, the hash data starts with the
+			// octet 0x99, followed by a two-octet length of the key, and then body
+			// of the key packet.  (Note that this is an old-style packet header for
+			// a key packet with two-octet length.)  A subkey binding signature
+			// (type 0x18) or primary key binding signature (type 0x19) then hashes
+			// the subkey using the same format as the main key (also using 0x99 as
+			// the first octet).
+		case 31:
+			// 0x1F: Signature directly on a key
+			// This signature is calculated directly on a key.  It binds the
+			// information in the Signature subpackets to the key, and is
+			// appropriate to be used for subpackets that provide information
+			// about the key, such as the Revocation Key subpacket.  It is also
+			// appropriate for statements that non-self certifiers want to make
+			// about the key itself, rather than the binding between a key and a
+			// name.
+		case 32:
+			// 0x20: Key revocation signature
+			// The signature is calculated directly on the key being revoked.  A
+			// revoked key is not to be used.  Only revocation signatures by the
+			// key being revoked, or by an authorized revocation key, should be
+			// considered valid revocation signatures.
+		case 40:
+			// 0x28: Subkey revocation signature
+			// The signature is calculated directly on the subkey being revoked.
+			// A revoked subkey is not to be used.  Only revocation signatures
+			// by the top-level signature key that is bound to this subkey, or
+			// by an authorized revocation key, should be considered valid
+			// revocation signatures.
+			var trailer = '';
+			trailer += String.fromCharCode(this.version);
+			trailer += String.fromCharCode(0xFF);
+			trailer += String.fromCharCode(this.signatureData.length >> 24);
+			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+			trailer += String.fromCharCode(this.signatureData.length &0xFF);
+			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+			
+			
+			// Key revocation signatures (types 0x20 and 0x28)
+			// hash only the key being revoked.
+		case 64:
+			// 0x40: Timestamp signature.
+			// This signature is only meaningful for the timestamp contained in
+			// it.
+		case 80:
+			//    0x50: Third-Party Confirmation signature.
+			// This signature is a signature over some other OpenPGP Signature
+			// packet(s).  It is analogous to a notary seal on the signed data.
+			// A third-party signature SHOULD include Signature Target
+			// subpacket(s) to give easy identification.  Note that we really do
+			// mean SHOULD.  There are plausible uses for this (such as a blind
+			// party that only sees the signature, not the key or source
+			// document) that cannot include a target subpacket.
+		default:
+			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
+			break;
+		}
+	}
+	/**
+	 * generates debug output (pretty print)
+	 * @return String which gives some information about the signature packet
+	 */
+
+	function toString () {
+		if (this.version == 3) {
+			var result = '5.2. Signature Packet (Tag 2)\n'+
+	          "Packet Length:                     :"+this.packetLength+'\n'+
+	          "Packet version:                    :"+this.version+'\n'+
+	          "One-octet signature type           :"+this.signatureType+'\n'+
+	          "Four-octet creation time.          :"+this.creationTime+'\n'+
+	         "Eight-octet Key ID of signer.       :"+util.hexidump(this.keyId)+'\n'+
+	          "One-octet public-key algorithm.    :"+this.publicKeyAlgorithm+'\n'+
+	          "One-octet hash algorithm.          :"+this.hashAlgorithm+'\n'+
+	          "Two-octet field holding left\n" +
+	          " 16 bits of signed hash value.     :"+this.signedHashValue+'\n';
+		} else {
+          var result = '5.2. Signature Packet (Tag 2)\n'+
+          "Packet Length:                     :"+this.packetLength+'\n'+
+          "Packet version:                    :"+this.version+'\n'+
+          "One-octet signature type           :"+this.signatureType+'\n'+
+          "One-octet public-key algorithm.    :"+this.publicKeyAlgorithm+'\n'+
+          "One-octet hash algorithm.          :"+this.hashAlgorithm+'\n'+
+          "Two-octet field holding left\n" +
+          " 16 bits of signed hash value.     :"+this.signedHashValue+'\n'+
+          "Signature Creation Time            :"+this.creationTime+'\n'+
+          "Signature Expiration Time          :"+this.signatureExpirationTime+'\n'+
+          "Signature Never Expires            :"+this.signatureNeverExpires+'\n'+
+          "Exportable Certification           :"+this.exportable+'\n'+
+          "Trust Signature level:             :"+this.trustLevel+' amount'+this.trustAmount+'\n'+
+          "Regular Expression                 :"+this.regular_expression+'\n'+
+          "Revocable                          :"+this.revocable+'\n'+
+          "Key Expiration Time                :"+this.keyExpirationTime+" "+this.keyNeverExpires+'\n'+
+          "Preferred Symmetric Algorithms     :"+this.preferredSymmetricAlgorithms+'\n'+
+          "Revocation Key"+'\n'+
+          "   ( 1 octet of class,             :"+this.revocationKeyClass +'\n'+
+          "     1 octet of public-key ID,     :" +this.revocationKeyAlgorithm+'\n'+
+          "    20 octets of fingerprint)      :"+this.revocationKeyFingerprint+'\n'+
+          "Issuer                             :"+util.hexstrdump(this.issuerKeyId)+'\n'+
+          "Preferred Hash Algorithms          :"+this.preferredHashAlgorithms+'\n'+
+          "Preferred Compression Alg.         :"+this.preferredCompressionAlgorithms+'\n'+
+          "Key Server Preferences             :"+this.keyServerPreferences+'\n'+
+          "Preferred Key Server               :"+this.preferredKeyServer+'\n'+
+          "Primary User ID                    :"+this.isPrimaryUserID+'\n'+
+          "Policy URI                         :"+this.policyURI+'\n'+
+          "Key Flags                          :"+this.keyFlags+'\n'+
+          "Signer's User ID                   :"+this.signersUserId+'\n'+
+          "Notation                           :"+this.notationName+" = "+this.notationValue+"\n"+
+          "Reason for Revocation\n"+
+          "      Flag                         :"+this.reasonForRevocationFlag+'\n'+
+          "      Reason                       :"+this.reasonForRevocationString+'\nMPI:\n';
+		}
+          for (var i = 0; i < this.MPIs.length; i++) {
+        	  result += this.MPIs[i].toString();
+          }
+          return result;
+     }
+
+	/**
+	 * gets the issuer key id of this signature
+	 * @return [String] issuer key id as string (8bytes)
+	 */
+	function getIssuer() {
+		 if (this.version == 4)
+			 return this.issuerKeyId;
+		 if (this.verions == 4)
+			 return this.keyId;
+		 return null;
 	}
 
-	return result;
+	/**
+	 * Tries to get the corresponding public key out of the public keyring for the issuer created this signature
+	 * @return {obj: [openpgp_msg_publickey], text: [String]} if found the public key will be returned. null otherwise
+	 */
+	function getIssuerKey() {
+		 var result = null;
+		 if (this.version == 4) {
+			 result = openpgp.keyring.getPublicKeysForKeyId(this.issuerKeyId);
+		 } else if (this.version == 3) {
+			 result = openpgp.keyring.getPublicKeysForKeyId(this.keyId);
+		 } else return null;
+		 if (result.length == 0)
+			 return null;
+		 return result[0];
+	}
+	this.getIssuerKey = getIssuerKey;
+	this.getIssuer = getIssuer;	 
+	this.write_message_signature = write_message_signature;
+	this.verify = verify;
+    this.read_packet = read_packet;
+    this.toString = toString;
 }
-
-/**
- * Calculates a checksum over the given data and returns it base64 encoded
- * @param data [String] data to create a CRC-24 checksum for
- * @return [String] base64 encoded checksum
- */
-function getCheckSum(data) {
-	var c = createcrc24(data);
-	var str = "" + String.fromCharCode(c >> 16)+
-				   String.fromCharCode((c >> 8) & 0xFF)+
-				   String.fromCharCode(c & 0xFF);
-	return openpgp_encoding_base64_encode(str);
-}
-
-/**
- * Calculates the checksum over the given data and compares it with the given base64 encoded checksum
- * @param data [String] data to create a CRC-24 checksum for
- * @param checksum [String] base64 encoded checksum
- * @return true if the given checksum is correct; otherwise false
- */
-function verifyCheckSum(data, checksum) {
-	var c = getCheckSum(data);
-	var d = checksum;
-	return c[0] == d[0] && c[1] == d[1] && c[2] == d[2];
-}
-/**
- * Internal function to calculate a CRC-24 checksum over a given string (data)
- * @param data [String] data to create a CRC-24 checksum for
- * @return [Integer] the CRC-24 checksum as number
- */
-var crc_table = [
-0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139, 0x0727cdc2, 0x062b5434, 0x06ad18cf, 0x043267d8, 0x04b42b23, 0x05b8b2d5, 0x053efe2e, 0x0fc54e89, 0x0f430272, 0x0e4f9b84, 0x0ec9d77f, 0x0c56a868, 0x0cd0e493, 0x0ddc7d65, 0x0d5a319e, 0x0864cfb0, 0x08e2834b, 0x09ee1abd, 0x09685646, 0x0bf72951, 0x0b7165aa, 0x0a7dfc5c, 0x0afbb0a7, 0x1f0cd1e9, 0x1f8a9d12, 0x1e8604e4, 0x1e00481f, 0x1c9f3708, 0x1c197bf3, 0x1d15e205, 0x1d93aefe, 0x18ad50d0, 0x182b1c2b, 0x192785dd, 0x19a1c926, 0x1b3eb631, 0x1bb8faca, 0x1ab4633c, 0x1a322fc7, 0x10c99f60, 0x104fd39b, 0x11434a6d, 0x11c50696, 0x135a7981, 0x13dc357a, 0x12d0ac8c, 0x1256e077, 0x17681e59, 0x17ee52a2, 0x16e2cb54, 0x166487af, 0x14fbf8b8, 0x147db443, 0x15712db5, 0x15f7614e, 0x3e19a3d2, 0x3e9fef29, 0x3f9376df, 0x3f153a24, 0x3d8a4533, 0x3d0c09c8, 0x3c00903e, 0x3c86dcc5, 0x39b822eb, 0x393e6e10, 0x3832f7e6, 0x38b4bb1d, 0x3a2bc40a, 0x3aad88f1, 0x3ba11107, 0x3b275dfc, 0x31dced5b, 0x315aa1a0,
-0x30563856, 0x30d074ad, 0x324f0bba, 0x32c94741, 0x33c5deb7, 0x3343924c, 0x367d6c62, 0x36fb2099, 0x37f7b96f, 0x3771f594, 0x35ee8a83, 0x3568c678, 0x34645f8e, 0x34e21375, 0x2115723b, 0x21933ec0, 0x209fa736, 0x2019ebcd, 0x228694da, 0x2200d821, 0x230c41d7, 0x238a0d2c, 0x26b4f302, 0x2632bff9, 0x273e260f, 0x27b86af4, 0x252715e3, 0x25a15918, 0x24adc0ee, 0x242b8c15, 0x2ed03cb2, 0x2e567049, 0x2f5ae9bf, 0x2fdca544, 0x2d43da53, 0x2dc596a8, 0x2cc90f5e, 0x2c4f43a5, 0x2971bd8b, 0x29f7f170, 0x28fb6886, 0x287d247d, 0x2ae25b6a, 0x2a641791, 0x2b688e67, 0x2beec29c, 0x7c3347a4, 0x7cb50b5f, 0x7db992a9, 0x7d3fde52, 0x7fa0a145, 0x7f26edbe, 0x7e2a7448, 0x7eac38b3, 0x7b92c69d, 0x7b148a66, 0x7a181390, 0x7a9e5f6b, 0x7801207c, 0x78876c87, 0x798bf571, 0x790db98a, 0x73f6092d, 0x737045d6, 0x727cdc20, 0x72fa90db, 0x7065efcc, 0x70e3a337, 0x71ef3ac1, 0x7169763a, 0x74578814, 0x74d1c4ef, 0x75dd5d19, 0x755b11e2, 0x77c46ef5, 0x7742220e, 0x764ebbf8, 0x76c8f703, 0x633f964d, 0x63b9dab6, 0x62b54340, 0x62330fbb,
-0x60ac70ac, 0x602a3c57, 0x6126a5a1, 0x61a0e95a, 0x649e1774, 0x64185b8f, 0x6514c279, 0x65928e82, 0x670df195, 0x678bbd6e, 0x66872498, 0x66016863, 0x6cfad8c4, 0x6c7c943f, 0x6d700dc9, 0x6df64132, 0x6f693e25, 0x6fef72de, 0x6ee3eb28, 0x6e65a7d3, 0x6b5b59fd, 0x6bdd1506, 0x6ad18cf0, 0x6a57c00b, 0x68c8bf1c, 0x684ef3e7, 0x69426a11, 0x69c426ea, 0x422ae476, 0x42aca88d, 0x43a0317b, 0x43267d80, 0x41b90297, 0x413f4e6c, 0x4033d79a, 0x40b59b61, 0x458b654f, 0x450d29b4, 0x4401b042, 0x4487fcb9, 0x461883ae, 0x469ecf55, 0x479256a3, 0x47141a58, 0x4defaaff, 0x4d69e604, 0x4c657ff2, 0x4ce33309, 0x4e7c4c1e, 0x4efa00e5, 0x4ff69913, 0x4f70d5e8, 0x4a4e2bc6, 0x4ac8673d, 0x4bc4fecb, 0x4b42b230, 0x49ddcd27, 0x495b81dc, 0x4857182a, 0x48d154d1, 0x5d26359f, 0x5da07964, 0x5cace092, 0x5c2aac69, 0x5eb5d37e, 0x5e339f85, 0x5f3f0673, 0x5fb94a88, 0x5a87b4a6, 0x5a01f85d, 0x5b0d61ab, 0x5b8b2d50, 0x59145247, 0x59921ebc, 0x589e874a, 0x5818cbb1, 0x52e37b16, 0x526537ed, 0x5369ae1b, 0x53efe2e0, 0x51709df7, 0x51f6d10c,
-0x50fa48fa, 0x507c0401, 0x5542fa2f, 0x55c4b6d4, 0x54c82f22, 0x544e63d9, 0x56d11cce, 0x56575035, 0x575bc9c3, 0x57dd8538];
-
-function createcrc24(input) {
-  var crc = 0xB704CE;
-  var index = 0;
-
-  while((input.length - index) > 16)  {
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+1)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+2)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+3)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+4)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+5)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+6)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+7)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+8)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+9)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+10)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+11)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+12)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+13)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+14)) & 0xff];
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index+15)) & 0xff];
-   index += 16;
-  }
-
-  for(var j = index; j < input.length; j++) {
-   crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff]
-  }
-  return crc & 0xffffff;
-}
-
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -10852,146 +10786,522 @@ function createcrc24(input) {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-function openpgp_msg_message() {
-	
-	// -1 = no valid passphrase submitted
-	// -2 = no private key found
-	// -3 = decryption error
-	// text = valid decryption
-	this.text = "";
+/** 
+ *  The User Attribute packet is a variation of the User ID packet.  It
+ *  is capable of storing more types of data than the User ID packet,
+ *  which is limited to text.  Like the User ID packet, a User Attribute
+ *  packet may be certified by the key owner ("self-signed") or any other
+ *  key owner who cares to certify it.  Except as noted, a User Attribute
+ *  packet may be used anywhere that a User ID packet may be used.
+ *
+ *  While User Attribute packets are not a required part of the OpenPGP
+ *  standard, implementations SHOULD provide at least enough
+ *  compatibility to properly handle a certification signature on the
+ *  User Attribute packet.  A simple way to do this is by treating the
+ *  User Attribute packet as a User ID packet with opaque contents, but
+ *  an implementation may use any method desired.
+ */
+function openpgp_packet_userattribute() {
+	this.tagType = 17;
+	this.certificationSignatures = new Array();
+	this.certificationRevocationSignatures = new Array();
+	this.revocationSignatures = new Array();
+	this.parentNode = null;
+
+	/**
+	 * parsing function for a user attribute packet (tag 17).
+	 * @param input [string] payload of a tag 17 packet
+	 * @param position [integer] position to start reading from the input string
+	 * @param len [integer] length of the packet or the remaining length of input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet (input, position, len) {
+		var total_len = 0;
+		this.packetLength = len;
+		this.userattributes = new Array();
+		var count = 0;
+		var mypos = position;
+		while (len != total_len) {
+			var current_len = 0;
+			// 4.2.2.1. One-Octet Lengths
+			if (input[mypos].charCodeAt() < 192) {
+				packet_length = input[mypos++].charCodeAt();
+				current_len = 1;
+			// 4.2.2.2. Two-Octet Lengths
+			} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
+				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
+					+ (input[mypos++].charCodeAt()) + 192;
+				current_len = 2;
+			// 4.2.2.4. Partial Body Lengths
+			} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
+				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+				current_len = 1;
+			// 4.2.2.3. Five-Octet Lengths
+			} else {
+				current_len = 5;
+				mypos++;
+				packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
+					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			}
+			
+			var subpackettype = input[mypos++].charCodeAt();
+			packet_length--;
+			current_len++;
+			this.userattributes[count] = new Array();
+			this.userattributes[count] = input.substring(mypos, mypos + packet_length);
+			mypos += packet_length;
+			total_len += current_len+packet_length;
+		}
+		this.packetLength = mypos - position;
+		return this;
+	}
 	
 	/**
-	 * Decrypts a message and generates user interface message out of the found.
-	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @return [String] plaintext of the message or null on error
+	 * generates debug output (pretty print)
+	 * @return String which gives some information about the user attribute packet
 	 */
-	function decrypt(private_key, sessionkey) {
-        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+	function toString() {
+		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
+		             '    AttributePackets: (count = '+this.userattributes.length+')\n';
+		for (var i = 0; i < this.userattributes.length; i++) {
+			result += '    ('+this.userattributes[i].length+') bytes: ['+util.hexidump(this.userattributes[i])+']\n'; 
+		}
+		return result;
+	}
+	
+	/**
+	 * Continue parsing packets belonging to the user attribute packet such as signatures
+	 * @param parent_node [openpgp_*] the parent object
+	 * @param input [String] input string to read the packet(s) from
+	 * @param position [integer] start position for the parser
+	 * @param len [integer] length of the packet(s) or remaining length of input
+	 * @return [integer] length of nodes read
+	 */
+	function read_nodes(parent_node, input, position, len) {
+		
+		this.parentNode = parent_node;
+		var exit = false;
+		var pos = position;
+		var l = len;
+		while (input.length != pos) {
+			var result = openpgp_packet.read_packet(input, pos, l);
+			if (result == null) {
+				util.print_error("openpgp.packet.userattribute.js\n"+'[user_attr] parsing ends here @:' + pos + " l:" + l);
+				break;
+			} else {
+				switch (result.tagType) {
+				case 2: // Signature Packet
+					if (result.signatureType > 15
+							&& result.signatureType < 20) // certification
+						// //
+						// signature
+						this.certificationSignatures[this.certificationSignatures.length] = result;
+					else if (result.signatureType == 32) // certification revocation signature
+						this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
+					pos += result.packetLength + result.headerLength;
+					l = len - (pos - position);
+					break;
+				default:
+					this.data = input;
+					this.position = position - parent_node.packetLength;
+					this.len = pos - position;
+					return this.len;
+					break;
+				}
+			}
+		}
+		this.data = input;
+		this.position = position - parent_node.packetLength;
+		this.len = pos - position;
+		return this.len;
+
+	}
+	
+	this.read_packet = read_packet;
+	this.read_nodes = read_nodes;
+	this.toString = toString;
+	
+};// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * A User ID packet consists of UTF-8 text that is intended to represent
+ * the name and email address of the key holder.  By convention, it
+ * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
+ * restrictions on its content.  The packet length in the header
+ * specifies the length of the User ID. 
+ */
+
+function openpgp_packet_userid() {
+	this.tagType = 13;
+	this.certificationSignatures = new Array();
+	this.certificationRevocationSignatures = new Array();
+	this.revocationSignatures = new Array();
+	this.parentNode = null;
+
+	/**
+	 * parsing function for a user id packet (tag 13).
+	 * @param input [string] payload of a tag 13 packet
+	 * @param position [integer] position to start reading from the input string
+	 * @param len [integer] length of the packet or the remaining length of input at position
+	 * @return [openpgp_packet_encrypteddata] object representation
+	 */
+	function read_packet(input, position, len) {
+		this.text = '';
+		this.packetLength = len;
+
+		for ( var i = 0; i < len; i++) {
+			this.text += input[position + i];
+		}
+		return this;
 	}
 
 	/**
-	 * Decrypts a message and generates user interface message out of the found.
-	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return [String] plaintext of the message or null on error
+	 * creates a string representation of the user id packet
+	 * @param user_id [String] the user id as string ("John Doe <john.doe@mail.us")
+	 * @return [String] string representation
 	 */
-	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
-		if (private_key == null || sessionkey == null || sessionkey == "")
-			return null;
-		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
-		if (decrypted == null)
-			return null;
-		var packet;
-		var position = 0;
-		var len = decrypted.length;
-		var validSignatures = new Array();
-		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
+	function write_packet(user_id) {
+		this.text = user_id;
+		var result = openpgp_packet.write_packet_header(13,this.text.length);
+		result += this.text;
+		return result;
+	}
 
-		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
-			if (packet.tagType == 8) {
-				this.text = packet.decompress();
-				decrypted = packet.decompress();
-			}
-			util.print_debug(packet.toString());
-			position += packet.headerLength+packet.packetLength;
-			if (position > 38)
-				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
-			len = decrypted.length - position;
-			if (packet.tagType == 11) {
-				this.text = packet.data;
-				util.print_info("message successfully decrypted");
-			}
-			if (packet.tagType == 19)
-				// ignore.. we checked that already in a more strict way.
-				continue;
-			if (packet.tagType == 2 && packet.signatureType < 3) {
-			    if(!pubkey || pubkey.length == 0 ){
-				    var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
-				}
-				if (pubkey.length == 0) {
-					util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(packet.issuerKeyId)+". Public key not found in keyring.");
-					validSignatures[validSignatures.length] = false;
+	/**
+	 * Continue parsing packets belonging to the userid packet such as signatures
+	 * @param parent_node [openpgp_*] the parent object
+	 * @param input [String] input string to read the packet(s) from
+	 * @param position [integer] start position for the parser
+	 * @param len [integer] length of the packet(s) or remaining length of input
+	 * @return [integer] length of nodes read
+	 */
+	function read_nodes(parent_node, input, position, len) {
+		if (parent_node.tagType == 6) { // public key
+			this.parentNode = parent_node;
+			var pos = position;
+			var l = len;
+			while (input.length != pos) {
+				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
+				if (result == null) {
+					util.print_error('[user_id] parsing ends here @:' + pos + " l:" + l);
+					break;
 				} else {
-					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate()){
-						util.print_info("Found Good Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = true;
+					
+					pos += result.packetLength + result.headerLength;
+					l = input.length - pos;
+					switch (result.tagType) {
+					case 2: // Signature Packet
+						if (result.signatureType > 15
+								&& result.signatureType < 20) { // certification
+							// //
+							// signature
+							this.certificationSignatures[this.certificationSignatures.length] = result;
+							break;
+						} else if (result.signatureType == 48) {// certification revocation signature
+							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
+							break;
+						} else if (result.signatureType == 24) { // omg. standalone signature 
+							this.certificationSignatures[this.certificationSignatures.length] = result;
+							break;
+						} else {
+							util.debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
 						}
-					else{
-						util.print_error("Signature verification failed: Bad Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = false;
-						}
-				}
-			}
-		}
-		if (this.text == "") {
-			this.text = decrypted;
-		}
-		return {text:this.text, validSignatures:validSignatures};
-	}
-	
-	/**
-	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
-	 * @return [boolean] true if the signature was correct; otherwise false
-	 */
-	function verifySignature(pubkey) {
-		var result = false;
-		if (this.type == 2) {
-		    if(!pubkey || pubkey.length == 0){
-			    var pubkey;
-			    if (this.signature.version == 4) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
-			    } else if (this.signature.version == 3) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
-			    } else {
-				    util.print_error("unknown signature type on message!");
-				    return false;
-			    }
-			}
-			if (pubkey.length == 0)
-				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
-			else {
-				for (var i = 0 ; i < pubkey.length; i++) {
-					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
-					if (this.signature.verify(tohash.substring(0, tohash.length -2), pubkey[i])) {
-						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[i].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
-						result = true;
-					} else {
-						util.print_error("Signature verification failed: Bad Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
+					default:
+						this.data = input;
+						this.position = position - parent_node.packetLength;
+						this.len = pos - position -(result.headerLength + result.packetLength);
+						return this.len;
 					}
 				}
 			}
+			this.data = input;
+			this.position = position - parent_node.packetLength;
+			this.len = pos - position -(result.headerLength + result.packetLength);
+			return this.len;
+		} else if (parent_node.tagType == 5) { // secret Key
+			this.parentNode = parent_node;
+			var exit = false;
+			var pos = position;
+			while (input.length != pos) {
+				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
+				if (result == null) {
+					util.print_error('parsing ends here @:' + pos + " l:" + l);
+					break;
+				} else {
+					pos += result.packetLength + result.headerLength;
+					l = input.length - pos;
+					switch (result.tagType) {
+					case 2: // Signature Packet certification signature
+						if (result.signatureType > 15
+								&& result.signatureType < 20)
+							this.certificationSignatures[this.certificationSignatures.length] = result;
+						// certification revocation signature
+						else if (result.signatureType == 48)
+							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
+					default:
+						this.data = input;
+						this.position = position - parent_node.packetLength;
+						this.len = pos - position -(result.headerLength + result.packetLength);
+						return this.len;
+					}
+				}
+			}
+		} else {
+			util.print_error("unknown parent node for a userId packet "+parent_node.tagType);
 		}
-		return result;
 	}
 	
+	/**
+	 * generates debug output (pretty print)
+	 * @return String which gives some information about the user id packet
+	 */
 	function toString() {
-		var result = "Session Keys:\n";
-		if (this.sessionKeys !=null)
-		for (var i = 0; i < this.sessionKeys.length; i++) {
-			result += this.sessionKeys[i].toString();
+		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
+				+ this.text.length + '): "' + this.text.replace("<", "&lt;")
+				+ '"\n';
+		result +="certification signatures:\n";
+		for (var i = 0; i < this.certificationSignatures.length; i++) {
+			result += "        "+this.certificationSignatures[i].toString();
 		}
-		result += "\n\n EncryptedData:\n";
-		if(this.encryptedData != null)
-		result += this.encryptedData.toString();
-		
-		result += "\n\n Signature:\n";
-		if(this.signature != null)
-		result += this.signature.toString();
-		
-		result += "\n\n Text:\n"
-		if(this.signature != null)
-			result += this.text;
+		result +="certification revocation signatures:\n";
+		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
+			result += "        "+this.certificationRevocationSignatures[i].toString();
+		}
 		return result;
 	}
-	this.decrypt = decrypt;
-	this.decryptAndVerifySignature = decryptAndVerifySignature;
-	this.verifySignature = verifySignature;
+
+	/**
+	 * lookup function to find certification revocation signatures
+	 * @param keyId string containing the key id of the issuer of this signature
+	 * @return a CertificationRevocationSignature if found; otherwise null
+	 */
+	function hasCertificationRevocationSignature(keyId) {
+		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
+			if ((this.certificationRevocationSignatures[i].version == 3 &&
+				 this.certificationRevocationSignatures[i].keyId == keyId) ||
+				(this.certificationRevocationSignatures[i].version == 4 &&
+				 this.certificationRevocationSignatures[i].issuerKeyId == keyId))
+				return this.certificationRevocationSignatures[i];
+		}
+		return null;
+	}
+
+	/**
+	 * Verifies all certification signatures. This method does not consider possible revocation signatures.
+	 * @param publicKeyPacket the top level key material
+	 * @return an array of integers corresponding to the array of certification signatures. The meaning of each integer is the following:
+	 * 0 = bad signature
+	 * 1 = signature expired
+	 * 2 = issuer key not available
+	 * 3 = revoked
+	 * 4 = signature valid
+	 * 5 = signature by key owner expired
+	 * 6 = signature by key owner revoked
+	 */
+	function verifyCertificationSignatures(publicKeyPacket) {
+		result = new Array();
+		for (var i = 0 ; i < this.certificationSignatures.length; i++) {
+			// A certification signature (type 0x10 through 0x13) hashes the User
+			// ID being bound to the key into the hash context after the above
+			// data.  A V3 certification hashes the contents of the User ID or
+			// attribute packet packet, without any header.  A V4 certification
+			// hashes the constant 0xB4 for User ID certifications or the constant
+			// 0xD1 for User Attribute certifications, followed by a four-octet
+			// number giving the length of the User ID or User Attribute data, and
+			// then the User ID or User Attribute data.
+
+			if (this.certificationSignatures[i].version == 4) {
+				if (this.certificationSignatures[i].signatureExpirationTime != null &&
+						this.certificationSignatures[i].signatureExpirationTime != null &&
+						this.certificationSignatures[i].signatureExpirationTime != 0 &&
+						!this.certificationSignatures[i].signatureNeverExpires &&
+						new Date(this.certificationSignatures[i].creationTime.getTime() +(this.certificationSignatures[i].signatureExpirationTime*1000)) < new Date()) {
+					if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
+						result[i] = 5;
+					else
+						result[i] = 1;
+					continue;
+				}
+				if (this.certificationSignatures[i].issuerKeyId == null) {
+					result[i] = 0;
+					continue;
+				}
+				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].issuerKeyId);
+				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
+					result[i] = 2;
+					continue;
+				}
+				// TODO: try to verify all returned issuer public keys (key ids are not unique!)
+				var issuerPublicKey = issuerPublicKey[0];
+				var signingKey = issuerPublicKey.obj.getSigningKey();
+				if (signingKey == null) {
+					result[i] = 0;
+					continue;
+				}
+				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].issuerKeyId);
+				if (revocation != null && revocation.creationTime > 
+					this.certificationSignatures[i].creationTime) {
+					var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
+					publicKeyPacket.data+String.fromCharCode(0xB4)+
+					String.fromCharCode((this.text.length >> 24) & 0xFF)+
+					String.fromCharCode((this.text.length >> 16) & 0xFF)+
+					String.fromCharCode((this.text.length >>  8) & 0xFF)+
+					String.fromCharCode((this.text.length) & 0xFF)+
+					this.text;
+					if (revocation.verify(signaturedata, signingKey)) {
+						if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
+							result[i] = 6;
+						else
+							result[i] = 3;
+						continue;
+					}
+				}
+				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
+						publicKeyPacket.data+String.fromCharCode(0xB4)+
+						String.fromCharCode((this.text.length >> 24) & 0xFF)+
+						String.fromCharCode((this.text.length >> 16) & 0xFF)+
+						String.fromCharCode((this.text.length >>  8) & 0xFF)+
+						String.fromCharCode((this.text.length) & 0xFF)+
+						this.text;
+				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
+					result[i] = 4;
+				} else
+				result[i] = 0;
+			} else if (this.certificationSignatures[i].version == 3) {
+				if (this.certificationSignatures[i].keyId == null) {
+					result[i] = 0;
+					continue;
+				}
+				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].keyId);
+				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
+					result[i] = 2;
+					continue;
+				}
+				issuerPublicKey = issuerPublicKey[0];
+				var signingKey = publicKey.obj.getSigningKey();
+				if (signingKey == null) {
+					result[i] = 0;
+					continue;
+				}
+				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].keyId);
+				if (revocation != null && revocation.creationTime > 
+					this.certificationSignatures[i].creationTime) {
+					var signaturedata = String.fromCharCode(0x99)+ this.publicKeyPacket.header.substring(1)+
+					this.publicKeyPacket.data+this.text;
+					if (revocation.verify(signaturedata, signingKey)) {
+						if (revocation.keyId == publicKeyPacket.getKeyId())
+							result[i] = 6;
+						else
+							result[i] = 3;
+						continue;
+					}
+				}
+				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
+					publicKeyPacket.data+this.text;
+				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
+					result[i] = 4;
+				} else 
+				result[i] = 0;
+			} else {
+				result[i] = 0;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * verifies the signatures of the user id
+	 * @return 0 if the userid is valid; 1 = userid expired; 2 = userid revoked
+	 */
+	function verify(publicKeyPacket) {
+		var result = this.verifyCertificationSignatures(publicKeyPacket);
+		if (result.indexOf(6) != -1)
+			return 2;
+		if (result.indexOf(5) != -1)
+			return 1;
+		return 0;
+	}
+
+	// TODO: implementation missing
+	function addCertification(publicKeyPacket, privateKeyPacket) {
+		
+	}
+
+	// TODO: implementation missing
+	function revokeCertification(publicKeyPacket, privateKeyPacket) {
+		
+	}
+
+	this.hasCertificationRevocationSignature = hasCertificationRevocationSignature;
+	this.verifyCertificationSignatures = verifyCertificationSignatures;
+	this.verify = verify;
+	this.read_packet = read_packet;
+	this.write_packet = write_packet;
 	this.toString = toString;
+	this.read_nodes = read_nodes;
 }
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of type key id (RFC4880 3.3)
+ *  A Key ID is an eight-octet scalar that identifies a key.
+   Implementations SHOULD NOT assume that Key IDs are unique.  The
+   section "Enhanced Key Formats" below describes how Key IDs are
+   formed.
+ */
+function openpgp_type_keyid() {
+	/**
+	 * parsing method for a key id
+	 * @param input [String] input to read the key id from 
+	 * @param position [integer] position where to start reading the key id from input
+	 * @return this object
+	 */
+	function read_packet(input, position) {
+		this.bytes = input.substring(position, position+8);
+		return this;
+	}
+	
+	/**
+	 * generates debug output (pretty print)
+	 * @return [String] Key Id as hexadecimal string
+	 */
+	function toString() {
+		return util.hexstrdump(this.bytes);
+	}
+	
+	this.read_packet = read_packet;
+	this.toString = toString;
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -11142,53 +11452,6 @@ function openpgp_type_mpi() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id (RFC4880 3.3)
- *  A Key ID is an eight-octet scalar that identifies a key.
-   Implementations SHOULD NOT assume that Key IDs are unique.  The
-   section "Enhanced Key Formats" below describes how Key IDs are
-   formed.
- */
-function openpgp_type_keyid() {
-	/**
-	 * parsing method for a key id
-	 * @param input [String] input to read the key id from 
-	 * @param position [integer] position where to start reading the key id from input
-	 * @return this object
-	 */
-	function read_packet(input, position) {
-		this.bytes = input.substring(position, position+8);
-		return this;
-	}
-	
-	/**
-	 * generates debug output (pretty print)
-	 * @return [String] Key Id as hexadecimal string
-	 */
-	function toString() {
-		return util.hexstrdump(this.bytes);
-	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
  * Implementation of the String-to-key specifier (RFC4880 3.7)
  * String-to-key (S2K) specifiers are used to convert passphrase strings
    into symmetric-key encryption/decryption keys.  They are used in two
@@ -11284,251 +11547,6 @@ function openpgp_type_s2k() {
 	this.read = read;
 	this.write = write;
 	this.produce_key = produce_key;
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-function openpgp_keyring() {
-		
-	/**
-	 * Initialization routine for the keyring. This method reads the 
-	 * keyring from HTML5 local storage and initializes this instance.
-	 * This method is called by openpgp.init().
-	 * @return [null] undefined
-	 */
-	function init() {
-		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
-		var spublickeys = JSON.parse(window.localStorage.getItem("publickeys"));
-		if (sprivatekeys == null || sprivatekeys.length == 0) {
-			sprivatekeys = new Array();
-		}
-
-		if (spublickeys == null || spublickeys.length == 0) {
-			spublickeys = new Array();
-		}
-		this.publicKeys = new Array();
-		this.privateKeys = new Array();
-		var k = 0;
-		for (var i =0; i < sprivatekeys.length; i++) {
-			var r = openpgp.read_privateKey(sprivatekeys[i]);
-			this.privateKeys[k] = { armored: sprivatekeys[i], obj: r[0], keyId: r[0].getKeyId()};
-			k++;
-		}
-		k = 0;
-		for (var i =0; i < spublickeys.length; i++) {
-			var r = openpgp.read_publicKey(spublickeys[i]);
-			if (r[0] != null) {
-				this.publicKeys[k] = { armored: spublickeys[i], obj: r[0], keyId: r[0].getKeyId()};
-				k++;
-			}
-		}
-	}
-	this.init = init;
-
-	/**
-	 * Checks if at least one private key is in the keyring
-	 * @return
-	 */
-	function hasPrivateKey() {
-		return this.privateKeys.length > 0;
-	}
-	this.hasPrivateKey = hasPrivateKey;
-
-	/**
-	 * Saves the current state of the keyring to HTML5 local storage.
-	 * The privateKeys array and publicKeys array gets Stringified using JSON
-	 * @return [null] undefined
-	 */
-	function store() { 
-		var priv = new Array();
-		for (var i = 0; i < this.privateKeys.length; i++) {
-			priv[i] = this.privateKeys[i].armored;
-		}
-		var pub = new Array();
-		for (var i = 0; i < this.publicKeys.length; i++) {
-			pub[i] = this.publicKeys[i].armored;
-		}
-		window.localStorage.setItem("privatekeys",JSON.stringify(priv));
-		window.localStorage.setItem("publickeys",JSON.stringify(pub));
-	}
-	this.store = store;
-	/**
-	 * searches all public keys in the keyring matching the address or address part of the user ids
-	 * @param email_address
-	 * @return
-	 */
-	function getPublicKeyForAddress(email_address) {
-		var results = new Array();
-		var spl = email_address.split("<");
-		var email = "";
-		if (spl.length > 1) {
-			email = spl[1].split(">")[0];
-		} else {
-			email = email_address.trim();
-		}
-		for (var i =0; i < this.publicKeys.length; i++) {
-			
-			for (var j = 0; j < this.publicKeys[i].obj.userIds.length; j++) {
-				if (this.publicKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
-					results[results.length] = this.publicKeys[i];
-			}
-		}
-		return results;
-	}
-	this.getPublicKeyForAddress = getPublicKeyForAddress;
-
-	/**
-	 * Searches the keyring for a private key containing the specified email address
-	 * @param email_address [String] email address to search for
-	 * @return [Array[openpgp_msg_privatekey] private keys found
-	 */
-	function getPrivateKeyForAddress(email_address) {
-		var results = new Array();
-		var spl = email_address.split("<");
-		var email = "";
-		if (spl.length > 1) {
-			email = spl[1].split(">")[0];
-		} else {
-			email = email_address.trim();
-		}
-		for (var i =0; i < this.privateKeys.length; i++) {
-			
-			for (var j = 0; j < this.privateKeys[i].obj.userIds.length; j++) {
-				if (this.privateKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
-					results[results.length] = this.privateKeys[i];
-			}
-		}
-		return results;
-	}
-
-	this.getPrivateKeyForAddress = getPrivateKeyForAddress;
-	/**
-	 * Searches the keyring for public keys having the specified key id
-	 * @param keyId provided as string of hex number (lowercase)
-	 * @return Array[openpgp_msg_privatekey] public keys found
-	 */
-	function getPublicKeysForKeyId(keyId) {
-		var result = new Array();
-		for (var i=0; i < this.publicKeys.length; i++)
-			if (keyId == this.publicKeys[i].obj.getKeyId())
-				result[result.length] = this.publicKeys[i];
-		return result;
-	}
-	this.getPublicKeysForKeyId = getPublicKeysForKeyId;
-	
-	/**
-	 * Searches the keyring for private keys having the specified key id
-	 * @param keyId [String] 8 bytes as string containing the key id to look for
-	 * @return Array[openpgp_msg_privatekey] private keys found
-	 */
-	function getPrivateKeyForKeyId(keyId) {
-		var result = new Array();
-		for (var i=0; i < this.privateKeys.length; i++) {
-			if (keyId == util.hexstrdump(this.privateKeys[i].obj.getKeyId())) {
-				result[result.length] = { key: this.privateKeys[i], keymaterial: this.privateKeys[i].obj.privateKeyPacket};
-			}
-			if (this.privateKeys[i].obj.subKeys != null) {
-				var subkeyids = this.privateKeys[i].obj.getSubKeyIds();
-				for (var j=0; j < subkeyids.length; j++)
-					if (keyId == util.hexstrdump(subkeyids[j])) {
-						result[result.length] = { key: this.privateKeys[i], keymaterial: this.privateKeys[i].obj.subKeys[j]};
-					}
-			}
-		}
-		return result;
-	}
-	this.getPrivateKeyForKeyId = getPrivateKeyForKeyId;
-	
-	/**
-	 * Imports a public key from an exported ascii armored message 
-	 * @param armored_text [String] PUBLIC KEY BLOCK message to read the public key from
-	 * @return [null] nothing
-	 */
-	function importPublicKey (armored_text) {
-		var result = openpgp.read_publicKey(armored_text);
-		for (var i = 0; i < result.length; i++) {
-			this.publicKeys[this.publicKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
-		}
-		return true;
-	}
-
-	/**
-	 * Imports a private key from an exported ascii armored message 
-	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from
-	 * @return [null] nothing
-	 */
-	function importPrivateKey (armored_text, password) {
-		var result = openpgp.read_privateKey(armored_text);
-		if(!result[0].decryptSecretMPIs(password))
-		    return false;
-		for (var i = 0; i < result.length; i++) {
-			this.privateKeys[this.privateKeys.length] = {armored: armored_text, obj: result[i], keyId: result[i].getKeyId()};
-		}
-		return true;
-	}
-
-	this.importPublicKey = importPublicKey;
-	this.importPrivateKey = importPrivateKey;
-	
-	/**
-	 * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] the public key object
-	 */
-	function exportPublicKey(index) {
-		return this.publicKey[index];
-	}
-	this.exportPublicKey = exportPublicKey;
-		
-	
-	/**
-	 * Removes a public key from the public key keyring at the specified index 
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] The public key object which has been removed
-	 */
-	function removePublicKey(index) {
-		var removed = this.publicKeys.splice(index,1);
-		this.store();
-		return removed;
-	}
-	this.removePublicKey = removePublicKey;
-
-	/**
-	 * returns the openpgp_msg_privatekey representation of the private key at private key ring index  
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] the private key object
-	 */	
-	function exportPrivateKey(index) {
-		return this.privateKeys[index];
-	}
-	this.exportPrivateKey = exportPrivateKey;
-
-	/**
-	 * Removes a private key from the private key keyring at the specified index 
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] The private key object which has been removed
-	 */
-	function removePrivateKey(index) {
-		var removed = this.privateKeys.splice(index,1);
-		this.store();
-		return removed;
-	}
-	this.removePrivateKey = removePrivateKey;
-
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
