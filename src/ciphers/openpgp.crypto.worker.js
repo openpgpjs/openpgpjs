@@ -47,7 +47,7 @@ var CRYPTOWORKER = (function (symEncrypt, symDecrypt) {
 			args.data &&
 			args.openpgp_cfb) {
 			// start encryption
-			output = symEncrypt(prefixrandom, 9, key, data, 0);
+			output = symEncrypt(args.prefixrandom, args.algo, args.key, args.data, args.openpgp_cfb);
 			
 		} else if (args.type === 'decrypt' &&
 			args.algo &&
@@ -55,7 +55,7 @@ var CRYPTOWORKER = (function (symEncrypt, symDecrypt) {
 			args.data &&
 			args.openpgp_cfb) {
 			// start decryption
-			output = symDecrypt(9, key, ciphertext, 0);
+			output = symDecrypt(args.algo, args.key, args.data, args.openpgp_cfb);
 			
 		} else {
 			throw 'Not all arguments for web worker crypto are defined!';
