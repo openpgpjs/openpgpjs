@@ -3044,13 +3044,25 @@ function openpgp_packet_keymaterial() {
     		break;
 	    case  7: // - AES with 128-bit key [AES]
     	case  8: // - AES with 192-bit key
-    	case  9: // - AES with 256-bit key	    	
-    		cleartextMPIs = normal_cfb_decrypt(AESencrypt,
-    				this.IVLength, keyExpansion(key), this.encryptedMPIData, this.IV);
+    	case  9: // - AES with 256-bit key
+    	    var numBytes = 16;
+            //This is a weird way to achieve this. If's within a switch is probably not ideal.
+    	    if(this.symmetricEncryptionAlgorithm == 8){
+    	        numBytes = 24;
+    	        key = this.s2k.produce_key(str_passphrase,numBytes);
+    	    }
+    	    if(this.symmetricEncryptionAlgorithm == 9){
+    	        numBytes = 32;
+    	        key = this.s2k.produce_key(str_passphrase,numBytes);
+    	    }
+    		cleartextMPIs = normal_cfb_decrypt(function(block,key){
+    		    return AESencrypt(util.str2bin(block),key);
+    		},
+    				this.IVLength, keyExpansion(key.substring(0,numBytes)), this.encryptedMPIData, this.IV);
 	    	break;
     	case 10: // - Twofish with 256-bit key [TWOFISH]
     		util.print_error("openpgp.packet.keymaterial.js\n"+"Key material is encrypted with twofish: not implemented");   		
-	    	return false;;
+	    	return false;
     	case  5: // - Reserved
     	case  6: // - Reserved
     	default:
@@ -11266,7 +11278,7 @@ function openpgp_type_s2k() {
 	 * @param passphrase [String] passphrase containing user input
 	 * @return [String] produced key with a length corresponding to hashAlgorithm hash length
 	 */
-	function produce_key(passphrase) {
+	function produce_key(passphrase, numBytes) {
 		if (this.type == 0) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
@@ -11277,6 +11289,10 @@ function openpgp_type_s2k() {
 				isp += this.saltValue+passphrase; 			
 			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
+			if(numBytes && (numBytes == 24 || numBytes == 32)){ //This if accounts for RFC 4880 3.7.1.1 -- If hash size is greater than block size, use leftmost bits.  If blocksize larger than hash size, we need to rehash isp and prepend with 0.
+			    var key = openpgp_crypto_hashData(this.hashAlgorithm,isp);
+			    return key + openpgp_crypto_hashData(this.hashAlgorithm,String.fromCharCode(0)+isp);
+			}
 			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;
 	}

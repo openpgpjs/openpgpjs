@@ -93,7 +93,7 @@ function openpgp_type_s2k() {
 	 * @param passphrase [String] passphrase containing user input
 	 * @return [String] produced key with a length corresponding to hashAlgorithm hash length
 	 */
-	function produce_key(passphrase) {
+	function produce_key(passphrase, numBytes) {
 		if (this.type == 0) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
@@ -104,6 +104,10 @@ function openpgp_type_s2k() {
 				isp += this.saltValue+passphrase; 			
 			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
+			if(numBytes && (numBytes == 24 || numBytes == 32)){ //This if accounts for RFC 4880 3.7.1.1 -- If hash size is greater than block size, use leftmost bits.  If blocksize larger than hash size, we need to rehash isp and prepend with 0.
+			    var key = openpgp_crypto_hashData(this.hashAlgorithm,isp);
+			    return key + openpgp_crypto_hashData(this.hashAlgorithm,String.fromCharCode(0)+isp);
+			}
 			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;
 	}

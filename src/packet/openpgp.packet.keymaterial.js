@@ -394,13 +394,25 @@ function openpgp_packet_keymaterial() {
     		break;
 	    case  7: // - AES with 128-bit key [AES]
     	case  8: // - AES with 192-bit key
-    	case  9: // - AES with 256-bit key	    	
-    		cleartextMPIs = normal_cfb_decrypt(AESencrypt,
-    				this.IVLength, keyExpansion(key), this.encryptedMPIData, this.IV);
+    	case  9: // - AES with 256-bit key
+    	    var numBytes = 16;
+            //This is a weird way to achieve this. If's within a switch is probably not ideal.
+    	    if(this.symmetricEncryptionAlgorithm == 8){
+    	        numBytes = 24;
+    	        key = this.s2k.produce_key(str_passphrase,numBytes);
+    	    }
+    	    if(this.symmetricEncryptionAlgorithm == 9){
+    	        numBytes = 32;
+    	        key = this.s2k.produce_key(str_passphrase,numBytes);
+    	    }
+    		cleartextMPIs = normal_cfb_decrypt(function(block,key){
+    		    return AESencrypt(util.str2bin(block),key);
+    		},
+    				this.IVLength, keyExpansion(key.substring(0,numBytes)), this.encryptedMPIData, this.IV);
 	    	break;
     	case 10: // - Twofish with 256-bit key [TWOFISH]
     		util.print_error("openpgp.packet.keymaterial.js\n"+"Key material is encrypted with twofish: not implemented");   		
-	    	return false;;
+	    	return false;
     	case  5: // - Reserved
     	case  6: // - Reserved
     	default:
