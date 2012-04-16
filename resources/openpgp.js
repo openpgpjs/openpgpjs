@@ -11302,9 +11302,11 @@ function openpgp_type_s2k() {
 		} else if (this.type == 1) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,this.saltValue+passphrase);
 		} else if (this.type == 3) {
-			var isp = this.saltValue+passphrase;
-			while (isp.length < this.count)
-				isp += this.saltValue+passphrase; 			
+			var isp = [];
+			isp[0] = this.saltValue+passphrase;
+			while (isp.length*(this.saltValue+passphrase).length < this.count)
+				isp.push(this.saltValue+passphrase);
+			isp = isp.join('');			
 			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
 			if(numBytes && (numBytes == 24 || numBytes == 32)){ //This if accounts for RFC 4880 3.7.1.1 -- If hash size is greater than block size, use leftmost bits.  If blocksize larger than hash size, we need to rehash isp and prepend with 0.
