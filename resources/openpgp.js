@@ -3368,7 +3368,7 @@ function openpgp_packet_keymaterial() {
 		        var salt = openpgp_crypto_getRandomBytes(8);
 		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
 		        body += salt;
-		        var c = openpgp_crypto_getSecureRandomOctet();
+		        var c = 96; //c of 96 translates to count of 65536
 		        body += String.fromCharCode(c);
 		        util.print_debug('write_private_key c: '+ c);
 		        var s2k = new openpgp_type_s2k();
