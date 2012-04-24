@@ -151,7 +151,7 @@ function openpgp_keyring() {
 	function getPrivateKeyForKeyId(keyId) {
 		var result = new Array();
 		for (var i=0; i < this.privateKeys.length; i++) {
-			if (keyId == util.hexstrdump(this.privateKeys[i].obj.getKeyId())) {
+			if (keyId == this.privateKeys[i].obj.getKeyId()) {
 				result[result.length] = { key: this.privateKeys[i], keymaterial: this.privateKeys[i].obj.privateKeyPacket};
 			}
 			if (this.privateKeys[i].obj.subKeys != null) {
