@@ -60,7 +60,12 @@ function openpgp_packet_compressed() {
 			this.decompressedData = this.compressedData;
 			break;
 		case 1: // - ZIP [RFC1951]
-			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
+            var inflater = new zip.Inflater();
+            var output = inflater.append(util.str2Uint8Array(this.compressedData));
+            var outputString = util.Uint8Array2str(output);
+            var packet = openpgp_packet.read_packet(outputString,0,outputString.length);
+            util.print_info('Decompressed packet [Type 1-ZIP]: ' + packet);
+            this.decompressedData = packet.data;
 			break;
 		case 2: // - ZLIB [RFC1950]
 			// TODO: need to implement this

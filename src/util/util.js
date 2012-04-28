@@ -112,6 +112,32 @@ var Util = function() {
 	};
 	
 	/**
+	 * convert a string to a Uint8Array
+	 * @param [String] string to convert
+	 * @return [Uint8Array] array of (binary) integers
+	 */
+	this.str2Uint8Array = function(str){
+        var uintArray = new Uint8Array(new ArrayBuffer(str.length));
+        for(var n = 0; n < str.length; n++){
+            uintArray[n] = str.charCodeAt(n);
+        }
+        return uintArray;
+	};
+	
+	/**
+	 * convert a Uint8Array to a string. This currently functions the same as bin2str. 
+	 * @param [Uint8Array] array of (binary) integers to convert
+	 * @return [String] string representation of the array
+	 */
+	this.Uint8Array2str = function(bin) {
+        var result = [];
+        for(n = 0; n< bin.length; n++){
+            result[n] = String.fromCharCode(bin[n]);
+        }
+        return result.join('');
+	};
+	
+	/**
 	 * calculates a 16bit sum of a string by adding each character codes modulus 65535
 	 * @param text [String] string to create a sum of
 	 * @return [Integer] an integer containing the sum of all character codes % 65535
