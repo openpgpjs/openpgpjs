@@ -68,9 +68,22 @@ function openpgp_packet_compressed() {
             this.decompressedData = packet.data;
 			break;
 		case 2: // - ZLIB [RFC1950]
-			// TODO: need to implement this
-			this.decompressedData = JXG.decompress(s2r(this.compressedData).replace(/\n/g,""));
-			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
+			// TODO: This is pretty hacky. Not fully utilizing ZLIB (ADLER-32). No real JS implementations out there for this?
+            var compressionMethod = this.compressedData.charCodeAt(0)%0x10; //RFC 1950. Bits 0-3 Compression Method
+            //Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
+            //2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary (how is this defined). Basic checksum, and compression level.
+            if(compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
+                var inflater = new zip.Inflater();
+			    var output = inflater.append(util.str2Uint8Array(this.compressedData.substring(2,this.compressedData.length-4)));
+                var outputString = util.Uint8Array2str(output);
+                //TODO check ADLER32 checksum
+                var packet = openpgp_packet.read_packet(outputString,0,outputString.length);
+                util.print_info('Decompressed packet [Type 2-ZLIB]: ' + packet);
+                this.decompressedData = packet.data;
+            }
+            else{
+			        util.print_error("Compression algorithm ZLIB is not fully implemented.");
+                }
 			break;
 		case 3: //  - BZip2 [BZ2]
 			// TODO: need to implement this
