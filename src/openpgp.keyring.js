@@ -93,8 +93,10 @@ function openpgp_keyring() {
 		} else {
 			email = email_address.trim();
 		}
+		if(!util.emailRegEx.test(email)){
+		    return results;
+		}
 		for (var i =0; i < this.publicKeys.length; i++) {
-			
 			for (var j = 0; j < this.publicKeys[i].obj.userIds.length; j++) {
 				if (this.publicKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
 					results[results.length] = this.publicKeys[i];
@@ -118,8 +120,10 @@ function openpgp_keyring() {
 		} else {
 			email = email_address.trim();
 		}
+		if(!util.emailRegEx.test(email)){
+		    return results;
+		}
 		for (var i =0; i < this.privateKeys.length; i++) {
-			
 			for (var j = 0; j < this.privateKeys[i].obj.userIds.length; j++) {
 				if (this.privateKeys[i].obj.userIds[j].text.indexOf(email) >= 0)
 					results[results.length] = this.privateKeys[i];
