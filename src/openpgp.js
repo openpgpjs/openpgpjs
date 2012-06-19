@@ -220,12 +220,6 @@ function _openpgp () {
 						util.print_error("A directly compressed message is currently not supported");
 						break;
 				} else
-					// Literal Message
-					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
-					if (first_packet.tagType == 11) {
-						util.print_error("A direct literal message is currently not supported.");
-						break;
-				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
 					if (first_packet.tagType == 10) {
@@ -234,6 +228,12 @@ function _openpgp () {
 						// continue with next packet
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
+				} else
+					// Literal Message
+					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
+					if (first_packet.tagType == 11) {
+						util.print_error("A direct literal message is currently not supported.");
+						break;
 				}
 			} else {
 				util.print_error('no message found!');
