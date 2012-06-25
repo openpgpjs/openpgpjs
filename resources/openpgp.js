@@ -220,12 +220,6 @@ function _openpgp () {
 						util.print_error("A directly compressed message is currently not supported");
 						break;
 				} else
-					// Literal Message
-					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
-					if (first_packet.tagType == 11) {
-						util.print_error("A direct literal message is currently not supported.");
-						break;
-				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
 					if (first_packet.tagType == 10) {
@@ -234,6 +228,12 @@ function _openpgp () {
 						// continue with next packet
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
+				} else
+					// Literal Message
+					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
+					if (first_packet.tagType == 11) {
+						util.print_error("A direct literal message is currently not supported.");
+						break;
 				}
 			} else {
 				util.print_error('no message found!');
@@ -4700,8 +4700,8 @@ var util = new Util();
  1. Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
 
- 2. Redistributions in binary form must reproduce the above copyright 
- notice, this list of conditions and the following disclaimer in 
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in
  the documentation and/or other materials provided with the distribution.
 
  3. The names of the authors may not be used to endorse or promote products
@@ -4719,11 +4719,19 @@ var util = new Util();
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+(function(obj) {
+
+	obj.zip = {
+		useWebWorkers : false
+	};
+
+})(this);
+
+// include inflate.js
+
 /*
- * This program is based on JZlib 1.0.2 ymnk, JCraft,Inc.
- * JZlib is based on zlib-1.1.3, so all credit should go authors
- * Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
- * and contributors of zlib.
+ * zip.js and include.js are merged in one file because of a dependency in the
+ * execution order: zip.Inflater is only defined if inflate.js is executed after zip.js
  */
 
 (function(obj) {
@@ -6860,41 +6868,7 @@ var util = new Util();
 	}
 
 })(this);
-/*
- Copyright (c) 2012 Gildas Lormeau. All rights reserved.
 
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice,
- this list of conditions and the following disclaimer.
-
- 2. Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in
- the documentation and/or other materials provided with the distribution.
-
- 3. The names of the authors may not be used to endorse or promote products
- derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
- INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JCRAFT,
- INC. OR ANY CONTRIBUTORS TO THIS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-(function(obj) {
-
-	obj.zip = {
-		useWebWorkers : false
-	};
-
-})(this);
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
