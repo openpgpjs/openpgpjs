@@ -7,6 +7,7 @@ help:
 	@echo "test           - runs JavaScript unit tests"
 	@echo "example        - creates a simple example"
 	@echo "ext-chr-gmail  - creates the Google Chrome / Google Mail extension"
+	@echo "spidermonkey   - makes a minified version compatible with Spidermonkey"
 
 update: update-me update-deps
 
@@ -21,6 +22,10 @@ example:
 	@rm -f build/openpgpjs-0.x.zip
 	@zip -j build/openpgpjs-0.x.zip resources/example.* resources/openpgp.min.js resources/jquery.min.js
 	@echo "Have a look at build/openpgpjs-0.x.zip"
+
+spidermonkey:
+	@echo See http://code.google.com/closure/compiler/
+	@./scripts/minimize.sh -s
 
 ext-chr-gmail:
 	@./scripts/create_extension.sh

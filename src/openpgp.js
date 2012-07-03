@@ -405,4 +405,8 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
+if (exports) {
+	exports.openpgp = openpgp;
+}
+
 
