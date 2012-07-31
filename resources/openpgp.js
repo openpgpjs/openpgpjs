@@ -10256,7 +10256,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v0.1";
+	this.versionstring ="OpenPGP.js 20120730";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -14381,6 +14381,7 @@ function openpgp_msg_message() {
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
+	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
 	 * @return [boolean] true if the signature was correct; otherwise false
 	 */
 	function verifySignature(pubkey) {
