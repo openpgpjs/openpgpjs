@@ -17,6 +17,7 @@ shift $(($OPTIND - 1))
 echo "Setup..."
 _src="src";
 _spidermonkey="engines/spidermonkey"
+_tmp="resources/openpgp.js.tmp";
 _raw="resources/openpgp.js";
 _min="resources/openpgp.min.js";
 _compiler="resources/compiler.jar";
@@ -30,7 +31,9 @@ if [ $SPIDERMONKEY = true ]; then
 fi
 
 echo "Concatenating..."
-find "$_src" -name "*.js" -exec cat "{}" >> "$_raw" \;
+find "$_src" -name "*.js" -exec cat "{}" >> "$_tmp" \;
+sed "s/OpenPGP.js VERSION/OpenPGP.js $(date +%Y%m%d)/g" "$_tmp" > "$_raw";
+rm "$_tmp";
 
 
 
