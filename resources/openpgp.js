@@ -1,4 +1,52 @@
-// GPG4Browsers - An OpenPGP implementation in javascript
+// make check for navigator properties not fail.
+var navigator = {};
+
+
+// support some basic HTML5 localStorage operations
+function _localStorage() {
+
+    this.ls = {};
+
+    this.getItem = function(key) {
+        return this.ls[key] || null;
+    };
+
+    this.setItem = function(key, value) {
+        this.ls[key] = value;
+        return this;
+    }
+
+    return this;
+}
+var window = window || {};
+window.localStorage = window.localStorage || _localStorage();
+
+// support some minimal jquery need that's used for encoding messages for display in openpgp.js
+function _$(foo) {
+
+    this.text = function(txt) {
+        this._txt = txt;
+        return this;
+    }
+
+    this.html = function() {
+        return this._txt;
+    }
+
+    return this;
+}
+var $ = _$;
+
+// support undefined function in from openpgp.js
+var showMessages = function(text) {
+    // print(text);
+}
+
+if (!!exports) {
+    exports.setShowMessages = function(fn) {
+        showMessages = fn;
+    };
+}// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -13796,6 +13844,16 @@ function openpgp_type_s2k() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var messageFormat = function(template, str) {
+	return template.replace(/\{\{\{message\}\}\}/, str.replace(/\n/, "<br/>"));
+}
+
+if (!!exports) {
+	exports.setMessageFormat = function(fn){
+		messageFormat = fn;
+	}
+}
+
 var Util = function() {
 
     this.emailRegEx = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
@@ -13965,7 +14023,7 @@ var Util = function() {
 		if (openpgp.config.debug) {
 			str = str + this.hexstrdump(strToHex);
 			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			showMessages(messageFormat("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">{{{message}}}</p></tt>", str));
 		}
 	};
 	
@@ -13979,7 +14037,7 @@ var Util = function() {
 	 */
 	this.print_error = function(str) {
 		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>ERROR:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		showMessages(messageFormat("<p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>ERROR:</b></span>{{{message}}}</p>", str));
 	};
 	
 	/**
@@ -13992,12 +14050,12 @@ var Util = function() {
 	 */
 	this.print_info = function(str) {
 		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>INFO:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		showMessages(messageFormat("<p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>INFO:</b></span>{{{message}}}</p>", str));
 	};
 	
 	this.print_warning = function(str) {
 		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>WARNING:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		showMessages(messageFormat("<p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>WARNING:</b></span>{{{message}}}</p>", str));
 	};
 	
 	this.getLeftNBits = function (string, bitcount) {

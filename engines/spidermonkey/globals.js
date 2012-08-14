@@ -38,6 +38,12 @@ function _$(foo) {
 var $ = _$;
 
 // support undefined function in from openpgp.js
-function showMessages(text) {
+var showMessages = function(text) {
     // print(text);
+}
+
+if (!!exports) {
+    exports.setShowMessages = function(fn) {
+        showMessages = fn;
+    };
 }
