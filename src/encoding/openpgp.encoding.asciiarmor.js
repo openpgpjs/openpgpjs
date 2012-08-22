@@ -122,7 +122,7 @@ function openpgp_encoding_armor_addheader() {
  * @param data
  * @param partindex
  * @param parttotal
- * @return
+ * @return {string} Armored text
  */
 function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	var result = "";
