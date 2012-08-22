@@ -54,7 +54,7 @@ function openpgp_keyring() {
 
 	/**
 	 * Checks if at least one private key is in the keyring
-	 * @return
+	 * @return {boolean} True if there are private keys, else false.
 	 */
 	function hasPrivateKey() {
 		return this.privateKeys.length > 0;
@@ -82,7 +82,7 @@ function openpgp_keyring() {
 	/**
 	 * searches all public keys in the keyring matching the address or address part of the user ids
 	 * @param email_address
-	 * @return
+	 * @return {array[openpgp_msg_publickey]} the public keys associated with provided email address.
 	 */
 	function getPublicKeyForAddress(email_address) {
 		var results = new Array();
@@ -109,8 +109,8 @@ function openpgp_keyring() {
 
 	/**
 	 * Searches the keyring for a private key containing the specified email address
-	 * @param email_address [String] email address to search for
-	 * @return [Array[openpgp_msg_privatekey] private keys found
+	 * @param {String} email_address email address to search for
+	 * @return {Array[openpgp_msg_privatekey} private keys found
 	 */
 	function getPrivateKeyForAddress(email_address) {
 		var results = new Array();
@@ -138,7 +138,7 @@ function openpgp_keyring() {
 	/**
 	 * Searches the keyring for public keys having the specified key id
 	 * @param keyId provided as string of hex number (lowercase)
-	 * @return Array[openpgp_msg_privatekey] public keys found
+	 * @return {Array[openpgp_msg_privatekey]} public keys found
 	 */
 	function getPublicKeysForKeyId(keyId) {
 		var result = new Array();
