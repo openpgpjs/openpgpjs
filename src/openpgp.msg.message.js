@@ -98,6 +98,7 @@ function openpgp_msg_message() {
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
+	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
 	 * @return [boolean] true if the signature was correct; otherwise false
 	 */
 	function verifySignature(pubkey) {
