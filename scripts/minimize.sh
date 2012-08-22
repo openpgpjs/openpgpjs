@@ -21,6 +21,7 @@ _tmp="resources/openpgp.js.tmp";
 _raw="resources/openpgp.js";
 _min="resources/openpgp.min.js";
 _compiler="resources/compiler.jar";
+_majorVersion=".1"
 :>"$_raw"
 :>"$_min"
 
@@ -32,7 +33,7 @@ fi
 
 echo "Concatenating..."
 find "$_src" -name "*.js" -exec cat "{}" >> "$_tmp" \;
-sed "s/OpenPGP.js VERSION/OpenPGP.js $(date +%Y%m%d)/g" "$_tmp" > "$_raw";
+sed "s/OpenPGP.js VERSION/OpenPGP.js v$_majorVersion.$(date +%Y%m%d)/g" "$_tmp" > "$_raw";
 rm "$_tmp";
 
 
