@@ -39,7 +39,7 @@ function RSA() {
 	 *            RSA q as BigInteger
 	 * @param u
 	 *            RSA u as BigInteger
-	 * @return
+	 * @return {BigInteger} The decrypted value of the message
 	 */
 	function decrypt(m, d, p, q, u) {
 		var xp = m.mod(p).modPow(d.mod(p.subtract(BigInteger.ONE)), p);
