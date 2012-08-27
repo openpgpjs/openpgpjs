@@ -625,7 +625,20 @@ JXG.Util.Unzip.prototype.unzipFile = function(name) {
 	}
 	
   };
-    
+
+JXG.Util.Unzip.prototype.deflate = function() {
+    outputArr = [];
+    var tmp = [];
+    modeZIP = false;
+    DeflateLoop();
+    if (debug)
+        alert(outputArr.join(''));
+    unzipped[files] = new Array(2);
+    unzipped[files][0] = outputArr.join('');
+    unzipped[files][1] = "DEFLATE";
+    files++;
+    return unzipped;
+}    
     
 JXG.Util.Unzip.prototype.unzip = function() {
 	//convertToByteArray(input);
