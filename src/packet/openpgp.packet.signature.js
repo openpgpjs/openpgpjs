@@ -477,9 +477,9 @@ function openpgp_packet_signature() {
 	};
 	/**
 	 * verifys the signature packet. Note: not signature types are implemented
-	 * @param data [String] data which on the signature applies
-	 * @param key [openpgp_msg_privatekey] the public key to verify the signature
-	 * @return
+	 * @param {String} data data which on the signature applies
+	 * @param {openpgp_msg_privatekey} key the public key to verify the signature
+	 * @return {boolean} True if message is verified, else false.
 	 */
 	function verify(data, key) {
 		switch(this.signatureType) {
