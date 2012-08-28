@@ -60,12 +60,14 @@ function openpgp_packet_compressed() {
 			this.decompressedData = this.compressedData;
 			break;
 		case 1: // - ZIP [RFC1951]
-            var inflater = new zip.Inflater();
-            var output = inflater.append(util.str2Uint8Array(this.compressedData));
-            var outputString = util.Uint8Array2str(output);
-            var packet = openpgp_packet.read_packet(outputString,0,outputString.length);
-            util.print_info('Decompressed packet [Type 1-ZIP]: ' + packet);
-            this.decompressedData = packet.data;
+			var compData = this.compressedData;
+			var radix = s2r(compData).replace(/\n/g,"");
+			// no header in this case, directly call deflate
+			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
+			var outputString = unescape(jxg_obj.deflate()[0][0]);
+			var packet = openpgp_packet.read_packet(outputString, 0, outputString.length);
+			util.print_info('Decompressed packet [Type 1-ZIP]: ' + packet);
+			this.decompressedData = packet.data;
 			break;
 		case 2: // - ZLIB [RFC1950]
 			var compressionMethod = this.compressedData.charCodeAt(0) % 0x10; //RFC 1950. Bits 0-3 Compression Method
