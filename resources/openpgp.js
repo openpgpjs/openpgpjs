@@ -8802,6 +8802,48 @@ function openpgp_msg_privatekey() {
 	function revoke() {
 		
 	}
+
+	/**
+	 * extracts the public key part
+	 * @return {String} OpenPGP armored text containing the public key
+	 *                  returns null if no sufficient data to extract public key
+	 */
+	function extractPublicKey() {
+		// add public key
+		var key = this.privateKeyPacket.publicKey.header + this.privateKeyPacket.publicKey.data;
+		for (var i = 0; i < this.userIds.length; i++) {
+			// verify userids
+			if (this.userIds[i].certificationSignatures.length === 0) {
+				util.print_error("extractPublicKey - missing certification signatures");
+				return null;
+			}
+			var userIdPacket = new openpgp_packet_userid();
+			// add userids
+			key += userIdPacket.write_packet(this.userIds[i].text);
+			for (var j = 0; j < this.userIds[i].certificationSignatures.length; j++) {
+				var certSig = this.userIds[i].certificationSignatures[j];
+				// add signatures
+				key += openpgp_packet.write_packet_header(2, certSig.data.length) + certSig.data;
+			}
+		}
+		for (var k = 0; k < this.subKeys.length; k++) {
+			var pubSubKey = this.subKeys[k].publicKey;
+			// add public subkey package
+			key += openpgp_packet.write_old_packet_header(14, pubSubKey.data.length) + pubSubKey.data;
+			var subKeySig = this.subKeys[k].subKeySignature;
+			if (subKeySig !== null) {
+				// add subkey signature
+				key += openpgp_packet.write_packet_header(2, subKeySig.data.length) + subKeySig.data;
+			} else {
+				util.print_error("extractPublicKey - missing subkey signature");
+				return null;
+			}
+		}
+		var publicArmored = openpgp_encoding_armor(4, key);
+		return publicArmored;
+	}
+
+	this.extractPublicKey = extractPublicKey;
 	this.getSigningKey = getSigningKey;
 	this.getFingerprint = getFingerprint;
 	this.getPreferredSignatureHashAlgorithm = getPreferredSignatureHashAlgorithm;
