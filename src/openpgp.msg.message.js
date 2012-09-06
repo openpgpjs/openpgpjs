@@ -15,6 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @protected
+ * @class
+ * @classdesc Top-level message object. Contains information from one or more packets
+ */
+
 function openpgp_msg_message() {
 	
 	// -1 = no valid passphrase submitted
@@ -26,9 +32,9 @@ function openpgp_msg_message() {
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
 	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @return [String] plaintext of the message or null on error
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @return {String} plaintext of the message or null on error
 	 */
 	function decrypt(private_key, sessionkey) {
         return this.decryptAndVerifySignature(private_key, sessionkey).text;
@@ -37,10 +43,10 @@ function openpgp_msg_message() {
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
 	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return [String] plaintext of the message or null on error
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return {String} plaintext of the message or null on error
 	 */
 	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
 		if (private_key == null || sessionkey == null || sessionkey == "")
@@ -98,8 +104,8 @@ function openpgp_msg_message() {
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
-	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return [boolean] true if the signature was correct; otherwise false
+	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return {boolean} true if the signature was correct; otherwise false
 	 */
 	function verifySignature(pubkey) {
 		var result = false;

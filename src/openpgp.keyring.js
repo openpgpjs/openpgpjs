@@ -15,13 +15,17 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @class
+ * @classdesc The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
+ */
 function openpgp_keyring() {
 		
 	/**
 	 * Initialization routine for the keyring. This method reads the 
 	 * keyring from HTML5 local storage and initializes this instance.
 	 * This method is called by openpgp.init().
-	 * @return [null] undefined
+	 * @return {null} undefined
 	 */
 	function init() {
 		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
@@ -64,7 +68,7 @@ function openpgp_keyring() {
 	/**
 	 * Saves the current state of the keyring to HTML5 local storage.
 	 * The privateKeys array and publicKeys array gets Stringified using JSON
-	 * @return [null] undefined
+	 * @return {null} undefined
 	 */
 	function store() { 
 		var priv = new Array();
@@ -151,8 +155,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Searches the keyring for private keys having the specified key id
-	 * @param keyId [String] 8 bytes as string containing the key id to look for
-	 * @return Array[openpgp_msg_privatekey] private keys found
+	 * @param {String} keyId 8 bytes as string containing the key id to look for
+	 * @return {Array[openpgp_msg_privatekey]} private keys found
 	 */
 	function getPrivateKeyForKeyId(keyId) {
 		var result = new Array();
@@ -174,8 +178,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Imports a public key from an exported ascii armored message 
-	 * @param armored_text [String] PUBLIC KEY BLOCK message to read the public key from
-	 * @return [null] nothing
+	 * @param {String} armored_text PUBLIC KEY BLOCK message to read the public key from
+	 * @return {null} nothing
 	 */
 	function importPublicKey (armored_text) {
 		var result = openpgp.read_publicKey(armored_text);
@@ -187,8 +191,8 @@ function openpgp_keyring() {
 
 	/**
 	 * Imports a private key from an exported ascii armored message 
-	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from
-	 * @return [null] nothing
+	 * @param {String} armored_text PRIVATE KEY BLOCK message to read the private key from
+	 * @return {null} nothing
 	 */
 	function importPrivateKey (armored_text, password) {
 		var result = openpgp.read_privateKey(armored_text);
@@ -205,8 +209,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] the public key object
+	 * @param {Integer} index the index of the public key within the publicKeys array
+	 * @return {openpgp_msg_privatekey} the public key object
 	 */
 	function exportPublicKey(index) {
 		return this.publicKey[index];
@@ -216,8 +220,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Removes a public key from the public key keyring at the specified index 
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] The public key object which has been removed
+	 * @param {Integer} index the index of the public key within the publicKeys array
+	 * @return {openpgp_msg_privatekey} The public key object which has been removed
 	 */
 	function removePublicKey(index) {
 		var removed = this.publicKeys.splice(index,1);
@@ -228,8 +232,8 @@ function openpgp_keyring() {
 
 	/**
 	 * returns the openpgp_msg_privatekey representation of the private key at private key ring index  
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] the private key object
+	 * @param {Integer} index the index of the private key within the privateKeys array
+	 * @return {openpgp_msg_privatekey} the private key object
 	 */	
 	function exportPrivateKey(index) {
 		return this.privateKeys[index];
@@ -238,8 +242,8 @@ function openpgp_keyring() {
 
 	/**
 	 * Removes a private key from the private key keyring at the specified index 
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] The private key object which has been removed
+	 * @param {Integer} index the index of the private key within the privateKeys array
+	 * @return {openpgp_msg_privatekey} The private key object which has been removed
 	 */
 	function removePrivateKey(index) {
 		var removed = this.privateKeys.splice(index,1);
