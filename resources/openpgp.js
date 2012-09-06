@@ -8275,13 +8275,17 @@ if (exports) {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @class
+ * @classdesc The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
+ */
 function openpgp_keyring() {
 		
 	/**
 	 * Initialization routine for the keyring. This method reads the 
 	 * keyring from HTML5 local storage and initializes this instance.
 	 * This method is called by openpgp.init().
-	 * @return [null] undefined
+	 * @return {null} undefined
 	 */
 	function init() {
 		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
@@ -8324,7 +8328,7 @@ function openpgp_keyring() {
 	/**
 	 * Saves the current state of the keyring to HTML5 local storage.
 	 * The privateKeys array and publicKeys array gets Stringified using JSON
-	 * @return [null] undefined
+	 * @return {null} undefined
 	 */
 	function store() { 
 		var priv = new Array();
@@ -8411,8 +8415,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Searches the keyring for private keys having the specified key id
-	 * @param keyId [String] 8 bytes as string containing the key id to look for
-	 * @return Array[openpgp_msg_privatekey] private keys found
+	 * @param {String} keyId 8 bytes as string containing the key id to look for
+	 * @return {Array[openpgp_msg_privatekey]} private keys found
 	 */
 	function getPrivateKeyForKeyId(keyId) {
 		var result = new Array();
@@ -8434,8 +8438,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Imports a public key from an exported ascii armored message 
-	 * @param armored_text [String] PUBLIC KEY BLOCK message to read the public key from
-	 * @return [null] nothing
+	 * @param {String} armored_text PUBLIC KEY BLOCK message to read the public key from
+	 * @return {null} nothing
 	 */
 	function importPublicKey (armored_text) {
 		var result = openpgp.read_publicKey(armored_text);
@@ -8447,8 +8451,8 @@ function openpgp_keyring() {
 
 	/**
 	 * Imports a private key from an exported ascii armored message 
-	 * @param armored_text [String] PRIVATE KEY BLOCK message to read the private key from
-	 * @return [null] nothing
+	 * @param {String} armored_text PRIVATE KEY BLOCK message to read the private key from
+	 * @return {null} nothing
 	 */
 	function importPrivateKey (armored_text, password) {
 		var result = openpgp.read_privateKey(armored_text);
@@ -8465,8 +8469,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] the public key object
+	 * @param {Integer} index the index of the public key within the publicKeys array
+	 * @return {openpgp_msg_privatekey} the public key object
 	 */
 	function exportPublicKey(index) {
 		return this.publicKey[index];
@@ -8476,8 +8480,8 @@ function openpgp_keyring() {
 	
 	/**
 	 * Removes a public key from the public key keyring at the specified index 
-	 * @param index [Integer] the index of the public key within the publicKeys array
-	 * @return [openpgp_msg_privatekey] The public key object which has been removed
+	 * @param {Integer} index the index of the public key within the publicKeys array
+	 * @return {openpgp_msg_privatekey} The public key object which has been removed
 	 */
 	function removePublicKey(index) {
 		var removed = this.publicKeys.splice(index,1);
@@ -8488,8 +8492,8 @@ function openpgp_keyring() {
 
 	/**
 	 * returns the openpgp_msg_privatekey representation of the private key at private key ring index  
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] the private key object
+	 * @param {Integer} index the index of the private key within the privateKeys array
+	 * @return {openpgp_msg_privatekey} the private key object
 	 */	
 	function exportPrivateKey(index) {
 		return this.privateKeys[index];
@@ -8498,8 +8502,8 @@ function openpgp_keyring() {
 
 	/**
 	 * Removes a private key from the private key keyring at the specified index 
-	 * @param index [Integer] the index of the private key within the privateKeys array
-	 * @return [openpgp_msg_privatekey] The private key object which has been removed
+	 * @param {Integer} index the index of the private key within the privateKeys array
+	 * @return {openpgp_msg_privatekey} The private key object which has been removed
 	 */
 	function removePrivateKey(index) {
 		var removed = this.privateKeys.splice(index,1);
@@ -8526,6 +8530,12 @@ function openpgp_keyring() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @protected
+ * @class
+ * @classdesc Top-level message object. Contains information from one or more packets
+ */
+
 function openpgp_msg_message() {
 	
 	// -1 = no valid passphrase submitted
@@ -8537,9 +8547,9 @@ function openpgp_msg_message() {
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
 	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @return [String] plaintext of the message or null on error
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @return {String} plaintext of the message or null on error
 	 */
 	function decrypt(private_key, sessionkey) {
         return this.decryptAndVerifySignature(private_key, sessionkey).text;
@@ -8548,10 +8558,10 @@ function openpgp_msg_message() {
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
 	 * MDC will be verified as well as message signatures
-	 * @param private_key [openpgp_msg_privatekey] the private the message is encrypted with (corresponding to the session key)
-	 * @param sessionkey [openpgp_packet_encryptedsessionkey] the session key to be used to decrypt the message
-	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return [String] plaintext of the message or null on error
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return {String} plaintext of the message or null on error
 	 */
 	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
 		if (private_key == null || sessionkey == null || sessionkey == "")
@@ -8609,8 +8619,8 @@ function openpgp_msg_message() {
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
-	 * @param pubkey [openpgp_msg_publickey] Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return [boolean] true if the signature was correct; otherwise false
+	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
+	 * @return {boolean} true if the signature was correct; otherwise false
 	 */
 	function verifySignature(pubkey) {
 		var result = false;
@@ -8683,6 +8693,11 @@ function openpgp_msg_message() {
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Class that represents a decoded private key for internal openpgp.js use
+ */
 
 function openpgp_msg_privatekey() {
 	this.subKeys = new Array();
@@ -8852,7 +8867,8 @@ function openpgp_msg_privatekey() {
 	this.getSubKeyIds = getSubKeyIds;
 	this.getKeyId = getKeyId;
 	
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -8869,6 +8885,10 @@ function openpgp_msg_privatekey() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @class
+ * @classdesc Decoded public key object for internal openpgp.js use
+ */
 function openpgp_msg_publickey() {
 	this.data;
 	this.position;
