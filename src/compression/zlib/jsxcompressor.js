@@ -22,11 +22,8 @@ JXG.decompress = function(str) {return unescape((new JXG.Util.Unzip(JXG.Util.Bas
 */
 
 /**
- * @fileoverview Utilities for uncompressing and base64 decoding
- */
-
-/**
   * @class Util class
+  * @classdesc Utilities for uncompressing and base64 decoding
   * Class for gunzipping, unzipping and base64 decoding of files.
   * It is used for reading GEONExT, Geogebra and Intergeo files.
   *

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: openpgp_msg_message</title>
+    <title>JSDoc: Class: openpgp_packet_signature</title>
     
     <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
     <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Class: openpgp_msg_message</h1>
+    <h1 class="page-title">Class: openpgp_packet_signature</h1>
     
     
 
@@ -27,10 +27,15 @@
     
 <header>
     <h2>
-    openpgp_msg_message
+    openpgp_packet_signature
     </h2>
     
-        <div class="class-description">Top-level message object. Contains information from one or more packets</div>
+        <div class="class-description">Implementation of the Signature Packet (Tag 2)
+
+RFC4480 5.2:
+A Signature packet describes a binding between some public key and
+some data.  The most common signatures are a signature of a file or a
+block of text, and a signature that is a certification of a User ID.</div>
     
 </header>  
 
@@ -41,7 +46,7 @@
     
         
 <dt>
-    <h4 class="name" id="openpgp_msg_message"><span class="type-signature">&lt;protected> </span>new openpgp_msg_message</h4>
+    <h4 class="name" id="openpgp_packet_signature"><span class="type-signature"></span>new openpgp_packet_signature</h4>
     
     
 </dt>
@@ -73,7 +78,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12196</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 210</li></ul></dd>
 	
     
     
@@ -114,7 +119,7 @@
         <dl>
             
 <dt>
-    <h4 class="name" id="decrypt"><span class="type-signature">&lt;inner> </span>decrypt</h4>
+    <h4 class="name" id="getIssuer"><span class="type-signature">&lt;inner> </span>getIssuer</h4>
     
     
 </dt>
@@ -122,80 +127,12 @@
     
     
     <div class="description">
-        Decrypts a message and generates user interface message out of the found.
-MDC will be verified as well as message signatures
+        gets the issuer key id of this signature
     </div>
     
     
     
     
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>private_key</code></td>
-            
-            
-            <td class="type">
-            
-                        <a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a>
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">the private the message is encrypted with (corresponding to the session key)</td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>sessionkey</code></td>
-            
-            
-            <td class="type">
-            
-                        <a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a>
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">the session key to be used to decrypt the message</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
     
     
     
@@ -218,7 +155,7 @@ MDC will be verified as well as message signatures
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12211</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 910</li></ul></dd>
 	
     
     
@@ -238,7 +175,7 @@ MDC will be verified as well as message signatures
     
             
 <div class="param-desc">
-    plaintext of the message or null on error
+    issuer key id as string (8bytes)
 </div>
 
 
@@ -263,7 +200,7 @@ MDC will be verified as well as message signatures
         
             
 <dt>
-    <h4 class="name" id="decryptAndVerifySignature"><span class="type-signature">&lt;inner> </span>decryptAndVerifySignature</h4>
+    <h4 class="name" id="getIssuerKey"><span class="type-signature">&lt;inner> </span>getIssuerKey</h4>
     
     
 </dt>
@@ -271,8 +208,88 @@ MDC will be verified as well as message signatures
     
     
     <div class="description">
-        Decrypts a message and generates user interface message out of the found.
-MDC will be verified as well as message signatures
+        Tries to get the corresponding public key out of the public keyring for the issuer created this signature
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 922</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    if found the public key will be returned. null otherwise
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">obj: [openpgp_msg_publickey], text: [String]</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="read_packet"><span class="type-signature">&lt;inner> </span>read_packet</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        parsing function for a signature packet (tag 2).
     </div>
     
     
@@ -304,7 +321,278 @@ MDC will be verified as well as message signatures
 	
         <tr>
             
-                <td class="name"><code>private_key</code></td>
+                <td class="name"><code>input</code></td>
+            
+            
+            <td class="type">
+            
+                        string
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">payload of a tag 2 packet</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">position to start reading from the input string</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or the remaining length of input at position</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 260</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    object representation
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">openpgp_packet_encrypteddata</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toString"><span class="type-signature">&lt;inner> </span>toString</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        generates debug output (pretty print)
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 852</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    String which gives some information about the signature packet
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">string</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="verify"><span class="type-signature">&lt;inner> </span>verify</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        verifys the signature packet. Note: not signature types are implemented
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+            
+            <td class="type">
+            
+                        String
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">data which on the signature applies</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>key</code></td>
             
             
             <td class="type">
@@ -318,49 +606,7 @@ MDC will be verified as well as message signatures
             
             
             
-            <td class="description last">the private the message is encrypted with (corresponding to the session key)</td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>sessionkey</code></td>
-            
-            
-            <td class="type">
-            
-                        <a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a>
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">the session key to be used to decrypt the message</td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>pubkey</code></td>
-            
-            
-            <td class="type">
-            
-                        <a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a>
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">Array of public keys to check signature against. If not provided, checks local keystore.</td>
+            <td class="description last">the public key to verify the signature</td>
         </tr>
 	
 	
@@ -388,7 +634,7 @@ MDC will be verified as well as message signatures
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12223</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 668</li></ul></dd>
 	
     
     
@@ -408,134 +654,7 @@ MDC will be verified as well as message signatures
     
             
 <div class="param-desc">
-    plaintext of the message or null on error
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">String</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="verifySignature"><span class="type-signature">&lt;inner> </span>verifySignature</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Verifies a message signature. This function can be called after read_message if the message was signed only.
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>pubkey</code></td>
-            
-            
-            <td class="type">
-            
-                        <a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a>
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">Array of public keys to check signature against. If not provided, checks local keystore.</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12282</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    true if the signature was correct; otherwise false
+    True if message is verified, else false.
 </div>
 
 
@@ -548,6 +667,324 @@ MDC will be verified as well as message signatures
 	<dd>
 		
 		<span class="param-type">boolean</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="write_message_signature"><span class="type-signature">&lt;inner> </span>write_message_signature</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        creates a string representation of a message signature packet (tag 2).
+This can be only used on text data
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>signature_type</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">should be 1 (one)</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+            
+            <td class="type">
+            
+                        String
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">data to be signed</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>privatekey</code></td>
+            
+            
+            <td class="type">
+            
+                        <a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a>
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">private key used to sign the message. (secMPIs MUST be unlocked)</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 400</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    string representation of a signature packet
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">string</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="write_sub_signature_packet"><span class="type-signature">&lt;inner> </span>write_sub_signature_packet</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+            
+            <td class="type">
+            
+                        String
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">data to be included</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 445</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">String</span> 
 		
 	</dd>
 </dl>

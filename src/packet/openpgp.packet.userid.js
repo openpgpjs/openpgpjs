@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @class
+ * @classdesc Implementation of the User ID Packet (Tag 13)
  * A User ID packet consists of UTF-8 text that is intended to represent
  * the name and email address of the key holder.  By convention, it
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
@@ -32,10 +34,10 @@ function openpgp_packet_userid() {
 
 	/**
 	 * parsing function for a user id packet (tag 13).
-	 * @param input [string] payload of a tag 13 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 13 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.text = '';
@@ -49,8 +51,8 @@ function openpgp_packet_userid() {
 
 	/**
 	 * creates a string representation of the user id packet
-	 * @param user_id [String] the user id as string ("John Doe <john.doe@mail.us")
-	 * @return [String] string representation
+	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
+	 * @return {String} string representation
 	 */
 	function write_packet(user_id) {
 		this.text = user_id;
@@ -61,11 +63,11 @@ function openpgp_packet_userid() {
 
 	/**
 	 * Continue parsing packets belonging to the userid packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		if (parent_node.tagType == 6) { // public key
@@ -145,7 +147,7 @@ function openpgp_packet_userid() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user id packet
+	 * @return {string} String which gives some information about the user id packet
 	 */
 	function toString() {
 		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
@@ -164,7 +166,7 @@ function openpgp_packet_userid() {
 
 	/**
 	 * lookup function to find certification revocation signatures
-	 * @param keyId string containing the key id of the issuer of this signature
+	 * @param {string} keyId string containing the key id of the issuer of this signature
 	 * @return a CertificationRevocationSignature if found; otherwise null
 	 */
 	function hasCertificationRevocationSignature(keyId) {

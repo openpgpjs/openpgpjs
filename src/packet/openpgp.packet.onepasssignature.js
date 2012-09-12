@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the One-Pass Signature Packets (Tag 4)
+ * @class
+ * @classdesc Implementation of the One-Pass Signature Packets (Tag 4)
  * 
  * RFC4880 5.4:
  * The One-Pass Signature packet precedes the signed data and contains
@@ -36,10 +37,10 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param input [string] payload of a tag 4 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 4 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -71,14 +72,14 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * creates a string representation of a one-pass signature packet
-	 * @param type [integer] Signature types as described in RFC4880 Section 5.2.1.
-	 * @param hashalgorithm [integer] the hash algorithm used within the signature
-	 * @param privatekey [openpgp_msg_privatekey] the private key used to generate the signature
-	 * @param length [integer] length of data to be signed
-	 * @param nested [boolean] boolean showing whether the signature is nested. 
+	 * @param {integer} type Signature types as described in RFC4880 Section 5.2.1.
+	 * @param {integer} hashalgorithm the hash algorithm used within the signature
+	 * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
+	 * @param {integer} length length of data to be signed
+	 * @param {boolean} nested boolean showing whether the signature is nested. 
 	 *  "true" indicates that the next packet is another One-Pass Signature packet
 	 *   that describes another signature to be applied to the same message data. 
-	 * @return [String] a string representation of a one-pass signature packet
+	 * @return {String} a string representation of a one-pass signature packet
 	 */
 	function write_packet(type, hashalgorithm, privatekey,length, nested) {
 		var result =""; 
@@ -99,7 +100,7 @@ function openpgp_packet_onepasssignature() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the one-pass signature packet
+	 * @return {string} String which gives some information about the one-pass signature packet
 	 */
 	function toString() {
 		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+

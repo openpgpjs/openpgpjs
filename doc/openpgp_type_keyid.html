@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Util</title>
+    <title>JSDoc: Class: openpgp_type_keyid</title>
     
     <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
     <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Class: Util</h1>
+    <h1 class="page-title">Class: openpgp_type_keyid</h1>
     
     
 
@@ -27,15 +27,14 @@
     
 <header>
     <h2>
-    Util
+    openpgp_type_keyid
     </h2>
     
-        <div class="class-description">Utilities for uncompressing and base64 decoding
-Class for gunzipping, unzipping and base64 decoding of files.
-It is used for reading GEONExT, Geogebra and Intergeo files.
-
-Only Huffman codes are decoded in gunzip.
-The code is based on the source code for gunzip.c by Pasi Ojala</div>
+        <div class="class-description">Implementation of type key id (RFC4880 3.3)
+ A Key ID is an eight-octet scalar that identifies a key.
+   Implementations SHOULD NOT assume that Key IDs are unique.  The
+   section "Enhanced Key Formats" below describes how Key IDs are
+   formed.</div>
     
 </header>  
 
@@ -46,7 +45,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
         
 <dt>
-    <h4 class="name" id="Util"><span class="type-signature"></span>new Util</h4>
+    <h4 class="name" id="openpgp_type_keyid"><span class="type-signature"></span>new openpgp_type_keyid</h4>
     
     
 </dt>
@@ -78,20 +77,11 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10985</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12495</li></ul></dd>
 	
     
     
 	
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c">http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c</a></li>
-        
-            <li><a href="http://www.cs.tut.fi/~albert">http://www.cs.tut.fi/~albert</a></li>
-        </ul>
-	</dd>
 	
 	
 	
@@ -120,65 +110,6 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
     
     
-    
-        <h3 class="subsection-title">Members</h3>
-        
-        <dl>
-            
-<dt>
-    <h4 class="name" id="Base64"><span class="type-signature">&lt;static> </span>Base64<span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        Base64 encoding / decoding
-    </div>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 11876</li></ul></dd>
-	
-    
-    
-	
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.webtoolkit.info/">http://www.webtoolkit.info/</A></li>
-        </ul>
-	</dd>
-	
-	
-	
-</dl>
-
-    
-    
-</dd>
-
-        </dl>
     
     
     
@@ -187,7 +118,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
         <dl>
             
 <dt>
-    <h4 class="name" id="genUUID"><span class="type-signature">&lt;static> </span>genUUID</h4>
+    <h4 class="name" id="read_packet"><span class="type-signature">&lt;inner> </span>read_packet</h4>
     
     
 </dt>
@@ -195,134 +126,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
     
     <div class="description">
-        Generate a random uuid.
-http://www.broofa.com
-mailto:robert@broofa.com
-
-Copyright (c) 2010 Robert Kieffer
-Dual licensed under the MIT and GPL licenses.
-
-EXAMPLES:
-  >>> Math.uuid()
-  "92329D39-6F5C-4520-ABFC-AAB64544E172"
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12152</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="Unzip"><span class="type-signature">&lt;static> </span>Unzip</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Unzip zip files
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10990</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="utf8Decode"><span class="type-signature">&lt;static> </span>utf8Decode</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Decoding string into utf-8
+        parsing method for a key id
     </div>
     
     
@@ -354,7 +158,7 @@ EXAMPLES:
 	
         <tr>
             
-                <td class="name"><code>string</code></td>
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
@@ -368,7 +172,28 @@ EXAMPLES:
             
             
             
-            <td class="description last">to decode</td>
+            <td class="description last">input to read the key id from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">position where to start reading the key id from input</td>
         </tr>
 	
 	
@@ -396,7 +221,7 @@ EXAMPLES:
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12114</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12502</li></ul></dd>
 	
     
     
@@ -416,7 +241,76 @@ EXAMPLES:
     
             
 <div class="param-desc">
-    utf8 decoded string
+    this object
+</div>
+
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toString"><span class="type-signature">&lt;inner> </span>toString</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        generates debug output (pretty print)
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12511</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    Key Id as hexadecimal string
 </div>
 
 
@@ -460,7 +354,7 @@ EXAMPLES:
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:26 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:27 GMT-0400 (EDT)
 </footer>
 
 <script> sh_highlightDocument(); </script>

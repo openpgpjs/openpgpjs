@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ * @class
+ * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
  * 
  * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature
@@ -35,14 +36,12 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	/**
 	 * parsing function for the packet.
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 18 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 18 packet
+	 * @param {integer} position
+	 *             position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encryptedintegrityprotecteddata] object
+	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
 	 *         representation
 	 */
 	function read_packet(input, position, len) {
@@ -73,11 +72,9 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	 * Creates a string representation of a Sym. Encrypted Integrity Protected
 	 * Data Packet (tag 18) (see RFC4880 5.13)
 	 * 
-	 * @param symmetric_algorithm
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
+	 * @param {integer} symmetric_algorithm
+	 *            the selected symmetric encryption algorithm to be used
+	 * @param {String} key the key of cipher blocksize length to be used
 	 * @param data
 	 *            plaintext data to be encrypted within the packet
 	 * @return a string representation of the packet
@@ -110,11 +107,9 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	 * Decrypts the encrypted data contained in this object read_packet must
 	 * have been called before
 	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
+	 * @param {integer} symmetric_algorithm_type
+	 *            the selected symmetric encryption algorithm to be used
+	 * @param {String} key the key of cipher blocksize length to be used
 	 * @return the decrypted data of this packet
 	 */
 	function decrypt(symmetric_algorithm_type, key) {

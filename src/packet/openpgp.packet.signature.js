@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Signature Packet (Tag 2)
+ * @class
+ * @classdesc Implementation of the Signature Packet (Tag 2)
  * 
  * RFC4480 5.2:
  * A Signature packet describes a binding between some public key and
@@ -68,10 +69,10 @@ function openpgp_packet_signature() {
 
 	/**
 	 * parsing function for a signature packet (tag 2).
-	 * @param input [string] payload of a tag 2 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 2 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.data = input.substring	(position, position+len);
@@ -208,10 +209,10 @@ function openpgp_packet_signature() {
 	/**
 	 * creates a string representation of a message signature packet (tag 2).
 	 * This can be only used on text data
-	 * @param signature_type [integer] should be 1 (one) 
-	 * @param data [String] data to be signed
-	 * @param privatekey [openpgp_msg_privatekey] private key used to sign the message. (secMPIs MUST be unlocked)
-	 * @return string representation of a signature packet
+	 * @param {integer} signature_type should be 1 (one) 
+	 * @param {String} data data to be signed
+	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. (secMPIs MUST be unlocked)
+	 * @return {string} string representation of a signature packet
 	 */
 	function write_message_signature(signature_type, data, privatekey) {
 		var publickey = privatekey.privateKeyPacket.publicKey;
@@ -254,9 +255,9 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
-	 * @param type [integer] subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
-	 * @param data [String] data to be included
-	 * @return [String] a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
+	 * @param {integer} type subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
+	 * @param {String} data data to be included
+	 * @return {String} a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
 	 */
 	function write_sub_signature_packet(type, data) {
 		var result = "";
@@ -662,7 +663,7 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the signature packet
+	 * @return {string} String which gives some information about the signature packet
 	 */
 
 	function toString () {
@@ -721,7 +722,7 @@ function openpgp_packet_signature() {
 
 	/**
 	 * gets the issuer key id of this signature
-	 * @return [String] issuer key id as string (8bytes)
+	 * @return {String} issuer key id as string (8bytes)
 	 */
 	function getIssuer() {
 		 if (this.version == 4)

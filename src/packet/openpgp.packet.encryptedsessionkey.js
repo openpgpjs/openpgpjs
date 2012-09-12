@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)
+ * @class
+ * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
  * 
  * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
@@ -35,14 +36,11 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * parsing function for a publickey encrypted session key packet (tag 1).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 1 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_pub_key_packet(input, position, len) {
 		this.tagType = 1;
@@ -87,23 +85,19 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * create a string representation of a tag 1 packet
 	 * 
-	 * @param publicKeyId
-	 *            [String] the public key id corresponding to publicMPIs key as
-	 *            string
-	 * @param publicMPIs
-	 *            [Array[openpgp_type_mpi]] multiprecision integer objects
-	 *            describing the public key
-	 * @param pubalgo
-	 *            [integer] the corresponding public key algorithm // See
-	 *            RFC4880 9.1
-	 * @param symmalgo
-	 *            [integer] the symmetric cipher algorithm used to encrypt the
-	 *            data within an encrypteddatapacket or
-	 *            encryptedintegrityprotecteddatapacket following this packet //
-	 *            See RFC4880 9.2
-	 * @param sessionkey
-	 *            [String] a string of randombytes representing the session key
-	 * @return [String] the string representation
+	 * @param {String} publicKeyId
+	 *             the public key id corresponding to publicMPIs key as string
+	 * @param {Array[openpgp_type_mpi]} publicMPIs
+	 *            multiprecision integer objects describing the public key
+	 * @param {integer} pubalgo
+	 *            the corresponding public key algorithm // See RFC4880 9.1
+	 * @param {integer} symmalgo
+	 *            the symmetric cipher algorithm used to encrypt the data within 
+	 *            an encrypteddatapacket or encryptedintegrityprotecteddatapacket 
+	 *            following this packet //See RFC4880 9.2
+	 * @param {String} sessionkey
+	 *            a string of randombytes representing the session key
+	 * @return {String} the string representation
 	 */
 	function write_pub_key_packet(publicKeyId, publicMPIs, pubalgo, symmalgo,
 			sessionkey) {
@@ -129,14 +123,12 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * parsing function for a symmetric encrypted session key packet (tag 3).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 1 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_symmetric_key_packet(input, position, len) {
 		this.tagType = 3;
@@ -164,12 +156,11 @@ function openpgp_packet_encryptedsessionkey() {
 	 * Decrypts the session key (only for public key encrypted session key
 	 * packets (tag 1)
 	 * 
-	 * @param msg
-	 *            [openpgp_msg_message] the message object (with member
-	 *            encryptedData
-	 * @param key
-	 *            [openpgp_msg_privatekey] private key with secMPIs unlocked
-	 * @return [String] the unencrypted session key
+	 * @param {openpgp_msg_message} msg
+	 *            the message object (with member encryptedData
+	 * @param {openpgp_msg_privatekey} key
+	 *            private key with secMPIs unlocked
+	 * @return {String} the unencrypted session key
 	 */
 	function decrypt(msg, key) {
 		if (this.tagType == 1) {

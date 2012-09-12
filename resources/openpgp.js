@@ -6104,11 +6104,8 @@ JXG.decompress = function(str) {return unescape((new JXG.Util.Unzip(JXG.Util.Bas
 */
 
 /**
- * @fileoverview Utilities for uncompressing and base64 decoding
- */
-
-/**
   * @class Util class
+  * @classdesc Utilities for uncompressing and base64 decoding
   * Class for gunzipping, unzipping and base64 decoding of files.
   * It is used for reading GEONExT, Geogebra and Intergeo files.
   *
@@ -7323,7 +7320,6 @@ JXG.Util.genUUID = function() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the GPG4Browsers config object
  *
  * This object contains configuration values and implements
  * storing and retrieving configuration them from HTML5 local storage.
@@ -7332,6 +7328,8 @@ JXG.Util.genUUID = function() {
  * using openpgp.config
  * Stored config parameters can be accessed using
  * openpgp.config.config
+ * @class
+ * @classdesc Implementation of the GPG4Browsers config object
  */
 function openpgp_config() {
 	this.config = null;
@@ -7859,6 +7857,12 @@ function openpgp_encoding_emsa_pkcs1_decode(algo, data) {
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview The openpgp base class should provide all of the functionality 
+ * to consume the openpgp.js library. All additional classes are documented 
+ * for extending and developing on top of the base library.
+ */
 
 /**
  * GPG4Browsers Core interface. A single instance is hold
@@ -9142,7 +9146,8 @@ function openpgp_msg_publickey() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Compressed Data Packet (Tag 8)
+ * @class
+ * @classdesc Implementation of the Compressed Data Packet (Tag 8)
  * 
  * RFC4880 5.6:
  * The Compressed Data packet contains compressed data.  Typically, this
@@ -9155,10 +9160,10 @@ function openpgp_packet_compressed() {
 	
 	/**
 	 * parsing function for the packet.
-	 * @param input [string] payload of a tag 8 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_compressed] object representation
+	 * @param {string} input payload of a tag 8 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_compressed} object representation
 	 */
 	function read_packet (input, position, len) {
 		this.packetLength = len;
@@ -9172,7 +9177,7 @@ function openpgp_packet_compressed() {
 	/**
 	 * decompression method for decompressing the compressed data
 	 * read by read_packet
-	 * @return [String] the decompressed data
+	 * @return {String} the decompressed data
 	 */
 	function decompress() {
 		if (this.decompressedData != null)
@@ -9226,9 +9231,9 @@ function openpgp_packet_compressed() {
 
 	/**
 	 * Compress the packet data (member decompressedData)
-	 * @param type [integer] algorithm to be used // See RFC 4880 9.3
-	 * @param data [String] data to be compressed
-	 * @return [String] The compressed data stored in attribute compressedData
+	 * @param {integer} type algorithm to be used // See RFC 4880 9.3
+	 * @param {String} data data to be compressed
+	 * @return {String} The compressed data stored in attribute compressedData
 	 */
 	function compress(type, data) {
 		this.type = type;
@@ -9258,9 +9263,9 @@ function openpgp_packet_compressed() {
 	
 	/**
 	 * creates a string representation of the packet
-	 * @param algorithm [integer] algorithm to be used // See RFC 4880 9.3
-	 * @param data [String] data to be compressed
-	 * @return [String] string-representation of the packet
+	 * @param {integer} algorithm algorithm to be used // See RFC 4880 9.3
+	 * @param {String} data data to be compressed
+	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(algorithm, data) {
 		this.decompressedData = data;
@@ -9273,7 +9278,7 @@ function openpgp_packet_compressed() {
 	
 	/**
 	 * pretty printing the packet (useful for debug purposes)
-	 * @return [String]
+	 * @return {String}
 	 */
 	function toString() {
 		return '5.6.  Compressed Data Packet (Tag 8)\n'+
@@ -9306,7 +9311,8 @@ function openpgp_packet_compressed() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ * @class
+ * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
  * 
  * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
@@ -9324,14 +9330,11 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * parsing function for the packet.
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 9 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 9 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		var mypos = position;
@@ -9345,10 +9348,10 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * symmetrically decrypt the packet data
 	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
+	 * @param {integer} symmetric_algorithm_type
+	 *             symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key
+	 *             key as string with the corresponding length to the
 	 *            algorithm
 	 * @return the decrypted data;
 	 */
@@ -9363,14 +9366,11 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param algo
-	 *            [Integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
+	 * @param {Integer} algo symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key key as string with the corresponding length to the
 	 *            algorithm
-	 * @param data
-	 *            [String] data to be
-	 * @return [String] string-representation of the packet
+	 * @param {String} data data to be
+	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(algo, key, data) {
 		var result = "";
@@ -9410,7 +9410,8 @@ function openpgp_packet_encrypteddata() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ * @class
+ * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
  * 
  * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature
@@ -9429,14 +9430,12 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	/**
 	 * parsing function for the packet.
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 18 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 18 packet
+	 * @param {integer} position
+	 *             position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encryptedintegrityprotecteddata] object
+	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
 	 *         representation
 	 */
 	function read_packet(input, position, len) {
@@ -9467,11 +9466,9 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	 * Creates a string representation of a Sym. Encrypted Integrity Protected
 	 * Data Packet (tag 18) (see RFC4880 5.13)
 	 * 
-	 * @param symmetric_algorithm
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
+	 * @param {integer} symmetric_algorithm
+	 *            the selected symmetric encryption algorithm to be used
+	 * @param {String} key the key of cipher blocksize length to be used
 	 * @param data
 	 *            plaintext data to be encrypted within the packet
 	 * @return a string representation of the packet
@@ -9504,11 +9501,9 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 	 * Decrypts the encrypted data contained in this object read_packet must
 	 * have been called before
 	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] the selected symmetric encryption algorithm to be
-	 *            used
-	 * @param key
-	 *            [String] the key of cipher blocksize length to be used
+	 * @param {integer} symmetric_algorithm_type
+	 *            the selected symmetric encryption algorithm to be used
+	 * @param {String} key the key of cipher blocksize length to be used
 	 * @return the decrypted data of this packet
 	 */
 	function decrypt(symmetric_algorithm_type, key) {
@@ -9569,7 +9564,8 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)
+ * @class
+ * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
  * 
  * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
@@ -9588,14 +9584,11 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * parsing function for a publickey encrypted session key packet (tag 1).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 1 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_pub_key_packet(input, position, len) {
 		this.tagType = 1;
@@ -9640,23 +9633,19 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * create a string representation of a tag 1 packet
 	 * 
-	 * @param publicKeyId
-	 *            [String] the public key id corresponding to publicMPIs key as
-	 *            string
-	 * @param publicMPIs
-	 *            [Array[openpgp_type_mpi]] multiprecision integer objects
-	 *            describing the public key
-	 * @param pubalgo
-	 *            [integer] the corresponding public key algorithm // See
-	 *            RFC4880 9.1
-	 * @param symmalgo
-	 *            [integer] the symmetric cipher algorithm used to encrypt the
-	 *            data within an encrypteddatapacket or
-	 *            encryptedintegrityprotecteddatapacket following this packet //
-	 *            See RFC4880 9.2
-	 * @param sessionkey
-	 *            [String] a string of randombytes representing the session key
-	 * @return [String] the string representation
+	 * @param {String} publicKeyId
+	 *             the public key id corresponding to publicMPIs key as string
+	 * @param {Array[openpgp_type_mpi]} publicMPIs
+	 *            multiprecision integer objects describing the public key
+	 * @param {integer} pubalgo
+	 *            the corresponding public key algorithm // See RFC4880 9.1
+	 * @param {integer} symmalgo
+	 *            the symmetric cipher algorithm used to encrypt the data within 
+	 *            an encrypteddatapacket or encryptedintegrityprotecteddatapacket 
+	 *            following this packet //See RFC4880 9.2
+	 * @param {String} sessionkey
+	 *            a string of randombytes representing the session key
+	 * @return {String} the string representation
 	 */
 	function write_pub_key_packet(publicKeyId, publicMPIs, pubalgo, symmalgo,
 			sessionkey) {
@@ -9682,14 +9671,12 @@ function openpgp_packet_encryptedsessionkey() {
 	/**
 	 * parsing function for a symmetric encrypted session key packet (tag 3).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 1 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 1 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_symmetric_key_packet(input, position, len) {
 		this.tagType = 3;
@@ -9717,12 +9704,11 @@ function openpgp_packet_encryptedsessionkey() {
 	 * Decrypts the session key (only for public key encrypted session key
 	 * packets (tag 1)
 	 * 
-	 * @param msg
-	 *            [openpgp_msg_message] the message object (with member
-	 *            encryptedData
-	 * @param key
-	 *            [openpgp_msg_privatekey] private key with secMPIs unlocked
-	 * @return [String] the unencrypted session key
+	 * @param {openpgp_msg_message} msg
+	 *            the message object (with member encryptedData
+	 * @param {openpgp_msg_privatekey} key
+	 *            private key with secMPIs unlocked
+	 * @return {String} the unencrypted session key
 	 */
 	function decrypt(msg, key) {
 		if (this.tagType == 1) {
@@ -9802,14 +9788,18 @@ function openpgp_packet_encryptedsessionkey() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @class
+ * @classdesc Parent openpgp packet class. Operations focus on determining packet types
+ *     and packet header.
+ */
 function _openpgp_packet() {
 	/**
 	 * Encodes a given integer of length to the openpgp length specifier to a
 	 * string
 	 * 
-	 * @param length
-	 *            [Integer] of the length to encode
-	 * @return string with openpgp length representation
+	 * @param {Integer} length of the length to encode
+	 * @return {string} string with openpgp length representation
 	 */
 	function encode_length(length) {
 		result = "";
@@ -9837,11 +9827,9 @@ function _openpgp_packet() {
 	 * Writes a packet header version 4 with the given tag_type and length to a
 	 * string
 	 * 
-	 * @param tag_type
-	 *            integer of tag type
-	 * @param length
-	 *            integer length of the payload
-	 * @return string of the header
+	 * @param {integer} tag_type tag type
+	 * @param {integer} length length of the payload
+	 * @return {string} string of the header
 	 */
 	function write_packet_header(tag_type, length) {
 		/* we're only generating v4 packet headers here */
@@ -9855,11 +9843,9 @@ function _openpgp_packet() {
 	 * Writes a packet header Version 3 with the given tag_type and length to a
 	 * string
 	 * 
-	 * @param tag_type
-	 *            integer of tag type
-	 * @param length
-	 *            integer length of the payload
-	 * @return string of the header
+	 * @param {integer} tag_type tag type
+	 * @param {integer} length length of the payload
+	 * @return {string} string of the header
 	 */
 	function write_old_packet_header(tag_type, length) {
 		var result = "";
@@ -9884,13 +9870,10 @@ function _openpgp_packet() {
 	/**
 	 * Generic static Packet Parser function
 	 * 
-	 * @param input
-	 *            [String] input stream as string
-	 * @param position
-	 *            [integer] position to start parsing
-	 * @param len
-	 *            [integer] length of the input from position on
-	 * @return [openpgp_packet_*] returns a parsed openpgp_packet
+	 * @param {String} input input stream as string
+	 * @param {integer} position position to start parsing
+	 * @param {integer} len length of the input from position on
+	 * @return {openpgp_packet_*} returns a parsed openpgp_packet
 	 */
 	function read_packet(input, position, len) {
 		// some sanity checks
@@ -10212,7 +10195,8 @@ var openpgp_packet = new _openpgp_packet();
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ * @class
+ * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
  *   
  * RFC4480 5.5:
  * A key material packet contains all the information about a public or
@@ -10741,11 +10725,11 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * Continue parsing packets belonging to the key material such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		this.parentNode = parent_node;
@@ -10853,7 +10837,7 @@ function openpgp_packet_keymaterial() {
 
 	/**
 	 * calculates the key id of they key 
-	 * @return [String] a 8 byte key id
+	 * @return {String} a 8 byte key id
 	 */
 	function getKeyId() {
 		if (this.version == 4) {
@@ -10868,7 +10852,7 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * calculates the fingerprint of the key
-	 * @return [String] a string containing the fingerprint
+	 * @return {String} a string containing the fingerprint
 	 */
 	function getFingerprint() {
 		if (this.version == 4) {
@@ -10883,8 +10867,12 @@ function openpgp_packet_keymaterial() {
 	
 	/*
      * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
+     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param {RSA.keyObject} key
+     * @param password
+     * @param s2kHash
+     * @param symmetricEncryptionAlgorithm
+     * @param timePacket
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
@@ -10960,8 +10948,9 @@ function openpgp_packet_keymaterial() {
 	
 	/*
      * same as write_private_key, but has less information because of public key.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
+     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param {RSA.keyObject} key
+     * @param timePacket
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_public_key(keyType, key, timePacket){
@@ -11015,7 +11004,8 @@ function openpgp_packet_keymaterial() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Literal Data Packet (Tag 11)
+ * @class
+ * @classdesc Implementation of the Literal Data Packet (Tag 11)
  * 
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
@@ -11026,14 +11016,13 @@ function openpgp_packet_literaldata() {
 	/**
 	 * parsing function for a literal data packet (tag 11).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 11 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 11 packet
+	 * @param {integer} position
+	 *            position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -11052,9 +11041,8 @@ function openpgp_packet_literaldata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param data
-	 *            [String] the data to be inserted as body
-	 * @return [String] string-representation of the packet
+	 * @param {String} data the data to be inserted as body
+	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(data) {
 		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
@@ -11082,7 +11070,7 @@ function openpgp_packet_literaldata() {
 	/**
 	 * generates debug output (pretty print)
 	 * 
-	 * @return String which gives some information about the keymaterial
+	 * @return {string} String which gives some information about the keymaterial
 	 */
 	function toString() {
 		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
@@ -11114,7 +11102,8 @@ function openpgp_packet_literaldata() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the strange "Marker packet" (Tag 10)
+ * @class
+ * @classdesc Implementation of the strange "Marker packet" (Tag 10)
  * 
  * RFC4880 5.8: An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
@@ -11128,14 +11117,13 @@ function openpgp_packet_marker() {
 	/**
 	 * parsing function for a literal data packet (tag 10).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 10 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 10 packet
+	 * @param {integer} position
+	 *            position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = 3;
@@ -11150,7 +11138,7 @@ function openpgp_packet_marker() {
 	/**
 	 * Generates Debug output
 	 * 
-	 * @return String which gives some information about the keymaterial
+	 * @return {string} String which gives some information about the keymaterial
 	 */
 	function toString() {
 		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"
@@ -11159,7 +11147,8 @@ function openpgp_packet_marker() {
 
 	this.read_packet = read_packet;
 	this.toString = toString;
-}// GPG4Browsers - An OpenPGP implementation in javascript
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -11177,7 +11166,8 @@ function openpgp_packet_marker() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Modification Detection Code Packet (Tag 19)
+ * @class
+ * @classdesc Implementation of the Modification Detection Code Packet (Tag 19)
  * 
  * RFC4880 5.14: The Modification Detection Code packet contains a SHA-1 hash of
  * plaintext data, which is used to detect message modification. It is only used
@@ -11193,14 +11183,13 @@ function openpgp_packet_modificationdetectioncode() {
 	/**
 	 * parsing function for a modification detection code packet (tag 19).
 	 * 
-	 * @param input
-	 *            [String] payload of a tag 19 packet
-	 * @param position
-	 *            [Integer] position to start reading from the input string
-	 * @param len
-	 *            [Integer] length of the packet or the remaining length of
+	 * @param {String} input payload of a tag 19 packet
+	 * @param {Integer} position
+	 *            position to start reading from the input string
+	 * @param {Integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -11228,7 +11217,7 @@ function openpgp_packet_modificationdetectioncode() {
 	/**
 	 * generates debug output (pretty print)
 	 * 
-	 * @return String which gives some information about the modification
+	 * @return {string} String which gives some information about the modification
 	 *         detection code
 	 */
 	function toString() {
@@ -11256,7 +11245,8 @@ function openpgp_packet_modificationdetectioncode() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the One-Pass Signature Packets (Tag 4)
+ * @class
+ * @classdesc Implementation of the One-Pass Signature Packets (Tag 4)
  * 
  * RFC4880 5.4:
  * The One-Pass Signature packet precedes the signed data and contains
@@ -11276,10 +11266,10 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param input [string] payload of a tag 4 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 4 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -11311,14 +11301,14 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * creates a string representation of a one-pass signature packet
-	 * @param type [integer] Signature types as described in RFC4880 Section 5.2.1.
-	 * @param hashalgorithm [integer] the hash algorithm used within the signature
-	 * @param privatekey [openpgp_msg_privatekey] the private key used to generate the signature
-	 * @param length [integer] length of data to be signed
-	 * @param nested [boolean] boolean showing whether the signature is nested. 
+	 * @param {integer} type Signature types as described in RFC4880 Section 5.2.1.
+	 * @param {integer} hashalgorithm the hash algorithm used within the signature
+	 * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
+	 * @param {integer} length length of data to be signed
+	 * @param {boolean} nested boolean showing whether the signature is nested. 
 	 *  "true" indicates that the next packet is another One-Pass Signature packet
 	 *   that describes another signature to be applied to the same message data. 
-	 * @return [String] a string representation of a one-pass signature packet
+	 * @return {String} a string representation of a one-pass signature packet
 	 */
 	function write_packet(type, hashalgorithm, privatekey,length, nested) {
 		var result =""; 
@@ -11339,7 +11329,7 @@ function openpgp_packet_onepasssignature() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the one-pass signature packet
+	 * @return {string} String which gives some information about the one-pass signature packet
 	 */
 	function toString() {
 		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+
@@ -11355,7 +11345,8 @@ function openpgp_packet_onepasssignature() {
 	this.read_packet = read_packet;
 	this.toString = toString;
 	this.write_packet = write_packet;
-};// GPG4Browsers - An OpenPGP implementation in javascript
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -11373,7 +11364,8 @@ function openpgp_packet_onepasssignature() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Signature Packet (Tag 2)
+ * @class
+ * @classdesc Implementation of the Signature Packet (Tag 2)
  * 
  * RFC4480 5.2:
  * A Signature packet describes a binding between some public key and
@@ -11425,10 +11417,10 @@ function openpgp_packet_signature() {
 
 	/**
 	 * parsing function for a signature packet (tag 2).
-	 * @param input [string] payload of a tag 2 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 2 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.data = input.substring	(position, position+len);
@@ -11565,10 +11557,10 @@ function openpgp_packet_signature() {
 	/**
 	 * creates a string representation of a message signature packet (tag 2).
 	 * This can be only used on text data
-	 * @param signature_type [integer] should be 1 (one) 
-	 * @param data [String] data to be signed
-	 * @param privatekey [openpgp_msg_privatekey] private key used to sign the message. (secMPIs MUST be unlocked)
-	 * @return string representation of a signature packet
+	 * @param {integer} signature_type should be 1 (one) 
+	 * @param {String} data data to be signed
+	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. (secMPIs MUST be unlocked)
+	 * @return {string} string representation of a signature packet
 	 */
 	function write_message_signature(signature_type, data, privatekey) {
 		var publickey = privatekey.privateKeyPacket.publicKey;
@@ -11611,9 +11603,9 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
-	 * @param type [integer] subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
-	 * @param data [String] data to be included
-	 * @return [String] a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
+	 * @param {integer} type subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
+	 * @param {String} data data to be included
+	 * @return {String} a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
 	 */
 	function write_sub_signature_packet(type, data) {
 		var result = "";
@@ -12019,7 +12011,7 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the signature packet
+	 * @return {string} String which gives some information about the signature packet
 	 */
 
 	function toString () {
@@ -12078,7 +12070,7 @@ function openpgp_packet_signature() {
 
 	/**
 	 * gets the issuer key id of this signature
-	 * @return [String] issuer key id as string (8bytes)
+	 * @return {String} issuer key id as string (8bytes)
 	 */
 	function getIssuer() {
 		 if (this.version == 4)
@@ -12128,6 +12120,8 @@ function openpgp_packet_signature() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** 
+ * @class
+ * @classdesc Implementation of the User Attribute Packet (Tag 17)
  *  The User Attribute packet is a variation of the User ID packet.  It
  *  is capable of storing more types of data than the User ID packet,
  *  which is limited to text.  Like the User ID packet, a User Attribute
@@ -12151,10 +12145,10 @@ function openpgp_packet_userattribute() {
 
 	/**
 	 * parsing function for a user attribute packet (tag 17).
-	 * @param input [string] payload of a tag 17 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 17 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet (input, position, len) {
 		var total_len = 0;
@@ -12199,7 +12193,7 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user attribute packet
+	 * @return {string} String which gives some information about the user attribute packet
 	 */
 	function toString() {
 		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
@@ -12212,11 +12206,11 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * Continue parsing packets belonging to the user attribute packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		
@@ -12262,7 +12256,8 @@ function openpgp_packet_userattribute() {
 	this.read_nodes = read_nodes;
 	this.toString = toString;
 	
-};// GPG4Browsers - An OpenPGP implementation in javascript
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
 // This library is free software; you can redistribute it and/or
@@ -12280,6 +12275,8 @@ function openpgp_packet_userattribute() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @class
+ * @classdesc Implementation of the User ID Packet (Tag 13)
  * A User ID packet consists of UTF-8 text that is intended to represent
  * the name and email address of the key holder.  By convention, it
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
@@ -12296,10 +12293,10 @@ function openpgp_packet_userid() {
 
 	/**
 	 * parsing function for a user id packet (tag 13).
-	 * @param input [string] payload of a tag 13 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 13 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.text = '';
@@ -12313,8 +12310,8 @@ function openpgp_packet_userid() {
 
 	/**
 	 * creates a string representation of the user id packet
-	 * @param user_id [String] the user id as string ("John Doe <john.doe@mail.us")
-	 * @return [String] string representation
+	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
+	 * @return {String} string representation
 	 */
 	function write_packet(user_id) {
 		this.text = user_id;
@@ -12325,11 +12322,11 @@ function openpgp_packet_userid() {
 
 	/**
 	 * Continue parsing packets belonging to the userid packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		if (parent_node.tagType == 6) { // public key
@@ -12409,7 +12406,7 @@ function openpgp_packet_userid() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user id packet
+	 * @return {string} String which gives some information about the user id packet
 	 */
 	function toString() {
 		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
@@ -12428,7 +12425,7 @@ function openpgp_packet_userid() {
 
 	/**
 	 * lookup function to find certification revocation signatures
-	 * @param keyId string containing the key id of the issuer of this signature
+	 * @param {string} keyId string containing the key id of the issuer of this signature
 	 * @return a CertificationRevocationSignature if found; otherwise null
 	 */
 	function hasCertificationRevocationSignature(keyId) {
@@ -12614,7 +12611,8 @@ function openpgp_packet_userid() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id (RFC4880 3.3)
+ * @class
+ * @classdesc Implementation of type key id (RFC4880 3.3)
  *  A Key ID is an eight-octet scalar that identifies a key.
    Implementations SHOULD NOT assume that Key IDs are unique.  The
    section "Enhanced Key Formats" below describes how Key IDs are
@@ -12623,8 +12621,8 @@ function openpgp_packet_userid() {
 function openpgp_type_keyid() {
 	/**
 	 * parsing method for a key id
-	 * @param input [String] input to read the key id from 
-	 * @param position [integer] position where to start reading the key id from input
+	 * @param {String} input input to read the key id from 
+	 * @param {integer} position position where to start reading the key id from input
 	 * @return this object
 	 */
 	function read_packet(input, position) {
@@ -12634,7 +12632,7 @@ function openpgp_type_keyid() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return [String] Key Id as hexadecimal string
+	 * @return {String} Key Id as hexadecimal string
 	 */
 	function toString() {
 		return util.hexstrdump(this.bytes);
@@ -12666,13 +12664,14 @@ function openpgp_type_keyid() {
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- *  Implementation of type MPI (RFC4880 3.2)
- *  Multiprecision integers (also called MPIs) are unsigned integers used
- *  to hold large integers such as the ones used in cryptographic
- *  calculations.
- *  An MPI consists of two pieces: a two-octet scalar that is the length
- *  of the MPI in bits followed by a string of octets that contain the
- *  actual integer.
+ * @class
+ * @classdescImplementation of type MPI (RFC4880 3.2)
+ * Multiprecision integers (also called MPIs) are unsigned integers used
+ * to hold large integers such as the ones used in cryptographic
+ * calculations.
+ * An MPI consists of two pieces: a two-octet scalar that is the length
+ * of the MPI in bits followed by a string of octets that contain the
+ * actual integer.
  */
 function openpgp_type_mpi() {
 	this.MPI = null;
@@ -12681,10 +12680,10 @@ function openpgp_type_mpi() {
 	this.data = null;
 	/**
 	 * parsing function for a mpi (RFC 4880 3.2).
-	 * @param input [string] payload of mpi data
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_type_mpi] object representation
+	 * @param {string} input payload of mpi data
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_type_mpi} object representation
 	 */
 	function read(input, position, len) {
 		var mypos = position;
@@ -12713,7 +12712,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the mpi
+	 * @return {string} String which gives some information about the mpi
 	 */
 	function toString() {
 		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
@@ -12723,7 +12722,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * converts the mpi to an BigInteger object
-	 * @return [BigInteger]
+	 * @return {BigInteger}
 	 */
 	function getBigInteger() {
 		return new BigInteger(util.hexstrdump(this.MPI),16); 
@@ -12738,7 +12737,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * gets the length of the mpi in bytes
-	 * @return [integer] mpi byte length
+	 * @return {integer} mpi byte length
 	 */
 	function getByteLength() {
 		return this.mpiByteLength;
@@ -12746,8 +12745,8 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * creates an mpi from the specified string
-	 * @param data [String] data to read the mpi from
-	 * @return [openpgp_type_mpi] 
+	 * @param {String} data data to read the mpi from
+	 * @return {openpgp_type_mpi} 
 	 */
 	function create(data) {
 		this.MPI = data;
@@ -12758,7 +12757,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * converts the mpi object to a string as specified in RFC4880 3.2
-	 * @return [String] mpi byte representation
+	 * @return {String} mpi byte representation
 	 */
 	function toBin() {
 		var result = String.fromCharCode((this.mpiBitLength >> 8) & 0xFF);
@@ -12793,7 +12792,8 @@ function openpgp_type_mpi() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the String-to-key specifier (RFC4880 3.7)
+ * @class
+ * @classdesc Implementation of the String-to-key specifier (RFC4880 3.7)
  * String-to-key (S2K) specifiers are used to convert passphrase strings
    into symmetric-key encryption/decryption keys.  They are used in two
    places, currently: to encrypt the secret part of private keys in the
@@ -12803,9 +12803,9 @@ function openpgp_type_mpi() {
 function openpgp_type_s2k() {
 	/**
 	 * parsing function for a string-to-key specifier (RFC 4880 3.7).
-	 * @param input [string] payload of string-to-key specifier
-	 * @param position [integer] position to start reading from the input string
-	 * @return [openpgp_type_s2k] object representation
+	 * @param {string} input payload of string-to-key specifier
+	 * @param {integer} position position to start reading from the input string
+	 * @return {openpgp_type_s2k} object representation
 	 */
 	function read(input, position) {
 		var mypos = position;
@@ -12853,7 +12853,7 @@ function openpgp_type_s2k() {
 	
 	/**
 	 * writes an s2k hash based on the inputs.
-	 * @return [String] produced key of hashAlgorithm hash length
+	 * @return {String} produced key of hashAlgorithm hash length
 	 */
 	function write(type, hash, passphrase, salt, c){
 	    this.type = type;
@@ -12867,8 +12867,8 @@ function openpgp_type_s2k() {
 
 	/**
 	 * produces a key using the specified passphrase and the defined hashAlgorithm 
-	 * @param passphrase [String] passphrase containing user input
-	 * @return [String] produced key with a length corresponding to hashAlgorithm hash length
+	 * @param passphrase {String} passphrase containing user input
+	 * @return {String} produced key with a length corresponding to hashAlgorithm hash length
 	 */
 	function produce_key(passphrase, numBytes) {
 		if (this.type == 0) {

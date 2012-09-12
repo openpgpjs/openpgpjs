@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Util</title>
+    <title>JSDoc: Class: openpgp_config</title>
     
     <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
     <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Class: Util</h1>
+    <h1 class="page-title">Class: openpgp_config</h1>
     
     
 
@@ -27,15 +27,10 @@
     
 <header>
     <h2>
-    Util
+    openpgp_config
     </h2>
     
-        <div class="class-description">Utilities for uncompressing and base64 decoding
-Class for gunzipping, unzipping and base64 decoding of files.
-It is used for reading GEONExT, Geogebra and Intergeo files.
-
-Only Huffman codes are decoded in gunzip.
-The code is based on the source code for gunzip.c by Pasi Ojala</div>
+        <div class="class-description">Implementation of the GPG4Browsers config object</div>
     
 </header>  
 
@@ -46,12 +41,22 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
         
 <dt>
-    <h4 class="name" id="Util"><span class="type-signature"></span>new Util</h4>
+    <h4 class="name" id="openpgp_config"><span class="type-signature"></span>new openpgp_config</h4>
     
     
 </dt>
 <dd>
     
+    
+    <div class="description">
+        This object contains configuration values and implements
+storing and retrieving configuration them from HTML5 local storage.
+
+This object can be accessed after calling openpgp.init()
+using openpgp.config
+Stored config parameters can be accessed using
+openpgp.config.config
+    </div>
     
     
     
@@ -78,20 +83,11 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10985</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10250</li></ul></dd>
 	
     
     
 	
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c">http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c</a></li>
-        
-            <li><a href="http://www.cs.tut.fi/~albert">http://www.cs.tut.fi/~albert</a></li>
-        </ul>
-	</dd>
 	
 	
 	
@@ -126,14 +122,14 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
         <dl>
             
 <dt>
-    <h4 class="name" id="Base64"><span class="type-signature">&lt;static> </span>Base64<span class="type-signature"></span></h4>
+    <h4 class="name" id="debug"><span class="type-signature"></span>debug<span class="type-signature"></span></h4>
     
     
 </dt>
 <dd>
     
     <div class="description">
-        Base64 encoding / decoding
+        if enabled, debug messages will be printed
     </div>
     
     
@@ -157,18 +153,60 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 11876</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10289</li></ul></dd>
 	
     
     
 	
 	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.webtoolkit.info/">http://www.webtoolkit.info/</A></li>
-        </ul>
-	</dd>
+	
+	
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="default_config"><span class="type-signature"></span>default_config<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        the default config object which is used if no
+configuration was in place
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10257</li></ul></dd>
+	
+    
+    
+	
 	
 	
 	
@@ -187,7 +225,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
         <dl>
             
 <dt>
-    <h4 class="name" id="genUUID"><span class="type-signature">&lt;static> </span>genUUID</h4>
+    <h4 class="name" id="read"><span class="type-signature">&lt;inner> </span>read</h4>
     
     
 </dt>
@@ -195,16 +233,9 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
     
     <div class="description">
-        Generate a random uuid.
-http://www.broofa.com
-mailto:robert@broofa.com
-
-Copyright (c) 2010 Robert Kieffer
-Dual licensed under the MIT and GPL licenses.
-
-EXAMPLES:
-  >>> Math.uuid()
-  "92329D39-6F5C-4520-ABFC-AAB64544E172"
+        reads the config out of the HTML5 local storage
+and initializes the object config.
+if config is null the default config will be used
     </div>
     
     
@@ -232,171 +263,7 @@ EXAMPLES:
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12152</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="Unzip"><span class="type-signature">&lt;static> </span>Unzip</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Unzip zip files
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10990</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="utf8Decode"><span class="type-signature">&lt;static> </span>utf8Decode</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Decoding string into utf-8
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>string</code></td>
-            
-            
-            <td class="type">
-            
-                        String
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">to decode</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12114</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10276</li></ul></dd>
 	
     
     
@@ -416,22 +283,79 @@ EXAMPLES:
     
             
 <div class="param-desc">
-    utf8 decoded string
+    [void]
 </div>
 
 
 
+        
+    
+    
+</dd>
 
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">String</span> 
-		
-	</dd>
+        
+            
+<dt>
+    <h4 class="name" id="write"><span class="type-signature">&lt;inner> </span>write</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        writes the config to HTML5 local storage
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10295</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
 </dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    [void]
+</div>
+
+
 
         
     

@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the strange "Marker packet" (Tag 10)
+ * @class
+ * @classdesc Implementation of the strange "Marker packet" (Tag 10)
  * 
  * RFC4880 5.8: An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
@@ -30,14 +31,13 @@ function openpgp_packet_marker() {
 	/**
 	 * parsing function for a literal data packet (tag 10).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 10 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 10 packet
+	 * @param {integer} position
+	 *            position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = 3;
@@ -52,7 +52,7 @@ function openpgp_packet_marker() {
 	/**
 	 * Generates Debug output
 	 * 
-	 * @return String which gives some information about the keymaterial
+	 * @return {string} String which gives some information about the keymaterial
 	 */
 	function toString() {
 		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"

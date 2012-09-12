@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ * @class
+ * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
  *   
  * RFC4480 5.5:
  * A key material packet contains all the information about a public or
@@ -545,11 +546,11 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * Continue parsing packets belonging to the key material such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		this.parentNode = parent_node;
@@ -657,7 +658,7 @@ function openpgp_packet_keymaterial() {
 
 	/**
 	 * calculates the key id of they key 
-	 * @return [String] a 8 byte key id
+	 * @return {String} a 8 byte key id
 	 */
 	function getKeyId() {
 		if (this.version == 4) {
@@ -672,7 +673,7 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * calculates the fingerprint of the key
-	 * @return [String] a string containing the fingerprint
+	 * @return {String} a string containing the fingerprint
 	 */
 	function getFingerprint() {
 		if (this.version == 4) {
@@ -687,8 +688,12 @@ function openpgp_packet_keymaterial() {
 	
 	/*
      * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
+     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param {RSA.keyObject} key
+     * @param password
+     * @param s2kHash
+     * @param symmetricEncryptionAlgorithm
+     * @param timePacket
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
@@ -764,8 +769,9 @@ function openpgp_packet_keymaterial() {
 	
 	/*
      * same as write_private_key, but has less information because of public key.
-     * @param keyType [int] follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
-     * @param key [RSA.keyObject]
+     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * @param {RSA.keyObject} key
+     * @param timePacket
      * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_public_key(keyType, key, timePacket){

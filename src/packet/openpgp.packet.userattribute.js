@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** 
+ * @class
+ * @classdesc Implementation of the User Attribute Packet (Tag 17)
  *  The User Attribute packet is a variation of the User ID packet.  It
  *  is capable of storing more types of data than the User ID packet,
  *  which is limited to text.  Like the User ID packet, a User Attribute
@@ -39,10 +41,10 @@ function openpgp_packet_userattribute() {
 
 	/**
 	 * parsing function for a user attribute packet (tag 17).
-	 * @param input [string] payload of a tag 17 packet
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @param {string} input payload of a tag 17 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet (input, position, len) {
 		var total_len = 0;
@@ -87,7 +89,7 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the user attribute packet
+	 * @return {string} String which gives some information about the user attribute packet
 	 */
 	function toString() {
 		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
@@ -100,11 +102,11 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * Continue parsing packets belonging to the user attribute packet such as signatures
-	 * @param parent_node [openpgp_*] the parent object
-	 * @param input [String] input string to read the packet(s) from
-	 * @param position [integer] start position for the parser
-	 * @param len [integer] length of the packet(s) or remaining length of input
-	 * @return [integer] length of nodes read
+	 * @param {openpgp_*} parent_node the parent object
+	 * @param {String} input input string to read the packet(s) from
+	 * @param {integer} position start position for the parser
+	 * @param {integer} len length of the packet(s) or remaining length of input
+	 * @return {integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		

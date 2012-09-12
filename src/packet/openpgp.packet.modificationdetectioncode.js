@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Modification Detection Code Packet (Tag 19)
+ * @class
+ * @classdesc Implementation of the Modification Detection Code Packet (Tag 19)
  * 
  * RFC4880 5.14: The Modification Detection Code packet contains a SHA-1 hash of
  * plaintext data, which is used to detect message modification. It is only used
@@ -32,14 +33,13 @@ function openpgp_packet_modificationdetectioncode() {
 	/**
 	 * parsing function for a modification detection code packet (tag 19).
 	 * 
-	 * @param input
-	 *            [String] payload of a tag 19 packet
-	 * @param position
-	 *            [Integer] position to start reading from the input string
-	 * @param len
-	 *            [Integer] length of the packet or the remaining length of
+	 * @param {String} input payload of a tag 19 packet
+	 * @param {Integer} position
+	 *            position to start reading from the input string
+	 * @param {Integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -67,7 +67,7 @@ function openpgp_packet_modificationdetectioncode() {
 	/**
 	 * generates debug output (pretty print)
 	 * 
-	 * @return String which gives some information about the modification
+	 * @return {string} String which gives some information about the modification
 	 *         detection code
 	 */
 	function toString() {

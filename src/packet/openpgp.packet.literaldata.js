@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Literal Data Packet (Tag 11)
+ * @class
+ * @classdesc Implementation of the Literal Data Packet (Tag 11)
  * 
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
@@ -27,14 +28,13 @@ function openpgp_packet_literaldata() {
 	/**
 	 * parsing function for a literal data packet (tag 11).
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 11 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 11 packet
+	 * @param {integer} position
+	 *            position to start reading from the input string
+	 * @param {integer} len
+	 *            length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = len;
@@ -53,9 +53,8 @@ function openpgp_packet_literaldata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param data
-	 *            [String] the data to be inserted as body
-	 * @return [String] string-representation of the packet
+	 * @param {String} data the data to be inserted as body
+	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(data) {
 		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
@@ -83,7 +82,7 @@ function openpgp_packet_literaldata() {
 	/**
 	 * generates debug output (pretty print)
 	 * 
-	 * @return String which gives some information about the keymaterial
+	 * @return {string} String which gives some information about the keymaterial
 	 */
 	function toString() {
 		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
