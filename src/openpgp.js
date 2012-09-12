@@ -16,6 +16,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview The openpgp base class should provide all of the functionality 
+ * to consume the openpgp.js library. All additional classes are documented 
+ * for extending and developing on top of the base library.
+ */
+
+/**
  * GPG4Browsers Core interface. A single instance is hold
  * from the beginning. To use this library call "openpgp.init()"
  * @alias openpgp

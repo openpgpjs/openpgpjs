@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: openpgp_keyring</title>
+    <title>JSDoc: Class: openpgp_packet_keymaterial</title>
     
     <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
     <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Class: openpgp_keyring</h1>
+    <h1 class="page-title">Class: openpgp_packet_keymaterial</h1>
     
     
 
@@ -27,10 +27,15 @@
     
 <header>
     <h2>
-    openpgp_keyring
+    openpgp_packet_keymaterial
     </h2>
     
-        <div class="class-description">The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.</div>
+        <div class="class-description">Implementation of the Key Material Packet (Tag 5,6,7,14)
+  
+RFC4480 5.5:
+A key material packet contains all the information about a public or
+private key.  There are four variants of this packet type, and two
+major versions.  Consequently, this section is complex.</div>
     
 </header>  
 
@@ -41,7 +46,7 @@
     
         
 <dt>
-    <h4 class="name" id="openpgp_keyring"><span class="type-signature"></span>new openpgp_keyring</h4>
+    <h4 class="name" id="openpgp_packet_keymaterial"><span class="type-signature"></span>new openpgp_packet_keymaterial</h4>
     
     
 </dt>
@@ -73,7 +78,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12660</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2683</li></ul></dd>
 	
     
     
@@ -114,7 +119,7 @@
         <dl>
             
 <dt>
-    <h4 class="name" id="exportPrivateKey"><span class="type-signature">&lt;inner> </span>exportPrivateKey</h4>
+    <h4 class="name" id="decryptSecretMPIs"><span class="type-signature">&lt;inner> </span>decryptSecretMPIs</h4>
     
     
 </dt>
@@ -122,7 +127,9 @@
     
     
     <div class="description">
-        returns the openpgp_msg_privatekey representation of the private key at private key ring index
+        Decrypts the private key MPIs which are needed to use the key.
+openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be false otherwise
+a call to this function is not needed
     </div>
     
     
@@ -154,21 +161,18 @@
 	
         <tr>
             
-                <td class="name"><code>index</code></td>
+                <td class="name"><code>str_passphrase</code></td>
             
             
             <td class="type">
             
-                        Integer
-                        
-                    
             </td>
             
             
             
             
             
-            <td class="description last">the index of the private key within the privateKeys array</td>
+            <td class="description last">the passphrase for this private key as string</td>
         </tr>
 	
 	
@@ -196,7 +200,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12876</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3024</li></ul></dd>
 	
     
     
@@ -216,22 +220,10 @@
     
             
 <div class="param-desc">
-    the private key object
+    true if the passphrase was correct; false if not
 </div>
 
 
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">openpgp_msg_privatekey</span> 
-		
-	</dd>
-</dl>
 
         
     
@@ -241,7 +233,7 @@
         
             
 <dt>
-    <h4 class="name" id="exportPublicKey"><span class="type-signature">&lt;inner> </span>exportPublicKey</h4>
+    <h4 class="name" id="getFingerprint"><span class="type-signature">&lt;inner> </span>getFingerprint</h4>
     
     
 </dt>
@@ -249,58 +241,12 @@
     
     
     <div class="description">
-        returns the openpgp_msg_privatekey representation of the public key at public key ring index
+        calculates the fingerprint of the key
     </div>
     
     
     
     
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>index</code></td>
-            
-            
-            <td class="type">
-            
-                        Integer
-                        
-                    
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">the index of the public key within the publicKeys array</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
     
     
     
@@ -323,7 +269,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12853</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3334</li></ul></dd>
 	
     
     
@@ -343,7 +289,7 @@
     
             
 <div class="param-desc">
-    the public key object
+    a string containing the fingerprint
 </div>
 
 
@@ -355,7 +301,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">openpgp_msg_privatekey</span> 
+		<span class="param-type">String</span> 
 		
 	</dd>
 </dl>
@@ -368,7 +314,7 @@
         
             
 <dt>
-    <h4 class="name" id="getPrivateKeyForAddress"><span class="type-signature">&lt;inner> </span>getPrivateKeyForAddress</h4>
+    <h4 class="name" id="getKeyId"><span class="type-signature">&lt;inner> </span>getKeyId</h4>
     
     
 </dt>
@@ -376,7 +322,88 @@
     
     
     <div class="description">
-        Searches the keyring for a private key containing the specified email address
+        calculates the key id of they key
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3319</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    a 8 byte key id
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">String</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="read_nodes"><span class="type-signature">&lt;inner> </span>read_nodes</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Continue parsing packets belonging to the key material such as signatures
     </div>
     
     
@@ -408,7 +435,28 @@
 	
         <tr>
             
-                <td class="name"><code>email_address</code></td>
+                <td class="name"><code>parent_node</code></td>
+            
+            
+            <td class="type">
+            
+                        openpgp_*
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">the parent object</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
@@ -422,125 +470,19 @@
             
             
             
-            <td class="description last">email address to search for</td>
+            <td class="description last">input string to read the packet(s) from</td>
         </tr>
 	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12757</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    private keys found
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Array[openpgp_msg_privatekey</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="getPrivateKeyForKeyId"><span class="type-signature">&lt;inner> </span>getPrivateKeyForKeyId</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Searches the keyring for private keys having the specified key id
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
 	
 	
         <tr>
             
-                <td class="name"><code>keyId</code></td>
+                <td class="name"><code>position</code></td>
             
             
             <td class="type">
             
-                        String
+                        integer
                         
                     
             </td>
@@ -549,454 +491,19 @@
             
             
             
-            <td class="description last">8 bytes as string containing the key id to look for</td>
+            <td class="description last">start position for the parser</td>
         </tr>
 	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12799</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    private keys found
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Array[openpgp_msg_privatekey]</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="getPublicKeyForAddress"><span class="type-signature">&lt;inner> </span>getPublicKeyForAddress</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        searches all public keys in the keyring matching the address or address part of the user ids
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
 	
 	
         <tr>
             
-                <td class="name"><code>email_address</code></td>
+                <td class="name"><code>len</code></td>
             
             
             <td class="type">
             
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last"></td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12729</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    the public keys associated with provided email address.
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">array[openpgp_msg_publickey]</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="getPublicKeysForKeyId"><span class="type-signature">&lt;inner> </span>getPublicKeysForKeyId</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Searches the keyring for public keys having the specified key id
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>keyId</code></td>
-            
-            
-            <td class="type">
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">provided as string of hex number (lowercase)</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12785</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    public keys found
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Array[openpgp_msg_privatekey]</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="hasPrivateKey"><span class="type-signature">&lt;inner> </span>hasPrivateKey</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Checks if at least one private key is in the keyring
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12701</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    True if there are private keys, else false.
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">boolean</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="importPrivateKey"><span class="type-signature">&lt;inner> </span>importPrivateKey</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Imports a private key from an exported ascii armored message
-    </div>
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>armored_text</code></td>
-            
-            
-            <td class="type">
-            
-                        String
+                        integer
                         
                     
             </td>
@@ -1005,7 +512,7 @@
             
             
             
-            <td class="description last">PRIVATE KEY BLOCK message to read the private key from</td>
+            <td class="description last">length of the packet(s) or remaining length of input</td>
         </tr>
 	
 	
@@ -1033,7 +540,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12835</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3211</li></ul></dd>
 	
     
     
@@ -1053,7 +560,7 @@
     
             
 <div class="param-desc">
-    nothing
+    length of nodes read
 </div>
 
 
@@ -1065,7 +572,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">null</span> 
+		<span class="param-type">integer</span> 
 		
 	</dd>
 </dl>
@@ -1078,7 +585,7 @@
         
             
 <dt>
-    <h4 class="name" id="importPublicKey"><span class="type-signature">&lt;inner> </span>importPublicKey</h4>
+    <h4 class="name" id="read_priv_key"><span class="type-signature">&lt;inner> </span>read_priv_key</h4>
     
     
 </dt>
@@ -1086,7 +593,7 @@
     
     
     <div class="description">
-        Imports a public key from an exported ascii armored message
+        Internal parser for private keys as specified in RFC 4880 section 5.5.3
     </div>
     
     
@@ -1118,21 +625,54 @@
 	
         <tr>
             
-                <td class="name"><code>armored_text</code></td>
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
             
-                        String
-                        
-                    
             </td>
             
             
             
             
             
-            <td class="description last">PUBLIC KEY BLOCK message to read the public key from</td>
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
         </tr>
 	
 	
@@ -1160,7 +700,7 @@
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12822</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2890</li></ul></dd>
 	
     
     
@@ -1180,22 +720,10 @@
     
             
 <div class="param-desc">
-    nothing
+    this object with attributes set by the parser
 </div>
 
 
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">null</span> 
-		
-	</dd>
-</dl>
 
         
     
@@ -1205,7 +733,7 @@
         
             
 <dt>
-    <h4 class="name" id="init"><span class="type-signature">&lt;inner> </span>init</h4>
+    <h4 class="name" id="read_pub_key"><span class="type-signature">&lt;inner> </span>read_pub_key</h4>
     
     
 </dt>
@@ -1213,90 +741,8 @@
     
     
     <div class="description">
-        Initialization routine for the keyring. This method reads the 
-keyring from HTML5 local storage and initializes this instance.
-This method is called by openpgp.init().
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12668</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    undefined
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">null</span> 
-		
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="removePrivateKey"><span class="type-signature">&lt;inner> </span>removePrivateKey</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Removes a private key from the private key keyring at the specified index
+        Internal Parser for public keys as specified in RFC 4880 section 5.5.2 Public-Key Packet Formats
+called by read_tag&lt;num&gt;
     </div>
     
     
@@ -1328,21 +774,54 @@ This method is called by openpgp.init().
 	
         <tr>
             
-                <td class="name"><code>index</code></td>
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
             
-                        Integer
-                        
-                    
             </td>
             
             
             
             
             
-            <td class="description last">the index of the private key within the privateKeys array</td>
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
         </tr>
 	
 	
@@ -1370,7 +849,7 @@ This method is called by openpgp.init().
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12886</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2780</li></ul></dd>
 	
     
     
@@ -1390,22 +869,10 @@ This method is called by openpgp.init().
     
             
 <div class="param-desc">
-    The private key object which has been removed
+    this object with attributes set by the parser
 </div>
 
 
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">openpgp_msg_privatekey</span> 
-		
-	</dd>
-</dl>
 
         
     
@@ -1415,7 +882,7 @@ This method is called by openpgp.init().
         
             
 <dt>
-    <h4 class="name" id="removePublicKey"><span class="type-signature">&lt;inner> </span>removePublicKey</h4>
+    <h4 class="name" id="read_tag14"><span class="type-signature">&lt;inner> </span>read_tag14</h4>
     
     
 </dt>
@@ -1423,7 +890,8 @@ This method is called by openpgp.init().
     
     
     <div class="description">
-        Removes a public key from the public key keyring at the specified index
+        This function reads the payload of a public key sub packet (Tag 14)
+and initializes the openpgp_packet_keymaterial
     </div>
     
     
@@ -1455,21 +923,54 @@ This method is called by openpgp.init().
 	
         <tr>
             
-                <td class="name"><code>index</code></td>
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
             
-                        Integer
-                        
-                    
             </td>
             
             
             
             
             
-            <td class="description last">the index of the public key within the publicKeys array</td>
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
         </tr>
 	
 	
@@ -1497,7 +998,7 @@ This method is called by openpgp.init().
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12864</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2763</li></ul></dd>
 	
     
     
@@ -1517,22 +1018,10 @@ This method is called by openpgp.init().
     
             
 <div class="param-desc">
-    The public key object which has been removed
+    openpgp_packet_keymaterial object
 </div>
 
 
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">openpgp_msg_privatekey</span> 
-		
-	</dd>
-</dl>
 
         
     
@@ -1542,7 +1031,7 @@ This method is called by openpgp.init().
         
             
 <dt>
-    <h4 class="name" id="store"><span class="type-signature">&lt;inner> </span>store</h4>
+    <h4 class="name" id="read_tag5"><span class="type-signature">&lt;inner> </span>read_tag5</h4>
     
     
 </dt>
@@ -1550,8 +1039,454 @@ This method is called by openpgp.init().
     
     
     <div class="description">
-        Saves the current state of the keyring to HTML5 local storage.
-The privateKeys array and publicKeys array gets Stringified using JSON
+        This function reads the payload of a secret key packet (Tag 5)
+and initializes the openpgp_packet_keymaterial
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2714</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    openpgp_packet_keymaterial object
+</div>
+
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="read_tag6"><span class="type-signature">&lt;inner> </span>read_tag6</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        This function reads the payload of a public key packet (Tag 6)
+and initializes the openpgp_packet_keymaterial
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2729</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    openpgp_packet_keymaterial object
+</div>
+
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="read_tag7"><span class="type-signature">&lt;inner> </span>read_tag7</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        This function reads the payload of a secret key sub packet (Tag 7)
+and initializes the openpgp_packet_keymaterial
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">input string to read the packet from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or remaining length of input</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2748</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    openpgp_packet_keymaterial object
+</div>
+
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toString"><span class="type-signature">&lt;inner> </span>toString</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Generates Debug output
     </div>
     
     
@@ -1579,7 +1514,7 @@ The privateKeys array and publicKeys array gets Stringified using JSON
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12711</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3138</li></ul></dd>
 	
     
     
@@ -1599,22 +1534,79 @@ The privateKeys array and publicKeys array gets Stringified using JSON
     
             
 <div class="param-desc">
-    undefined
+    String which gives some information about the keymaterial
 </div>
 
 
 
+        
+    
+    
+</dd>
 
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">null</span> 
-		
-	</dd>
+        
+            
+<dt>
+    <h4 class="name" id="verifyKey"><span class="type-signature">&lt;inner> </span>verifyKey</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Checks the validity for usage of this (sub)key
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 3288</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
 </dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    0 = bad key, 1 = expired, 2 = revoked, 3 = valid
+</div>
+
+
 
         
     
@@ -1643,7 +1635,7 @@ The privateKeys array and publicKeys array gets Stringified using JSON
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:26 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:27 GMT-0400 (EDT)
 </footer>
 
 <script> sh_highlightDocument(); </script>

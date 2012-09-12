@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id (RFC4880 3.3)
+ * @class
+ * @classdesc Implementation of type key id (RFC4880 3.3)
  *  A Key ID is an eight-octet scalar that identifies a key.
    Implementations SHOULD NOT assume that Key IDs are unique.  The
    section "Enhanced Key Formats" below describes how Key IDs are
@@ -25,8 +26,8 @@
 function openpgp_type_keyid() {
 	/**
 	 * parsing method for a key id
-	 * @param input [String] input to read the key id from 
-	 * @param position [integer] position where to start reading the key id from input
+	 * @param {String} input input to read the key id from 
+	 * @param {integer} position position where to start reading the key id from input
 	 * @return this object
 	 */
 	function read_packet(input, position) {
@@ -36,7 +37,7 @@ function openpgp_type_keyid() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return [String] Key Id as hexadecimal string
+	 * @return {String} Key Id as hexadecimal string
 	 */
 	function toString() {
 		return util.hexstrdump(this.bytes);

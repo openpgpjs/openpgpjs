@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the GPG4Browsers config object
  *
  * This object contains configuration values and implements
  * storing and retrieving configuration them from HTML5 local storage.
@@ -25,6 +24,8 @@
  * using openpgp.config
  * Stored config parameters can be accessed using
  * openpgp.config.config
+ * @class
+ * @classdesc Implementation of the GPG4Browsers config object
  */
 function openpgp_config() {
 	this.config = null;

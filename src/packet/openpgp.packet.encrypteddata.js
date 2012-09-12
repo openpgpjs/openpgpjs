@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ * @class
+ * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
  * 
  * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
@@ -34,14 +35,11 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * parsing function for the packet.
 	 * 
-	 * @param input
-	 *            [string] payload of a tag 9 packet
-	 * @param position
-	 *            [integer] position to start reading from the input string
-	 * @param len
-	 *            [integer] length of the packet or the remaining length of
+	 * @param {string} input payload of a tag 9 packet
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of
 	 *            input at position
-	 * @return [openpgp_packet_encrypteddata] object representation
+	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
 		var mypos = position;
@@ -55,10 +53,10 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * symmetrically decrypt the packet data
 	 * 
-	 * @param symmetric_algorithm_type
-	 *            [integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
+	 * @param {integer} symmetric_algorithm_type
+	 *             symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key
+	 *             key as string with the corresponding length to the
 	 *            algorithm
 	 * @return the decrypted data;
 	 */
@@ -73,14 +71,11 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param algo
-	 *            [Integer] symmetric key algorithm to use // See RFC4880 9.2
-	 * @param key
-	 *            [String] key as string with the corresponding length to the
+	 * @param {Integer} algo symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key key as string with the corresponding length to the
 	 *            algorithm
-	 * @param data
-	 *            [String] data to be
-	 * @return [String] string-representation of the packet
+	 * @param {String} data data to be
+	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(algo, key, data) {
 		var result = "";

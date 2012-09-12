@@ -21,13 +21,14 @@
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- *  Implementation of type MPI (RFC4880 3.2)
- *  Multiprecision integers (also called MPIs) are unsigned integers used
- *  to hold large integers such as the ones used in cryptographic
- *  calculations.
- *  An MPI consists of two pieces: a two-octet scalar that is the length
- *  of the MPI in bits followed by a string of octets that contain the
- *  actual integer.
+ * @class
+ * @classdescImplementation of type MPI (RFC4880 3.2)
+ * Multiprecision integers (also called MPIs) are unsigned integers used
+ * to hold large integers such as the ones used in cryptographic
+ * calculations.
+ * An MPI consists of two pieces: a two-octet scalar that is the length
+ * of the MPI in bits followed by a string of octets that contain the
+ * actual integer.
  */
 function openpgp_type_mpi() {
 	this.MPI = null;
@@ -36,10 +37,10 @@ function openpgp_type_mpi() {
 	this.data = null;
 	/**
 	 * parsing function for a mpi (RFC 4880 3.2).
-	 * @param input [string] payload of mpi data
-	 * @param position [integer] position to start reading from the input string
-	 * @param len [integer] length of the packet or the remaining length of input at position
-	 * @return [openpgp_type_mpi] object representation
+	 * @param {string} input payload of mpi data
+	 * @param {integer} position position to start reading from the input string
+	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_type_mpi} object representation
 	 */
 	function read(input, position, len) {
 		var mypos = position;
@@ -68,7 +69,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return String which gives some information about the mpi
+	 * @return {string} String which gives some information about the mpi
 	 */
 	function toString() {
 		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
@@ -78,7 +79,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * converts the mpi to an BigInteger object
-	 * @return [BigInteger]
+	 * @return {BigInteger}
 	 */
 	function getBigInteger() {
 		return new BigInteger(util.hexstrdump(this.MPI),16); 
@@ -93,7 +94,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * gets the length of the mpi in bytes
-	 * @return [integer] mpi byte length
+	 * @return {integer} mpi byte length
 	 */
 	function getByteLength() {
 		return this.mpiByteLength;
@@ -101,8 +102,8 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * creates an mpi from the specified string
-	 * @param data [String] data to read the mpi from
-	 * @return [openpgp_type_mpi] 
+	 * @param {String} data data to read the mpi from
+	 * @return {openpgp_type_mpi} 
 	 */
 	function create(data) {
 		this.MPI = data;
@@ -113,7 +114,7 @@ function openpgp_type_mpi() {
 	
 	/**
 	 * converts the mpi object to a string as specified in RFC4880 3.2
-	 * @return [String] mpi byte representation
+	 * @return {String} mpi byte representation
 	 */
 	function toBin() {
 		var result = String.fromCharCode((this.mpiBitLength >> 8) & 0xFF);

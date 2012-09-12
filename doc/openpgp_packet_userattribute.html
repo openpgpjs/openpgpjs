@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Util</title>
+    <title>JSDoc: Class: openpgp_packet_userattribute</title>
     
     <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
     <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Class: Util</h1>
+    <h1 class="page-title">Class: openpgp_packet_userattribute</h1>
     
     
 
@@ -27,15 +27,23 @@
     
 <header>
     <h2>
-    Util
+    openpgp_packet_userattribute
     </h2>
     
-        <div class="class-description">Utilities for uncompressing and base64 decoding
-Class for gunzipping, unzipping and base64 decoding of files.
-It is used for reading GEONExT, Geogebra and Intergeo files.
+        <div class="class-description">Implementation of the User Attribute Packet (Tag 17)
+ The User Attribute packet is a variation of the User ID packet.  It
+ is capable of storing more types of data than the User ID packet,
+ which is limited to text.  Like the User ID packet, a User Attribute
+ packet may be certified by the key owner ("self-signed") or any other
+ key owner who cares to certify it.  Except as noted, a User Attribute
+ packet may be used anywhere that a User ID packet may be used.
 
-Only Huffman codes are decoded in gunzip.
-The code is based on the source code for gunzip.c by Pasi Ojala</div>
+ While User Attribute packets are not a required part of the OpenPGP
+ standard, implementations SHOULD provide at least enough
+ compatibility to properly handle a certification signature on the
+ User Attribute packet.  A simple way to do this is by treating the
+ User Attribute packet as a User ID packet with opaque contents, but
+ an implementation may use any method desired.</div>
     
 </header>  
 
@@ -46,7 +54,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
         
 <dt>
-    <h4 class="name" id="Util"><span class="type-signature"></span>new Util</h4>
+    <h4 class="name" id="openpgp_packet_userattribute"><span class="type-signature"></span>new openpgp_packet_userattribute</h4>
     
     
 </dt>
@@ -78,20 +86,11 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10985</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 1965</li></ul></dd>
 	
     
     
 	
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c">http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c</a></li>
-        
-            <li><a href="http://www.cs.tut.fi/~albert">http://www.cs.tut.fi/~albert</a></li>
-        </ul>
-	</dd>
 	
 	
 	
@@ -120,65 +119,6 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
     
     
-    
-        <h3 class="subsection-title">Members</h3>
-        
-        <dl>
-            
-<dt>
-    <h4 class="name" id="Base64"><span class="type-signature">&lt;static> </span>Base64<span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        Base64 encoding / decoding
-    </div>
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 11876</li></ul></dd>
-	
-    
-    
-	
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul>
-            <li><a href="http://www.webtoolkit.info/">http://www.webtoolkit.info/</A></li>
-        </ul>
-	</dd>
-	
-	
-	
-</dl>
-
-    
-    
-</dd>
-
-        </dl>
     
     
     
@@ -187,7 +127,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
         <dl>
             
 <dt>
-    <h4 class="name" id="genUUID"><span class="type-signature">&lt;static> </span>genUUID</h4>
+    <h4 class="name" id="read_nodes"><span class="type-signature">&lt;inner> </span>read_nodes</h4>
     
     
 </dt>
@@ -195,134 +135,7 @@ The code is based on the source code for gunzip.c by Pasi Ojala</div>
     
     
     <div class="description">
-        Generate a random uuid.
-http://www.broofa.com
-mailto:robert@broofa.com
-
-Copyright (c) 2010 Robert Kieffer
-Dual licensed under the MIT and GPL licenses.
-
-EXAMPLES:
-  >>> Math.uuid()
-  "92329D39-6F5C-4520-ABFC-AAB64544E172"
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12152</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="Unzip"><span class="type-signature">&lt;static> </span>Unzip</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Unzip zip files
-    </div>
-    
-    
-    
-    
-    
-    
-    
-<dl class="details">
-    
-        
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10990</li></ul></dd>
-	
-    
-    
-	
-	
-	
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="utf8Decode"><span class="type-signature">&lt;static> </span>utf8Decode</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Decoding string into utf-8
+        Continue parsing packets belonging to the user attribute packet such as signatures
     </div>
     
     
@@ -354,7 +167,28 @@ EXAMPLES:
 	
         <tr>
             
-                <td class="name"><code>string</code></td>
+                <td class="name"><code>parent_node</code></td>
+            
+            
+            <td class="type">
+            
+                        openpgp_*
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">the parent object</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
             
             
             <td class="type">
@@ -368,7 +202,49 @@ EXAMPLES:
             
             
             
-            <td class="description last">to decode</td>
+            <td class="description last">input string to read the packet(s) from</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">start position for the parser</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet(s) or remaining length of input</td>
         </tr>
 	
 	
@@ -396,7 +272,7 @@ EXAMPLES:
 	
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 12114</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2041</li></ul></dd>
 	
     
     
@@ -416,7 +292,7 @@ EXAMPLES:
     
             
 <div class="param-desc">
-    utf8 decoded string
+    length of nodes read
 </div>
 
 
@@ -428,7 +304,257 @@ EXAMPLES:
 	</dt>
 	<dd>
 		
-		<span class="param-type">String</span> 
+		<span class="param-type">integer</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="read_packet"><span class="type-signature">&lt;inner> </span>read_packet</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        parsing function for a user attribute packet (tag 17).
+    </div>
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+            
+            <td class="type">
+            
+                        string
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">payload of a tag 17 packet</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>position</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">position to start reading from the input string</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>len</code></td>
+            
+            
+            <td class="type">
+            
+                        integer
+                        
+                    
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">length of the packet or the remaining length of input at position</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 1979</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    object representation
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">openpgp_packet_encrypteddata</span> 
+		
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toString"><span class="type-signature">&lt;inner> </span>toString</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        generates debug output (pretty print)
+    </div>
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 2024</li></ul></dd>
+	
+    
+    
+	
+	
+	
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    String which gives some information about the user attribute packet
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">string</span> 
 		
 	</dd>
 </dl>
@@ -460,7 +586,7 @@ EXAMPLES:
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:26 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:27 GMT-0400 (EDT)
 </footer>
 
 <script> sh_highlightDocument(); </script>
