@@ -575,6 +575,7 @@ JXG.Util.Unzip = function (barray){
             }
             if (debug)
            		document.write("<br>literalTree");
+            outer:
             while(1) {
                 j = DecodeValue(literalTree);
                 if(j >= 256) {        // In C64: if carry set
@@ -596,6 +597,9 @@ JXG.Util.Unzip = function (barray){
                     }
                     dist += cpdist[j];
                     while(len--) {
+                        if(bIdx - dist < 0) {
+                            break outer;
+                        }
                         var c = buf32k[(bIdx - dist) & 0x7fff];
                         addBuffer(c);
                     }

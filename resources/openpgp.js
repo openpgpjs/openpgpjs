@@ -2219,7 +2219,6 @@ function _openpgp_packet() {
 		mypos++;
 
 		// parsed length from length field
-		var len = 0;
 		var bodydata = null;
 
 		// used for partial body lengths
@@ -2254,6 +2253,8 @@ function _openpgp_packet() {
 				// definite length, or a new format header. The new format 
 				// headers described below have a mechanism for precisely
 				// encoding data of indeterminate length.
+				packet_length = len;
+				break;
 			}
 
 		} else // 4.2.2. New Format Packet Lengths
@@ -2571,9 +2572,13 @@ function openpgp_packet_compressed() {
 				var radix = s2r(compData).replace(/\n/g,"");
 				var outputString = JXG.decompress(radix);
 				//TODO check ADLER32 checksum
-				var packet = openpgp_packet.read_packet(outputString, 0, outputString.length);
-				util.print_info('Decompressed packet [Type 2-ZLIB]: ' + packet);
-				this.decompressedData = packet.data;
+				var dearmored = {type: 3, text: outputString, openpgp: outputString};
+				var messages = openpgp.read_messages_dearmored(dearmored);
+				for(var m in messages){
+					if(messages[m].data){
+						this.decompressedData = messages[m].data;
+					}
+				}
 			} else {
 				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
 			}
@@ -9684,13 +9689,20 @@ function _openpgp () {
     		util.print_error('no message found!');
     		return null;
 		}
-		var input = dearmored.openpgp;
+		return read_messages_dearmored(dearmored);
+		}
+		
+	function read_messages_dearmored(input){
+		var messageString = input.openpgp;
 		var messages = new Array();
 		var messageCount = 0;
 		var mypos = 0;
-		var l = input.length;
-		while (mypos < input.length) {
-			var first_packet = openpgp_packet.read_packet(input, mypos, l);
+		var l = messageString.length;
+		while (mypos < messageString.length) {
+			var first_packet = openpgp_packet.read_packet(messageString, mypos, l);
+			if (!first_packet) {
+				break;
+			}
 			// public key parser (definition from the standard:)
 			// OpenPGP Message      :- Encrypted Message | Signed Message |
 			//                         Compressed Message | Literal Message.
@@ -9716,6 +9728,7 @@ function _openpgp () {
 			if (first_packet.tagType ==  1 ||
 			    (first_packet.tagType == 2 && first_packet.signatureType < 16) ||
 			     first_packet.tagType ==  3 ||
+			     first_packet.tagType ==  4 ||
 				 first_packet.tagType ==  8 ||
 				 first_packet.tagType ==  9 ||
 				 first_packet.tagType == 10 ||
@@ -9724,7 +9737,7 @@ function _openpgp () {
 				 first_packet.tagType == 19) {
 				messages[messages.length] = new openpgp_msg_message();
 				messages[messageCount].messagePacket = first_packet;
-				messages[messageCount].type = dearmored.type;
+				messages[messageCount].type = input.type;
 				// Encrypted Message
 				if (first_packet.tagType == 9 ||
 				    first_packet.tagType == 1 ||
@@ -9742,7 +9755,7 @@ function _openpgp () {
 							messages[messageCount].sessionKeys[sessionKeyCount] = first_packet;
 							mypos += first_packet.packetLength + first_packet.headerLength;
 							l -= (first_packet.packetLength + first_packet.headerLength);
-							first_packet = openpgp_packet.read_packet(input, mypos, l);
+							first_packet = openpgp_packet.read_packet(messageString, mypos, l);
 							
 							if (first_packet.tagType != 1 && first_packet.tagType != 3)
 								issessionkey = false;
@@ -9766,12 +9779,19 @@ function _openpgp () {
 				} else 
 					// Signed Message
 					if (first_packet.tagType == 2 && first_packet.signatureType < 3) {
-						messages[messageCount].text = dearmored.text;
+						messages[messageCount].text = input.text;
 						messages[messageCount].signature = first_packet;
 						break;
 				} else 
+					// Signed Message
+					if (first_packet.tagType == 4) {
+						//TODO: Implement check
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
+				} else 
 					// Compressed Message
 					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
+					// This has been implemented as part of processing. Check openpgp.packet.
 					if (first_packet.tagType == 8) {
 						util.print_error("A directly compressed message is currently not supported");
 						break;
@@ -9784,12 +9804,13 @@ function _openpgp () {
 						// continue with next packet
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
-				} else
-					// Literal Message
-					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
+				} else 
 					if (first_packet.tagType == 11) {
-						util.print_error("A direct literal message is currently not supported.");
-						break;
+					// Literal Message -- work is already done in read_packet
+					mypos += first_packet.packetLength + first_packet.headerLength;
+					l -= (first_packet.packetLength + first_packet.headerLength);
+					messages[messageCount].data = first_packet.data;
+					messageCount++;
 				}
 			} else {
 				util.print_error('no message found!');
@@ -9954,6 +9975,7 @@ function _openpgp () {
 	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
 	this.write_encrypted_message = write_encrypted_message;
 	this.read_message = read_message;
+	this.read_messages_dearmored = read_messages_dearmored;
 	this.read_publicKey = read_publicKey;
 	this.read_privateKey = read_privateKey;
 	this.init = init;
@@ -10265,7 +10287,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20120911";
+	this.versionstring ="OpenPGP.js v.1.20121006";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -11525,6 +11547,7 @@ JXG.Util.Unzip = function (barray){
             }
             if (debug)
            		document.write("<br>literalTree");
+            outer:
             while(1) {
                 j = DecodeValue(literalTree);
                 if(j >= 256) {        // In C64: if carry set
@@ -11546,6 +11569,9 @@ JXG.Util.Unzip = function (barray){
                     }
                     dist += cpdist[j];
                     while(len--) {
+                        if(bIdx - dist < 0) {
+                            break outer;
+                        }
                         var c = buf32k[(bIdx - dist) & 0x7fff];
                         addBuffer(c);
                     }
