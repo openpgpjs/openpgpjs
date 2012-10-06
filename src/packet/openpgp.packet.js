@@ -134,7 +134,6 @@ function _openpgp_packet() {
 		mypos++;
 
 		// parsed length from length field
-		var len = 0;
 		var bodydata = null;
 
 		// used for partial body lengths
@@ -169,6 +168,8 @@ function _openpgp_packet() {
 				// definite length, or a new format header. The new format 
 				// headers described below have a mechanism for precisely
 				// encoding data of indeterminate length.
+				packet_length = len;
+				break;
 			}
 
 		} else // 4.2.2. New Format Packet Lengths

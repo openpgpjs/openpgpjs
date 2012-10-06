@@ -80,9 +80,13 @@ function openpgp_packet_compressed() {
 				var radix = s2r(compData).replace(/\n/g,"");
 				var outputString = JXG.decompress(radix);
 				//TODO check ADLER32 checksum
-				var packet = openpgp_packet.read_packet(outputString, 0, outputString.length);
-				util.print_info('Decompressed packet [Type 2-ZLIB]: ' + packet);
-				this.decompressedData = packet.data;
+				var dearmored = {type: 3, text: outputString, openpgp: outputString};
+				var messages = openpgp.read_messages_dearmored(dearmored);
+				for(var m in messages){
+					if(messages[m].data){
+						this.decompressedData = messages[m].data;
+					}
+				}
 			} else {
 				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
 			}
