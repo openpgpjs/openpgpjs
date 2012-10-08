@@ -248,6 +248,7 @@ function openpgp_packet_signature() {
 	this.signatureTargetHashAlgorithm = null;
 	this.signatureTargetHash = null;
 	this.embeddedSignature = null;
+	this.verified = false;
 	
 
 	/**
@@ -666,55 +667,43 @@ function openpgp_packet_signature() {
 	 * @return {boolean} True if message is verified, else false.
 	 */
 	function verify(data, key) {
-		switch(this.signatureType) {
 		// calculating the trailer
+		var trailer = '';
+		trailer += String.fromCharCode(this.version);
+		trailer += String.fromCharCode(0xFF);
+		trailer += String.fromCharCode(this.signatureData.length >> 24);
+		trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+		trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+		trailer += String.fromCharCode(this.signatureData.length & 0xFF);
+		switch(this.signatureType) {
 		case 0: // 0x00: Signature of a binary document.
 			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length & 0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data.substring(i)+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
 			}
+			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
 			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length &0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
+				return this.verified;
 			}
+			break;
 				
 		case 2: // 0x02: Standalone signature.
 			// This signature is a signature of only its own subpacket contents.
 			// It is calculated identically to a signature over a zero-length
 			// binary document.  Note that it doesn't make sense to have a V3
 			// standalone signature.
-			if (this.version == 3)
-				return false; 
+			if (this.version == 3) {
+				this.verified = false;
+				break;
+				}
 			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+			break;
 		case 16:			
 			// 0x10: Generic certification of a User ID and Public-Key packet.
 			// The issuer of this certification does not make any particular
@@ -746,15 +735,9 @@ function openpgp_packet_signature() {
 			// revokes, and should have a later creation date than that
 			// certificate.
 
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+			break;
 						
 		case 24:
 			// 0x18: Subkey Binding Signature
@@ -765,18 +748,14 @@ function openpgp_packet_signature() {
 			// an Embedded Signature subpacket in this binding signature that
 			// contains a 0x19 signature made by the signing subkey on the
 			// primary key and subkey.
-			if (this.version == 3)
-				return false; 
+			if (this.version == 3) {
+				this.verified = false;
+				break;
+			}
 			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+			break;
 		case 25:
 			// 0x19: Primary Key Binding Signature
 			// This signature is a statement by a signing subkey, indicating
@@ -813,16 +792,9 @@ function openpgp_packet_signature() {
 			// by the top-level signature key that is bound to this subkey, or
 			// by an authorized revocation key, should be considered valid
 			// revocation signatures.
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
-			
+			break;
 			
 			// Key revocation signatures (types 0x20 and 0x28)
 			// hash only the key being revoked.
@@ -843,6 +815,7 @@ function openpgp_packet_signature() {
 			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
 			break;
 		}
+		return this.verified;
 	}
 	/**
 	 * generates debug output (pretty print)
@@ -2519,6 +2492,7 @@ var openpgp_packet = new _openpgp_packet();
  */   
 function openpgp_packet_compressed() {
 	this.tagType = 8;
+	this.decompressedData = null;
 	
 	/**
 	 * parsing function for the packet.
@@ -2553,16 +2527,15 @@ function openpgp_packet_compressed() {
 			this.decompressedData = this.compressedData;
 			break;
 		case 1: // - ZIP [RFC1951]
+			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
 			var compData = this.compressedData;
 			var radix = s2r(compData).replace(/\n/g,"");
 			// no header in this case, directly call deflate
 			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
-			var outputString = unescape(jxg_obj.deflate()[0][0]);
-			var packet = openpgp_packet.read_packet(outputString, 0, outputString.length);
-			util.print_info('Decompressed packet [Type 1-ZIP]: ' + packet);
-			this.decompressedData = packet.data;
+			this.decompressedData = unescape(jxg_obj.deflate()[0][0]);
 			break;
 		case 2: // - ZLIB [RFC1950]
+			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
 			var compressionMethod = this.compressedData.charCodeAt(0) % 0x10; //RFC 1950. Bits 0-3 Compression Method
 			//Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
 			//2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary (how is this defined). Basic checksum, and compression level.
@@ -2570,15 +2543,9 @@ function openpgp_packet_compressed() {
 				// remove 4 bytes ADLER32 checksum from the end
 				var compData = this.compressedData.substring(0, this.compressedData.length - 4);
 				var radix = s2r(compData).replace(/\n/g,"");
-				var outputString = JXG.decompress(radix);
 				//TODO check ADLER32 checksum
-				var dearmored = {type: 3, text: outputString, openpgp: outputString};
-				var messages = openpgp.read_messages_dearmored(dearmored);
-				for(var m in messages){
-					if(messages[m].data){
-						this.decompressedData = messages[m].data;
-					}
-				}
+				this.decompressedData = JXG.decompress(radix);
+				break;
 			} else {
 				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
 			}
@@ -3233,7 +3200,7 @@ function openpgp_packet_keymaterial() {
 							pos += result.packetLength + result.headerLength;
 							break;
 						} else if (result.signatureType == 40) { // subkey revocation signature
-							this.subKeyRevocationSignature = result;
+							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
 							pos += result.packetLength + result.headerLength;
 							break;
 						} else {
@@ -3266,7 +3233,7 @@ function openpgp_packet_keymaterial() {
 						if (result.signatureType == 24) // subkey embedded signature
 							this.subKeySignature = result; 
 						else if (result.signatureType == 40) // subkey revocation signature
-							this.subKeyRevocationSignature[this.subKeyRevocationSignature] = result;
+							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
 						pos += result.packetLength + result.headerLength;
 						break;
 					default:
@@ -3292,26 +3259,24 @@ function openpgp_packet_keymaterial() {
 	 */
 	function verifyKey() {
 		if (this.tagType == 14) {
-			if (this.subKeySignature == null)
+			if (this.subKeySignature == null) {
 				return 0;
+			}
 			if (this.subKeySignature.version == 4 &&
 				this.subKeySignature.keyNeverExpires != null &&
 				!this.subKeySignature.keyNeverExpires &&
-				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date())
-				return 1;
+				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date()) {
+				    return 1;
+				}
 			var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
 			String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
 			if (!this.subKeySignature.verify(hashdata,this.parentNode)) {
 				return 0;
 			}
 			for (var i = 0; i < this.subKeyRevocationSignature.length; i++) {
-				if (this.subKeyRevocationSignature[i])
-				var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
-				String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-				if (this.subKeyRevocationSignature[i].verify(hashdata, this.parentNode))
-					return 2;
-				else 
-					return 0;
+			    if (this.getKeyId() == this.subKeyRevocationSignature[i].keyId){
+			        return 2;
+			    }
 			}
 		}
 		return 3;
@@ -9692,8 +9657,18 @@ function _openpgp () {
 		return read_messages_dearmored(dearmored);
 		}
 		
+	/**
+	 * reads message packets out of an OpenPGP armored text and
+	 * returns an array of message objects. Can be called externally or internally.
+	 * External call will parse a de-armored messaged and return messages found.
+	 * Internal will be called to read packets wrapped in other packets (i.e. compressed)
+	 * @param {String} input dearmored text of OpenPGP packets, to be parsed
+	 * @return {Array[openpgp_msg_message]} on error the function
+	 * returns null
+	 */
 	function read_messages_dearmored(input){
 		var messageString = input.openpgp;
+		var signatureText = input.text; //text to verify signatures against. Modified by Tag11.
 		var messages = new Array();
 		var messageCount = 0;
 		var mypos = 0;
@@ -9777,11 +9752,13 @@ function _openpgp () {
 						break;
 					}
 				} else 
-					// Signed Message
 					if (first_packet.tagType == 2 && first_packet.signatureType < 3) {
-						messages[messageCount].text = input.text;
+					// Signed Message
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
+						messages[messageCount].text = signatureText;
 						messages[messageCount].signature = first_packet;
-						break;
+				        messageCount++;
 				} else 
 					// Signed Message
 					if (first_packet.tagType == 4) {
@@ -9789,12 +9766,12 @@ function _openpgp () {
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
 				} else 
-					// Compressed Message
-					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
-					// This has been implemented as part of processing. Check openpgp.packet.
 					if (first_packet.tagType == 8) {
-						util.print_error("A directly compressed message is currently not supported");
-						break;
+					// Compressed Message
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
+				        var decompressedText = first_packet.decompress();
+				        messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
 				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
@@ -9809,8 +9786,14 @@ function _openpgp () {
 					// Literal Message -- work is already done in read_packet
 					mypos += first_packet.packetLength + first_packet.headerLength;
 					l -= (first_packet.packetLength + first_packet.headerLength);
+					signatureText = first_packet.data;
 					messages[messageCount].data = first_packet.data;
 					messageCount++;
+				} else 
+					if (first_packet.tagType == 19) {
+					// Modification Detect Code
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
 				}
 			} else {
 				util.print_error('no message found!');
@@ -10148,7 +10131,6 @@ function openpgp_msg_publickey() {
 			var tohash = this.publicKeyPacket.header+this.publicKeyPacket.data;
 			if (this.revocationSignatures[i].verify(tohash, this.publicKeyPacket))
 				return false;
-			else return false;
 		}
 		
 		if (this.subKeys.length != 0) {
@@ -10287,7 +10269,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20121006";
+	this.versionstring ="OpenPGP.js v.1.20121007";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -12226,6 +12208,8 @@ function openpgp_msg_message() {
 	// -3 = decryption error
 	// text = valid decryption
 	this.text = "";
+	this.messagePacket = null;
+	this.type = null;
 	
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
@@ -12257,45 +12241,15 @@ function openpgp_msg_message() {
 		var len = decrypted.length;
 		var validSignatures = new Array();
 		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
-
-		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
-			if (packet.tagType == 8) {
-				this.text = packet.decompress();
-				decrypted = packet.decompress();
+		
+		var messages = openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
+		for(var m in messages){
+			if(messages[m].data){
+				this.text = messages[m].data;
 			}
-			util.print_debug(packet.toString());
-			position += packet.headerLength+packet.packetLength;
-			if (position > 38)
-				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
-			len = decrypted.length - position;
-			if (packet.tagType == 11) {
-				this.text = packet.data;
-				util.print_info("message successfully decrypted");
+			if(messages[m].signature){
+			    validSignatures.push(messages[m].verifySignature(pubkey));
 			}
-			if (packet.tagType == 19)
-				// ignore.. we checked that already in a more strict way.
-				continue;
-			if (packet.tagType == 2 && packet.signatureType < 3) {
-			    if(!pubkey || pubkey.length == 0 ){
-				    var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
-				}
-				if (pubkey.length == 0) {
-					util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(packet.issuerKeyId)+". Public key not found in keyring.");
-					validSignatures[validSignatures.length] = false;
-				} else {
-					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate()){
-						util.print_info("Found Good Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = true;
-						}
-					else{
-						util.print_error("Signature verification failed: Bad Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = false;
-						}
-				}
-			}
-		}
-		if (this.text == "") {
-			this.text = decrypted;
 		}
 		return {text:this.text, validSignatures:validSignatures};
 	}
@@ -12307,7 +12261,7 @@ function openpgp_msg_message() {
 	 */
 	function verifySignature(pubkey) {
 		var result = false;
-		if (this.type == 2) {
+		if (this.signature.tagType == 2) {
 		    if(!pubkey || pubkey.length == 0){
 			    var pubkey;
 			    if (this.signature.version == 4) {
@@ -12324,7 +12278,7 @@ function openpgp_msg_message() {
 			else {
 				for (var i = 0 ; i < pubkey.length; i++) {
 					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
-					if (this.signature.verify(tohash.substring(0, tohash.length -2), pubkey[i])) {
+					if (this.signature.verify(tohash, pubkey[i])) {
 						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[i].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
 						result = true;
 					} else {

@@ -140,8 +140,18 @@ function _openpgp () {
 		return read_messages_dearmored(dearmored);
 		}
 		
+	/**
+	 * reads message packets out of an OpenPGP armored text and
+	 * returns an array of message objects. Can be called externally or internally.
+	 * External call will parse a de-armored messaged and return messages found.
+	 * Internal will be called to read packets wrapped in other packets (i.e. compressed)
+	 * @param {String} input dearmored text of OpenPGP packets, to be parsed
+	 * @return {Array[openpgp_msg_message]} on error the function
+	 * returns null
+	 */
 	function read_messages_dearmored(input){
 		var messageString = input.openpgp;
+		var signatureText = input.text; //text to verify signatures against. Modified by Tag11.
 		var messages = new Array();
 		var messageCount = 0;
 		var mypos = 0;
@@ -225,11 +235,13 @@ function _openpgp () {
 						break;
 					}
 				} else 
-					// Signed Message
 					if (first_packet.tagType == 2 && first_packet.signatureType < 3) {
-						messages[messageCount].text = input.text;
+					// Signed Message
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
+						messages[messageCount].text = signatureText;
 						messages[messageCount].signature = first_packet;
-						break;
+				        messageCount++;
 				} else 
 					// Signed Message
 					if (first_packet.tagType == 4) {
@@ -237,12 +249,12 @@ function _openpgp () {
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
 				} else 
-					// Compressed Message
-					// TODO: needs to be implemented. From a security perspective: this message is plaintext anyway.
-					// This has been implemented as part of processing. Check openpgp.packet.
 					if (first_packet.tagType == 8) {
-						util.print_error("A directly compressed message is currently not supported");
-						break;
+					// Compressed Message
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
+				        var decompressedText = first_packet.decompress();
+				        messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
 				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
@@ -257,8 +269,14 @@ function _openpgp () {
 					// Literal Message -- work is already done in read_packet
 					mypos += first_packet.packetLength + first_packet.headerLength;
 					l -= (first_packet.packetLength + first_packet.headerLength);
+					signatureText = first_packet.data;
 					messages[messageCount].data = first_packet.data;
 					messageCount++;
+				} else 
+					if (first_packet.tagType == 19) {
+					// Modification Detect Code
+						mypos += first_packet.packetLength + first_packet.headerLength;
+						l -= (first_packet.packetLength + first_packet.headerLength);
 				}
 			} else {
 				util.print_error('no message found!');

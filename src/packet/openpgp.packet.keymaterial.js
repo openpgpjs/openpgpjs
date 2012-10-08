@@ -572,7 +572,7 @@ function openpgp_packet_keymaterial() {
 							pos += result.packetLength + result.headerLength;
 							break;
 						} else if (result.signatureType == 40) { // subkey revocation signature
-							this.subKeyRevocationSignature = result;
+							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
 							pos += result.packetLength + result.headerLength;
 							break;
 						} else {
@@ -605,7 +605,7 @@ function openpgp_packet_keymaterial() {
 						if (result.signatureType == 24) // subkey embedded signature
 							this.subKeySignature = result; 
 						else if (result.signatureType == 40) // subkey revocation signature
-							this.subKeyRevocationSignature[this.subKeyRevocationSignature] = result;
+							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
 						pos += result.packetLength + result.headerLength;
 						break;
 					default:
@@ -631,26 +631,24 @@ function openpgp_packet_keymaterial() {
 	 */
 	function verifyKey() {
 		if (this.tagType == 14) {
-			if (this.subKeySignature == null)
+			if (this.subKeySignature == null) {
 				return 0;
+			}
 			if (this.subKeySignature.version == 4 &&
 				this.subKeySignature.keyNeverExpires != null &&
 				!this.subKeySignature.keyNeverExpires &&
-				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date())
-				return 1;
+				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date()) {
+				    return 1;
+				}
 			var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
 			String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
 			if (!this.subKeySignature.verify(hashdata,this.parentNode)) {
 				return 0;
 			}
 			for (var i = 0; i < this.subKeyRevocationSignature.length; i++) {
-				if (this.subKeyRevocationSignature[i])
-				var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
-				String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-				if (this.subKeyRevocationSignature[i].verify(hashdata, this.parentNode))
-					return 2;
-				else 
-					return 0;
+			    if (this.getKeyId() == this.subKeyRevocationSignature[i].keyId){
+			        return 2;
+			    }
 			}
 		}
 		return 3;
