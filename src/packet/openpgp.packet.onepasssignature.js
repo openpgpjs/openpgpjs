@@ -29,7 +29,7 @@
 function openpgp_packet_onepasssignature() {
 	this.tagType = 4;
 	this.version = null; // A one-octet version number.  The current version is 3.
-	this.type == null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
+	this.type = null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
 	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
 	this.publicKeyAlgorithm = null;	     // A one-octet number describing the public-key algorithm used. (See RFC4880 9.1)
 	this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
