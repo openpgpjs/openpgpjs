@@ -108,7 +108,7 @@ function _openpgp_packet() {
 				|| input.substring(position).length < 2
 				|| (input[position].charCodeAt() & 0x80) == 0) {
 			util
-					.print_error("Error during parsing. This message / key is propably not containing a valid OpenPGP format.");
+					.print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
 			return null;
 		}
 		var mypos = position;
