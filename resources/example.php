@@ -8,7 +8,7 @@ define('LARGE_LIMIT',131072);
 $subject="OpenPGP.js Example";
 $to="alex@openpgpjs.org";
 $headers = "From: OpenPGP.js Example <noreply@openpgpjs.org>\r\n";
-$redirect = "http://openpgpjs.org";
+$redirect = "http://openpgpjs.org/";
 /* -------------------------------------------------------------------------- */
 
 /* input -------------------------------------------------------------------- */
@@ -20,7 +20,8 @@ $message=substr(trim($_POST["message"]), 0, LARGE_LIMIT);
 if (filter_var($user, FILTER_VALIDATE_EMAIL)) {
     $headers = "From: $user\r\n";
 }
-mail($to, $subject, $message, $headers);
+if (!empty($message))
+  mail($to, $subject, $message, $headers);
 /* -------------------------------------------------------------------------- */
 
 /* Redirect browser */
