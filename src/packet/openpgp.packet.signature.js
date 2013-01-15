@@ -65,6 +65,7 @@ function openpgp_packet_signature() {
 	this.signatureTargetHashAlgorithm = null;
 	this.signatureTargetHash = null;
 	this.embeddedSignature = null;
+	this.verified = false;
 	
 
 	/**
@@ -483,55 +484,43 @@ function openpgp_packet_signature() {
 	 * @return {boolean} True if message is verified, else false.
 	 */
 	function verify(data, key) {
-		switch(this.signatureType) {
 		// calculating the trailer
+		var trailer = '';
+		trailer += String.fromCharCode(this.version);
+		trailer += String.fromCharCode(0xFF);
+		trailer += String.fromCharCode(this.signatureData.length >> 24);
+		trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
+		trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
+		trailer += String.fromCharCode(this.signatureData.length & 0xFF);
+		switch(this.signatureType) {
 		case 0: // 0x00: Signature of a binary document.
 			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length & 0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data.substring(i)+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
 			}
+			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
 			if (this.version == 4) {
-				var trailer = '';
-				trailer += String.fromCharCode(this.version);
-				trailer += String.fromCharCode(0xFF);
-				trailer += String.fromCharCode(this.signatureData.length >> 24);
-				trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-				trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-				trailer += String.fromCharCode(this.signatureData.length &0xFF);
-				return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-			} else if (this.version == 3) {
-				return false;
+				return this.verified;
 			}
+			break;
 				
 		case 2: // 0x02: Standalone signature.
 			// This signature is a signature of only its own subpacket contents.
 			// It is calculated identically to a signature over a zero-length
 			// binary document.  Note that it doesn't make sense to have a V3
 			// standalone signature.
-			if (this.version == 3)
-				return false; 
+			if (this.version == 3) {
+				this.verified = false;
+				break;
+				}
 			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+			break;
 		case 16:			
 			// 0x10: Generic certification of a User ID and Public-Key packet.
 			// The issuer of this certification does not make any particular
@@ -563,15 +552,9 @@ function openpgp_packet_signature() {
 			// revokes, and should have a later creation date than that
 			// certificate.
 
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+			break;
 						
 		case 24:
 			// 0x18: Subkey Binding Signature
@@ -582,18 +565,14 @@ function openpgp_packet_signature() {
 			// an Embedded Signature subpacket in this binding signature that
 			// contains a 0x19 signature made by the signing subkey on the
 			// primary key and subkey.
-			if (this.version == 3)
-				return false; 
+			if (this.version == 3) {
+				this.verified = false;
+				break;
+			}
 			
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
+			break;
 		case 25:
 			// 0x19: Primary Key Binding Signature
 			// This signature is a statement by a signing subkey, indicating
@@ -630,16 +609,9 @@ function openpgp_packet_signature() {
 			// by the top-level signature key that is bound to this subkey, or
 			// by an authorized revocation key, should be considered valid
 			// revocation signatures.
-			var trailer = '';
-			trailer += String.fromCharCode(this.version);
-			trailer += String.fromCharCode(0xFF);
-			trailer += String.fromCharCode(this.signatureData.length >> 24);
-			trailer += String.fromCharCode((this.signatureData.length >> 16) &0xFF);
-			trailer += String.fromCharCode((this.signatureData.length >> 8) &0xFF);
-			trailer += String.fromCharCode(this.signatureData.length &0xFF);
-			return openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.MPIs, data+this.signatureData+trailer);
-			
+			break;
 			
 			// Key revocation signatures (types 0x20 and 0x28)
 			// hash only the key being revoked.
@@ -660,6 +632,7 @@ function openpgp_packet_signature() {
 			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
 			break;
 		}
+		return this.verified;
 	}
 	/**
 	 * generates debug output (pretty print)
