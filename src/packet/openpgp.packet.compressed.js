@@ -27,6 +27,7 @@
  */   
 function openpgp_packet_compressed() {
 	this.tagType = 8;
+	this.decompressedData = null;
 	
 	/**
 	 * parsing function for the packet.
@@ -61,16 +62,15 @@ function openpgp_packet_compressed() {
 			this.decompressedData = this.compressedData;
 			break;
 		case 1: // - ZIP [RFC1951]
+			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
 			var compData = this.compressedData;
 			var radix = s2r(compData).replace(/\n/g,"");
 			// no header in this case, directly call deflate
 			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
-			var outputString = unescape(jxg_obj.deflate()[0][0]);
-			var packet = openpgp_packet.read_packet(outputString, 0, outputString.length);
-			util.print_info('Decompressed packet [Type 1-ZIP]: ' + packet);
-			this.decompressedData = packet.data;
+			this.decompressedData = unescape(jxg_obj.deflate()[0][0]);
 			break;
 		case 2: // - ZLIB [RFC1950]
+			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
 			var compressionMethod = this.compressedData.charCodeAt(0) % 0x10; //RFC 1950. Bits 0-3 Compression Method
 			//Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
 			//2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary (how is this defined). Basic checksum, and compression level.
@@ -78,15 +78,9 @@ function openpgp_packet_compressed() {
 				// remove 4 bytes ADLER32 checksum from the end
 				var compData = this.compressedData.substring(0, this.compressedData.length - 4);
 				var radix = s2r(compData).replace(/\n/g,"");
-				var outputString = JXG.decompress(radix);
 				//TODO check ADLER32 checksum
-				var dearmored = {type: 3, text: outputString, openpgp: outputString};
-				var messages = openpgp.read_messages_dearmored(dearmored);
-				for(var m in messages){
-					if(messages[m].data){
-						this.decompressedData = messages[m].data;
-					}
-				}
+				this.decompressedData = JXG.decompress(radix);
+				break;
 			} else {
 				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
 			}

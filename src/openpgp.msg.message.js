@@ -28,6 +28,8 @@ function openpgp_msg_message() {
 	// -3 = decryption error
 	// text = valid decryption
 	this.text = "";
+	this.messagePacket = null;
+	this.type = null;
 	
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
@@ -59,45 +61,15 @@ function openpgp_msg_message() {
 		var len = decrypted.length;
 		var validSignatures = new Array();
 		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
-
-		while (position != decrypted.length && (packet = openpgp_packet.read_packet(decrypted, position, len)) != null) {
-			if (packet.tagType == 8) {
-				this.text = packet.decompress();
-				decrypted = packet.decompress();
+		
+		var messages = openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
+		for(var m in messages){
+			if(messages[m].data){
+				this.text = messages[m].data;
 			}
-			util.print_debug(packet.toString());
-			position += packet.headerLength+packet.packetLength;
-			if (position > 38)
-				util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted.substring(position));
-			len = decrypted.length - position;
-			if (packet.tagType == 11) {
-				this.text = packet.data;
-				util.print_info("message successfully decrypted");
+			if(messages[m].signature){
+			    validSignatures.push(messages[m].verifySignature(pubkey));
 			}
-			if (packet.tagType == 19)
-				// ignore.. we checked that already in a more strict way.
-				continue;
-			if (packet.tagType == 2 && packet.signatureType < 3) {
-			    if(!pubkey || pubkey.length == 0 ){
-				    var pubkey = openpgp.keyring.getPublicKeysForKeyId(packet.issuerKeyId);
-				}
-				if (pubkey.length == 0) {
-					util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(packet.issuerKeyId)+". Public key not found in keyring.");
-					validSignatures[validSignatures.length] = false;
-				} else {
-					if(packet.verify(this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"),pubkey[0]) && pubkey[0].obj.validate()){
-						util.print_info("Found Good Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = true;
-						}
-					else{
-						util.print_error("Signature verification failed: Bad Signature from "+pubkey[0].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
-    					validSignatures[validSignatures.length] = false;
-						}
-				}
-			}
-		}
-		if (this.text == "") {
-			this.text = decrypted;
 		}
 		return {text:this.text, validSignatures:validSignatures};
 	}
@@ -109,7 +81,7 @@ function openpgp_msg_message() {
 	 */
 	function verifySignature(pubkey) {
 		var result = false;
-		if (this.type == 2) {
+		if (this.signature.tagType == 2) {
 		    if(!pubkey || pubkey.length == 0){
 			    var pubkey;
 			    if (this.signature.version == 4) {
@@ -126,7 +98,7 @@ function openpgp_msg_message() {
 			else {
 				for (var i = 0 ; i < pubkey.length; i++) {
 					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
-					if (this.signature.verify(tohash.substring(0, tohash.length -2), pubkey[i])) {
+					if (this.signature.verify(tohash, pubkey[i])) {
 						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[i].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
 						result = true;
 					} else {

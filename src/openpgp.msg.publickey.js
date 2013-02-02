@@ -162,7 +162,6 @@ function openpgp_msg_publickey() {
 			var tohash = this.publicKeyPacket.header+this.publicKeyPacket.data;
 			if (this.revocationSignatures[i].verify(tohash, this.publicKeyPacket))
 				return false;
-			else return false;
 		}
 		
 		if (this.subKeys.length != 0) {
