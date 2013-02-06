@@ -9679,7 +9679,7 @@ function openpgp_msg_message() {
 				for (var i = 0 ; i < pubkey.length; i++) {
 					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
 					if (this.signature.verify(tohash, pubkey[i])) {
-						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[i].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
+						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
 						result = true;
 					} else {
 						util.print_error("Signature verification failed: Bad Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
