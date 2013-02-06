@@ -275,7 +275,7 @@ function openpgp_packet_keymaterial() {
 	    		this.s2kUsageConventions != 254) {
 	    	this.symmetricEncryptionAlgorithm = this.s2kUsageConventions;
 	    }
-	    if (this.s2kUsageConventions != 0) {
+	    if (this.s2kUsageConventions != 0 && this.s2k.type != 1001) {
 	    	this.hasIV = true;
 	    	switch (this.symmetricEncryptionAlgorithm) {
 		    case  1: // - IDEA [IDEA]
@@ -310,7 +310,10 @@ function openpgp_packet_keymaterial() {
 
 	    //
 	    //
-	    if (!this.hasUnencryptedSecretKeyData) {
+	    if (this.s2k.type == 1001) {
+	    	this.secMPIs = null;
+	    	this.encryptedMPIData = null;
+	    } else if (!this.hasUnencryptedSecretKeyData) {
 	    	this.encryptedMPIData = input.substring(mypos, len);
 	    	mypos += this.encryptedMPIData.length;
 	    } else {

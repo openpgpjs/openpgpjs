@@ -72,5 +72,44 @@ unittests.register("Testing of binary signature checking", function() {
       [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
   result[0] = new test_result("Testing signature checking on CAST5-enciphered message",
           ret.validSignatures[0] == true);
+
+  // exercises the GnuPG s2k type 1001 extension:
+  // the secrets on the primary key have been stripped.
+  var priv_key_gnupg_ext = openpgp.read_privateKey([
+        '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+        'Version: GnuPG v1.4.11 (GNU/Linux)',
+        '',
+        'lQGqBFERnrMRBADmM0hIfkI3yosjgbWo9v0Lnr3CCE+8KsMszgVS+hBu0XfGraKm',
+        'ivcA2aaJimHqVYOP7gEnwFAxHBBpeTJcu5wzCFyJwEYqVeS3nnaIhBPplSF14Duf',
+        'i6bB9RV7KxVAg6aunmM2tAutqC+a0y2rDaf7jkJoZ9gWJe2zI+vraD6fiwCgxvHo',
+        '3IgULB9RqIqpLoMgXfcjC+cD/1jeJlKRm+n71ryYwT/ECKsspFz7S36z6q3XyS8Q',
+        'QfrsUz2p1fbFicvJwIOJ8B20J/N2/nit4P0gBUTUxv3QEa7XCM/56/xrGkyBzscW',
+        'AzBoy/AK9K7GN6z13RozuAS60F1xO7MQc6Yi2VU3eASDQEKiyL/Ubf/s/rkZ+sGj',
+        'yJizBACtwCbQzA+z9XBZNUat5NPgcZz5Qeh1nwF9Nxnr6pyBv7tkrLh/3gxRGHqG',
+        '063dMbUk8pmUcJzBUyRsNiIPDoEUsLjY5zmZZmp/waAhpREsnK29WLCbqLdpUors',
+        'c1JJBsObkA1IM8TZY8YUmvsMEvBLCCanuKpclZZXqeRAeOHJ0v4DZQJHTlUBtBZU',
+        'ZXN0MiA8dGVzdDJAdGVzdC5jb20+iGIEExECACIFAlERnrMCGwMGCwkIBwMCBhUI',
+        'AgkKCwQWAgMBAh4BAheAAAoJEBEnlAPLFp74xc0AoLNZINHe0ytOsNtMCuLvc3Vd',
+        'vePUAJ9KX3L5IBqHarsa+aJHX7r796SokZ0BWARREZ6zEAQA2WkxmNbfeMzGUocN',
+        '3JEVe0o6rxGt5eGrTSmWisduDP3MURabhUXnf4T8oaeYcbJjkLLxMrJmNq55ln1e',
+        '4bSG5mDkh/ryKsV81m3F0DbqO/z/891nRSP5fondFVral4wsMOzBNgs4vVk7V/F2',
+        '0MPjR90CIhnVDKPAQbQA+3PjUR8AAwUEALn922AEE+0d7xSMMFpR7ic3Me5QEGnp',
+        'cT4ft6oc0UK5kAnvKoksZUc0hpBHjX1w3LTz847/5hRDuuDvwvGMWK8IfsjOF9T7',
+        'rK8QtJuBEyJxjoScA/YZP5vX4y0U1reUEa0EdwmVrnZzatMAe2FhlaR9PlHkOcm5',
+        'DZwkcExL0dbI/gMDArxZ+5N7kH4zYLtr9glJS/pJ7F0YJqJpNwCbqD8+8DqHD8Uv',
+        'MgQ/rtBxBJJOaF+1AjCd123hLgzIkkfdTh8loV9hDXMKeJgmiEkEGBECAAkFAlER',
+        'nrMCGwwACgkQESeUA8sWnvhBswCfdXjznvHCc73/6/MhWcv3dbeTT/wAoLyiZg8+',
+        'iY3UT9QkV9d0sMgyLkug',
+        '=GQsY',
+        '-----END PGP PRIVATE KEY BLOCK-----',
+      ].join("\n"));
+  priv_key_gnupg_ext[0].subKeys[0].decryptSecretMPIs("abcd");
+  var ret2 = msg[0].decryptAndVerifySignature(
+      { key: priv_key_gnupg_ext[0], keymaterial: priv_key_gnupg_ext[0].subKeys[0]},
+      msg[0].sessionKeys[0],
+      [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
+  result[1] = new test_result("Testing GnuPG stripped-key extensions",
+          priv_key_gnupg_ext[0].privateKeyPacket.s2k.type == 1001 &&
+          ret.validSignatures[0] == true);
   return result;
 })
