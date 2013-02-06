@@ -9233,9 +9233,25 @@ function openpgp_keyring() {
 	 */
 	function getPublicKeysForKeyId(keyId) {
 		var result = new Array();
-		for (var i=0; i < this.publicKeys.length; i++)
+		for (var i=0; i < this.publicKeys.length; i++) {
 			if (keyId == this.publicKeys[i].obj.getKeyId())
 				result[result.length] = this.publicKeys[i];
+			else if (this.publicKeys[i].obj.subKeys != null) {
+				for (var j=0; j < this.publicKeys[i].obj.subKeys.length; j++) {
+					var subkey = this.publicKeys[i].obj.subKeys[j];
+					if (keyId == subkey.getKeyId()) {
+						result[result.length] = { 
+                                                    obj: {
+                                                        userIds: this.publicKeys[i].obj.userIds,
+                                                        getKeyId: function() { return this.publicKeyPacket.getKeyId(); },
+                                                        publicKeyPacket: subkey
+                                                    },
+                                                    keyId: subkey.getKeyId()
+                                                };
+					}
+				}
+			}
+		}
 		return result;
 	}
 	this.getPublicKeysForKeyId = getPublicKeysForKeyId;
