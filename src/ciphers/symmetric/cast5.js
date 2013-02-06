@@ -58,7 +58,7 @@ function openpgp_symenc_cast5() {
 	this.encrypt = function(src) {
 		 var dst = new Array(src.length);
 
-		 for(i = 0; i < src.length; i+=8)
+		 for(var i = 0; i < src.length; i+=8)
 		 {
 		  var l = src[i]<<24 | src[i+1]<<16 | src[i+2]<<8 | src[i+3];
 		  var r = src[i+4]<<24 | src[i+5]<<16 | src[i+6]<<8 | src[i+7];
@@ -100,7 +100,7 @@ function openpgp_symenc_cast5() {
 	this.decrypt = function(src) {
 		 var dst = new Array(src.length);
 
-		 for(i = 0; i < src.length; i+=8)
+		 for(var i = 0; i < src.length; i+=8)
 		 {
 		  var l = src[i]<<24 | src[i+1]<<16 | src[i+2]<<8 | src[i+3];
 		  var r = src[i+4]<<24 | src[i+5]<<16 | src[i+6]<<8 | src[i+7];

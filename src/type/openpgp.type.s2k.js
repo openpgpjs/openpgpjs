@@ -66,6 +66,23 @@ function openpgp_type_s2k() {
 			this.s2kLength = 10;
 			break;
 
+		case 101:
+			if(input.substring(mypos+1, mypos+4) == "GNU") {
+				this.hashAlgorithm = input[mypos++].charCodeAt();
+				mypos += 3; // GNU
+				var gnuExtType = 1000 + input[mypos++].charCodeAt();
+				if(gnuExtType == 1001) {
+					this.type = gnuExtType;
+					this.s2kLength = 5;
+					// GnuPG extension mode 1001 -- don't write secret key at all
+				} else {
+					util.print_error("unknown s2k gnu protection mode! "+this.type);
+				}
+			} else {
+				util.print_error("unknown s2k type! "+this.type);
+			}
+			break;
+
 		case 2: // Reserved value
 		default:
 			util.print_error("unknown s2k type! "+this.type);
