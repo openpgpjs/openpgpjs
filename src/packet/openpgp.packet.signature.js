@@ -496,7 +496,7 @@ function openpgp_packet_signature() {
 		case 0: // 0x00: Signature of a binary document.
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data.substring(i)+this.signatureData+trailer);
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
 			}
 			break;
 

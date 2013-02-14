@@ -11,7 +11,7 @@ _majorVersion=".1"
 :>"$_min"
 
 echo "Concatenating..."
-find "$_src" -name "*.js" -exec cat "{}" >> "$_tmp" \;
+find "$_src" -name "*.js" | sort | xargs --delimiter='\n' cat > "$_tmp"
 sed "s/OpenPGP.js VERSION/OpenPGP.js v$_majorVersion.$(date +%Y%m%d)/g" "$_tmp" > "$_raw";
 rm "$_tmp";
 
