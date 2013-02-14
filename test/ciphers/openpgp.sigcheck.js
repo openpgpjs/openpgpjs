@@ -111,5 +111,57 @@ unittests.register("Testing of binary signature checking", function() {
   result[1] = new test_result("Testing GnuPG stripped-key extensions",
           priv_key_gnupg_ext[0].privateKeyPacket.s2k.type == 1001 &&
           ret.validSignatures[0] == true);
+
+  // Exercises the ability of openpgp_keyring.getPublicKeysForKeyId to return subkeys
+  var test_keyring = new openpgp_keyring();
+  test_keyring.init();
+  test_keyring.importPublicKey([
+        '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+        'Version: GnuPG v1.4.11 (GNU/Linux)',
+        '',
+        'mQGiBFERvI4RBAD0M/HGglCtVNXPF72ehT8riAXrl0rSec4RJC61Bh+UAOhxn5+U',
+        'fDgos5p1SpIzYmn+M87JoSSVLAjfakFk0gHgR9I3bu7SIwq3Bikk1Vw3gO+yDSO6',
+        'TKpLUFGYDiBSSE1MGdxBadWLE1hlRf5B2x62gnGmjSpSVbly33PFkoDmrwCg9rAp',
+        'RmncnF9GhWjOLFkEoQw9Yx8EAOsxvq8Ig5Z1gk+ZKfDZeftpHRe3FdrRtbnhxvYY',
+        '7z+w9uz1EpoZUwDR5G4X3hTwJQ7lXmIOskg/+eRMLEAqEY7b/7tW6RaUJ2d6Ehsi',
+        'dOS89fIxElwjAOnVOM5S24f0FDQTTto7QBOoxcNTfkEJCHXSlpoOUmGAP85fXh3l',
+        'yPTGBACJfKc76Un3UWC1sWIRDxYiyh3ZpZyNEskoV6ESW8jEI1RnMnv5TrfGJH5K',
+        'E8jWX7TTnoFyPJtBTjlucAtkQaS4Bb7dg1LLja17zAqKNGOJK2b9fb2Z+lnTjPiY',
+        'i7DPH1XHnfaEexjlh/U7mYa5RrwIphRxNi8gCuxv874ZMmhEn7QWVGVzdDMgPHRl',
+        'c3QzQHRlc3QuY29tPohiBBMRAgAiBQJREbyOAhsDBgsJCAcDAgYVCAIJCgsEFgID',
+        'AQIeAQIXgAAKCRC0u8O0Moa2JYxyAJ9Oi2UlcUT0VJNgwjyl/VF9Xcjf9gCeJPvy',
+        'g/fp4EAU8MJIaN2yMI8pLFS5AaIEURG8nhEEAKVgeNDuYDPufLuJ0GrJV/CbXEjj',
+        'aEPA0iTUqV0nTCPdAfQ/nmE3gh5UlNMr/zSHJ+c4FQhYdLrzRGDOSzV+mfPHH3t+',
+        'YVx+wat0BYwABpHAtsIuLIVo2RQqYZYH85tatwBkm71HHT3jmlEAvr6NFH38+v3s',
+        '3w4Wl0/sdHyaeiSXAKCxJ4X1eOdN7L1rrbJozQ/gDCFuVQP/dcV6Ksss8Aw443jG',
+        'AYBLHWh6o4GhAY6/h1kijF0xD+uc+tNmTQnQi1tEOoTeIZMXnSRwtk8XEuJkkbAP',
+        '+uyvMgyV3wrk9zkaTAin7nrjAERxezFOdBEOtnB1CovJxtMn+RRxaMEGpC4GnETy',
+        'N5+6FkLuLcNXiCQP75ajzOAN1aID/juNjUNpBbNpfqBV7j1K+Kn0n9HYTyQl9ghy',
+        '026+/4c8ag2HV+bg3BD7c2VTVu9xBODHsfu0q8Ql/QB9W8tmYugU6DeXMHaeWPUH',
+        'ph98guM9kF2yHIiRBvAd5i7wOjwn+I/Ir6nBR2yxJ3p31CDUnUlbjTPYg7mtQvHW',
+        'EY2Cp4SWiJEEGBECAAkFAlERvJ4CGwIAUgkQtLvDtDKGtiVHIAQZEQIABgUCURG8',
+        'ngAKCRAMiMeR296Y2SjyAJ9V3wRJJ2Szazqal4khWGfLu5R6/wCfQQIRD24yVdz8',
+        '2a+2eCrwyALT2GAihACfS0nWM3a0gtITqngpJsRws+Ep+eIAn15qD2itutxNb8NI',
+        'bR2gBB5QmVJ3',
+        '=pGA6',
+        '-----END PGP PUBLIC KEY BLOCK-----'
+        ].join("\n"));
+
+  var msg2 = openpgp.read_message([
+        '-----BEGIN PGP MESSAGE-----',
+        'Version: GnuPG v1.4.11 (GNU/Linux)',
+        '',
+        'kA0DAAIRDIjHkdvemNkBrB1iB2Zvby50eHRREbz3VEVTVCBEQVRBIDEyMzQ1NohG',
+        'BAARAgAGBQJREbz3AAoJEAyIx5Hb3pjZ2TcAn32LpDEuHe9QrSRlyvSuREKNOFwz',
+        'AJ9zh4zsK4GIPuEu81YPNmHsju7DYg==',
+        '=WaSx',
+        '-----END PGP MESSAGE-----'
+        ].join("\n"));
+  var pubKey = test_keyring.getPublicKeysForKeyId(msg2[1].signature.issuerKeyId);
+  result[2] = new test_result("Testing keyring public subkey support",
+          pubKey != null && 
+          pubKey.length == 1 && 
+          msg2[1].signature.verify(msg2[0].data, pubKey[0]));
   return result;
 })
+

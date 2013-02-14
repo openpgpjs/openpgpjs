@@ -243,6 +243,15 @@ function openpgp_msg_publickey() {
 		return null;
 	}
 
+        /* Returns the i-th subKey as a openpgp_msg_publickey object */
+	function getSubKeyAsKey(i) {
+		var ret = new openpgp_msg_publickey();
+		ret.userIds = this.userIds;
+		ret.userAttributes = this.userAttributes;
+		ret.publicKeyPacket = this.subKeys[i];
+		return ret;
+	}
+
 	this.getEncryptionKey = getEncryptionKey;
 	this.getSigningKey = getSigningKey;
 	this.read_nodes = read_nodes;
@@ -252,4 +261,5 @@ function openpgp_msg_publickey() {
 	this.getFingerprint = getFingerprint;
 	this.getKeyId = getKeyId;
 	this.verifyBasicSignatures = verifyBasicSignatures;
+	this.getSubKeyAsKey = getSubKeyAsKey;
 }

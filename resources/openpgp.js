@@ -2969,7 +2969,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130206";
+	this.versionstring ="OpenPGP.js v.1.20130213";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -9233,9 +9233,22 @@ function openpgp_keyring() {
 	 */
 	function getPublicKeysForKeyId(keyId) {
 		var result = new Array();
-		for (var i=0; i < this.publicKeys.length; i++)
-			if (keyId == this.publicKeys[i].obj.getKeyId())
-				result[result.length] = this.publicKeys[i];
+		for (var i=0; i < this.publicKeys.length; i++) {
+			var key = this.publicKeys[i];
+			if (keyId == key.obj.getKeyId())
+				result[result.length] = key;
+			else if (key.obj.subKeys != null) {
+				for (var j=0; j < key.obj.subKeys.length; j++) {
+					var subkey = key.obj.subKeys[j];
+					if (keyId == subkey.getKeyId()) {
+						result[result.length] = {
+								obj: key.obj.getSubKeyAsKey(j),
+								keyId: subkey.getKeyId()
+						}
+					}
+				}
+			}
+		}
 		return result;
 	}
 	this.getPublicKeysForKeyId = getPublicKeysForKeyId;
@@ -9585,6 +9598,15 @@ function openpgp_msg_publickey() {
 		return null;
 	}
 
+        /* Returns the i-th subKey as a openpgp_msg_publickey object */
+	function getSubKeyAsKey(i) {
+		var ret = new openpgp_msg_publickey();
+		ret.userIds = this.userIds;
+		ret.userAttributes = this.userAttributes;
+		ret.publicKeyPacket = this.subKeys[i];
+		return ret;
+	}
+
 	this.getEncryptionKey = getEncryptionKey;
 	this.getSigningKey = getSigningKey;
 	this.read_nodes = read_nodes;
@@ -9594,6 +9616,7 @@ function openpgp_msg_publickey() {
 	this.getFingerprint = getFingerprint;
 	this.getKeyId = getKeyId;
 	this.verifyBasicSignatures = verifyBasicSignatures;
+	this.getSubKeyAsKey = getSubKeyAsKey;
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
