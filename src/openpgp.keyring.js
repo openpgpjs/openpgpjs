@@ -146,9 +146,22 @@ function openpgp_keyring() {
 	 */
 	function getPublicKeysForKeyId(keyId) {
 		var result = new Array();
-		for (var i=0; i < this.publicKeys.length; i++)
-			if (keyId == this.publicKeys[i].obj.getKeyId())
-				result[result.length] = this.publicKeys[i];
+		for (var i=0; i < this.publicKeys.length; i++) {
+			var key = this.publicKeys[i];
+			if (keyId == key.obj.getKeyId())
+				result[result.length] = key;
+			else if (key.obj.subKeys != null) {
+				for (var j=0; j < key.obj.subKeys.length; j++) {
+					var subkey = key.obj.subKeys[j];
+					if (keyId == subkey.getKeyId()) {
+						result[result.length] = {
+								obj: key.obj.getSubKeyAsKey(j),
+								keyId: subkey.getKeyId()
+						}
+					}
+				}
+			}
+		}
 		return result;
 	}
 	this.getPublicKeysForKeyId = getPublicKeysForKeyId;
