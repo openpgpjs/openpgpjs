@@ -7353,7 +7353,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130213";
+	this.versionstring ="OpenPGP.js v.1.20130228";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -9110,16 +9110,19 @@ function openpgp_msg_publickey() {
 	 * @returns null if no encryption key has been found
 	 */
 	function getEncryptionKey() {
-		if (this.publicKeyPacket.publicKeyAlgorithm != 17 && this.publicKeyPacket.publicKeyAlgorithm != 3
-				&& this.publicKeyPacket.verifyKey())
-			return this.publicKeyPacket;
-		else if (this.publicKeyPacket.version == 4) // V3 keys MUST NOT have subkeys.
-			for (var j = 0; j < this.subKeys.length; j++)
+		// V4: by convention subkeys are prefered for encryption service
+		// V3: keys MUST NOT have subkeys
+		for (var j = 0; j < this.subKeys.length; j++)
 				if (this.subKeys[j].publicKeyAlgorithm != 17 &&
 						this.subKeys[j].publicKeyAlgorithm != 3 &&
 						this.subKeys[j].verifyKey()) {
 					return this.subKeys[j];
 				}
+		// if no valid subkey for encryption, use primary key
+		if (this.publicKeyPacket.publicKeyAlgorithm != 17 && this.publicKeyPacket.publicKeyAlgorithm != 3
+			&& this.publicKeyPacket.verifyKey()) {
+			return this.publicKeyPacket;	
+		}
 		return null;
 	}
 	
