@@ -98,7 +98,7 @@ function openpgp_packet_userid() {
 							this.certificationSignatures[this.certificationSignatures.length] = result;
 							break;
 						} else {
-							util.debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
+							util.print_debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
 						}
 					default:
 						this.data = input;
