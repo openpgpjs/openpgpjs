@@ -7353,7 +7353,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130213";
+	this.versionstring ="OpenPGP.js v.1.20130228";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * reads the config out of the HTML5 local storage
@@ -12359,7 +12359,7 @@ function openpgp_packet_userid() {
 							this.certificationSignatures[this.certificationSignatures.length] = result;
 							break;
 						} else {
-							util.debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
+							util.print_debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
 						}
 					default:
 						this.data = input;
