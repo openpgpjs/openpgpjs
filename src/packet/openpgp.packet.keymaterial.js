@@ -308,9 +308,9 @@ function openpgp_packet_keymaterial() {
 	    //   key data.  These algorithm-specific fields are as described
 	    //   below.
 
-	    //
-	    //
-	    if (this.s2k.type == 1001) {
+      // s2k type 1001 corresponds to GPG specific extension without primary key secrets
+      // http://www.gnupg.org/faq/GnuPG-FAQ.html#how-can-i-use-gnupg-in-an-automated-environment
+	    if (this.s2kUsageConventions != 0 && this.s2k.type == 1001) {
 	    	this.secMPIs = null;
 	    	this.encryptedMPIData = null;
 	    } else if (!this.hasUnencryptedSecretKeyData) {
