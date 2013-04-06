@@ -85,45 +85,66 @@ var Util = function() {
 	    }
 	    return r.join('');
 	};
+
+
+	var encode_utf8 = function(s) {
+		return unescape(encodeURIComponent(s));
+	};
+
+	var decode_utf8 = function(s) {
+		return decodeURIComponent(escape(s));
+	};
+
+	var str2bin = function(str, array_maker) {
+		str = encode_utf8(str);
+
+		var result = array_maker(str.length);
+
+		for (var i = 0; i < str.length; i++) {
+			result[i] = str.charCodeAt(i);
+		}
+
+		return result;
+	};
+	
+	var bin2str = function(bin) {
+		var result = [];
+
+		for (var i = 0; i < bin.length; i++) {
+			result.push(String.fromCharCode(bin[i]));
+		}
+
+		return decode_utf8(result.join(''));
+	};
 	
 	/**
 	 * Convert a string to an array of integers(0.255)
 	 * @param {String} str String to convert
 	 * @return {Integer[]} An array of (binary) integers
 	 */
-	this.str2bin = function(str) {
-		var result = new Array();
-		for (var i = 0; i < str.length; i++) {
-			result[i] = str.charCodeAt(i);
-		}
-		
-		return result;
+	this.str2bin = function(str) { 
+		return str2bin(str, 
+			function(l) { return new Array(l); });
 	};
-
+	
+	
 	/**
 	 * Convert an array of integers(0.255) to a string 
 	 * @param {Integer[]} bin An array of (binary) integers to convert
 	 * @return {String} The string representation of the array
 	 */
-	this.bin2str = function(bin) {
-		var result = [];
-		for (var i = 0; i < bin.length; i++) {
-			result.push(String.fromCharCode(bin[i]));
-		}
-		return result.join('');
-	};
+	this.bin2str = bin2str;
 	
 	/**
 	 * Convert a string to a Uint8Array
 	 * @param {String} str String to convert
 	 * @return {Uint8Array} The array of (binary) integers
 	 */
-	this.str2Uint8Array = function(str){
-        var uintArray = new Uint8Array(new ArrayBuffer(str.length));
-        for(var n = 0; n < str.length; n++){
-            uintArray[n] = str.charCodeAt(n);
-        }
-        return uintArray;
+	this.str2Uint8Array = function(str) { 
+		return str2bin(str, 
+			function(l) {
+				return new Uint8Array(new ArrayBuffer(l)); 
+			});
 	};
 	
 	/**
@@ -132,13 +153,7 @@ var Util = function() {
 	 * @param {Uint8Array} bin An array of (binary) integers to convert
 	 * @return {String} String representation of the array
 	 */
-	this.Uint8Array2str = function(bin) {
-        var result = [];
-        for(n = 0; n< bin.length; n++){
-            result[n] = String.fromCharCode(bin[n]);
-        }
-        return result.join('');
-	};
+	this.Uint8Array2str = bin2str;
 	
 	/**
 	 * Calculates a 16bit sum of a string by adding each character 
