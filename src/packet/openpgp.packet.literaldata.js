@@ -47,6 +47,7 @@ function openpgp_packet_literaldata() {
 				+ input.charCodeAt(position + 1), 4)) * 1000);
 		this.data = input.substring(position + 6
 				+ input.charCodeAt(position + 1));
+		this.data = util.decode_utf8(this.data)
 		return this;
 	}
 
@@ -58,6 +59,7 @@ function openpgp_packet_literaldata() {
 	 */
 	function write_packet(data) {
 		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+		data = util.encode_utf8(data)
 		this.filename = "msg.txt";
 		this.date = new Date();
 		this.format = 't';

@@ -87,17 +87,25 @@ var Util = function() {
 	};
 
 
-	var encode_utf8 = function(s) {
+	/**
+	 * convert a native javascript string to a string of utf8 bytes
+	 * @param [String] string to convert
+	 * @return [String] a valid squence of utf8 bytes
+	 */
+	this.encode_utf8 = function(s) {
 		return unescape(encodeURIComponent(s));
 	};
 
-	var decode_utf8 = function(s) {
+	/**
+	 * convert a string of utf8 bytes to a native javascript string
+	 * @param [String] a valid squence of utf8 bytes
+	 * @return [String] javascript string
+	 */
+	this.decode_utf8 = function(s) {
 		return decodeURIComponent(escape(s));
 	};
 
 	var str2bin = function(str, array_maker) {
-		str = encode_utf8(str);
-
 		var result = array_maker(str.length);
 
 		for (var i = 0; i < str.length; i++) {
@@ -114,9 +122,9 @@ var Util = function() {
 			result.push(String.fromCharCode(bin[i]));
 		}
 
-		return decode_utf8(result.join(''));
+		return result.join('');
 	};
-	
+
 	/**
 	 * Convert a string to an array of integers(0.255)
 	 * @param {String} str String to convert
