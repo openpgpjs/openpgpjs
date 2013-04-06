@@ -414,6 +414,7 @@ function _openpgp () {
 	 * be 1024+, generally)
 	 * @param {String} userId assumes already in form of "User Name 
 	 * <username@email.com>"
+	 * @param {String} passphrase The passphrase used to encrypt the resulting private key
 	 * @return {Object} {privateKey: [openpgp_msg_privatekey], 
 	 * privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */

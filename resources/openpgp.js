@@ -7383,7 +7383,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130412";
+	this.versionstring ="OpenPGP.js v.1.20130416";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8294,6 +8294,7 @@ function _openpgp () {
 	 * be 1024+, generally)
 	 * @param {String} userId assumes already in form of "User Name 
 	 * <username@email.com>"
+	 * @param {String} passphrase The passphrase used to encrypt the resulting private key
 	 * @return {Object} {privateKey: [openpgp_msg_privatekey], 
 	 * privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */
@@ -11094,6 +11095,47 @@ function openpgp_packet_keymaterial() {
 function openpgp_packet_literaldata() {
 	this.tagType = 11;
 
+	
+	/**
+	 * Set the packet data to a javascript native string or a squence of 
+	 * bytes. Conversion to a proper utf8 encoding takes place when the 
+	 * packet is written.
+	 * @param {String} str Any native javascript string
+	 * @param {String} format 
+	 */
+	this.set_data = function(str, format) {
+		this.format = format;
+		this.data = str;
+	}
+
+	/**
+	 * Set the packet data to value represented by the provided string
+	 * of bytes together with the appropriate conversion format.
+	 * @param {String} bytes The string of bytes
+	 * @param {String} format
+	 */
+	this.set_data_bytes = function(bytes, format) {
+		this.format = format;
+
+		if(format == this.formats.utf8)
+			bytes = util.decode_utf8(bytes);
+
+		this.data = bytes;
+	}
+
+	/**
+	 * Get the byte sequence representing the literal packet data
+	 * @returns {String} A sequence of bytes
+	 */
+	this.get_data_bytes = function() {
+		if(this.format == 'u')
+			return util.encode_utf8(this.data);
+		else
+			return this.data;
+	}
+	
+	
+
 	/**
 	 * Parsing function for a literal data packet (tag 11).
 	 * 
@@ -11105,17 +11147,22 @@ function openpgp_packet_literaldata() {
 	 *            input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read_packet(input, position, len) {
+	this.read_packet = function(input, position, len) {
 		this.packetLength = len;
 		// - A one-octet field that describes how the data is formatted.
 
-		this.format = input[position];
-		this.filename = input.substr(position + 2, input
-				.charCodeAt(position + 1));
+		var format = input[position];
+
+		this.filename = util.decode_utf8(input.substr(position + 2, input
+				.charCodeAt(position + 1)));
+
 		this.date = new Date(parseInt(input.substr(position + 2
 				+ input.charCodeAt(position + 1), 4)) * 1000);
-		this.data = input.substring(position + 6
+
+		var bytes = input.substring(position + 6
 				+ input.charCodeAt(position + 1));
+	
+		this.set_data_bytes(bytes, format);
 		return this;
 	}
 
@@ -11125,11 +11172,13 @@ function openpgp_packet_literaldata() {
 	 * @param {String} data The data to be inserted as body
 	 * @return {String} string-representation of the packet
 	 */
-	function write_packet(data) {
-		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
-		this.filename = "msg.txt";
+	this.write_packet = function(data) {
+		this.set_data(data, this.formats.utf8);
+		this.filename = util.encode_utf8("msg.txt");
 		this.date = new Date();
-		this.format = 't';
+
+		data = this.get_data_bytes();
+
 		var result = openpgp_packet.write_packet_header(11, data.length + 6
 				+ this.filename.length);
 		result += this.format;
@@ -11144,7 +11193,6 @@ function openpgp_packet_literaldata() {
 		result += String
 				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
 		result += data;
-		this.data = data;
 		return result;
 	}
 
@@ -11153,18 +11201,28 @@ function openpgp_packet_literaldata() {
 	 * 
 	 * @return {String} String which gives some information about the keymaterial
 	 */
-	function toString() {
+	this.toString = function() {
 		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
 				+ this.packetLength + '\n' + '    format: ' + this.format
 				+ '\n' + '    filename:' + this.filename + '\n'
 				+ '    date:   ' + this.date + '\n' + '    data:  |'
 				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
 	}
-
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.write_packet = write_packet;
 }
+
+/**
+ * Data types in the literal packet
+ * @readonly
+ * @enum {String}
+ */
+openpgp_packet_literaldata.prototype.formats = {
+	/** Binary data */
+	binary: 'b',
+	/** Text data */
+	text: 't',
+	/** Utf8 data */
+	utf8: 'u'
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12340,38 +12398,71 @@ function openpgp_packet_userattribute() {
  */
 
 function openpgp_packet_userid() {
+	this.text = ''
 	this.tagType = 13;
 	this.certificationSignatures = new Array();
 	this.certificationRevocationSignatures = new Array();
 	this.revocationSignatures = new Array();
 	this.parentNode = null;
+	
+	/**
+	 * Set the packet text field to a native javascript string
+	 * Conversion to a proper utf8 encoding takes place when the 
+	 * packet is written.
+	 * @param {String} str Any native javascript string
+	 */
+	this.set_text = function(str) {
+		this.text = str;
+	}
 
 	/**
-	 * parsing function for a user id packet (tag 13).
+	 * Set the packet text to value represented by the provided string
+	 * of bytes.
+	 * @param {String} bytes A string of bytes
+	 */
+	this.set_text_bytes = function(bytes) {
+		this.text = util.decode_utf8(bytes);
+	}
+
+	/**
+	 * Get the byte sequence representing the text of this packet.
+	 * @returns {String} A sequence of bytes
+	 */
+	this.get_text_bytes = function() {
+		return util.encode_utf8(this.text);
+	}
+	
+
+	/**
+	 * Parsing function for a user id packet (tag 13).
 	 * @param {String} input payload of a tag 13 packet
 	 * @param {Integer} position position to start reading from the input string
 	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read_packet(input, position, len) {
-		this.text = '';
+	this.read_packet = function(input, position, len) {
 		this.packetLength = len;
 
+		var bytes = '';
 		for ( var i = 0; i < len; i++) {
-			this.text += input[position + i];
+			bytes += input[position + i];
 		}
+
+		this.set_text_bytes(bytes);
 		return this;
 	}
 
 	/**
-	 * creates a string representation of the user id packet
+	 * Creates a string representation of the user id packet
 	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
 	 * @return {String} string representation
 	 */
-	function write_packet(user_id) {
-		this.text = user_id;
-		var result = openpgp_packet.write_packet_header(13,this.text.length);
-		result += this.text;
+	this.write_packet = function(user_id) {
+		this.set_text(user_id);
+		var bytes = this.get_text_bytes();
+
+		var result = openpgp_packet.write_packet_header(13, bytes.length);
+		result += bytes;
 		return result;
 	}
 
@@ -12383,7 +12474,7 @@ function openpgp_packet_userid() {
 	 * @param {Integer} len length of the packet(s) or remaining length of input
 	 * @return {Integer} length of nodes read
 	 */
-	function read_nodes(parent_node, input, position, len) {
+	this.read_nodes = function(parent_node, input, position, len) {
 		if (parent_node.tagType == 6) { // public key
 			this.parentNode = parent_node;
 			var pos = position;
@@ -12463,7 +12554,7 @@ function openpgp_packet_userid() {
 	 * generates debug output (pretty print)
 	 * @return {String} String which gives some information about the user id packet
 	 */
-	function toString() {
+	this.toString = function() {
 		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
 				+ this.text.length + '): "' + this.text.replace("<", "&lt;")
 				+ '"\n';
@@ -12483,7 +12574,7 @@ function openpgp_packet_userid() {
 	 * @param {String} keyId string containing the key id of the issuer of this signature
 	 * @return a CertificationRevocationSignature if found; otherwise null
 	 */
-	function hasCertificationRevocationSignature(keyId) {
+	this.hasCertificationRevocationSignature = function(keyId) {
 		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
 			if ((this.certificationRevocationSignatures[i].version == 3 &&
 				 this.certificationRevocationSignatures[i].keyId == keyId) ||
@@ -12506,7 +12597,8 @@ function openpgp_packet_userid() {
 	 * 5 = signature by key owner expired
 	 * 6 = signature by key owner revoked
 	 */
-	function verifyCertificationSignatures(publicKeyPacket) {
+	this.verifyCertificationSignatures = function(publicKeyPacket) {
+		var bytes = this.get_text_bytes();
 		result = new Array();
 		for (var i = 0 ; i < this.certificationSignatures.length; i++) {
 			// A certification signature (type 0x10 through 0x13) hashes the User
@@ -12549,13 +12641,14 @@ function openpgp_packet_userid() {
 				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].issuerKeyId);
 				if (revocation != null && revocation.creationTime > 
 					this.certificationSignatures[i].creationTime) {
+
 					var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
 					publicKeyPacket.data+String.fromCharCode(0xB4)+
-					String.fromCharCode((this.text.length >> 24) & 0xFF)+
-					String.fromCharCode((this.text.length >> 16) & 0xFF)+
-					String.fromCharCode((this.text.length >>  8) & 0xFF)+
-					String.fromCharCode((this.text.length) & 0xFF)+
-					this.text;
+					String.fromCharCode((bytes.length >> 24) & 0xFF)+
+					String.fromCharCode((bytes.length >> 16) & 0xFF)+
+					String.fromCharCode((bytes.length >>  8) & 0xFF)+
+					String.fromCharCode((bytes.length) & 0xFF)+
+					bytes;
 					if (revocation.verify(signaturedata, signingKey)) {
 						if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
 							result[i] = 6;
@@ -12564,13 +12657,14 @@ function openpgp_packet_userid() {
 						continue;
 					}
 				}
+
 				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
 						publicKeyPacket.data+String.fromCharCode(0xB4)+
-						String.fromCharCode((this.text.length >> 24) & 0xFF)+
-						String.fromCharCode((this.text.length >> 16) & 0xFF)+
-						String.fromCharCode((this.text.length >>  8) & 0xFF)+
-						String.fromCharCode((this.text.length) & 0xFF)+
-						this.text;
+						String.fromCharCode((bytes.length >> 24) & 0xFF)+
+						String.fromCharCode((bytes.length >> 16) & 0xFF)+
+						String.fromCharCode((bytes.length >>  8) & 0xFF)+
+						String.fromCharCode((bytes.length) & 0xFF)+
+						bytes;
 				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
 					result[i] = 4;
 				} else
@@ -12595,7 +12689,7 @@ function openpgp_packet_userid() {
 				if (revocation != null && revocation.creationTime > 
 					this.certificationSignatures[i].creationTime) {
 					var signaturedata = String.fromCharCode(0x99)+ this.publicKeyPacket.header.substring(1)+
-					this.publicKeyPacket.data+this.text;
+					this.publicKeyPacket.data+bytes;
 					if (revocation.verify(signaturedata, signingKey)) {
 						if (revocation.keyId == publicKeyPacket.getKeyId())
 							result[i] = 6;
@@ -12605,7 +12699,7 @@ function openpgp_packet_userid() {
 					}
 				}
 				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data+this.text;
+					publicKeyPacket.data + bytes;
 				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
 					result[i] = 4;
 				} else 
@@ -12621,7 +12715,7 @@ function openpgp_packet_userid() {
 	 * verifies the signatures of the user id
 	 * @return 0 if the userid is valid; 1 = userid expired; 2 = userid revoked
 	 */
-	function verify(publicKeyPacket) {
+	this.verify = function(publicKeyPacket) {
 		var result = this.verifyCertificationSignatures(publicKeyPacket);
 		if (result.indexOf(6) != -1)
 			return 2;
@@ -12631,22 +12725,14 @@ function openpgp_packet_userid() {
 	}
 
 	// TODO: implementation missing
-	function addCertification(publicKeyPacket, privateKeyPacket) {
+	this.addCertification = function(publicKeyPacket, privateKeyPacket) {
 		
 	}
 
 	// TODO: implementation missing
-	function revokeCertification(publicKeyPacket, privateKeyPacket) {
+	this.revokeCertification = function(publicKeyPacket, privateKeyPacket) {
 		
 	}
-
-	this.hasCertificationRevocationSignature = hasCertificationRevocationSignature;
-	this.verifyCertificationSignatures = verifyCertificationSignatures;
-	this.verify = verify;
-	this.read_packet = read_packet;
-	this.write_packet = write_packet;
-	this.toString = toString;
-	this.read_nodes = read_nodes;
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -12948,6 +13034,7 @@ function openpgp_type_s2k() {
 	 * hashAlgorithm hash length
 	 */
 	function produce_key(passphrase, numBytes) {
+		passphrase = util.encode_utf8(passphrase);
 		if (this.type == 0) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
@@ -13059,45 +13146,68 @@ var Util = function() {
 	    }
 	    return r.join('');
 	};
+
+
+	/**
+	 * Convert a native javascript string to a string of utf8 bytes
+	 * @param {String} str The string to convert
+	 * @return {String} A valid squence of utf8 bytes
+	 */
+	this.encode_utf8 = function(str) {
+		return unescape(encodeURIComponent(str));
+	};
+
+	/**
+	 * Convert a string of utf8 bytes to a native javascript string
+	 * @param {String} utf8 A valid squence of utf8 bytes
+	 * @return {String} A native javascript string
+	 */
+	this.decode_utf8 = function(utf8) {
+		return decodeURIComponent(escape(utf8));
+	};
+
+	var str2bin = function(str, result) {
+		for (var i = 0; i < str.length; i++) {
+			result[i] = str.charCodeAt(i);
+		}
+
+		return result;
+	};
 	
+	var bin2str = function(bin) {
+		var result = [];
+
+		for (var i = 0; i < bin.length; i++) {
+			result.push(String.fromCharCode(bin[i]));
+		}
+
+		return result.join('');
+	};
+
 	/**
 	 * Convert a string to an array of integers(0.255)
 	 * @param {String} str String to convert
 	 * @return {Integer[]} An array of (binary) integers
 	 */
-	this.str2bin = function(str) {
-		var result = new Array();
-		for (var i = 0; i < str.length; i++) {
-			result[i] = str.charCodeAt(i);
-		}
-		
-		return result;
+	this.str2bin = function(str) { 
+		return str2bin(str, new Array(str.length));
 	};
-
+	
+	
 	/**
 	 * Convert an array of integers(0.255) to a string 
 	 * @param {Integer[]} bin An array of (binary) integers to convert
 	 * @return {String} The string representation of the array
 	 */
-	this.bin2str = function(bin) {
-		var result = [];
-		for (var i = 0; i < bin.length; i++) {
-			result.push(String.fromCharCode(bin[i]));
-		}
-		return result.join('');
-	};
+	this.bin2str = bin2str;
 	
 	/**
 	 * Convert a string to a Uint8Array
 	 * @param {String} str String to convert
 	 * @return {Uint8Array} The array of (binary) integers
 	 */
-	this.str2Uint8Array = function(str){
-        var uintArray = new Uint8Array(new ArrayBuffer(str.length));
-        for(var n = 0; n < str.length; n++){
-            uintArray[n] = str.charCodeAt(n);
-        }
-        return uintArray;
+	this.str2Uint8Array = function(str) { 
+		return str2bin(str, new Uint8Array(new ArrayBuffer(str.length))); 
 	};
 	
 	/**
@@ -13106,13 +13216,7 @@ var Util = function() {
 	 * @param {Uint8Array} bin An array of (binary) integers to convert
 	 * @return {String} String representation of the array
 	 */
-	this.Uint8Array2str = function(bin) {
-        var result = [];
-        for(n = 0; n< bin.length; n++){
-            result[n] = String.fromCharCode(bin[n]);
-        }
-        return result.join('');
-	};
+	this.Uint8Array2str = bin2str;
 	
 	/**
 	 * Calculates a 16bit sum of a string by adding each character 
