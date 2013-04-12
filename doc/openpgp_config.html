@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <title>JSDoc: Class: openpgp_config</title>
     
-    <script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
-    <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/node-dark.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
@@ -41,7 +41,7 @@
     
         
 <dt>
-    <h4 class="name" id="openpgp_config"><span class="type-signature"></span>new openpgp_config</h4>
+    <h4 class="name" id="openpgp_config"><span class="type-signature"></span>new openpgp_config<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -58,6 +58,8 @@ Stored config parameters can be accessed using
 openpgp.config.config
     </div>
     
+
+    
     
     
     
@@ -67,33 +69,41 @@ openpgp.config.config
 <dl class="details">
     
         
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10250</li></ul></dd>
-	
     
     
-	
-	
-	
-	
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 30
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
 </dl>
 
     
+    
+
+    
+
     
     
     
@@ -122,14 +132,14 @@ openpgp.config.config
         <dl>
             
 <dt>
-    <h4 class="name" id="debug"><span class="type-signature"></span>debug<span class="type-signature"></span></h4>
+    <h4 class="name" id="config"><span class="type-signature"></span>config<span class="type-signature"></span></h4>
     
     
 </dt>
 <dd>
     
     <div class="description">
-        if enabled, debug messages will be printed
+        The variable with the actual configuration
     </div>
     
     
@@ -137,30 +147,298 @@ openpgp.config.config
 <dl class="details">
     
         
+        <h5 class="subsection-title">Properties:</h5>
+        
+        <dl>
+
+<table class="props">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>prefer_hash_algorithm</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
 	
 	
+        <tr>
+            
+                <td class="name"><code>encryption_cipher</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
 	
 	
+        <tr>
+            
+                <td class="name"><code>compression</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
 	
 	
+        <tr>
+            
+                <td class="name"><code>show_version</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
 	
 	
+        <tr>
+            
+                <td class="name"><code>show_comment</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
 	
 	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10289</li></ul></dd>
+        <tr>
+            
+                <td class="name"><code>integrity_protect</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
 	
+	
+	
+        <tr>
+            
+                <td class="name"><code>composition_behavior</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>keyserver</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table></dl>
+        
+    
+        
     
     
-	
-	
-	
-	
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 42
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="debug"><span class="type-signature"></span>debug<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        If enabled, debug messages will be printed
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 79
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
 </dl>
 
     
@@ -177,7 +455,7 @@ openpgp.config.config
 <dd>
     
     <div class="description">
-        the default config object which is used if no
+        The default config object which is used if no
 configuration was in place
     </div>
     
@@ -186,30 +464,34 @@ configuration was in place
 <dl class="details">
     
         
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10257</li></ul></dd>
-	
     
     
-	
-	
-	
-	
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 48
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
 </dl>
 
     
@@ -225,7 +507,7 @@ configuration was in place
         <dl>
             
 <dt>
-    <h4 class="name" id="read"><span class="type-signature">&lt;inner> </span>read</h4>
+    <h4 class="name" id="read"><span class="type-signature">&lt;inner> </span>read<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -233,10 +515,12 @@ configuration was in place
     
     
     <div class="description">
-        reads the config out of the HTML5 local storage
+        Reads the config out of the HTML5 local storage
 and initializes the object config.
 if config is null the default config will be used
     </div>
+    
+
     
     
     
@@ -247,48 +531,46 @@ if config is null the default config will be used
 <dl class="details">
     
         
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10276</li></ul></dd>
-	
     
     
-	
-	
-	
-	
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 66
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
 </dl>
 
     
     
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    [void]
-</div>
 
+    
 
-
-        
+    
+    
+    
+    
+    
     
     
 </dd>
@@ -296,7 +578,7 @@ if config is null the default config will be used
         
             
 <dt>
-    <h4 class="name" id="write"><span class="type-signature">&lt;inner> </span>write</h4>
+    <h4 class="name" id="write"><span class="type-signature">&lt;inner> </span>write<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -304,8 +586,10 @@ if config is null the default config will be used
     
     
     <div class="description">
-        writes the config to HTML5 local storage
+        Writes the config to HTML5 local storage
     </div>
+    
+
     
     
     
@@ -316,48 +600,46 @@ if config is null the default config will be used
 <dl class="details">
     
         
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>openpgp.js, line 10295</li></ul></dd>
-	
     
     
-	
-	
-	
-	
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="openpgp.config.js.html">config/openpgp.config.js</a>, line 84
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
 </dl>
 
     
     
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    [void]
-</div>
 
+    
 
-
-        
+    
+    
+    
+    
+    
     
     
 </dd>
@@ -378,15 +660,15 @@ if config is null the default config will be used
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3</a> on Tue Sep 11 2012 21:45:26 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Fri Apr 12 2013 14:20:34 GMT+0200 (CEST)
 </footer>
 
-<script> sh_highlightDocument(); </script>
+<script> prettyPrint(); </script>
 </body>
 </html>

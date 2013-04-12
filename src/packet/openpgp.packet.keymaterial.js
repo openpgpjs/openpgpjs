@@ -50,10 +50,10 @@ function openpgp_packet_keymaterial() {
 	/**
 	 * This function reads the payload of a secret key packet (Tag 5)
 	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Intefer} len Length of the packet or remaining length of input
+	 * @return {openpgp_packet_keymaterial}
 	 */
 	function read_tag5(input, position, len) {
 		this.tagType = 5;
@@ -65,10 +65,10 @@ function openpgp_packet_keymaterial() {
 	/**
 	 * This function reads the payload of a public key packet (Tag 6)
 	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet or remaining length of input
+	 * @return {openpgp_packet_keymaterial}
 	 */
 	function read_tag6(input, position, len) {
 		// A Public-Key packet starts a series of packets that forms an OpenPGP
@@ -84,10 +84,10 @@ function openpgp_packet_keymaterial() {
 	/**
 	 * This function reads the payload of a secret key sub packet (Tag 7)
 	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet or remaining length of input
+	 * @return {openpgp_packet_keymaterial}
 	 */
 	function read_tag7(input, position, len) {
 		this.tagType = 7;
@@ -99,10 +99,10 @@ function openpgp_packet_keymaterial() {
 	/**
 	 * This function reads the payload of a public key sub packet (Tag 14)
 	 * and initializes the openpgp_packet_keymaterial
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return openpgp_packet_keymaterial object
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet or remaining length of input
+	 * @return {openpgp_packet_keymaterial}
 	 */
 	function read_tag14(input, position, len) {
 		this.subKeySignature = null;
@@ -114,12 +114,13 @@ function openpgp_packet_keymaterial() {
 	}
 	
 	/**
-	 * Internal Parser for public keys as specified in RFC 4880 section 5.5.2 Public-Key Packet Formats
+	 * Internal Parser for public keys as specified in RFC 4880 section 
+	 * 5.5.2 Public-Key Packet Formats
 	 * called by read_tag&lt;num&gt;
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return this object with attributes set by the parser
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet or remaining length of input
+	 * @return {Object} This object with attributes set by the parser
 	 */  
 	function read_pub_key(input, position, len) {
 		var mypos = position;
@@ -226,10 +227,10 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * Internal parser for private keys as specified in RFC 4880 section 5.5.3
-	 * @param input input string to read the packet from
-	 * @param position start position for the parser
-	 * @param len length of the packet or remaining length of input
-	 * @return this object with attributes set by the parser
+	 * @param {String} input Input string to read the packet from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet or remaining length of input
+	 * @return {Object} This object with attributes set by the parser
 	 */
 	function read_priv_key(input,position, len) {
 	    // - A Public-Key or Public-Subkey packet, as described above.
@@ -362,11 +363,13 @@ function openpgp_packet_keymaterial() {
 
 	/**
 	 * Decrypts the private key MPIs which are needed to use the key.
-	 * openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be false otherwise
+	 * openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be 
+	 * false otherwise
 	 * a call to this function is not needed
 	 * 
-	 * @param str_passphrase the passphrase for this private key as string
-	 * @return true if the passphrase was correct; false if not
+	 * @param {String} str_passphrase The passphrase for this private key 
+	 * as string
+	 * @return {Boolean} True if the passphrase was correct; false if not
 	 */
 	function decryptSecretMPIs(str_passphrase) {
 		if (this.hasUnencryptedSecretKeyData)
@@ -549,11 +552,11 @@ function openpgp_packet_keymaterial() {
 	
 	/**
 	 * Continue parsing packets belonging to the key material such as signatures
-	 * @param {openpgp_*} parent_node the parent object
-	 * @param {String} input input string to read the packet(s) from
-	 * @param {integer} position start position for the parser
-	 * @param {integer} len length of the packet(s) or remaining length of input
-	 * @return {integer} length of nodes read
+	 * @param {Object} parent_node The parent object
+	 * @param {String} input Input string to read the packet(s) from
+	 * @param {Integer} position Start position for the parser
+	 * @param {Integer} len Length of the packet(s) or remaining length of input
+	 * @return {Integer} Length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		this.parentNode = parent_node;
@@ -630,7 +633,7 @@ function openpgp_packet_keymaterial() {
 
 	/**
 	 * Checks the validity for usage of this (sub)key
-	 * @return 0 = bad key, 1 = expired, 2 = revoked, 3 = valid
+	 * @return {Integer} 0 = bad key, 1 = expired, 2 = revoked, 3 = valid
 	 */
 	function verifyKey() {
 		if (this.tagType == 14) {
@@ -658,8 +661,8 @@ function openpgp_packet_keymaterial() {
 	}
 
 	/**
-	 * calculates the key id of they key 
-	 * @return {String} a 8 byte key id
+	 * Calculates the key id of they key 
+	 * @return {String} A 8 byte key id
 	 */
 	function getKeyId() {
 		if (this.version == 4) {
@@ -673,8 +676,8 @@ function openpgp_packet_keymaterial() {
 	}
 	
 	/**
-	 * calculates the fingerprint of the key
-	 * @return {String} a string containing the fingerprint
+	 * Calculates the fingerprint of the key
+	 * @return {String} A string containing the fingerprint
 	 */
 	function getFingerprint() {
 		if (this.version == 4) {
@@ -688,14 +691,17 @@ function openpgp_packet_keymaterial() {
 	}
 	
 	/*
-     * creates an OpenPGP key packet for the given key. much TODO in regards to s2k, subkeys.
-     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * Creates an OpenPGP key packet for the given key. much 
+	 * TODO in regards to s2k, subkeys.
+     * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
+	 * IE 1 corresponds to RSA.
      * @param {RSA.keyObject} key
      * @param password
      * @param s2kHash
      * @param symmetricEncryptionAlgorithm
      * @param timePacket
-     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     * @return {Object} {body: [string]OpenPGP packet body contents, 
+		header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_private_key(keyType, key, password, s2kHash, symmetricEncryptionAlgorithm, timePacket){
         this.symmetricEncryptionAlgorithm = symmetricEncryptionAlgorithm;
@@ -769,11 +775,14 @@ function openpgp_packet_keymaterial() {
     }
 	
 	/*
-     * same as write_private_key, but has less information because of public key.
-     * @param {int} keyType follows the OpenPGP algorithm standard, IE 1 corresponds to RSA.
+     * Same as write_private_key, but has less information because of 
+	 * public key.
+     * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
+	 * IE 1 corresponds to RSA.
      * @param {RSA.keyObject} key
      * @param timePacket
-     * @return {body: [string]OpenPGP packet body contents, header: [string] OpenPGP packet header, string: [string] header+body}
+     * @return {Object} {body: [string]OpenPGP packet body contents, 
+	 * header: [string] OpenPGP packet header, string: [string] header+body}
      */
     function write_public_key(keyType, key, timePacket){
         var tag = 6;

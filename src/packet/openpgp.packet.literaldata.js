@@ -26,13 +26,13 @@ function openpgp_packet_literaldata() {
 	this.tagType = 11;
 
 	/**
-	 * parsing function for a literal data packet (tag 11).
+	 * Parsing function for a literal data packet (tag 11).
 	 * 
-	 * @param {string} input payload of a tag 11 packet
-	 * @param {integer} position
-	 *            position to start reading from the input string
-	 * @param {integer} len
-	 *            length of the packet or the remaining length of
+	 * @param {String} input Payload of a tag 11 packet
+	 * @param {Integer} position
+	 *            Position to start reading from the input string
+	 * @param {Integer} len
+	 *            Length of the packet or the remaining length of
 	 *            input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
@@ -53,7 +53,7 @@ function openpgp_packet_literaldata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param {String} data the data to be inserted as body
+	 * @param {String} data The data to be inserted as body
 	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(data) {
@@ -80,9 +80,9 @@ function openpgp_packet_literaldata() {
 	}
 
 	/**
-	 * generates debug output (pretty print)
+	 * Generates debug output (pretty print)
 	 * 
-	 * @return {string} String which gives some information about the keymaterial
+	 * @return {String} String which gives some information about the keymaterial
 	 */
 	function toString() {
 		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '

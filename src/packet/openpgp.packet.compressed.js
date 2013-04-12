@@ -30,11 +30,12 @@ function openpgp_packet_compressed() {
 	this.decompressedData = null;
 	
 	/**
-	 * parsing function for the packet.
-	 * @param {string} input payload of a tag 8 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of input at position
-	 * @return {openpgp_packet_compressed} object representation
+	 * Parsing function for the packet.
+	 * @param {String} input Payload of a tag 8 packet
+	 * @param {Integer} position Position to start reading from the input string
+	 * @param {Integer} len Length of the packet or the remaining length of 
+	 * input at position
+	 * @return {openpgp_packet_compressed} Object representation
 	 */
 	function read_packet (input, position, len) {
 		this.packetLength = len;
@@ -46,9 +47,9 @@ function openpgp_packet_compressed() {
 		return this;
 	}
 	/**
-	 * decompression method for decompressing the compressed data
+	 * Decompression method for decompressing the compressed data
 	 * read by read_packet
-	 * @return {String} the decompressed data
+	 * @return {String} The decompressed data
 	 */
 	function decompress() {
 		if (this.decompressedData != null)
@@ -99,8 +100,8 @@ function openpgp_packet_compressed() {
 
 	/**
 	 * Compress the packet data (member decompressedData)
-	 * @param {integer} type algorithm to be used // See RFC 4880 9.3
-	 * @param {String} data data to be compressed
+	 * @param {Integer} type Algorithm to be used // See RFC 4880 9.3
+	 * @param {String} data Data to be compressed
 	 * @return {String} The compressed data stored in attribute compressedData
 	 */
 	function compress(type, data) {
@@ -130,10 +131,10 @@ function openpgp_packet_compressed() {
 	}
 	
 	/**
-	 * creates a string representation of the packet
-	 * @param {integer} algorithm algorithm to be used // See RFC 4880 9.3
-	 * @param {String} data data to be compressed
-	 * @return {String} string-representation of the packet
+	 * Creates a string representation of the packet
+	 * @param {Integer} algorithm Algorithm to be used // See RFC 4880 9.3
+	 * @param {String} data Data to be compressed
+	 * @return {String} String-representation of the packet
 	 */
 	function write_packet(algorithm, data) {
 		this.decompressedData = data;
@@ -145,7 +146,7 @@ function openpgp_packet_compressed() {
 	}
 	
 	/**
-	 * pretty printing the packet (useful for debug purposes)
+	 * Pretty printing the packet (useful for debug purposes)
 	 * @return {String}
 	 */
 	function toString() {

@@ -25,7 +25,6 @@ function openpgp_keyring() {
 	 * Initialization routine for the keyring. This method reads the 
 	 * keyring from HTML5 local storage and initializes this instance.
 	 * This method is called by openpgp.init().
-	 * @return {null} undefined
 	 */
 	function init() {
 		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
@@ -58,7 +57,7 @@ function openpgp_keyring() {
 
 	/**
 	 * Checks if at least one private key is in the keyring
-	 * @return {boolean} True if there are private keys, else false.
+	 * @return {Boolean} True if there are private keys, else false.
 	 */
 	function hasPrivateKey() {
 		return this.privateKeys.length > 0;
@@ -68,7 +67,6 @@ function openpgp_keyring() {
 	/**
 	 * Saves the current state of the keyring to HTML5 local storage.
 	 * The privateKeys array and publicKeys array gets Stringified using JSON
-	 * @return {null} undefined
 	 */
 	function store() { 
 		var priv = new Array();
@@ -85,8 +83,8 @@ function openpgp_keyring() {
 	this.store = store;
 	/**
 	 * searches all public keys in the keyring matching the address or address part of the user ids
-	 * @param email_address
-	 * @return {array[openpgp_msg_publickey]} the public keys associated with provided email address.
+	 * @param {String} email_address
+	 * @return {openpgp_msg_publickey[]} The public keys associated with provided email address.
 	 */
 	function getPublicKeyForAddress(email_address) {
 		var results = new Array();
@@ -114,7 +112,7 @@ function openpgp_keyring() {
 	/**
 	 * Searches the keyring for a private key containing the specified email address
 	 * @param {String} email_address email address to search for
-	 * @return {Array[openpgp_msg_privatekey} private keys found
+	 * @return {openpgp_msg_privatekey[]} private keys found
 	 */
 	function getPrivateKeyForAddress(email_address) {
 		var results = new Array();
@@ -141,8 +139,8 @@ function openpgp_keyring() {
 	this.getPrivateKeyForAddress = getPrivateKeyForAddress;
 	/**
 	 * Searches the keyring for public keys having the specified key id
-	 * @param keyId provided as string of hex number (lowercase)
-	 * @return {Array[openpgp_msg_privatekey]} public keys found
+	 * @param {String} keyId provided as string of hex number (lowercase)
+	 * @return {openpgp_msg_privatekey[]} public keys found
 	 */
 	function getPublicKeysForKeyId(keyId) {
 		var result = new Array();
@@ -169,7 +167,7 @@ function openpgp_keyring() {
 	/**
 	 * Searches the keyring for private keys having the specified key id
 	 * @param {String} keyId 8 bytes as string containing the key id to look for
-	 * @return {Array[openpgp_msg_privatekey]} private keys found
+	 * @return {openpgp_msg_privatekey[]} private keys found
 	 */
 	function getPrivateKeyForKeyId(keyId) {
 		var result = new Array();
@@ -192,7 +190,6 @@ function openpgp_keyring() {
 	/**
 	 * Imports a public key from an exported ascii armored message 
 	 * @param {String} armored_text PUBLIC KEY BLOCK message to read the public key from
-	 * @return {null} nothing
 	 */
 	function importPublicKey (armored_text) {
 		var result = openpgp.read_publicKey(armored_text);
@@ -205,7 +202,6 @@ function openpgp_keyring() {
 	/**
 	 * Imports a private key from an exported ascii armored message 
 	 * @param {String} armored_text PRIVATE KEY BLOCK message to read the private key from
-	 * @return {null} nothing
 	 */
 	function importPrivateKey (armored_text, password) {
 		var result = openpgp.read_privateKey(armored_text);

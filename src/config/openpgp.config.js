@@ -28,10 +28,21 @@
  * @classdesc Implementation of the GPG4Browsers config object
  */
 function openpgp_config() {
+	/**
+	 * The variable with the actual configuration
+	 * @property {Integer} prefer_hash_algorithm
+	 * @property {Integer} encryption_cipher
+	 * @property {Integer} compression
+	 * @property {Boolean} show_version
+	 * @property {Boolean} show_comment
+	 * @property {Boolean} integrity_protect
+	 * @property {Integer} composition_behavior
+	 * @property {String} keyserver
+	 */
 	this.config = null;
 
 	/**
-	 * the default config object which is used if no
+	 * The default config object which is used if no
 	 * configuration was in place
 	 */
 	this.default_config = {
@@ -48,10 +59,9 @@ function openpgp_config() {
 	this.versionstring ="OpenPGP.js VERSION";
 	this.commentstring ="http://openpgpjs.org";
 	/**
-	 * reads the config out of the HTML5 local storage
+	 * Reads the config out of the HTML5 local storage
 	 * and initializes the object config.
 	 * if config is null the default config will be used
-	 * @return [void]
 	 */
 	function read() {
 		var cf = JSON.parse(window.localStorage.getItem("config"));
@@ -64,13 +74,12 @@ function openpgp_config() {
 	}
 
 	/**
-	 * if enabled, debug messages will be printed
+	 * If enabled, debug messages will be printed
 	 */
 	this.debug = false;
 
 	/**
-	 * writes the config to HTML5 local storage
-	 * @return [void]
+	 * Writes the config to HTML5 local storage
 	 */
 	function write() {
 		window.localStorage.setItem("config",JSON.stringify(this.config));
