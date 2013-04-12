@@ -216,13 +216,18 @@ h6
 	margin: 0;
 }
 
-.sh_sourceCode
+.prettyprint
 {
 	border: 1px solid #ddd;
 	width: 80%;
+    overflow: auto;
 }
 
-.sh_sourceCode code
+.prettyprint.source {
+    width: inherit;
+}
+
+.prettyprint code
 {
 	font-family: Consolas, 'Lucida Console', Monaco, monospace;
 	font-size: 100%;

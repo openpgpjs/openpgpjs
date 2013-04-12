@@ -33,13 +33,13 @@ function openpgp_packet_encrypteddata() {
 	this.decryptedData = null;
 
 	/**
-	 * parsing function for the packet.
+	 * Parsing function for the packet.
 	 * 
-	 * @param {string} input payload of a tag 9 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of
+	 * @param {String} input Payload of a tag 9 packet
+	 * @param {Integer} position Position to start reading from the input string
+	 * @param {Integer} len Length of the packet or the remaining length of
 	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
+	 * @return {openpgp_packet_encrypteddata} Object representation
 	 */
 	function read_packet(input, position, len) {
 		var mypos = position;
@@ -51,14 +51,14 @@ function openpgp_packet_encrypteddata() {
 	}
 
 	/**
-	 * symmetrically decrypt the packet data
+	 * Symmetrically decrypt the packet data
 	 * 
-	 * @param {integer} symmetric_algorithm_type
-	 *             symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {Integer} symmetric_algorithm_type
+	 *             Symmetric key algorithm to use // See RFC4880 9.2
 	 * @param {String} key
-	 *             key as string with the corresponding length to the
+	 *             Key as string with the corresponding length to the
 	 *            algorithm
-	 * @return the decrypted data;
+	 * @return The decrypted data;
 	 */
 	function decrypt_sym(symmetric_algorithm_type, key) {
 		this.decryptedData = openpgp_crypto_symmetricDecrypt(
@@ -71,11 +71,11 @@ function openpgp_packet_encrypteddata() {
 	/**
 	 * Creates a string representation of the packet
 	 * 
-	 * @param {Integer} algo symmetric key algorithm to use // See RFC4880 9.2
-	 * @param {String} key key as string with the corresponding length to the
+	 * @param {Integer} algo Symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key Key as string with the corresponding length to the
 	 *            algorithm
-	 * @param {String} data data to be
-	 * @return {String} string-representation of the packet
+	 * @param {String} data Data to be
+	 * @return {String} String-representation of the packet
 	 */
 	function write_packet(algo, key, data) {
 		var result = "";

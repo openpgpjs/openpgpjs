@@ -21,14 +21,14 @@
  * Symmetrically encrypts data using prefixedrandom, a key with length 
  * depending on the algorithm in openpgp_cfb mode with or without resync
  * (MDC style)
- * @param prefixrandom secure random bytes as string in length equal to the
- * block size of the algorithm used (use openpgp_crypto_getPrefixRandom(algo)
- * to retrieve that string
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] data to encrypt
- * @param openpgp_cfb [boolean]
- * @return [String] encrypted data
+ * @param {String} prefixrandom Secure random bytes as string in 
+ * length equal to the block size of the algorithm used (use 
+ * openpgp_crypto_getPrefixRandom(algo) to retrieve that string
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @param {String} key Key as string. length is depending on the algorithm used
+ * @param {String} data Data to encrypt
+ * @param {Boolean} openpgp_cfb
+ * @return {String} Encrypted data
  */
 function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_cfb) {
 	switch(algo) {
@@ -57,12 +57,12 @@ function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_
 /**
  * Symmetrically decrypts data using a key with length depending on the
  * algorithm in openpgp_cfb mode with or without resync (MDC style)
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] data to be decrypted
- * @param openpgp_cfb [boolean] if true use the resync (for encrypteddata); 
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @param {String} key Key as string. length is depending on the algorithm used
+ * @param {String} data Data to be decrypted
+ * @param {Boolean} openpgp_cfb If true use the resync (for encrypteddata); 
  * otherwise use without the resync (for MDC encrypted data)
- * @return [String] plaintext data
+ * @return {String} Plaintext data
  */
 function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
 	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);

@@ -41,9 +41,9 @@ function openpgp_packet_userattribute() {
 
 	/**
 	 * parsing function for a user attribute packet (tag 17).
-	 * @param {string} input payload of a tag 17 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @param {String} input payload of a tag 17 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet (input, position, len) {
@@ -89,7 +89,7 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return {string} String which gives some information about the user attribute packet
+	 * @return {String} String which gives some information about the user attribute packet
 	 */
 	function toString() {
 		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
@@ -102,11 +102,11 @@ function openpgp_packet_userattribute() {
 	
 	/**
 	 * Continue parsing packets belonging to the user attribute packet such as signatures
-	 * @param {openpgp_*} parent_node the parent object
+	 * @param {Object} parent_node the parent object
 	 * @param {String} input input string to read the packet(s) from
-	 * @param {integer} position start position for the parser
-	 * @param {integer} len length of the packet(s) or remaining length of input
-	 * @return {integer} length of nodes read
+	 * @param {Integer} position start position for the parser
+	 * @param {Integer} len length of the packet(s) or remaining length of input
+	 * @return {Integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		

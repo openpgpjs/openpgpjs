@@ -17,16 +17,16 @@
 
 /**
  * @class
- * @classdesc Parent openpgp packet class. Operations focus on determining packet types
- *     and packet header.
+ * @classdesc Parent openpgp packet class. Operations focus on determining 
+ * packet types and packet header.
  */
 function _openpgp_packet() {
 	/**
 	 * Encodes a given integer of length to the openpgp length specifier to a
 	 * string
 	 * 
-	 * @param {Integer} length of the length to encode
-	 * @return {string} string with openpgp length representation
+	 * @param {Integer} length The length to encode
+	 * @return {String} String with openpgp length representation
 	 */
 	function encode_length(length) {
 		result = "";
@@ -54,9 +54,9 @@ function _openpgp_packet() {
 	 * Writes a packet header version 4 with the given tag_type and length to a
 	 * string
 	 * 
-	 * @param {integer} tag_type tag type
-	 * @param {integer} length length of the payload
-	 * @return {string} string of the header
+	 * @param {Integer} tag_type Tag type
+	 * @param {Integer} length Length of the payload
+	 * @return {String} String of the header
 	 */
 	function write_packet_header(tag_type, length) {
 		/* we're only generating v4 packet headers here */
@@ -70,9 +70,9 @@ function _openpgp_packet() {
 	 * Writes a packet header Version 3 with the given tag_type and length to a
 	 * string
 	 * 
-	 * @param {integer} tag_type tag type
-	 * @param {integer} length length of the payload
-	 * @return {string} string of the header
+	 * @param {Integer} tag_type Tag type
+	 * @param {Integer} length Length of the payload
+	 * @return {String} String of the header
 	 */
 	function write_old_packet_header(tag_type, length) {
 		var result = "";
@@ -97,10 +97,10 @@ function _openpgp_packet() {
 	/**
 	 * Generic static Packet Parser function
 	 * 
-	 * @param {String} input input stream as string
-	 * @param {integer} position position to start parsing
-	 * @param {integer} len length of the input from position on
-	 * @return {openpgp_packet_*} returns a parsed openpgp_packet
+	 * @param {String} input Input stream as string
+	 * @param {integer} position Position to start parsing
+	 * @param {integer} len Length of the input from position on
+	 * @return {Object} Returns a parsed openpgp_packet
 	 */
 	function read_packet(input, position, len) {
 		// some sanity checks

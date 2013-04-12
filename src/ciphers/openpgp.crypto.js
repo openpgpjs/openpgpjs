@@ -20,11 +20,11 @@
 /**
  * Encrypts data using the specified public key multiprecision integers 
  * and the specified algorithm.
- * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers
- * @param data [openpgp_type_mpi] data to be encrypted as MPI
- * @return [Object] if RSA an openpgp_type_mpi; if elgamal encryption an array of two
- * openpgp_type_mpi is returned; otherwise null
+ * @param {Integer} algo Algorithm to be used (See RFC4880 9.1)
+ * @param {openpgp_type_mpi[]} publicMPIs Algorithm dependent multiprecision integers
+ * @param {openpgp_type_mpi} data Data to be encrypted as MPI
+ * @return {(openpgp_type_mpi|openpgp_type_mpi[])} if RSA an openpgp_type_mpi; 
+ * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
  */
 function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
 	switch(algo) {
@@ -51,11 +51,13 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
 /**
  * Decrypts data using the specified public key multiprecision integers of the private key,
  * the specified secretMPIs of the private key and the specified algorithm.
- * @param algo [Integer] Algorithm to be used (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the public key part of the private key
- * @param secretMPIs [Array[openpgp_type_mpi]] algorithm dependent multiprecision integers of the private key used
- * @param data [openpgp_type_mpi] data to be encrypted as MPI
- * @return [BigInteger] returns a big integer containing the decrypted data; otherwise null
+ * @param {Integer} algo Algorithm to be used (See RFC4880 9.1)
+ * @param {openpgp_type_mpi[]} publicMPIs Algorithm dependent multiprecision integers 
+ * of the public key part of the private key
+ * @param {openpgp_type_mpi[]} secretMPIs Algorithm dependent multiprecision integers 
+ * of the private key used
+ * @param {openpgp_type_mpi} data Data to be encrypted as MPI
+ * @return {BigInteger} returns a big integer containing the decrypted data; otherwise null
  */
 
 function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
@@ -85,8 +87,8 @@ function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs)
 
 /**
  * generate random byte prefix as string for the specified algorithm
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @return [String] random bytes with length equal to the block
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @return {String} Random bytes with length equal to the block
  * size of the cipher
  */
 function openpgp_crypto_getPrefixRandom(algo) {
@@ -107,10 +109,10 @@ function openpgp_crypto_getPrefixRandom(algo) {
 
 /**
  * retrieve the MDC prefixed bytes by decrypting them
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @param key [String] key as string. length is depending on the algorithm used
- * @param data [String] encrypted data where the prefix is decrypted from
- * @return [String] plain text data of the prefixed data
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @param {String} key Key as string. length is depending on the algorithm used
+ * @param {String} data Encrypted data where the prefix is decrypted from
+ * @return {String} Plain text data of the prefixed data
  */
 function openpgp_crypto_MDCSystemBytes(algo, key, data) {
 	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
@@ -138,8 +140,8 @@ function openpgp_crypto_MDCSystemBytes(algo, key, data) {
 }
 /**
  * Generating a session key for the specified symmetric algorithm
- * @param algo [Integer] algorithm to use (see RFC4880 9.2)
- * @return [String] random bytes as a string to be used as a key
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @return {String} Random bytes as a string to be used as a key
  */
 function openpgp_crypto_generateSessionKey(algo) {
 	switch (algo) {
@@ -160,12 +162,12 @@ function openpgp_crypto_generateSessionKey(algo) {
 
 /**
  * 
- * @param algo [Integer] public key algorithm
- * @param hash_algo [Integer] hash algorithm
- * @param msg_MPIs [Array[openpgp_type_mpi]] signature multiprecision integers
- * @param publickey_MPIs [Array[openpgp_type_mpi]] public key multiprecision integers 
- * @param data [String] data on where the signature was computed on.
- * @return true if signature (sig_data was equal to data over hash)
+ * @param {Integer} algo public Key algorithm
+ * @param {Integer} hash_algo Hash algorithm
+ * @param {openpgp_type_mpi[]} msg_MPIs Signature multiprecision integers
+ * @param {openpgp_type_mpi[]} publickey_MPIs Public key multiprecision integers 
+ * @param {String} data Data on where the signature was computed on.
+ * @return {Boolean} true if signature (sig_data was equal to data over hash)
  */
 function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
 	var calc_hash = openpgp_crypto_hashData(hash_algo, data);
@@ -207,12 +209,14 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
    
 /**
  * Create a signature on data using the specified algorithm
- * @param hash_algo [Integer] hash algorithm to use (See RFC4880 9.4)
- * @param algo [Integer] asymmetric cipher algorithm to use (See RFC4880 9.1)
- * @param publicMPIs [Array[openpgp_type_mpi]] public key multiprecision integers of the private key 
- * @param secretMPIs [Array[openpgp_type_mpi]] private key multiprecision integers which is used to sign the data
- * @param data [String] data to be signed
- * @return [String or openpgp_type_mpi] 
+ * @param {Integer} hash_algo hash Algorithm to use (See RFC4880 9.4)
+ * @param {Integer} algo Asymmetric cipher algorithm to use (See RFC4880 9.1)
+ * @param {openpgp_type_mpi[]} publicMPIs Public key multiprecision integers 
+ * of the private key 
+ * @param {openpgp_type_mpi[]} secretMPIs Private key multiprecision 
+ * integers which is used to sign the data
+ * @param {String} data Data to be signed
+ * @return {(String|openpgp_type_mpi)}
  */
 function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
 	
@@ -247,10 +251,10 @@ function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) 
 }
 
 /**
- * create a hash on the specified data using the specified algorithm
- * @param algo [Integer] hash algorithm type (see RFC4880 9.4)
- * @param data [String] data to be hashed
- * @return [String] hash value
+ * Create a hash on the specified data using the specified algorithm
+ * @param {Integer} algo Hash algorithm type (see RFC4880 9.4)
+ * @param {String} data Data to be hashed
+ * @return {String} hash value
  */
 function openpgp_crypto_hashData(algo, data) {
 	var hash = null;
@@ -282,9 +286,9 @@ function openpgp_crypto_hashData(algo, data) {
 }
 
 /**
- * returns the hash size in bytes of the specified hash algorithm type
- * @param algo [Integer] hash algorithm type (See RFC4880 9.4)
- * @return [Integer] size in bytes of the resulting hash
+ * Returns the hash size in bytes of the specified hash algorithm type
+ * @param {Integer} algo Hash algorithm type (See RFC4880 9.4)
+ * @return {Integer} Size in bytes of the resulting hash
  */
 function openpgp_crypto_getHashByteLength(algo) {
 	var hash = null;
@@ -307,9 +311,9 @@ function openpgp_crypto_getHashByteLength(algo) {
 }
 
 /**
- * retrieve secure random byte string of the specified length
- * @param length [Integer] length in bytes to generate
- * @return [String] random byte string
+ * Retrieve secure random byte string of the specified length
+ * @param {Integer} length Length in bytes to generate
+ * @return {String} Random byte string
  */
 function openpgp_crypto_getRandomBytes(length) {
 	var result = '';
@@ -320,20 +324,20 @@ function openpgp_crypto_getRandomBytes(length) {
 }
 
 /**
- * return a pseudo-random number in the specified range
- * @param from [Integer] min of the random number
- * @param to [Integer] max of the random number (max 32bit)
- * @return [Integer] a pseudo random number
+ * Return a pseudo-random number in the specified range
+ * @param {Integer} from Min of the random number
+ * @param {Integer} to Max of the random number (max 32bit)
+ * @return {Integer} A pseudo random number
  */
 function openpgp_crypto_getPseudoRandom(from, to) {
 	return Math.round(Math.random()*(to-from))+from;
 }
 
 /**
- * return a secure random number in the specified range
- * @param from [Integer] min of the random number
- * @param to [Integer] max of the random number (max 32bit)
- * @return [Integer] a secure random number
+ * Return a secure random number in the specified range
+ * @param {Integer} from Min of the random number
+ * @param {Integer} to Max of the random number (max 32bit)
+ * @return {Integer} A secure random number
  */
 function openpgp_crypto_getSecureRandom(from, to) {
 	var buf = new Uint32Array(1);
@@ -351,9 +355,9 @@ function openpgp_crypto_getSecureRandomOctet() {
 }
 
 /**
- * create a secure random big integer of bits length
- * @param bits [Integer] bit length of the MPI to create
- * @return [BigInteger] resulting big integer
+ * Create a secure random big integer of bits length
+ * @param {Integer} bits Bit length of the MPI to create
+ * @return {BigInteger} Resulting big integer
  */
 function openpgp_crypto_getRandomBigInteger(bits) {
 	if (bits < 0)
@@ -392,11 +396,19 @@ function openpgp_crypto_testRSA(key){
 	var msg = rsa.encrypt(mpi.toBigInteger(),key.ee,key.n);
 	var result = rsa.decrypt(msg, key.d, key.p, key.q, key.u);
 }
+
 /**
- * calls the necessary crypto functions to generate a keypair. Called directly by openpgp.js
- * @keyType [int] follows OpenPGP algorithm convention.
- * @numBits [int] number of bits to make the key to be generated
- * @return {privateKey: [openpgp_packet_keymaterial] , publicKey: [openpgp_packet_keymaterial]}
+ * @typedef {Object} openpgp_keypair
+ * @property {openpgp_packet_keymaterial} privateKey 
+ * @property {openpgp_packet_keymaterial} publicKey
+ */
+
+/**
+ * Calls the necessary crypto functions to generate a keypair. 
+ * Called directly by openpgp.js
+ * @param {Integer} keyType Follows OpenPGP algorithm convention.
+ * @param {Integer} numBits Number of bits to make the key to be generated
+ * @return {openpgp_keypair}
  */
 function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
 	var privKeyPacket;

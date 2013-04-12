@@ -29,8 +29,8 @@ JXG.decompress = function(str) {return unescape((new JXG.Util.Unzip(JXG.Util.Bas
   *
   * Only Huffman codes are decoded in gunzip.
   * The code is based on the source code for gunzip.c by Pasi Ojala 
-  * @see <a href="http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c">http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c</a>
-  * @see <a href="http://www.cs.tut.fi/~albert">http://www.cs.tut.fi/~albert</a>
+  * {@link http://www.cs.tut.fi/~albert/Dev/gunzip/gunzip.c}
+  * {@link http://www.cs.tut.fi/~albert}
   */
 JXG.Util = {};
                                  
@@ -925,7 +925,7 @@ function skipdir(){
 
 /**
 *  Base64 encoding / decoding
-*  @see <a href="http://www.webtoolkit.info/">http://www.webtoolkit.info/</A>
+*  {@link http://www.webtoolkit.info/}
 */
 JXG.Util.Base64 = {
 

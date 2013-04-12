@@ -15,27 +15,37 @@
  * materials provided with the application or distribution.
  */
 
+/**
+ * An array of bytes, that is integers with values from 0 to 255
+ * @typedef {(Array|Uint8Array)} openpgp_byte_array
+ */
+
+/**
+ * Block cipher function
+ * @callback openpgp_cipher_block_fn
+ * @param {openpgp_byte_array} block A block to perform operations on
+ * @param {openpgp_byte_array} key to use in encryption/decryption
+ * @return {openpgp_byte_array} Encrypted/decrypted block
+ */
+
+
 // --------------------------------------
 /**
  * This function encrypts a given with the specified prefixrandom 
  * using the specified blockcipher to encrypt a message
- * @param prefixrandom random bytes of block_size length provided 
+ * @param {String} prefixrandom random bytes of block_size length provided 
  *  as a string to be used in prefixing the data
- * @param blockcipherfn the algorithm encrypt function to encrypt
- *  data in one block_size encryption. The function must be 
- *  specified as blockcipherfn([integer_array(integers 0..255)] 
- *  block,[integer_array(integers 0..255)] key) returning an 
- *  array of bytes (integers 0..255)
- * @param block_size the block size in bytes of the algorithm used
- * @param plaintext data to be encrypted provided as a string
- * @param key key to be used to encrypt the data as 
- *  integer_array(integers 0..255)]. This will be passed to the 
+ * @param {openpgp_cipher_block_fn} blockcipherfn the algorithm encrypt function to encrypt
+ *  data in one block_size encryption. 
+ * @param {Integer} block_size the block size in bytes of the algorithm used
+ * @param {String} plaintext data to be encrypted provided as a string
+ * @param {openpgp_byte_array} key key to be used to encrypt the data. This will be passed to the 
  *  blockcipherfn
- * @param resync a boolean value specifying if a resync of the 
+ * @param {Boolean} resync a boolean value specifying if a resync of the 
  *  IV should be used or not. The encrypteddatapacket uses the 
  *  "old" style with a resync. Encryption within an 
  *  encryptedintegrityprotecteddata packet is not resyncing the IV.
- * @return a string with the encrypted data
+ * @return {String} a string with the encrypted data
  */
 function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, block_size, key, resync) {
 	var FR = new Array(block_size);
@@ -126,12 +136,12 @@ function openpgp_cfb_encrypt(prefixrandom, blockcipherencryptfn, plaintext, bloc
 }
 
 /**
- * decrypts the prefixed data for the Modification Detection Code (MDC) computation
- * @param blockcipherencryptfn cipher function to use
- * @param block_size blocksize of the algorithm
- * @param key the key for encryption
- * @param ciphertext the encrypted data
- * @return plaintext data of D(ciphertext) with blocksize length +2
+ * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
+ * @param {openpgp_block_cipher_fn} blockcipherencryptfn Cipher function to use
+ * @param {Integer} block_size Blocksize of the algorithm
+ * @param {openpgp_byte_array} key The key for encryption
+ * @param {String} ciphertext The encrypted data
+ * @return {String} plaintext Data of D(ciphertext) with blocksize length +2
  */
 function openpgp_cfb_mdc(blockcipherencryptfn, block_size, key, ciphertext) {
 	var iblock = new Array(block_size);
@@ -157,21 +167,17 @@ function openpgp_cfb_mdc(blockcipherencryptfn, block_size, key, ciphertext) {
 /**
  * This function decrypts a given plaintext using the specified
  * blockcipher to decrypt a message
- * @param blockcipherfn the algorithm _encrypt_ function to encrypt
- *  data in one block_size encryption. The function must be 
- *  specified as blockcipherfn([integer_array(integers 0..255)] 
- *  block,[integer_array(integers 0..255)] key) returning an 
- *  array of bytes (integers 0..255)
- * @param block_size the block size in bytes of the algorithm used
- * @param plaintext ciphertext to be decrypted provided as a string
- * @param key key to be used to decrypt the ciphertext as 
- *  integer_array(integers 0..255)]. This will be passed to the 
+ * @param {openpgp_cipher_block_fn} blockcipherfn The algorithm _encrypt_ function to encrypt
+ *  data in one block_size encryption.
+ * @param {Integer} block_size the block size in bytes of the algorithm used
+ * @param {String} plaintext ciphertext to be decrypted provided as a string
+ * @param {openpgp_byte_array} key key to be used to decrypt the ciphertext. This will be passed to the 
  *  blockcipherfn
- * @param resync a boolean value specifying if a resync of the 
+ * @param {Boolean} resync a boolean value specifying if a resync of the 
  *  IV should be used or not. The encrypteddatapacket uses the 
  *  "old" style with a resync. Decryption within an 
  *  encryptedintegrityprotecteddata packet is not resyncing the IV.
- * @return a string with the plaintext data
+ * @return {String} a string with the plaintext data
  */
 
 function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, resync)

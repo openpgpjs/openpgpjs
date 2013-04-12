@@ -70,9 +70,9 @@ function openpgp_packet_signature() {
 
 	/**
 	 * parsing function for a signature packet (tag 2).
-	 * @param {string} input payload of a tag 2 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @param {String} input payload of a tag 2 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
@@ -210,10 +210,10 @@ function openpgp_packet_signature() {
 	/**
 	 * creates a string representation of a message signature packet (tag 2).
 	 * This can be only used on text data
-	 * @param {integer} signature_type should be 1 (one) 
+	 * @param {Integer} signature_type should be 1 (one) 
 	 * @param {String} data data to be signed
 	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. (secMPIs MUST be unlocked)
-	 * @return {string} string representation of a signature packet
+	 * @return {String} string representation of a signature packet
 	 */
 	function write_message_signature(signature_type, data, privatekey) {
 		var publickey = privatekey.privateKeyPacket.publicKey;
@@ -256,7 +256,7 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
-	 * @param {integer} type subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
+	 * @param {Integer} type subpacket signature type. Signature types as described in RFC4880 Section 5.2.3.2
 	 * @param {String} data data to be included
 	 * @return {String} a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
 	 */
@@ -636,7 +636,7 @@ function openpgp_packet_signature() {
 	}
 	/**
 	 * generates debug output (pretty print)
-	 * @return {string} String which gives some information about the signature packet
+	 * @return {String} String which gives some information about the signature packet
 	 */
 
 	function toString () {
@@ -707,7 +707,7 @@ function openpgp_packet_signature() {
 
 	/**
 	 * Tries to get the corresponding public key out of the public keyring for the issuer created this signature
-	 * @return {obj: [openpgp_msg_publickey], text: [String]} if found the public key will be returned. null otherwise
+	 * @return {Object} {obj: [openpgp_msg_publickey], text: [String]} if found the public key will be returned. null otherwise
 	 */
 	function getIssuerKey() {
 		 var result = null;

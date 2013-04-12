@@ -18,8 +18,8 @@
 /**
  * Wrapper function for the base64 codec. 
  * This function encodes a String (message) in base64 (radix-64)
- * @param message [String] the message to encode
- * @return [String] the base64 encoded data
+ * @param {String} message The message to encode
+ * @return {String} The base64 encoded data
  */
 function openpgp_encoding_base64_encode(message) {
 	return s2r(message);
@@ -29,8 +29,8 @@ function openpgp_encoding_base64_encode(message) {
 /**
  * Wrapper function for the base64 codec.
  * This function decodes a String(message) in base64 (radix-64)
- * @param message [String] base64 encoded data
- * @return [String] raw data after decoding
+ * @param {String} message Base64 encoded data
+ * @return {String} Raw data after decoding
  */
 function openpgp_encoding_base64_decode(message) {
 	return r2s(message);
@@ -38,9 +38,10 @@ function openpgp_encoding_base64_decode(message) {
 
 /**
  * Wrapper function for jquery library.
- * This function escapes HTML characters within a string. This is used to prevent XSS.
- * @param message [String] message to escape
- * @return [String] html encoded string
+ * This function escapes HTML characters within a string. This is used 
+ * to prevent XSS.
+ * @param {String} message Message to escape
+ * @return {String} Html encoded string
  */
 function openpgp_encoding_html_encode(message) {
 	if (message == null)
@@ -50,9 +51,9 @@ function openpgp_encoding_html_encode(message) {
 
 /**
  * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)
- * @param message [String] message to be padded
- * @param length [Integer] length to the resulting message
- * @return [String] EME-PKCS1 padded message
+ * @param {String} message message to be padded
+ * @param {Integer} length Length to the resulting message
+ * @return {String} EME-PKCS1 padded message
  */
 function openpgp_encoding_eme_pkcs1_encode(message, length) {
 	if (message.length > length-11)
@@ -70,8 +71,8 @@ function openpgp_encoding_eme_pkcs1_encode(message, length) {
 
 /**
  * decodes a EME-PKCS1-v1_5 padding (See RFC4880 13.1.2)
- * @param message [String] EME-PKCS1 padded message
- * @return [String] decoded message 
+ * @param {String} message EME-PKCS1 padded message
+ * @return {String} decoded message 
  */
 function openpgp_encoding_eme_pkcs1_decode(message, len) {
 	if (message.length < len)
@@ -97,10 +98,10 @@ hash_headers[11] = [0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,
 
 /**
  * create a EMSA-PKCS1-v1_5 padding (See RFC4880 13.1.3)
- * @param algo [Integer] hash algorithm type used
- * @param data [String] data to be hashed
- * @param keylength [Integer] key size of the public mpi in bytes
- * @return the [String] hashcode with pkcs1padding as string
+ * @param {Integer} algo Hash algorithm type used
+ * @param {String} data Data to be hashed
+ * @param {Integer} keylength Key size of the public mpi in bytes
+ * @returns {String} Hashcode with pkcs1padding as string
  */
 function openpgp_encoding_emsa_pkcs1_encode(algo, data, keylength) {
 	var data2 = "";
@@ -119,8 +120,8 @@ function openpgp_encoding_emsa_pkcs1_encode(algo, data, keylength) {
 
 /**
  * extract the hash out of an EMSA-PKCS1-v1.5 padding (See RFC4880 13.1.3) 
- * @param data [String] hash in pkcs1 encoding
- * @return the hash as string
+ * @param {String} data Hash in pkcs1 encoding
+ * @returns {String} The hash as string
  */
 function openpgp_encoding_emsa_pkcs1_decode(algo, data) { 
 	var i = 0;
