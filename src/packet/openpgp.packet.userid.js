@@ -26,11 +26,14 @@
  */
 
 function openpgp_packet_userid() {
+	this.text = ''
 	this.tagType = 13;
 	this.certificationSignatures = new Array();
 	this.certificationRevocationSignatures = new Array();
 	this.revocationSignatures = new Array();
 	this.parentNode = null;
+
+	//*
 
 	/**
 	 * parsing function for a user id packet (tag 13).

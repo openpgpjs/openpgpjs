@@ -88,26 +88,24 @@ var Util = function() {
 
 
 	/**
-	 * convert a native javascript string to a string of utf8 bytes
-	 * @param [String] string to convert
-	 * @return [String] a valid squence of utf8 bytes
+	 * Convert a native javascript string to a string of utf8 bytes
+	 * @param {String} str The string to convert
+	 * @return {String} A valid squence of utf8 bytes
 	 */
-	this.encode_utf8 = function(s) {
-		return unescape(encodeURIComponent(s));
+	this.encode_utf8 = function(str) {
+		return unescape(encodeURIComponent(str));
 	};
 
 	/**
-	 * convert a string of utf8 bytes to a native javascript string
-	 * @param [String] a valid squence of utf8 bytes
-	 * @return [String] javascript string
+	 * Convert a string of utf8 bytes to a native javascript string
+	 * @param {String} utf8 A valid squence of utf8 bytes
+	 * @return {String} A native javascript string
 	 */
-	this.decode_utf8 = function(s) {
-		return decodeURIComponent(escape(s));
+	this.decode_utf8 = function(utf8) {
+		return decodeURIComponent(escape(utf8));
 	};
 
-	var str2bin = function(str, array_maker) {
-		var result = array_maker(str.length);
-
+	var str2bin = function(str, result) {
 		for (var i = 0; i < str.length; i++) {
 			result[i] = str.charCodeAt(i);
 		}
@@ -131,8 +129,7 @@ var Util = function() {
 	 * @return {Integer[]} An array of (binary) integers
 	 */
 	this.str2bin = function(str) { 
-		return str2bin(str, 
-			function(l) { return new Array(l); });
+		return str2bin(str, new Array(str.length));
 	};
 	
 	
@@ -149,10 +146,7 @@ var Util = function() {
 	 * @return {Uint8Array} The array of (binary) integers
 	 */
 	this.str2Uint8Array = function(str) { 
-		return str2bin(str, 
-			function(l) {
-				return new Uint8Array(new ArrayBuffer(l)); 
-			});
+		return str2bin(str, new Uint8Array(new ArrayBuffer(str.length))); 
 	};
 	
 	/**

@@ -58,11 +58,14 @@ function openpgp_packet_literaldata() {
 	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(data) {
-		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
-		data = util.encode_utf8(data)
+		this.data = data;
 		this.filename = "msg.txt";
 		this.date = new Date();
 		this.format = 't';
+
+		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+		data = util.encode_utf8(data)
+
 		var result = openpgp_packet.write_packet_header(11, data.length + 6
 				+ this.filename.length);
 		result += this.format;
@@ -77,7 +80,6 @@ function openpgp_packet_literaldata() {
 		result += String
 				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
 		result += data;
-		this.data = data;
 		return result;
 	}
 

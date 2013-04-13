@@ -89,6 +89,58 @@
         <dl>
             
 <dt>
+    <h4 class="name" id="bin2str"><span class="type-signature"></span>bin2str<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Convert an array of integers(0.255) to a string
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="util.js.html">util/util.js</a>, line 141
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="crc_table"><span class="type-signature"></span>crc_table<span class="type-signature"></span></h4>
     
     
@@ -193,6 +245,59 @@
         
             
 <dt>
+    <h4 class="name" id="Uint8Array2str"><span class="type-signature"></span>Uint8Array2str<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Convert a Uint8Array to a string. This currently functions 
+the same as bin2str.
+    </div>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="util.js.html">util/util.js</a>, line 158
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="util"><span class="type-signature"></span>util<span class="type-signature"></span></h4>
     
     
@@ -227,7 +332,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 287
+        <a href="util.js.html">util/util.js</a>, line 304
     </li></ul></dd>
     
     
@@ -249,145 +354,6 @@
         <h3 class="subsection-title">Methods</h3>
         
         <dl>
-            
-<dt>
-    <h4 class="name" id="bin2str"><span class="type-signature"></span>bin2str<span class="signature">(bin)</span><span class="type-signature"> &rarr; {String}</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Convert an array of integers(0.255) to a string
-    </div>
-    
-
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>bin</code></td>
-            
-            
-            <td class="type">
-            
-                
-<span class="param-type">Integer[]</span>
-
-
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">An array of (binary) integers to convert</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 108
-    </li></ul></dd>
-    
-    
-    
-    
-    
-    
-    
-</dl>
-
-    
-    
-
-    
-
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    The string representation of the array
-</div>
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-<span class="param-type">String</span>
-
-
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
             
 <dt>
     <h4 class="name" id="calc_checksum"><span class="type-signature"></span>calc_checksum<span class="signature">(text)</span><span class="type-signature"> &rarr; {Integer}</span></h4>
@@ -480,7 +446,7 @@ codes modulus 65535
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 150
+        <a href="util.js.html">util/util.js</a>, line 167
     </li></ul></dd>
     
     
@@ -518,6 +484,284 @@ codes % 65535
 	<dd>
 		
 <span class="param-type">Integer</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="decode_utf8"><span class="type-signature"></span>decode_utf8<span class="signature">(utf8)</span><span class="type-signature"> &rarr; {String}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Convert a string of utf8 bytes to a native javascript string
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>utf8</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">A valid squence of utf8 bytes</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="util.js.html">util/util.js</a>, line 104
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    A native javascript string
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">String</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="encode_utf8"><span class="type-signature"></span>encode_utf8<span class="signature">(str)</span><span class="type-signature"> &rarr; {String}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Convert a native javascript string to a string of utf8 bytes
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>str</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">The string to convert</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="util.js.html">util/util.js</a>, line 95
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    A valid squence of utf8 bytes
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">String</span>
 
 
 	</dd>
@@ -572,7 +816,7 @@ codes % 65535
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 263
+        <a href="util.js.html">util/util.js</a>, line 280
     </li></ul></dd>
     
     
@@ -6529,7 +6773,7 @@ are automatically converted to HTML line feeds '<br/>'
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 169
+        <a href="util.js.html">util/util.js</a>, line 186
     </li></ul></dd>
     
     
@@ -6675,7 +6919,7 @@ Different than print_debug because will call hexstrdump iff necessary.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 188
+        <a href="util.js.html">util/util.js</a>, line 205
     </li></ul></dd>
     
     
@@ -6818,7 +7062,7 @@ are automatically converted to HTML line feeds '<br/>'
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 205
+        <a href="util.js.html">util/util.js</a>, line 222
     </li></ul></dd>
     
     
@@ -6961,7 +7205,7 @@ are automatically converted to HTML line feeds '<br/>'.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 219
+        <a href="util.js.html">util/util.js</a>, line 236
     </li></ul></dd>
     
     
@@ -7125,7 +7369,7 @@ than 9)</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 245
+        <a href="util.js.html">util/util.js</a>, line 262
     </li></ul></dd>
     
     
@@ -7264,7 +7508,7 @@ than 9)</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 94
+        <a href="util.js.html">util/util.js</a>, line 131
     </li></ul></dd>
     
     
@@ -7403,7 +7647,7 @@ than 9)</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 121
+        <a href="util.js.html">util/util.js</a>, line 148
     </li></ul></dd>
     
     
@@ -7440,146 +7684,6 @@ than 9)</td>
 	<dd>
 		
 <span class="param-type">Uint8Array</span>
-
-
-	</dd>
-</dl>
-
-        
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="Uint8Array2str"><span class="type-signature"></span>Uint8Array2str<span class="signature">(bin)</span><span class="type-signature"> &rarr; {String}</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Convert a Uint8Array to a string. This currently functions 
-the same as bin2str.
-    </div>
-    
-
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>bin</code></td>
-            
-            
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">An array of (binary) integers to convert</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="util.js.html">util/util.js</a>, line 135
-    </li></ul></dd>
-    
-    
-    
-    
-    
-    
-    
-</dl>
-
-    
-    
-
-    
-
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    String representation of the array
-</div>
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-<span class="param-type">String</span>
 
 
 	</dd>
@@ -8109,13 +8213,13 @@ given base64 encoded checksum
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#decode_utf8">decode_utf8</a></li><li><a href="global.html#encode_utf8">encode_utf8</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Fri Apr 12 2013 14:20:33 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Sat Apr 13 2013 22:39:45 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>
