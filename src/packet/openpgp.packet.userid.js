@@ -73,7 +73,7 @@ function openpgp_packet_userid() {
 
 		var bytes = ''
 		for ( var i = 0; i < len; i++) {
-			this.bytes += input[position + i];
+			bytes += input[position + i];
 		}
 
 		this.set_text_bytes(bytes)
