@@ -34,9 +34,9 @@ function openpgp_packet_userid() {
 
 	/**
 	 * parsing function for a user id packet (tag 13).
-	 * @param {string} input payload of a tag 13 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @param {String} input payload of a tag 13 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
@@ -63,11 +63,11 @@ function openpgp_packet_userid() {
 
 	/**
 	 * Continue parsing packets belonging to the userid packet such as signatures
-	 * @param {openpgp_*} parent_node the parent object
+	 * @param {Object} parent_node the parent object
 	 * @param {String} input input string to read the packet(s) from
-	 * @param {integer} position start position for the parser
-	 * @param {integer} len length of the packet(s) or remaining length of input
-	 * @return {integer} length of nodes read
+	 * @param {Integer} position start position for the parser
+	 * @param {Integer} len length of the packet(s) or remaining length of input
+	 * @return {Integer} length of nodes read
 	 */
 	function read_nodes(parent_node, input, position, len) {
 		if (parent_node.tagType == 6) { // public key
@@ -147,7 +147,7 @@ function openpgp_packet_userid() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return {string} String which gives some information about the user id packet
+	 * @return {String} String which gives some information about the user id packet
 	 */
 	function toString() {
 		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
@@ -166,7 +166,7 @@ function openpgp_packet_userid() {
 
 	/**
 	 * lookup function to find certification revocation signatures
-	 * @param {string} keyId string containing the key id of the issuer of this signature
+	 * @param {String} keyId string containing the key id of the issuer of this signature
 	 * @return a CertificationRevocationSignature if found; otherwise null
 	 */
 	function hasCertificationRevocationSignature(keyId) {
@@ -182,8 +182,8 @@ function openpgp_packet_userid() {
 
 	/**
 	 * Verifies all certification signatures. This method does not consider possible revocation signatures.
-	 * @param publicKeyPacket the top level key material
-	 * @return an array of integers corresponding to the array of certification signatures. The meaning of each integer is the following:
+	 * @param {Object} publicKeyPacket the top level key material
+	 * @return {Integer[]} An array of integers corresponding to the array of certification signatures. The meaning of each integer is the following:
 	 * 0 = bad signature
 	 * 1 = signature expired
 	 * 2 = issuer key not available

@@ -37,9 +37,9 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param {string} input payload of a tag 4 packet
-	 * @param {integer} position position to start reading from the input string
-	 * @param {integer} len length of the packet or the remaining length of input at position
+	 * @param {String} input payload of a tag 4 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
 	function read_packet(input, position, len) {
@@ -72,10 +72,10 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * creates a string representation of a one-pass signature packet
-	 * @param {integer} type Signature types as described in RFC4880 Section 5.2.1.
-	 * @param {integer} hashalgorithm the hash algorithm used within the signature
+	 * @param {Integer} type Signature types as described in RFC4880 Section 5.2.1.
+	 * @param {Integer} hashalgorithm the hash algorithm used within the signature
 	 * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
-	 * @param {integer} length length of data to be signed
+	 * @param {Integer} length length of data to be signed
 	 * @param {boolean} nested boolean showing whether the signature is nested. 
 	 *  "true" indicates that the next packet is another One-Pass Signature packet
 	 *   that describes another signature to be applied to the same message data. 
@@ -100,7 +100,7 @@ function openpgp_packet_onepasssignature() {
 	
 	/**
 	 * generates debug output (pretty print)
-	 * @return {string} String which gives some information about the one-pass signature packet
+	 * @return {String} String which gives some information about the one-pass signature packet
 	 */
 	function toString() {
 		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+

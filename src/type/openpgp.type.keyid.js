@@ -25,10 +25,11 @@
  */
 function openpgp_type_keyid() {
 	/**
-	 * parsing method for a key id
-	 * @param {String} input input to read the key id from 
-	 * @param {integer} position position where to start reading the key id from input
-	 * @return this object
+	 * Parsing method for a key id
+	 * @param {String} input Input to read the key id from 
+	 * @param {integer} position Position where to start reading the key 
+	 * id from input
+	 * @return {openpgp_type_keyid} This object
 	 */
 	function read_packet(input, position) {
 		this.bytes = input.substring(position, position+8);
@@ -36,7 +37,7 @@ function openpgp_type_keyid() {
 	}
 	
 	/**
-	 * generates debug output (pretty print)
+	 * Generates debug output (pretty print)
 	 * @return {String} Key Id as hexadecimal string
 	 */
 	function toString() {

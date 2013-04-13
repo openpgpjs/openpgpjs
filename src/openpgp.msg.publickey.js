@@ -155,7 +155,7 @@ function openpgp_msg_publickey() {
 	 *  - subkey binding and revocation certificates
 	 *  
 	 *  This is useful for validating the key
-	 *  @returns true if the basic signatures are all valid
+	 *  @returns {Boolean} true if the basic signatures are all valid
 	 */
 	function verifyBasicSignatures() {
 		for (var i = 0; i < this.revocationSignatures.length; i++) {

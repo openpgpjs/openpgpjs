@@ -67,8 +67,8 @@ function openpgp_packet_modificationdetectioncode() {
 	/**
 	 * generates debug output (pretty print)
 	 * 
-	 * @return {string} String which gives some information about the modification
-	 *         detection code
+	 * @return {String} String which gives some information about the 
+	 * modification detection code
 	 */
 	function toString() {
 		return '5.14 Modification detection code packet\n' + '    bytes ('

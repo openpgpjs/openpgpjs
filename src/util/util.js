@@ -37,9 +37,9 @@ var Util = function() {
 	};
 	
 	/**
-	 * create hexstring from a binary
-	 * @param str [String] string to convert
-	 * @return [String] string containing the hexadecimal values
+	 * Create hexstring from a binary
+	 * @param {String} str String to convert
+	 * @return {String} String containing the hexadecimal values
 	 */
 	this.hexstrdump = function(str) {
 		if (str == null)
@@ -57,9 +57,9 @@ var Util = function() {
 	};
 	
 	/**
-	 * create binary string from a hex encoded string
-	 * @param str [String] hex string to convert
-	 * @return [String] string containing the binary values
+	 * Create binary string from a hex encoded string
+	 * @param {String} str Hex string to convert
+	 * @return {String} String containing the binary values
 	 */
 	this.hex2bin = function(hex) {
 	    var str = '';
@@ -69,9 +69,9 @@ var Util = function() {
 	};
 	
 	/**
-	 * creating a hex string from an binary array of integers (0..255)
-	 * @param [Array[integer 0..255]] array to convert
-	 * @return [String] hexadecimal representation of the array
+	 * Creating a hex string from an binary array of integers (0..255)
+	 * @param {String} str Array of bytes to convert
+	 * @return {String} Hexadecimal representation of the array
 	 */
 	this.hexidump = function(str) {
 	    var r=[];
@@ -87,9 +87,9 @@ var Util = function() {
 	};
 	
 	/**
-	 * convert a string to an array of integers(0.255)
-	 * @param [String] string to convert
-	 * @return [Array [Integer 0..255]] array of (binary) integers
+	 * Convert a string to an array of integers(0.255)
+	 * @param {String} str String to convert
+	 * @return {Integer[]} An array of (binary) integers
 	 */
 	this.str2bin = function(str) {
 		var result = new Array();
@@ -101,9 +101,9 @@ var Util = function() {
 	};
 
 	/**
-	 * convert an array of integers(0.255) to a string 
-	 * @param [Array [Integer 0..255]] array of (binary) integers to convert
-	 * @return [String] string representation of the array
+	 * Convert an array of integers(0.255) to a string 
+	 * @param {Integer[]} bin An array of (binary) integers to convert
+	 * @return {String} The string representation of the array
 	 */
 	this.bin2str = function(bin) {
 		var result = [];
@@ -114,9 +114,9 @@ var Util = function() {
 	};
 	
 	/**
-	 * convert a string to a Uint8Array
-	 * @param [String] string to convert
-	 * @return [Uint8Array] array of (binary) integers
+	 * Convert a string to a Uint8Array
+	 * @param {String} str String to convert
+	 * @return {Uint8Array} The array of (binary) integers
 	 */
 	this.str2Uint8Array = function(str){
         var uintArray = new Uint8Array(new ArrayBuffer(str.length));
@@ -127,9 +127,10 @@ var Util = function() {
 	};
 	
 	/**
-	 * convert a Uint8Array to a string. This currently functions the same as bin2str. 
-	 * @param [Uint8Array] array of (binary) integers to convert
-	 * @return [String] string representation of the array
+	 * Convert a Uint8Array to a string. This currently functions 
+	 * the same as bin2str. 
+	 * @param {Uint8Array} bin An array of (binary) integers to convert
+	 * @return {String} String representation of the array
 	 */
 	this.Uint8Array2str = function(bin) {
         var result = [];
@@ -140,9 +141,11 @@ var Util = function() {
 	};
 	
 	/**
-	 * calculates a 16bit sum of a string by adding each character codes modulus 65535
-	 * @param text [String] string to create a sum of
-	 * @return [Integer] an integer containing the sum of all character codes % 65535
+	 * Calculates a 16bit sum of a string by adding each character 
+	 * codes modulus 65535
+	 * @param {String} text String to create a sum of
+	 * @return {Integer} An integer containing the sum of all character 
+	 * codes % 65535
 	 */
 	this.calc_checksum = function(text) {
 		var checksum = {  s: 0, add: function (sadd) { this.s = (this.s + sadd) % 65536; }};
@@ -159,8 +162,9 @@ var Util = function() {
 	 * Javascript context MUST define
 	 * a "showMessages(text)" function. Line feeds ('\n')
 	 * are automatically converted to HTML line feeds '<br/>'
-	 * @param str [String] string of the debug message
-	 * @return [String] an HTML tt entity containing a paragraph with a style attribute where the debug message is HTMLencoded in. 
+	 * @param {String} str String of the debug message
+	 * @return {String} An HTML tt entity containing a paragraph with a 
+	 * style attribute where the debug message is HTMLencoded in. 
 	 */
 	this.print_debug = function(str) {
 		if (openpgp.config.debug) {
@@ -177,8 +181,9 @@ var Util = function() {
 	 * a "showMessages(text)" function. Line feeds ('\n')
 	 * are automatically converted to HTML line feeds '<br/>'
 	 * Different than print_debug because will call hexstrdump iff necessary.
-	 * @param str [String] string of the debug message
-	 * @return [String] an HTML tt entity containing a paragraph with a style attribute where the debug message is HTMLencoded in. 
+	 * @param {String} str String of the debug message
+	 * @return {String} An HTML tt entity containing a paragraph with a 
+	 * style attribute where the debug message is HTMLencoded in. 
 	 */
 	this.print_debug_hexstr_dump = function(str,strToHex) {
 		if (openpgp.config.debug) {
@@ -193,8 +198,9 @@ var Util = function() {
 	 * The calling Javascript context MUST define
 	 * a "showMessages(text)" function. Line feeds ('\n')
 	 * are automatically converted to HTML line feeds '<br/>'
-	 * @param str [String] string of the error message
-	 * @return [String] a HTML paragraph entity with a style attribute containing the HTML encoded error message
+	 * @param {String} str String of the error message
+	 * @return {String} A HTML paragraph entity with a style attribute 
+	 * containing the HTML encoded error message
 	 */
 	this.print_error = function(str) {
 		str = openpgp_encoding_html_encode(str);
@@ -206,8 +212,9 @@ var Util = function() {
 	 * The calling Javascript context MUST define
 	 * a "showMessages(text)" function. Line feeds ('\n')
 	 * are automatically converted to HTML line feeds '<br/>'.
-	 * @param str [String] string of the info message
-	 * @return [String] a HTML paragraph entity with a style attribute containing the HTML encoded info message
+	 * @param {String} str String of the info message
+	 * @return {String} A HTML paragraph entity with a style attribute 
+	 * containing the HTML encoded info message
 	 */
 	this.print_info = function(str) {
 		str = openpgp_encoding_html_encode(str);
@@ -227,11 +234,13 @@ var Util = function() {
 		var result = string.substring(0, bytes);
 		return this.shiftRight(result, 8-rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
 	};
+
 	/**
 	 * Shifting a string to n bits right
-	 * @param value [String] the string to shift
-	 * @param bitcount [Integer] amount of bits to shift (MUST be smaller than 9)
-	 * @return [String] resulting string. 
+	 * @param {String} value The string to shift
+	 * @param {Integer} bitcount Amount of bits to shift (MUST be smaller 
+	 * than 9)
+	 * @return {String} Resulting string. 
 	 */
 	this.shiftRight = function(value, bitcount) {
 		var temp = util.str2bin(value);
@@ -249,7 +258,7 @@ var Util = function() {
 	
 	/**
 	 * Return the algorithm type as string
-	 * @return [String] String representing the message type
+	 * @return {String} String representing the message type
 	 */
 	this.get_hashAlgorithmString = function(algo) {
 		switch(algo) {

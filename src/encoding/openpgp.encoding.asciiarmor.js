@@ -16,9 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
- * @text [String] OpenPGP armored message
- * @return either the bytes of the decoded message or an object with attribute "text" containing the message text
+ * DeArmor an OpenPGP armored message; verify the checksum and return 
+ * the encoded bytes
+ * @param {String} text OpenPGP armored message
+ * @returns {(String|Object)} Either the bytes of the decoded message 
+ * or an object with attribute "text" containing the message text
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
@@ -45,8 +47,8 @@ function openpgp_encoding_deArmor(text) {
 
 /**
  * Finds out which Ascii Armoring type is used. This is an internal function
- * @param text [String] ascii armored text
- * @return 0 = MESSAGE PART n of m
+ * @param {String} text [String] ascii armored text
+ * @returns {Integer} 0 = MESSAGE PART n of m
  *         1 = MESSAGE PART n
  *         2 = SIGNED MESSAGE
  *         3 = PGP MESSAGE
@@ -102,7 +104,7 @@ function getPGPMessageType(text) {
  * packet block.
  * @author  Alex
  * @version 2011-12-16
- * @return  The header information
+ * @returns {String} The header information
  */
 function openpgp_encoding_armor_addheader() {
     var result = "";
@@ -118,11 +120,11 @@ function openpgp_encoding_armor_addheader() {
 
 /**
  * Armor an OpenPGP binary packet block
- * @param messagetype type of the message
+ * @param {Integer} messagetype type of the message
  * @param data
- * @param partindex
- * @param parttotal
- * @return {string} Armored text
+ * @param {Integer} partindex
+ * @param {Integer} parttotal
+ * @returns {String} Armored text
  */
 function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 	var result = "";
@@ -178,8 +180,8 @@ function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
 
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
- * @param data [String] data to create a CRC-24 checksum for
- * @return [String] base64 encoded checksum
+ * @param {String} data Data to create a CRC-24 checksum for
+ * @return {String} Base64 encoded checksum
  */
 function getCheckSum(data) {
 	var c = createcrc24(data);
@@ -190,10 +192,11 @@ function getCheckSum(data) {
 }
 
 /**
- * Calculates the checksum over the given data and compares it with the given base64 encoded checksum
- * @param data [String] data to create a CRC-24 checksum for
- * @param checksum [String] base64 encoded checksum
- * @return true if the given checksum is correct; otherwise false
+ * Calculates the checksum over the given data and compares it with the 
+ * given base64 encoded checksum
+ * @param {String} data Data to create a CRC-24 checksum for
+ * @param {String} checksum Base64 encoded checksum
+ * @return {Boolean} True if the given checksum is correct; otherwise false
  */
 function verifyCheckSum(data, checksum) {
 	var c = getCheckSum(data);
@@ -202,8 +205,8 @@ function verifyCheckSum(data, checksum) {
 }
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
- * @param data [String] data to create a CRC-24 checksum for
- * @return [Integer] the CRC-24 checksum as number
+ * @param {String} data Data to create a CRC-24 checksum for
+ * @return {Integer} The CRC-24 checksum as number
  */
 var crc_table = [
 0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139, 0x0727cdc2, 0x062b5434, 0x06ad18cf, 0x043267d8, 0x04b42b23, 0x05b8b2d5, 0x053efe2e, 0x0fc54e89, 0x0f430272, 0x0e4f9b84, 0x0ec9d77f, 0x0c56a868, 0x0cd0e493, 0x0ddc7d65, 0x0d5a319e, 0x0864cfb0, 0x08e2834b, 0x09ee1abd, 0x09685646, 0x0bf72951, 0x0b7165aa, 0x0a7dfc5c, 0x0afbb0a7, 0x1f0cd1e9, 0x1f8a9d12, 0x1e8604e4, 0x1e00481f, 0x1c9f3708, 0x1c197bf3, 0x1d15e205, 0x1d93aefe, 0x18ad50d0, 0x182b1c2b, 0x192785dd, 0x19a1c926, 0x1b3eb631, 0x1bb8faca, 0x1ab4633c, 0x1a322fc7, 0x10c99f60, 0x104fd39b, 0x11434a6d, 0x11c50696, 0x135a7981, 0x13dc357a, 0x12d0ac8c, 0x1256e077, 0x17681e59, 0x17ee52a2, 0x16e2cb54, 0x166487af, 0x14fbf8b8, 0x147db443, 0x15712db5, 0x15f7614e, 0x3e19a3d2, 0x3e9fef29, 0x3f9376df, 0x3f153a24, 0x3d8a4533, 0x3d0c09c8, 0x3c00903e, 0x3c86dcc5, 0x39b822eb, 0x393e6e10, 0x3832f7e6, 0x38b4bb1d, 0x3a2bc40a, 0x3aad88f1, 0x3ba11107, 0x3b275dfc, 0x31dced5b, 0x315aa1a0,

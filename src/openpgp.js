@@ -35,7 +35,6 @@ function _openpgp () {
 	 * initializes the library:
 	 * - reading the keyring from local storage
 	 * - reading the config from local storage
-	 * @return [void]
 	 */
 	function init() {
 		this.config = new openpgp_config();
@@ -49,7 +48,7 @@ function _openpgp () {
 	 * representation an returns openpgp_msg_publickey packets
 	 * @param {String} armoredText OpenPGP armored text containing
 	 * the public key(s)
-	 * @return {Array[openpgp_msg_publickey]} on error the function
+	 * @return {openpgp_msg_publickey[]} on error the function
 	 * returns null
 	 */
 	function read_publicKey(armoredText) {
@@ -95,7 +94,7 @@ function _openpgp () {
 	 * representation an returns openpgp_msg_privatekey objects
 	 * @param {String} armoredText OpenPGP armored text containing
 	 * the private key(s)
-	 * @return {Array[openpgp_msg_privatekey]} on error the function
+	 * @return {openpgp_msg_privatekey[]} on error the function
 	 * returns null
 	 */
 	function read_privateKey(armoredText) {
@@ -125,7 +124,7 @@ function _openpgp () {
 	 * reads message packets out of an OpenPGP armored text and
 	 * returns an array of message objects
 	 * @param {String} armoredText text to be parsed
-	 * @return {Array[openpgp_msg_message]} on error the function
+	 * @return {openpgp_msg_message[]} on error the function
 	 * returns null
 	 */
 	function read_message(armoredText) {
@@ -146,7 +145,7 @@ function _openpgp () {
 	 * External call will parse a de-armored messaged and return messages found.
 	 * Internal will be called to read packets wrapped in other packets (i.e. compressed)
 	 * @param {String} input dearmored text of OpenPGP packets, to be parsed
-	 * @return {Array[openpgp_msg_message]} on error the function
+	 * @return {openpgp_msg_message[]} on error the function
 	 * returns null
 	 */
 	function read_messages_dearmored(input){
@@ -291,10 +290,13 @@ function _openpgp () {
 	 * creates a binary string representation of an encrypted and signed message.
 	 * The message will be encrypted with the public keys specified and signed
 	 * with the specified private key.
-	 * @param {obj: [openpgp_msg_privatekey]} privatekey private key to be used to sign the message
-	 * @param {Array {obj: [openpgp_msg_publickey]}} publickeys  public keys to be used to encrypt the message 
+	 * @param {Object} privatekey {obj: [openpgp_msg_privatekey]} Private key 
+	 * to be used to sign the message
+	 * @param {Object[]} publickeys An arraf of {obj: [openpgp_msg_publickey]}
+	 * - public keys to be used to encrypt the message 
 	 * @param {String} messagetext message text to encrypt and sign
-	 * @return {String} a binary string representation of the message which can be OpenPGP armored
+	 * @return {String} a binary string representation of the message which 
+	 * can be OpenPGP armored
 	 */
 	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
 		var result = "";
@@ -347,8 +349,8 @@ function _openpgp () {
 	/**
 	 * creates a binary string representation of an encrypted message.
 	 * The message will be encrypted with the public keys specified 
-	 * @param {Array {obj: [openpgp_msg_publickey]}} publickeys public
-	 * keys to be used to encrypt the message 
+	 * @param {Object[]} publickeys An array of {obj: [openpgp_msg_publickey]}
+	 * -public keys to be used to encrypt the message 
 	 * @param {String} messagetext message text to encrypt
 	 * @return {String} a binary string representation of the message
 	 * which can be OpenPGP armored
@@ -389,12 +391,13 @@ function _openpgp () {
 	/**
 	 * creates a binary string representation a signed message.
 	 * The message will be signed with the specified private key.
-	 * @param {obj: [openpgp_msg_privatekey]} privatekey private
-	 * key to be used to sign the message 
+	 * @param {Object} privatekey {obj: [openpgp_msg_privatekey]}
+	 * - the private key to be used to sign the message 
 	 * @param {String} messagetext message text to sign
-	 * @return {Object: text [String]}, openpgp: {String} a binary
+	 * @return {Object} {Object: text [String]}, openpgp: {String} a binary
 	 *  string representation of the message which can be OpenPGP
-	 *   armored(openpgp) and a text representation of the message (text). This can be directly used to OpenPGP armor the message
+	 *   armored(openpgp) and a text representation of the message (text). 
+	 * This can be directly used to OpenPGP armor the message
 	 */
 	function write_signed_message(privatekey, messagetext) {
 		var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/,"\r\n"), privatekey);
@@ -403,11 +406,16 @@ function _openpgp () {
 	}
 	
 	/**
-	 * generates a new key pair for openpgp. Beta stage. Currently only supports RSA keys, and no subkeys.
-	 * @param {int} keyType to indicate what type of key to make. RSA is 1. Follows algorithms outlined in OpenPGP.
-	 * @param {int} numBits number of bits for the key creation. (should be 1024+, generally)
-	 * @param {string} userId assumes already in form of "User Name <username@email.com>"
-	 * @return {privateKey: [openpgp_msg_privatekey], privateKeyArmored: [string], publicKeyArmored: [string]}
+	 * generates a new key pair for openpgp. Beta stage. Currently only 
+	 * supports RSA keys, and no subkeys.
+	 * @param {Integer} keyType to indicate what type of key to make. 
+	 * RSA is 1. Follows algorithms outlined in OpenPGP.
+	 * @param {Integer} numBits number of bits for the key creation. (should 
+	 * be 1024+, generally)
+	 * @param {String} userId assumes already in form of "User Name 
+	 * <username@email.com>"
+	 * @return {Object} {privateKey: [openpgp_msg_privatekey], 
+	 * privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */
 	function generate_key_pair(keyType, numBits, userId, passphrase){
 		var userIdPacket = new openpgp_packet_userid();

@@ -26,10 +26,10 @@
  */
 function openpgp_type_s2k() {
 	/**
-	 * parsing function for a string-to-key specifier (RFC 4880 3.7).
-	 * @param {string} input payload of string-to-key specifier
-	 * @param {integer} position position to start reading from the input string
-	 * @return {openpgp_type_s2k} object representation
+	 * Parsing function for a string-to-key specifier (RFC 4880 3.7).
+	 * @param {String} input Payload of string-to-key specifier
+	 * @param {Integer} position Position to start reading from the input string
+	 * @return {openpgp_type_s2k} Object representation
 	 */
 	function read(input, position) {
 		var mypos = position;
@@ -94,7 +94,7 @@ function openpgp_type_s2k() {
 	
 	/**
 	 * writes an s2k hash based on the inputs.
-	 * @return {String} produced key of hashAlgorithm hash length
+	 * @return {String} Produced key of hashAlgorithm hash length
 	 */
 	function write(type, hash, passphrase, salt, c){
 	    this.type = type;
@@ -107,9 +107,11 @@ function openpgp_type_s2k() {
 	}
 
 	/**
-	 * produces a key using the specified passphrase and the defined hashAlgorithm 
-	 * @param passphrase {String} passphrase containing user input
-	 * @return {String} produced key with a length corresponding to hashAlgorithm hash length
+	 * Produces a key using the specified passphrase and the defined 
+	 * hashAlgorithm 
+	 * @param {String} passphrase Passphrase containing user input
+	 * @return {String} Produced key with a length corresponding to 
+	 * hashAlgorithm hash length
 	 */
 	function produce_key(passphrase, numBytes) {
 		if (this.type == 0) {
