@@ -11094,6 +11094,47 @@ function openpgp_packet_keymaterial() {
 function openpgp_packet_literaldata() {
 	this.tagType = 11;
 
+	
+	/**
+	 * Set the packet data to a javascript native string or a squence of 
+	 * bytes. Conversion to a proper utf8 encoding takes place when the 
+	 * packet is written.
+	 * @param {String} str Any native javascript string
+	 * @param {String} format 
+	 */
+	this.set_data = function(str, format) {
+		this.format = format;
+		this.data = data;
+	}
+
+	/**
+	 * Set the packet data to value represented by the provided string
+	 * of bytes together with the appropriate conversion format.
+	 * @param {String} bytes The string of bytes
+	 * @param {String} format 
+	 */
+	this.set_data_bytes = function(bytes, format) {
+		this.format = format
+
+		if(format == this.utf8)
+			bytes = util.decode_utf8(bytes)
+
+		this.data = bytes
+	}
+
+	/**
+	 * Get the byte sequence representing the literal packet data
+	 * @returns {String} A sequence of bytes
+	 */
+	this.get_data_bytes = function() {
+		if(this.format == 'u')
+			return util.encode_utf8(this.data);
+		else
+			return this.data;
+	}
+	
+	
+
 	/**
 	 * Parsing function for a literal data packet (tag 11).
 	 * 
@@ -11109,14 +11150,17 @@ function openpgp_packet_literaldata() {
 		this.packetLength = len;
 		// - A one-octet field that describes how the data is formatted.
 
-		this.format = input[position];
+		var format = input[position];
+
 		this.filename = input.substr(position + 2, input
 				.charCodeAt(position + 1));
 		this.date = new Date(parseInt(input.substr(position + 2
 				+ input.charCodeAt(position + 1), 4)) * 1000);
-		this.data = input.substring(position + 6
+
+		var bytes = input.substring(position + 6
 				+ input.charCodeAt(position + 1));
-		this.data = util.decode_utf8(this.data)
+	
+		this.set_data_bytes(bytes, format)
 		return this;
 	}
 
@@ -11127,13 +11171,11 @@ function openpgp_packet_literaldata() {
 	 * @return {String} string-representation of the packet
 	 */
 	function write_packet(data) {
-		this.data = data;
+		this.set_data(data, this.utf8)
 		this.filename = "msg.txt";
 		this.date = new Date();
-		this.format = 't';
 
-		data = data.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
-		data = util.encode_utf8(data)
+		data = this.get_data_bytes();
 
 		var result = openpgp_packet.write_packet_header(11, data.length + 6
 				+ this.filename.length);
@@ -11169,6 +11211,12 @@ function openpgp_packet_literaldata() {
 	this.toString = toString;
 	this.write_packet = write_packet;
 }
+
+openpgp_packet_literaldata.prototype = {
+	binary: 'b',
+	text: 't',
+	utf8: 'u'
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12344,11 +12392,14 @@ function openpgp_packet_userattribute() {
  */
 
 function openpgp_packet_userid() {
+	this.text = ''
 	this.tagType = 13;
 	this.certificationSignatures = new Array();
 	this.certificationRevocationSignatures = new Array();
 	this.revocationSignatures = new Array();
 	this.parentNode = null;
+
+	//*
 
 	/**
 	 * parsing function for a user id packet (tag 13).
