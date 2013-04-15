@@ -7383,7 +7383,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130414";
+	this.versionstring ="OpenPGP.js v.1.20130415";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8294,6 +8294,7 @@ function _openpgp () {
 	 * be 1024+, generally)
 	 * @param {String} userId assumes already in form of "User Name 
 	 * <username@email.com>"
+	 * @param {String} passphrase The passphrase used to encrypt the resulting private key
 	 * @return {Object} {privateKey: [openpgp_msg_privatekey], 
 	 * privateKeyArmored: [string], publicKeyArmored: [string]}
 	 */
@@ -11152,8 +11153,9 @@ function openpgp_packet_literaldata() {
 
 		var format = input[position];
 
-		this.filename = input.substr(position + 2, input
-				.charCodeAt(position + 1));
+		this.filename = util.decode_utf8(input.substr(position + 2, input
+				.charCodeAt(position + 1)));
+
 		this.date = new Date(parseInt(input.substr(position + 2
 				+ input.charCodeAt(position + 1), 4)) * 1000);
 
@@ -11172,7 +11174,7 @@ function openpgp_packet_literaldata() {
 	 */
 	this.write_packet = function(data) {
 		this.set_data(data, this.formats.utf8)
-		this.filename = "msg.txt";
+		this.filename = util.encode_utf8("msg.txt");
 		this.date = new Date();
 
 		data = this.get_data_bytes();
@@ -13032,6 +13034,7 @@ function openpgp_type_s2k() {
 	 * hashAlgorithm hash length
 	 */
 	function produce_key(passphrase, numBytes) {
+		passphrase = util.encode_utf8(passphrase)
 		if (this.type == 0) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
