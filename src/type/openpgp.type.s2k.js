@@ -114,6 +114,7 @@ function openpgp_type_s2k() {
 	 * hashAlgorithm hash length
 	 */
 	function produce_key(passphrase, numBytes) {
+		passphrase = util.encode_utf8(passphrase)
 		if (this.type == 0) {
 			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {

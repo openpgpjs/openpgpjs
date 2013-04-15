@@ -26,38 +26,71 @@
  */
 
 function openpgp_packet_userid() {
+	this.text = ''
 	this.tagType = 13;
 	this.certificationSignatures = new Array();
 	this.certificationRevocationSignatures = new Array();
 	this.revocationSignatures = new Array();
 	this.parentNode = null;
+	
+	/**
+	 * Set the packet text field to a native javascript string
+	 * Conversion to a proper utf8 encoding takes place when the 
+	 * packet is written.
+	 * @param {String} str Any native javascript string
+	 */
+	this.set_text = function(str) {
+		this.text = str
+	}
 
 	/**
-	 * parsing function for a user id packet (tag 13).
+	 * Set the packet text to value represented by the provided string
+	 * of bytes.
+	 * @param {String} bytes A string of bytes
+	 */
+	this.set_text_bytes = function(bytes) {
+		this.text = util.decode_utf8(bytes)
+	}
+
+	/**
+	 * Get the byte sequence representing the text of this packet.
+	 * @returns {String} A sequence of bytes
+	 */
+	this.get_text_bytes = function() {
+		return util.encode_utf8(this.text);
+	}
+	
+
+	/**
+	 * Parsing function for a user id packet (tag 13).
 	 * @param {String} input payload of a tag 13 packet
 	 * @param {Integer} position position to start reading from the input string
 	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read_packet(input, position, len) {
-		this.text = '';
+	this.read_packet = function(input, position, len) {
 		this.packetLength = len;
 
+		var bytes = ''
 		for ( var i = 0; i < len; i++) {
-			this.text += input[position + i];
+			bytes += input[position + i];
 		}
+
+		this.set_text_bytes(bytes)
 		return this;
 	}
 
 	/**
-	 * creates a string representation of the user id packet
+	 * Creates a string representation of the user id packet
 	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
 	 * @return {String} string representation
 	 */
-	function write_packet(user_id) {
-		this.text = user_id;
-		var result = openpgp_packet.write_packet_header(13,this.text.length);
-		result += this.text;
+	this.write_packet = function(user_id) {
+		this.set_text(user_id);
+		var bytes = this.get_text_bytes()
+
+		var result = openpgp_packet.write_packet_header(13, bytes.length);
+		result += bytes;
 		return result;
 	}
 
@@ -69,7 +102,7 @@ function openpgp_packet_userid() {
 	 * @param {Integer} len length of the packet(s) or remaining length of input
 	 * @return {Integer} length of nodes read
 	 */
-	function read_nodes(parent_node, input, position, len) {
+	this.read_nodes = function(parent_node, input, position, len) {
 		if (parent_node.tagType == 6) { // public key
 			this.parentNode = parent_node;
 			var pos = position;
@@ -149,7 +182,7 @@ function openpgp_packet_userid() {
 	 * generates debug output (pretty print)
 	 * @return {String} String which gives some information about the user id packet
 	 */
-	function toString() {
+	this.toString = function() {
 		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
 				+ this.text.length + '): "' + this.text.replace("<", "&lt;")
 				+ '"\n';
@@ -169,7 +202,7 @@ function openpgp_packet_userid() {
 	 * @param {String} keyId string containing the key id of the issuer of this signature
 	 * @return a CertificationRevocationSignature if found; otherwise null
 	 */
-	function hasCertificationRevocationSignature(keyId) {
+	this.hasCertificationRevocationSignature = function(keyId) {
 		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
 			if ((this.certificationRevocationSignatures[i].version == 3 &&
 				 this.certificationRevocationSignatures[i].keyId == keyId) ||
@@ -192,7 +225,8 @@ function openpgp_packet_userid() {
 	 * 5 = signature by key owner expired
 	 * 6 = signature by key owner revoked
 	 */
-	function verifyCertificationSignatures(publicKeyPacket) {
+	this.verifyCertificationSignatures = function(publicKeyPacket) {
+		var bytes = this.get_text_bytes()
 		result = new Array();
 		for (var i = 0 ; i < this.certificationSignatures.length; i++) {
 			// A certification signature (type 0x10 through 0x13) hashes the User
@@ -235,13 +269,14 @@ function openpgp_packet_userid() {
 				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].issuerKeyId);
 				if (revocation != null && revocation.creationTime > 
 					this.certificationSignatures[i].creationTime) {
+
 					var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
 					publicKeyPacket.data+String.fromCharCode(0xB4)+
-					String.fromCharCode((this.text.length >> 24) & 0xFF)+
-					String.fromCharCode((this.text.length >> 16) & 0xFF)+
-					String.fromCharCode((this.text.length >>  8) & 0xFF)+
-					String.fromCharCode((this.text.length) & 0xFF)+
-					this.text;
+					String.fromCharCode((bytes.length >> 24) & 0xFF)+
+					String.fromCharCode((bytes.length >> 16) & 0xFF)+
+					String.fromCharCode((bytes.length >>  8) & 0xFF)+
+					String.fromCharCode((bytes.length) & 0xFF)+
+					bytes;
 					if (revocation.verify(signaturedata, signingKey)) {
 						if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
 							result[i] = 6;
@@ -250,13 +285,14 @@ function openpgp_packet_userid() {
 						continue;
 					}
 				}
+
 				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
 						publicKeyPacket.data+String.fromCharCode(0xB4)+
-						String.fromCharCode((this.text.length >> 24) & 0xFF)+
-						String.fromCharCode((this.text.length >> 16) & 0xFF)+
-						String.fromCharCode((this.text.length >>  8) & 0xFF)+
-						String.fromCharCode((this.text.length) & 0xFF)+
-						this.text;
+						String.fromCharCode((bytes.length >> 24) & 0xFF)+
+						String.fromCharCode((bytes.length >> 16) & 0xFF)+
+						String.fromCharCode((bytes.length >>  8) & 0xFF)+
+						String.fromCharCode((bytes.length) & 0xFF)+
+						bytes;
 				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
 					result[i] = 4;
 				} else
@@ -281,7 +317,7 @@ function openpgp_packet_userid() {
 				if (revocation != null && revocation.creationTime > 
 					this.certificationSignatures[i].creationTime) {
 					var signaturedata = String.fromCharCode(0x99)+ this.publicKeyPacket.header.substring(1)+
-					this.publicKeyPacket.data+this.text;
+					this.publicKeyPacket.data+bytes;
 					if (revocation.verify(signaturedata, signingKey)) {
 						if (revocation.keyId == publicKeyPacket.getKeyId())
 							result[i] = 6;
@@ -291,7 +327,7 @@ function openpgp_packet_userid() {
 					}
 				}
 				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data+this.text;
+					publicKeyPacket.data + bytes;
 				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
 					result[i] = 4;
 				} else 
@@ -307,7 +343,7 @@ function openpgp_packet_userid() {
 	 * verifies the signatures of the user id
 	 * @return 0 if the userid is valid; 1 = userid expired; 2 = userid revoked
 	 */
-	function verify(publicKeyPacket) {
+	this.verify = function(publicKeyPacket) {
 		var result = this.verifyCertificationSignatures(publicKeyPacket);
 		if (result.indexOf(6) != -1)
 			return 2;
@@ -317,20 +353,12 @@ function openpgp_packet_userid() {
 	}
 
 	// TODO: implementation missing
-	function addCertification(publicKeyPacket, privateKeyPacket) {
+	this.addCertification = function(publicKeyPacket, privateKeyPacket) {
 		
 	}
 
 	// TODO: implementation missing
-	function revokeCertification(publicKeyPacket, privateKeyPacket) {
+	this.revokeCertification = function(publicKeyPacket, privateKeyPacket) {
 		
 	}
-
-	this.hasCertificationRevocationSignature = hasCertificationRevocationSignature;
-	this.verifyCertificationSignatures = verifyCertificationSignatures;
-	this.verify = verify;
-	this.read_packet = read_packet;
-	this.write_packet = write_packet;
-	this.toString = toString;
-	this.read_nodes = read_nodes;
 }
