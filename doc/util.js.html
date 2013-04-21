@@ -112,45 +112,68 @@ var Util = function() {
 	    }
 	    return r.join('');
 	};
+
+
+	/**
+	 * Convert a native javascript string to a string of utf8 bytes
+	 * @param {String} str The string to convert
+	 * @return {String} A valid squence of utf8 bytes
+	 */
+	this.encode_utf8 = function(str) {
+		return unescape(encodeURIComponent(str));
+	};
+
+	/**
+	 * Convert a string of utf8 bytes to a native javascript string
+	 * @param {String} utf8 A valid squence of utf8 bytes
+	 * @return {String} A native javascript string
+	 */
+	this.decode_utf8 = function(utf8) {
+		return decodeURIComponent(escape(utf8));
+	};
+
+	var str2bin = function(str, result) {
+		for (var i = 0; i &lt; str.length; i++) {
+			result[i] = str.charCodeAt(i);
+		}
+
+		return result;
+	};
 	
+	var bin2str = function(bin) {
+		var result = [];
+
+		for (var i = 0; i &lt; bin.length; i++) {
+			result.push(String.fromCharCode(bin[i]));
+		}
+
+		return result.join('');
+	};
+
 	/**
 	 * Convert a string to an array of integers(0.255)
 	 * @param {String} str String to convert
 	 * @return {Integer[]} An array of (binary) integers
 	 */
-	this.str2bin = function(str) {
-		var result = new Array();
-		for (var i = 0; i &lt; str.length; i++) {
-			result[i] = str.charCodeAt(i);
-		}
-		
-		return result;
+	this.str2bin = function(str) { 
+		return str2bin(str, new Array(str.length));
 	};
-
+	
+	
 	/**
 	 * Convert an array of integers(0.255) to a string 
 	 * @param {Integer[]} bin An array of (binary) integers to convert
 	 * @return {String} The string representation of the array
 	 */
-	this.bin2str = function(bin) {
-		var result = [];
-		for (var i = 0; i &lt; bin.length; i++) {
-			result.push(String.fromCharCode(bin[i]));
-		}
-		return result.join('');
-	};
+	this.bin2str = bin2str;
 	
 	/**
 	 * Convert a string to a Uint8Array
 	 * @param {String} str String to convert
 	 * @return {Uint8Array} The array of (binary) integers
 	 */
-	this.str2Uint8Array = function(str){
-        var uintArray = new Uint8Array(new ArrayBuffer(str.length));
-        for(var n = 0; n &lt; str.length; n++){
-            uintArray[n] = str.charCodeAt(n);
-        }
-        return uintArray;
+	this.str2Uint8Array = function(str) { 
+		return str2bin(str, new Uint8Array(new ArrayBuffer(str.length))); 
 	};
 	
 	/**
@@ -159,13 +182,7 @@ var Util = function() {
 	 * @param {Uint8Array} bin An array of (binary) integers to convert
 	 * @return {String} String representation of the array
 	 */
-	this.Uint8Array2str = function(bin) {
-        var result = [];
-        for(n = 0; n&lt; bin.length; n++){
-            result[n] = String.fromCharCode(bin[n]);
-        }
-        return result.join('');
-	};
+	this.Uint8Array2str = bin2str;
 	
 	/**
 	 * Calculates a 16bit sum of a string by adding each character 
@@ -322,13 +339,13 @@ var util = new Util();
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#decode_utf8">decode_utf8</a></li><li><a href="global.html#encode_utf8">encode_utf8</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Fri Apr 12 2013 14:20:33 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Tue Apr 16 2013 10:42:39 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

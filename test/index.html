@@ -76,10 +76,9 @@
 <script type="text/javascript" src="ciphers/openpgp.crypto.js"></script>
 <script type="text/javascript" src="ciphers/openpgp.sigcheck.js"></script>
 
+<script type="text/javascript" src="general/openpgp.basic.js"></script>
 <title>OpenPGP.js testpage</title>
 
-</head>
-<body>
 <style>
 * {
 	font-family: monospace;
@@ -102,7 +101,11 @@
 #unittests {
 	width: 98%;
 	max-width: 99%;
+	table-layout: fixed;
+	word-wrap: break-word;
+	white-space: pre;
 }
+
 
 #unittests tbody tr th {
 	background-color: #eee;
@@ -134,7 +137,6 @@ function showMessages(str) {
 }
 
 function unit_tests() {
-	$('#unittests').empty();
 	$('#unittests').append("<tr><th>Unit</th><th>Description</th><th>Result</th></tr>");
 	var result = unittests.runAll();
 	var html = "";
@@ -151,11 +153,23 @@ function unit_tests() {
 }
 
 </script>
-<a href="index.html">Unit Tests</a> | <a href="parser.html">Parser</a> | <a href="encryption.html">Encryption / Decryption</a> | <a href="coverage.html">Coverage</a>
+</head>
+<body>
+	<a href="index.html">Unit Tests</a> | 
+	<a href="parser.html">Parser</a> | 
+	<a href="encryption.html">Encryption / Decryption</a> | 
+	<a href="coverage.html">Coverage</a>
+
 <p><input id="enabledebug" type="checkbox" onclick="($('#enabledebug').is(':checked') ? openpgp.config.debug = true : openpgp.config.debug = false)"> Print Debug Messages </p>  
 <h1>Unit tests</h1>
 
-<table id="unittests"></table><br>
+<table id="unittests">
+	<colgroup>
+		<col style="width: 20%;">
+		<col>
+		<col style="width: 5%;">
+	</colgroup>
+</table><br>
 <button type="submit" onmousedown="unit_tests();">Run unit tests</button>
 
 <!-- src/util/util.js print_debug() writes to  -->
