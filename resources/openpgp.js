@@ -7512,29 +7512,66 @@ function r2s(t) {
  * DeArmor an OpenPGP armored message; verify the checksum and return 
  * the encoded bytes
  * @param {String} text OpenPGP armored message
- * @returns {(String|Object)} Either the bytes of the decoded message 
+ * @returns {(Boolean|Object)} Either false in case of an error 
  * or an object with attribute "text" containing the message text
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
-	var type = getPGPMessageType(text);
+	text = text.replace(/\r/g, '')
+
+	var type = openpgp_encoding_get_type(text);
+
 	if (type != 2) {
-	var splittedtext = text.split('-----');
-	data = { openpgp: openpgp_encoding_base64_decode(splittedtext[2].split('\n\n')[1].split("\n=")[0].replace(/\n- /g,"\n")),
-			type: type};
-	if (verifyCheckSum(data.openpgp, splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]))
-		return data;
-	else
-		util.print_error("Ascii armor integrity check on message failed: '"+splittedtext[2].split('\n\n')[1].split("\n=")[1].split('\n')[0]+"' should be '"+getCheckSum(data))+"'";
+		var splittedtext = text.split('-----');
+
+		var data = { 
+			openpgp: openpgp_encoding_base64_decode(
+				splittedtext[2]
+					.split('\n\n')[1]
+					.split("\n=")[0]
+					.replace(/\n- /g,"\n")),
+			type: type
+		};
+
+		if (verifyCheckSum(data.openpgp, 
+			splittedtext[2]
+				.split('\n\n')[1]
+				.split("\n=")[1]
+				.split('\n')[0]))
+
+			return data;
+		else {
+			util.print_error("Ascii armor integrity check on message failed: '"
+				+ splittedtext[2]
+					.split('\n\n')[1]
+					.split("\n=")[1]
+					.split('\n')[0] 
+				+ "' should be '"
+				+ getCheckSum(data)) + "'";
+			return false;
+		}
 	} else {
 		var splittedtext = text.split('-----');
-		var result = { text: splittedtext[2].replace(/\n- /g,"\n").split("\n\n")[1],
-		               openpgp: openpgp_encoding_base64_decode(splittedtext[4].split("\n\n")[1].split("\n=")[0]),
-		               type: type};
-		if (verifyCheckSum(result.openpgp, splittedtext[4].split("\n\n")[1].split("\n=")[1]))
+
+		var result = {
+			text: splittedtext[2]
+				.replace(/\n- /g,"\n")
+				.split("\n\n")[1],
+			openpgp: openpgp_encoding_base64_decode(splittedtext[4]
+				.split("\n\n")[1]
+				.split("\n=")[0]),
+			type: type
+		};
+
+		if (verifyCheckSum(result.openpgp, splittedtext[4]
+			.split("\n\n")[1]
+			.split("\n=")[1]))
+
 				return result;
-		else
+		else {
 			util.print_error("Ascii armor integrity check on message failed");
+			return false;
+		}
 	}
 }
 
@@ -7549,7 +7586,7 @@ function openpgp_encoding_deArmor(text) {
  *         5 = PRIVATE KEY BLOCK
  *         null = unknown
  */
-function getPGPMessageType(text) {
+function openpgp_encoding_get_type(text) {
 	var splittedtext = text.split('-----');
 	// BEGIN PGP MESSAGE, PART X/Y
 	// Used for multi-part messages, where the armor is split amongst Y
