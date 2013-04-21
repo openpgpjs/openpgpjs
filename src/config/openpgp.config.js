@@ -46,7 +46,7 @@ function openpgp_config() {
 	 * configuration was in place
 	 */
 	this.default_config = {
-			prefer_hash_algorithm: 2,
+			prefer_hash_algorithm: 8,
 			encryption_cipher: 9,
 			compression: 1,
 			show_version: true,

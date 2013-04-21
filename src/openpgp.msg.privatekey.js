@@ -122,6 +122,8 @@ function openpgp_msg_privatekey() {
 			var dsa = new DSA();
 			return dsa.select_hash_algorithm(pkey.publicKey.MPIs[1].toBigInteger()); // q
 		}
+		//TODO implement: https://tools.ietf.org/html/rfc4880#section-5.2.3.8
+		//separate private key preference from digest preferences
 		return openpgp.config.config.prefer_hash_algorithm;
 			
 	}
