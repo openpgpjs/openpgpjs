@@ -50,6 +50,15 @@ function openpgp_packet_encrypteddata() {
 		return this;
 	}
 
+	this.read = function(bytes) {
+		this.encryptedData = bytes;
+		this.decryptedData = null;
+	}
+
+	this.write = function() {
+		return this.encryptedData;
+	}
+
 	/**
 	 * Symmetrically decrypt the packet data
 	 * 
@@ -66,6 +75,11 @@ function openpgp_packet_encrypteddata() {
 		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"+
 				"data: "+util.hexstrdump(this.decryptedData));
 		return this.decryptedData;
+	}
+
+	this.encrypt = function(algo, key) {
+		this.encryptedData = openpgp_crypto_symmetricEncrypt(
+				openpgp_crypto_getPrefixRandom(algo), algo, key, this.decryptedData, true);
 	}
 
 	/**

@@ -402,6 +402,32 @@ function _openpgp_packet() {
 	}
 
 	this.read_packet = read_packet;
+
+
+	/**
+	 * @enum {Integer}
+	 * A list of packet type and numeric tags associated with them.
+	 */
+	this.type = {
+		reserved: 0,
+		public_key_encrypted_session_key: 1,
+		signature: 2,
+		symmetric_key_encrypted_session_key: 3,
+		one_pass_signature: 4,
+		secret_key: 5,
+		public_key: 6,
+		secret_subkey: 7,
+		compressed: 8,
+		symmetrically_encrypted_data: 9,
+		marker: 10,
+		literal: 11,
+		trust: 12,
+		userid: 13,
+		public_subkey: 14,
+		user_attribute: 17,
+		sym_encrypted_and_integrity_protected_data: 18,
+		modification_detection_code: 19
+	};
 }
 
 var openpgp_packet = new _openpgp_packet();

@@ -25,9 +25,14 @@
  * a Signature or One-Pass Signature packet, and contains a literal data
  * packet.
  */   
-function openpgp_packet_compressed() {
+function openpgp_packet_compressed(bytes) {
 	this.tagType = 8;
 	this.decompressedData = null;
+	this.compressedData = null;
+	this.type = 0;
+
+	if(bytes != undefined)
+		this.read(bytes);
 	
 	/**
 	 * Parsing function for the packet.
@@ -46,6 +51,21 @@ function openpgp_packet_compressed() {
 		this.compressedData = input.substring(position+1, position+len);
 		return this;
 	}
+
+	this.read = function(bytes) {
+		this.type = input.charCodeAt(mypos++);
+		this.compressedData = input.substring(position+1, position+len);
+		this.decompressedData = null;
+	}
+	
+	this.write = function() {
+		if(this.compressedData == null)
+			this.compress();
+
+		return String.fromCharCode(this.type) + this.compress();
+	}
+
+
 	/**
 	 * Decompression method for decompressing the compressed data
 	 * read by read_packet
@@ -104,9 +124,7 @@ function openpgp_packet_compressed() {
 	 * @param {String} data Data to be compressed
 	 * @return {String} The compressed data stored in attribute compressedData
 	 */
-	function compress(type, data) {
-		this.type = type;
-		this.decompressedData = data;
+	function compress() {
 		switch (this.type) {
 		case 0: // - Uncompressed
 			this.compressedData = this.decompressedData;
