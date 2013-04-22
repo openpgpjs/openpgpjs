@@ -42,9 +42,8 @@ function openpgp_packet_onepasssignature() {
 	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-		var mypos = position;
+	function read(bytes) {
+		var mypos = 0;
 		// A one-octet version number.  The current version is 3.
 		this.version = input.charCodeAt(mypos++);
 
@@ -81,13 +80,12 @@ function openpgp_packet_onepasssignature() {
 	 *   that describes another signature to be applied to the same message data. 
 	 * @return {String} a string representation of a one-pass signature packet
 	 */
-	function write_packet(type, hashalgorithm, privatekey,length, nested) {
+	function write(type, hashalgorithm, privatekey,length, nested) {
 		var result =""; 
 		
-		result += openpgp_packet.write_packet_header(4,13);
 		result += String.fromCharCode(3);
 		result += String.fromCharCode(type);
-		result += String.fromCharCode(hashalgorithm);
+		result += String.fromCharCode(this.hashAlgorithm);
 		result += String.fromCharCode(privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm);
 		result += privatekey.getKeyId();
 		if (nested)

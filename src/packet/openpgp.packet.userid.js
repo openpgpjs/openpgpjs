@@ -68,30 +68,22 @@ function openpgp_packet_userid() {
 	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	this.read_packet = function(input, position, len) {
-		this.packetLength = len;
-
-		var bytes = '';
-		for ( var i = 0; i < len; i++) {
-			bytes += input[position + i];
-		}
-
+	this.read = function(bytes) {
 		this.set_text_bytes(bytes);
 		return this;
 	}
+
+	this.read_packet = function(){};
 
 	/**
 	 * Creates a string representation of the user id packet
 	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
 	 * @return {String} string representation
 	 */
-	this.write_packet = function(user_id) {
-		this.set_text(user_id);
+	this.write = function() {
 		var bytes = this.get_text_bytes();
 
-		var result = openpgp_packet.write_packet_header(13, bytes.length);
-		result += bytes;
-		return result;
+		return bytes;
 	}
 
 	/**

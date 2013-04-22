@@ -4,10 +4,11 @@
  * @class
  * @classdesc This class represents a list of openpgp packets.
  */
-function openpgp_packetlist(bytes) {
+function openpgp_packetlist() {
 
 	/** @type {openpgp_packet_[]} A list of packets */
 	this.list = []
+
 
 
 	/**
@@ -34,7 +35,16 @@ function openpgp_packetlist(bytes) {
 		var bytes = '';
 
 		for(var i in this.list) {
-			bytes += openpgp_packet.write_header
+			var packetbytes = this.list[i].write();
+			bytes += openpgp_packet.write_packet_header(this.list[i].tag, packetbytes.length);
+			bytes += packetbytes;
+		}
+		
+		return bytes;
+	}
+
+	this.push = function(packet) {
+		this.list.push(packet);
 	}
 
 }

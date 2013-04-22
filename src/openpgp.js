@@ -458,4 +458,20 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
+/** RFC4880, section 9.2 
+ * @enum {Integer}
+ */
+openpgp.symmetric = {
+	plaintext: 0,
+	/** Not implemented! */
+	idea: 1,
+	tripledes: 2,
+	cast5: 3,
+	blowfish: 4,
+	aes128: 7,
+	aes192: 8,
+	aes256: 9,
+	twofish: 10
+};
+
 

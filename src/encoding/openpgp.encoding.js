@@ -37,19 +37,6 @@ function openpgp_encoding_base64_decode(message) {
 }
 
 /**
- * Wrapper function for jquery library.
- * This function escapes HTML characters within a string. This is used 
- * to prevent XSS.
- * @param {String} message Message to escape
- * @return {String} Html encoded string
- */
-function openpgp_encoding_html_encode(message) {
-	if (message == null)
-		return "";
-	return $('<div/>').text(message).html();
-}
-
-/**
  * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)
  * @param {String} message message to be padded
  * @param {Integer} length Length to the resulting message

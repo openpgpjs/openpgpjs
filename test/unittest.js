@@ -1,16 +1,30 @@
 
 var unittests = {
-	tests: Array(),
+	tests: [],
 	register: function(str_title, func_runtest) {
-		this.tests[this.tests.length] = {title: str_title, run: func_runtest};
-		
+		this.tests.push({ title: str_title, run: func_runtest });
 	},
 	
-	runAll: function() {
-		var result = new Array();
-		for (var i = 0; i < this.tests.length; i++) {
-				result[i] = {tests: this.tests[i].run(), title: this.tests[i].title };
+	run: function() {
+		var test = this.tests.shift();
+
+		var result = {
+			title: test.title
+		};
+
+
+		//try
+		{
+			result.tests = test.run();
 		}
+		/*catch(e)
+		{
+			result.tests = [{ 
+				description: 'Failed with an exception: ' + e,
+				result: false
+			}];
+		}*/
+
 		return result;
 	}
 }

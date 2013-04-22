@@ -23,7 +23,10 @@
  * is not to be further interpreted.
  */
 function openpgp_packet_literaldata() {
-	this.tagType = 11;
+	this.tag = 11;
+	this.format = openpgp_packet_literaldata.formats.utf8;
+	this.data = '';
+	this.date = new Date();
 
 	
 	/**
@@ -77,22 +80,21 @@ function openpgp_packet_literaldata() {
 	 *            input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	this.read_packet = function(input, position, len) {
-		this.packetLength = len;
+	this.read = function(bytes) {
 		// - A one-octet field that describes how the data is formatted.
 
 		var format = input[position];
 
-		this.filename = util.decode_utf8(input.substr(position + 2, input
-				.charCodeAt(position + 1)));
+		this.filename = util.decode_utf8(bytes.substr(2, bytes
+				.charCodeAt(1)));
 
-		this.date = new Date(parseInt(input.substr(position + 2
-				+ input.charCodeAt(position + 1), 4)) * 1000);
+		this.date = new Date(parseInt(bytes.substr(2
+				+ bytes.charCodeAt(1), 4)) * 1000);
 
-		var bytes = input.substring(position + 6
-				+ input.charCodeAt(position + 1));
+		var data = bytes.substring(6
+				+ bytes.charCodeAt(1));
 	
-		this.set_data_bytes(bytes, format);
+		this.set_data_bytes(data, format);
 		return this;
 	}
 
@@ -102,18 +104,14 @@ function openpgp_packet_literaldata() {
 	 * @param {String} data The data to be inserted as body
 	 * @return {String} string-representation of the packet
 	 */
-	this.write_packet = function(data) {
-		this.set_data(data, openpgp_packet_literaldata.formats.utf8);
-		this.filename = util.encode_utf8("msg.txt");
-		this.date = new Date();
+	this.write = function() {
+		var filename = util.encode_utf8("msg.txt");
 
-		data = this.get_data_bytes();
+		var data = this.get_data_bytes();
 
-		var result = openpgp_packet.write_packet_header(11, data.length + 6
-				+ this.filename.length);
 		result += this.format;
-		result += String.fromCharCode(this.filename.length);
-		result += this.filename;
+		result += String.fromCharCode(filename.length);
+		result += filename;
 		result += String
 				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
 		result += String

@@ -34,10 +34,10 @@
  */
 function openpgp_packet_userattribute() {
 	this.tagType = 17;
-	this.certificationSignatures = new Array();
-	this.certificationRevocationSignatures = new Array();
-	this.revocationSignatures = new Array();
-	this.parentNode = null;
+	this.certificationSignatures = [];
+	this.certificationRevocationSignatures = [];
+	this.revocationSignatures = [];
+	this.userattributes = [];
 
 	/**
 	 * parsing function for a user attribute packet (tag 17).
@@ -46,44 +46,44 @@ function openpgp_packet_userattribute() {
 	 * @param {Integer} len length of the packet or the remaining length of input at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read_packet (input, position, len) {
-		var total_len = 0;
-		this.packetLength = len;
-		this.userattributes = new Array();
+	this.read = function(bytes) {
 		var count = 0;
-		var mypos = position;
-		while (len != total_len) {
+		var mypos = 0;
+		var packet_len = 0;
+
+		while (mypos != bytes.length) {
 			var current_len = 0;
 			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
+			if (bytes[mypos].charCodeAt() < 192) {
+				packet_length = bytes[mypos++].charCodeAt();
 				current_len = 1;
 			// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-					+ (input[mypos++].charCodeAt()) + 192;
+			} else if (bytes[mypos].charCodeAt() >= 192 && bytes[mypos].charCodeAt() < 224) {
+				packet_length = ((bytes[mypos++].charCodeAt() - 192) << 8)
+					+ (bytes[mypos++].charCodeAt()) + 192;
 				current_len = 2;
 			// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+			} else if (bytes[mypos].charCodeAt() > 223 && bytes[mypos].charCodeAt() < 255) {
+				packet_length = 1 << (bytes[mypos++].charCodeAt() & 0x1F);
 				current_len = 1;
 			// 4.2.2.3. Five-Octet Lengths
 			} else {
 				current_len = 5;
 				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+				packet_length = (bytes[mypos++].charCodeAt() << 24) | 
+					(bytes[mypos++].charCodeAt() << 16)
+					| (bytes[mypos++].charCodeAt() << 8) | bytes[mypos++].charCodeAt();
 			}
 			
-			var subpackettype = input[mypos++].charCodeAt();
+			var subpackettype = bytes[mypos++].charCodeAt();
 			packet_length--;
 			current_len++;
-			this.userattributes[count] = new Array();
-			this.userattributes[count] = input.substring(mypos, mypos + packet_length);
+			this.userattributes[count] = [];
+			this.userattributes[count] = bytes.substring(mypos, mypos + packet_len);
 			mypos += packet_length;
-			total_len += current_len+packet_length;
+			total_len += current_len+packet_len;
 		}
-		this.packetLength = mypos - position;
+
 		return this;
 	}
 	
