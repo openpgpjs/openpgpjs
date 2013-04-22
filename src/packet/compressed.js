@@ -25,14 +25,12 @@
  * a Signature or One-Pass Signature packet, and contains a literal data
  * packet.
  */   
-function openpgp_packet_compressed(bytes) {
-	this.tagType = 8;
-	this.decompressedData = null;
-	this.compressedData = null;
-	this.type = 0;
+function openpgp_packet_compressed() {
+	this.tag = 8;
+	this.packets = new openpgp_packetlist();
+	this.algorithm = openpgp.compression.uncompressed;
+	this.compressed = null;
 
-	if(bytes != undefined)
-		this.read(bytes);
 	
 	/**
 	 * Parsing function for the packet.
@@ -42,27 +40,22 @@ function openpgp_packet_compressed(bytes) {
 	 * input at position
 	 * @return {openpgp_packet_compressed} Object representation
 	 */
-	function read_packet (input, position, len) {
-		this.packetLength = len;
-		var mypos = position;
+	this.read = function(bytes) {
 		// One octet that gives the algorithm used to compress the packet.
-		this.type = input.charCodeAt(mypos++);
+		this.algorithm = input.charCodeAt(0);
 		// Compressed data, which makes up the remainder of the packet.
-		this.compressedData = input.substring(position+1, position+len);
-		return this;
+		this.compressed = input.substr(1);
+
+		this.decompress();
 	}
 
-	this.read = function(bytes) {
-		this.type = input.charCodeAt(mypos++);
-		this.compressedData = input.substring(position+1, position+len);
-		this.decompressedData = null;
-	}
+	
 	
 	this.write = function() {
-		if(this.compressedData == null)
+		if(this.compressed == null)
 			this.compress();
 
-		return String.fromCharCode(this.type) + this.compress();
+		return String.fromCharCode(this.type) + this.compressed;
 	}
 
 
@@ -71,51 +64,61 @@ function openpgp_packet_compressed(bytes) {
 	 * read by read_packet
 	 * @return {String} The decompressed data
 	 */
-	function decompress() {
-		if (this.decompressedData != null)
-			return this.decompressedData;
+	this.decompress = function() {
+		var bytes;
 
-		if (this.type == null)
-			return null;
-
-		switch (this.type) {
-		case 0: // - Uncompressed
-			this.decompressedData = this.compressedData;
+		switch (this.algorithm) {
+		case openpgp.compression.uncompressed:
+			decompressed = this.compressed;
 			break;
-		case 1: // - ZIP [RFC1951]
+
+		case openpgp.compression.zip:
 			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
-			var compData = this.compressedData;
+			var compData = this.compressed;
+
 			var radix = s2r(compData).replace(/\n/g,"");
 			// no header in this case, directly call deflate
 			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
-			this.decompressedData = unescape(jxg_obj.deflate()[0][0]);
+
+			decompressed = unescape(jxg_obj.deflate()[0][0]);
 			break;
-		case 2: // - ZLIB [RFC1950]
+
+		case openpgp.compression.zlib:
 			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
-			var compressionMethod = this.compressedData.charCodeAt(0) % 0x10; //RFC 1950. Bits 0-3 Compression Method
+			//RFC 1950. Bits 0-3 Compression Method
+			var compressionMethod = this.compressed.charCodeAt(0) % 0x10;
+
 			//Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
-			//2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary (how is this defined). Basic checksum, and compression level.
+			// 2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary 
+			// (how is this defined). Basic checksum, and compression level.
+
 			if (compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
 				// remove 4 bytes ADLER32 checksum from the end
-				var compData = this.compressedData.substring(0, this.compressedData.length - 4);
+				var compData = this.compressed.substring(0, this.compressed.length - 4);
 				var radix = s2r(compData).replace(/\n/g,"");
 				//TODO check ADLER32 checksum
-				this.decompressedData = JXG.decompress(radix);
+				decompressed = JXG.decompress(radix);
 				break;
+
 			} else {
-				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
+				util.print_error("Compression algorithm ZLIB only supports " +
+					"DEFLATE compression method.");
 			}
 			break;
-		case 3: //  - BZip2 [BZ2]
+
+		case openpgp.compression.bzip2:
 			// TODO: need to implement this
 			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
 			break;
+
 		default:
 			util.print_error("Compression algorithm unknown :"+this.type);
 			break;
 		}
-		util.print_debug("decompressed:"+util.hexstrdump(this.decompressedData));
-		return this.decompressedData; 
+
+		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
+
+		this.packets.read(decompressed);
 	}
 
 	/**
@@ -124,59 +127,41 @@ function openpgp_packet_compressed(bytes) {
 	 * @param {String} data Data to be compressed
 	 * @return {String} The compressed data stored in attribute compressedData
 	 */
-	function compress() {
+	this.compress = function() {
 		switch (this.type) {
-		case 0: // - Uncompressed
-			this.compressedData = this.decompressedData;
+
+		case openpgp.compression.uncompressed: // - Uncompressed
+			this.compressed = this.packets.write();
 			break;
-		case 1: // - ZIP [RFC1951]
+
+		case openpgp.compression.zip: // - ZIP [RFC1951]
 			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
 			break;
-		case 2: // - ZLIB [RFC1950]
+
+		case openpgp.compression.zlib: // - ZLIB [RFC1950]
 			// TODO: need to implement this
 			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
 			break;
-		case 3: //  - BZip2 [BZ2]
+
+		case openpgp.compression.bzip2: //  - BZip2 [BZ2]
 			// TODO: need to implement this
 			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
 			break;
+
 		default:
 			util.print_error("Compression algorithm unknown :"+this.type);
 			break;
 		}
-		this.packetLength = this.compressedData.length +1;
-		return this.compressedData; 
 	}
 	
-	/**
-	 * Creates a string representation of the packet
-	 * @param {Integer} algorithm Algorithm to be used // See RFC 4880 9.3
-	 * @param {String} data Data to be compressed
-	 * @return {String} String-representation of the packet
-	 */
-	function write_packet(algorithm, data) {
-		this.decompressedData = data;
-		if (algorithm == null) {
-			this.type = 1;
-		}
-		var result = String.fromCharCode(this.type)+this.compress(this.type);
-		return openpgp_packet.write_packet_header(8, result.length)+result;
-	}
 	
 	/**
 	 * Pretty printing the packet (useful for debug purposes)
 	 * @return {String}
 	 */
-	function toString() {
+	this.toString = function() {
 		return '5.6.  Compressed Data Packet (Tag 8)\n'+
-		   '    length:  '+this.packetLength+'\n'+
-			   '    Compression Algorithm = '+this.type+'\n'+
-		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressedData)+']\n';
+			   '    Compression Algorithm = '+this.algorithm+'\n'+
+		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressed)+']\n';
 	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.compress = compress;
-	this.decompress = decompress;
-	this.write_packet = write_packet;
 };

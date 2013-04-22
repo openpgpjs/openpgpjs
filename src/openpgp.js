@@ -458,6 +458,17 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
+/** RFC4880, section 9.1 
+ * @enum {Integer}
+ */
+openpgp.publickey = {
+	rsa_encrypt_sign: 1,
+	rsa_encrypt: 2,
+	rsa_sign: 3,
+	elgamal: 16,
+	dsa: 17
+};
+
 /** RFC4880, section 9.2 
  * @enum {Integer}
  */
@@ -474,4 +485,27 @@ openpgp.symmetric = {
 	twofish: 10
 };
 
+/** RFC4880, section 9.3
+ * @enum {Integer}
+ */
+openpgp.compression = {
+	uncompressed: 0,
+	/** RFC1951 */
+	zip: 1,
+	/** RFC1950 */
+	zlib: 2,
+	bzip2: 3
+};
 
+/** RFC4880, section 9.4
+ * @enum {Integer}
+ */
+openpgp.hash = {
+	md5: 1,
+	sha1: 2,
+	ripemd: 3,
+	sha256: 8,
+	sha384: 9,
+	sha512: 10,
+	sha224: 11
+};

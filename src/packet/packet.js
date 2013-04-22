@@ -304,7 +304,7 @@ function _openpgp_packet() {
 		userid: 13,
 		public_subkey: 14,
 		user_attribute: 17,
-		sym_encrypted_and_integrity_protected: 18,
+		sym_encrypted_integrity_protected: 18,
 		modification_detection_code: 19
 	};
 }

@@ -3,8 +3,6 @@ unittests.register("Packet testing", function() {
 
 	var tests = [function() {
 
-
-
 		var literal = new openpgp_packet_literal();
 		literal.set_data('Hello world', openpgp_packet_literal.format.utf8);
 		
@@ -27,6 +25,27 @@ unittests.register("Packet testing", function() {
 
 		return new test_result('Symmetrically encrypted data packet', 
 			msg2.packets[0].data.packets[0].data == literal.data);
+	}, function() {
+		var key = '12345678901234567890123456789012',
+			algo = openpgp.symmetric.aes256;
+
+		var literal = new openpgp_packet_literal(),
+			enc = new openpgp_packet_sym_encrypted_integrity_protected(),
+			msg = new openpgp_packetlist();
+
+		literal.set_data('Hello world!', openpgp_packet_literal.format.utf8);
+		enc.data.push(literal);
+		enc.encrypt(algo, key);
+		msg.push(enc);
+
+		var msg2 = new openpgp_packetlist();
+		msg2.read(msg.write());
+
+		msg2.packets[0].decrypt(algo, key);
+
+		return new test_result('Sym. encrypted integrity protected data packet', 
+			msg2.packets[0].data.packets[0].data == literal.data);
+	
 	}];
 
 	var results = [];

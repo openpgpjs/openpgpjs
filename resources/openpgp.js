@@ -8362,6 +8362,17 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
+/** RFC4880, section 9.1 
+ * @enum {Integer}
+ */
+openpgp.publickey = {
+	rsa_encrypt_sign: 1,
+	rsa_encrypt: 2,
+	rsa_sign: 3,
+	elgamal: 16,
+	dsa: 17
+};
+
 /** RFC4880, section 9.2 
  * @enum {Integer}
  */
@@ -8378,7 +8389,30 @@ openpgp.symmetric = {
 	twofish: 10
 };
 
+/** RFC4880, section 9.3
+ * @enum {Integer}
+ */
+openpgp.compression = {
+	uncompressed: 0,
+	/** RFC1951 */
+	zip: 1,
+	/** RFC1950 */
+	zlib: 2,
+	bzip2: 3
+};
 
+/** RFC4880, section 9.4
+ * @enum {Integer}
+ */
+openpgp.hash = {
+	md5: 1,
+	sha1: 2,
+	ripemd: 3,
+	sha256: 8,
+	sha384: 9,
+	sha512: 10,
+	sha224: 11
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -9259,6 +9293,173 @@ function openpgp_msg_publickey() {
 
 /**
  * @class
+ * @classdesc Implementation of the Compressed Data Packet (Tag 8)
+ * 
+ * RFC4880 5.6:
+ * The Compressed Data packet contains compressed data.  Typically, this
+ * packet is found as the contents of an encrypted packet, or following
+ * a Signature or One-Pass Signature packet, and contains a literal data
+ * packet.
+ */   
+function openpgp_packet_compressed() {
+	this.tag = 8;
+	this.packets = new openpgp_packetlist();
+	this.algorithm = openpgp.compression.uncompressed;
+	this.compressed = null;
+
+	
+	/**
+	 * Parsing function for the packet.
+	 * @param {String} input Payload of a tag 8 packet
+	 * @param {Integer} position Position to start reading from the input string
+	 * @param {Integer} len Length of the packet or the remaining length of 
+	 * input at position
+	 * @return {openpgp_packet_compressed} Object representation
+	 */
+	this.read = function(bytes) {
+		// One octet that gives the algorithm used to compress the packet.
+		this.algorithm = input.charCodeAt(0);
+		// Compressed data, which makes up the remainder of the packet.
+		this.compressed = input.substr(1);
+
+		this.decompress();
+	}
+
+	
+	
+	this.write = function() {
+		if(this.compressed == null)
+			this.compress();
+
+		return String.fromCharCode(this.type) + this.compressed;
+	}
+
+
+	/**
+	 * Decompression method for decompressing the compressed data
+	 * read by read_packet
+	 * @return {String} The decompressed data
+	 */
+	this.decompress = function() {
+		var bytes;
+
+		switch (this.algorithm) {
+		case openpgp.compression.uncompressed:
+			decompressed = this.compressed;
+			break;
+
+		case openpgp.compression.zip:
+			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
+			var compData = this.compressed;
+
+			var radix = s2r(compData).replace(/\n/g,"");
+			// no header in this case, directly call deflate
+			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
+
+			decompressed = unescape(jxg_obj.deflate()[0][0]);
+			break;
+
+		case openpgp.compression.zlib:
+			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
+			//RFC 1950. Bits 0-3 Compression Method
+			var compressionMethod = this.compressed.charCodeAt(0) % 0x10;
+
+			//Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
+			// 2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary 
+			// (how is this defined). Basic checksum, and compression level.
+
+			if (compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
+				// remove 4 bytes ADLER32 checksum from the end
+				var compData = this.compressed.substring(0, this.compressed.length - 4);
+				var radix = s2r(compData).replace(/\n/g,"");
+				//TODO check ADLER32 checksum
+				decompressed = JXG.decompress(radix);
+				break;
+
+			} else {
+				util.print_error("Compression algorithm ZLIB only supports " +
+					"DEFLATE compression method.");
+			}
+			break;
+
+		case openpgp.compression.bzip2:
+			// TODO: need to implement this
+			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+			break;
+
+		default:
+			util.print_error("Compression algorithm unknown :"+this.type);
+			break;
+		}
+
+		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
+
+		this.packets.read(decompressed);
+	}
+
+	/**
+	 * Compress the packet data (member decompressedData)
+	 * @param {Integer} type Algorithm to be used // See RFC 4880 9.3
+	 * @param {String} data Data to be compressed
+	 * @return {String} The compressed data stored in attribute compressedData
+	 */
+	this.compress = function() {
+		switch (this.type) {
+
+		case openpgp.compression.uncompressed: // - Uncompressed
+			this.compressed = this.packets.write();
+			break;
+
+		case openpgp.compression.zip: // - ZIP [RFC1951]
+			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
+			break;
+
+		case openpgp.compression.zlib: // - ZLIB [RFC1950]
+			// TODO: need to implement this
+			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
+			break;
+
+		case openpgp.compression.bzip2: //  - BZip2 [BZ2]
+			// TODO: need to implement this
+			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+			break;
+
+		default:
+			util.print_error("Compression algorithm unknown :"+this.type);
+			break;
+		}
+	}
+	
+	
+	/**
+	 * Pretty printing the packet (useful for debug purposes)
+	 * @return {String}
+	 */
+	this.toString = function() {
+		return '5.6.  Compressed Data Packet (Tag 8)\n'+
+			   '    Compression Algorithm = '+this.algorithm+'\n'+
+		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressed)+']\n';
+	}
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
  * @classdesc Implementation of the Literal Data Packet (Tag 11)
  * 
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
@@ -9392,343 +9593,6 @@ openpgp_packet_literal.format = {
 	text: 't',
 	/** Utf8 data */
 	utf8: 'u'
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Implementation of the Compressed Data Packet (Tag 8)
- * 
- * RFC4880 5.6:
- * The Compressed Data packet contains compressed data.  Typically, this
- * packet is found as the contents of an encrypted packet, or following
- * a Signature or One-Pass Signature packet, and contains a literal data
- * packet.
- */   
-function openpgp_packet_compressed(bytes) {
-	this.tagType = 8;
-	this.decompressedData = null;
-	this.compressedData = null;
-	this.type = 0;
-
-	if(bytes != undefined)
-		this.read(bytes);
-	
-	/**
-	 * Parsing function for the packet.
-	 * @param {String} input Payload of a tag 8 packet
-	 * @param {Integer} position Position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of 
-	 * input at position
-	 * @return {openpgp_packet_compressed} Object representation
-	 */
-	function read_packet (input, position, len) {
-		this.packetLength = len;
-		var mypos = position;
-		// One octet that gives the algorithm used to compress the packet.
-		this.type = input.charCodeAt(mypos++);
-		// Compressed data, which makes up the remainder of the packet.
-		this.compressedData = input.substring(position+1, position+len);
-		return this;
-	}
-
-	this.read = function(bytes) {
-		this.type = input.charCodeAt(mypos++);
-		this.compressedData = input.substring(position+1, position+len);
-		this.decompressedData = null;
-	}
-	
-	this.write = function() {
-		if(this.compressedData == null)
-			this.compress();
-
-		return String.fromCharCode(this.type) + this.compress();
-	}
-
-
-	/**
-	 * Decompression method for decompressing the compressed data
-	 * read by read_packet
-	 * @return {String} The decompressed data
-	 */
-	function decompress() {
-		if (this.decompressedData != null)
-			return this.decompressedData;
-
-		if (this.type == null)
-			return null;
-
-		switch (this.type) {
-		case 0: // - Uncompressed
-			this.decompressedData = this.compressedData;
-			break;
-		case 1: // - ZIP [RFC1951]
-			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
-			var compData = this.compressedData;
-			var radix = s2r(compData).replace(/\n/g,"");
-			// no header in this case, directly call deflate
-			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
-			this.decompressedData = unescape(jxg_obj.deflate()[0][0]);
-			break;
-		case 2: // - ZLIB [RFC1950]
-			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
-			var compressionMethod = this.compressedData.charCodeAt(0) % 0x10; //RFC 1950. Bits 0-3 Compression Method
-			//Bits 4-7 RFC 1950 are LZ77 Window. Generally this value is 7 == 32k window size.
-			//2nd Byte in RFC 1950 is for "FLAGs" Allows for a Dictionary (how is this defined). Basic checksum, and compression level.
-			if (compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
-				// remove 4 bytes ADLER32 checksum from the end
-				var compData = this.compressedData.substring(0, this.compressedData.length - 4);
-				var radix = s2r(compData).replace(/\n/g,"");
-				//TODO check ADLER32 checksum
-				this.decompressedData = JXG.decompress(radix);
-				break;
-			} else {
-				util.print_error("Compression algorithm ZLIB only supports DEFLATE compression method.");
-			}
-			break;
-		case 3: //  - BZip2 [BZ2]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
-			break;
-		default:
-			util.print_error("Compression algorithm unknown :"+this.type);
-			break;
-		}
-		util.print_debug("decompressed:"+util.hexstrdump(this.decompressedData));
-		return this.decompressedData; 
-	}
-
-	/**
-	 * Compress the packet data (member decompressedData)
-	 * @param {Integer} type Algorithm to be used // See RFC 4880 9.3
-	 * @param {String} data Data to be compressed
-	 * @return {String} The compressed data stored in attribute compressedData
-	 */
-	function compress() {
-		switch (this.type) {
-		case 0: // - Uncompressed
-			this.compressedData = this.decompressedData;
-			break;
-		case 1: // - ZIP [RFC1951]
-			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
-			break;
-		case 2: // - ZLIB [RFC1950]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
-			break;
-		case 3: //  - BZip2 [BZ2]
-			// TODO: need to implement this
-			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
-			break;
-		default:
-			util.print_error("Compression algorithm unknown :"+this.type);
-			break;
-		}
-		this.packetLength = this.compressedData.length +1;
-		return this.compressedData; 
-	}
-	
-	/**
-	 * Creates a string representation of the packet
-	 * @param {Integer} algorithm Algorithm to be used // See RFC 4880 9.3
-	 * @param {String} data Data to be compressed
-	 * @return {String} String-representation of the packet
-	 */
-	function write_packet(algorithm, data) {
-		this.decompressedData = data;
-		if (algorithm == null) {
-			this.type = 1;
-		}
-		var result = String.fromCharCode(this.type)+this.compress(this.type);
-		return openpgp_packet.write_packet_header(8, result.length)+result;
-	}
-	
-	/**
-	 * Pretty printing the packet (useful for debug purposes)
-	 * @return {String}
-	 */
-	function toString() {
-		return '5.6.  Compressed Data Packet (Tag 8)\n'+
-		   '    length:  '+this.packetLength+'\n'+
-			   '    Compression Algorithm = '+this.type+'\n'+
-		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressedData)+']\n';
-	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.compress = compress;
-	this.decompress = decompress;
-	this.write_packet = write_packet;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data 
- * Packet (Tag 18)
- * 
- * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
- * a variant of the Symmetrically Encrypted Data packet. It is a new feature
- * created for OpenPGP that addresses the problem of detecting a modification to
- * encrypted data. It is used in combination with a Modification Detection Code
- * packet.
- */
-
-function openpgp_packet_encryptedintegrityprotecteddata() {
-	this.tagType = 18;
-	this.version = null; // integer == 1
-	this.packetLength = null; // integer
-	this.encryptedData = null; // string
-	this.decrytpedData = null; // string
-	this.hash = null; // string
-	/**
-	 * Parsing function for the packet.
-	 * 
-	 * @param {String} input Payload of a tag 18 packet
-	 * @param {Integer} position
-	 *             position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
-	 *         representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-		// - A one-octet version number. The only currently defined value is
-		// 1.
-		this.version = input[position].charCodeAt();
-		if (this.version != 1) {
-			util
-					.print_error('openpgp.packet.encryptedintegrityprotecteddata.js\nunknown encrypted integrity protected data packet version: '
-							+ this.version
-							+ " , @ "
-							+ position
-							+ "hex:"
-							+ util.hexstrdump(input));
-			return null;
-		}
-		// - Encrypted data, the output of the selected symmetric-key cipher
-		//   operating in Cipher Feedback mode with shift amount equal to the
-		//   block size of the cipher (CFB-n where n is the block size).
-		this.encryptedData = input.substring(position + 1, position + 1 + len);
-		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"
-				+ this.toString());
-		return this;
-	}
-
-	/**
-	 * Creates a string representation of a Sym. Encrypted Integrity Protected
-	 * Data Packet (tag 18) (see RFC4880 5.13)
-	 * 
-	 * @param {Integer} symmetric_algorithm
-	 *            The selected symmetric encryption algorithm to be used
-	 * @param {String} key The key of cipher blocksize length to be used
-	 * @param {String} data
-	 *            Plaintext data to be encrypted within the packet
-	 * @return {String} A string representation of the packet
-	 */
-	function write_packet(symmetric_algorithm, key, data) {
-
-		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
-		var prefix = prefixrandom
-				+ prefixrandom.charAt(prefixrandom.length - 2)
-				+ prefixrandom.charAt(prefixrandom.length - 1);
-		var tohash = data;
-		tohash += String.fromCharCode(0xD3);
-		tohash += String.fromCharCode(0x14);
-		util.print_debug_hexstr_dump("data to be hashed:"
-				, prefix + tohash);
-		tohash += str_sha1(prefix + tohash);
-		util.print_debug_hexstr_dump("hash:"
-				, tohash.substring(tohash.length - 20,
-						tohash.length));
-		var result = openpgp_crypto_symmetricEncrypt(prefixrandom,
-				symmetric_algorithm, key, tohash, false).substring(0,
-				prefix.length + tohash.length);
-		var header = openpgp_packet.write_packet_header(18, result.length + 1)
-				+ String.fromCharCode(1);
-		this.encryptedData = result;
-		return header + result;
-	}
-
-	/**
-	 * Decrypts the encrypted data contained in this object read_packet must
-	 * have been called before
-	 * 
-	 * @param {Integer} symmetric_algorithm_type
-	 *            The selected symmetric encryption algorithm to be used
-	 * @param {String} key The key of cipher blocksize length to be used
-	 * @return {String} The decrypted data of this packet
-	 */
-	function decrypt(symmetric_algorithm_type, key) {
-		this.decryptedData = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encryptedData, false);
-		// there must be a modification detection code packet as the
-		// last packet and everything gets hashed except the hash itself
-		this.hash = str_sha1(openpgp_crypto_MDCSystemBytes(
-				symmetric_algorithm_type, key, this.encryptedData)
-				+ this.decryptedData.substring(0,
-						this.decryptedData.length - 20));
-		util.print_debug_hexstr_dump("calc hash = ", this.hash);
-		if (this.hash == this.decryptedData.substring(
-				this.decryptedData.length - 20, this.decryptedData.length))
-			return this.decryptedData;
-		else
-			util
-					.print_error("Decryption stopped: discovered a modification of encrypted data.");
-		return null;
-	}
-
-	function toString() {
-	    var data = '';
-	    if(openpgp.config.debug)
-	        data = '    data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']';
-	    
-		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
-				+ '    length:  '
-				+ this.packetLength
-				+ '\n'
-				+ '    version: '
-				+ this.version
-				+ '\n'
-				+ data;
-	}
-
-	this.write_packet = write_packet;
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.decrypt = decrypt;
 };
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -10840,85 +10704,6 @@ function openpgp_packet_marker() {
 	this.read_packet = read_packet;
 	this.toString = toString;
 }
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Implementation of the Modification Detection Code Packet (Tag 19)
- * 
- * RFC4880 5.14: The Modification Detection Code packet contains a SHA-1 hash of
- * plaintext data, which is used to detect message modification. It is only used
- * with a Symmetrically Encrypted Integrity Protected Data packet. The
- * Modification Detection Code packet MUST be the last packet in the plaintext
- * data that is encrypted in the Symmetrically Encrypted Integrity Protected
- * Data packet, and MUST appear in no other place.
- */
-
-function openpgp_packet_modificationdetectioncode() {
-	this.tagType = 19;
-	this.hash = null;
-	/**
-	 * parsing function for a modification detection code packet (tag 19).
-	 * 
-	 * @param {String} input payload of a tag 19 packet
-	 * @param {Integer} position
-	 *            position to start reading from the input string
-	 * @param {Integer} len
-	 *            length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	function read_packet(input, position, len) {
-		this.packetLength = len;
-
-		if (len != 20) {
-			util
-					.print_error("openpgp.packet.modificationdetectioncode.js\n"
-							+ 'invalid length for a modification detection code packet!'
-							+ len);
-			return null;
-		}
-		// - A 20-octet SHA-1 hash of the preceding plaintext data of the
-		// Symmetrically Encrypted Integrity Protected Data packet,
-		// including prefix data, the tag octet, and length octet of the
-		// Modification Detection Code packet.
-		this.hash = input.substring(position, position + 20);
-		return this;
-	}
-
-	/*
-	 * this packet is created within the encryptedintegrityprotected packet
-	 * function write_packet(data) { }
-	 */
-
-	/**
-	 * generates debug output (pretty print)
-	 * 
-	 * @return {String} String which gives some information about the 
-	 * modification detection code
-	 */
-	function toString() {
-		return '5.14 Modification detection code packet\n' + '    bytes ('
-				+ this.hash.length + '): [' + util.hexstrdump(this.hash) + ']';
-	}
-	this.read_packet = read_packet;
-	this.toString = toString;
-};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12582,7 +12367,7 @@ function _openpgp_packet() {
 		userid: 13,
 		public_subkey: 14,
 		user_attribute: 17,
-		sym_encrypted_and_integrity_protected: 18,
+		sym_encrypted_integrity_protected: 18,
 		modification_detection_code: 19
 	};
 }
@@ -12638,6 +12423,171 @@ function openpgp_packetlist() {
 		this.packets.push(packet);
 	}
 
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data 
+ * Packet (Tag 18)
+ * 
+ * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
+ * a variant of the Symmetrically Encrypted Data packet. It is a new feature
+ * created for OpenPGP that addresses the problem of detecting a modification to
+ * encrypted data. It is used in combination with a Modification Detection Code
+ * packet.
+ */
+
+function openpgp_packet_sym_encrypted_integrity_protected() {
+	this.tag = 18;
+	this.version = 1;
+	this.encrypted = null; // string
+	this.hash = null; // string
+	this.data = new openpgp_packetlist();
+	this.algorithm = openpgp.symmetric.plaintext;
+
+	/**
+	 * Parsing function for the packet.
+	 * 
+	 * @param {String} input Payload of a tag 18 packet
+	 * @param {Integer} position
+	 *             position to start reading from the input string
+	 * @param {Integer} len Length of the packet or the remaining length of
+	 *            input at position
+	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
+	 *         representation
+	 */
+	this.read = function(bytes) {
+		// - A one-octet version number. The only currently defined value is
+		// 1.
+		this.version = bytes[0].charCodeAt();
+		if (this.version != 1) {
+			util.print_error('openpgp.packet.encryptedintegrityprotecteddata.js' +
+				'\nunknown encrypted integrity protected data packet version: '
+							+ this.version
+							+ "hex:"
+							+ util.hexstrdump(bytes));
+			return null;
+		}
+
+		// - Encrypted data, the output of the selected symmetric-key cipher
+		//   operating in Cipher Feedback mode with shift amount equal to the
+		//   block size of the cipher (CFB-n where n is the block size).
+		this.encrypted = bytes.substr(1);
+	}
+
+	/**
+	 * Creates a string representation of a Sym. Encrypted Integrity Protected
+	 * Data Packet (tag 18) (see RFC4880 5.13)
+	 * 
+	 * @param {Integer} symmetric_algorithm
+	 *            The selected symmetric encryption algorithm to be used
+	 * @param {String} key The key of cipher blocksize length to be used
+	 * @param {String} data
+	 *            Plaintext data to be encrypted within the packet
+	 * @return {String} A string representation of the packet
+	 */
+	this.write = function(symmetric_algorithm, key, data) {
+		return String.fromCharCode(this.version) + this.encrypted;
+	}
+
+	this.encrypt = function(symmetric_algorithm, key) {
+		var bytes = this.data.write()
+		
+		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
+		var prefix = prefixrandom
+				+ prefixrandom.charAt(prefixrandom.length - 2)
+				+ prefixrandom.charAt(prefixrandom.length - 1)
+
+		var tohash = bytes;
+		tohash += String.fromCharCode(0xD3);
+		tohash += String.fromCharCode(0x14);
+
+		util.print_debug_hexstr_dump("data to be hashed:"
+				, prefix + tohash);
+
+		tohash += str_sha1(prefix + tohash);
+
+		util.print_debug_hexstr_dump("hash:"
+				, tohash.substring(tohash.length - 20,
+						tohash.length));
+
+		this.encrypted = openpgp_crypto_symmetricEncrypt(prefixrandom,
+				symmetric_algorithm, key, tohash, false).substring(0,
+				prefix.length + tohash.length);
+	}
+
+	/**
+	 * Decrypts the encrypted data contained in this object read_packet must
+	 * have been called before
+	 * 
+	 * @param {Integer} symmetric_algorithm_type
+	 *            The selected symmetric encryption algorithm to be used
+	 * @param {String} key The key of cipher blocksize length to be used
+	 * @return {String} The decrypted data of this packet
+	 */
+	this.decrypt = function(symmetric_algorithm_type, key) {
+		var decrypted = openpgp_crypto_symmetricDecrypt(
+				symmetric_algorithm_type, key, this.encrypted, false);
+
+
+		// there must be a modification detection code packet as the
+		// last packet and everything gets hashed except the hash itself
+		this.hash = str_sha1(
+			openpgp_crypto_MDCSystemBytes(symmetric_algorithm_type, key, this.encrypted)
+			+ decrypted.substring(0, decrypted.length - 20));
+
+		util.print_debug_hexstr_dump("calc hash = ", this.hash);
+
+		this.data.read(decrypted);
+
+		// We pop the mandatory modification detection code packet.
+		var mdc = this.data.packets.pop();
+
+		if(this.hash != mdc.hash) {
+			this.data = null;
+			util.print_error("Decryption stopped: discovered a " +
+				"modification of encrypted data.");
+			return;
+		}
+	}
+
+	this.toString = function() {
+	    var data = '';
+	    if(openpgp.config.debug)
+	        data = '    data: Bytes ['
+				+ util.hexstrdump(this.encrypted) + ']';
+	    
+		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
+				+ '\n'
+				+ '    version: '
+				+ this.version
+				+ '\n'
+				+ data;
+	}
+
+};
+
+function openpgp_packet_modification_detection_code() {
+	this.hash = null;
+	this.read = function(bytes) {
+		this.hash = bytes;
+	}
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
