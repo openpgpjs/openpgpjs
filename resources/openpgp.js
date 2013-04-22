@@ -9259,6 +9259,159 @@ function openpgp_msg_publickey() {
 
 /**
  * @class
+ * @classdesc Implementation of the Literal Data Packet (Tag 11)
+ * 
+ * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
+ * is not to be further interpreted.
+ */
+function openpgp_packet_literal() {
+	this.tag = 11;
+	this.format = openpgp_packet_literal.format.utf8;
+	this.data = '';
+	this.date = new Date();
+
+	
+	/**
+	 * Set the packet data to a javascript native string or a squence of 
+	 * bytes. Conversion to a proper utf8 encoding takes place when the 
+	 * packet is written.
+	 * @param {String} str Any native javascript string
+	 * @param {openpgp_packet_literaldata.format} format 
+	 */
+	this.set_data = function(str, format) {
+		this.format = format;
+		this.data = str;
+	}
+
+	/**
+	 * Set the packet data to value represented by the provided string
+	 * of bytes together with the appropriate conversion format.
+	 * @param {String} bytes The string of bytes
+	 * @param {openpgp_packet_literaldata.format} format
+	 */
+	this.set_data_bytes = function(bytes, format) {
+		this.format = format;
+
+		if(format == openpgp_packet_literal.format.utf8)
+			bytes = util.decode_utf8(bytes);
+
+		this.data = bytes;
+	}
+
+	/**
+	 * Get the byte sequence representing the literal packet data
+	 * @returns {String} A sequence of bytes
+	 */
+	this.get_data_bytes = function() {
+		if(this.format == openpgp_packet_literal.format.utf8)
+			return util.encode_utf8(this.data);
+		else
+			return this.data;
+	}
+	
+	
+
+	/**
+	 * Parsing function for a literal data packet (tag 11).
+	 * 
+	 * @param {String} input Payload of a tag 11 packet
+	 * @param {Integer} position
+	 *            Position to start reading from the input string
+	 * @param {Integer} len
+	 *            Length of the packet or the remaining length of
+	 *            input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
+	 */
+	this.read = function(bytes) {
+		// - A one-octet field that describes how the data is formatted.
+
+		var format = bytes[0];
+
+		this.filename = util.decode_utf8(bytes.substr(2, bytes
+				.charCodeAt(1)));
+
+		this.date = new Date(parseInt(bytes.substr(2
+				+ bytes.charCodeAt(1), 4)) * 1000);
+
+		var data = bytes.substring(6
+				+ bytes.charCodeAt(1));
+	
+		this.set_data_bytes(data, format);
+	}
+
+	/**
+	 * Creates a string representation of the packet
+	 * 
+	 * @param {String} data The data to be inserted as body
+	 * @return {String} string-representation of the packet
+	 */
+	this.write = function() {
+		var filename = util.encode_utf8("msg.txt");
+
+		var data = this.get_data_bytes();
+
+		var result = '';
+		result += this.format;
+		result += String.fromCharCode(filename.length);
+		result += filename;
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
+		result += String
+				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
+		result += String
+				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
+		result += data;
+		return result;
+	}
+
+	/**
+	 * Generates debug output (pretty print)
+	 * 
+	 * @return {String} String which gives some information about the keymaterial
+	 */
+	this.toString = function() {
+		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
+				+ this.packetLength + '\n' + '    format: ' + this.format
+				+ '\n' + '    filename:' + this.filename + '\n'
+				+ '    date:   ' + this.date + '\n' + '    data:  |'
+				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
+	}
+}
+
+/**
+ * Data types in the literal packet
+ * @readonly
+ * @enum {String}
+ */
+openpgp_packet_literal.format = {
+	/** Binary data */
+	binary: 'b',
+	/** Text data */
+	text: 't',
+	/** Utf8 data */
+	utf8: 'u'
+};
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
  * @classdesc Implementation of the Compressed Data Packet (Tag 8)
  * 
  * RFC4880 5.6:
@@ -9421,86 +9574,6 @@ function openpgp_packet_compressed(bytes) {
 	this.compress = compress;
 	this.decompress = decompress;
 	this.write_packet = write_packet;
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
- * 
- * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
- * with a symmetric-key algorithm. When it has been decrypted, it contains other
- * packets (usually a literal data packet or compressed data packet, but in
- * theory other Symmetrically Encrypted Data packets or sequences of packets
- * that form whole OpenPGP messages).
- */
-
-function openpgp_packet_encrypteddata() {
-	this.tag = 9;
-	this.encrypted = null;
-	this.data = new openpgp_packetlist();
-	this.algorithm = openpgp.symmetric.plaintext;
-
-	
-
-	this.read = function(bytes) {
-		this.encrypted = bytes;
-	}
-
-	this.write = function() {
-		return this.encrypted;
-	}
-
-	/**
-	 * Symmetrically decrypt the packet data
-	 * 
-	 * @param {Integer} symmetric_algorithm_type
-	 *             Symmetric key algorithm to use // See RFC4880 9.2
-	 * @param {String} key
-	 *             Key as string with the corresponding length to the
-	 *            algorithm
-	 * @return The decrypted data;
-	 */
-	this.decrypt = function(symmetric_algorithm_type, key) {
-		var decrypted = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encryptedData, true);
-
-		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"+
-				"data: "+util.hexstrdump(this.decryptedData));
-
-
-		this.data = new openpgp_packetlist(decrypted);
-	}
-
-	this.encrypt = function(algo, key) {
-		var data = this.data.write();
-
-		this.encrypted = openpgp_crypto_symmetricEncrypt(
-				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
-	}
-
-
-	this.toString = function () {
-		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
-				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
-				+ '    encrypted data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']\n';
-	}
 };
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -9883,439 +9956,6 @@ function openpgp_packet_encryptedsessionkey() {
 	this.decrypt = decrypt;
 };
 
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Parent openpgp packet class. Operations focus on determining 
- * packet types and packet header.
- */
-function _openpgp_packet() {
-	/**
-	 * Encodes a given integer of length to the openpgp length specifier to a
-	 * string
-	 * 
-	 * @param {Integer} length The length to encode
-	 * @return {String} String with openpgp length representation
-	 */
-	function encode_length(length) {
-		result = "";
-		if (length < 192) {
-			result += String.fromCharCode(length);
-		} else if (length > 191 && length < 8384) {
-			/*
-			 * let a = (total data packet length) - 192 let bc = two octet
-			 * representation of a let d = b + 192
-			 */
-			result += String.fromCharCode(((length - 192) >> 8) + 192);
-			result += String.fromCharCode((length - 192) & 0xFF);
-		} else {
-			result += String.fromCharCode(255);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
-		}
-		return result;
-	}
-	this.encode_length = encode_length;
-
-	/**
-	 * Writes a packet header version 4 with the given tag_type and length to a
-	 * string
-	 * 
-	 * @param {Integer} tag_type Tag type
-	 * @param {Integer} length Length of the payload
-	 * @return {String} String of the header
-	 */
-	function write_packet_header(tag_type, length) {
-		/* we're only generating v4 packet headers here */
-		var result = "";
-		result += String.fromCharCode(0xC0 | tag_type);
-		result += encode_length(length);
-		return result;
-	}
-
-	/**
-	 * Writes a packet header Version 3 with the given tag_type and length to a
-	 * string
-	 * 
-	 * @param {Integer} tag_type Tag type
-	 * @param {Integer} length Length of the payload
-	 * @return {String} String of the header
-	 */
-	function write_old_packet_header(tag_type, length) {
-		var result = "";
-		if (length < 256) {
-			result += String.fromCharCode(0x80 | (tag_type << 2));
-			result += String.fromCharCode(length);
-		} else if (length < 65536) {
-			result += String.fromCharCode(0x80 | (tag_type << 2) | 1);
-			result += String.fromCharCode(length >> 8);
-			result += String.fromCharCode(length & 0xFF);
-		} else {
-			result += String.fromCharCode(0x80 | (tag_type << 2) | 2);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
-		}
-		return result;
-	}
-	this.write_old_packet_header = write_old_packet_header;
-	this.write_packet_header = write_packet_header;
-	/**
-	 * Generic static Packet Parser function
-	 * 
-	 * @param {String} input Input stream as string
-	 * @param {integer} position Position to start parsing
-	 * @param {integer} len Length of the input from position on
-	 * @return {Object} Returns a parsed openpgp_packet
-	 */
-	function read_packet(input, position, len) {
-		// some sanity checks
-		if (input == null || input.length <= position
-				|| input.substring(position).length < 2
-				|| (input[position].charCodeAt() & 0x80) == 0) {
-			util
-					.print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
-			return null;
-		}
-		var mypos = position;
-		var tag = -1;
-		var format = -1;
-
-		format = 0; // 0 = old format; 1 = new format
-		if ((input[mypos].charCodeAt() & 0x40) != 0) {
-			format = 1;
-		}
-
-		var packet_length_type;
-		if (format) {
-			// new format header
-			tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
-		} else {
-			// old format header
-			tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
-			packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
-		}
-
-		// header octet parsing done
-		mypos++;
-
-		// parsed length from length field
-		var bodydata = null;
-
-		// used for partial body lengths
-		var real_packet_length = -1;
-		if (!format) {
-			// 4.2.1. Old Format Packet Lengths
-			switch (packet_length_type) {
-			case 0: // The packet has a one-octet length. The header is 2 octets
-				// long.
-				packet_length = input[mypos++].charCodeAt();
-				break;
-			case 1: // The packet has a two-octet length. The header is 3 octets
-				// long.
-				packet_length = (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-				break;
-			case 2: // The packet has a four-octet length. The header is 5
-				// octets long.
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-				break;
-			default:
-				// 3 - The packet is of indeterminate length. The header is 1
-				// octet long, and the implementation must determine how long
-				// the packet is. If the packet is in a file, this means that
-				// the packet extends until the end of the file. In general, 
-				// an implementation SHOULD NOT use indeterminate-length 
-				// packets except where the end of the data will be clear 
-				// from the context, and even then it is better to use a 
-				// definite length, or a new format header. The new format 
-				// headers described below have a mechanism for precisely
-				// encoding data of indeterminate length.
-				packet_length = len;
-				break;
-			}
-
-		} else // 4.2.2. New Format Packet Lengths
-		{
-
-			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
-				util.print_debug("1 byte length:" + packet_length);
-				// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192
-					&& input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-						+ (input[mypos++].charCodeAt()) + 192;
-				util.print_debug("2 byte length:" + packet_length);
-				// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223
-					&& input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
-				util.print_debug("4 byte length:" + packet_length);
-				// EEEK, we're reading the full data here...
-				var mypos2 = mypos + packet_length;
-				bodydata = input.substring(mypos, mypos + packet_length);
-				while (true) {
-					if (input[mypos2].charCodeAt() < 192) {
-						var tmplen = input[mypos2++].charCodeAt();
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-						break;
-					} else if (input[mypos2].charCodeAt() >= 192
-							&& input[mypos2].charCodeAt() < 224) {
-						var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8)
-								+ (input[mypos2++].charCodeAt()) + 192;
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-						break;
-					} else if (input[mypos2].charCodeAt() > 223
-							&& input[mypos2].charCodeAt() < 255) {
-						var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
-						packet_length += tmplen;
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						mypos2 += tmplen;
-					} else {
-						mypos2++;
-						var tmplen = (input[mypos2++].charCodeAt() << 24)
-								| (input[mypos2++].charCodeAt() << 16)
-								| (input[mypos2++].charCodeAt() << 8)
-								| input[mypos2++].charCodeAt();
-						bodydata += input.substring(mypos2, mypos2 + tmplen);
-						packet_length += tmplen;
-						mypos2 += tmplen;
-						break;
-					}
-				}
-				real_packet_length = mypos2;
-				// 4.2.2.3. Five-Octet Lengths
-			} else {
-				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
-			}
-		}
-
-		// if there was'nt a partial body length: use the specified
-		// packet_length
-		if (real_packet_length == -1) {
-			real_packet_length = packet_length;
-		}
-
-		if (bodydata == null) {
-			bodydata = input.substring(mypos, mypos + real_packet_length);
-		}
-
-		// alert('tag type: '+this.tag+' length: '+packet_length);
-		var version = 1; // (old format; 2= new format)
-		// if (input[mypos++].charCodeAt() > 15)
-		// version = 2;
-
-		switch (tag) {
-		case 0: // Reserved - a packet tag MUST NOT have this value
-			break;
-		case 1: // Public-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_pub_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 2: // Signature Packet
-			var result = new openpgp_packet_signature();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 3: // Symmetric-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_symmetric_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 4: // One-Pass Signature Packet
-			var result = new openpgp_packet_onepasssignature();
-			if (result.read_packet(bodydata, 0, packet_length)) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 5: // Secret-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag5(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 6: // Public-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag6(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 7: // Secret-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			if (result.read_tag7(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 8: // Compressed Data Packet
-			var result = new openpgp_packet_compressed();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 9: // Symmetrically Encrypted Data Packet
-			var result = new openpgp_packet_encrypteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 10: // Marker Packet = PGP (0x50, 0x47, 0x50)
-			var result = new openpgp_packet_marker();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 11: // Literal Data Packet
-			var result = new openpgp_packet_literaldata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.header = input.substring(position, mypos);
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 12: // Trust Packet
-			// TODO: to be implemented
-			break;
-		case 13: // User ID Packet
-			var result = new openpgp_packet_userid();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 14: // Public-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag14(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 17: // User Attribute Packet
-			var result = new openpgp_packet_userattribute();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 18: // Sym. Encrypted and Integrity Protected Data Packet
-			var result = new openpgp_packet_encryptedintegrityprotecteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 19: // Modification Detection Code Packet
-			var result = new openpgp_packet_modificationdetectioncode();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		default:
-			util.print_error("openpgp.packet.js\n"
-					+ "[ERROR] openpgp_packet: failed to parse packet @:"
-					+ mypos + "\nchar:'"
-					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
-					+ util.hexstrdump(input));
-			return null;
-			break;
-		}
-	}
-
-	this.read_packet = read_packet;
-
-
-	/**
-	 * @enum {Integer}
-	 * A list of packet type and numeric tags associated with them.
-	 */
-	this.type = {
-		reserved: 0,
-		public_key_encrypted_session_key: 1,
-		signature: 2,
-		symmetric_key_encrypted_session_key: 3,
-		one_pass_signature: 4,
-		secret_key: 5,
-		public_key: 6,
-		secret_subkey: 7,
-		compressed: 8,
-		symmetrically_encrypted_data: 9,
-		marker: 10,
-		literal: 11,
-		trust: 12,
-		userid: 13,
-		public_subkey: 14,
-		user_attribute: 17,
-		sym_encrypted_and_integrity_protected_data: 18,
-		modification_detection_code: 19
-	};
-}
-
-var openpgp_packet = new _openpgp_packet();
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -11135,209 +10775,6 @@ function openpgp_packet_keymaterial() {
 	this.write_private_key = write_private_key;
 	this.write_public_key = write_public_key;
 }
-
-
-/**
- * @class
- * @classdesc This class represents a list of openpgp packets.
- */
-function openpgp_packetlist() {
-
-	/** @type {openpgp_packet_[]} A list of packets */
-	this.list = []
-
-
-
-	/**
-	 * Reads a stream of binary data and interprents it as a list of packets.
-	 * @param {openpgp_bytearray} An array of bytes.
-	 */
-	this.read = function(bytes) {
-		var i = 0;
-
-		while(i < bytes.length) {
-			var packet = openpgp_packet.read_packet(bytes, i, bytes.length - i);
-			i += packet.headerLength + packet.packetLength;
-
-			list.push(packet);
-		}
-	}
-
-	/**
-	 * Creates a binary representation of openpgp objects contained within the
-	 * class instance.
-	 * @returns {openpgp_bytearray} An array of bytes containing valid openpgp packets.
-	 */
-	this.write = function() {
-		var bytes = '';
-
-		for(var i in this.list) {
-			var packetbytes = this.list[i].write();
-			bytes += openpgp_packet.write_packet_header(this.list[i].tag, packetbytes.length);
-			bytes += packetbytes;
-		}
-		
-		return bytes;
-	}
-
-	this.push = function(packet) {
-		this.list.push(packet);
-	}
-
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
- * @classdesc Implementation of the Literal Data Packet (Tag 11)
- * 
- * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
- * is not to be further interpreted.
- */
-function openpgp_packet_literaldata() {
-	this.tag = 11;
-	this.format = openpgp_packet_literaldata.formats.utf8;
-	this.data = '';
-	this.date = new Date();
-
-	
-	/**
-	 * Set the packet data to a javascript native string or a squence of 
-	 * bytes. Conversion to a proper utf8 encoding takes place when the 
-	 * packet is written.
-	 * @param {String} str Any native javascript string
-	 * @param {openpgp_packet_literaldata.formats} format 
-	 */
-	this.set_data = function(str, format) {
-		this.format = format;
-		this.data = str;
-	}
-
-	/**
-	 * Set the packet data to value represented by the provided string
-	 * of bytes together with the appropriate conversion format.
-	 * @param {String} bytes The string of bytes
-	 * @param {openpgp_packet_literaldata.formats} format
-	 */
-	this.set_data_bytes = function(bytes, format) {
-		this.format = format;
-
-		if(format == openpgp_packet_literaldata.formats.utf8)
-			bytes = util.decode_utf8(bytes);
-
-		this.data = bytes;
-	}
-
-	/**
-	 * Get the byte sequence representing the literal packet data
-	 * @returns {String} A sequence of bytes
-	 */
-	this.get_data_bytes = function() {
-		if(this.format == openpgp_packet_literaldata.formats.utf8)
-			return util.encode_utf8(this.data);
-		else
-			return this.data;
-	}
-	
-	
-
-	/**
-	 * Parsing function for a literal data packet (tag 11).
-	 * 
-	 * @param {String} input Payload of a tag 11 packet
-	 * @param {Integer} position
-	 *            Position to start reading from the input string
-	 * @param {Integer} len
-	 *            Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		// - A one-octet field that describes how the data is formatted.
-
-		var format = input[position];
-
-		this.filename = util.decode_utf8(bytes.substr(2, bytes
-				.charCodeAt(1)));
-
-		this.date = new Date(parseInt(bytes.substr(2
-				+ bytes.charCodeAt(1), 4)) * 1000);
-
-		var data = bytes.substring(6
-				+ bytes.charCodeAt(1));
-	
-		this.set_data_bytes(data, format);
-		return this;
-	}
-
-	/**
-	 * Creates a string representation of the packet
-	 * 
-	 * @param {String} data The data to be inserted as body
-	 * @return {String} string-representation of the packet
-	 */
-	this.write = function() {
-		var filename = util.encode_utf8("msg.txt");
-
-		var data = this.get_data_bytes();
-
-		result += this.format;
-		result += String.fromCharCode(filename.length);
-		result += filename;
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
-		result += String
-				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
-		result += data;
-		return result;
-	}
-
-	/**
-	 * Generates debug output (pretty print)
-	 * 
-	 * @return {String} String which gives some information about the keymaterial
-	 */
-	this.toString = function() {
-		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
-				+ this.packetLength + '\n' + '    format: ' + this.format
-				+ '\n' + '    filename:' + this.filename + '\n'
-				+ '    date:   ' + this.date + '\n' + '    data:  |'
-				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
-	}
-}
-
-/**
- * Data types in the literal packet
- * @readonly
- * @enum {String}
- */
-openpgp_packet_literaldata.formats = {
-	/** Binary data */
-	binary: 'b',
-	/** Text data */
-	text: 't',
-	/** Utf8 data */
-	utf8: 'u'
-};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12839,6 +12276,445 @@ function openpgp_packet_userid() {
 		
 	}
 }
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Parent openpgp packet class. Operations focus on determining 
+ * packet types and packet header.
+ */
+function _openpgp_packet() {
+	/**
+	 * Encodes a given integer of length to the openpgp length specifier to a
+	 * string
+	 * 
+	 * @param {Integer} length The length to encode
+	 * @return {String} String with openpgp length representation
+	 */
+	function encode_length(length) {
+		result = "";
+		if (length < 192) {
+			result += String.fromCharCode(length);
+		} else if (length > 191 && length < 8384) {
+			/*
+			 * let a = (total data packet length) - 192 let bc = two octet
+			 * representation of a let d = b + 192
+			 */
+			result += String.fromCharCode(((length - 192) >> 8) + 192);
+			result += String.fromCharCode((length - 192) & 0xFF);
+		} else {
+			result += String.fromCharCode(255);
+			result += String.fromCharCode((length >> 24) & 0xFF);
+			result += String.fromCharCode((length >> 16) & 0xFF);
+			result += String.fromCharCode((length >> 8) & 0xFF);
+			result += String.fromCharCode(length & 0xFF);
+		}
+		return result;
+	}
+	this.encode_length = encode_length;
+
+	/**
+	 * Writes a packet header version 4 with the given tag_type and length to a
+	 * string
+	 * 
+	 * @param {Integer} tag_type Tag type
+	 * @param {Integer} length Length of the payload
+	 * @return {String} String of the header
+	 */
+	function write_packet_header(tag_type, length) {
+		/* we're only generating v4 packet headers here */
+		var result = "";
+		result += String.fromCharCode(0xC0 | tag_type);
+		result += encode_length(length);
+		return result;
+	}
+
+	/**
+	 * Writes a packet header Version 3 with the given tag_type and length to a
+	 * string
+	 * 
+	 * @param {Integer} tag_type Tag type
+	 * @param {Integer} length Length of the payload
+	 * @return {String} String of the header
+	 */
+	function write_old_packet_header(tag_type, length) {
+		var result = "";
+		if (length < 256) {
+			result += String.fromCharCode(0x80 | (tag_type << 2));
+			result += String.fromCharCode(length);
+		} else if (length < 65536) {
+			result += String.fromCharCode(0x80 | (tag_type << 2) | 1);
+			result += String.fromCharCode(length >> 8);
+			result += String.fromCharCode(length & 0xFF);
+		} else {
+			result += String.fromCharCode(0x80 | (tag_type << 2) | 2);
+			result += String.fromCharCode((length >> 24) & 0xFF);
+			result += String.fromCharCode((length >> 16) & 0xFF);
+			result += String.fromCharCode((length >> 8) & 0xFF);
+			result += String.fromCharCode(length & 0xFF);
+		}
+		return result;
+	}
+	this.write_old_packet_header = write_old_packet_header;
+	this.write_packet_header = write_packet_header;
+	/**
+	 * Generic static Packet Parser function
+	 * 
+	 * @param {String} input Input stream as string
+	 * @param {integer} position Position to start parsing
+	 * @param {integer} len Length of the input from position on
+	 * @return {Object} Returns a parsed openpgp_packet
+	 */
+	function read_packet(input, position, len) {
+		// some sanity checks
+		if (input == null || input.length <= position
+				|| input.substring(position).length < 2
+				|| (input[position].charCodeAt() & 0x80) == 0) {
+			util
+					.print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
+			return null;
+		}
+		var mypos = position;
+		var tag = -1;
+		var format = -1;
+
+		format = 0; // 0 = old format; 1 = new format
+		if ((input[mypos].charCodeAt() & 0x40) != 0) {
+			format = 1;
+		}
+
+		var packet_length_type;
+		if (format) {
+			// new format header
+			tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
+		} else {
+			// old format header
+			tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
+			packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
+		}
+
+		// header octet parsing done
+		mypos++;
+
+		// parsed length from length field
+		var bodydata = null;
+
+		// used for partial body lengths
+		var real_packet_length = -1;
+		if (!format) {
+			// 4.2.1. Old Format Packet Lengths
+			switch (packet_length_type) {
+			case 0: // The packet has a one-octet length. The header is 2 octets
+				// long.
+				packet_length = input[mypos++].charCodeAt();
+				break;
+			case 1: // The packet has a two-octet length. The header is 3 octets
+				// long.
+				packet_length = (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+				break;
+			case 2: // The packet has a four-octet length. The header is 5
+				// octets long.
+				packet_length = (input[mypos++].charCodeAt() << 24)
+						| (input[mypos++].charCodeAt() << 16)
+						| (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+				break;
+			default:
+				// 3 - The packet is of indeterminate length. The header is 1
+				// octet long, and the implementation must determine how long
+				// the packet is. If the packet is in a file, this means that
+				// the packet extends until the end of the file. In general, 
+				// an implementation SHOULD NOT use indeterminate-length 
+				// packets except where the end of the data will be clear 
+				// from the context, and even then it is better to use a 
+				// definite length, or a new format header. The new format 
+				// headers described below have a mechanism for precisely
+				// encoding data of indeterminate length.
+				packet_length = len;
+				break;
+			}
+
+		} else // 4.2.2. New Format Packet Lengths
+		{
+
+			// 4.2.2.1. One-Octet Lengths
+			if (input[mypos].charCodeAt() < 192) {
+				packet_length = input[mypos++].charCodeAt();
+				util.print_debug("1 byte length:" + packet_length);
+				// 4.2.2.2. Two-Octet Lengths
+			} else if (input[mypos].charCodeAt() >= 192
+					&& input[mypos].charCodeAt() < 224) {
+				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
+						+ (input[mypos++].charCodeAt()) + 192;
+				util.print_debug("2 byte length:" + packet_length);
+				// 4.2.2.4. Partial Body Lengths
+			} else if (input[mypos].charCodeAt() > 223
+					&& input[mypos].charCodeAt() < 255) {
+				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+				util.print_debug("4 byte length:" + packet_length);
+				// EEEK, we're reading the full data here...
+				var mypos2 = mypos + packet_length;
+				bodydata = input.substring(mypos, mypos + packet_length);
+				while (true) {
+					if (input[mypos2].charCodeAt() < 192) {
+						var tmplen = input[mypos2++].charCodeAt();
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+						break;
+					} else if (input[mypos2].charCodeAt() >= 192
+							&& input[mypos2].charCodeAt() < 224) {
+						var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8)
+								+ (input[mypos2++].charCodeAt()) + 192;
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+						break;
+					} else if (input[mypos2].charCodeAt() > 223
+							&& input[mypos2].charCodeAt() < 255) {
+						var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
+						packet_length += tmplen;
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						mypos2 += tmplen;
+					} else {
+						mypos2++;
+						var tmplen = (input[mypos2++].charCodeAt() << 24)
+								| (input[mypos2++].charCodeAt() << 16)
+								| (input[mypos2++].charCodeAt() << 8)
+								| input[mypos2++].charCodeAt();
+						bodydata += input.substring(mypos2, mypos2 + tmplen);
+						packet_length += tmplen;
+						mypos2 += tmplen;
+						break;
+					}
+				}
+				real_packet_length = mypos2;
+				// 4.2.2.3. Five-Octet Lengths
+			} else {
+				mypos++;
+				packet_length = (input[mypos++].charCodeAt() << 24)
+						| (input[mypos++].charCodeAt() << 16)
+						| (input[mypos++].charCodeAt() << 8)
+						| input[mypos++].charCodeAt();
+			}
+		}
+
+		// if there was'nt a partial body length: use the specified
+		// packet_length
+		if (real_packet_length == -1) {
+			real_packet_length = packet_length;
+		}
+
+		if (bodydata == null) {
+			bodydata = input.substring(mypos, mypos + real_packet_length);
+		}
+
+		// alert('tag type: '+this.tag+' length: '+packet_length);
+		var version = 1; // (old format; 2= new format)
+		// if (input[mypos++].charCodeAt() > 15)
+		// version = 2;
+
+		var names_by_tag = {};
+
+		for(var i in this.type)
+			names_by_tag[this.type[i]] = i;
+
+		var classname = 'openpgp_packet_' + names_by_tag[tag];
+
+		var packetclass = window[classname];
+
+		if(packetclass == undefined) {
+			throw classname;
+			util.print_error("openpgp.packet.js\n"
+					+ "[ERROR] openpgp_packet: failed to parse packet @:"
+					+ mypos + "\nchar:'"
+					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
+					+ util.hexstrdump(input));
+			return null;
+		}
+
+		var result = new packetclass();
+		result.read(bodydata);
+
+		return { 
+			packet: result, 
+			offset: mypos + packet_length
+		};
+	}
+
+	this.read_packet = read_packet;
+
+
+	/**
+	 * @enum {Integer}
+	 * A list of packet type and numeric tags associated with them.
+	 */
+	this.type = {
+		reserved: 0,
+		public_key_encrypted_session_key: 1,
+		signature: 2,
+		symmetric_key_encrypted_session_key: 3,
+		one_pass_signature: 4,
+		secret_key: 5,
+		public_key: 6,
+		secret_subkey: 7,
+		compressed: 8,
+		symmetrically_encrypted: 9,
+		marker: 10,
+		literal: 11,
+		trust: 12,
+		userid: 13,
+		public_subkey: 14,
+		user_attribute: 17,
+		sym_encrypted_and_integrity_protected: 18,
+		modification_detection_code: 19
+	};
+}
+
+var openpgp_packet = new _openpgp_packet();
+
+
+/**
+ * @class
+ * @classdesc This class represents a list of openpgp packets.
+ */
+function openpgp_packetlist() {
+
+	/** @type {openpgp_packet_[]} A list of packets */
+	this.packets = []
+
+
+
+	/**
+	 * Reads a stream of binary data and interprents it as a list of packets.
+	 * @param {openpgp_bytearray} An array of bytes.
+	 */
+	this.read = function(bytes) {
+		this.packets = [];
+		var i = 0;
+
+		while(i < bytes.length) {
+			var parsed = openpgp_packet.read_packet(bytes, i, bytes.length - i);
+			i += parsed.offset;
+
+			this.push(parsed.packet);
+		}
+	}
+
+	/**
+	 * Creates a binary representation of openpgp objects contained within the
+	 * class instance.
+	 * @returns {openpgp_bytearray} An array of bytes containing valid openpgp packets.
+	 */
+	this.write = function() {
+		var bytes = '';
+
+		for(var i in this.packets) {
+			var packetbytes = this.packets[i].write();
+			bytes += openpgp_packet.write_packet_header(this.packets[i].tag, packetbytes.length);
+			bytes += packetbytes;
+		}
+		
+		return bytes;
+	}
+
+	this.push = function(packet) {
+		this.packets.push(packet);
+	}
+
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ * 
+ * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
+ * with a symmetric-key algorithm. When it has been decrypted, it contains other
+ * packets (usually a literal data packet or compressed data packet, but in
+ * theory other Symmetrically Encrypted Data packets or sequences of packets
+ * that form whole OpenPGP messages).
+ */
+
+function openpgp_packet_symmetrically_encrypted() {
+	this.tag = 9;
+	this.encrypted = null;
+	this.data = new openpgp_packetlist();
+	this.algorithm = openpgp.symmetric.plaintext;
+
+	
+
+	this.read = function(bytes) {
+		this.encrypted = bytes;
+	}
+
+	this.write = function() {
+		return this.encrypted;
+	}
+
+	/**
+	 * Symmetrically decrypt the packet data
+	 * 
+	 * @param {Integer} symmetric_algorithm_type
+	 *             Symmetric key algorithm to use // See RFC4880 9.2
+	 * @param {String} key
+	 *             Key as string with the corresponding length to the
+	 *            algorithm
+	 * @return The decrypted data;
+	 */
+	this.decrypt = function(symmetric_algorithm_type, key) {
+		var decrypted = openpgp_crypto_symmetricDecrypt(
+				symmetric_algorithm_type, key, this.encrypted, true);
+
+		this.data.read(decrypted);
+	}
+
+	this.encrypt = function(algo, key) {
+		var data = this.data.write();
+
+		this.encrypted = openpgp_crypto_symmetricEncrypt(
+				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
+	}
+
+
+	this.toString = function () {
+		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
+				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
+				+ '    encrypted data: Bytes ['
+				+ util.hexstrdump(this.encryptedData) + ']\n';
+	}
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 

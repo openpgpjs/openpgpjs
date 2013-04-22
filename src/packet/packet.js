@@ -252,153 +252,32 @@ function _openpgp_packet() {
 		// if (input[mypos++].charCodeAt() > 15)
 		// version = 2;
 
-		switch (tag) {
-		case 0: // Reserved - a packet tag MUST NOT have this value
-			break;
-		case 1: // Public-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_pub_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 2: // Signature Packet
-			var result = new openpgp_packet_signature();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 3: // Symmetric-Key Encrypted Session Key Packet
-			var result = new openpgp_packet_encryptedsessionkey();
-			if (result.read_symmetric_key_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 4: // One-Pass Signature Packet
-			var result = new openpgp_packet_onepasssignature();
-			if (result.read_packet(bodydata, 0, packet_length)) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 5: // Secret-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag5(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 6: // Public-Key Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag6(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 7: // Secret-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			if (result.read_tag7(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 8: // Compressed Data Packet
-			var result = new openpgp_packet_compressed();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 9: // Symmetrically Encrypted Data Packet
-			var result = new openpgp_packet_encrypteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 10: // Marker Packet = PGP (0x50, 0x47, 0x50)
-			var result = new openpgp_packet_marker();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 11: // Literal Data Packet
-			var result = new openpgp_packet_literaldata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.header = input.substring(position, mypos);
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 12: // Trust Packet
-			// TODO: to be implemented
-			break;
-		case 13: // User ID Packet
-			var result = new openpgp_packet_userid();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 14: // Public-Subkey Packet
-			var result = new openpgp_packet_keymaterial();
-			result.header = input.substring(position, mypos);
-			if (result.read_tag14(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 17: // User Attribute Packet
-			var result = new openpgp_packet_userattribute();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 18: // Sym. Encrypted and Integrity Protected Data Packet
-			var result = new openpgp_packet_encryptedintegrityprotecteddata();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		case 19: // Modification Detection Code Packet
-			var result = new openpgp_packet_modificationdetectioncode();
-			if (result.read_packet(bodydata, 0, packet_length) != null) {
-				result.headerLength = mypos - position;
-				result.packetLength = real_packet_length;
-				return result;
-			}
-			break;
-		default:
+		var names_by_tag = {};
+
+		for(var i in this.type)
+			names_by_tag[this.type[i]] = i;
+
+		var classname = 'openpgp_packet_' + names_by_tag[tag];
+
+		var packetclass = window[classname];
+
+		if(packetclass == undefined) {
+			throw classname;
 			util.print_error("openpgp.packet.js\n"
 					+ "[ERROR] openpgp_packet: failed to parse packet @:"
 					+ mypos + "\nchar:'"
 					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
 					+ util.hexstrdump(input));
 			return null;
-			break;
 		}
+
+		var result = new packetclass();
+		result.read(bodydata);
+
+		return { 
+			packet: result, 
+			offset: mypos + packet_length
+		};
 	}
 
 	this.read_packet = read_packet;
@@ -418,14 +297,14 @@ function _openpgp_packet() {
 		public_key: 6,
 		secret_subkey: 7,
 		compressed: 8,
-		symmetrically_encrypted_data: 9,
+		symmetrically_encrypted: 9,
 		marker: 10,
 		literal: 11,
 		trust: 12,
 		userid: 13,
 		public_subkey: 14,
 		user_attribute: 17,
-		sym_encrypted_and_integrity_protected_data: 18,
+		sym_encrypted_and_integrity_protected: 18,
 		modification_detection_code: 19
 	};
 }

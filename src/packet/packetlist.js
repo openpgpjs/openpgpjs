@@ -7,7 +7,7 @@
 function openpgp_packetlist() {
 
 	/** @type {openpgp_packet_[]} A list of packets */
-	this.list = []
+	this.packets = []
 
 
 
@@ -16,13 +16,14 @@ function openpgp_packetlist() {
 	 * @param {openpgp_bytearray} An array of bytes.
 	 */
 	this.read = function(bytes) {
+		this.packets = [];
 		var i = 0;
 
 		while(i < bytes.length) {
-			var packet = openpgp_packet.read_packet(bytes, i, bytes.length - i);
-			i += packet.headerLength + packet.packetLength;
+			var parsed = openpgp_packet.read_packet(bytes, i, bytes.length - i);
+			i += parsed.offset;
 
-			list.push(packet);
+			this.push(parsed.packet);
 		}
 	}
 
@@ -34,9 +35,9 @@ function openpgp_packetlist() {
 	this.write = function() {
 		var bytes = '';
 
-		for(var i in this.list) {
-			var packetbytes = this.list[i].write();
-			bytes += openpgp_packet.write_packet_header(this.list[i].tag, packetbytes.length);
+		for(var i in this.packets) {
+			var packetbytes = this.packets[i].write();
+			bytes += openpgp_packet.write_packet_header(this.packets[i].tag, packetbytes.length);
 			bytes += packetbytes;
 		}
 		
@@ -44,7 +45,7 @@ function openpgp_packetlist() {
 	}
 
 	this.push = function(packet) {
-		this.list.push(packet);
+		this.packets.push(packet);
 	}
 
 }

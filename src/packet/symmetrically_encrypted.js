@@ -26,7 +26,7 @@
  * that form whole OpenPGP messages).
  */
 
-function openpgp_packet_encrypteddata() {
+function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
 	this.data = new openpgp_packetlist();
@@ -54,13 +54,9 @@ function openpgp_packet_encrypteddata() {
 	 */
 	this.decrypt = function(symmetric_algorithm_type, key) {
 		var decrypted = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encryptedData, true);
+				symmetric_algorithm_type, key, this.encrypted, true);
 
-		util.print_debug("openpgp.packet.encryptedintegrityprotecteddata.js\n"+
-				"data: "+util.hexstrdump(this.decryptedData));
-
-
-		this.data = new openpgp_packetlist(decrypted);
+		this.data.read(decrypted);
 	}
 
 	this.encrypt = function(algo, key) {

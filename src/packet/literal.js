@@ -22,9 +22,9 @@
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
  */
-function openpgp_packet_literaldata() {
+function openpgp_packet_literal() {
 	this.tag = 11;
-	this.format = openpgp_packet_literaldata.formats.utf8;
+	this.format = openpgp_packet_literal.format.utf8;
 	this.data = '';
 	this.date = new Date();
 
@@ -34,7 +34,7 @@ function openpgp_packet_literaldata() {
 	 * bytes. Conversion to a proper utf8 encoding takes place when the 
 	 * packet is written.
 	 * @param {String} str Any native javascript string
-	 * @param {openpgp_packet_literaldata.formats} format 
+	 * @param {openpgp_packet_literaldata.format} format 
 	 */
 	this.set_data = function(str, format) {
 		this.format = format;
@@ -45,12 +45,12 @@ function openpgp_packet_literaldata() {
 	 * Set the packet data to value represented by the provided string
 	 * of bytes together with the appropriate conversion format.
 	 * @param {String} bytes The string of bytes
-	 * @param {openpgp_packet_literaldata.formats} format
+	 * @param {openpgp_packet_literaldata.format} format
 	 */
 	this.set_data_bytes = function(bytes, format) {
 		this.format = format;
 
-		if(format == openpgp_packet_literaldata.formats.utf8)
+		if(format == openpgp_packet_literal.format.utf8)
 			bytes = util.decode_utf8(bytes);
 
 		this.data = bytes;
@@ -61,7 +61,7 @@ function openpgp_packet_literaldata() {
 	 * @returns {String} A sequence of bytes
 	 */
 	this.get_data_bytes = function() {
-		if(this.format == openpgp_packet_literaldata.formats.utf8)
+		if(this.format == openpgp_packet_literal.format.utf8)
 			return util.encode_utf8(this.data);
 		else
 			return this.data;
@@ -83,7 +83,7 @@ function openpgp_packet_literaldata() {
 	this.read = function(bytes) {
 		// - A one-octet field that describes how the data is formatted.
 
-		var format = input[position];
+		var format = bytes[0];
 
 		this.filename = util.decode_utf8(bytes.substr(2, bytes
 				.charCodeAt(1)));
@@ -95,7 +95,6 @@ function openpgp_packet_literaldata() {
 				+ bytes.charCodeAt(1));
 	
 		this.set_data_bytes(data, format);
-		return this;
 	}
 
 	/**
@@ -109,6 +108,7 @@ function openpgp_packet_literaldata() {
 
 		var data = this.get_data_bytes();
 
+		var result = '';
 		result += this.format;
 		result += String.fromCharCode(filename.length);
 		result += filename;
@@ -143,7 +143,7 @@ function openpgp_packet_literaldata() {
  * @readonly
  * @enum {String}
  */
-openpgp_packet_literaldata.formats = {
+openpgp_packet_literal.format = {
 	/** Binary data */
 	binary: 'b',
 	/** Text data */
