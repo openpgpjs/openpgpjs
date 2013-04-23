@@ -3787,18 +3787,26 @@ function openpgp_crypto_MDCSystemBytes(algo, key, data) {
  * @return {String} Random bytes as a string to be used as a key
  */
 function openpgp_crypto_generateSessionKey(algo) {
+	return openpgp_crypto_getRandomBytes(openpgp_crypto_getKeyLength(algo)); 
+}
+
+/**
+ * Get the key length by symmetric algorithm id.
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @return {String} Random bytes as a string to be used as a key
+ */
+function openpgp_crypto_getKeyLength(algo) {
 	switch (algo) {
 	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
 	case 8: // AES with 192-bit key
-		return openpgp_crypto_getRandomBytes(24); 
+		return 24;
 	case 3: // CAST5 (128 bit key, as per [RFC2144])
 	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 	case 7: // AES with 128-bit key [AES]
-		util.print_debug("length = 16:\n"+util.hexstrdump(openpgp_crypto_getRandomBytes(16)));
-		return openpgp_crypto_getRandomBytes(16);
+		return 16;
 	case 9: // AES with 256-bit key
 	case 10:// Twofish with 256-bit key [TWOFISH]
-		return openpgp_crypto_getRandomBytes(32);
+		return 32;
 	}
 	return null;
 }
@@ -7383,7 +7391,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130422";
+	this.versionstring ="OpenPGP.js v.1.20130423";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -9303,7 +9311,7 @@ function openpgp_msg_publickey() {
  */   
 function openpgp_packet_compressed() {
 	this.tag = 8;
-	this.packets = new openpgp_packetlist();
+	this.data = new openpgp_packetlist();
 	this.algorithm = openpgp.compression.uncompressed;
 	this.compressed = null;
 
@@ -9312,15 +9320,15 @@ function openpgp_packet_compressed() {
 	 * Parsing function for the packet.
 	 * @param {String} input Payload of a tag 8 packet
 	 * @param {Integer} position Position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of 
+	 * @parAM {iNTEGER} LEN lENGTH OF the packet or the remaining length of 
 	 * input at position
 	 * @return {openpgp_packet_compressed} Object representation
 	 */
 	this.read = function(bytes) {
 		// One octet that gives the algorithm used to compress the packet.
-		this.algorithm = input.charCodeAt(0);
+		this.algorithm = bytes.charCodeAt(0);
 		// Compressed data, which makes up the remainder of the packet.
-		this.compressed = input.substr(1);
+		this.compressed = bytes.substr(1);
 
 		this.decompress();
 	}
@@ -9341,7 +9349,7 @@ function openpgp_packet_compressed() {
 	 * @return {String} The decompressed data
 	 */
 	this.decompress = function() {
-		var bytes;
+		var decompressed;
 
 		switch (this.algorithm) {
 		case openpgp.compression.uncompressed:
@@ -9394,7 +9402,7 @@ function openpgp_packet_compressed() {
 
 		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
 
-		this.packets.read(decompressed);
+		this.data.read(decompressed);
 	}
 
 	/**
@@ -9407,7 +9415,7 @@ function openpgp_packet_compressed() {
 		switch (this.type) {
 
 		case openpgp.compression.uncompressed: // - Uncompressed
-			this.compressed = this.packets.write();
+			this.compressed = this.data.write();
 			break;
 
 		case openpgp.compression.zip: // - ZIP [RFC1951]
@@ -12092,7 +12100,7 @@ function _openpgp_packet() {
 	 * @return {String} String with openpgp length representation
 	 */
 	function encode_length(length) {
-		result = "";
+		var result = "";
 		if (length < 192) {
 			result += String.fromCharCode(length);
 		} else if (length > 191 && length < 8384) {
@@ -12177,6 +12185,7 @@ function _openpgp_packet() {
 		var mypos = position;
 		var tag = -1;
 		var format = -1;
+		var packet_length;
 
 		format = 0; // 0 = old format; 1 = new format
 		if ((input[mypos].charCodeAt() & 0x40) != 0) {
@@ -12354,7 +12363,7 @@ function _openpgp_packet() {
 		reserved: 0,
 		public_key_encrypted_session_key: 1,
 		signature: 2,
-		symmetric_key_encrypted_session_key: 3,
+		sym_encrypted_session_key: 3,
 		one_pass_signature: 4,
 		secret_key: 5,
 		public_key: 6,
@@ -12396,7 +12405,7 @@ function openpgp_packetlist() {
 
 		while(i < bytes.length) {
 			var parsed = openpgp_packet.read_packet(bytes, i, bytes.length - i);
-			i += parsed.offset;
+			i = parsed.offset;
 
 			this.push(parsed.packet);
 		}
@@ -12456,22 +12465,19 @@ function openpgp_packetlist() {
 function openpgp_packet_sym_encrypted_integrity_protected() {
 	this.tag = 18;
 	this.version = 1;
+	/** The encrypted payload. */
 	this.encrypted = null; // string
-	this.hash = null; // string
+	/** @type {Boolean}
+	 * If after decrypting the packet this is set to true,
+	 * a modification has been detected and thus the contents
+	 * should be discarded.
+	 */
+	this.modification = false;
 	this.data = new openpgp_packetlist();
+	/** @type {openpgp.symmetric} */
 	this.algorithm = openpgp.symmetric.plaintext;
 
-	/**
-	 * Parsing function for the packet.
-	 * 
-	 * @param {String} input Payload of a tag 18 packet
-	 * @param {Integer} position
-	 *             position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
-	 *         representation
-	 */
+
 	this.read = function(bytes) {
 		// - A one-octet version number. The only currently defined value is
 		// 1.
@@ -12491,18 +12497,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		this.encrypted = bytes.substr(1);
 	}
 
-	/**
-	 * Creates a string representation of a Sym. Encrypted Integrity Protected
-	 * Data Packet (tag 18) (see RFC4880 5.13)
-	 * 
-	 * @param {Integer} symmetric_algorithm
-	 *            The selected symmetric encryption algorithm to be used
-	 * @param {String} key The key of cipher blocksize length to be used
-	 * @param {String} data
-	 *            Plaintext data to be encrypted within the packet
-	 * @return {String} A string representation of the packet
-	 */
-	this.write = function(symmetric_algorithm, key, data) {
+	this.write = function() {
 		return String.fromCharCode(this.version) + this.encrypted;
 	}
 
@@ -12515,6 +12510,9 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 				+ prefixrandom.charAt(prefixrandom.length - 1)
 
 		var tohash = bytes;
+
+
+		// Modification detection code packet.
 		tohash += String.fromCharCode(0xD3);
 		tohash += String.fromCharCode(0x14);
 
@@ -12554,12 +12552,12 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 
 		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
-		this.data.read(decrypted);
 
-		// We pop the mandatory modification detection code packet.
-		var mdc = this.data.packets.pop();
+		this.data.read(decrypted.substr(0, decrypted.length - 22));
 
-		if(this.hash != mdc.hash) {
+		var mdc = decrypted.substr(decrypted.length - 20, 20);
+
+		if(this.hash != mdc) {
 			this.data = null;
 			util.print_error("Decryption stopped: discovered a " +
 				"modification of encrypted data.");
@@ -12582,13 +12580,115 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	}
 
 };
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-function openpgp_packet_modification_detection_code() {
-	this.hash = null;
+/**
+ * @class
+ * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
+ * 
+ * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
+ * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
+ * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
+ * message is encrypted with the session key, and the session key is itself
+ * encrypted and stored in the Encrypted Session Key packet(s). The
+ * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
+ * Session Key packet for each OpenPGP key to which the message is encrypted.
+ * The recipient of the message finds a session key that is encrypted to their
+ * public key, decrypts the session key, and then uses the session key to
+ * decrypt the message.
+ */
+function openpgp_packet_sym_encrypted_session_key() {
+	this.tag = 3;
+	this.private_algorithm = openpgp.symmetric.plaintext;
+	this.algorithm = openpgp.symmetric.plaintext;
+	this.encrypted = null;
+	this.s2k = new openpgp_type_s2k();
+
+	/**
+	 * Parsing function for a symmetric encrypted session key packet (tag 3).
+	 * 
+	 * @param {String} input Payload of a tag 1 packet
+	 * @param {Integer} position Position to start reading from the input string
+	 * @param {Integer} len
+	 *            Length of the packet or the remaining length of
+	 *            input at position
+	 * @return {openpgp_packet_encrypteddata} Object representation
+	 */
 	this.read = function(bytes) {
-		this.hash = bytes;
+		// A one-octet version number. The only currently defined version is 4.
+		this.version = bytes[0].charCodeAt();
+
+		// A one-octet number describing the symmetric algorithm used.
+		this.private_algorithm = bytes[1].charCodeAt();
+
+		// A string-to-key (S2K) specifier, length as defined above.
+		this.s2k.read(bytes, 2);
+
+		// Optionally, the encrypted session key itself, which is decrypted
+		// with the string-to-key object.
+		var done = this.s2k.length + 2;
+		if(done < bytes.length) {
+			this.encrypted = bytes.substr(done);
+		}
 	}
-}
+	/**
+	 * Decrypts the session key (only for public key encrypted session key
+	 * packets (tag 1)
+	 * 
+	 * @param {openpgp_msg_message} msg
+	 *            The message object (with member encryptedData
+	 * @param {openpgp_msg_privatekey} key
+	 *            Private key with secMPIs unlocked
+	 * @return {String} The unencrypted session key
+	 */
+	this.decrypt = function(passphrase) {
+		var length = openpgp_crypto_getKeyLength(this.private_algorithm);
+		var key = this.s2k.produce_key(passphrase, length);
+
+		if(this.encrypted == null) {
+			this.key = key;
+			this.algorithm = this.private_algorithm;
+		} else {
+			var decrypted = openpgp_crypto_symmetricDecrypt(
+				this.private_algorithm, key, this.encrypted, true);
+
+			this.algorithm = decrypted[0].keyCodeAt();
+			this.key = decrypted.substr(1);
+		}
+	}
+
+	/**
+	 * Creates a string representation of this object (useful for debug
+	 * purposes)
+	 * 
+	 * @return {String} The string containing a openpgp description
+	 */
+	this.toString = function() {
+		return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
+				+ '    KeyId:  ' + this.keyId.toString() + '\n'
+				+ '    length: ' + this.packetLength + '\n'
+				+ '    version:' + this.version + '\n' + '    symKeyA:'
+				+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
+				+ this.s2k + '\n';
+	}
+};
+
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12621,7 +12721,6 @@ function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
 	this.data = new openpgp_packetlist();
-	this.algorithm = openpgp.symmetric.plaintext;
 
 	
 
@@ -12939,6 +13038,7 @@ function openpgp_type_s2k() {
 			util.print_error("unknown s2k type! "+this.type);
 			break;
 		}
+		this.packetLength = mypos - position;
 		return this;
 	}
 	
@@ -12966,10 +13066,12 @@ function openpgp_type_s2k() {
 	 */
 	function produce_key(passphrase, numBytes) {
 		passphrase = util.encode_utf8(passphrase);
+		var result;
+
 		if (this.type == 0) {
-			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
+			result = openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
-			return openpgp_crypto_hashData(this.hashAlgorithm,this.saltValue+passphrase);
+			result = openpgp_crypto_hashData(this.hashAlgorithm,this.saltValue+passphrase);
 		} else if (this.type == 3) {
 			var isp = [];
 			isp[0] = this.saltValue+passphrase;
@@ -12978,12 +13080,19 @@ function openpgp_type_s2k() {
 			isp = isp.join('');			
 			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
-			if(numBytes && (numBytes == 24 || numBytes == 32)){ //This if accounts for RFC 4880 3.7.1.1 -- If hash size is greater than block size, use leftmost bits.  If blocksize larger than hash size, we need to rehash isp and prepend with 0.
+			if(numBytes && (numBytes == 24 || numBytes == 32)){ 
+				//This if accounts for RFC 4880 3.7.1.1 -- If hash size is 
+				//greater than block size, use leftmost bits.  If blocksize 
+				//larger than hash size, we need to rehash isp and prepend with 0.
+
 			    var key = openpgp_crypto_hashData(this.hashAlgorithm,isp);
-			    return key + openpgp_crypto_hashData(this.hashAlgorithm,String.fromCharCode(0)+isp);
+			    result = key + openpgp_crypto_hashData(this.hashAlgorithm,
+					String.fromCharCode(0)+isp);
 			}
-			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
+			else result = openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;
+
+		return result.substr(0, numBytes);
 	}
 	
 	this.read = read;

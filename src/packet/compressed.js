@@ -27,7 +27,7 @@
  */   
 function openpgp_packet_compressed() {
 	this.tag = 8;
-	this.packets = new openpgp_packetlist();
+	this.data = new openpgp_packetlist();
 	this.algorithm = openpgp.compression.uncompressed;
 	this.compressed = null;
 
@@ -36,15 +36,15 @@ function openpgp_packet_compressed() {
 	 * Parsing function for the packet.
 	 * @param {String} input Payload of a tag 8 packet
 	 * @param {Integer} position Position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of 
+	 * @parAM {iNTEGER} LEN lENGTH OF the packet or the remaining length of 
 	 * input at position
 	 * @return {openpgp_packet_compressed} Object representation
 	 */
 	this.read = function(bytes) {
 		// One octet that gives the algorithm used to compress the packet.
-		this.algorithm = input.charCodeAt(0);
+		this.algorithm = bytes.charCodeAt(0);
 		// Compressed data, which makes up the remainder of the packet.
-		this.compressed = input.substr(1);
+		this.compressed = bytes.substr(1);
 
 		this.decompress();
 	}
@@ -65,7 +65,7 @@ function openpgp_packet_compressed() {
 	 * @return {String} The decompressed data
 	 */
 	this.decompress = function() {
-		var bytes;
+		var decompressed;
 
 		switch (this.algorithm) {
 		case openpgp.compression.uncompressed:
@@ -118,7 +118,7 @@ function openpgp_packet_compressed() {
 
 		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
 
-		this.packets.read(decompressed);
+		this.data.read(decompressed);
 	}
 
 	/**
@@ -131,7 +131,7 @@ function openpgp_packet_compressed() {
 		switch (this.type) {
 
 		case openpgp.compression.uncompressed: // - Uncompressed
-			this.compressed = this.packets.write();
+			this.compressed = this.data.write();
 			break;
 
 		case openpgp.compression.zip: // - ZIP [RFC1951]

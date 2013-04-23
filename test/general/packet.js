@@ -46,6 +46,35 @@ unittests.register("Packet testing", function() {
 		return new test_result('Sym. encrypted integrity protected data packet', 
 			msg2.packets[0].data.packets[0].data == literal.data);
 	
+	}, function() {
+			
+		var msg = 
+			'-----BEGIN PGP MESSAGE-----\n' +
+			'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
+			'\n' +
+			'jA0ECQMCpo7I8WqsebTJ0koBmm6/oqdHXJU9aPe+Po+nk/k4/PZrLmlXwz2lhqBg\n' +
+			'GAlY9rxVStLBrg0Hn+5gkhyHI9B85rM1BEYXQ8pP5CSFuTwbJ3O2s67dzQ==\n' +
+			'=VZ0/\n' +
+			'-----END PGP MESSAGE-----';
+
+
+
+		var msgbytes = openpgp_encoding_deArmor(msg).openpgp;
+
+		var parsed = new openpgp_packetlist();
+		parsed.read(msgbytes);
+
+		parsed.packets[0].decrypt('test');
+
+		var key = parsed.packets[0].key;
+		parsed.packets[1].decrypt(parsed.packets[0].algorithm, key);
+		var compressed = parsed.packets[1].data.packets[0];
+		compressed.decompress();
+
+		var result = compressed.data.packets[0].data;
+
+		return new test_result('Sym encrypted session key with a compressed packet',
+			result == 'Hello world!\n');
 	}];
 
 	var results = [];

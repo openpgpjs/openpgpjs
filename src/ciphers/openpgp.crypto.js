@@ -144,18 +144,26 @@ function openpgp_crypto_MDCSystemBytes(algo, key, data) {
  * @return {String} Random bytes as a string to be used as a key
  */
 function openpgp_crypto_generateSessionKey(algo) {
+	return openpgp_crypto_getRandomBytes(openpgp_crypto_getKeyLength(algo)); 
+}
+
+/**
+ * Get the key length by symmetric algorithm id.
+ * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
+ * @return {String} Random bytes as a string to be used as a key
+ */
+function openpgp_crypto_getKeyLength(algo) {
 	switch (algo) {
 	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
 	case 8: // AES with 192-bit key
-		return openpgp_crypto_getRandomBytes(24); 
+		return 24;
 	case 3: // CAST5 (128 bit key, as per [RFC2144])
 	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 	case 7: // AES with 128-bit key [AES]
-		util.print_debug("length = 16:\n"+util.hexstrdump(openpgp_crypto_getRandomBytes(16)));
-		return openpgp_crypto_getRandomBytes(16);
+		return 16;
 	case 9: // AES with 256-bit key
 	case 10:// Twofish with 256-bit key [TWOFISH]
-		return openpgp_crypto_getRandomBytes(32);
+		return 32;
 	}
 	return null;
 }

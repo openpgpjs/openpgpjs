@@ -30,7 +30,6 @@ function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
 	this.data = new openpgp_packetlist();
-	this.algorithm = openpgp.symmetric.plaintext;
 
 	
 

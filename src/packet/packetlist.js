@@ -21,7 +21,7 @@ function openpgp_packetlist() {
 
 		while(i < bytes.length) {
 			var parsed = openpgp_packet.read_packet(bytes, i, bytes.length - i);
-			i += parsed.offset;
+			i = parsed.offset;
 
 			this.push(parsed.packet);
 		}

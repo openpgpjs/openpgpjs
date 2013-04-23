@@ -88,6 +88,7 @@ function openpgp_type_s2k() {
 			util.print_error("unknown s2k type! "+this.type);
 			break;
 		}
+		this.packetLength = mypos - position;
 		return this;
 	}
 	
@@ -115,10 +116,12 @@ function openpgp_type_s2k() {
 	 */
 	function produce_key(passphrase, numBytes) {
 		passphrase = util.encode_utf8(passphrase);
+		var result;
+
 		if (this.type == 0) {
-			return openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
+			result = openpgp_crypto_hashData(this.hashAlgorithm,passphrase);
 		} else if (this.type == 1) {
-			return openpgp_crypto_hashData(this.hashAlgorithm,this.saltValue+passphrase);
+			result = openpgp_crypto_hashData(this.hashAlgorithm,this.saltValue+passphrase);
 		} else if (this.type == 3) {
 			var isp = [];
 			isp[0] = this.saltValue+passphrase;
@@ -127,12 +130,19 @@ function openpgp_type_s2k() {
 			isp = isp.join('');			
 			if (isp.length > this.count)
 				isp = isp.substr(0, this.count);
-			if(numBytes && (numBytes == 24 || numBytes == 32)){ //This if accounts for RFC 4880 3.7.1.1 -- If hash size is greater than block size, use leftmost bits.  If blocksize larger than hash size, we need to rehash isp and prepend with 0.
+			if(numBytes && (numBytes == 24 || numBytes == 32)){ 
+				//This if accounts for RFC 4880 3.7.1.1 -- If hash size is 
+				//greater than block size, use leftmost bits.  If blocksize 
+				//larger than hash size, we need to rehash isp and prepend with 0.
+
 			    var key = openpgp_crypto_hashData(this.hashAlgorithm,isp);
-			    return key + openpgp_crypto_hashData(this.hashAlgorithm,String.fromCharCode(0)+isp);
+			    result = key + openpgp_crypto_hashData(this.hashAlgorithm,
+					String.fromCharCode(0)+isp);
 			}
-			return openpgp_crypto_hashData(this.hashAlgorithm,isp);
+			else result = openpgp_crypto_hashData(this.hashAlgorithm,isp);
 		} else return null;
+
+		return result.substr(0, numBytes);
 	}
 	
 	this.read = read;

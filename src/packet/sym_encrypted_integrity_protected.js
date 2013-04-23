@@ -30,22 +30,19 @@
 function openpgp_packet_sym_encrypted_integrity_protected() {
 	this.tag = 18;
 	this.version = 1;
+	/** The encrypted payload. */
 	this.encrypted = null; // string
-	this.hash = null; // string
+	/** @type {Boolean}
+	 * If after decrypting the packet this is set to true,
+	 * a modification has been detected and thus the contents
+	 * should be discarded.
+	 */
+	this.modification = false;
 	this.data = new openpgp_packetlist();
+	/** @type {openpgp.symmetric} */
 	this.algorithm = openpgp.symmetric.plaintext;
 
-	/**
-	 * Parsing function for the packet.
-	 * 
-	 * @param {String} input Payload of a tag 18 packet
-	 * @param {Integer} position
-	 *             position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encryptedintegrityprotecteddata} object
-	 *         representation
-	 */
+
 	this.read = function(bytes) {
 		// - A one-octet version number. The only currently defined value is
 		// 1.
@@ -65,18 +62,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		this.encrypted = bytes.substr(1);
 	}
 
-	/**
-	 * Creates a string representation of a Sym. Encrypted Integrity Protected
-	 * Data Packet (tag 18) (see RFC4880 5.13)
-	 * 
-	 * @param {Integer} symmetric_algorithm
-	 *            The selected symmetric encryption algorithm to be used
-	 * @param {String} key The key of cipher blocksize length to be used
-	 * @param {String} data
-	 *            Plaintext data to be encrypted within the packet
-	 * @return {String} A string representation of the packet
-	 */
-	this.write = function(symmetric_algorithm, key, data) {
+	this.write = function() {
 		return String.fromCharCode(this.version) + this.encrypted;
 	}
 
@@ -89,6 +75,9 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 				+ prefixrandom.charAt(prefixrandom.length - 1)
 
 		var tohash = bytes;
+
+
+		// Modification detection code packet.
 		tohash += String.fromCharCode(0xD3);
 		tohash += String.fromCharCode(0x14);
 
@@ -128,12 +117,12 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 
 		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
-		this.data.read(decrypted);
 
-		// We pop the mandatory modification detection code packet.
-		var mdc = this.data.packets.pop();
+		this.data.read(decrypted.substr(0, decrypted.length - 22));
 
-		if(this.hash != mdc.hash) {
+		var mdc = decrypted.substr(decrypted.length - 20, 20);
+
+		if(this.hash != mdc) {
 			this.data = null;
 			util.print_error("Decryption stopped: discovered a " +
 				"modification of encrypted data.");
@@ -156,10 +145,3 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	}
 
 };
-
-function openpgp_packet_modification_detection_code() {
-	this.hash = null;
-	this.read = function(bytes) {
-		this.hash = bytes;
-	}
-}

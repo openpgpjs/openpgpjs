@@ -29,7 +29,7 @@ function _openpgp_packet() {
 	 * @return {String} String with openpgp length representation
 	 */
 	function encode_length(length) {
-		result = "";
+		var result = "";
 		if (length < 192) {
 			result += String.fromCharCode(length);
 		} else if (length > 191 && length < 8384) {
@@ -114,6 +114,7 @@ function _openpgp_packet() {
 		var mypos = position;
 		var tag = -1;
 		var format = -1;
+		var packet_length;
 
 		format = 0; // 0 = old format; 1 = new format
 		if ((input[mypos].charCodeAt() & 0x40) != 0) {
@@ -291,7 +292,7 @@ function _openpgp_packet() {
 		reserved: 0,
 		public_key_encrypted_session_key: 1,
 		signature: 2,
-		symmetric_key_encrypted_session_key: 3,
+		sym_encrypted_session_key: 3,
 		one_pass_signature: 4,
 		secret_key: 5,
 		public_key: 6,
