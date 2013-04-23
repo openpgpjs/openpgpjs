@@ -27,7 +27,7 @@
  */   
 function openpgp_packet_compressed() {
 	this.tag = 8;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 	this.algorithm = openpgp.compression.uncompressed;
 	this.compressed = null;
 
@@ -118,7 +118,7 @@ function openpgp_packet_compressed() {
 
 		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
 
-		this.data.read(decompressed);
+		this.packets.read(decompressed);
 	}
 
 	/**
@@ -131,7 +131,7 @@ function openpgp_packet_compressed() {
 		switch (this.type) {
 
 		case openpgp.compression.uncompressed: // - Uncompressed
-			this.compressed = this.data.write();
+			this.compressed = this.packets.write();
 			break;
 
 		case openpgp.compression.zip: // - ZIP [RFC1951]

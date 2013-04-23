@@ -29,7 +29,7 @@
 function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 
 	
 
@@ -55,11 +55,11 @@ function openpgp_packet_symmetrically_encrypted() {
 		var decrypted = openpgp_crypto_symmetricDecrypt(
 				symmetric_algorithm_type, key, this.encrypted, true);
 
-		this.data.read(decrypted);
+		this.packets.read(decrypted);
 	}
 
 	this.encrypt = function(algo, key) {
-		var data = this.data.write();
+		var data = this.packets.write();
 
 		this.encrypted = openpgp_crypto_symmetricEncrypt(
 				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);

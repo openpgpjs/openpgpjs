@@ -38,7 +38,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	 * should be discarded.
 	 */
 	this.modification = false;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 	/** @type {openpgp.symmetric} */
 	this.algorithm = openpgp.symmetric.plaintext;
 
@@ -67,7 +67,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	}
 
 	this.encrypt = function(symmetric_algorithm, key) {
-		var bytes = this.data.write()
+		var bytes = this.packets.write()
 		
 		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
 		var prefix = prefixrandom
@@ -118,12 +118,12 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
 
-		this.data.read(decrypted.substr(0, decrypted.length - 22));
+		this.packets.read(decrypted.substr(0, decrypted.length - 22));
 
 		var mdc = decrypted.substr(decrypted.length - 20, 20);
 
 		if(this.hash != mdc) {
-			this.data = null;
+			this.packets = null;
 			util.print_error("Decryption stopped: discovered a " +
 				"modification of encrypted data.");
 			return;

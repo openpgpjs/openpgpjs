@@ -3,11 +3,11 @@
 /**
  * @class
  * @classdesc This class represents a list of openpgp packets.
+ * Take care when iterating over it - the packets themselves
+ * are stored as numerical indices.
  */
 function openpgp_packetlist() {
-
-	/** @type {openpgp_packet_[]} A list of packets */
-	this.packets = []
+	this.length = 0;
 
 
 
@@ -35,9 +35,9 @@ function openpgp_packetlist() {
 	this.write = function() {
 		var bytes = '';
 
-		for(var i in this.packets) {
-			var packetbytes = this.packets[i].write();
-			bytes += openpgp_packet.write_packet_header(this.packets[i].tag, packetbytes.length);
+		for(var i = 0; i < this.length; i++) {
+			var packetbytes = this[i].write();
+			bytes += openpgp_packet.write_packet_header(this[i].tag, packetbytes.length);
 			bytes += packetbytes;
 		}
 		
@@ -45,7 +45,8 @@ function openpgp_packetlist() {
 	}
 
 	this.push = function(packet) {
-		this.packets.push(packet);
+		this[this.length] = packet;
+		this.length++;
 	}
 
 }

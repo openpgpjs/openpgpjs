@@ -7,7 +7,7 @@ unittests.register("Packet testing", function() {
 		literal.set_data('Hello world', openpgp_packet_literal.format.utf8);
 		
 		var enc = new openpgp_packet_symmetrically_encrypted();
-		enc.data.push(literal);
+		enc.packets.push(literal);
 
 		var key = '12345678901234567890123456789012',
 			algo = openpgp.symmetric.aes256;
@@ -21,10 +21,11 @@ unittests.register("Packet testing", function() {
 		var msg2 = new openpgp_packetlist();
 		msg2.read(message.write());
 
-		msg2.packets[0].decrypt(algo, key);
+		msg2[0].decrypt(algo, key);
 
-		return new test_result('Symmetrically encrypted data packet', 
-			msg2.packets[0].data.packets[0].data == literal.data);
+		return new test_result('Symmetrically encrypted packet', 
+			msg2[0].packets[0].data == literal.data);
+
 	}, function() {
 		var key = '12345678901234567890123456789012',
 			algo = openpgp.symmetric.aes256;
@@ -34,17 +35,17 @@ unittests.register("Packet testing", function() {
 			msg = new openpgp_packetlist();
 
 		literal.set_data('Hello world!', openpgp_packet_literal.format.utf8);
-		enc.data.push(literal);
+		enc.packets.push(literal);
 		enc.encrypt(algo, key);
 		msg.push(enc);
 
 		var msg2 = new openpgp_packetlist();
 		msg2.read(msg.write());
 
-		msg2.packets[0].decrypt(algo, key);
+		msg2[0].decrypt(algo, key);
 
-		return new test_result('Sym. encrypted integrity protected data packet', 
-			msg2.packets[0].data.packets[0].data == literal.data);
+		return new test_result('Sym. encrypted integrity protected packet', 
+			msg2[0].packets[0].data == literal.data);
 	
 	}, function() {
 			
@@ -64,14 +65,13 @@ unittests.register("Packet testing", function() {
 		var parsed = new openpgp_packetlist();
 		parsed.read(msgbytes);
 
-		parsed.packets[0].decrypt('test');
+		parsed[0].decrypt('test');
 
-		var key = parsed.packets[0].key;
-		parsed.packets[1].decrypt(parsed.packets[0].algorithm, key);
-		var compressed = parsed.packets[1].data.packets[0];
-		compressed.decompress();
+		var key = parsed[0].key;
+		parsed[1].decrypt(parsed[0].algorithm, key);
+		var compressed = parsed[1].packets[0];
 
-		var result = compressed.data.packets[0].data;
+		var result = compressed.packets[0].data;
 
 		return new test_result('Sym encrypted session key with a compressed packet',
 			result == 'Hello world!\n');

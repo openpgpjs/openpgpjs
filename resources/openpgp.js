@@ -9311,7 +9311,7 @@ function openpgp_msg_publickey() {
  */   
 function openpgp_packet_compressed() {
 	this.tag = 8;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 	this.algorithm = openpgp.compression.uncompressed;
 	this.compressed = null;
 
@@ -9402,7 +9402,7 @@ function openpgp_packet_compressed() {
 
 		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
 
-		this.data.read(decompressed);
+		this.packets.read(decompressed);
 	}
 
 	/**
@@ -9415,7 +9415,7 @@ function openpgp_packet_compressed() {
 		switch (this.type) {
 
 		case openpgp.compression.uncompressed: // - Uncompressed
-			this.compressed = this.data.write();
+			this.compressed = this.packets.write();
 			break;
 
 		case openpgp.compression.zip: // - ZIP [RFC1951]
@@ -12387,11 +12387,11 @@ var openpgp_packet = new _openpgp_packet();
 /**
  * @class
  * @classdesc This class represents a list of openpgp packets.
+ * Take care when iterating over it - the packets themselves
+ * are stored as numerical indices.
  */
 function openpgp_packetlist() {
-
-	/** @type {openpgp_packet_[]} A list of packets */
-	this.packets = []
+	this.length = 0;
 
 
 
@@ -12419,9 +12419,9 @@ function openpgp_packetlist() {
 	this.write = function() {
 		var bytes = '';
 
-		for(var i in this.packets) {
-			var packetbytes = this.packets[i].write();
-			bytes += openpgp_packet.write_packet_header(this.packets[i].tag, packetbytes.length);
+		for(var i = 0; i < this.length; i++) {
+			var packetbytes = this[i].write();
+			bytes += openpgp_packet.write_packet_header(this[i].tag, packetbytes.length);
 			bytes += packetbytes;
 		}
 		
@@ -12429,7 +12429,8 @@ function openpgp_packetlist() {
 	}
 
 	this.push = function(packet) {
-		this.packets.push(packet);
+		this[this.length] = packet;
+		this.length++;
 	}
 
 }
@@ -12473,7 +12474,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	 * should be discarded.
 	 */
 	this.modification = false;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 	/** @type {openpgp.symmetric} */
 	this.algorithm = openpgp.symmetric.plaintext;
 
@@ -12502,7 +12503,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	}
 
 	this.encrypt = function(symmetric_algorithm, key) {
-		var bytes = this.data.write()
+		var bytes = this.packets.write()
 		
 		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
 		var prefix = prefixrandom
@@ -12553,12 +12554,12 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
 
-		this.data.read(decrypted.substr(0, decrypted.length - 22));
+		this.packets.read(decrypted.substr(0, decrypted.length - 22));
 
 		var mdc = decrypted.substr(decrypted.length - 20, 20);
 
 		if(this.hash != mdc) {
-			this.data = null;
+			this.packets = null;
 			util.print_error("Decryption stopped: discovered a " +
 				"modification of encrypted data.");
 			return;
@@ -12720,7 +12721,7 @@ function openpgp_packet_sym_encrypted_session_key() {
 function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
-	this.data = new openpgp_packetlist();
+	this.packets = new openpgp_packetlist();
 
 	
 
@@ -12746,11 +12747,11 @@ function openpgp_packet_symmetrically_encrypted() {
 		var decrypted = openpgp_crypto_symmetricDecrypt(
 				symmetric_algorithm_type, key, this.encrypted, true);
 
-		this.data.read(decrypted);
+		this.packets.read(decrypted);
 	}
 
 	this.encrypt = function(algo, key) {
-		var data = this.data.write();
+		var data = this.packets.write();
 
 		this.encrypted = openpgp_crypto_symmetricEncrypt(
 				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
