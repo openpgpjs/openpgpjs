@@ -3670,25 +3670,33 @@ function normal_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, i
  * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
  */
 function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var n = publicMPIs[0].toBigInteger();
-		var e = publicMPIs[1].toBigInteger();
-		var m = data.toBigInteger();
-		return [rsa.encrypt(m,e,n)];
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var p = publicMPIs[0].toBigInteger();
-		var g = publicMPIs[1].toBigInteger();
-		var y = publicMPIs[2].toBigInteger();
-		var m = data.toBigInteger();
-		return elgamal.encrypt(m,g,p,y);
-	default:
-		return null;
-	}
+	var result = (function() {
+		switch(algo) {
+		case 1: // RSA (Encrypt or Sign) [HAC]
+		case 2: // RSA Encrypt-Only [HAC]
+		case 3: // RSA Sign-Only [HAC]
+			var rsa = new RSA();
+			var n = publicMPIs[0].toBigInteger();
+			var e = publicMPIs[1].toBigInteger();
+			var m = data.toBigInteger();
+			return [rsa.encrypt(m,e,n)];
+		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+			var elgamal = new Elgamal();
+			var p = publicMPIs[0].toBigInteger();
+			var g = publicMPIs[1].toBigInteger();
+			var y = publicMPIs[2].toBigInteger();
+			var m = data.toBigInteger();
+			return elgamal.encrypt(m,g,p,y);
+		default:
+			return [];
+		}
+	})();
+
+	return result.map(function(bn) {
+		var mpi = new openpgp_type_mpi();
+		mpi.fromBigInteger(bn);
+		return mpi;
+	});
 }
 
 /**
@@ -3700,32 +3708,37 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
  * @param {openpgp_type_mpi[]} secretMPIs Algorithm dependent multiprecision integers 
  * of the private key used
  * @param {openpgp_type_mpi} data Data to be encrypted as MPI
- * @return {BigInteger} returns a big integer containing the decrypted data; otherwise null
+ * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
  */
 
 function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var p = secretMPIs[1].toBigInteger();
-		var q = secretMPIs[2].toBigInteger();
-		var u = secretMPIs[3].toBigInteger();
-		var m = dataMPIs[0].toBigInteger();
-		return rsa.decrypt(m, d, p, q, u);
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var x = secretMPIs[0].toBigInteger();
-		var c1 = dataMPIs[0].toBigInteger();
-		var c2 = dataMPIs[1].toBigInteger();
-		var p = publicMPIs[0].toBigInteger();
-		return elgamal.decrypt(c1,c2,p,x);
-	default:
-		return null;
-	}
-	
+	var bn = (function() {
+		switch(algo) {
+		case 1: // RSA (Encrypt or Sign) [HAC]  
+		case 2: // RSA Encrypt-Only [HAC]
+		case 3: // RSA Sign-Only [HAC]
+			var rsa = new RSA();
+			var d = secretMPIs[0].toBigInteger();
+			var p = secretMPIs[1].toBigInteger();
+			var q = secretMPIs[2].toBigInteger();
+			var u = secretMPIs[3].toBigInteger();
+			var m = dataMPIs[0].toBigInteger();
+			return rsa.decrypt(m, d, p, q, u);
+		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+			var elgamal = new Elgamal();
+			var x = secretMPIs[0].toBigInteger();
+			var c1 = dataMPIs[0].toBigInteger();
+			var c2 = dataMPIs[1].toBigInteger();
+			var p = publicMPIs[0].toBigInteger();
+			return elgamal.decrypt(c1,c2,p,x);
+		default:
+			return null;
+		}
+	})();
+
+	var result = new openpgp_type_mpi();
+	result.fromBigInteger(bn);
+	return result;
 }
 
 /**
@@ -12509,9 +12522,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		}
 
 		this.version = bytes[0].charCodeAt();
-
 		this.public_key_id.read_packet(bytes, 1);
-
 		this.public_key_algorithm = bytes[9].charCodeAt();
 
 		var i = 10;
@@ -12522,16 +12533,15 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		case openpgp.publickey.rsa_encrypt_sign:
 			this.encrypted = [];
 			this.encrypted[0] = new openpgp_type_mpi();
-			this.encrypted[0].read(bytes, i, bytes.length - i);
+			this.encrypted[0].read(bytes.substr(i));
 			break;
 
 		case openpgp.publickey.elgamal:
 			this.encrypted = [];
 			this.encrypted[0] = new openpgp_type_mpi();
-			this.encrypted[0].read(bytes, i, bytes.length - i);
-			i += this.encrypted[0].packetLength;
+			i += this.encrypted[0].read(bytes.substr(i));
 			this.encrypted[1] = new openpgp_type_mpi();
-			this.encrypted[1].read(bytes, i, bytes.length - i);
+			this.encrypted[1].read(bytes.substr(i));
 			break;
 
 		default:
@@ -12567,7 +12577,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		result += String.fromCharCode(this.public_key_algorithm);
 
 		for ( var i = 0; i < this.encrypted.length; i++) {
-			result += this.encrypted[i].toBin();
+			result += this.encrypted[i].write()
 		}
 
 		return result;
@@ -12582,20 +12592,14 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		data += String.fromCharCode((checksum) & 0xFF);
 
 		var mpi = new openpgp_type_mpi();
+		mpi.fromBytes(openpgp_encoding_eme_pkcs1_encode(
+			data,
+			public_key_mpi[0].byteLength()));
 
-		var encrypted = openpgp_crypto_asymetricEncrypt(
+		this.encrypted = openpgp_crypto_asymetricEncrypt(
 			this.public_key_algorithm, 
 			public_key_mpi,
-			mpi.create(openpgp_encoding_eme_pkcs1_encode(data,
-					public_key_mpi[0].mpiByteLength)));
-
-		// TODO: fix this - make openpgp_crypto_ interfaces uniform
-		this.encrypted = encrypted.map(function(k) {
-				var mpi = new openpgp_type_mpi;
-				var b = k.toMPI();
-				mpi.read(b, 0, b.length);
-				return mpi;
-			});
+			mpi);
 	}
 
 	/**
@@ -12613,16 +12617,16 @@ function openpgp_packet_public_key_encrypted_session_key() {
 				this.public_key_algorithm,
 				public_key_mpi,
 				private_key_mpi,
-				this.encrypted).toMPI();
+				this.encrypted).toBytes();
 
-		var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
-				.charCodeAt(result.length - 1));
+		var checksum = ((result.charCodeAt(result.length - 2) << 8) 
+			+ result.charCodeAt(result.length - 1));
 
 		var decoded = openpgp_encoding_eme_pkcs1_decode(
-			result.substring(2, result.length - 2), 
-			public_key_mpi[0].getByteLength());
+			result,
+			public_key_mpi[0].byteLength());
 
-		var key = decoded.substring(1);
+		var key = decoded.substring(1, decoded.length - 2);
 
 		if(checksum != util.calc_checksum(key)) {
 			util.print_error("Checksum mismatch");
@@ -13005,6 +13009,111 @@ function openpgp_packet_symmetrically_encrypted() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
+// octet scalar: MPI: [a,b,c,d,e,f]
+// - MPI size: (a << 8) | b 
+// - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
+
+/**
+ * @class
+ * @classdescImplementation of type MPI (RFC4880 3.2)
+ * Multiprecision integers (also called MPIs) are unsigned integers used
+ * to hold large integers such as the ones used in cryptographic
+ * calculations.
+ * An MPI consists of two pieces: a two-octet scalar that is the length
+ * of the MPI in bits followed by a string of octets that contain the
+ * actual integer.
+ */
+function openpgp_type_mpi() {
+	/** An implementation dependent integer */
+	this.data = null;
+
+	/**
+	 * Parsing function for a mpi (RFC 4880 3.2).
+	 * @param {String} input Payload of mpi data
+	 * @param {Integer} position Position to start reading from the input 
+	 * string
+	 * @param {Integer} len Length of the packet or the remaining length of 
+	 * input at position
+	 * @return {openpgp_type_mpi} Object representation
+	 */
+	this.read = function(bytes) {
+		var bits = (bytes[0].charCodeAt() << 8) | bytes[1].charCodeAt();
+		
+		// Additional rules:
+		//
+		//    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
+		//
+		//    The length field of an MPI describes the length starting from its
+		//	  most significant non-zero bit.  Thus, the MPI [00 02 01] is not
+		//    formed correctly.  It should be [00 01 01].
+
+		// TODO: Verification of this size method! This size calculation as
+		// 		 specified above is not applicable in JavaScript
+		var bytelen = Math.ceil(bits / 8);
+		
+		var raw = bytes.substr(2, bytelen);
+		this.fromBytes(raw);
+
+		return 2 + bytelen;
+	}
+
+	this.fromBytes = function(bytes) {
+		this.data = new BigInteger(util.hexstrdump(bytes), 16); 
+	}
+
+	this.toBytes = function() {
+		return this.write().substr(2);
+	}
+
+	this.byteLength = function() {
+		return this.toBytes().length;
+	}
+
+	/**
+	 * Converts the mpi object to a string as specified in RFC4880 3.2
+	 * @return {String} mpi Byte representation
+	 */
+	this.write = function() {
+		return this.data.toMPI();
+	}
+
+	this.toBigInteger = function() {
+		return this.data.clone();
+	}
+
+	this.fromBigInteger = function(bn) {
+		this.data = bn.clone();
+	}
+
+	/**
+	 * Generates debug output (pretty print)
+	 * @return {String} String which gives some information about the mpi
+	 */
+	this.toString = function() {
+		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
+		r+=util.hexstrdump(this.MPI);
+		return r+'\n';
+	}
+}
+
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 /**
  * @class
  * @classdesc Implementation of type key id (RFC4880 3.3)
@@ -13014,6 +13123,10 @@ function openpgp_packet_symmetrically_encrypted() {
    formed.
  */
 function openpgp_type_keyid() {
+	var bytes = '';
+
+	for(var i = 0; i < 8; i++)
+		bytes += String.fromCharCode(0);
 	/**
 	 * Parsing method for a key id
 	 * @param {String} input Input to read the key id from 
@@ -13037,141 +13150,6 @@ function openpgp_type_keyid() {
 	this.read_packet = read_packet;
 	this.toString = toString;
 };
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-// Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
-// octet scalar: MPI: [a,b,c,d,e,f]
-// - MPI size: (a << 8) | b 
-// - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
-
-/**
- * @class
- * @classdescImplementation of type MPI (RFC4880 3.2)
- * Multiprecision integers (also called MPIs) are unsigned integers used
- * to hold large integers such as the ones used in cryptographic
- * calculations.
- * An MPI consists of two pieces: a two-octet scalar that is the length
- * of the MPI in bits followed by a string of octets that contain the
- * actual integer.
- */
-function openpgp_type_mpi() {
-	this.MPI = null;
-	this.mpiBitLength = null;
-	this.mpiByteLength = null;
-	this.data = null;
-	/**
-	 * Parsing function for a mpi (RFC 4880 3.2).
-	 * @param {String} input Payload of mpi data
-	 * @param {Integer} position Position to start reading from the input 
-	 * string
-	 * @param {Integer} len Length of the packet or the remaining length of 
-	 * input at position
-	 * @return {openpgp_type_mpi} Object representation
-	 */
-	function read(input, position, len) {
-		var mypos = position;
-		
-		this.mpiBitLength = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
-		
-		// Additional rules:
-		//
-		//    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
-		//
-		//    The length field of an MPI describes the length starting from its
-		//	  most significant non-zero bit.  Thus, the MPI [00 02 01] is not
-		//    formed correctly.  It should be [00 01 01].
-
-		// TODO: Verification of this size method! This size calculation as
-		// 		 specified above is not applicable in JavaScript
-		this.mpiByteLength = (this.mpiBitLength - (this.mpiBitLength % 8)) / 8;
-		if (this.mpiBitLength % 8 != 0)
-			this.mpiByteLength++;
-		
-		this.MPI = input.substring(mypos,mypos+this.mpiByteLength);
-		this.data = input.substring(position, position+2+this.mpiByteLength);
-		this.packetLength = this.mpiByteLength +2;
-		return this;
-	}
-	
-	/**
-	 * Generates debug output (pretty print)
-	 * @return {String} String which gives some information about the mpi
-	 */
-	function toString() {
-		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
-		r+=util.hexstrdump(this.MPI);
-		return r+'\n';
-	}
-	
-	/**
-	 * Converts the mpi to an BigInteger object
-	 * @return {BigInteger}
-	 */
-	function getBigInteger() {
-		return new BigInteger(util.hexstrdump(this.MPI),16); 
-	}
-
-	
-	function getBits(num) {
-		for (var i = 0; i < 9; i++)
-		if (num >> i == 0)
-		return i;
-	}
-	
-	/**
-	 * Gets the length of the mpi in bytes
-	 * @return {Integer} Mpi byte length
-	 */
-	function getByteLength() {
-		return this.mpiByteLength;
-	}
-	
-	/**
-	 * Creates an mpi from the specified string
-	 * @param {String} data Data to read the mpi from
-	 * @return {openpgp_type_mpi} 
-	 */
-	function create(data) {
-		this.MPI = data;
-		this.mpiBitLength = (data.length -1) *8 + getBits(data.charCodeAt(0));
-		this.mpiByteLength = data.length;
-		return this;
-	}
-	
-	/**
-	 * Converts the mpi object to a string as specified in RFC4880 3.2
-	 * @return {String} mpi Byte representation
-	 */
-	function toBin() {
-		var result = String.fromCharCode((this.mpiBitLength >> 8) & 0xFF);
-		result += String.fromCharCode(this.mpiBitLength & 0xFF);
-		result += this.MPI;
-		return result;
-	}
-	
-	this.read = read;
-	this.toBigInteger = getBigInteger;
-	this.toString = toString;
-	this.create = create;
-	this.toBin = toBin;
-	this.getByteLength = getByteLength;
-}
-
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 

@@ -60,9 +60,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		}
 
 		this.version = bytes[0].charCodeAt();
-
 		this.public_key_id.read_packet(bytes, 1);
-
 		this.public_key_algorithm = bytes[9].charCodeAt();
 
 		var i = 10;
@@ -73,16 +71,15 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		case openpgp.publickey.rsa_encrypt_sign:
 			this.encrypted = [];
 			this.encrypted[0] = new openpgp_type_mpi();
-			this.encrypted[0].read(bytes, i, bytes.length - i);
+			this.encrypted[0].read(bytes.substr(i));
 			break;
 
 		case openpgp.publickey.elgamal:
 			this.encrypted = [];
 			this.encrypted[0] = new openpgp_type_mpi();
-			this.encrypted[0].read(bytes, i, bytes.length - i);
-			i += this.encrypted[0].packetLength;
+			i += this.encrypted[0].read(bytes.substr(i));
 			this.encrypted[1] = new openpgp_type_mpi();
-			this.encrypted[1].read(bytes, i, bytes.length - i);
+			this.encrypted[1].read(bytes.substr(i));
 			break;
 
 		default:
@@ -118,7 +115,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		result += String.fromCharCode(this.public_key_algorithm);
 
 		for ( var i = 0; i < this.encrypted.length; i++) {
-			result += this.encrypted[i].toBin();
+			result += this.encrypted[i].write()
 		}
 
 		return result;
@@ -133,20 +130,14 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		data += String.fromCharCode((checksum) & 0xFF);
 
 		var mpi = new openpgp_type_mpi();
+		mpi.fromBytes(openpgp_encoding_eme_pkcs1_encode(
+			data,
+			public_key_mpi[0].byteLength()));
 
-		var encrypted = openpgp_crypto_asymetricEncrypt(
+		this.encrypted = openpgp_crypto_asymetricEncrypt(
 			this.public_key_algorithm, 
 			public_key_mpi,
-			mpi.create(openpgp_encoding_eme_pkcs1_encode(data,
-					public_key_mpi[0].mpiByteLength)));
-
-		// TODO: fix this - make openpgp_crypto_ interfaces uniform
-		this.encrypted = encrypted.map(function(k) {
-				var mpi = new openpgp_type_mpi;
-				var b = k.toMPI();
-				mpi.read(b, 0, b.length);
-				return mpi;
-			});
+			mpi);
 	}
 
 	/**
@@ -164,16 +155,16 @@ function openpgp_packet_public_key_encrypted_session_key() {
 				this.public_key_algorithm,
 				public_key_mpi,
 				private_key_mpi,
-				this.encrypted).toMPI();
+				this.encrypted).toBytes();
 
-		var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
-				.charCodeAt(result.length - 1));
+		var checksum = ((result.charCodeAt(result.length - 2) << 8) 
+			+ result.charCodeAt(result.length - 1));
 
 		var decoded = openpgp_encoding_eme_pkcs1_decode(
-			result.substring(2, result.length - 2), 
-			public_key_mpi[0].getByteLength());
+			result,
+			public_key_mpi[0].byteLength());
 
-		var key = decoded.substring(1);
+		var key = decoded.substring(1, decoded.length - 2);
 
 		if(checksum != util.calc_checksum(key)) {
 			util.print_error("Checksum mismatch");

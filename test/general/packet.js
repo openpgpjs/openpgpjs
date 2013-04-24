@@ -38,6 +38,8 @@ unittests.register("Packet testing", function() {
 		enc.packets.push(literal);
 		enc.encrypt(algo, key);
 		msg.push(enc);
+		
+
 
 		var msg2 = new openpgp_packetlist();
 		msg2.read(msg.write());
@@ -82,16 +84,22 @@ unittests.register("Packet testing", function() {
 			key = rsa.generate(512, "10001")
 
 
-		var key = [[key.d.toMPI(), key.p.toMPI(), key.q.toMPI(), key.u.toMPI()],
-			[key.n.toMPI(), key.ee.toMPI()]];
+		var key = [
+			[key.d, key.p, key.q, key.u],
+			[key.n, key.ee]];
 
 		key = key.map(function(k) {
-			return k.map(function(v) {
+			return k.map(function(bn) {
 				var mpi = new openpgp_type_mpi();
-				mpi.read(v, 0, v.length);
+				mpi.fromBigInteger(bn);
 				return mpi;
 				});
 		});
+
+		var mpi = new openpgp_type_mpi();
+		mpi.fromBigInteger(key[0][1].data);
+		mpi.read(mpi.write());
+
 		var enc = new openpgp_packet_public_key_encrypted_session_key(),
 			msg = new openpgp_packetlist(),
 			msg2 = new openpgp_packetlist();
@@ -113,6 +121,8 @@ unittests.register("Packet testing", function() {
 			msg2[0].symmetric_algorithm == enc.symmetric_algorithm);
 	}];
 
+	tests.reverse();
+
 	var results = [];
 
 	for(var i in tests) {
@@ -121,4 +131,4 @@ unittests.register("Packet testing", function() {
 	
 	
 	return results;
-})
+});

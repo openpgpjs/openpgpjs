@@ -24,6 +24,10 @@
    formed.
  */
 function openpgp_type_keyid() {
+	var bytes = '';
+
+	for(var i = 0; i < 8; i++)
+		bytes += String.fromCharCode(0);
 	/**
 	 * Parsing method for a key id
 	 * @param {String} input Input to read the key id from 

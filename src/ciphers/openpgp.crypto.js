@@ -27,25 +27,33 @@
  * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
  */
 function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var n = publicMPIs[0].toBigInteger();
-		var e = publicMPIs[1].toBigInteger();
-		var m = data.toBigInteger();
-		return [rsa.encrypt(m,e,n)];
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var p = publicMPIs[0].toBigInteger();
-		var g = publicMPIs[1].toBigInteger();
-		var y = publicMPIs[2].toBigInteger();
-		var m = data.toBigInteger();
-		return elgamal.encrypt(m,g,p,y);
-	default:
-		return null;
-	}
+	var result = (function() {
+		switch(algo) {
+		case 1: // RSA (Encrypt or Sign) [HAC]
+		case 2: // RSA Encrypt-Only [HAC]
+		case 3: // RSA Sign-Only [HAC]
+			var rsa = new RSA();
+			var n = publicMPIs[0].toBigInteger();
+			var e = publicMPIs[1].toBigInteger();
+			var m = data.toBigInteger();
+			return [rsa.encrypt(m,e,n)];
+		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+			var elgamal = new Elgamal();
+			var p = publicMPIs[0].toBigInteger();
+			var g = publicMPIs[1].toBigInteger();
+			var y = publicMPIs[2].toBigInteger();
+			var m = data.toBigInteger();
+			return elgamal.encrypt(m,g,p,y);
+		default:
+			return [];
+		}
+	})();
+
+	return result.map(function(bn) {
+		var mpi = new openpgp_type_mpi();
+		mpi.fromBigInteger(bn);
+		return mpi;
+	});
 }
 
 /**
@@ -57,32 +65,37 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
  * @param {openpgp_type_mpi[]} secretMPIs Algorithm dependent multiprecision integers 
  * of the private key used
  * @param {openpgp_type_mpi} data Data to be encrypted as MPI
- * @return {BigInteger} returns a big integer containing the decrypted data; otherwise null
+ * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
  */
 
 function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var p = secretMPIs[1].toBigInteger();
-		var q = secretMPIs[2].toBigInteger();
-		var u = secretMPIs[3].toBigInteger();
-		var m = dataMPIs[0].toBigInteger();
-		return rsa.decrypt(m, d, p, q, u);
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		var elgamal = new Elgamal();
-		var x = secretMPIs[0].toBigInteger();
-		var c1 = dataMPIs[0].toBigInteger();
-		var c2 = dataMPIs[1].toBigInteger();
-		var p = publicMPIs[0].toBigInteger();
-		return elgamal.decrypt(c1,c2,p,x);
-	default:
-		return null;
-	}
-	
+	var bn = (function() {
+		switch(algo) {
+		case 1: // RSA (Encrypt or Sign) [HAC]  
+		case 2: // RSA Encrypt-Only [HAC]
+		case 3: // RSA Sign-Only [HAC]
+			var rsa = new RSA();
+			var d = secretMPIs[0].toBigInteger();
+			var p = secretMPIs[1].toBigInteger();
+			var q = secretMPIs[2].toBigInteger();
+			var u = secretMPIs[3].toBigInteger();
+			var m = dataMPIs[0].toBigInteger();
+			return rsa.decrypt(m, d, p, q, u);
+		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+			var elgamal = new Elgamal();
+			var x = secretMPIs[0].toBigInteger();
+			var c1 = dataMPIs[0].toBigInteger();
+			var c2 = dataMPIs[1].toBigInteger();
+			var p = publicMPIs[0].toBigInteger();
+			return elgamal.decrypt(c1,c2,p,x);
+		default:
+			return null;
+		}
+	})();
+
+	var result = new openpgp_type_mpi();
+	result.fromBigInteger(bn);
+	return result;
 }
 
 /**

@@ -31,10 +31,9 @@
  * actual integer.
  */
 function openpgp_type_mpi() {
-	this.MPI = null;
-	this.mpiBitLength = null;
-	this.mpiByteLength = null;
+	/** An implementation dependent integer */
 	this.data = null;
+
 	/**
 	 * Parsing function for a mpi (RFC 4880 3.2).
 	 * @param {String} input Payload of mpi data
@@ -44,10 +43,8 @@ function openpgp_type_mpi() {
 	 * input at position
 	 * @return {openpgp_type_mpi} Object representation
 	 */
-	function read(input, position, len) {
-		var mypos = position;
-		
-		this.mpiBitLength = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+	this.read = function(bytes) {
+		var bits = (bytes[0].charCodeAt() << 8) | bytes[1].charCodeAt();
 		
 		// Additional rules:
 		//
@@ -59,77 +56,50 @@ function openpgp_type_mpi() {
 
 		// TODO: Verification of this size method! This size calculation as
 		// 		 specified above is not applicable in JavaScript
-		this.mpiByteLength = (this.mpiBitLength - (this.mpiBitLength % 8)) / 8;
-		if (this.mpiBitLength % 8 != 0)
-			this.mpiByteLength++;
+		var bytelen = Math.ceil(bits / 8);
 		
-		this.MPI = input.substring(mypos,mypos+this.mpiByteLength);
-		this.data = input.substring(position, position+2+this.mpiByteLength);
-		this.packetLength = this.mpiByteLength +2;
-		return this;
-	}
-	
-	/**
-	 * Generates debug output (pretty print)
-	 * @return {String} String which gives some information about the mpi
-	 */
-	function toString() {
-		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
-		r+=util.hexstrdump(this.MPI);
-		return r+'\n';
-	}
-	
-	/**
-	 * Converts the mpi to an BigInteger object
-	 * @return {BigInteger}
-	 */
-	function getBigInteger() {
-		return new BigInteger(util.hexstrdump(this.MPI),16); 
+		var raw = bytes.substr(2, bytelen);
+		this.fromBytes(raw);
+
+		return 2 + bytelen;
 	}
 
-	
-	function getBits(num) {
-		for (var i = 0; i < 9; i++)
-		if (num >> i == 0)
-		return i;
+	this.fromBytes = function(bytes) {
+		this.data = new BigInteger(util.hexstrdump(bytes), 16); 
 	}
-	
-	/**
-	 * Gets the length of the mpi in bytes
-	 * @return {Integer} Mpi byte length
-	 */
-	function getByteLength() {
-		return this.mpiByteLength;
+
+	this.toBytes = function() {
+		return this.write().substr(2);
 	}
-	
-	/**
-	 * Creates an mpi from the specified string
-	 * @param {String} data Data to read the mpi from
-	 * @return {openpgp_type_mpi} 
-	 */
-	function create(data) {
-		this.MPI = data;
-		this.mpiBitLength = (data.length -1) *8 + getBits(data.charCodeAt(0));
-		this.mpiByteLength = data.length;
-		return this;
+
+	this.byteLength = function() {
+		return this.toBytes().length;
 	}
-	
+
 	/**
 	 * Converts the mpi object to a string as specified in RFC4880 3.2
 	 * @return {String} mpi Byte representation
 	 */
-	function toBin() {
-		var result = String.fromCharCode((this.mpiBitLength >> 8) & 0xFF);
-		result += String.fromCharCode(this.mpiBitLength & 0xFF);
-		result += this.MPI;
-		return result;
+	this.write = function() {
+		return this.data.toMPI();
 	}
-	
-	this.read = read;
-	this.toBigInteger = getBigInteger;
-	this.toString = toString;
-	this.create = create;
-	this.toBin = toBin;
-	this.getByteLength = getByteLength;
+
+	this.toBigInteger = function() {
+		return this.data.clone();
+	}
+
+	this.fromBigInteger = function(bn) {
+		this.data = bn.clone();
+	}
+
+	/**
+	 * Generates debug output (pretty print)
+	 * @return {String} String which gives some information about the mpi
+	 */
+	this.toString = function() {
+		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
+		r+=util.hexstrdump(this.MPI);
+		return r+'\n';
+	}
 }
 
