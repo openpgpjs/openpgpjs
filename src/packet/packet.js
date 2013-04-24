@@ -308,6 +308,19 @@ function _openpgp_packet() {
 		sym_encrypted_integrity_protected: 18,
 		modification_detection_code: 19
 	};
+
+	/*
+
+	TODO Invoke this code instead of putting a tag variable
+	inside each and every packet class. Right now we don't
+	know whether or not they have been loaded yet.
+
+	for(var i in this.type) {
+		var classname = 'openpgp_packet_' + i;
+		window[classname].prototype.tag = this.type[i];
+	}
+
+	*/
 }
 
 var openpgp_packet = new _openpgp_packet();

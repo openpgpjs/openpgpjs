@@ -220,6 +220,8 @@ var Util = function() {
 	 * containing the HTML encoded error message
 	 */
 	this.print_error = function(str) {
+		if(this.debug)
+			throw str;
 		console.log(str);
 	};
 	
@@ -233,7 +235,8 @@ var Util = function() {
 	 * containing the HTML encoded info message
 	 */
 	this.print_info = function(str) {
-		console.log(str);
+		if(this.debug)
+			console.log(str);
 	};
 	
 	this.print_warning = function(str) {

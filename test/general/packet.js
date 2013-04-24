@@ -75,6 +75,42 @@ unittests.register("Packet testing", function() {
 
 		return new test_result('Sym encrypted session key with a compressed packet',
 			result == 'Hello world!\n');
+
+	}, function() {
+	
+		var rsa = new RSA(),
+			key = rsa.generate(512, "10001")
+
+
+		var key = [[key.d.toMPI(), key.p.toMPI(), key.q.toMPI(), key.u.toMPI()],
+			[key.n.toMPI(), key.ee.toMPI()]];
+
+		key = key.map(function(k) {
+			return k.map(function(v) {
+				var mpi = new openpgp_type_mpi();
+				mpi.read(v, 0, v.length);
+				return mpi;
+				});
+		});
+		var enc = new openpgp_packet_public_key_encrypted_session_key(),
+			msg = new openpgp_packetlist(),
+			msg2 = new openpgp_packetlist();
+
+		enc.symmetric_key = '12345678901234567890123456789012',
+		enc.public_key_algorithm = openpgp.publickey.rsa_encrypt;
+		enc.symmetric_algorithm = openpgp.symmetric.aes256;
+		enc.public_key_id.bytes = '12345678';
+		enc.encrypt(key[1]);
+
+		msg.push(enc);
+
+		msg2.read(msg.write());
+
+		msg2[0].decrypt(key[1], key[0]);
+
+		return new test_result('Public key encrypted symmetric key packet', 
+			msg2[0].symmetric_key == enc.symmetric_key &&
+			msg2[0].symmetric_algorithm == enc.symmetric_algorithm);
 	}];
 
 	var results = [];
@@ -85,4 +121,4 @@ unittests.register("Packet testing", function() {
 	
 	
 	return results;
-});
+})

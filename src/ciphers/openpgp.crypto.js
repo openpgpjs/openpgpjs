@@ -23,7 +23,7 @@
  * @param {Integer} algo Algorithm to be used (See RFC4880 9.1)
  * @param {openpgp_type_mpi[]} publicMPIs Algorithm dependent multiprecision integers
  * @param {openpgp_type_mpi} data Data to be encrypted as MPI
- * @return {(openpgp_type_mpi|openpgp_type_mpi[])} if RSA an openpgp_type_mpi; 
+ * @return {openpgp_type_mpi[]} if RSA an openpgp_type_mpi; 
  * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
  */
 function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
@@ -35,7 +35,7 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
 		var n = publicMPIs[0].toBigInteger();
 		var e = publicMPIs[1].toBigInteger();
 		var m = data.toBigInteger();
-		return rsa.encrypt(m,e,n).toMPI();
+		return [rsa.encrypt(m,e,n)];
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
 		var elgamal = new Elgamal();
 		var p = publicMPIs[0].toBigInteger();

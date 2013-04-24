@@ -39,8 +39,6 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	 */
 	this.modification = false;
 	this.packets = new openpgp_packetlist();
-	/** @type {openpgp.symmetric} */
-	this.algorithm = openpgp.symmetric.plaintext;
 
 
 	this.read = function(bytes) {
