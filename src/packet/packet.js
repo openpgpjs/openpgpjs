@@ -277,7 +277,7 @@ function _openpgp_packet() {
 
 		return { 
 			packet: result, 
-			offset: mypos + packet_length
+			offset: mypos + real_packet_length
 		};
 	}
 

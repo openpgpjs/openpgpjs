@@ -16,7 +16,6 @@ function openpgp_packetlist() {
 	 * @param {openpgp_bytearray} An array of bytes.
 	 */
 	this.read = function(bytes) {
-		this.packets = [];
 		var i = 0;
 
 		while(i < bytes.length) {

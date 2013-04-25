@@ -98,6 +98,30 @@ function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs)
 	return result;
 }
 
+/** Returns the number of integers comprising the private key of an algorithm
+ * @param {openpgp.publickey} algo The public key algorithm
+ * @return {Integer} The number of integers.
+ */
+function openpgp_crypto_getPrivateMpiCount(algo) {
+	if (algo > 0 && algo < 4) {
+		//   Algorithm-Specific Fields for RSA secret keys:
+		//   - multiprecision integer (MPI) of RSA secret exponent d.
+		//   - MPI of RSA secret prime value p.
+		//   - MPI of RSA secret prime value q (p < q).
+		//   - MPI of u, the multiplicative inverse of p, mod q.
+		return 4;
+	} else if (algo == 16) {
+		// Algorithm-Specific Fields for Elgamal secret keys:
+		//   - MPI of Elgamal secret exponent x.
+		return 1;
+	} else if (algo == 17) {
+		// Algorithm-Specific Fields for DSA secret keys:
+		//   - MPI of DSA secret exponent x.
+		return 1;
+	}
+	else return 0;
+}
+
 /**
  * generate random byte prefix as string for the specified algorithm
  * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
@@ -181,6 +205,28 @@ function openpgp_crypto_getKeyLength(algo) {
 	return null;
 }
 
+/**
+ * Returns the block length of the specified symmetric encryption algorithm
+ * @param {openpgp.symmetric} algo Symmetric algorithm idenhifier
+ * @return {Integer} The number of bytes in a single block encrypted by the algorithm
+ */
+function openpgp_crypto_getBlockLength(algo) {
+	switch (algo) {
+	case  1: // - IDEA [IDEA]
+	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+	case  3: // - CAST5 (128 bit key, as per [RFC2144])
+		return 8;
+	case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	case  7: // - AES with 128-bit key [AES]
+	case  8: // - AES with 192-bit key
+	case  9: // - AES with 256-bit key
+		return 16;
+	case 10: // - Twofish with 256-bit key [TWOFISH]
+		return 32;	    		
+	default:
+		return 0;
+	}
+}
 /**
  * 
  * @param {Integer} algo public Key algorithm

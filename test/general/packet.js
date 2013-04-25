@@ -104,7 +104,7 @@ unittests.register("Packet testing", function() {
 			msg = new openpgp_packetlist(),
 			msg2 = new openpgp_packetlist();
 
-		enc.symmetric_key = '12345678901234567890123456789012',
+		enc.symmetric_key = '12345678901234567890123456789012';
 		enc.public_key_algorithm = openpgp.publickey.rsa_encrypt;
 		enc.symmetric_algorithm = openpgp.symmetric.aes256;
 		enc.public_key_id.bytes = '12345678';
@@ -119,6 +119,67 @@ unittests.register("Packet testing", function() {
 		return new test_result('Public key encrypted symmetric key packet', 
 			msg2[0].symmetric_key == enc.symmetric_key &&
 			msg2[0].symmetric_algorithm == enc.symmetric_algorithm);
+	}, function() {
+		var armored_key = 
+			'-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+			'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
+			'\n' +
+			'lQHYBFF33iMBBAC9YfOYahJlWrVj2J1TjQiZLunWljI4G9e6ARTyD99nfOkV3swh\n' +
+			'0WaOse4Utj7BfTqdYcoezhCaQpuExUupKWZqmduBcwSmEBfNu1XyKcxlDQuuk0Vk\n' +
+			'viGC3kFRce/cJaKVFSRU8V5zPgt6KQNv/wNz7ydEisaSoNbk51vQt5oGfwARAQAB\n' +
+			'AAP5AVL8xWMuKgLj9g7/wftMH+jO7vhAxje2W3Y+8r8TnOSn0536lQvzl/eQyeLC\n' +
+			'VK2k3+7+trgO7I4KuXCXZqgAbEi3niDYXDaCJ+8gdR9qvPM2gi9NM71TGXZvGE0w\n' +
+			'X8gIZfqLTQWKm9TIS/3tdrth4nwhiye0ASychOboIiN6VIECAMbCQ4/noxGV6yTK\n' +
+			'VezsGSz+iCMxz2lV270/Ac2C5WPk+OlxXloxUXeEkGIr6Xkmhhpceed2KL41UC8Y\n' +
+			'w5ttGIECAPPsahniKGyqp9CHy6W0B83yhhcIbmLlaVG2ftKyUEDxIggzOlXuVrue\n' +
+			'z9XRd6wFqwDd1QMFW0uUyHPDCIFPnv8CAJaDFSZutuWdWMt15NZXjfgRgfJuDrtv\n' +
+			'E7yFY/p0el8lCihOT8WoHbTn1PbCYMzNBc0IhHaZKAtA2pjkE+wzz9ClP7QbR2Vv\n' +
+			'cmdlIDxnZW9yZ2VAZXhhbXBsZS5jb20+iLkEEwECACMFAlF33iMCGwMHCwkIBwMC\n' +
+			'AQYVCAIJCgsEFgIDAQIeAQIXgAAKCRBcqs36fwJCXRbvA/9LPiK6WFKcFoNBnLEJ\n' +
+			'mS/CNkL8yTpkslpCP6+TwJMc8uXqwYl9/PW2+CwmzZjs6JsvTzMcR/ZbfZJuSW6Y\n' +
+			'EsLNejsSpgcY9aiewGtE+53e5oKYnlmVMTWOPywciIgMvXlzdGhxcwqJ8u0hT+ug\n' +
+			'9CjcAfuX9yw85LwXtdGwNh7J8Q==\n' +
+			'=lKiS\n' +
+			'-----END PGP PRIVATE KEY BLOCK-----';
+
+		key = new openpgp_packetlist();
+		key.read(openpgp_encoding_deArmor(armored_key).openpgp);
+		key = key[0];
+
+		var enc = new openpgp_packet_public_key_encrypted_session_key(),
+			secret = '12345678901234567890123456789012';
+
+		enc.symmetric_key = secret;
+		enc.public_key_algorithm = openpgp.publickey.rsa_encrypt;
+		enc.symmetric_algorithm = openpgp.symmetric.aes256;
+		enc.public_key_id.bytes = '12345678';
+
+		enc.encrypt(key.public_key.mpi);
+
+		enc.decrypt(key.public_key.mpi, key.mpi);
+
+		return new test_result('Public key packet (reading, unencrpted)',
+			enc.symmetric_key == secret);
+	}, function() {
+
+
+
+
+
+		key = new openpgp_packetlist();
+		key.read(openpgp_encoding_deArmor(armored_key).openpgp);
+		key = key[0];
+
+		var msg = new openpgp_packetlist();
+		msg.read(openpgp_encoding_deArmor(gpg).openpgp);
+
+		msg[0].decrypt(key.public_key.mpi, key.mpi);
+		msg[1].decrypt(msg[0].symmetric_algorithm, msg[0].symmetric_key);
+
+
+
+		return new test_result('Public key packet (reading, GPG encrypted)',
+			true);
 	}];
 
 	tests.reverse();

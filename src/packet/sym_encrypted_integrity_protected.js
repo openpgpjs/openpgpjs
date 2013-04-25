@@ -115,17 +115,16 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 
 		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
-
-		this.packets.read(decrypted.substr(0, decrypted.length - 22));
-
 		var mdc = decrypted.substr(decrypted.length - 20, 20);
 
 		if(this.hash != mdc) {
-			this.packets = null;
+			this.packets = new openpgp_packetlist();
 			util.print_error("Decryption stopped: discovered a " +
 				"modification of encrypted data.");
 			return;
 		}
+		else
+			this.packets.read(decrypted.substr(0, decrypted.length - 22));
 	}
 
 	this.toString = function() {

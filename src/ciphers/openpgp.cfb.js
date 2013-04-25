@@ -241,7 +241,6 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 				text.push(String.fromCharCode(ablock[i]^iblock[i])); 
 			}
 		}
-		
 	}
 	
 	return text.join('');
