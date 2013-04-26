@@ -55,7 +55,8 @@ function openpgp_packet_public_key_encrypted_session_key() {
 	 */
 	this.read = function(bytes) {
 		if (bytes.length < 10) {
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n" + 'invalid length');
+			util.print_error("openpgp.packet.encryptedsessionkey.js\n" 
+				+ 'invalid length');
 			return null;
 		}
 

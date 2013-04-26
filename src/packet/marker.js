@@ -27,7 +27,8 @@
  * Such a packet MUST be ignored when received.
  */
 function openpgp_packet_marker() {
-	this.tagType = 10;
+	this.tag = 10;
+
 	/**
 	 * Parsing function for a literal data packet (tag 10).
 	 * 
@@ -39,27 +40,12 @@ function openpgp_packet_marker() {
 	 *            input at position
 	 * @return {openpgp_packet_encrypteddata} Object representation
 	 */
-	function read_packet(input, position, len) {
-		this.packetLength = 3;
-		if (input[position].charCodeAt() == 0x50 && // P
-				input[position + 1].charCodeAt() == 0x47 && // G
-				input[position + 2].charCodeAt() == 0x50) // P
-			return this;
+	this.read = function(bytes) {
+		if (bytes[0].charCodeAt() == 0x50 && // P
+				bytes[1].charCodeAt() == 0x47 && // G
+				bytes[2].charCodeAt() == 0x50) // P
+			return true;
 		// marker packet does not contain "PGP"
-		return null;
+		return false;
 	}
-
-	/**
-	 * Generates Debug output
-	 * 
-	 * @return {String} String which gives some information about the 
-	 * keymaterial
-	 */
-	function toString() {
-		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"
-				+ "     packet reads: \"PGP\"\n";
-	}
-
-	this.read_packet = read_packet;
-	this.toString = toString;
 }

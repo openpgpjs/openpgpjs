@@ -534,3 +534,11 @@ function openpgp_packet_secret_key() {
 	
 	
 }
+
+
+function openpgp_packet_secret_subkey() {
+	openpgp_packet_secret_key.call(this);
+	this.tag = 7;
+}
+
+

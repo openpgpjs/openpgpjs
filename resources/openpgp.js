@@ -7449,7 +7449,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130425";
+	this.versionstring ="OpenPGP.js v.1.20130426";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -9679,232 +9679,6 @@ openpgp_packet_literal.format = {
 
 /**
  * @class
- * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
- * 
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
- * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
- * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
- * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
- * message is encrypted with the session key, and the session key is itself
- * encrypted and stored in the Encrypted Session Key packet(s). The
- * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
- * Session Key packet for each OpenPGP key to which the message is encrypted.
- * The recipient of the message finds a session key that is encrypted to their
- * public key, decrypts the session key, and then uses the session key to
- * decrypt the message.
- */
-function openpgp_packet_encryptedsessionkey() {
-
-	/**
-	 * Parsing function for a publickey encrypted session key packet (tag 1).
-	 * 
-	 * @param {String} input Payload of a tag 1 packet
-	 * @param {Integer} position Position to start reading from the input string
-	 * @param {Integer} len Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} Object representation
-	 */
-	function read_pub_key_packet(input, position, len) {
-		this.tagType = 1;
-		this.packetLength = len;
-		var mypos = position;
-		if (len < 10) {
-			util
-					.print_error("openpgp.packet.encryptedsessionkey.js\n" + 'invalid length');
-			return null;
-		}
-
-		this.version = input[mypos++].charCodeAt();
-		this.keyId = new openpgp_type_keyid();
-		this.keyId.read_packet(input, mypos);
-		mypos += 8;
-		this.publicKeyAlgorithmUsed = input[mypos++].charCodeAt();
-
-		switch (this.publicKeyAlgorithmUsed) {
-		case 1:
-		case 2: // RSA
-			this.MPIs = new Array();
-			this.MPIs[0] = new openpgp_type_mpi();
-			this.MPIs[0].read(input, mypos, mypos - position);
-			break;
-		case 16: // Elgamal
-			this.MPIs = new Array();
-			this.MPIs[0] = new openpgp_type_mpi();
-			this.MPIs[0].read(input, mypos, mypos - position);
-			mypos += this.MPIs[0].packetLength;
-			this.MPIs[1] = new openpgp_type_mpi();
-			this.MPIs[1].read(input, mypos, mypos - position);
-			break;
-		default:
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n"
-					+ "unknown public key packet algorithm type "
-					+ this.publicKeyAlgorithmType);
-			break;
-		}
-		return this;
-	}
-
-	/**
-	 * Create a string representation of a tag 1 packet
-	 * 
-	 * @param {String} publicKeyId
-	 *             The public key id corresponding to publicMPIs key as string
-	 * @param {openpgp_type_mpi[]} publicMPIs
-	 *            Multiprecision integer objects describing the public key
-	 * @param {Integer} pubalgo
-	 *            The corresponding public key algorithm // See RFC4880 9.1
-	 * @param {Integer} symmalgo
-	 *            The symmetric cipher algorithm used to encrypt the data 
-	 *            within an encrypteddatapacket or encryptedintegrity-
-	 *            protecteddatapacket 
-	 *            following this packet //See RFC4880 9.2
-	 * @param {String} sessionkey
-	 *            A string of randombytes representing the session key
-	 * @return {String} The string representation
-	 */
-	function write_pub_key_packet(publicKeyId, publicMPIs, pubalgo, symmalgo,
-			sessionkey) {
-		var result = String.fromCharCode(3);
-		var data = String.fromCharCode(symmalgo);
-		data += sessionkey;
-		var checksum = util.calc_checksum(sessionkey);
-		data += String.fromCharCode((checksum >> 8) & 0xFF);
-		data += String.fromCharCode((checksum) & 0xFF);
-		result += publicKeyId;
-		result += String.fromCharCode(pubalgo);
-		var mpi = new openpgp_type_mpi();
-		var mpiresult = openpgp_crypto_asymetricEncrypt(pubalgo, publicMPIs,
-				mpi.create(openpgp_encoding_eme_pkcs1_encode(data,
-						publicMPIs[0].mpiByteLength)));
-		for ( var i = 0; i < mpiresult.length; i++) {
-			result += mpiresult[i];
-		}
-		result = openpgp_packet.write_packet_header(1, result.length) + result;
-		return result;
-	}
-
-	/**
-	 * Parsing function for a symmetric encrypted session key packet (tag 3).
-	 * 
-	 * @param {String} input Payload of a tag 1 packet
-	 * @param {Integer} position Position to start reading from the input string
-	 * @param {Integer} len
-	 *            Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} Object representation
-	 */
-	function read_symmetric_key_packet(input, position, len) {
-		this.tagType = 3;
-		var mypos = position;
-		// A one-octet version number. The only currently defined version is 4.
-		this.version = input[mypos++];
-
-		// A one-octet number describing the symmetric algorithm used.
-		this.symmetricKeyAlgorithmUsed = input[mypos++];
-		// A string-to-key (S2K) specifier, length as defined above.
-		this.s2k = new openpgp_type_s2k();
-		this.s2k.read(input, mypos);
-
-		// Optionally, the encrypted session key itself, which is decrypted
-		// with the string-to-key object.
-		if ((s2k.s2kLength + mypos) < len) {
-			this.encryptedSessionKey = new Array();
-			for ( var i = (mypos - position); i < len; i++) {
-				this.encryptedSessionKey[i] = input[mypos++];
-			}
-		}
-		return this;
-	}
-	/**
-	 * Decrypts the session key (only for public key encrypted session key
-	 * packets (tag 1)
-	 * 
-	 * @param {openpgp_msg_message} msg
-	 *            The message object (with member encryptedData
-	 * @param {openpgp_msg_privatekey} key
-	 *            Private key with secMPIs unlocked
-	 * @return {String} The unencrypted session key
-	 */
-	function decrypt(msg, key) {
-		if (this.tagType == 1) {
-			var result = openpgp_crypto_asymetricDecrypt(
-					this.publicKeyAlgorithmUsed, key.publicKey.MPIs,
-					key.secMPIs, this.MPIs).toMPI();
-			var checksum = ((result.charCodeAt(result.length - 2) << 8) + result
-					.charCodeAt(result.length - 1));
-			var decoded = openpgp_encoding_eme_pkcs1_decode(result.substring(2, result.length - 2), key.publicKey.MPIs[0].getByteLength());
-			var sesskey = decoded.substring(1);
-			var algo = decoded.charCodeAt(0);
-			if (msg.encryptedData.tagType == 18)
-				return msg.encryptedData.decrypt(algo, sesskey);
-			else
-				return msg.encryptedData.decrypt_sym(algo, sesskey);
-		} else if (this.tagType == 3) {
-			util
-					.print_error("Symmetric encrypted sessionkey is not supported!");
-			return null;
-		}
-	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return {String} The string containing a openpgp description
-	 */
-	function toString() {
-		if (this.tagType == 1) {
-			var result = '5.1.  Public-Key Encrypted Session Key Packets (Tag 1)\n'
-					+ '    KeyId:  '
-					+ this.keyId.toString()
-					+ '\n'
-					+ '    length: '
-					+ this.packetLength
-					+ '\n'
-					+ '    version:'
-					+ this.version
-					+ '\n'
-					+ '    pubAlgUs:'
-					+ this.publicKeyAlgorithmUsed + '\n';
-			for ( var i = 0; i < this.MPIs.length; i++) {
-				result += this.MPIs[i].toString();
-			}
-			return result;
-		} else
-			return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
-					+ '    KeyId:  ' + this.keyId.toString() + '\n'
-					+ '    length: ' + this.packetLength + '\n'
-					+ '    version:' + this.version + '\n' + '    symKeyA:'
-					+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
-					+ this.s2k + '\n';
-	}
-
-	this.read_pub_key_packet = read_pub_key_packet;
-	this.read_symmetric_key_packet = read_symmetric_key_packet;
-	this.write_pub_key_packet = write_pub_key_packet;
-	this.toString = toString;
-	this.decrypt = decrypt;
-};
-
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
  * @classdesc Implementation of the strange "Marker packet" (Tag 10)
  * 
  * RFC4880 5.8: An experimental version of PGP used this packet as the Literal
@@ -9915,7 +9689,8 @@ function openpgp_packet_encryptedsessionkey() {
  * Such a packet MUST be ignored when received.
  */
 function openpgp_packet_marker() {
-	this.tagType = 10;
+	this.tag = 10;
+
 	/**
 	 * Parsing function for a literal data packet (tag 10).
 	 * 
@@ -9927,29 +9702,14 @@ function openpgp_packet_marker() {
 	 *            input at position
 	 * @return {openpgp_packet_encrypteddata} Object representation
 	 */
-	function read_packet(input, position, len) {
-		this.packetLength = 3;
-		if (input[position].charCodeAt() == 0x50 && // P
-				input[position + 1].charCodeAt() == 0x47 && // G
-				input[position + 2].charCodeAt() == 0x50) // P
-			return this;
+	this.read = function(bytes) {
+		if (bytes[0].charCodeAt() == 0x50 && // P
+				bytes[1].charCodeAt() == 0x47 && // G
+				bytes[2].charCodeAt() == 0x50) // P
+			return true;
 		// marker packet does not contain "PGP"
-		return null;
+		return false;
 	}
-
-	/**
-	 * Generates Debug output
-	 * 
-	 * @return {String} String which gives some information about the 
-	 * keymaterial
-	 */
-	function toString() {
-		return "5.8.  Marker Packet (Obsolete Literal Packet) (Tag 10)\n"
-				+ "     packet reads: \"PGP\"\n";
-	}
-
-	this.read_packet = read_packet;
-	this.toString = toString;
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -10971,362 +10731,6 @@ function openpgp_packet_userattribute() {
 
 /**
  * @class
- * @classdesc Implementation of the User ID Packet (Tag 13)
- * A User ID packet consists of UTF-8 text that is intended to represent
- * the name and email address of the key holder.  By convention, it
- * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
- * restrictions on its content.  The packet length in the header
- * specifies the length of the User ID. 
- */
-
-function openpgp_packet_userid() {
-	this.text = ''
-	this.tagType = 13;
-	this.certificationSignatures = new Array();
-	this.certificationRevocationSignatures = new Array();
-	this.revocationSignatures = new Array();
-	this.parentNode = null;
-	
-	/**
-	 * Set the packet text field to a native javascript string
-	 * Conversion to a proper utf8 encoding takes place when the 
-	 * packet is written.
-	 * @param {String} str Any native javascript string
-	 */
-	this.set_text = function(str) {
-		this.text = str;
-	}
-
-	/**
-	 * Set the packet text to value represented by the provided string
-	 * of bytes.
-	 * @param {String} bytes A string of bytes
-	 */
-	this.set_text_bytes = function(bytes) {
-		this.text = util.decode_utf8(bytes);
-	}
-
-	/**
-	 * Get the byte sequence representing the text of this packet.
-	 * @returns {String} A sequence of bytes
-	 */
-	this.get_text_bytes = function() {
-		return util.encode_utf8(this.text);
-	}
-	
-
-	/**
-	 * Parsing function for a user id packet (tag 13).
-	 * @param {String} input payload of a tag 13 packet
-	 * @param {Integer} position position to start reading from the input string
-	 * @param {Integer} len length of the packet or the remaining length of input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		this.set_text_bytes(bytes);
-		return this;
-	}
-
-	this.read_packet = function(){};
-
-	/**
-	 * Creates a string representation of the user id packet
-	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
-	 * @return {String} string representation
-	 */
-	this.write = function() {
-		var bytes = this.get_text_bytes();
-
-		return bytes;
-	}
-
-	/**
-	 * Continue parsing packets belonging to the userid packet such as signatures
-	 * @param {Object} parent_node the parent object
-	 * @param {String} input input string to read the packet(s) from
-	 * @param {Integer} position start position for the parser
-	 * @param {Integer} len length of the packet(s) or remaining length of input
-	 * @return {Integer} length of nodes read
-	 */
-	this.read_nodes = function(parent_node, input, position, len) {
-		if (parent_node.tagType == 6) { // public key
-			this.parentNode = parent_node;
-			var pos = position;
-			var l = len;
-			while (input.length != pos) {
-				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
-				if (result == null) {
-					util.print_error('[user_id] parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					
-					pos += result.packetLength + result.headerLength;
-					l = input.length - pos;
-					switch (result.tagType) {
-					case 2: // Signature Packet
-						if (result.signatureType > 15
-								&& result.signatureType < 20) { // certification
-							// //
-							// signature
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-							break;
-						} else if (result.signatureType == 48) {// certification revocation signature
-							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-							break;
-						} else if (result.signatureType == 24) { // omg. standalone signature 
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-							break;
-						} else {
-							util.print_debug("unknown sig t: "+result.signatureType+"@"+(pos - (result.packetLength + result.headerLength)));
-						}
-					default:
-						this.data = input;
-						this.position = position - parent_node.packetLength;
-						this.len = pos - position -(result.headerLength + result.packetLength);
-						return this.len;
-					}
-				}
-			}
-			this.data = input;
-			this.position = position - parent_node.packetLength;
-			this.len = pos - position -(result.headerLength + result.packetLength);
-			return this.len;
-		} else if (parent_node.tagType == 5) { // secret Key
-			this.parentNode = parent_node;
-			var exit = false;
-			var pos = position;
-			while (input.length != pos) {
-				var result = openpgp_packet.read_packet(input, pos, l - (pos - position));
-				if (result == null) {
-					util.print_error('parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					pos += result.packetLength + result.headerLength;
-					l = input.length - pos;
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType > 15
-								&& result.signatureType < 20)
-							this.certificationSignatures[this.certificationSignatures.length] = result;
-						// certification revocation signature
-						else if (result.signatureType == 48)
-							this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-					default:
-						this.data = input;
-						this.position = position - parent_node.packetLength;
-						this.len = pos - position -(result.headerLength + result.packetLength);
-						return this.len;
-					}
-				}
-			}
-		} else {
-			util.print_error("unknown parent node for a userId packet "+parent_node.tagType);
-		}
-	}
-	
-	/**
-	 * generates debug output (pretty print)
-	 * @return {String} String which gives some information about the user id packet
-	 */
-	this.toString = function() {
-		var result = '     5.11.  User ID Packet (Tag 13)\n' + '    text ('
-				+ this.text.length + '): "' + this.text.replace("<", "&lt;")
-				+ '"\n';
-		result +="certification signatures:\n";
-		for (var i = 0; i < this.certificationSignatures.length; i++) {
-			result += "        "+this.certificationSignatures[i].toString();
-		}
-		result +="certification revocation signatures:\n";
-		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
-			result += "        "+this.certificationRevocationSignatures[i].toString();
-		}
-		return result;
-	}
-
-	/**
-	 * lookup function to find certification revocation signatures
-	 * @param {String} keyId string containing the key id of the issuer of this signature
-	 * @return a CertificationRevocationSignature if found; otherwise null
-	 */
-	this.hasCertificationRevocationSignature = function(keyId) {
-		for (var i = 0; i < this.certificationRevocationSignatures.length; i++) {
-			if ((this.certificationRevocationSignatures[i].version == 3 &&
-				 this.certificationRevocationSignatures[i].keyId == keyId) ||
-				(this.certificationRevocationSignatures[i].version == 4 &&
-				 this.certificationRevocationSignatures[i].issuerKeyId == keyId))
-				return this.certificationRevocationSignatures[i];
-		}
-		return null;
-	}
-
-	/**
-	 * Verifies all certification signatures. This method does not consider possible revocation signatures.
-	 * @param {Object} publicKeyPacket the top level key material
-	 * @return {Integer[]} An array of integers corresponding to the array of certification signatures. The meaning of each integer is the following:
-	 * 0 = bad signature
-	 * 1 = signature expired
-	 * 2 = issuer key not available
-	 * 3 = revoked
-	 * 4 = signature valid
-	 * 5 = signature by key owner expired
-	 * 6 = signature by key owner revoked
-	 */
-	this.verifyCertificationSignatures = function(publicKeyPacket) {
-		var bytes = this.get_text_bytes();
-		result = new Array();
-		for (var i = 0 ; i < this.certificationSignatures.length; i++) {
-			// A certification signature (type 0x10 through 0x13) hashes the User
-			// ID being bound to the key into the hash context after the above
-			// data.  A V3 certification hashes the contents of the User ID or
-			// attribute packet packet, without any header.  A V4 certification
-			// hashes the constant 0xB4 for User ID certifications or the constant
-			// 0xD1 for User Attribute certifications, followed by a four-octet
-			// number giving the length of the User ID or User Attribute data, and
-			// then the User ID or User Attribute data.
-
-			if (this.certificationSignatures[i].version == 4) {
-				if (this.certificationSignatures[i].signatureExpirationTime != null &&
-						this.certificationSignatures[i].signatureExpirationTime != null &&
-						this.certificationSignatures[i].signatureExpirationTime != 0 &&
-						!this.certificationSignatures[i].signatureNeverExpires &&
-						new Date(this.certificationSignatures[i].creationTime.getTime() +(this.certificationSignatures[i].signatureExpirationTime*1000)) < new Date()) {
-					if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
-						result[i] = 5;
-					else
-						result[i] = 1;
-					continue;
-				}
-				if (this.certificationSignatures[i].issuerKeyId == null) {
-					result[i] = 0;
-					continue;
-				}
-				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].issuerKeyId);
-				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
-					result[i] = 2;
-					continue;
-				}
-				// TODO: try to verify all returned issuer public keys (key ids are not unique!)
-				var issuerPublicKey = issuerPublicKey[0];
-				var signingKey = issuerPublicKey.obj.getSigningKey();
-				if (signingKey == null) {
-					result[i] = 0;
-					continue;
-				}
-				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].issuerKeyId);
-				if (revocation != null && revocation.creationTime > 
-					this.certificationSignatures[i].creationTime) {
-
-					var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data+String.fromCharCode(0xB4)+
-					String.fromCharCode((bytes.length >> 24) & 0xFF)+
-					String.fromCharCode((bytes.length >> 16) & 0xFF)+
-					String.fromCharCode((bytes.length >>  8) & 0xFF)+
-					String.fromCharCode((bytes.length) & 0xFF)+
-					bytes;
-					if (revocation.verify(signaturedata, signingKey)) {
-						if (this.certificationSignatures[i].issuerKeyId == publicKeyPacket.getKeyId())
-							result[i] = 6;
-						else
-							result[i] = 3;
-						continue;
-					}
-				}
-
-				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-						publicKeyPacket.data+String.fromCharCode(0xB4)+
-						String.fromCharCode((bytes.length >> 24) & 0xFF)+
-						String.fromCharCode((bytes.length >> 16) & 0xFF)+
-						String.fromCharCode((bytes.length >>  8) & 0xFF)+
-						String.fromCharCode((bytes.length) & 0xFF)+
-						bytes;
-				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
-					result[i] = 4;
-				} else
-				result[i] = 0;
-			} else if (this.certificationSignatures[i].version == 3) {
-				if (this.certificationSignatures[i].keyId == null) {
-					result[i] = 0;
-					continue;
-				}
-				var issuerPublicKey = openpgp.keyring.getPublicKeysForKeyId(this.certificationSignatures[i].keyId);
-				if (issuerPublicKey == null || issuerPublicKey.length == 0) {
-					result[i] = 2;
-					continue;
-				}
-				issuerPublicKey = issuerPublicKey[0];
-				var signingKey = publicKey.obj.getSigningKey();
-				if (signingKey == null) {
-					result[i] = 0;
-					continue;
-				}
-				var revocation = this.hasCertificationRevocationSignature(this.certificationSignatures[i].keyId);
-				if (revocation != null && revocation.creationTime > 
-					this.certificationSignatures[i].creationTime) {
-					var signaturedata = String.fromCharCode(0x99)+ this.publicKeyPacket.header.substring(1)+
-					this.publicKeyPacket.data+bytes;
-					if (revocation.verify(signaturedata, signingKey)) {
-						if (revocation.keyId == publicKeyPacket.getKeyId())
-							result[i] = 6;
-						else
-							result[i] = 3;
-						continue;
-					}
-				}
-				var signaturedata = String.fromCharCode(0x99)+ publicKeyPacket.header.substring(1)+
-					publicKeyPacket.data + bytes;
-				if (this.certificationSignatures[i].verify(signaturedata, signingKey)) {
-					result[i] = 4;
-				} else 
-				result[i] = 0;
-			} else {
-				result[i] = 0;
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * verifies the signatures of the user id
-	 * @return 0 if the userid is valid; 1 = userid expired; 2 = userid revoked
-	 */
-	this.verify = function(publicKeyPacket) {
-		var result = this.verifyCertificationSignatures(publicKeyPacket);
-		if (result.indexOf(6) != -1)
-			return 2;
-		if (result.indexOf(5) != -1)
-			return 1;
-		return 0;
-	}
-
-	// TODO: implementation missing
-	this.addCertification = function(publicKeyPacket, privateKeyPacket) {
-		
-	}
-
-	// TODO: implementation missing
-	this.revokeCertification = function(publicKeyPacket, privateKeyPacket) {
-		
-	}
-}
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @class
  * @classdesc Parent openpgp packet class. Operations focus on determining 
  * packet types and packet header.
  */
@@ -11742,7 +11146,8 @@ function openpgp_packet_public_key_encrypted_session_key() {
 	 */
 	this.read = function(bytes) {
 		if (bytes.length < 10) {
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n" + 'invalid length');
+			util.print_error("openpgp.packet.encryptedsessionkey.js\n" 
+				+ 'invalid length');
 			return null;
 		}
 
@@ -11915,10 +11320,8 @@ function openpgp_packet_public_key_encrypted_session_key() {
  * major versions.  Consequently, this section is complex.
  */
 function openpgp_packet_public_key() {
-	// members:
 	this.tag = 6;
 	this.version = 4;
-	this.expiration  = null;
 	this.created = null;
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
@@ -12071,35 +11474,11 @@ function openpgp_packet_public_key() {
 
 		return result;
 	}
+}
 
-
-	/**
-	 * Generates Debug output
-	 * @return String which gives some information about the keymaterial
-	 */
-	this.toString = function() {
-		var result = "";
-		switch (this.tag) {
-		case 6:
-			 result += '5.5.1.1. Public-Key Packet (Tag 6)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 14:
-			result += '5.5.1.2. Public-Subkey Packet (Tag 14)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		}
-	}
-	
-
+function openpgp_packet_public_subkey() {
+	openpgp_packet_public_key.call(this);
+	this.tag = 14;
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -12637,6 +12016,14 @@ function openpgp_packet_secret_key() {
 	
 	
 }
+
+
+function openpgp_packet_secret_subkey() {
+	openpgp_packet_secret_key.call(this);
+	this.tag = 7;
+}
+
+
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -13000,6 +12387,62 @@ function openpgp_packet_symmetrically_encrypted() {
 				+ util.hexstrdump(this.encryptedData) + ']\n';
 	}
 };
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Implementation of the User ID Packet (Tag 13)
+ * A User ID packet consists of UTF-8 text that is intended to represent
+ * the name and email address of the key holder.  By convention, it
+ * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
+ * restrictions on its content.  The packet length in the header
+ * specifies the length of the User ID. 
+ */
+
+function openpgp_packet_userid() {
+	/** @type {String} A string containing the user id. Usually in the form
+	 * John Doe <john@example.com> 
+	 */
+	this.userid = '';
+	this.tag = 13;
+	
+	
+	/**
+	 * Parsing function for a user id packet (tag 13).
+	 * @param {String} input payload of a tag 13 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input 
+	 * at position
+	 * @return {openpgp_packet_encrypteddata} object representation
+	 */
+	this.read = function(bytes) {
+		this.userid = util.decode_utf8(bytes);
+	}
+
+	/**
+	 * Creates a string representation of the user id packet
+	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
+	 * @return {String} string representation
+	 */
+	this.write = function() {
+		return util.encode_utf8(this.userid);
+	}
+}
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 

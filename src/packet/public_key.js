@@ -25,10 +25,8 @@
  * major versions.  Consequently, this section is complex.
  */
 function openpgp_packet_public_key() {
-	// members:
 	this.tag = 6;
 	this.version = 4;
-	this.expiration  = null;
 	this.created = null;
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
@@ -181,33 +179,9 @@ function openpgp_packet_public_key() {
 
 		return result;
 	}
+}
 
-
-	/**
-	 * Generates Debug output
-	 * @return String which gives some information about the keymaterial
-	 */
-	this.toString = function() {
-		var result = "";
-		switch (this.tag) {
-		case 6:
-			 result += '5.5.1.1. Public-Key Packet (Tag 6)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 14:
-			result += '5.5.1.2. Public-Subkey Packet (Tag 14)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		}
-	}
-	
-
+function openpgp_packet_public_subkey() {
+	openpgp_packet_public_key.call(this);
+	this.tag = 14;
 }
