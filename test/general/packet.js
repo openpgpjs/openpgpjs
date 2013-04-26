@@ -225,6 +225,11 @@ unittests.register("Packet testing", function() {
 
 		return new test_result('Public key encrypted packet (reading, GPG)',
 			text == 'Hello world!');
+	}, function() {
+	
+	
+		return new test_result('Secret key encryption/decryption test',
+			'tello' == 'Hello world!');
 	}];
 
 	tests.reverse();

@@ -11417,13 +11417,7 @@ function openpgp_packet_public_key() {
 			*/
 		} else if (this.version == 4) {
 			// - A four-octet number denoting the time that the key was created.
-			var timeb = bytes.substr(1, 4);
-
-			this.created= new Date((
-				(timeb[0].charCodeAt() << 24) |
-				(timeb[1].charCodeAt() << 16) |
-				(timeb[2].charCodeAt() <<  8) |
-				(timeb[3].charCodeAt())) * 1000);
+			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
 			this.algorithm = bytes[5].charCodeAt();
@@ -11465,7 +11459,7 @@ function openpgp_packet_public_key() {
      */
     this.write = function() {
 		var result = String.fromCharCode(4);
-        result += '0000';
+        result += openpgp_packet_time_write(this.created);
 		result += String.fromCharCode(this.algorithm);
 
 		for(var i in this.mpi) {
@@ -11512,7 +11506,6 @@ function openpgp_packet_secret_key() {
 	this.mpi = [];
 	this.symmetric_algorithm = openpgp.symmetric.plaintext;
 	this.s2k = null;
-	this.checksum_algorithm = openpgp.hash.sha1;
 	this.encrypted = null;
 	this.iv = null;
 
@@ -11550,8 +11543,7 @@ function openpgp_packet_secret_key() {
 			//   string-to-key specifier.  The length of the string-to-key
 			//   specifier is implied by its type, as described above.
 	    	this.s2k = new openpgp_type_s2k();
-	    	this.s2k.read(bytes, i);
-	    	i += this.s2k.s2kLength;
+	    	i += this.s2k.read(bytes.substr(i));
 	    }
 	    
 	    // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -11561,6 +11553,7 @@ function openpgp_packet_secret_key() {
 	    if (s2k_usage != 0 && s2k_usage != 255 &&
 	    		s2k_usage != 254) {
 	    	this.symmetric_algorithm = s2k_usage;
+			
 	    }
 
 	    if (s2k_usage != 0 && this.s2k.type != 1001) {
@@ -11587,7 +11580,7 @@ function openpgp_packet_secret_key() {
 			var mpis = openpgp_crypto_getPrivateMpiCount(this.public_key.algorithm);
 			this.mpi = [];
 
-			for(var j = 0; j < 4; j++) {
+			for(var j = 0; j < mpis; j++) {
 	    		this.mpi[j] = new openpgp_type_mpi();
 	    		i += this.mpi[j].read(bytes.substr(i));
 			}
@@ -11613,6 +11606,95 @@ function openpgp_packet_secret_key() {
 		header: [string] OpenPGP packet header, string: [string] header+body}
      */
     this.write = function() {
+		var bytes = this.public_key.write();
+
+		if(this.encrypted == null) {
+			bytes += String.fromCharCode(0);
+			
+			for(var i in this.mpi) {
+				bytes += this.mpi[i].write();
+			}
+
+			// TODO check the cheksum!
+			bytes += '00'
+		} else if(this.s2k == null) {
+			bytes += String.fromCharCode(this.symmetric_algorithm);
+			bytes += this.encrypted;
+		} else {
+			bytes += String.fromCharCode(254);
+			bytes += String.fromCharCode(this.symmetric_algorithm);
+			bytes += this.s2k.write();
+		}
+			
+
+
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(keyType);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    var algorithmStart = body.length;
+		    //below shows ske/s2k
+		    if(password){
+		        body += String.fromCharCode(254); //octet of 254 indicates s2k with SHA1
+		        //if s2k == 255,254 then 1 octet symmetric encryption algo
+		        body += String.fromCharCode(this.symmetric_algorithm);
+		        //if s2k == 255,254 then s2k specifier
+		        body += String.fromCharCode(3); //s2k salt+iter
+		        body += String.fromCharCode(s2kHash);
+		        //8 octet salt value
+		        //1 octet count
+		        var cleartextMPIs = key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var sha1Hash = str_sha1(cleartextMPIs);
+   		        util.print_debug_hexstr_dump('write_private_key sha1: ',sha1Hash);
+		        var salt = openpgp_crypto_getRandomBytes(8);
+		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
+		        body += salt;
+		        var c = 96; //c of 96 translates to count of 65536
+		        body += String.fromCharCode(c);
+		        util.print_debug('write_private_key c: '+ c);
+		        var s2k = new openpgp_type_s2k();
+		        var hashKey = s2k.write(3, s2kHash, password, salt, c);
+		        //if s2k, IV of same length as cipher's block
+		        switch(this.symmetric_algorithm){
+		        case 3:
+		            this.IVLength = 8;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+            		ciphertextMPIs = normal_cfb_encrypt(function(block, key) {
+                		var cast5 = new openpgp_symenc_cast5();
+                		cast5.setKey(key);
+                		return cast5.encrypt(util.str2bin(block)); 
+            		}, this.IVLength, util.str2bin(hashKey.substring(0,16)), cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+		            break;
+		        case 7:
+		        case 8:
+		        case 9:
+		            this.IVLength = 16;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+		            ciphertextMPIs = normal_cfb_encrypt(AESencrypt,
+            				this.IVLength, hashKey, cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+	            	break;
+		        }
+		    }
+		    else{
+		        body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
+		        body += key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var checksum = util.calc_checksum(key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI());
+        		body += String.fromCharCode(checksum/0x100) + String.fromCharCode(checksum%0x100);//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536
+        		util.print_debug_hexstr_dump('write_private_key basic checksum: '+ checksum);
+		    }
+		    break;
+		default :
+			body = "";
+			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+        }
+		var header = openpgp_packet.write_packet_header(tag,body.length);
+		return {string: header+body , header: header, body: body};
+    }
+
+    this.encrypt = function() {
 
 		var body = String.fromCharCode(4);
 		body += timePacket;
@@ -11681,6 +11763,7 @@ function openpgp_packet_secret_key() {
 		var header = openpgp_packet.write_packet_header(tag,body.length);
 		return {string: header+body , header: header, body: body};
     }
+
 
 	/**
 	 * Decrypts the private key MPIs which are needed to use the key.
@@ -12261,11 +12344,11 @@ function openpgp_packet_sym_encrypted_session_key() {
 		this.private_algorithm = bytes[1].charCodeAt();
 
 		// A string-to-key (S2K) specifier, length as defined above.
-		this.s2k.read(bytes, 2);
+		var s2klength = this.s2k.read(bytes.substr(2));
 
 		// Optionally, the encrypted session key itself, which is decrypted
 		// with the string-to-key object.
-		var done = this.s2k.length + 2;
+		var done = s2klength + 2;
 		if(done < bytes.length) {
 			this.encrypted = bytes.substr(done);
 		}
@@ -12387,6 +12470,42 @@ function openpgp_packet_symmetrically_encrypted() {
 				+ util.hexstrdump(this.encryptedData) + ']\n';
 	}
 };
+
+
+
+function openpgp_packet_number_read(bytes) {
+	var n = 0;
+
+	for(var i = 0; i < bytes.length; i++) {
+		n += bytes[i].charCodeAt() * 8 * (bytes.length - i - 1);
+	}
+
+	return n;
+}
+
+function openpgp_packet_number_write(n, bytes) {
+	var b = '';
+	for(var i = 0; i < bytes; i++) {
+		b += String.fromCharCode((n >> 8 * (bytes.length - i - 1)) ^ 0xFF);
+	}
+
+	return b;
+}
+
+
+
+function openpgp_packet_time_read(bytes) {
+	var n = openpgp_packet_number_read(bytes);
+	var d = new Date();
+	d.setTime(n * 1000);
+	return d;
+}
+
+function openpgp_packet_time_write(time) {
+	var numeric = Math.round(this.time.getTime() / 1000);
+
+	return openpgp_packet_number_write(numeric, 4);
+}
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12751,6 +12870,185 @@ function openpgp_type_s2k() {
 	this.read = read;
 	this.write = write;
 	this.produce_key = produce_key;
+}
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @class
+ * @classdesc Implementation of the String-to-key specifier (RFC4880 3.7)
+ * String-to-key (S2K) specifiers are used to convert passphrase strings
+   into symmetric-key encryption/decryption keys.  They are used in two
+   places, currently: to encrypt the secret part of private keys in the
+   private keyring, and to convert passphrases to encryption keys for
+   symmetrically encrypted messages.
+ */
+function openpgp_type_s2k() {
+	/** @type {openpgp.hash} */
+	this.algorithm = null;
+	/** @type {openpgp_type_s2k.type} */
+	this.type = openpgp_type_s2k.type.iterated;
+	this.c = 1000;
+
+
+	// Exponen bias, defined in RFC4880
+	var expbias = 6;
+
+	this.get_count = function() {
+		return (16 + (this.c & 15)) << ((this.c >> 4) + expbias);
+	}
+
+	/**
+	 * Parsing function for a string-to-key specifier (RFC 4880 3.7).
+	 * @param {String} input Payload of string-to-key specifier
+	 * @return {Integer} Actual length of the object
+	 */
+	this.read = function(bytes) {
+		var i = 0;
+		this.type = bytes[i++].charCodeAt();
+		this.algorithm = bytes[i++].charCodeAt();
+
+		var t = openpgp_type_s2k.type;
+
+		switch (this.type) {
+		case t.simple:
+			break;
+
+		case t.salted:
+			this.salt = bytes.substr(i, 8);
+			i += 8;
+			break;
+
+		case t.iterated:
+			this.salt = bytes.substr(i, 8);
+			i += 8;
+
+			// Octet 10: count, a one-octet, coded value
+			this.c = bytes[i++].charCodeAt();
+			break;
+
+		case t.gnu:
+			if(bytes.substr(i, 3) == "GNU") {
+				i += 3; // GNU
+				var gnuExtType = 1000 + bytes[i++].charCodeAt();
+				if(gnuExtType == 1001) {
+					this.type = gnuExtType;
+					// GnuPG extension mode 1001 -- don't write secret key at all
+				} else {
+					util.print_error("unknown s2k gnu protection mode! "+this.type);
+				}
+			} else {
+				util.print_error("unknown s2k type! "+this.type);
+			}
+			break;
+
+		default:
+			util.print_error("unknown s2k type! "+this.type);
+			break;
+		}
+
+		return i;
+	}
+	
+	
+	/**
+	 * writes an s2k hash based on the inputs.
+	 * @return {String} Produced key of hashAlgorithm hash length
+	 */
+	this.write = function() {
+		var bytes = String.fromCharCode(this.type);
+		bytes += String.fromCharCode(this.algorithm);
+
+		var t = openpgp_type_s2k.type;
+		switch(this.type) {
+			case t.simple:
+				break;
+			case t.salted:
+				bytes += this.salt;
+				break;
+			case t.iterated:
+				bytes += this.salt;
+				bytes += this.c;
+				break;
+		};
+
+		return bytes;
+	}
+
+	/**
+	 * Produces a key using the specified passphrase and the defined 
+	 * hashAlgorithm 
+	 * @param {String} passphrase Passphrase containing user input
+	 * @return {String} Produced key with a length corresponding to 
+	 * hashAlgorithm hash length
+	 */
+	this.produce_key = function(passphrase, numBytes) {
+		passphrase = util.encode_utf8(passphrase);
+
+		function round(prefix, s2k) {
+
+			var t = openpgp_type_s2k.type;
+			switch(s2k.type) {
+				case t.simple:
+					return openpgp_crypto_hashData(s2k.algorithm, prefix + passphrase);
+
+				case t.salted:
+					return openpgp_crypto_hashData(s2k.algorithm, 
+						prefix + s2k.salt + passphrase);
+
+				case t.iterated:
+					var isp = [],
+						count = s2k.get_count();
+						data = s2k.salt + passphrase;
+
+					while (isp.length * data.length < count)
+						isp.push(data);
+
+					isp = isp.join('');			
+
+					if (isp.length > count)
+						isp = isp.substr(0, count);
+
+					return openpgp_crypto_hashData(s2k.algorithm, prefix + isp);
+			};
+		}
+		
+		var result = '',
+			prefix = '';
+
+		while(result.length <= numBytes) {
+			result += round(prefix, this);
+			prefix += String.fromCharCode(0);
+		}
+
+		return result.substr(0, numBytes);
+	}
+}
+
+
+
+/** A string to key specifier type
+ * @enum {Integer}
+ */
+openpgp_type_s2k.type = {
+	simple: 0,
+	salted: 1,
+	iterated: 3,
+	gnu: 101
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH

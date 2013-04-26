@@ -122,13 +122,7 @@ function openpgp_packet_public_key() {
 			*/
 		} else if (this.version == 4) {
 			// - A four-octet number denoting the time that the key was created.
-			var timeb = bytes.substr(1, 4);
-
-			this.created= new Date((
-				(timeb[0].charCodeAt() << 24) |
-				(timeb[1].charCodeAt() << 16) |
-				(timeb[2].charCodeAt() <<  8) |
-				(timeb[3].charCodeAt())) * 1000);
+			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
 			this.algorithm = bytes[5].charCodeAt();
@@ -170,7 +164,7 @@ function openpgp_packet_public_key() {
      */
     this.write = function() {
 		var result = String.fromCharCode(4);
-        result += '0000';
+        result += openpgp_packet_time_write(this.created);
 		result += String.fromCharCode(this.algorithm);
 
 		for(var i in this.mpi) {

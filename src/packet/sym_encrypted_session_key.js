@@ -56,11 +56,11 @@ function openpgp_packet_sym_encrypted_session_key() {
 		this.private_algorithm = bytes[1].charCodeAt();
 
 		// A string-to-key (S2K) specifier, length as defined above.
-		this.s2k.read(bytes, 2);
+		var s2klength = this.s2k.read(bytes.substr(2));
 
 		// Optionally, the encrypted session key itself, which is decrypted
 		// with the string-to-key object.
-		var done = this.s2k.length + 2;
+		var done = s2klength + 2;
 		if(done < bytes.length) {
 			this.encrypted = bytes.substr(done);
 		}

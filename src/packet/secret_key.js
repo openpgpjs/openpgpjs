@@ -30,7 +30,6 @@ function openpgp_packet_secret_key() {
 	this.mpi = [];
 	this.symmetric_algorithm = openpgp.symmetric.plaintext;
 	this.s2k = null;
-	this.checksum_algorithm = openpgp.hash.sha1;
 	this.encrypted = null;
 	this.iv = null;
 
@@ -68,8 +67,7 @@ function openpgp_packet_secret_key() {
 			//   string-to-key specifier.  The length of the string-to-key
 			//   specifier is implied by its type, as described above.
 	    	this.s2k = new openpgp_type_s2k();
-	    	this.s2k.read(bytes, i);
-	    	i += this.s2k.s2kLength;
+	    	i += this.s2k.read(bytes.substr(i));
 	    }
 	    
 	    // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -79,6 +77,7 @@ function openpgp_packet_secret_key() {
 	    if (s2k_usage != 0 && s2k_usage != 255 &&
 	    		s2k_usage != 254) {
 	    	this.symmetric_algorithm = s2k_usage;
+			
 	    }
 
 	    if (s2k_usage != 0 && this.s2k.type != 1001) {
@@ -105,7 +104,7 @@ function openpgp_packet_secret_key() {
 			var mpis = openpgp_crypto_getPrivateMpiCount(this.public_key.algorithm);
 			this.mpi = [];
 
-			for(var j = 0; j < 4; j++) {
+			for(var j = 0; j < mpis; j++) {
 	    		this.mpi[j] = new openpgp_type_mpi();
 	    		i += this.mpi[j].read(bytes.substr(i));
 			}
@@ -131,6 +130,95 @@ function openpgp_packet_secret_key() {
 		header: [string] OpenPGP packet header, string: [string] header+body}
      */
     this.write = function() {
+		var bytes = this.public_key.write();
+
+		if(this.encrypted == null) {
+			bytes += String.fromCharCode(0);
+			
+			for(var i in this.mpi) {
+				bytes += this.mpi[i].write();
+			}
+
+			// TODO check the cheksum!
+			bytes += '00'
+		} else if(this.s2k == null) {
+			bytes += String.fromCharCode(this.symmetric_algorithm);
+			bytes += this.encrypted;
+		} else {
+			bytes += String.fromCharCode(254);
+			bytes += String.fromCharCode(this.symmetric_algorithm);
+			bytes += this.s2k.write();
+		}
+			
+
+
+		switch(keyType){
+		case 1:
+		    body += String.fromCharCode(keyType);//public key algo
+		    body += key.n.toMPI();
+		    body += key.ee.toMPI();
+		    var algorithmStart = body.length;
+		    //below shows ske/s2k
+		    if(password){
+		        body += String.fromCharCode(254); //octet of 254 indicates s2k with SHA1
+		        //if s2k == 255,254 then 1 octet symmetric encryption algo
+		        body += String.fromCharCode(this.symmetric_algorithm);
+		        //if s2k == 255,254 then s2k specifier
+		        body += String.fromCharCode(3); //s2k salt+iter
+		        body += String.fromCharCode(s2kHash);
+		        //8 octet salt value
+		        //1 octet count
+		        var cleartextMPIs = key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var sha1Hash = str_sha1(cleartextMPIs);
+   		        util.print_debug_hexstr_dump('write_private_key sha1: ',sha1Hash);
+		        var salt = openpgp_crypto_getRandomBytes(8);
+		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
+		        body += salt;
+		        var c = 96; //c of 96 translates to count of 65536
+		        body += String.fromCharCode(c);
+		        util.print_debug('write_private_key c: '+ c);
+		        var s2k = new openpgp_type_s2k();
+		        var hashKey = s2k.write(3, s2kHash, password, salt, c);
+		        //if s2k, IV of same length as cipher's block
+		        switch(this.symmetric_algorithm){
+		        case 3:
+		            this.IVLength = 8;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+            		ciphertextMPIs = normal_cfb_encrypt(function(block, key) {
+                		var cast5 = new openpgp_symenc_cast5();
+                		cast5.setKey(key);
+                		return cast5.encrypt(util.str2bin(block)); 
+            		}, this.IVLength, util.str2bin(hashKey.substring(0,16)), cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+		            break;
+		        case 7:
+		        case 8:
+		        case 9:
+		            this.IVLength = 16;
+		            this.IV = openpgp_crypto_getRandomBytes(this.IVLength);
+		            ciphertextMPIs = normal_cfb_encrypt(AESencrypt,
+            				this.IVLength, hashKey, cleartextMPIs + sha1Hash, this.IV);
+            		body += this.IV + ciphertextMPIs;
+	            	break;
+		        }
+		    }
+		    else{
+		        body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
+		        body += key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
+		        var checksum = util.calc_checksum(key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI());
+        		body += String.fromCharCode(checksum/0x100) + String.fromCharCode(checksum%0x100);//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536
+        		util.print_debug_hexstr_dump('write_private_key basic checksum: '+ checksum);
+		    }
+		    break;
+		default :
+			body = "";
+			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
+        }
+		var header = openpgp_packet.write_packet_header(tag,body.length);
+		return {string: header+body , header: header, body: body};
+    }
+
+    this.encrypt = function() {
 
 		var body = String.fromCharCode(4);
 		body += timePacket;
@@ -199,6 +287,7 @@ function openpgp_packet_secret_key() {
 		var header = openpgp_packet.write_packet_header(tag,body.length);
 		return {string: header+body , header: header, body: body};
     }
+
 
 	/**
 	 * Decrypts the private key MPIs which are needed to use the key.
