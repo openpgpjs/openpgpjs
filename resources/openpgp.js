@@ -9594,14 +9594,13 @@ function openpgp_packet_literal() {
 
 		var format = bytes[0];
 
-		this.filename = util.decode_utf8(bytes.substr(2, bytes
-				.charCodeAt(1)));
+		var filename_len = bytes.charCodeAt(1);
+		this.filename = util.decode_utf8(bytes.substr(2, filename_len));
 
-		this.date = new Date(parseInt(bytes.substr(2
-				+ bytes.charCodeAt(1), 4)) * 1000);
+		this.date = openpgp_packet_time_read(bytes.substr(2
+				+ filename_len, 4));
 
-		var data = bytes.substring(6
-				+ bytes.charCodeAt(1));
+		var data = bytes.substring(6 + filename_len);
 	
 		this.set_data_bytes(data, format);
 	}
@@ -9621,14 +9620,7 @@ function openpgp_packet_literal() {
 		result += this.format;
 		result += String.fromCharCode(filename.length);
 		result += filename;
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
-		result += String
-				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
+		result += openpgp_packet_time_write(this.date);
 		result += data;
 		return result;
 	}
@@ -12514,7 +12506,8 @@ function openpgp_packet_number_read(bytes) {
 	var n = 0;
 
 	for(var i = 0; i < bytes.length; i++) {
-		n += bytes[i].charCodeAt() * 8 * (bytes.length - i - 1);
+		n <<= 8;
+		n += bytes[i].charCodeAt()
 	}
 
 	return n;
@@ -12523,7 +12516,7 @@ function openpgp_packet_number_read(bytes) {
 function openpgp_packet_number_write(n, bytes) {
 	var b = '';
 	for(var i = 0; i < bytes; i++) {
-		b += String.fromCharCode((n >> 8 * (bytes.length - i - 1)) ^ 0xFF);
+		b += String.fromCharCode((n >> (8 * (bytes- i - 1))) & 0xFF);
 	}
 
 	return b;
@@ -12539,7 +12532,7 @@ function openpgp_packet_time_read(bytes) {
 }
 
 function openpgp_packet_time_write(time) {
-	var numeric = Math.round(this.time.getTime() / 1000);
+	var numeric = Math.round(time.getTime() / 1000);
 
 	return openpgp_packet_number_write(numeric, 4);
 }

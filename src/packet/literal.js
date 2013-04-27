@@ -85,14 +85,13 @@ function openpgp_packet_literal() {
 
 		var format = bytes[0];
 
-		this.filename = util.decode_utf8(bytes.substr(2, bytes
-				.charCodeAt(1)));
+		var filename_len = bytes.charCodeAt(1);
+		this.filename = util.decode_utf8(bytes.substr(2, filename_len));
 
-		this.date = new Date(parseInt(bytes.substr(2
-				+ bytes.charCodeAt(1), 4)) * 1000);
+		this.date = openpgp_packet_time_read(bytes.substr(2
+				+ filename_len, 4));
 
-		var data = bytes.substring(6
-				+ bytes.charCodeAt(1));
+		var data = bytes.substring(6 + filename_len);
 	
 		this.set_data_bytes(data, format);
 	}
@@ -112,14 +111,7 @@ function openpgp_packet_literal() {
 		result += this.format;
 		result += String.fromCharCode(filename.length);
 		result += filename;
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 24) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 16) & 0xFF);
-		result += String
-				.fromCharCode((Math.round(this.date.getTime() / 1000) >> 8) & 0xFF);
-		result += String
-				.fromCharCode(Math.round(this.date.getTime() / 1000) & 0xFF);
+		result += openpgp_packet_time_write(this.date);
 		result += data;
 		return result;
 	}
