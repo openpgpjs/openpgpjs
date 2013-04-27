@@ -33,8 +33,8 @@
  */
 function openpgp_packet_sym_encrypted_session_key() {
 	this.tag = 3;
-	this.private_algorithm = openpgp.symmetric.plaintext;
-	this.algorithm = openpgp.symmetric.plaintext;
+	this.private_algorithm = null;
+	this.algorithm = openpgp.symmetric.aes256;
 	this.encrypted = null;
 	this.s2k = new openpgp_type_s2k();
 
@@ -53,7 +53,7 @@ function openpgp_packet_sym_encrypted_session_key() {
 		this.version = bytes[0].charCodeAt();
 
 		// A one-octet number describing the symmetric algorithm used.
-		this.private_algorithm = bytes[1].charCodeAt();
+		var algo = bytes[1].charCodeAt();
 
 		// A string-to-key (S2K) specifier, length as defined above.
 		var s2klength = this.s2k.read(bytes.substr(2));
@@ -61,10 +61,28 @@ function openpgp_packet_sym_encrypted_session_key() {
 		// Optionally, the encrypted session key itself, which is decrypted
 		// with the string-to-key object.
 		var done = s2klength + 2;
+
 		if(done < bytes.length) {
 			this.encrypted = bytes.substr(done);
+			this.private_algorithm = algo
 		}
+		else
+			this.algorithm = algo;
 	}
+
+	this.write = function() {
+		var algo = this.encrypted == null ? this.algorithm :
+			this.private_algorithm;
+
+		var bytes = String.fromCharCode(this.version) +
+			String.fromCharCode(algo) +
+			this.s2k.write();
+
+		if(this.encrypted != null)
+			bytes += this.encrypted;
+		return bytes;
+	}
+
 	/**
 	 * Decrypts the session key (only for public key encrypted session key
 	 * packets (tag 1)
@@ -76,12 +94,16 @@ function openpgp_packet_sym_encrypted_session_key() {
 	 * @return {String} The unencrypted session key
 	 */
 	this.decrypt = function(passphrase) {
-		var length = openpgp_crypto_getKeyLength(this.private_algorithm);
+		var algo = this.private_algorithm != null ?
+			this.private_algorithm :
+			this.algorithm
+
+		var length = openpgp_crypto_getKeyLength(algo);
 		var key = this.s2k.produce_key(passphrase, length);
 
 		if(this.encrypted == null) {
 			this.key = key;
-			this.algorithm = this.private_algorithm;
+
 		} else {
 			var decrypted = openpgp_crypto_symmetricDecrypt(
 				this.private_algorithm, key, this.encrypted, true);
@@ -89,6 +111,21 @@ function openpgp_packet_sym_encrypted_session_key() {
 			this.algorithm = decrypted[0].keyCodeAt();
 			this.key = decrypted.substr(1);
 		}
+	}
+
+	this.encrypt = function(passphrase) {
+		var length = openpgp_crypto_getKeyLength(this.private_algorithm);
+		var key = this.s2k.produce_key(passphrase, length);
+
+
+		
+		var private_key = String.fromCharCode(this.algorithm) +
+			openpgp_crypto_getRandomBytes(
+				openpgp_crypto_getKeyLength(this.algorithm));
+
+		this.encrypted = openpgp_crypto_symmetricEncrypt(
+				openpgp_crypto_getPrefixRandom(this.private_algorithm), 
+				this.private_algorithm, key, private_key, true);
 	}
 
 	/**

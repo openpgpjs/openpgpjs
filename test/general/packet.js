@@ -226,6 +226,39 @@ unittests.register("Packet testing", function() {
 		return new test_result('Public key encrypted packet (reading, GPG)',
 			text == 'Hello world!');
 	}, function() {
+
+		var passphrase = 'hello',
+			algo = openpgp.symmetric.aes256;
+
+		var literal = new openpgp_packet_literal(),
+			key_enc = new openpgp_packet_sym_encrypted_session_key(),
+			enc = new openpgp_packet_sym_encrypted_integrity_protected(),
+			msg = new openpgp_packetlist();
+
+
+		key_enc.algorithm = algo;
+		key_enc.decrypt(passphrase);
+		var key = key_enc.key;
+
+		literal.set_data('Hello world!', openpgp_packet_literal.format.utf8);
+		enc.packets.push(literal);
+		enc.encrypt(algo, key);
+
+		msg.push(key_enc);
+		msg.push(enc);
+
+		var msg2 = new openpgp_packetlist();
+		msg2.read(msg.write());
+
+		msg2[0].decrypt(passphrase);
+		var key2 = msg2[0].key;
+		msg2[1].decrypt(msg2[0].algorithm, key2);
+
+
+		return new test_result('Sym encrypted session key reading/writing', 
+			msg2[1].packets[0].data == literal.data);
+	
+	}, function() {
 	
 	
 		return new test_result('Secret key encryption/decryption test',

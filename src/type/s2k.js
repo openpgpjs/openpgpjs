@@ -26,10 +26,13 @@
  */
 function openpgp_type_s2k() {
 	/** @type {openpgp.hash} */
-	this.algorithm = null;
+	this.algorithm = openpgp.hash.sha256;
 	/** @type {openpgp_type_s2k.type} */
 	this.type = openpgp_type_s2k.type.iterated;
-	this.c = 1000;
+	this.c = 10;
+	/** @type {openpgp_bytearray} 
+	 * Eight bytes of salt. */
+	this.salt = openpgp_crypto_getRandomBytes(8);
 
 
 	// Exponen bias, defined in RFC4880
@@ -109,7 +112,7 @@ function openpgp_type_s2k() {
 				break;
 			case t.iterated:
 				bytes += this.salt;
-				bytes += this.c;
+				bytes += String.fromCharCode(this.c);
 				break;
 		};
 
