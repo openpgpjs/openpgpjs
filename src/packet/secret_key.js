@@ -34,7 +34,48 @@ function openpgp_packet_secret_key() {
 	this.encrypted = null;
 	this.iv = null;
 
-	
+
+	function get_hash_len(hash) {
+		if(hash == openpgp.hash.sha1)
+			return 20;
+		else
+			return 2;
+	}
+
+	function get_hash_fn(hash) {
+		if(hash == openpgp.hash.sha1)
+			return str_sha1;
+		else
+			return function(c) {
+					return openpgp_packet_number_write(util.calc_checksum(c), 2);
+				}
+	}
+
+	// Helper function
+	function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
+		var hashlen = get_hash_len(hash_algorithm),
+			hashfn = get_hash_fn(hash_algorithm);
+
+		var hashtext = cleartext.substr(cleartext.length - hashlen);
+		cleartext = cleartext.substr(0, cleartext.length - hashlen);
+
+		var hash = hashfn(cleartext);
+
+		if(hash != hashtext)
+			throw "Hash mismatch!";
+
+		var mpis = openpgp_crypto_getPrivateMpiCount(algorithm);
+
+		var j = 0;
+		var mpi = [];
+		for(var i = 0; i < mpis && j < cleartext.length; i++) {
+			mpi[i] = new openpgp_type_mpi();
+			j += mpi[i].read(cleartext.substr(j));
+		}
+
+		return mpi;
+	}
+
 	// 5.5.3.  Secret-Key Packet Formats
 	
 	/**
@@ -106,18 +147,8 @@ function openpgp_packet_secret_key() {
 	    	this.encrypted = bytes.substr(i);
 
 	    } else {
-			var mpis = openpgp_crypto_getPrivateMpiCount(this.public_key.algorithm);
-			this.mpi = [];
-
-			for(var j = 0; j < mpis; j++) {
-	    		this.mpi[j] = new openpgp_type_mpi();
-	    		i += this.mpi[j].read(bytes.substr(i));
-			}
-	    	
-	    	// checksum because s2k usage convention is 0
-	        this.checksum = [];
-		    this.checksum[0] = bytes[i++].charCodeAt();
-		    this.checksum[1] = bytes[i++].charCodeAt();
+			this.mpi = parse_cleartext_mpi(this.hash_algorithm, bytes.substr(i),
+				this.public_key.algorithm);
 	    }
 	}
 	
@@ -140,12 +171,15 @@ function openpgp_packet_secret_key() {
 		if(this.encrypted == null) {
 			bytes += String.fromCharCode(0);
 			
+			var mpi = '';
 			for(var i in this.mpi) {
-				bytes += this.mpi[i].write();
+				mpi += this.mpi[i].write();
 			}
 
+			bytes += mpi;
+
 			// TODO check the cheksum!
-			bytes += '00'
+			bytes += openpgp_packet_number_write(util.calc_checksum(mpi), 2);
 		} else if(this.s2k == null) {
 			bytes += String.fromCharCode(this.symmetric_algorithm);
 			bytes += this.encrypted;
@@ -301,27 +335,9 @@ function openpgp_packet_secret_key() {
     	}
     	
 
-    	if (this.hash_algorithm == openpgp.hash.sha1) {
-    		var hash = str_sha1(cleartext.substring(0,cleartext.length - 20));
 
-			if(hash != cleartext.substring(cleartext.length - 20))
-				throw "Hash mismatch!";
-			cleartext = cleartext.substr(0, cleartext.length - 20);
-    	} else {
-			var hash = util.calc_checksum(cleartext.substring(0, cleartext.length - 2));
-			
-			if(hash != cleartext.substring(cleartext.length -2))
-				throw "Hash mismatch!";
-			cleartext = cleartext.substr(0, cleartext.length - 2);
-		}
-
-		var mpis = openpgp_crypto_getPrivateMpiCount(this.public_key.algorithm);
-
-		var j = 0;
-		for(var i = 0; i < mpis && j < cleartext.length; i++) {
-			this.mpi[i] = new openpgp_type_mpi();
-			j += this.mpi[i].read(cleartext.substr(j));
-		}
+		this.mpi = parse_cleartext_mpi(this.hash_algorithm, cleartext,
+			this.public_key.algorithm);
 	}
 	
 	/**

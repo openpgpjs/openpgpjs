@@ -21,7 +21,26 @@
  * packet types and packet header.
  */
 function _openpgp_packet() {
-	/**
+
+	var read_simple_length = function(bytes) {
+		var len = 0;
+		var i = 0;
+
+		if (bytes[i].charCodeAt() < 192) {
+			len = bytes[i++].charCodeAt();
+		} else if (bytes[i].charCodeAt() >= 192 && bytes[i].charCodeAt() < 224) {
+			len = ((bytes[i++].charCodeAt() - 192) << 8) + (bytes[i++].charCodeAt()) + 192;
+		} else if (bytes[i].charCodeAt() > 223 && bytes[i].charCodeAt() < 255) {
+			len = 1 << (bytes[i++].charCodeAt() & 0x1F);
+		} else if (bytes[i].charCodeAt() < 255) {
+			i++;
+			len = (bytes[i++].charCodeAt() << 24) | (bytes[i++].charCodeAt() << 16)
+					|  (bytes[i++].charCodeAt() << 8) |  bytes[i++].charCodeAt();
+		}
+
+		return { len: len, offset: i };
+	}
+		/**
 	 * Encodes a given integer of length to the openpgp length specifier to a
 	 * string
 	 * 
