@@ -26,8 +26,8 @@
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
  */
-function openpgp_packet_onepasssignature() {
-	this.tagType = 4;
+function openpgp_packet_one_pass_signature() {
+	this.tag = 4;
 	this.version = null; // A one-octet version number.  The current version is 3.
 	this.type = null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
 	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
@@ -37,35 +37,35 @@ function openpgp_packet_onepasssignature() {
 
 	/**
 	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param {String} input payload of a tag 4 packet
-	 * @param {Integer} position position to start reading from the input string
-	 * @param {Integer} len length of the packet or the remaining length of input at position
+	 * @param {String} bytes payload of a tag 4 packet
+	 * @param {Integer} position position to start reading from the bytes string
+	 * @param {Integer} len length of the packet or the remaining length of bytes at position
 	 * @return {openpgp_packet_encrypteddata} object representation
 	 */
-	function read(bytes) {
+	this.read = function(bytes) {
 		var mypos = 0;
 		// A one-octet version number.  The current version is 3.
-		this.version = input.charCodeAt(mypos++);
+		this.version = bytes.charCodeAt(mypos++);
 
 	     // A one-octet signature type.  Signature types are described in
 	     //   Section 5.2.1.
-		this.type = input.charCodeAt(mypos++);
+		this.type = bytes.charCodeAt(mypos++);
 
 	     // A one-octet number describing the hash algorithm used.
-		this.hashAlgorithm = input.charCodeAt(mypos++);
+		this.hashAlgorithm = bytes.charCodeAt(mypos++);
 
 	     // A one-octet number describing the public-key algorithm used.
-		this.publicKeyAlgorithm = input.charCodeAt(mypos++);
+		this.publicKeyAlgorithm = bytes.charCodeAt(mypos++);
 	     // An eight-octet number holding the Key ID of the signing key.
 		this.signingKeyId = new openpgp_type_keyid();
-		this.signingKeyId.read_packet(input,mypos);
+		this.signingKeyId.read_packet(bytes,mypos);
 		mypos += 8;
 		
 	     // A one-octet number holding a flag showing whether the signature
 	     //   is nested.  A zero value indicates that the next packet is
 	     //   another One-Pass Signature packet that describes another
 	     //   signature to be applied to the same message data.
-		this.flags = input.charCodeAt(mypos++);
+		this.flags = bytes.charCodeAt(mypos++);
 		return this;
 	}
 
@@ -80,7 +80,7 @@ function openpgp_packet_onepasssignature() {
 	 *   that describes another signature to be applied to the same message data. 
 	 * @return {String} a string representation of a one-pass signature packet
 	 */
-	function write(type, hashalgorithm, privatekey,length, nested) {
+	this.write = function(type, hashalgorithm, privatekey,length, nested) {
 		var result =""; 
 		
 		result += String.fromCharCode(3);
@@ -95,23 +95,4 @@ function openpgp_packet_onepasssignature() {
 		
 		return result;
 	}
-	
-	/**
-	 * generates debug output (pretty print)
-	 * @return {String} String which gives some information about the one-pass signature packet
-	 */
-	function toString() {
-		return '5.4.  One-Pass Signature Packets (Tag 4)\n'+
-			   '    length: '+this.packetLength+'\n'+
-			   '    type:   '+this.type+'\n'+
-			   '    keyID:  '+this.signingKeyId.toString()+'\n'+
-			   '    hashA:  '+this.hashAlgorithm+'\n'+
-			   '    pubKeyA:'+this.publicKeyAlgorithm+'\n'+
-			   '    flags:  '+this.flags+'\n'+
-			   '    version:'+this.version+'\n';
-	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
-	this.write_packet = write_packet;
 };

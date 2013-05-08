@@ -22,32 +22,34 @@
  */
 function _openpgp_packet() {
 
-	var read_simple_length = function(bytes) {
-		var len = 0;
-		var i = 0;
+	this.read_simple_length = function(bytes) {
+		var len = 0,
+			offset,
+			type = bytes[0].charCodeAt();
 
-		if (bytes[i].charCodeAt() < 192) {
-			len = bytes[i++].charCodeAt();
-		} else if (bytes[i].charCodeAt() >= 192 && bytes[i].charCodeAt() < 224) {
-			len = ((bytes[i++].charCodeAt() - 192) << 8) + (bytes[i++].charCodeAt()) + 192;
-		} else if (bytes[i].charCodeAt() > 223 && bytes[i].charCodeAt() < 255) {
-			len = 1 << (bytes[i++].charCodeAt() & 0x1F);
-		} else if (bytes[i].charCodeAt() < 255) {
-			i++;
-			len = (bytes[i++].charCodeAt() << 24) | (bytes[i++].charCodeAt() << 16)
-					|  (bytes[i++].charCodeAt() << 8) |  bytes[i++].charCodeAt();
+
+		if (type < 192) {
+			len = bytes[0].charCodeAt();
+			offset = 1;
+		} else if (type < 255) {
+			len = ((bytes[0].charCodeAt() - 192) << 8) + (bytes[1].charCodeAt()) + 192;
+			offset = 2;
+		} else if (type == 255) {
+			len = openpgp_packet_integer_read(bytes.substr(1, 4));
+			offset = 5;
 		}
 
-		return { len: len, offset: i };
+		return { len: len, offset: offset };
 	}
-		/**
+
+	/**
 	 * Encodes a given integer of length to the openpgp length specifier to a
 	 * string
 	 * 
 	 * @param {Integer} length The length to encode
 	 * @return {String} String with openpgp length representation
 	 */
-	function encode_length(length) {
+	this.encode_length = function(length) {
 		var result = "";
 		if (length < 192) {
 			result += String.fromCharCode(length);
@@ -67,7 +69,6 @@ function _openpgp_packet() {
 		}
 		return result;
 	}
-	this.encode_length = encode_length;
 
 	/**
 	 * Writes a packet header version 4 with the given tag_type and length to a
@@ -81,7 +82,7 @@ function _openpgp_packet() {
 		/* we're only generating v4 packet headers here */
 		var result = "";
 		result += String.fromCharCode(0xC0 | tag_type);
-		result += encode_length(length);
+		result += this.encode_length(length);
 		return result;
 	}
 
