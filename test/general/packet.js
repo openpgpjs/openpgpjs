@@ -333,7 +333,10 @@ unittests.register("Packet testing", function() {
 		key.read(openpgp_encoding_deArmor(armored_key).openpgp);
 
 
-		var verified = key[2].verify(key[1].userid, key[0].public_key);
+		var verified = key[2].verify(key[0].public_key,
+			{
+				userid: key[1]
+			});
 
 
 
@@ -372,7 +375,10 @@ unittests.register("Packet testing", function() {
 
 
 
-		var verified = payload[2].verify(payload[1].data, key[0].public_key);
+		var verified = payload[2].verify(key[0].public_key,
+			{
+				literal: payload[1]
+			});
 
 
 

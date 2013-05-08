@@ -9818,161 +9818,6 @@ function openpgp_packet_one_pass_signature() {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** 
- * @class
- * @classdesc Implementation of the User Attribute Packet (Tag 17)
- *  The User Attribute packet is a variation of the User ID packet.  It
- *  is capable of storing more types of data than the User ID packet,
- *  which is limited to text.  Like the User ID packet, a User Attribute
- *  packet may be certified by the key owner ("self-signed") or any other
- *  key owner who cares to certify it.  Except as noted, a User Attribute
- *  packet may be used anywhere that a User ID packet may be used.
- *
- *  While User Attribute packets are not a required part of the OpenPGP
- *  standard, implementations SHOULD provide at least enough
- *  compatibility to properly handle a certification signature on the
- *  User Attribute packet.  A simple way to do this is by treating the
- *  User Attribute packet as a User ID packet with opaque contents, but
- *  an implementation may use any method desired.
- */
-function openpgp_packet_userattribute() {
-	this.tagType = 17;
-	this.certificationSignatures = [];
-	this.certificationRevocationSignatures = [];
-	this.revocationSignatures = [];
-	this.userattributes = [];
-
-	/**
-	 * parsing function for a user attribute packet (tag 17).
-	 * @param {String} input payload of a tag 17 packet
-	 * @param {Integer} position position to start reading from the input string
-	 * @param {Integer} len length of the packet or the remaining length of input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		var count = 0;
-		var mypos = 0;
-		var packet_len = 0;
-
-		while (mypos != bytes.length) {
-			var current_len = 0;
-			// 4.2.2.1. One-Octet Lengths
-			if (bytes[mypos].charCodeAt() < 192) {
-				packet_length = bytes[mypos++].charCodeAt();
-				current_len = 1;
-			// 4.2.2.2. Two-Octet Lengths
-			} else if (bytes[mypos].charCodeAt() >= 192 && bytes[mypos].charCodeAt() < 224) {
-				packet_length = ((bytes[mypos++].charCodeAt() - 192) << 8)
-					+ (bytes[mypos++].charCodeAt()) + 192;
-				current_len = 2;
-			// 4.2.2.4. Partial Body Lengths
-			} else if (bytes[mypos].charCodeAt() > 223 && bytes[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (bytes[mypos++].charCodeAt() & 0x1F);
-				current_len = 1;
-			// 4.2.2.3. Five-Octet Lengths
-			} else {
-				current_len = 5;
-				mypos++;
-				packet_length = (bytes[mypos++].charCodeAt() << 24) | 
-					(bytes[mypos++].charCodeAt() << 16)
-					| (bytes[mypos++].charCodeAt() << 8) | bytes[mypos++].charCodeAt();
-			}
-			
-			var subpackettype = bytes[mypos++].charCodeAt();
-			packet_length--;
-			current_len++;
-			this.userattributes[count] = [];
-			this.userattributes[count] = bytes.substring(mypos, mypos + packet_len);
-			mypos += packet_length;
-			total_len += current_len+packet_len;
-		}
-
-		return this;
-	}
-	
-	/**
-	 * generates debug output (pretty print)
-	 * @return {String} String which gives some information about the user attribute packet
-	 */
-	function toString() {
-		var result = '5.12.  User Attribute Packet (Tag 17)\n'+
-		             '    AttributePackets: (count = '+this.userattributes.length+')\n';
-		for (var i = 0; i < this.userattributes.length; i++) {
-			result += '    ('+this.userattributes[i].length+') bytes: ['+util.hexidump(this.userattributes[i])+']\n'; 
-		}
-		return result;
-	}
-	
-	/**
-	 * Continue parsing packets belonging to the user attribute packet such as signatures
-	 * @param {Object} parent_node the parent object
-	 * @param {String} input input string to read the packet(s) from
-	 * @param {Integer} position start position for the parser
-	 * @param {Integer} len length of the packet(s) or remaining length of input
-	 * @return {Integer} length of nodes read
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		
-		this.parentNode = parent_node;
-		var exit = false;
-		var pos = position;
-		var l = len;
-		while (input.length != pos) {
-			var result = openpgp_packet.read_packet(input, pos, l);
-			if (result == null) {
-				util.print_error("openpgp.packet.userattribute.js\n"+'[user_attr] parsing ends here @:' + pos + " l:" + l);
-				break;
-			} else {
-				switch (result.tagType) {
-				case 2: // Signature Packet
-					if (result.signatureType > 15
-							&& result.signatureType < 20) // certification
-						// //
-						// signature
-						this.certificationSignatures[this.certificationSignatures.length] = result;
-					else if (result.signatureType == 32) // certification revocation signature
-						this.certificationRevocationSignatures[this.certificationRevocationSignatures.length] = result;
-					pos += result.packetLength + result.headerLength;
-					l = len - (pos - position);
-					break;
-				default:
-					this.data = input;
-					this.position = position - parent_node.packetLength;
-					this.len = pos - position;
-					return this.len;
-					break;
-				}
-			}
-		}
-		this.data = input;
-		this.position = position - parent_node.packetLength;
-		this.len = pos - position;
-		return this.len;
-
-	}
-	
-	this.read_packet = read_packet;
-	this.read_nodes = read_nodes;
-	this.toString = toString;
-	
-};
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
 /**
  * @class
  * @classdesc Parent openpgp packet class. Operations focus on determining 
@@ -10036,7 +9881,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	function write_packet_header(tag_type, length) {
+	this.write_packet_header = function(tag_type, length) {
 		/* we're only generating v4 packet headers here */
 		var result = "";
 		result += String.fromCharCode(0xC0 | tag_type);
@@ -10052,7 +9897,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	function write_old_packet_header(tag_type, length) {
+	this.write_old_packet_header = function(tag_type, length) {
 		var result = "";
 		if (length < 256) {
 			result += String.fromCharCode(0x80 | (tag_type << 2));
@@ -10070,8 +9915,7 @@ function _openpgp_packet() {
 		}
 		return result;
 	}
-	this.write_old_packet_header = write_old_packet_header;
-	this.write_packet_header = write_packet_header;
+
 	/**
 	 * Generic static Packet Parser function
 	 * 
@@ -11685,164 +11529,189 @@ function openpgp_packet_signature() {
 	 * @param {openpgp_msg_privatekey} key the public key to verify the signature
 	 * @return {boolean} True if message is verified, else false.
 	 */
-	this.verify = function(data, key) {
+	this.verify = function(key, data) {
+
+		var bytes =
+
+		(function(type, data) {
+		switch(type) {
+		case 0: // 0x00: Signature of a binary document.
+			return data.literal.data;
+			break;
+
+		case 1: // 0x01: Signature of a canonical text document.
+			return data.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+				
+		case 2: // 0x02: Standalone signature.
+			return ''
+		case 16:			
+			// 0x10: Generic certification of a User ID and Public-Key packet.
+		case 17:
+			// 0x11: Persona certification of a User ID and Public-Key packet.
+		case 18:
+			// 0x12: Casual certification of a User ID and Public-Key packet.
+		case 19:
+			// 0x13: Positive certification of a User ID and Public-Key packet.
+		case 48:
+			// 0x30: Certification revocation signature
+
+			if(data.userid != undefined) {
+				return String.fromCharCode(0xB4) +
+					openpgp_packet_number_write(data.userid.userid.length, 4) +
+					data;
+			}
+			else if(data.userattribute != undefined) {
+				return String.fromCharCode(0xB4) +
+					openpgp_packet_number_write(data.userattribute.userid.length, 4) +
+					data;
+			}
+			else return;
+		case 24:
+			// 0x18: Subkey Binding Signature
+			break;
+		case 25:
+			// 0x19: Primary Key Binding Signature
+		case 31:
+			// 0x1F: Signature directly on a key
+		case 32:
+			// 0x20: Key revocation signature
+		case 40:
+			// 0x28: Subkey revocation signature
+			return;
+		case 64:
+			// 0x40: Timestamp signature.
+			break;
+		case 80:
+			//    0x50: Third-Party Confirmation signature.
+			break;
+		default:
+			util.print_error("openpgp.packet.signature.js\n"+
+				"signature verification for type"+ 
+				this.signatureType+" not implemented");
+			return false;
+		}})(this.signatureType, data);
+
 		// calculating the trailer
 		var trailer = '';
 		trailer += String.fromCharCode(this.version);
 		trailer += String.fromCharCode(0xFF);
 		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
 
-		switch(this.signatureType) {
-		case 0: // 0x00: Signature of a binary document.
-			if (this.version == 4) {
-				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, 
-					this.hashAlgorithm, this.mpi, key.mpi, 
-					data+this.signatureData+trailer);
-			}
-			break;
-
-		case 1: // 0x01: Signature of a canonical text document.
-			if (this.version == 4) {
-				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm,
-					this.hashAlgorithm, this.mpi, key.mpi, 
-					data+this.signatureData+trailer);
-				return this.verified;
-			}
-			break;
-				
-		case 2: // 0x02: Standalone signature.
-			// This signature is a signature of only its own subpacket contents.
-			// It is calculated identically to a signature over a zero-lengh
-			// binary document.  Note that it doesn't make sense to have a V3
-			// standalone signature.
-			if (this.version == 3) {
-				this.verified = false;
-				break;
-				}
-			
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, 
-				this.hashAlgorithm, this.mpi, key.mpi, 
-				this.signatureData+trailer);
-			break;
-		case 16:			
-			// 0x10: Generic certification of a User ID and Public-Key packet.
-			// The issuer of this certification does not make any particular
-			// assertion as to how well the certifier has checked that the owner
-			// of the key is in fact the person described by the User ID.
-		case 17:
-			// 0x11: Persona certification of a User ID and Public-Key packet.
-			// The issuer of this certification has not done any verification of
-			// the claim that the owner of this key is the User ID specified.
-		case 18:
-			// 0x12: Casual certification of a User ID and Public-Key packet.
-			// The issuer of this certification has done some casual
-			// verification of the claim of identity.
-		case 19:
-			// 0x13: Positive certification of a User ID and Public-Key packet.
-			// The issuer of this certification has done substantial
-			// verification of the claim of identity.
-			// 
-			// Most OpenPGP implementations make their "key signatures" as 0x10
-			// certifications.  Some implementations can issue 0x11-0x13
-			// certifications, but few differentiate between the types.
-		case 48:
-			// 0x30: Certification revocation signature
-			// This signature revokes an earlier User ID certification signature
-			// (signature class 0x10 through 0x13) or direct-key signature
-			// (0x1F).  It should be issued by the same key that issued the
-			// revoked signature or an authorized revocation key.  The signature
-			// is computed over the same data as the certificate that it
-			// revokes, and should have a later creation date than that
-			// certificate.
-
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm,
-				this.hashAlgorithm, this.mpi, key.mpi, 
-					String.fromCharCode(0xB4) +
-					openpgp_packet_number_write(data.length, 4) +
-					data + this.signatureData + trailer);
-			break;
-						
-		case 24:
-			// 0x18: Subkey Binding Signature
-			// This signature is a statement by the top-level signing key that
-			// indicates that it owns the subkey.  This signature is calculated
-			// directly on the primary key and subkey, and not on any User ID or
-			// other packets.  A signature that binds a signing subkey MUST have
-			// an Embedded Signature subpacket in this binding signature that
-			// contains a 0x19 signature made by the signing subkey on the
-			// primary key and subkey.
-			if (this.version == 3) {
-				this.verified = false;
-				break;
-			}
-			
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm,
-				this.hashAlgorithm, this.mpi, key.mpi, data+this.signatureData+trailer);
-			break;
-		case 25:
-			// 0x19: Primary Key Binding Signature
-			// This signature is a statement by a signing subkey, indicating
-			// that it is owned by the primary key and subkey.  This signature
-			// is calculated the same way as a 0x18 signature: directly on the
-			// primary key and subkey, and not on any User ID or other packets.
-			
-			// When a signature is made over a key, the hash data starts with the
-			// octet 0x99, followed by a two-octet length of the key, and then body
-			// of the key packet.  (Note that this is an old-style packet header for
-			// a key packet with two-octet length.)  A subkey binding signature
-			// (type 0x18) or primary key binding signature (type 0x19) then hashes
-			// the subkey using the same format as the main key (also using 0x99 as
-			// the first octet).
-		case 31:
-			// 0x1F: Signature directly on a key
-			// This signature is calculated directly on a key.  It binds the
-			// information in the Signature subpackets to the key, and is
-			// appropriate to be used for subpackets that provide information
-			// about the key, such as the Revocation Key subpacket.  It is also
-			// appropriate for statements that non-self certifiers want to make
-			// about the key itself, rather than the binding between a key and a
-			// name.
-		case 32:
-			// 0x20: Key revocation signature
-			// The signature is calculated directly on the key being revoked.  A
-			// revoked key is not to be used.  Only revocation signatures by the
-			// key being revoked, or by an authorized revocation key, should be
-			// considered valid revocation signatures.
-		case 40:
-			// 0x28: Subkey revocation signature
-			// The signature is calculated directly on the subkey being revoked.
-			// A revoked subkey is not to be used.  Only revocation signatures
-			// by the top-level signature key that is bound to this subkey, or
-			// by an authorized revocation key, should be considered valid
-			// revocation signatures.
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm,
-				this.hashAlgorithm,	this.mpi, key.mpi, data+this.signatureData+trailer);
-			break;
-			
-			// Key revocation signatures (types 0x20 and 0x28)
-			// hash only the key being revoked.
-		case 64:
-			// 0x40: Timestamp signature.
-			// This signature is only meaningful for the timestamp contained in
-			// it.
-		case 80:
-			//    0x50: Third-Party Confirmation signature.
-			// This signature is a signature over some other OpenPGP Signature
-			// packet(s).  It is analogous to a notary seal on the signed data.
-			// A third-party signature SHOULD include Signature Target
-			// subpacket(s) to give easy identification.  Note that we really do
-			// mean SHOULD.  There are plausible uses for this (such as a blind
-			// party that only sees the signature, not the key or source
-			// document) that cannot include a target subpacket.
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+
-				"signature verification for type"+ this.signatureType+" not implemented");
-			break;
-		}
+		this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, 
+			this.hashAlgorithm, this.mpi, key.mpi, 
+			bytes + this.signatureData + trailer);
 
 		return this.verified;
 	}
 }
+
+
+/* One pass signature packet type
+ * @enum {Integer} */
+openpgp_packet_signature.type = {
+	/** 0x00: Signature of a binary document. */
+	binary: 0,
+	/** 0x01: Signature of a canonical text document.
+	 * Canonicalyzing the document by converting line endings. */
+	text: 1,
+	/** 0x02: Standalone signature.
+	* This signature is a signature of only its own subpacket contents.
+	* It is calculated identically to a signature over a zero-lengh
+	* binary document.  Note that it doesn't make sense to have a V3
+	* standalone signature. */
+	standalone: 2,
+	/** 0x10: Generic certification of a User ID and Public-Key packet.
+	* The issuer of this certification does not make any particular
+	* assertion as to how well the certifier has checked that the owner
+	* of the key is in fact the person described by the User ID. */
+	cert_generic: 16,
+	/** 0x11: Persona certification of a User ID and Public-Key packet.
+	* The issuer of this certification has not done any verification of
+	* the claim that the owner of this key is the User ID specified. */
+	cert_persona: 17,
+	/** 0x12: Casual certification of a User ID and Public-Key packet.
+	* The issuer of this certification has done some casual
+	* verification of the claim of identity. */
+	cert_casual: 18,
+	/** 0x13: Positive certification of a User ID and Public-Key packet.
+	* The issuer of this certification has done substantial
+	* verification of the claim of identity.
+	* 
+	* Most OpenPGP implementations make their "key signatures" as 0x10
+	* certifications.  Some implementations can issue 0x11-0x13
+	* certifications, but few differentiate between the types. */
+	cert_positive: 19,
+	/** 0x30: Certification revocation signature
+	* This signature revokes an earlier User ID certification signature
+	* (signature class 0x10 through 0x13) or direct-key signature
+	* (0x1F).  It should be issued by the same key that issued the
+	* revoked signature or an authorized revocation key.  The signature
+	* is computed over the same data as the certificate that it
+	* revokes, and should have a later creation date than that
+	* certificate. */
+	cert_revocation: 48,
+	/** 0x18: Subkey Binding Signature
+	* This signature is a statement by the top-level signing key that
+	* indicates that it owns the subkey.  This signature is calculated
+	* directly on the primary key and subkey, and not on any User ID or
+	* other packets.  A signature that binds a signing subkey MUST have
+	* an Embedded Signature subpacket in this binding signature that
+	* contains a 0x19 signature made by the signing subkey on the
+	* primary key and subkey. */
+	subkey_binding: 24,
+	/** 0x19: Primary Key Binding Signature
+	* This signature is a statement by a signing subkey, indicating
+	* that it is owned by the primary key and subkey.  This signature
+	* is calculated the same way as a 0x18 signature: directly on the
+	* primary key and subkey, and not on any User ID or other packets.
+	
+	* When a signature is made over a key, the hash data starts with the
+	* octet 0x99, followed by a two-octet length of the key, and then body
+	* of the key packet.  (Note that this is an old-style packet header for
+	* a key packet with two-octet length.)  A subkey binding signature
+	* (type 0x18) or primary key binding signature (type 0x19) then hashes
+	* the subkey using the same format as the main key (also using 0x99 as
+	* the first octet). */
+	key_binding: 25,
+	/** 0x1F: Signature directly on a key
+	* This signature is calculated directly on a key.  It binds the
+	* information in the Signature subpackets to the key, and is
+	* appropriate to be used for subpackets that provide information
+	* about the key, such as the Revocation Key subpacket.  It is also
+	* appropriate for statements that non-self certifiers want to make
+	* about the key itself, rather than the binding between a key and a
+	* name. */
+	key: 31,
+	/** 0x20: Key revocation signature
+	* The signature is calculated directly on the key being revoked.  A
+	* revoked key is not to be used.  Only revocation signatures by the
+	* key being revoked, or by an authorized revocation key, should be
+	* considered valid revocation signatures.a */
+	key_revocation: 32,
+	/** 0x28: Subkey revocation signature
+	* The signature is calculated directly on the subkey being revoked.
+	* A revoked subkey is not to be used.  Only revocation signatures
+	* by the top-level signature key that is bound to this subkey, or
+	* by an authorized revocation key, should be considered valid
+	* revocation signatures.
+	* Key revocation signatures (types 0x20 and 0x28)
+	* hash only the key being revoked. */
+	subkey_revocation: 40,
+	/** 0x40: Timestamp signature.
+	* This signature is only meaningful for the timestamp contained in
+	* it. */
+	timestamp: 64,
+	/**    0x50: Third-Party Confirmation signature.
+	* This signature is a signature over some other OpenPGP Signature
+	* packet(s).  It is analogous to a notary seal on the signed data.
+	* A third-party signature SHOULD include Signature Target
+	* subpacket(s) to give easy identification.  Note that we really do
+	* mean SHOULD.  There are plausible uses for this (such as a blind
+	* party that only sees the signature, not the key or source
+	* document) that cannot include a target subpacket. */
+	third_party: 80
+}
+	
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12245,6 +12114,62 @@ function openpgp_packet_time_write(time) {
 
 	return openpgp_packet_number_write(numeric, 4);
 }
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/** 
+ * @class
+ * @classdesc Implementation of the User Attribute Packet (Tag 17)
+ *  The User Attribute packet is a variation of the User ID packet.  It
+ *  is capable of storing more types of data than the User ID packet,
+ *  which is limited to text.  Like the User ID packet, a User Attribute
+ *  packet may be certified by the key owner ("self-signed") or any other
+ *  key owner who cares to certify it.  Except as noted, a User Attribute
+ *  packet may be used anywhere that a User ID packet may be used.
+ *
+ *  While User Attribute packets are not a required part of the OpenPGP
+ *  standard, implementations SHOULD provide at least enough
+ *  compatibility to properly handle a certification signature on the
+ *  User Attribute packet.  A simple way to do this is by treating the
+ *  User Attribute packet as a User ID packet with opaque contents, but
+ *  an implementation may use any method desired.
+ */
+function openpgp_packet_user_attribute() {
+	this.tag = 17;
+	this.attributes = [];
+
+	/**
+	 * parsing function for a user attribute packet (tag 17).
+	 * @param {String} input payload of a tag 17 packet
+	 * @param {Integer} position position to start reading from the input string
+	 * @param {Integer} len length of the packet or the remaining length of input at position
+	 * @return {openpgp_packet_encrypteddata} object representation
+	 */
+	this.read = function(bytes) {
+		var i = 0;
+		while(i < bytes.length) {
+			var len = openpgp_packet.read_simple_length(bytes);
+
+			i += len.offset;
+			this.attributes.push(bytes.substr(i, len.len));
+			i += len.len;
+		}
+	}
+};
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 

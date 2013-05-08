@@ -78,7 +78,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	function write_packet_header(tag_type, length) {
+	this.write_packet_header = function(tag_type, length) {
 		/* we're only generating v4 packet headers here */
 		var result = "";
 		result += String.fromCharCode(0xC0 | tag_type);
@@ -94,7 +94,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	function write_old_packet_header(tag_type, length) {
+	this.write_old_packet_header = function(tag_type, length) {
 		var result = "";
 		if (length < 256) {
 			result += String.fromCharCode(0x80 | (tag_type << 2));
@@ -112,8 +112,7 @@ function _openpgp_packet() {
 		}
 		return result;
 	}
-	this.write_old_packet_header = write_old_packet_header;
-	this.write_packet_header = write_packet_header;
+
 	/**
 	 * Generic static Packet Parser function
 	 * 
