@@ -121,7 +121,7 @@ function _openpgp_packet() {
 	 * @param {integer} len Length of the input from position on
 	 * @return {Object} Returns a parsed openpgp_packet
 	 */
-	function read_packet(input, position, len) {
+	this.read_packet = function(input, position, len) {
 		// some sanity checks
 		if (input == null || input.length <= position
 				|| input.substring(position).length < 2
@@ -300,7 +300,6 @@ function _openpgp_packet() {
 		};
 	}
 
-	this.read_packet = read_packet;
 
 
 	/**

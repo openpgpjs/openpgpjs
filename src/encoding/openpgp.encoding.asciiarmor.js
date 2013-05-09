@@ -23,7 +23,7 @@
  * or an object with attribute "text" containing the message text
  * and an attribute "openpgp" containing the bytes.
  */
-function openpgp_encoding_deArmor(text) {
+function openpgp_encoding_dearmor(text) {
 	text = text.replace(/\r/g, '')
 
 	var type = openpgp_encoding_get_type(text);

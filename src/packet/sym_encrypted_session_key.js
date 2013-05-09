@@ -127,20 +127,5 @@ function openpgp_packet_sym_encrypted_session_key() {
 				openpgp_crypto_getPrefixRandom(this.private_algorithm), 
 				this.private_algorithm, key, private_key, true);
 	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return {String} The string containing a openpgp description
-	 */
-	this.toString = function() {
-		return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
-				+ '    KeyId:  ' + this.keyId.toString() + '\n'
-				+ '    length: ' + this.packetLength + '\n'
-				+ '    version:' + this.version + '\n' + '    symKeyA:'
-				+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
-				+ this.s2k + '\n';
-	}
 };
 

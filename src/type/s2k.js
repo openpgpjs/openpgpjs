@@ -29,7 +29,7 @@ function openpgp_type_s2k() {
 	this.algorithm = openpgp.hash.sha256;
 	/** @type {openpgp_type_s2k.type} */
 	this.type = openpgp_type_s2k.type.iterated;
-	this.c = 10;
+	this.c = 96;
 	/** @type {openpgp_bytearray} 
 	 * Eight bytes of salt. */
 	this.salt = openpgp_crypto_getRandomBytes(8);

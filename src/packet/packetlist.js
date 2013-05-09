@@ -7,6 +7,9 @@
  * are stored as numerical indices.
  */
 function openpgp_packetlist() {
+	/** The number of packets contained within the list.
+	 * @readonly
+	 * @type {Integer} */
 	this.length = 0;
 
 

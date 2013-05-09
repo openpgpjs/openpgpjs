@@ -29,6 +29,7 @@
 function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
+	/** Decrypted packets contained within. */
 	this.packets = new openpgp_packetlist();
 
 	
@@ -63,13 +64,5 @@ function openpgp_packet_symmetrically_encrypted() {
 
 		this.encrypted = openpgp_crypto_symmetricEncrypt(
 				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
-	}
-
-
-	this.toString = function () {
-		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
-				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
-				+ '    encrypted data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']\n';
 	}
 };

@@ -153,15 +153,4 @@ function openpgp_packet_compressed() {
 			break;
 		}
 	}
-	
-	
-	/**
-	 * Pretty printing the packet (useful for debug purposes)
-	 * @return {String}
-	 */
-	this.toString = function() {
-		return '5.6.  Compressed Data Packet (Tag 8)\n'+
-			   '    Compression Algorithm = '+this.algorithm+'\n'+
-		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressed)+']\n';
-	}
 };

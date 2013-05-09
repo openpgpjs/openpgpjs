@@ -175,30 +175,5 @@ function openpgp_packet_public_key_encrypted_session_key() {
 			this.symmetric_algorithm = decoded.charCodeAt(0);
 		}
 	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return {String} The string containing a openpgp description
-	 */
-	this.toString = function() {
-		var result = '5.1.  Public-Key Encrypted Session Key Packets (Tag 1)\n'
-				+ '    KeyId:  '
-				+ this.keyId.toString()
-				+ '\n'
-				+ '    length: '
-				+ this.packetLength
-				+ '\n'
-				+ '    version:'
-				+ this.version
-				+ '\n'
-				+ '    pubAlgUs:'
-				+ this.publicKeyAlgorithmUsed + '\n';
-		for ( var i = 0; i < this.encrypted.length; i++) {
-			result += this.encrypted[i].toString();
-		}
-		return result;
-	}
 };
 

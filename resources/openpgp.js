@@ -7582,7 +7582,7 @@ function r2s(t) {
  * or an object with attribute "text" containing the message text
  * and an attribute "openpgp" containing the bytes.
  */
-function openpgp_encoding_deArmor(text) {
+function openpgp_encoding_dearmor(text) {
 	text = text.replace(/\r/g, '')
 
 	var type = openpgp_encoding_get_type(text);
@@ -9495,17 +9495,6 @@ function openpgp_packet_compressed() {
 			break;
 		}
 	}
-	
-	
-	/**
-	 * Pretty printing the packet (useful for debug purposes)
-	 * @return {String}
-	 */
-	this.toString = function() {
-		return '5.6.  Compressed Data Packet (Tag 8)\n'+
-			   '    Compression Algorithm = '+this.algorithm+'\n'+
-		       '    Compressed Data: Byte ['+util.hexstrdump(this.compressed)+']\n';
-	}
 };
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -9924,7 +9913,7 @@ function _openpgp_packet() {
 	 * @param {integer} len Length of the input from position on
 	 * @return {Object} Returns a parsed openpgp_packet
 	 */
-	function read_packet(input, position, len) {
+	this.read_packet = function(input, position, len) {
 		// some sanity checks
 		if (input == null || input.length <= position
 				|| input.substring(position).length < 2
@@ -10103,7 +10092,6 @@ function _openpgp_packet() {
 		};
 	}
 
-	this.read_packet = read_packet;
 
 
 	/**
@@ -10155,6 +10143,9 @@ var openpgp_packet = new _openpgp_packet();
  * are stored as numerical indices.
  */
 function openpgp_packetlist() {
+	/** The number of packets contained within the list.
+	 * @readonly
+	 * @type {Integer} */
 	this.length = 0;
 
 
@@ -10374,31 +10365,6 @@ function openpgp_packet_public_key_encrypted_session_key() {
 			this.symmetric_algorithm = decoded.charCodeAt(0);
 		}
 	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return {String} The string containing a openpgp description
-	 */
-	this.toString = function() {
-		var result = '5.1.  Public-Key Encrypted Session Key Packets (Tag 1)\n'
-				+ '    KeyId:  '
-				+ this.keyId.toString()
-				+ '\n'
-				+ '    length: '
-				+ this.packetLength
-				+ '\n'
-				+ '    version:'
-				+ this.version
-				+ '\n'
-				+ '    pubAlgUs:'
-				+ this.publicKeyAlgorithmUsed + '\n';
-		for ( var i = 0; i < this.encrypted.length; i++) {
-			result += this.encrypted[i].toString();
-		}
-		return result;
-	}
 };
 
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -10430,7 +10396,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 function openpgp_packet_public_key() {
 	this.tag = 6;
 	this.version = 4;
-	this.created = null;
+	this.created = new Date();
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
 
@@ -10612,11 +10578,7 @@ function openpgp_packet_secret_key() {
 	this.tag = 5;
 	this.public_key = new openpgp_packet_public_key();
 	this.mpi = [];
-	this.symmetric_algorithm = openpgp.symmetric.plaintext;
-	this.hash_algorithm = openpgp.hash.sha1;
-	this.s2k = null;
 	this.encrypted = null;
-	this.iv = null;
 
 
 	function get_hash_len(hash) {
@@ -10646,7 +10608,7 @@ function openpgp_packet_secret_key() {
 		var hash = hashfn(cleartext);
 
 		if(hash != hashtext)
-			throw "Hash mismatch!";
+			throw new Error("Hash mismatch.");
 
 		var mpis = openpgp_crypto_getPrivateMpiCount(algorithm);
 
@@ -10659,6 +10621,19 @@ function openpgp_packet_secret_key() {
 
 		return mpi;
 	}
+
+	function write_cleartext_mpi(hash_algorithm, mpi) {
+		var bytes= '';
+		for(var i in mpi) {
+			bytes += mpi[i].write();
+		}
+
+
+		bytes += get_hash_fn(hash_algorithm)(bytes);
+		
+		return bytes;
+	}
+		
 
 	// 5.5.3.  Secret-Key Packet Formats
 	
@@ -10680,60 +10655,20 @@ function openpgp_packet_secret_key() {
 	    //   indicates that the secret-key data is not encrypted.  255 or 254
 	    //   indicates that a string-to-key specifier is being given.  Any
 	    //   other value is a symmetric-key encryption algorithm identifier.
-	    var s2k_usage = bytes[0].charCodeAt();
-	    
-		var i = 1;
+	    var isEncrypted = bytes[0].charCodeAt();
 
-	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
-	    //   octet symmetric encryption algorithm.
-	    if (s2k_usage == 255 || s2k_usage == 254) {
-	    	this.symmetric_algorithm = bytes[i++].charCodeAt();
-	     
-			// - [Optional] If string-to-key usage octet was 255 or 254, a
-			//   string-to-key specifier.  The length of the string-to-key
-			//   specifier is implied by its type, as described above.
-	    	this.s2k = new openpgp_type_s2k();
-	    	i += this.s2k.read(bytes.substr(i));
-	    }
-	    
-	    // - [Optional] If secret data is encrypted (string-to-key usage octet
-	    //   not zero), an Initial Vector (IV) of the same length as the
-	    //   cipher's block size.
+		if(isEncrypted) {
+			this.encrypted = bytes;
+		} else {
+	
+			// - Plain or encrypted multiprecision integers comprising the secret
+			//   key data.  These algorithm-specific fields are as described
+			//   below.
 
-	    if (s2k_usage != 0 && s2k_usage != 255 &&
-	    		s2k_usage != 254) {
-	    	this.symmetric_algorithm = s2k_usage;
-	    }
-
-	    if (s2k_usage != 0 && this.s2k.type != 1001) {
-	    	this.iv = bytes.substr(i, 
-				openpgp_crypto_getBlockLength(this.symmetric_algorithm));
-
-	    	i += this.iv.length;
-	    }
-
-		if(s2k_usage == 254)
-			this.hash_algorithm = openpgp.hash.sha1;
-		else
-			this.hash_algorithm = 'checksum';
-
-	    // - Plain or encrypted multiprecision integers comprising the secret
-	    //   key data.  These algorithm-specific fields are as described
-	    //   below.
-
-      // s2k type 1001 corresponds to GPG specific extension without primary key secrets
-      // http://www.gnupg.org/faq/GnuPG-FAQ.html#how-can-i-use-gnupg-in-an-automated-environment
-	    if (s2k_usage != 0 && this.s2k.type == 1001) {
-	    	this.mpi = null;
-	    	this.encrypted = null;
-
-	    } else if (s2k_usage != 0) {
-	    	this.encrypted = bytes.substr(i);
-
-	    } else {
-			this.mpi = parse_cleartext_mpi(this.hash_algorithm, bytes.substr(i),
+			this.mpi = parse_cleartext_mpi('mod', bytes.substr(1),
 				this.public_key.algorithm);
-	    }
+		}    
+
 	}
 	
 	/*
@@ -10742,7 +10677,7 @@ function openpgp_packet_secret_key() {
      * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
 	 * IE 1 corresponds to RSA.
      * @param {RSA.keyObject} key
-     * @param password
+     * @param passphrase
      * @param s2kHash
      * @param symmetricEncryptionAlgorithm
      * @param timePacket
@@ -10752,25 +10687,11 @@ function openpgp_packet_secret_key() {
     this.write = function() {
 		var bytes = this.public_key.write();
 
-		if(this.encrypted == null) {
+		if(!this.encrypted) {
 			bytes += String.fromCharCode(0);
 			
-			var mpi = '';
-			for(var i in this.mpi) {
-				mpi += this.mpi[i].write();
-			}
-
-			bytes += mpi;
-
-			// TODO check the cheksum!
-			bytes += openpgp_packet_number_write(util.calc_checksum(mpi), 2);
-		} else if(this.s2k == null) {
-			bytes += String.fromCharCode(this.symmetric_algorithm);
-			bytes += this.encrypted;
+			bytes += write_cleartext_mpi('mod', this.mpi);
 		} else {
-			bytes += String.fromCharCode(254);
-			bytes += String.fromCharCode(this.symmetric_algorithm);
-			bytes += this.s2k.write();
 			bytes += this.encrypted;
 		}
 
@@ -10780,75 +10701,54 @@ function openpgp_packet_secret_key() {
 
 
 
-    this.encrypt = function(password) {
+	/** Encrypt the payload. By default, we use aes256 and iterated, salted string
+	 * to key specifier
+	 * @param {String} passphrase
+	 */
+    this.encrypt = function(passphrase) {
+
+		var s2k = new openpgp_type_s2k(),
+			symmetric = openpgp.symmetric.aes256,
+			cleartext = write_cleartext_mpi(openpgp.hash.sha1, this.mpi),
+			key = produceEncryptionKey(s2k, passphrase, symmetric),
+			blockLen = openpgp_crypto_getBlockLength(symmetric),
+			iv = openpgp_crypto_getRandomBytes(blockLen);
 
 
-		switch(keyType){
-		case 1:
-		    body += String.fromCharCode(keyType);//public key algo
-		    body += key.n.toMPI();
-		    body += key.ee.toMPI();
-		    var algorithmStart = body.length;
-		    //below shows ske/s2k
-		    if(password){
-		        body += String.fromCharCode(254); //octet of 254 indicates s2k with SHA1
-		        //if s2k == 255,254 then 1 octet symmetric encryption algo
-		        body += String.fromCharCode(this.symmetric_algorithm);
-		        //if s2k == 255,254 then s2k specifier
-		        body += String.fromCharCode(3); //s2k salt+iter
-		        body += String.fromCharCode(s2kHash);
-		        //8 octet salt value
-		        //1 octet count
-		        var cleartext = key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
-		        var sha1Hash = str_sha1(cleartext);
-   		        util.print_debug_hexstr_dump('write_private_key sha1: ',sha1Hash);
-		        var salt = openpgp_crypto_getRandomBytes(8);
-		        util.print_debug_hexstr_dump('write_private_key Salt: ',salt);
-		        body += salt;
-		        var c = 96; //c of 96 translates to count of 65536
-		        body += String.fromCharCode(c);
-		        util.print_debug('write_private_key c: '+ c);
-		        var s2k = new openpgp_type_s2k();
-		        var hashKey = s2k.write(3, s2kHash, password, salt, c);
-		        //if s2k, IV of same length as cipher's block
-		        switch(this.symmetric_algorithm){
-		        case 3:
-		            this.iv.length = 8;
-		            this.iv = openpgp_crypto_getRandomBytes(this.iv.length);
-            		ciphertextMPIs = normal_cfb_encrypt(function(block, key) {
-                		var cast5 = new openpgp_symenc_cast5();
-                		cast5.setKey(key);
-                		return cast5.encrypt(util.str2bin(block)); 
-            		}, this.iv.length, util.str2bin(hashKey.substring(0,16)), cleartext + sha1Hash, this.iv);
-            		body += this.iv + ciphertextMPIs;
-		            break;
-		        case 7:
-		        case 8:
-		        case 9:
-		            this.iv.length = 16;
-		            this.iv = openpgp_crypto_getRandomBytes(this.iv.length);
-		            ciphertextMPIs = normal_cfb_encrypt(AESencrypt,
-            				this.iv.length, hashKey, cleartext + sha1Hash, this.iv);
-            		body += this.iv + ciphertextMPIs;
-	            	break;
-		        }
-		    }
-		    else{
-		        body += String.fromCharCode(0);//1 octet -- s2k, 0 for no s2k
-		        body += key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI();
-		        var checksum = util.calc_checksum(key.d.toMPI() + key.p.toMPI() + key.q.toMPI() + key.u.toMPI());
-        		body += String.fromCharCode(checksum/0x100) + String.fromCharCode(checksum%0x100);//DEPRECATED:s2k == 0, 255: 2 octet checksum, sum all octets%65536
-        		util.print_debug_hexstr_dump('write_private_key basic checksum: '+ checksum);
-		    }
-		    break;
-		default :
-			body = "";
-			util.print_error("openpgp.packet.keymaterial.js\n"+'error writing private key, unknown type :'+keyType);
-        }
-		var header = openpgp_packet.write_packet_header(tag,body.length);
-		return {string: header+body , header: header, body: body};
+		this.encrypted = '';
+		this.encrypted += String.fromCharCode(254);
+		this.encrypted += String.fromCharCode(symmetric);
+		this.encrypted += s2k.write();
+		this.encrypted += iv;
+
+		console.log(cleartext);
+
+		switch(symmetric) {
+		case 3:
+			this.encrypted += normal_cfb_encrypt(function(block, key) {
+				var cast5 = new openpgp_symenc_cast5();
+				cast5.setKey(key);
+				return cast5.encrypt(util.str2bin(block)); 
+			}, iv.length, key, cleartext, iv);
+			break;
+		case 7:
+		case 8:
+		case 9:
+    		var fn = function(block,key) {
+    		    	return AESencrypt(util.str2bin(block),key);
+    			}
+			this.encrypted += normal_cfb_encrypt(fn,
+					iv.length, new keyExpansion(key), cleartext, iv);
+			break;
+		default:
+			throw new Error("Unsupported symmetric encryption algorithm.");
+		}
     }
 
+	function produceEncryptionKey(s2k, passphrase, algorithm) {
+		return s2k.produce_key(passphrase,
+			openpgp_crypto_getKeyLength(algorithm));
+	}
 
 	/**
 	 * Decrypts the private key MPIs which are needed to use the key.
@@ -10861,38 +10761,65 @@ function openpgp_packet_secret_key() {
 	 * @return {Boolean} True if the passphrase was correct; false if not
 	 */
 	this.decrypt = function(passphrase) {
-		if (this.encrypted == null)
+		if (!this.encrypted)
 			return;
 
-		// creating a key out of the passphrase
-		var key = this.s2k.produce_key(passphrase,
-			openpgp_crypto_getKeyLength(this.symmetric_algorithm));
+		var i = 0,
+			symmetric,
+			key;
 
-		var cleartext = '';
+		var s2k_usage = this.encrypted[i++].charCodeAt();
+
+	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
+	    //   octet symmetric encryption algorithm.
+	    if (s2k_usage == 255 || s2k_usage == 254) {
+	    	symmetric = this.encrypted[i++].charCodeAt();
+	     
+			// - [Optional] If string-to-key usage octet was 255 or 254, a
+			//   string-to-key specifier.  The length of the string-to-key
+			//   specifier is implied by its type, as described above.
+	    	var s2k = new openpgp_type_s2k();
+	    	i += s2k.read(this.encrypted.substr(i));
+
+			key = produceEncryptionKey(s2k, passphrase, symmetric);
+	    } else {
+			symmetric = s2k_usage;
+			key = MD5(passphrase);
+		}
+	    
+	    // - [Optional] If secret data is encrypted (string-to-key usage octet
+	    //   not zero), an Initial Vector (IV) of the same length as the
+	    //   cipher's block size.
+		var iv = this.encrypted.substr(i, 
+			openpgp_crypto_getBlockLength(symmetric));
+
+		i += iv.length;
+
+		var cleartext,
+			ciphertext = this.encrypted.substr(i);
 
 
-    	switch (this.symmetric_algorithm) {
+    	switch (symmetric) {
 	    case  1: // - IDEA [IDEA]
-	    	util.print_error("openpgp.packet.keymaterial.js\n"
-				+"symmetric encryption algorithim: IDEA is not implemented");
+			throw new Error("IDEA is not implemented.");
 	    	return false;
     	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
     		cleartext = normal_cfb_decrypt(function(block, key) {
     			return des(key, block,1,null,0);
-    		}, this.iv.length, key, this.encrypted, this.iv);
+    		}, iv.length, key, ciphertext, iv);
     		break;
     	case  3: // - CAST5 (128 bit key, as per [RFC2144])
     		cleartext = normal_cfb_decrypt(function(block, key) {
         		var cast5 = new openpgp_symenc_cast5();
         		cast5.setKey(key);
         		return cast5.encrypt(util.str2bin(block)); 
-    		}, this.iv.length, util.str2bin(key.substring(0,16)), this.encrypted, this.iv);
+    		}, iv.length, util.str2bin(key.substring(0,16)), ciphertext, iv);
     		break;
 	    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 	    	cleartext = normal_cfb_decrypt(function(block, key) {
     			var blowfish = new Blowfish(key);
         		return blowfish.encrypt(block); 
-    		}, this.iv.length, key, this.encrypted, this.iv);
+    		}, iv.length, key, ciphertext, iv);
     		break;
 	    case  7: // - AES with 128-bit key [AES]
     	case  8: // - AES with 192-bit key
@@ -10900,27 +10827,27 @@ function openpgp_packet_secret_key() {
     		cleartext = normal_cfb_decrypt(function(block,key){
     		    	return AESencrypt(util.str2bin(block),key);
     			},
-    			this.iv.length, keyExpansion(key), 
-					this.encrypted, this.iv);
+    			iv.length, new keyExpansion(key), 
+					ciphertext, iv);
 	    	break;
     	case 10: // - Twofish with 256-bit key [TWOFISH]
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"Key material is encrypted with twofish: not implemented");   		
+			throw new Error("Twofish is not implemented.");
 	    	return false;
     	case  5: // - Reserved
     	case  6: // - Reserved
     	default:
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"unknown encryption algorithm for secret key :"+this.symmetric_algorithm);
+			throw new Error("Unknown symmetric algorithm.");
     		return false;
     	}
-    	
-    	if (cleartext == null) {
-    		util.print_error("openpgp.packet.keymaterial.js\n"+"cleartext was null");
-    		return false;
-    	}
-    	
+ 
+		var hash;
+		if(s2k_usage == 254)
+			hash = openpgp.hash.sha1;
+		else
+			hash = 'mod';
 
-
-		this.mpi = parse_cleartext_mpi(this.hash_algorithm, cleartext,
+   	
+		this.mpi = parse_cleartext_mpi(hash, cleartext,
 			this.public_key.algorithm);
 	}
 	
@@ -11674,21 +11601,6 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		else
 			this.packets.read(decrypted.substr(0, decrypted.length - 22));
 	}
-
-	this.toString = function() {
-	    var data = '';
-	    if(openpgp.config.debug)
-	        data = '    data: Bytes ['
-				+ util.hexstrdump(this.encrypted) + ']';
-	    
-		return '5.13.  Sym. Encrypted Integrity Protected Data Packet (Tag 18)\n'
-				+ '\n'
-				+ '    version: '
-				+ this.version
-				+ '\n'
-				+ data;
-	}
-
 };
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -11819,21 +11731,6 @@ function openpgp_packet_sym_encrypted_session_key() {
 				openpgp_crypto_getPrefixRandom(this.private_algorithm), 
 				this.private_algorithm, key, private_key, true);
 	}
-
-	/**
-	 * Creates a string representation of this object (useful for debug
-	 * purposes)
-	 * 
-	 * @return {String} The string containing a openpgp description
-	 */
-	this.toString = function() {
-		return '5.3 Symmetric-Key Encrypted Session Key Packets (Tag 3)\n'
-				+ '    KeyId:  ' + this.keyId.toString() + '\n'
-				+ '    length: ' + this.packetLength + '\n'
-				+ '    version:' + this.version + '\n' + '    symKeyA:'
-				+ this.symmetricKeyAlgorithmUsed + '\n' + '    s2k:    '
-				+ this.s2k + '\n';
-	}
 };
 
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -11867,6 +11764,7 @@ function openpgp_packet_sym_encrypted_session_key() {
 function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
+	/** Decrypted packets contained within. */
 	this.packets = new openpgp_packetlist();
 
 	
@@ -11901,14 +11799,6 @@ function openpgp_packet_symmetrically_encrypted() {
 
 		this.encrypted = openpgp_crypto_symmetricEncrypt(
 				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
-	}
-
-
-	this.toString = function () {
-		return '5.7.  Symmetrically Encrypted Data Packet (Tag 9)\n'
-				+ '    Used symmetric algorithm: ' + this.algorithmType + '\n'
-				+ '    encrypted data: Bytes ['
-				+ util.hexstrdump(this.encryptedData) + ']\n';
 	}
 };
 
@@ -12400,7 +12290,7 @@ function openpgp_type_s2k() {
 	this.algorithm = openpgp.hash.sha256;
 	/** @type {openpgp_type_s2k.type} */
 	this.type = openpgp_type_s2k.type.iterated;
-	this.c = 10;
+	this.c = 96;
 	/** @type {openpgp_bytearray} 
 	 * Eight bytes of salt. */
 	this.salt = openpgp_crypto_getRandomBytes(8);

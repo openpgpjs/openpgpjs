@@ -27,7 +27,7 @@
 function openpgp_packet_public_key() {
 	this.tag = 6;
 	this.version = 4;
-	this.created = null;
+	this.created = new Date();
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
 
