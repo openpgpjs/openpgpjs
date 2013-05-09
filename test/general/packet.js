@@ -339,6 +339,11 @@ unittests.register("Packet testing", function() {
 				key: key[0].public_key
 			});
 
+		verified = verified == key[4].verify(key[0].public_key,
+			{
+				key: key[0].public_key,
+				bind: key[3].public_key
+			})
 
 
 		return new test_result('Secret key reading with signature verification.',
