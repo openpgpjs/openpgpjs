@@ -424,6 +424,53 @@ unittests.register("Packet testing", function() {
 	
 		return new test_result('Writing and encryptio of a secret key packet.',
 			key[0].mpi.toString() == key2[0].mpi.toString());
+	}, function() {
+		var key = new openpgp_packet_secret_key;
+
+		var rsa = new RSA(),
+			mpi = rsa.generate(512, "10001")
+
+
+		var mpi = [
+			[mpi.d, mpi.p, mpi.q, mpi.u],
+			[mpi.n, mpi.ee]];
+
+		mpi = mpi.map(function(k) {
+			return k.map(function(bn) {
+				var mpi = new openpgp_type_mpi();
+				mpi.fromBigInteger(bn);
+				return mpi;
+				});
+		});
+
+		key.public_key.mpi = mpi[1];
+		key.mpi = mpi[0];
+
+		var signed = new openpgp_packetlist(),
+			literal = new openpgp_packet_literal(),
+			signature = new openpgp_packet_signature();
+
+		literal.set_data('Hello world', openpgp_packet_literal.format.utf8);
+
+		signature.hashAlgorithm = openpgp.hash.sha256;
+		signature.publicKeyAlgorithm = openpgp.publickey.rsa_sign;
+		signature.signatureType = openpgp_packet_signature.type.binary;
+
+		signature.sign(key, { literal: literal });
+
+		signed.push(literal);
+		signed.push(signature);
+
+		var raw = signed.write();
+
+		var signed2 = new openpgp_packetlist();
+		signed2.read(raw);
+
+		var verified = signed2[1].verify(key.public_key, { literal: signed2[0] });
+	
+	
+		return new test_result('Writing and verification of a signature packet.',
+			verified == true);
 	}];
 
 

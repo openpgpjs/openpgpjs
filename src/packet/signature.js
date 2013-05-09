@@ -26,15 +26,19 @@
  */
 function openpgp_packet_signature() {
 	this.tag = 2;
+
 	this.signatureType = null;
-	this.created = null;
+	this.hashAlgorithm = null;
+	this.publicKeyAlgorithm = null; 
+	this.version = 4;
+
 	this.signatureData = null;
-	this.signatureExpirationTime = null;
-	this.signatureNeverExpires = null;
 	this.signedHashValue = null;
 	this.mpi = null;
-	this.publicKeyAlgorithm = null; 
-	this.hashAlgorithm = null;
+
+	this.created = null;
+	this.signatureExpirationTime = null;
+	this.signatureNeverExpires = null;
 	this.exportable = null;
 	this.trustLevel = null;
 	this.trustAmount = null;
@@ -62,6 +66,7 @@ function openpgp_packet_signature() {
 	this.signatureTargetHashAlgorithm = null;
 	this.signatureTargetHash = null;
 	this.embeddedSignature = null;
+
 	this.verified = false;
 	
 
@@ -161,71 +166,48 @@ function openpgp_packet_signature() {
 		this.signedHashValue = bytes.substr(i, 2);
 		i += 2;
 
-		var mpicount = 0;
-		// Algorithm-Specific Fields for RSA signatures:
-		// 	    - multiprecision number (MPI) of RSA signature value m**d mod n.
-		if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-			mpicount = 1;
-		//    Algorithm-Specific Fields for DSA signatures:
-		//      - MPI of DSA value r.
-		//      - MPI of DSA value s.
-		else if (this.publicKeyAlgorithm == 17)
-			mpicount = 2;
-		
-		this.mpi = [];
-		for (var j = 0; j < mpicount; j++) {
-			this.mpi[j] = new openpgp_type_mpi();
-			i += this.mpi[j].read(bytes.substr(i));
-		}
+		this.signature = bytes.substr(i);
+	}
+
+	this.write = function() {
+		return this.signatureData + 
+			openpgp_packet_number_write(0, 2) + // Number of unsigned subpackets.
+			this.signedHashValue +
+			this.signature;
 	}
 
 	/**
-	 * creates a string representation of a message signature packet (tag 2).
-	 * This can be only used on text data
-	 * @param {Integer} signature_type should be 1 (one) 
-	 * @param {String} data data to be signed
-	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. (secmpi MUST be unlocked)
-	 * @return {String} string representation of a signature packet
+	 * Signs provided data. This needs to be done prior to serialization.
+	 * @param {Object} data Contains packets to be signed.
+	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. 
 	 */
-	function write_message_signature(signature_type, data, privatekey) {
-		var publickey = privatekey.privateKeyPacket.publicKey;
-		var hash_algo = privatekey.getPreferredSignatureHashAlgorithm();
+	this.sign = function(privatekey, data) {
+		var publickey = privatekey.public_key;
+
 		var result = String.fromCharCode(4); 
-		result += String.fromCharCode(signature_type);
-		result += String.fromCharCode(publickey.publicKeyAlgorithm);
-		result += String.fromCharCode(hash_algo);
-		var d = Math.round(new Date().getTime() / 1000);
-		var datesubpacket = write_sub_signature_packet(2,""+
-				String.fromCharCode((d >> 24) & 0xFF) + 
-				String.fromCharCode((d >> 16) & 0xFF) +
-				String.fromCharCode((d >> 8) & 0xFF) + 
-				String.fromCharCode(d & 0xFF));
-		var issuersubpacket = write_sub_signature_packet(16, privatekey.getKeyId());
-		result += String.fromCharCode(((datesubpacket.length + issuersubpacket.length) >> 8) & 0xFF);
-		result += String.fromCharCode ((datesubpacket.length + issuersubpacket.length) & 0xFF);
-		result += datesubpacket;
-		result += issuersubpacket;
-		var trailer = '';
+		result += String.fromCharCode(this.signatureType);
+		result += String.fromCharCode(this.publicKeyAlgorithm);
+		result += String.fromCharCode(this.hashAlgorithm);
+
+
+		// Add subpackets here
+		result += openpgp_packet_number_write(0, 2);
+
+
+		this.signatureData = result;
+
+		var trailer = this.calculateTrailer();
 		
-		trailer += String.fromCharCode(4);
-		trailer += String.fromCharCode(0xFF);
-		trailer += String.fromCharCode((result.length) >> 24);
-		trailer += String.fromCharCode(((result.length) >> 16) & 0xFF);
-		trailer += String.fromCharCode(((result.length) >> 8) & 0xFF);
-		trailer += String.fromCharCode((result.length) & 0xFF);
-		var result2 = String.fromCharCode(0);
-		result2 += String.fromCharCode(0);
-		var hash = openpgp_crypto_hashData(hash_algo, data+result+trailer);
-		util.print_debug("DSA Signature is calculated with:|"+data+result+trailer+"|\n"+util.hexstrdump(data+result+trailer)+"\n hash:"+util.hexstrdump(hash));
-		result2 += hash.charAt(0);
-		result2 += hash.charAt(1);
-		result2 += openpgp_crypto_signData(hash_algo,privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm,
-				publickey.mpi,
-				privatekey.privateKeyPacket.secmpi,
-				data+result+trailer);
-		return {openpgp: (openpgp_packet.write_packet_header(2, (result+result2).length)+result + result2), 
-				hash: util.get_hashAlgorithmString(hash_algo)};
+		var toHash = this.toSign(this.signatureType, data) + this.signatureData + trailer;
+		var hash = openpgp_crypto_hashData(this.hashAlgorithm, toHash);
+		
+		this.signedHashValue = hash.substr(0, 2);
+
+
+		this.signature = openpgp_crypto_signData(this.hashAlgorithm, this.publicKeyAlgorithm, 
+			publickey.mpi, privatekey.mpi, toHash);
 	}
+
 	/**
 	 * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)
 	 * @param {Integer} type subpacket signature type. Signature types as described 
@@ -233,7 +215,7 @@ function openpgp_packet_signature() {
 	 * @param {String} data data to be included
 	 * @return {String} a string-representation of a sub signature packet (See RFC 4880 5.2.3.1)
 	 */
-	function write_sub_signature_packet(type, data) {
+	function write_sub_packet(type, data) {
 		var result = "";
 		result += openpgp_packet.encode_length(data.length+1);
 		result += String.fromCharCode(type);
@@ -450,6 +432,16 @@ function openpgp_packet_signature() {
 		}
 	}
 
+	
+	this.calculateTrailer = function() {
+		// calculating the trailer
+		var trailer = '';
+		trailer += String.fromCharCode(this.version);
+		trailer += String.fromCharCode(0xFF);
+		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
+		return trailer
+	}
+
 
 	/**
 	 * verifys the signature packet. Note: not signature types are implemented
@@ -459,16 +451,29 @@ function openpgp_packet_signature() {
 	 */
 	this.verify = function(key, data) {
 
-		var bytes = this.toSign(this.signatureType, data);
+		var bytes = this.toSign(this.signatureType, data),
+			trailer = this.calculateTrailer();
 
-		// calculating the trailer
-		var trailer = '';
-		trailer += String.fromCharCode(this.version);
-		trailer += String.fromCharCode(0xFF);
-		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
+
+		var mpicount = 0;
+		// Algorithm-Specific Fields for RSA signatures:
+		// 	    - multiprecision number (MPI) of RSA signature value m**d mod n.
+		if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+			mpicount = 1;
+		//    Algorithm-Specific Fields for DSA signatures:
+		//      - MPI of DSA value r.
+		//      - MPI of DSA value s.
+		else if (this.publicKeyAlgorithm == 17)
+			mpicount = 2;
+		
+		var mpi = [], i = 0;
+		for (var j = 0; j < mpicount; j++) {
+			mpi[j] = new openpgp_type_mpi();
+			i += mpi[j].read(this.signature.substr(i));
+		}
 
 		this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, 
-			this.hashAlgorithm, this.mpi, key.mpi, 
+			this.hashAlgorithm, mpi, key.mpi, 
 			bytes + this.signatureData + trailer);
 
 		return this.verified;

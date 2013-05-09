@@ -283,7 +283,7 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
  * @param {openpgp_type_mpi[]} secretMPIs Private key multiprecision 
  * integers which is used to sign the data
  * @param {String} data Data to be signed
- * @return {(String|openpgp_type_mpi)}
+ * @return {openpgp_type_mpi[]}
  */
 function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
 	
@@ -294,7 +294,7 @@ function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) 
 		var rsa = new RSA();
 		var d = secretMPIs[0].toBigInteger();
 		var n = publicMPIs[0].toBigInteger();
-		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].mpiByteLength);
+		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].byteLength());
 		util.print_debug("signing using RSA");
 		return rsa.sign(m, d, n).toMPI();
 	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
@@ -308,7 +308,7 @@ function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) 
 		var m = data;
 		var result = dsa.sign(hash_algo,m, g, p, q, x);
 		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));
-		return result[0]+result[1];
+		return result[0].toString() + result[1].toString();
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
 			util.print_debug("signing with Elgamal is not defined in the OpenPGP standard.");
 			return null;
