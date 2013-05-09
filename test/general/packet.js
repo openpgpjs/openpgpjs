@@ -335,7 +335,8 @@ unittests.register("Packet testing", function() {
 
 		var verified = key[2].verify(key[0].public_key,
 			{
-				userid: key[1]
+				userid: key[1],
+				key: key[0].public_key
 			});
 
 

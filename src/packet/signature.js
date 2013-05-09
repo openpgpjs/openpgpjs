@@ -378,6 +378,79 @@ function openpgp_packet_signature() {
 		}
 	};
 
+	this.toSign = function(type, data) {
+		var t = openpgp_packet_signature.type;
+
+		switch(type) {
+		case t.binary:
+			return data.literal.get_data_bytes();
+
+		case t.text:
+			return toSign(t.binary, data)
+				.replace(/\r\n/g, '\n')
+				.replace(/\n/g, '\r\n');
+				
+		case t.standalone:
+			return ''
+
+		case t.cert_generic:
+		case t.cert_persona:
+		case t.cert_casual:
+		case t.cert_positive:
+		case t.cert_revocation:
+		{
+			var packet, tag;
+
+			if(data.userid != undefined) {
+				tag = 0xB4;
+				packet = data.userid;
+			}
+			else if(data.userattribute != undefined) {
+				tag = 0xD1
+				packet = data.userattribute;
+			}
+			else throw new Error('Either a userid or userattribute packet needs to be ' +
+				'supplied for certification.');
+
+
+			var bytes = packet.write();
+
+			
+			return this.toSign(t.key, data) +
+				String.fromCharCode(tag) +
+				openpgp_packet_number_write(bytes.length, 4) +
+				bytes;
+		}
+		case t.subkey_binding:
+		case t.key_binding:
+		{
+			return this.toSign(t.key, data) + this.toSign(t.key, { key: data.bind });
+		}
+		case t.key:
+		{
+			if(data.key == undefined)
+				throw new Error('Key packet is required for this sigtature.');
+			
+			var bytes = data.key.write();
+
+			return String.fromCharCode(0x99) +
+				openpgp_packet_number_write(bytes.length, 2) +
+				bytes;
+		}
+		case t.key_revocation:
+		case t.subkey_revocation:
+			return this.toSign(t.key, data);
+		case t.timestamp:
+			return '';
+		case t.thrid_party:
+			throw new Error('Not implemented');
+			break;
+		default:
+			throw new Error('Unknown signature type.')
+		}
+	}
+
+
 	/**
 	 * verifys the signature packet. Note: not signature types are implemented
 	 * @param {String} data data which on the signature applies
@@ -386,65 +459,7 @@ function openpgp_packet_signature() {
 	 */
 	this.verify = function(key, data) {
 
-		var bytes =
-
-		(function(type, data) {
-		switch(type) {
-		case 0: // 0x00: Signature of a binary document.
-			return data.literal.data;
-			break;
-
-		case 1: // 0x01: Signature of a canonical text document.
-			return data.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-				
-		case 2: // 0x02: Standalone signature.
-			return ''
-		case 16:			
-			// 0x10: Generic certification of a User ID and Public-Key packet.
-		case 17:
-			// 0x11: Persona certification of a User ID and Public-Key packet.
-		case 18:
-			// 0x12: Casual certification of a User ID and Public-Key packet.
-		case 19:
-			// 0x13: Positive certification of a User ID and Public-Key packet.
-		case 48:
-			// 0x30: Certification revocation signature
-
-			if(data.userid != undefined) {
-				return String.fromCharCode(0xB4) +
-					openpgp_packet_number_write(data.userid.userid.length, 4) +
-					data;
-			}
-			else if(data.userattribute != undefined) {
-				return String.fromCharCode(0xB4) +
-					openpgp_packet_number_write(data.userattribute.userid.length, 4) +
-					data;
-			}
-			else return;
-		case 24:
-			// 0x18: Subkey Binding Signature
-			break;
-		case 25:
-			// 0x19: Primary Key Binding Signature
-		case 31:
-			// 0x1F: Signature directly on a key
-		case 32:
-			// 0x20: Key revocation signature
-		case 40:
-			// 0x28: Subkey revocation signature
-			return;
-		case 64:
-			// 0x40: Timestamp signature.
-			break;
-		case 80:
-			//    0x50: Third-Party Confirmation signature.
-			break;
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+
-				"signature verification for type"+ 
-				this.signatureType+" not implemented");
-			return false;
-		}})(this.signatureType, data);
+		var bytes = this.toSign(this.signatureType, data);
 
 		// calculating the trailer
 		var trailer = '';

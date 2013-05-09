@@ -7449,7 +7449,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130508";
+	this.versionstring ="OpenPGP.js v.1.20130509";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -10925,189 +10925,10 @@ function openpgp_packet_secret_key() {
 	}
 	
 	/**
-	 * Generates Debug output
-	 * @return String which gives some information about the keymaterial
-	 */
-	function toString() {
-		var result = "";
-		switch (this.tagType) {
-		case 6:
-			 result += '5.5.1.1. Public-Key Packet (Tag 6)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 14:
-			result += '5.5.1.2. Public-Subkey Packet (Tag 14)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.version+'\n'+
-			   '    creation time:      '+this.creationTime+'\n'+
-			   '    expiration time:    '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		case 5:
-			result +='5.5.1.3. Secret-Key Packet (Tag 5)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version:            '+this.publicKey.version+'\n'+
-			   '    creation time:      '+this.publicKey.creationTime+'\n'+
-			   '    expiration time:    '+this.publicKey.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKey.publicKeyAlgorithm+'\n';
-			break;
-		case 7:
-			result += '5.5.1.4. Secret-Subkey Packet (Tag 7)\n'+
-			   '    length:             '+this.packetLength+'\n'+
-			   '    version[1]:         '+(this.version == 4)+'\n'+
-			   '    creationtime[4]:    '+this.creationTime+'\n'+
-			   '    expiration[2]:      '+this.expiration+'\n'+
-			   '    publicKeyAlgorithm: '+this.publicKeyAlgorithm+'\n';
-			break;
-		default:
-			result += 'unknown key material packet\n';
-		}
-		if (this.MPIs != null) {
-			result += "Public Key MPIs:\n";
-			for (var i = 0; i < this.MPIs.length; i++) {
-      	  	result += this.MPIs[i].toString();
-        	}
-		}
-		if (this.publicKey != null && this.publicKey.MPIs != null) {
-			result += "Public Key MPIs:\n";
-			for (var i = 0; i < this.publicKey.MPIs.length; i++) {
-	      	  	result += this.publicKey.MPIs[i].toString();
-        	}
-		}
-		if (this.mpi != null) {
-			result += "Secret Key MPIs:\n";
-			for (var i = 0; i < this.mpi.length; i++) {
-		      	  result += this.mpi[i].toString();
-		        }
-		}
-		
-		if (this.subKeySignature != null)
-			result += "subKey Signature:\n"+this.subKeySignature.toString();
-		
-		if (this.subKeyRevocationSignature != null )
-			result += "subKey Revocation Signature:\n"+this.subKeyRevocationSignature.toString();
-        return result;
-	}
-	
-	/**
-	 * Continue parsing packets belonging to the key material such as signatures
-	 * @param {Object} parent_node The parent object
-	 * @param {String} bytes Input string to read the packet(s) from
-	 * @param {Integer} position Start position for the parser
-	 * @param {Integer} len Length of the packet(s) or remaining length of bytes
-	 * @return {Integer} Length of nodes read
-	 */
-	function read_nodes(parent_node, bytes, position, len) {
-		this.parentNode = parent_node;
-		if (this.tagType == 14) { // public sub-key packet
-			var pos = position;
-			var result = null;
-			while (bytes.length != pos) {
-				var l = bytes.length - pos;
-				result = openpgp_packet.read_packet(bytes, pos, l);
-				if (result == null) {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_pub]parsing ends here @:' + pos + " l:" + l);
-					break;
-				} else {
-					
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType == 24)  { // subkey binding signature
-							this.subKeySignature = result;
-							pos += result.packetLength + result.headerLength;
-							break;
-						} else if (result.signatureType == 40) { // subkey revocation signature
-							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
-							pos += result.packetLength + result.headerLength;
-							break;
-						} else {
-							util.print_error("openpgp.packet.keymaterial.js\nunknown signature:"+result.toString());
-						}
-						
-					default:
-						this.data = bytes;
-						this.position = position - this.parentNode.packetLength;
-						this.len = pos - position;
-						return this.len;
-						break;
-					}
-				}
-			}
-			this.data = bytes;
-			this.position = position - this.parentNode.packetLength;
-			this.len = pos - position;
-			return this.len;
-		} else if (this.tagType == 7) { // private sub-key packet
-			var pos = position;
-			while (bytes.length != pos) {
-				var result = openpgp_packet.read_packet(bytes, pos, len - (pos - position));
-				if (result == null) {
-					util.print_error("openpgp.packet.keymaterial.js\n"+'[user_keymat_priv] parsing ends here @:' + pos);
-					break;
-				} else {
-					switch (result.tagType) {
-					case 2: // Signature Packet certification signature
-						if (result.signatureType == 24) // subkey embedded signature
-							this.subKeySignature = result; 
-						else if (result.signatureType == 40) // subkey revocation signature
-							this.subKeyRevocationSignature[this.subKeyRevocationSignature.length] = result;
-						pos += result.packetLength + result.headerLength;
-						break;
-					default:
-						this.data = bytes;
-						this.position = position - this.parentNode.packetLength;
-						this.len = pos - position;
-						return this.len;
-					}
-				}
-			}
-			this.data = bytes;
-			this.position = position - this.parentNode.packetLength;
-			this.len = pos - position;
-			return this.len;
-		} else {
-			util.print_error("openpgp.packet.keymaterial.js\n"+"unknown parent node for a key material packet "+parent_node.tagType);
-		}
-	}
-
-	/**
-	 * Checks the validity for usage of this (sub)key
-	 * @return {Integer} 0 = bad key, 1 = expired, 2 = revoked, 3 = valid
-	 */
-	function verifyKey() {
-		if (this.tagType == 14) {
-			if (this.subKeySignature == null) {
-				return 0;
-			}
-			if (this.subKeySignature.version == 4 &&
-				this.subKeySignature.keyNeverExpires != null &&
-				!this.subKeySignature.keyNeverExpires &&
-				new Date((this.subKeySignature.keyExpirationTime*1000)+ this.creationTime.getTime()) < new Date()) {
-				    return 1;
-				}
-			var hashdata = String.fromCharCode(0x99)+this.parentNode.header.substring(1)+this.parentNode.data+
-			String.fromCharCode(0x99)+this.header.substring(1)+this.packetdata;
-			if (!this.subKeySignature.verify(hashdata,this.parentNode)) {
-				return 0;
-			}
-			for (var i = 0; i < this.subKeyRevocationSignature.length; i++) {
-			    if (this.getKeyId() == this.subKeyRevocationSignature[i].keyId){
-			        return 2;
-			    }
-			}
-		}
-		return 3;
-	}
-
-	/**
 	 * Calculates the key id of they key 
 	 * @return {String} A 8 byte key id
 	 */
-	function getKeyId() {
+	this.getKeyId = function() {
 		if (this.version == 4) {
 			var f = this.getFingerprint();
 			return f.substring(12,20);
@@ -11122,7 +10943,7 @@ function openpgp_packet_secret_key() {
 	 * Calculates the fingerprint of the key
 	 * @return {String} A string containing the fingerprint
 	 */
-	function getFingerprint() {
+	this.getFingerprint = function() {
 		if (this.version == 4) {
 			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
 				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
@@ -11132,8 +10953,6 @@ function openpgp_packet_secret_key() {
 			return MD5(this.MPIs[0].MPI);
 		}
 	}
-	
-	
 }
 
 
@@ -11523,6 +11342,79 @@ function openpgp_packet_signature() {
 		}
 	};
 
+	this.toSign = function(type, data) {
+		var t = openpgp_packet_signature.type;
+
+		switch(type) {
+		case t.binary:
+			return data.literal.get_data_bytes();
+
+		case t.text:
+			return toSign(t.binary, data)
+				.replace(/\r\n/g, '\n')
+				.replace(/\n/g, '\r\n');
+				
+		case t.standalone:
+			return ''
+
+		case t.cert_generic:
+		case t.cert_persona:
+		case t.cert_casual:
+		case t.cert_positive:
+		case t.cert_revocation:
+		{
+			var packet, tag;
+
+			if(data.userid != undefined) {
+				tag = 0xB4;
+				packet = data.userid;
+			}
+			else if(data.userattribute != undefined) {
+				tag = 0xD1
+				packet = data.userattribute;
+			}
+			else throw new Error('Either a userid or userattribute packet needs to be ' +
+				'supplied for certification.');
+
+
+			var bytes = packet.write();
+
+			
+			return this.toSign(t.key, data) +
+				String.fromCharCode(tag) +
+				openpgp_packet_number_write(bytes.length, 4) +
+				bytes;
+		}
+		case t.subkey_binding:
+		case t.key_binding:
+		{
+			return this.toSign(t.key, data) + this.toSign(t.key, { key: data.bind });
+		}
+		case t.key:
+		{
+			if(data.key == undefined)
+				throw new Error('Key packet is required for this sigtature.');
+			
+			var bytes = data.key.write();
+
+			return String.fromCharCode(0x99) +
+				openpgp_packet_number_write(bytes.length, 2) +
+				bytes;
+		}
+		case t.key_revocation:
+		case t.subkey_revocation:
+			return this.toSign(t.key, data);
+		case t.timestamp:
+			return '';
+		case t.thrid_party:
+			throw new Error('Not implemented');
+			break;
+		default:
+			throw new Error('Unknown signature type.')
+		}
+	}
+
+
 	/**
 	 * verifys the signature packet. Note: not signature types are implemented
 	 * @param {String} data data which on the signature applies
@@ -11531,65 +11423,7 @@ function openpgp_packet_signature() {
 	 */
 	this.verify = function(key, data) {
 
-		var bytes =
-
-		(function(type, data) {
-		switch(type) {
-		case 0: // 0x00: Signature of a binary document.
-			return data.literal.data;
-			break;
-
-		case 1: // 0x01: Signature of a canonical text document.
-			return data.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-				
-		case 2: // 0x02: Standalone signature.
-			return ''
-		case 16:			
-			// 0x10: Generic certification of a User ID and Public-Key packet.
-		case 17:
-			// 0x11: Persona certification of a User ID and Public-Key packet.
-		case 18:
-			// 0x12: Casual certification of a User ID and Public-Key packet.
-		case 19:
-			// 0x13: Positive certification of a User ID and Public-Key packet.
-		case 48:
-			// 0x30: Certification revocation signature
-
-			if(data.userid != undefined) {
-				return String.fromCharCode(0xB4) +
-					openpgp_packet_number_write(data.userid.userid.length, 4) +
-					data;
-			}
-			else if(data.userattribute != undefined) {
-				return String.fromCharCode(0xB4) +
-					openpgp_packet_number_write(data.userattribute.userid.length, 4) +
-					data;
-			}
-			else return;
-		case 24:
-			// 0x18: Subkey Binding Signature
-			break;
-		case 25:
-			// 0x19: Primary Key Binding Signature
-		case 31:
-			// 0x1F: Signature directly on a key
-		case 32:
-			// 0x20: Key revocation signature
-		case 40:
-			// 0x28: Subkey revocation signature
-			return;
-		case 64:
-			// 0x40: Timestamp signature.
-			break;
-		case 80:
-			//    0x50: Third-Party Confirmation signature.
-			break;
-		default:
-			util.print_error("openpgp.packet.signature.js\n"+
-				"signature verification for type"+ 
-				this.signatureType+" not implemented");
-			return false;
-		}})(this.signatureType, data);
+		var bytes = this.toSign(this.signatureType, data);
 
 		// calculating the trailer
 		var trailer = '';
@@ -11606,7 +11440,7 @@ function openpgp_packet_signature() {
 }
 
 
-/* One pass signature packet type
+/** One pass signature packet type
  * @enum {Integer} */
 openpgp_packet_signature.type = {
 	/** 0x00: Signature of a binary document. */
