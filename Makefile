@@ -30,6 +30,8 @@ lint:
 	@echo See http://code.google.com/closure/utilities/
 	@./scripts/lint.sh
 
+bundle:
+	@browserify -d -r ./src/openpgp.js:openpgp > ./resources/openpgp.js
 minify:
 	@echo See http://code.google.com/closure/compiler/
 	@./scripts/minimize.sh

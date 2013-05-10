@@ -482,3 +482,8 @@ function AESencrypt(block, ctx)
 
   return unpackBytes(b);
 }
+
+module.exports = {
+	AESencrypt: AESencrypt,
+	keyExpansion: keyExpansion
+}

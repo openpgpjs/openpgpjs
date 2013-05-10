@@ -1,5 +1,9 @@
 
 unittests.register("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
+	var openpgp = require('openpgp'),
+		util = openpgp.util,
+		desede = openpgp.cipher.des
+
 	var result = new Array();
 	var key = util.bin2str([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
 	var testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],

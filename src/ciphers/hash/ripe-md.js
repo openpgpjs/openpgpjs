@@ -291,3 +291,5 @@ function RMDstring(message)
 
   return retString;  
 }
+
+module.exports = RMDstring;

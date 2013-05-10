@@ -509,3 +509,20 @@ openpgp.hash = {
 	sha512: 10,
 	sha224: 11
 };
+
+module.exports = {
+	cipher: {
+		aes: require('./ciphers/symmetric/aes.js'),
+		des: require('./ciphers/symmetric/dessrc.js'),
+		cast5: require('./ciphers/symmetric/cast5.js'),
+		twofish: require('./ciphers/symmetric/twofish.js'),
+		blowfish: require('./ciphers/symmetric/blowfish.js')
+	},
+	hash: {
+		md5: require('./ciphers/hash/md5.js'),
+		sha: require('./ciphers/hash/sha.js'),
+		ripemd: require('./ciphers/hash/ripe-md.js')
+	},
+	util: require('./util/util.js')
+}
+

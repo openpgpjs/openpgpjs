@@ -545,3 +545,5 @@ function openpgp_symenc_cast5() {
 
 };
 
+
+module.exports = cast5_encrypt;

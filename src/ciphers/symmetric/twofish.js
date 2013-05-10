@@ -300,3 +300,4 @@ function createTwofish() {
 	};
 }
 
+module.exports = TFencrypt;

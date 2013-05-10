@@ -391,3 +391,5 @@ function BFencrypt(block,key) {
 	bf.init(util.str2bin(key));
 	return bf.encrypt_block(block);
 }
+
+module.exports = BFencrypt;

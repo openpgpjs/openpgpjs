@@ -1193,29 +1193,26 @@ var jsSHA = (function () {
 	return jsSHA;
 }());
 
-function str_sha1(str) {
-	var shaObj = new jsSHA(str, "ASCII");
-	return shaObj.getHash("SHA-1", "ASCII");
-}
+module.exports = {
+	sha1: function(str) {
+		var shaObj = new jsSHA(str, "ASCII");
+		return shaObj.getHash("SHA-1", "ASCII");
+	},
+	sha224: function(str) {
+		var shaObj = new jsSHA(str, "ASCII");
+		return shaObj.getHash("SHA-224", "ASCII");
+	},
+	sha256: function(str) {
+		var shaObj = new jsSHA(str, "ASCII");
+		return shaObj.getHash("SHA-256", "ASCII");
+	},
+	sha384: function(str) {
+		var shaObj = new jsSHA(str, "ASCII");
+		return shaObj.getHash("SHA-384", "ASCII");
 
-function str_sha224(str) {
-	var shaObj = new jsSHA(str, "ASCII");
-	return shaObj.getHash("SHA-224", "ASCII");
-}
-
-function str_sha256(str) {
-	var shaObj = new jsSHA(str, "ASCII");
-	return shaObj.getHash("SHA-256", "ASCII");
-}
-
-
-function str_sha384(str) {
-	var shaObj = new jsSHA(str, "ASCII");
-	return shaObj.getHash("SHA-384", "ASCII");
-
-}
-
-function str_sha512(str) {
-	var shaObj = new jsSHA(str, "ASCII");
-	return shaObj.getHash("SHA-512", "ASCII");
+	},
+	sha512: function(str) {
+		var shaObj = new jsSHA(str, "ASCII");
+		return shaObj.getHash("SHA-512", "ASCII");
+	}
 }

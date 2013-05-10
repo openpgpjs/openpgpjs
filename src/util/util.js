@@ -301,4 +301,4 @@ var Util = function() {
 /**
  * an instance that should be used. 
  */
-var util = new Util();
+module.exports = new Util();

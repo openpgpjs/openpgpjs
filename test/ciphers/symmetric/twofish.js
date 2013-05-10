@@ -1,5 +1,9 @@
 
 unittests.register("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.txt", function() {
+	var openpgp = require('openpgp'),
+		util = openpgp.util,
+		TFencrypt = openpgp.cipher.twofish;
+
 	var result = new Array();
 	var start = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 	var start_short = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
