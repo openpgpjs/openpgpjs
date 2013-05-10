@@ -29,8 +29,8 @@ function openpgp_key() {
 	 * @returns {openpgp_packet_secret_key|openpgp_packet_public_key|null} */
 	this.getKey = function() {
 		for(var i = 0; i < this.packets.length; i++)
-			if(this.packets[i] instanceof openpgp_packet_secret_key ||
-			this.packets[i] instanceof openpgp_packet_public_key)
+			if(this.packets[i].tag == openpgp_packets.tags.public_key ||
+			this.packets[i].tag == openpgp_packets.tags.secret_key)
 				return this.packets[i];
 
 		return null;
@@ -43,8 +43,8 @@ function openpgp_key() {
 		var subkeys = [];
 
 		for(var i = 0; i < this.packets.length; i++)
-			if(this.packets[i] instanceof openpgp_packet_secret_subkey ||
-			this.packets[i] instanceof openpgp_packet_public_subkey)
+			if(this.packets[i].tag == openpgp_packet.tags.public_subkey ||
+			this.packets[i].tag == openpgp_packet.tags.secret_subkey)
 			subkeys.push(this.packets[i]);
 
 		return subkeys;
@@ -89,8 +89,8 @@ function openpgp_key() {
 		var keys = this.getAllKeys();
 
 		for(var i in keys)
-			if(keys[i] instanceof openpgp_packet_secret_subkey ||
-			keys[i] instanceof openpgp_packet_secret_key)
+			if(keys[i].tag == openpgp_packet.tags.secret_subkey ||
+			keys[i].tag == openpgp_packet.tags.secret_key)
 			
 			keys[i].decrypt(passphrase);
 	}

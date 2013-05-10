@@ -16,30 +16,35 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @protected
  * @class
- * @classdesc Top-level message object. Contains information from one or more packets
+ * @classdesc A generic message containing one or more literal packets.
  */
 
-function openpgp_msg_message() {
+function openpgp_message() {
+	this.packets = new openpgp_packetlist();
 	
-	// -1 = no valid passphrase submitted
-	// -2 = no private key found
-	// -3 = decryption error
-	// text = valid decryption
-	this.text = "";
-	this.messagePacket = null;
-	this.type = null;
+
+	function generic_decrypt(packets, passphrase) {
+		var sessionkey;
+
+		for(var i = 0; i < packets.length; i++) {
+			if(packets[i].tag == openpgp_packet.tags.public_key_encrypted_session_key) {
+				var key = openpgp.keyring.getKeyById(packets[i].public_key_id);
+				
+			}
+		}
+
+	}
 	
 	/**
 	 * Decrypts a message and generates user interface message out of the found.
 	 * MDC will be verified as well as message signatures
 	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
 	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
-	 * @return {String} plaintext of the message or null on error
+	 * @return {} plaintext of the message or null on error
 	 */
-	function decrypt(private_key, sessionkey) {
-        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+	this.decrypt = function(key) {
+        return this.decryptAndVerifySignature(private_key, sessionkey)
 	}
 
 	/**
@@ -109,28 +114,4 @@ function openpgp_msg_message() {
 		}
 		return result;
 	}
-	
-	function toString() {
-		var result = "Session Keys:\n";
-		if (this.sessionKeys !=null)
-		for (var i = 0; i < this.sessionKeys.length; i++) {
-			result += this.sessionKeys[i].toString();
-		}
-		result += "\n\n EncryptedData:\n";
-		if(this.encryptedData != null)
-		result += this.encryptedData.toString();
-		
-		result += "\n\n Signature:\n";
-		if(this.signature != null)
-		result += this.signature.toString();
-		
-		result += "\n\n Text:\n"
-		if(this.signature != null)
-			result += this.text;
-		return result;
-	}
-	this.decrypt = decrypt;
-	this.decryptAndVerifySignature = decryptAndVerifySignature;
-	this.verifySignature = verifySignature;
-	this.toString = toString;
 }

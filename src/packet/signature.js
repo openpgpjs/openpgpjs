@@ -156,8 +156,7 @@ function openpgp_packet_signature() {
 
 			break;
 		default:
-			util.print_error("openpgp.packet.signature.js\n"+
-				'unknown signature packet version'+this.version);
+			throw new Error('Version ' + version + ' of the signature is unsupported.');
 			break;
 		}
 
@@ -295,6 +294,7 @@ function openpgp_packet_signature() {
 			// We don't know how to handle anything but a text flagged data.
 			if(bytes[mypos].charCodeAt() == 0x80) {
 
+				// We extract key/value tuple from the byte stream.
 				mypos += 4;
 				var m = openpgp_packet_number_read(bytes.substr(mypos, 2));
 				mypos += 2
@@ -306,6 +306,7 @@ function openpgp_packet_signature() {
 
 				this.notation[name] = value;
 			}
+			else throw new Error("Unsupported notation flag.");
 			break;
 		case 21: // Preferred Hash Algorithms
 			read_array.call(this, 'preferredHashAlgorithms', bytes.substr(mypos));
@@ -368,7 +369,7 @@ function openpgp_packet_signature() {
 			return data.literal.get_data_bytes();
 
 		case t.text:
-			return toSign(t.binary, data)
+			return this.toSign(t.binary, data)
 				.replace(/\r\n/g, '\n')
 				.replace(/\n/g, '\r\n');
 				
@@ -413,11 +414,7 @@ function openpgp_packet_signature() {
 			if(data.key == undefined)
 				throw new Error('Key packet is required for this sigtature.');
 			
-			var bytes = data.key.writePublicKey();
-
-			return String.fromCharCode(0x99) +
-				openpgp_packet_number_write(bytes.length, 2) +
-				bytes;
+			return data.key.writeOld();
 		}
 		case t.key_revocation:
 		case t.subkey_revocation:

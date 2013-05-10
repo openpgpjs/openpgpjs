@@ -36,7 +36,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 	this.version = 3;
 
 	this.public_key_id = new openpgp_type_keyid();
-	this.public_key_algorithm = openpgp.publickey.rsa_encrypt_sign;
+	this.public_key_algorithm = openpgp.publickey.rsa_encrypt;
 
 	this.symmetric_key = null;
 	this.symmetric_algorithm = openpgp.symmetric.plaintext;

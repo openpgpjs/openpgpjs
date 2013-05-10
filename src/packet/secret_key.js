@@ -303,35 +303,6 @@ function openpgp_packet_secret_key() {
 			this.algorithm));
 	}
 	
-	/**
-	 * Calculates the key id of they key 
-	 * @return {String} A 8 byte key id
-	 */
-	this.getKeyId = function() {
-		if (this.version == 4) {
-			var f = this.getFingerprint();
-			return f.substring(12,20);
-		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
-			var key_id = this.MPIs[0].substring((this.MPIs[0].mpiByteLength-8));
-			util.print_debug("openpgp.msg.publickey read_nodes:\n"+"V3 key ID: "+key_id);
-			return key_id;
-		}
-	}
-	
-	/**
-	 * Calculates the fingerprint of the key
-	 * @return {String} A string containing the fingerprint
-	 */
-	this.getFingerprint = function() {
-		if (this.version == 4) {
-			tohash = String.fromCharCode(0x99)+ String.fromCharCode(((this.packetdata.length) >> 8) & 0xFF) 
-				+ String.fromCharCode((this.packetdata.length) & 0xFF)+this.packetdata;
-			util.print_debug("openpgp.msg.publickey creating subkey fingerprint by hashing:"+util.hexstrdump(tohash)+"\npublickeyalgorithm: "+this.publicKeyAlgorithm);
-			return str_sha1(tohash, tohash.length);
-		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
-			return MD5(this.MPIs[0].MPI);
-		}
-	}
 }
 
 openpgp_packet_secret_key.prototype = new openpgp_packet_public_key();

@@ -26,8 +26,14 @@
  */
 function openpgp_packet_public_key() {
 	this.tag = 6;
+	/** Key creation date.
+	 * @type {Date} */
 	this.created = new Date();
+	/** A list of multiprecision integers
+	 * @type {openpgp_type_mpi} */
 	this.mpi = [];
+	/** Public key algorithm
+	 * @type {openpgp.publickey} */
 	this.algorithm = openpgp.publickey.rsa_sign;
 
 
@@ -44,56 +50,7 @@ function openpgp_packet_public_key() {
 		// A one-octet version number (3 or 4).
 		var version = bytes[0].charCodeAt();
 
-		if (version == 3) {
-		/*	
-			// A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-				(input[mypos++].charCodeAt() << 16) |
-				(input[mypos++].charCodeAt() <<  8) |
-				(input[mypos++].charCodeAt()))*1000);
-			
-		    // - A two-octet number denoting the time in days that this key is
-		    //   valid.  If this number is zero, then it does not expire.
-			this.expiration = (input[mypos++].charCodeAt() << 8) & input[mypos++].charCodeAt();
-	
-		    // - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			var mpicount = 0;
-		    // - A series of multiprecision integers comprising the key material:
-			//   Algorithm-Specific Fields for RSA public keys:
-		    //       - a multiprecision integer (MPI) of RSA public modulus n;
-		    //       - an MPI of RSA public encryption exponent e.
-			if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
-				mpicount = 2;
-			//   Algorithm-Specific Fields for Elgamal public keys:
-			//     - MPI of Elgamal prime p;
-			//     - MPI of Elgamal group generator g;
-			//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-
-			else if (this.publicKeyAlgorithm == 16)
-				mpicount = 3;
-			//   Algorithm-Specific Fields for DSA public keys:
-			//       - MPI of DSA prime p;
-			//       - MPI of DSA group order q (q is a prime divisor of p-1);
-			//       - MPI of DSA group generator g;
-			//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-			else if (this.publicKeyAlgorithm == 17)
-				mpicount = 4;
-
-			this.MPIs = new Array();
-			for (var i = 0; i < mpicount; i++) {
-				this.MPIs[i] = new openpgp_type_mpi();
-				if (this.MPIs[i].read(input, mypos, (mypos-position)) != null && 
-						!this.packetLength < (mypos-position)) {
-					mypos += this.MPIs[i].packetLength;
-				} else {
-					util.print_error("openpgp.packet.keymaterial.js\n"+
-						'error reading MPI @:'+mypos);
-				}
-			}
-			this.packetLength = mypos-position;
-			*/
-		} else if (version == 4) {
+		if (version == 4) {
 			// - A four-octet number denoting the time that the key was created.
 			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
 			
@@ -121,7 +78,7 @@ function openpgp_packet_public_key() {
 
 			return p + 6;
 		} else {
-			util.print_error('Unknown packet version');
+			throw new Error('Version ' + version + ' of the key packet is unsupported.');
 		}
 	}
 
@@ -149,6 +106,33 @@ function openpgp_packet_public_key() {
 
 		return result;
 	}
+
+	// Write an old version packet - it's used by some of the internal routines.
+	this.writeOld = function() {
+		var bytes = this.writePublicKey();
+
+		return String.fromCharCode(0x99) +
+			openpgp_packet_number_write(bytes.length, 2) +
+			bytes;
+	}
+
+	/**
+	 * Calculates the key id of the key 
+	 * @return {String} A 8 byte key id
+	 */
+	this.getKeyId = function() {
+		return this.getFingerprint().substr(12, 8);
+	}
+	
+	/**
+	 * Calculates the fingerprint of the key
+	 * @return {String} A string containing the fingerprint
+	 */
+	this.getFingerprint = function() {
+		var toHash = this.writeOld();
+		return str_sha1(toHash, toHash.length);
+	}
+
 }
 
 function openpgp_packet_public_subkey() {

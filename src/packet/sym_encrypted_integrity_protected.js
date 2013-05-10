@@ -29,7 +29,6 @@
 
 function openpgp_packet_sym_encrypted_integrity_protected() {
 	this.tag = 18;
-	this.version = 1;
 	/** The encrypted payload. */
 	this.encrypted = null; // string
 	/** @type {Boolean}
@@ -44,14 +43,11 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	this.read = function(bytes) {
 		// - A one-octet version number. The only currently defined value is
 		// 1.
-		this.version = bytes[0].charCodeAt();
-		if (this.version != 1) {
-			util.print_error('openpgp.packet.encryptedintegrityprotecteddata.js' +
-				'\nunknown encrypted integrity protected data packet version: '
-							+ this.version
-							+ "hex:"
-							+ util.hexstrdump(bytes));
-			return null;
+		var version = bytes[0].charCodeAt();
+
+		if (version != 1) {
+			throw new Error('Version ' + version + ' of encrypted integrity protected' +
+				' packet is unsupported');
 		}
 
 		// - Encrypted data, the output of the selected symmetric-key cipher
@@ -61,7 +57,9 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	}
 
 	this.write = function() {
-		return String.fromCharCode(this.version) + this.encrypted;
+		
+		return String.fromCharCode(1) // Version
+			+ this.encrypted;
 	}
 
 	this.encrypt = function(symmetric_algorithm, key) {
@@ -119,8 +117,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 
 		if(this.hash != mdc) {
 			this.packets = new openpgp_packetlist();
-			util.print_error("Decryption stopped: discovered a " +
-				"modification of encrypted data.");
+			throw new Error('Modification detected.');
 			return;
 		}
 		else

@@ -29,7 +29,8 @@
 function openpgp_packet_symmetrically_encrypted() {
 	this.tag = 9;
 	this.encrypted = null;
-	/** Decrypted packets contained within. */
+	/** Decrypted packets contained within. 
+	 * @type {openpgp_packetlist} */
 	this.packets = new openpgp_packetlist();
 
 	
