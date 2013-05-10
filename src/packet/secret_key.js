@@ -25,9 +25,9 @@
  * major versions.  Consequently, this section is complex.
  */
 function openpgp_packet_secret_key() {
+	openpgp_packet_public_key.call(this);
+
 	this.tag = 5;
-	this.public_key = new openpgp_packet_public_key();
-	this.mpi = [];
 	this.encrypted = null;
 
 
@@ -74,7 +74,9 @@ function openpgp_packet_secret_key() {
 
 	function write_cleartext_mpi(hash_algorithm, mpi) {
 		var bytes= '';
-		for(var i in mpi) {
+		var discard = openpgp_crypto_getPublicMpiCount(this.algorithm);
+
+		for(var i = discard; i < mpi.length; i++) {
 			bytes += mpi[i].write();
 		}
 
@@ -96,7 +98,7 @@ function openpgp_packet_secret_key() {
 	 */
 	this.read = function(bytes) {
 	    // - A Public-Key or Public-Subkey packet, as described above.
-		var len = this.public_key.read(bytes);
+		var len = this.readPublicKey(bytes);
 
 	    bytes = bytes.substr(len);
 
@@ -115,8 +117,8 @@ function openpgp_packet_secret_key() {
 			//   key data.  These algorithm-specific fields are as described
 			//   below.
 
-			this.mpi = parse_cleartext_mpi('mod', bytes.substr(1),
-				this.public_key.algorithm);
+			this.mpi = this.mpi.concat(parse_cleartext_mpi('mod', bytes.substr(1),
+				this.algorithm));
 		}    
 
 	}
@@ -135,7 +137,7 @@ function openpgp_packet_secret_key() {
 		header: [string] OpenPGP packet header, string: [string] header+body}
      */
     this.write = function() {
-		var bytes = this.public_key.write();
+		var bytes = this.writePublicKey();
 
 		if(!this.encrypted) {
 			bytes += String.fromCharCode(0);
@@ -297,8 +299,8 @@ function openpgp_packet_secret_key() {
 			hash = 'mod';
 
    	
-		this.mpi = parse_cleartext_mpi(hash, cleartext,
-			this.public_key.algorithm);
+		this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
+			this.algorithm));
 	}
 	
 	/**
@@ -332,10 +334,11 @@ function openpgp_packet_secret_key() {
 	}
 }
 
+openpgp_packet_secret_key.prototype = new openpgp_packet_public_key();
+
 
 function openpgp_packet_secret_subkey() {
 	openpgp_packet_secret_key.call(this);
 	this.tag = 7;
 }
-
 

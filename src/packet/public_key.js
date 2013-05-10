@@ -26,36 +26,9 @@
  */
 function openpgp_packet_public_key() {
 	this.tag = 6;
-	this.version = 4;
 	this.created = new Date();
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
-
-	
-	var public_mpis = function(algorithm) {
-		// - A series of multiprecision integers comprising the key material:
-		//   Algorithm-Specific Fields for RSA public keys:
-		//       - a multiprecision integer (MPI) of RSA public modulus n;
-		//       - an MPI of RSA public encryption exponent e.
-		if (algorithm > 0 && algorithm < 4)
-			return 2;
-		//   Algorithm-Specific Fields for Elgamal public keys:
-		//     - MPI of Elgamal prime p;
-		//     - MPI of Elgamal group generator g;
-		//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-		else if (algorithm == 16)
-			return 3;
-
-		//   Algorithm-Specific Fields for DSA public keys:
-		//       - MPI of DSA prime p;
-		//       - MPI of DSA group order q (q is a prime divisor of p-1);
-		//       - MPI of DSA group generator g;
-		//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-		else if (algorithm == 17)
-			return 4;
-		else
-			return 0;
-	};
 
 
 	/**
@@ -67,11 +40,11 @@ function openpgp_packet_public_key() {
 	 * @param {Integer} len Length of the packet or remaining length of input
 	 * @return {Object} This object with attributes set by the parser
 	 */  
-	this.read = function(bytes) {
+	this.readPublicKey = this.read = function(bytes) {
 		// A one-octet version number (3 or 4).
-		this.version = bytes[0].charCodeAt();
+		var version = bytes[0].charCodeAt();
 
-		if (this.version == 3) {
+		if (version == 3) {
 		/*	
 			// A four-octet number denoting the time that the key was created.
 			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
@@ -120,14 +93,14 @@ function openpgp_packet_public_key() {
 			}
 			this.packetLength = mypos-position;
 			*/
-		} else if (this.version == 4) {
+		} else if (version == 4) {
 			// - A four-octet number denoting the time that the key was created.
 			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
 			this.algorithm = bytes[5].charCodeAt();
 
-			var mpicount = public_mpis(this.algorithm);
+			var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
 			this.mpi = [];
 
 			var bmpi = bytes.substr(6);
@@ -162,12 +135,15 @@ function openpgp_packet_public_key() {
      * @return {Object} {body: [string]OpenPGP packet body contents, 
 	 * header: [string] OpenPGP packet header, string: [string] header+body}
      */
-    this.write = function() {
+    this.writePublicKey = this.write = function() {
+		// Version
 		var result = String.fromCharCode(4);
         result += openpgp_packet_time_write(this.created);
 		result += String.fromCharCode(this.algorithm);
 
-		for(var i in this.mpi) {
+		var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
+
+		for(var i = 0; i < mpicount; i++) {
 			result += this.mpi[i].write();
 		}
 

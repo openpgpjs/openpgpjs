@@ -3710,25 +3710,26 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
  * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
  */
 
-function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
+function openpgp_crypto_asymetricDecrypt(algo, keyIntegers, dataIntegers) {
 	var bn = (function() {
 		switch(algo) {
 		case 1: // RSA (Encrypt or Sign) [HAC]  
 		case 2: // RSA Encrypt-Only [HAC]
 		case 3: // RSA Sign-Only [HAC]
 			var rsa = new RSA();
-			var d = secretMPIs[0].toBigInteger();
-			var p = secretMPIs[1].toBigInteger();
-			var q = secretMPIs[2].toBigInteger();
-			var u = secretMPIs[3].toBigInteger();
-			var m = dataMPIs[0].toBigInteger();
+			// 0 and 1 are the public key.
+			var d = keyIntegers[2].toBigInteger();
+			var p = keyIntegers[3].toBigInteger();
+			var q = keyIntegers[4].toBigInteger();
+			var u = keyIntegers[5].toBigInteger();
+			var m = dataIntegers[0].toBigInteger();
 			return rsa.decrypt(m, d, p, q, u);
 		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
 			var elgamal = new Elgamal();
-			var x = secretMPIs[0].toBigInteger();
-			var c1 = dataMPIs[0].toBigInteger();
-			var c2 = dataMPIs[1].toBigInteger();
-			var p = publicMPIs[0].toBigInteger();
+			var x = keyIntegers[3].toBigInteger();
+			var c1 = dataIntegers[0].toBigInteger();
+			var c2 = dataIntegers[1].toBigInteger();
+			var p = keyIntegers[0].toBigInteger();
 			return elgamal.decrypt(c1,c2,p,x);
 		default:
 			return null;
@@ -3763,6 +3764,33 @@ function openpgp_crypto_getPrivateMpiCount(algo) {
 	}
 	else return 0;
 }
+	
+function openpgp_crypto_getPublicMpiCount(algorithm) {
+	// - A series of multiprecision integers comprising the key material:
+	//   Algorithm-Specific Fields for RSA public keys:
+	//       - a multiprecision integer (MPI) of RSA public modulus n;
+	//       - an MPI of RSA public encryption exponent e.
+	if (algorithm > 0 && algorithm < 4)
+		return 2;
+
+	//   Algorithm-Specific Fields for Elgamal public keys:
+	//     - MPI of Elgamal prime p;
+	//     - MPI of Elgamal group generator g;
+	//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
+	else if (algorithm == 16)
+		return 3;
+
+	//   Algorithm-Specific Fields for DSA public keys:
+	//       - MPI of DSA prime p;
+	//       - MPI of DSA group order q (q is a prime divisor of p-1);
+	//       - MPI of DSA group generator g;
+	//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
+	else if (algorithm == 17)
+		return 4;
+	else
+		return 0;
+};
+
 
 /**
  * generate random byte prefix as string for the specified algorithm
@@ -3927,26 +3955,28 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
  * @param {String} data Data to be signed
  * @return {openpgp_type_mpi[]}
  */
-function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
+function openpgp_crypto_signData(hash_algo, algo, keyIntegers, data) {
 	
 	switch(algo) {
 	case 1: // RSA (Encrypt or Sign) [HAC]  
 	case 2: // RSA Encrypt-Only [HAC]
 	case 3: // RSA Sign-Only [HAC]
 		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var n = publicMPIs[0].toBigInteger();
-		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].byteLength());
+		var d = keyIntegers[2].toBigInteger();
+		var n = keyIntegers[0].toBigInteger();
+		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, 
+			data, keyIntegers[0].byteLength());
+
 		util.print_debug("signing using RSA");
 		return rsa.sign(m, d, n).toMPI();
 	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
 		var dsa = new DSA();
-		util.print_debug("DSA Sign: q size in Bytes:"+publicMPIs[1].getByteLength());
-		var p = publicMPIs[0].toBigInteger();
-		var q = publicMPIs[1].toBigInteger();
-		var g = publicMPIs[2].toBigInteger();
-		var y = publicMPIs[3].toBigInteger();
-		var x = secretMPIs[0].toBigInteger();
+		util.print_debug("DSA Sign: q size in Bytes:"+keyIntegers[1].getByteLength());
+		var p = keyIntegers[0].toBigInteger();
+		var q = keyIntegers[1].toBigInteger();
+		var g = keyIntegers[2].toBigInteger();
+		var y = keyIntegers[3].toBigInteger();
+		var x = keyIntegers[4].toBigInteger();
 		var m = data;
 		var result = dsa.sign(hash_algo,m, g, p, q, x);
 		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));
@@ -7449,7 +7479,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130509";
+	this.versionstring ="OpenPGP.js v.1.20130510";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8898,98 +8928,55 @@ function openpgp_msg_message() {
 
 /**
  * @class
- * @classdesc Class that represents a decoded private key for internal openpgp.js use
+ * @classdesc Class that represents an OpenPGP key. Must contain a master key. 
+ * Can contain additional subkeys, signatures,
+ * user ids, user attributes.
  */
 
-function openpgp_msg_privatekey() {
-	this.subKeys = new Array();
-	this.privateKeyPacket = null;
-	this.userIds = new Array();
-	this.userAttributes = new Array();
-	this.revocationSignatures = new Array();
-	this.subKeys = new Array();
+function openpgp_key() {
+	this.packets = new openpgp_packetlist();
 
-	/**
-	 * 
-	 * @return last position
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		this.privateKeyPacket = parent_node;
+	/** Returns the master key (secret or public)
+	 * @returns {openpgp_packet_secret_key|openpgp_packet_public_key|null} */
+	this.getKey = function() {
+		for(var i = 0; i < this.packets.length; i++)
+			if(this.packets[i] instanceof openpgp_packet_secret_key ||
+			this.packets[i] instanceof openpgp_packet_public_key)
+				return this.packets[i];
+
+		return null;
+	}
+
+	/** Returns all the private and public subkeys 
+	 * @returns {openpgp_packet_subkey[]} */
+	this.getSubkeys = function() {
+
+		var subkeys = [];
+
+		for(var i = 0; i < this.packets.length; i++)
+			if(this.packets[i] instanceof openpgp_packet_secret_subkey ||
+			this.packets[i] instanceof openpgp_packet_public_subkey)
+			subkeys.push(this.packets[i]);
+
+		return subkeys;
+	}
+
+	this.getAllKeys = function() {
+		return [this.getKey()].concat(this.getSubkeys());
+	}
+
+	
+	this.getSigningKey = function() {
 		
-		var pos = position;
-		while (input.length > pos) {
-			var result = openpgp_packet.read_packet(input, pos, input.length - pos);
-			if (result == null) {
-				util.print_error("openpgp.msg.messge decrypt:\n"+'[pub/priv_key]parsing ends here @:' + pos + " l:" + len);
-				break;
-			} else {
-				switch (result.tagType) {
-				case 2: // public key revocation signature
-					if (result.signatureType == 32)
-						this.revocationSignatures[this.revocationSignatures.length] = result;
-					else if (result.signatureType > 15 && result.signatureType < 20) {
-						if (this.certificationsignatures == null)
-							this.certificationSignatures = new Array();
-						this.certificationSignatures[this.certificationSignatures.length] = result;
-					} else
-						util.print_error("openpgp.msg.messge decrypt:\n"+"unknown signature type directly on key "+result.signatureType+" @"+pos);
-					pos += result.packetLength + result.headerLength;
-					break;
-				case 7: // PrivateSubkey Packet
-					this.subKeys[this.subKeys.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 17: // User Attribute Packet
-					this.userAttributes[this.userAttributes.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 13: // User ID Packet
-					this.userIds[this.userIds.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket, input, pos, input.length - pos);
-					break;
-				default:
-					this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-					this.len = pos - position;
-					return this.len;
-				}
-			}
-		}
-		this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-		this.len = pos - position;
-		
-		return this.len;
-	}
-	
-	function getKeyId() {
-		return this.privateKeyPacket.publicKey.getKeyId();
-	}
-	
-	
-	function getSubKeyIds() {
-		if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-		var result = new Array();
-		for (var i = 0; i < this.subKeys.length; i++) {
-			result[i] = str_sha1(this.subKeys[i].publicKey.header+this.subKeys[i].publicKey.data).substring(12,20);
-		}
-		return result;
-	}
-	
-	
-	function getSigningKey() {
-		if ((this.privateKeyPacket.publicKey.publicKeyAlgorithm == 17 ||
-			 this.privateKeyPacket.publicKey.publicKeyAlgorithm != 2)
-			&& this.privateKeyPacket.publicKey.verifyKey() == 3)
-			return this.privateKeyPacket;
-		else if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-			for (var j = 0; j < this.privateKeyPacket.subKeys.length; j++) {
-				if ((this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm == 17 ||
-					 this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm != 2) &&
-					 this.privateKeyPacket.subKeys[j].publicKey.verifyKey() == 3)
-					return this.privateKeyPacket.subKeys[j];
-			}
+		var signing = ['rsa_encrypt_sign', 'rsa_sign', 'dsa'];
+		signing = signing.map(function(s) { return openpgp.publickey[s]; })
+
+		var keys = this.getAllKeys();
+
+		for(var i in keys)
+			if(signing.indexOf(keys[i].public_algorithm) != -1)
+				return keys[i];
+
 		return null;
 	}
 	
@@ -9009,67 +8996,22 @@ function openpgp_msg_privatekey() {
 			
 	}
 
-	function decryptSecretMPIs(str_passphrase) {
-		return this.privateKeyPacket.decryptSecretMPIs(str_passphrase);
+	this.decrypt = function(passphrase) {
+		var keys = this.getAllKeys();
+
+		for(var i in keys)
+			if(keys[i] instanceof openpgp_packet_secret_subkey ||
+			keys[i] instanceof openpgp_packet_secret_key)
+			
+			keys[i].decrypt(passphrase);
 	}
 	
-	function getFingerprint() {
-		return this.privateKeyPacket.publicKey.getFingerprint();
-	}
 
 	// TODO need to implement this
 	function revoke() {
 		
 	}
 
-	/**
-	 * extracts the public key part
-	 * @return {String} OpenPGP armored text containing the public key
-	 *                  returns null if no sufficient data to extract public key
-	 */
-	function extractPublicKey() {
-		// add public key
-		var key = this.privateKeyPacket.publicKey.header + this.privateKeyPacket.publicKey.data;
-		for (var i = 0; i < this.userIds.length; i++) {
-			// verify userids
-			if (this.userIds[i].certificationSignatures.length === 0) {
-				util.print_error("extractPublicKey - missing certification signatures");
-				return null;
-			}
-			var userIdPacket = new openpgp_packet_userid();
-			// add userids
-			key += userIdPacket.write_packet(this.userIds[i].text);
-			for (var j = 0; j < this.userIds[i].certificationSignatures.length; j++) {
-				var certSig = this.userIds[i].certificationSignatures[j];
-				// add signatures
-				key += openpgp_packet.write_packet_header(2, certSig.data.length) + certSig.data;
-			}
-		}
-		for (var k = 0; k < this.subKeys.length; k++) {
-			var pubSubKey = this.subKeys[k].publicKey;
-			// add public subkey package
-			key += openpgp_packet.write_old_packet_header(14, pubSubKey.data.length) + pubSubKey.data;
-			var subKeySig = this.subKeys[k].subKeySignature;
-			if (subKeySig !== null) {
-				// add subkey signature
-				key += openpgp_packet.write_packet_header(2, subKeySig.data.length) + subKeySig.data;
-			} else {
-				util.print_error("extractPublicKey - missing subkey signature");
-				return null;
-			}
-		}
-		var publicArmored = openpgp_encoding_armor(4, key);
-		return publicArmored;
-	}
-
-	this.extractPublicKey = extractPublicKey;
-	this.getSigningKey = getSigningKey;
-	this.getFingerprint = getFingerprint;
-	this.getPreferredSignatureHashAlgorithm = getPreferredSignatureHashAlgorithm;
-	this.read_nodes = read_nodes;
-	this.decryptSecretMPIs = decryptSecretMPIs;
-	this.getSubKeyIds = getSubKeyIds;
-	this.getKeyId = getKeyId;
 	
 }
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -10312,7 +10254,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		return result;
 	}
 
-	this.encrypt = function(public_key_mpi) {
+	this.encrypt = function(key) {
 		
 		var data = String.fromCharCode(this.symmetric_algorithm);
 		data += this.symmetric_key;
@@ -10323,11 +10265,11 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		var mpi = new openpgp_type_mpi();
 		mpi.fromBytes(openpgp_encoding_eme_pkcs1_encode(
 			data,
-			public_key_mpi[0].byteLength()));
+			key.mpi[0].byteLength()));
 
 		this.encrypted = openpgp_crypto_asymetricEncrypt(
 			this.public_key_algorithm, 
-			public_key_mpi,
+			key.mpi,
 			mpi);
 	}
 
@@ -10341,11 +10283,10 @@ function openpgp_packet_public_key_encrypted_session_key() {
 	 *            Private key with secMPIs unlocked
 	 * @return {String} The unencrypted session key
 	 */
-	this.decrypt = function(public_key_mpi, private_key_mpi) {
+	this.decrypt = function(key) {
 		var result = openpgp_crypto_asymetricDecrypt(
 				this.public_key_algorithm,
-				public_key_mpi,
-				private_key_mpi,
+				key.mpi,
 				this.encrypted).toBytes();
 
 		var checksum = ((result.charCodeAt(result.length - 2) << 8) 
@@ -10353,7 +10294,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 
 		var decoded = openpgp_encoding_eme_pkcs1_decode(
 			result,
-			public_key_mpi[0].byteLength());
+			key.mpi[0].byteLength());
 
 		var key = decoded.substring(1, decoded.length - 2);
 
@@ -10395,36 +10336,9 @@ function openpgp_packet_public_key_encrypted_session_key() {
  */
 function openpgp_packet_public_key() {
 	this.tag = 6;
-	this.version = 4;
 	this.created = new Date();
 	this.mpi = [];
 	this.algorithm = openpgp.publickey.rsa_sign;
-
-	
-	var public_mpis = function(algorithm) {
-		// - A series of multiprecision integers comprising the key material:
-		//   Algorithm-Specific Fields for RSA public keys:
-		//       - a multiprecision integer (MPI) of RSA public modulus n;
-		//       - an MPI of RSA public encryption exponent e.
-		if (algorithm > 0 && algorithm < 4)
-			return 2;
-		//   Algorithm-Specific Fields for Elgamal public keys:
-		//     - MPI of Elgamal prime p;
-		//     - MPI of Elgamal group generator g;
-		//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-		else if (algorithm == 16)
-			return 3;
-
-		//   Algorithm-Specific Fields for DSA public keys:
-		//       - MPI of DSA prime p;
-		//       - MPI of DSA group order q (q is a prime divisor of p-1);
-		//       - MPI of DSA group generator g;
-		//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-		else if (algorithm == 17)
-			return 4;
-		else
-			return 0;
-	};
 
 
 	/**
@@ -10436,11 +10350,11 @@ function openpgp_packet_public_key() {
 	 * @param {Integer} len Length of the packet or remaining length of input
 	 * @return {Object} This object with attributes set by the parser
 	 */  
-	this.read = function(bytes) {
+	this.readPublicKey = this.read = function(bytes) {
 		// A one-octet version number (3 or 4).
-		this.version = bytes[0].charCodeAt();
+		var version = bytes[0].charCodeAt();
 
-		if (this.version == 3) {
+		if (version == 3) {
 		/*	
 			// A four-octet number denoting the time that the key was created.
 			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
@@ -10489,14 +10403,14 @@ function openpgp_packet_public_key() {
 			}
 			this.packetLength = mypos-position;
 			*/
-		} else if (this.version == 4) {
+		} else if (version == 4) {
 			// - A four-octet number denoting the time that the key was created.
 			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
 			this.algorithm = bytes[5].charCodeAt();
 
-			var mpicount = public_mpis(this.algorithm);
+			var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
 			this.mpi = [];
 
 			var bmpi = bytes.substr(6);
@@ -10531,12 +10445,15 @@ function openpgp_packet_public_key() {
      * @return {Object} {body: [string]OpenPGP packet body contents, 
 	 * header: [string] OpenPGP packet header, string: [string] header+body}
      */
-    this.write = function() {
+    this.writePublicKey = this.write = function() {
+		// Version
 		var result = String.fromCharCode(4);
         result += openpgp_packet_time_write(this.created);
 		result += String.fromCharCode(this.algorithm);
 
-		for(var i in this.mpi) {
+		var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
+
+		for(var i = 0; i < mpicount; i++) {
 			result += this.mpi[i].write();
 		}
 
@@ -10575,9 +10492,9 @@ function openpgp_packet_public_subkey() {
  * major versions.  Consequently, this section is complex.
  */
 function openpgp_packet_secret_key() {
+	openpgp_packet_public_key.call(this);
+
 	this.tag = 5;
-	this.public_key = new openpgp_packet_public_key();
-	this.mpi = [];
 	this.encrypted = null;
 
 
@@ -10624,7 +10541,9 @@ function openpgp_packet_secret_key() {
 
 	function write_cleartext_mpi(hash_algorithm, mpi) {
 		var bytes= '';
-		for(var i in mpi) {
+		var discard = openpgp_crypto_getPublicMpiCount(this.algorithm);
+
+		for(var i = discard; i < mpi.length; i++) {
 			bytes += mpi[i].write();
 		}
 
@@ -10646,7 +10565,7 @@ function openpgp_packet_secret_key() {
 	 */
 	this.read = function(bytes) {
 	    // - A Public-Key or Public-Subkey packet, as described above.
-		var len = this.public_key.read(bytes);
+		var len = this.readPublicKey(bytes);
 
 	    bytes = bytes.substr(len);
 
@@ -10665,8 +10584,8 @@ function openpgp_packet_secret_key() {
 			//   key data.  These algorithm-specific fields are as described
 			//   below.
 
-			this.mpi = parse_cleartext_mpi('mod', bytes.substr(1),
-				this.public_key.algorithm);
+			this.mpi = this.mpi.concat(parse_cleartext_mpi('mod', bytes.substr(1),
+				this.algorithm));
 		}    
 
 	}
@@ -10685,7 +10604,7 @@ function openpgp_packet_secret_key() {
 		header: [string] OpenPGP packet header, string: [string] header+body}
      */
     this.write = function() {
-		var bytes = this.public_key.write();
+		var bytes = this.writePublicKey();
 
 		if(!this.encrypted) {
 			bytes += String.fromCharCode(0);
@@ -10847,8 +10766,8 @@ function openpgp_packet_secret_key() {
 			hash = 'mod';
 
    	
-		this.mpi = parse_cleartext_mpi(hash, cleartext,
-			this.public_key.algorithm);
+		this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
+			this.algorithm));
 	}
 	
 	/**
@@ -10882,12 +10801,13 @@ function openpgp_packet_secret_key() {
 	}
 }
 
+openpgp_packet_secret_key.prototype = new openpgp_packet_public_key();
+
 
 function openpgp_packet_secret_subkey() {
 	openpgp_packet_secret_key.call(this);
 	this.tag = 7;
 }
-
 
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -10921,7 +10841,6 @@ function openpgp_packet_signature() {
 	this.signatureType = null;
 	this.hashAlgorithm = null;
 	this.publicKeyAlgorithm = null; 
-	this.version = 4;
 
 	this.signatureData = null;
 	this.signedHashValue = null;
@@ -10971,9 +10890,9 @@ function openpgp_packet_signature() {
 	this.read = function(bytes) {
 		var i = 0;
 
-		this.version = bytes[i++].charCodeAt();
+		var version = bytes[i++].charCodeAt();
 		// switch on version (3 and 4)
-		switch (this.version) {
+		switch (version) {
 		case 3:
 			// One-octet length of following hashed material. MUST be 5.
 			if (bytes[i++].charCodeAt() != 5)
@@ -11072,8 +10991,7 @@ function openpgp_packet_signature() {
 	 * @param {Object} data Contains packets to be signed.
 	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. 
 	 */
-	this.sign = function(privatekey, data) {
-		var publickey = privatekey.public_key;
+	this.sign = function(key, data) {
 
 		var result = String.fromCharCode(4); 
 		result += String.fromCharCode(this.signatureType);
@@ -11089,14 +11007,15 @@ function openpgp_packet_signature() {
 
 		var trailer = this.calculateTrailer();
 		
-		var toHash = this.toSign(this.signatureType, data) + this.signatureData + trailer;
+		var toHash = this.toSign(this.signatureType, data) + 
+			this.signatureData + trailer;
 		var hash = openpgp_crypto_hashData(this.hashAlgorithm, toHash);
 		
 		this.signedHashValue = hash.substr(0, 2);
 
 
-		this.signature = openpgp_crypto_signData(this.hashAlgorithm, this.publicKeyAlgorithm, 
-			publickey.mpi, privatekey.mpi, toHash);
+		this.signature = openpgp_crypto_signData(this.hashAlgorithm, 
+			this.publicKeyAlgorithm, key.mpi, toHash);
 	}
 
 	/**
@@ -11251,6 +11170,7 @@ function openpgp_packet_signature() {
 		}
 	};
 
+	// Produces data to produce signature on
 	this.toSign = function(type, data) {
 		var t = openpgp_packet_signature.type;
 
@@ -11304,7 +11224,7 @@ function openpgp_packet_signature() {
 			if(data.key == undefined)
 				throw new Error('Key packet is required for this sigtature.');
 			
-			var bytes = data.key.write();
+			var bytes = data.key.writePublicKey();
 
 			return String.fromCharCode(0x99) +
 				openpgp_packet_number_write(bytes.length, 2) +
@@ -11327,7 +11247,7 @@ function openpgp_packet_signature() {
 	this.calculateTrailer = function() {
 		// calculating the trailer
 		var trailer = '';
-		trailer += String.fromCharCode(this.version);
+		trailer += String.fromCharCode(4); // Version
 		trailer += String.fromCharCode(0xFF);
 		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
 		return trailer

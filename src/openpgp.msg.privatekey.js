@@ -17,98 +17,55 @@
 
 /**
  * @class
- * @classdesc Class that represents a decoded private key for internal openpgp.js use
+ * @classdesc Class that represents an OpenPGP key. Must contain a master key. 
+ * Can contain additional subkeys, signatures,
+ * user ids, user attributes.
  */
 
-function openpgp_msg_privatekey() {
-	this.subKeys = new Array();
-	this.privateKeyPacket = null;
-	this.userIds = new Array();
-	this.userAttributes = new Array();
-	this.revocationSignatures = new Array();
-	this.subKeys = new Array();
+function openpgp_key() {
+	this.packets = new openpgp_packetlist();
 
-	/**
-	 * 
-	 * @return last position
-	 */
-	function read_nodes(parent_node, input, position, len) {
-		this.privateKeyPacket = parent_node;
+	/** Returns the master key (secret or public)
+	 * @returns {openpgp_packet_secret_key|openpgp_packet_public_key|null} */
+	this.getKey = function() {
+		for(var i = 0; i < this.packets.length; i++)
+			if(this.packets[i] instanceof openpgp_packet_secret_key ||
+			this.packets[i] instanceof openpgp_packet_public_key)
+				return this.packets[i];
+
+		return null;
+	}
+
+	/** Returns all the private and public subkeys 
+	 * @returns {openpgp_packet_subkey[]} */
+	this.getSubkeys = function() {
+
+		var subkeys = [];
+
+		for(var i = 0; i < this.packets.length; i++)
+			if(this.packets[i] instanceof openpgp_packet_secret_subkey ||
+			this.packets[i] instanceof openpgp_packet_public_subkey)
+			subkeys.push(this.packets[i]);
+
+		return subkeys;
+	}
+
+	this.getAllKeys = function() {
+		return [this.getKey()].concat(this.getSubkeys());
+	}
+
+	
+	this.getSigningKey = function() {
 		
-		var pos = position;
-		while (input.length > pos) {
-			var result = openpgp_packet.read_packet(input, pos, input.length - pos);
-			if (result == null) {
-				util.print_error("openpgp.msg.messge decrypt:\n"+'[pub/priv_key]parsing ends here @:' + pos + " l:" + len);
-				break;
-			} else {
-				switch (result.tagType) {
-				case 2: // public key revocation signature
-					if (result.signatureType == 32)
-						this.revocationSignatures[this.revocationSignatures.length] = result;
-					else if (result.signatureType > 15 && result.signatureType < 20) {
-						if (this.certificationsignatures == null)
-							this.certificationSignatures = new Array();
-						this.certificationSignatures[this.certificationSignatures.length] = result;
-					} else
-						util.print_error("openpgp.msg.messge decrypt:\n"+"unknown signature type directly on key "+result.signatureType+" @"+pos);
-					pos += result.packetLength + result.headerLength;
-					break;
-				case 7: // PrivateSubkey Packet
-					this.subKeys[this.subKeys.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 17: // User Attribute Packet
-					this.userAttributes[this.userAttributes.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket,input, pos, input.length - pos);
-					break;
-				case 13: // User ID Packet
-					this.userIds[this.userIds.length] = result;
-					pos += result.packetLength + result.headerLength;
-					pos += result.read_nodes(this.privateKeyPacket, input, pos, input.length - pos);
-					break;
-				default:
-					this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-					this.len = pos - position;
-					return this.len;
-				}
-			}
-		}
-		this.position = position - this.privateKeyPacket.packetLength - this.privateKeyPacket.headerLength;
-		this.len = pos - position;
-		
-		return this.len;
-	}
-	
-	function getKeyId() {
-		return this.privateKeyPacket.publicKey.getKeyId();
-	}
-	
-	
-	function getSubKeyIds() {
-		if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-		var result = new Array();
-		for (var i = 0; i < this.subKeys.length; i++) {
-			result[i] = str_sha1(this.subKeys[i].publicKey.header+this.subKeys[i].publicKey.data).substring(12,20);
-		}
-		return result;
-	}
-	
-	
-	function getSigningKey() {
-		if ((this.privateKeyPacket.publicKey.publicKeyAlgorithm == 17 ||
-			 this.privateKeyPacket.publicKey.publicKeyAlgorithm != 2)
-			&& this.privateKeyPacket.publicKey.verifyKey() == 3)
-			return this.privateKeyPacket;
-		else if (this.privateKeyPacket.publicKey.version == 4) // V3 keys MUST NOT have subkeys.
-			for (var j = 0; j < this.privateKeyPacket.subKeys.length; j++) {
-				if ((this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm == 17 ||
-					 this.privateKeyPacket.subKeys[j].publicKey.publicKeyAlgorithm != 2) &&
-					 this.privateKeyPacket.subKeys[j].publicKey.verifyKey() == 3)
-					return this.privateKeyPacket.subKeys[j];
-			}
+		var signing = ['rsa_encrypt_sign', 'rsa_sign', 'dsa'];
+		signing = signing.map(function(s) { return openpgp.publickey[s]; })
+
+		var keys = this.getAllKeys();
+
+		for(var i in keys)
+			if(signing.indexOf(keys[i].public_algorithm) != -1)
+				return keys[i];
+
 		return null;
 	}
 	
@@ -128,66 +85,21 @@ function openpgp_msg_privatekey() {
 			
 	}
 
-	function decryptSecretMPIs(str_passphrase) {
-		return this.privateKeyPacket.decryptSecretMPIs(str_passphrase);
+	this.decrypt = function(passphrase) {
+		var keys = this.getAllKeys();
+
+		for(var i in keys)
+			if(keys[i] instanceof openpgp_packet_secret_subkey ||
+			keys[i] instanceof openpgp_packet_secret_key)
+			
+			keys[i].decrypt(passphrase);
 	}
 	
-	function getFingerprint() {
-		return this.privateKeyPacket.publicKey.getFingerprint();
-	}
 
 	// TODO need to implement this
 	function revoke() {
 		
 	}
 
-	/**
-	 * extracts the public key part
-	 * @return {String} OpenPGP armored text containing the public key
-	 *                  returns null if no sufficient data to extract public key
-	 */
-	function extractPublicKey() {
-		// add public key
-		var key = this.privateKeyPacket.publicKey.header + this.privateKeyPacket.publicKey.data;
-		for (var i = 0; i < this.userIds.length; i++) {
-			// verify userids
-			if (this.userIds[i].certificationSignatures.length === 0) {
-				util.print_error("extractPublicKey - missing certification signatures");
-				return null;
-			}
-			var userIdPacket = new openpgp_packet_userid();
-			// add userids
-			key += userIdPacket.write_packet(this.userIds[i].text);
-			for (var j = 0; j < this.userIds[i].certificationSignatures.length; j++) {
-				var certSig = this.userIds[i].certificationSignatures[j];
-				// add signatures
-				key += openpgp_packet.write_packet_header(2, certSig.data.length) + certSig.data;
-			}
-		}
-		for (var k = 0; k < this.subKeys.length; k++) {
-			var pubSubKey = this.subKeys[k].publicKey;
-			// add public subkey package
-			key += openpgp_packet.write_old_packet_header(14, pubSubKey.data.length) + pubSubKey.data;
-			var subKeySig = this.subKeys[k].subKeySignature;
-			if (subKeySig !== null) {
-				// add subkey signature
-				key += openpgp_packet.write_packet_header(2, subKeySig.data.length) + subKeySig.data;
-			} else {
-				util.print_error("extractPublicKey - missing subkey signature");
-				return null;
-			}
-		}
-		var publicArmored = openpgp_encoding_armor(4, key);
-		return publicArmored;
-	}
-
-	this.extractPublicKey = extractPublicKey;
-	this.getSigningKey = getSigningKey;
-	this.getFingerprint = getFingerprint;
-	this.getPreferredSignatureHashAlgorithm = getPreferredSignatureHashAlgorithm;
-	this.read_nodes = read_nodes;
-	this.decryptSecretMPIs = decryptSecretMPIs;
-	this.getSubKeyIds = getSubKeyIds;
-	this.getKeyId = getKeyId;
 	
 }

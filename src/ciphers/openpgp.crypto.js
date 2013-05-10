@@ -68,25 +68,26 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
  * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
  */
 
-function openpgp_crypto_asymetricDecrypt(algo, publicMPIs, secretMPIs, dataMPIs) {
+function openpgp_crypto_asymetricDecrypt(algo, keyIntegers, dataIntegers) {
 	var bn = (function() {
 		switch(algo) {
 		case 1: // RSA (Encrypt or Sign) [HAC]  
 		case 2: // RSA Encrypt-Only [HAC]
 		case 3: // RSA Sign-Only [HAC]
 			var rsa = new RSA();
-			var d = secretMPIs[0].toBigInteger();
-			var p = secretMPIs[1].toBigInteger();
-			var q = secretMPIs[2].toBigInteger();
-			var u = secretMPIs[3].toBigInteger();
-			var m = dataMPIs[0].toBigInteger();
+			// 0 and 1 are the public key.
+			var d = keyIntegers[2].toBigInteger();
+			var p = keyIntegers[3].toBigInteger();
+			var q = keyIntegers[4].toBigInteger();
+			var u = keyIntegers[5].toBigInteger();
+			var m = dataIntegers[0].toBigInteger();
 			return rsa.decrypt(m, d, p, q, u);
 		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
 			var elgamal = new Elgamal();
-			var x = secretMPIs[0].toBigInteger();
-			var c1 = dataMPIs[0].toBigInteger();
-			var c2 = dataMPIs[1].toBigInteger();
-			var p = publicMPIs[0].toBigInteger();
+			var x = keyIntegers[3].toBigInteger();
+			var c1 = dataIntegers[0].toBigInteger();
+			var c2 = dataIntegers[1].toBigInteger();
+			var p = keyIntegers[0].toBigInteger();
 			return elgamal.decrypt(c1,c2,p,x);
 		default:
 			return null;
@@ -121,6 +122,33 @@ function openpgp_crypto_getPrivateMpiCount(algo) {
 	}
 	else return 0;
 }
+	
+function openpgp_crypto_getPublicMpiCount(algorithm) {
+	// - A series of multiprecision integers comprising the key material:
+	//   Algorithm-Specific Fields for RSA public keys:
+	//       - a multiprecision integer (MPI) of RSA public modulus n;
+	//       - an MPI of RSA public encryption exponent e.
+	if (algorithm > 0 && algorithm < 4)
+		return 2;
+
+	//   Algorithm-Specific Fields for Elgamal public keys:
+	//     - MPI of Elgamal prime p;
+	//     - MPI of Elgamal group generator g;
+	//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
+	else if (algorithm == 16)
+		return 3;
+
+	//   Algorithm-Specific Fields for DSA public keys:
+	//       - MPI of DSA prime p;
+	//       - MPI of DSA group order q (q is a prime divisor of p-1);
+	//       - MPI of DSA group generator g;
+	//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
+	else if (algorithm == 17)
+		return 4;
+	else
+		return 0;
+};
+
 
 /**
  * generate random byte prefix as string for the specified algorithm
@@ -285,26 +313,28 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
  * @param {String} data Data to be signed
  * @return {openpgp_type_mpi[]}
  */
-function openpgp_crypto_signData(hash_algo, algo, publicMPIs, secretMPIs, data) {
+function openpgp_crypto_signData(hash_algo, algo, keyIntegers, data) {
 	
 	switch(algo) {
 	case 1: // RSA (Encrypt or Sign) [HAC]  
 	case 2: // RSA Encrypt-Only [HAC]
 	case 3: // RSA Sign-Only [HAC]
 		var rsa = new RSA();
-		var d = secretMPIs[0].toBigInteger();
-		var n = publicMPIs[0].toBigInteger();
-		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, data,publicMPIs[0].byteLength());
+		var d = keyIntegers[2].toBigInteger();
+		var n = keyIntegers[0].toBigInteger();
+		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, 
+			data, keyIntegers[0].byteLength());
+
 		util.print_debug("signing using RSA");
 		return rsa.sign(m, d, n).toMPI();
 	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
 		var dsa = new DSA();
-		util.print_debug("DSA Sign: q size in Bytes:"+publicMPIs[1].getByteLength());
-		var p = publicMPIs[0].toBigInteger();
-		var q = publicMPIs[1].toBigInteger();
-		var g = publicMPIs[2].toBigInteger();
-		var y = publicMPIs[3].toBigInteger();
-		var x = secretMPIs[0].toBigInteger();
+		util.print_debug("DSA Sign: q size in Bytes:"+keyIntegers[1].getByteLength());
+		var p = keyIntegers[0].toBigInteger();
+		var q = keyIntegers[1].toBigInteger();
+		var g = keyIntegers[2].toBigInteger();
+		var y = keyIntegers[3].toBigInteger();
+		var x = keyIntegers[4].toBigInteger();
 		var m = data;
 		var result = dsa.sign(hash_algo,m, g, p, q, x);
 		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));

@@ -30,7 +30,6 @@ function openpgp_packet_signature() {
 	this.signatureType = null;
 	this.hashAlgorithm = null;
 	this.publicKeyAlgorithm = null; 
-	this.version = 4;
 
 	this.signatureData = null;
 	this.signedHashValue = null;
@@ -80,9 +79,9 @@ function openpgp_packet_signature() {
 	this.read = function(bytes) {
 		var i = 0;
 
-		this.version = bytes[i++].charCodeAt();
+		var version = bytes[i++].charCodeAt();
 		// switch on version (3 and 4)
-		switch (this.version) {
+		switch (version) {
 		case 3:
 			// One-octet length of following hashed material. MUST be 5.
 			if (bytes[i++].charCodeAt() != 5)
@@ -181,8 +180,7 @@ function openpgp_packet_signature() {
 	 * @param {Object} data Contains packets to be signed.
 	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. 
 	 */
-	this.sign = function(privatekey, data) {
-		var publickey = privatekey.public_key;
+	this.sign = function(key, data) {
 
 		var result = String.fromCharCode(4); 
 		result += String.fromCharCode(this.signatureType);
@@ -198,14 +196,15 @@ function openpgp_packet_signature() {
 
 		var trailer = this.calculateTrailer();
 		
-		var toHash = this.toSign(this.signatureType, data) + this.signatureData + trailer;
+		var toHash = this.toSign(this.signatureType, data) + 
+			this.signatureData + trailer;
 		var hash = openpgp_crypto_hashData(this.hashAlgorithm, toHash);
 		
 		this.signedHashValue = hash.substr(0, 2);
 
 
-		this.signature = openpgp_crypto_signData(this.hashAlgorithm, this.publicKeyAlgorithm, 
-			publickey.mpi, privatekey.mpi, toHash);
+		this.signature = openpgp_crypto_signData(this.hashAlgorithm, 
+			this.publicKeyAlgorithm, key.mpi, toHash);
 	}
 
 	/**
@@ -360,6 +359,7 @@ function openpgp_packet_signature() {
 		}
 	};
 
+	// Produces data to produce signature on
 	this.toSign = function(type, data) {
 		var t = openpgp_packet_signature.type;
 
@@ -413,7 +413,7 @@ function openpgp_packet_signature() {
 			if(data.key == undefined)
 				throw new Error('Key packet is required for this sigtature.');
 			
-			var bytes = data.key.write();
+			var bytes = data.key.writePublicKey();
 
 			return String.fromCharCode(0x99) +
 				openpgp_packet_number_write(bytes.length, 2) +
@@ -436,7 +436,7 @@ function openpgp_packet_signature() {
 	this.calculateTrailer = function() {
 		// calculating the trailer
 		var trailer = '';
-		trailer += String.fromCharCode(this.version);
+		trailer += String.fromCharCode(4); // Version
 		trailer += String.fromCharCode(0xFF);
 		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
 		return trailer

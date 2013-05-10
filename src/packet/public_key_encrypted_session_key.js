@@ -122,7 +122,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		return result;
 	}
 
-	this.encrypt = function(public_key_mpi) {
+	this.encrypt = function(key) {
 		
 		var data = String.fromCharCode(this.symmetric_algorithm);
 		data += this.symmetric_key;
@@ -133,11 +133,11 @@ function openpgp_packet_public_key_encrypted_session_key() {
 		var mpi = new openpgp_type_mpi();
 		mpi.fromBytes(openpgp_encoding_eme_pkcs1_encode(
 			data,
-			public_key_mpi[0].byteLength()));
+			key.mpi[0].byteLength()));
 
 		this.encrypted = openpgp_crypto_asymetricEncrypt(
 			this.public_key_algorithm, 
-			public_key_mpi,
+			key.mpi,
 			mpi);
 	}
 
@@ -151,11 +151,10 @@ function openpgp_packet_public_key_encrypted_session_key() {
 	 *            Private key with secMPIs unlocked
 	 * @return {String} The unencrypted session key
 	 */
-	this.decrypt = function(public_key_mpi, private_key_mpi) {
+	this.decrypt = function(key) {
 		var result = openpgp_crypto_asymetricDecrypt(
 				this.public_key_algorithm,
-				public_key_mpi,
-				private_key_mpi,
+				key.mpi,
 				this.encrypted).toBytes();
 
 		var checksum = ((result.charCodeAt(result.length - 2) << 8) 
@@ -163,7 +162,7 @@ function openpgp_packet_public_key_encrypted_session_key() {
 
 		var decoded = openpgp_encoding_eme_pkcs1_decode(
 			result,
-			public_key_mpi[0].byteLength());
+			key.mpi[0].byteLength());
 
 		var key = decoded.substring(1, decoded.length - 2);
 
