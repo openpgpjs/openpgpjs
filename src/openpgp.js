@@ -458,71 +458,8 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
-/** RFC4880, section 9.1 
- * @enum {Integer}
- */
-openpgp.publickey = {
-	rsa_encrypt_sign: 1,
-	rsa_encrypt: 2,
-	rsa_sign: 3,
-	elgamal: 16,
-	dsa: 17
-};
+var crypto = require('./crypto');
 
-/** RFC4880, section 9.2 
- * @enum {Integer}
- */
-openpgp.symmetric = {
-	plaintext: 0,
-	/** Not implemented! */
-	idea: 1,
-	tripledes: 2,
-	cast5: 3,
-	blowfish: 4,
-	aes128: 7,
-	aes192: 8,
-	aes256: 9,
-	twofish: 10
-};
-
-/** RFC4880, section 9.3
- * @enum {Integer}
- */
-openpgp.compression = {
-	uncompressed: 0,
-	/** RFC1951 */
-	zip: 1,
-	/** RFC1950 */
-	zlib: 2,
-	bzip2: 3
-};
-
-/** RFC4880, section 9.4
- * @enum {Integer}
- */
-openpgp.hash = {
-	md5: 1,
-	sha1: 2,
-	ripemd: 3,
-	sha256: 8,
-	sha384: 9,
-	sha512: 10,
-	sha224: 11
-};
-
-module.exports = {
-	cipher: {
-		aes: require('./ciphers/symmetric/aes.js'),
-		des: require('./ciphers/symmetric/dessrc.js'),
-		cast5: require('./ciphers/symmetric/cast5.js'),
-		twofish: require('./ciphers/symmetric/twofish.js'),
-		blowfish: require('./ciphers/symmetric/blowfish.js')
-	},
-	hash: {
-		md5: require('./ciphers/hash/md5.js'),
-		sha: require('./ciphers/hash/sha.js'),
-		ripemd: require('./ciphers/hash/ripe-md.js')
-	},
-	util: require('./util/util.js')
-}
+module.exports = crypto;
+module.exports.util = require('./util/util.js');
 

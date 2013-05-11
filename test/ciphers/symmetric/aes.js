@@ -1,10 +1,11 @@
 var openpgp = require('openpgp')
 
-var util = openpgp.util,
-	keyExpansion = openpgp.cipher.aes.keyExpansion,
-	AESencrypt = openpgp.cipher.aes.AESencrypt;
 
 unittests.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", function() {
+	var util = openpgp.util,
+		keyExpansion = openpgp.cipher.aes.keyExpansion,
+		AESencrypt = openpgp.cipher.aes.AESencrypt;
+
 	var result = new Array();
 	function test_aes(input, key, output) {
 		return (util.hexstrdump(util.bin2str(AESencrypt(input,keyExpansion(util.bin2str(key))))) == util.hexstrdump(util.bin2str(output)));

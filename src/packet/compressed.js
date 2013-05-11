@@ -15,6 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var packetlist = require('./packetlist.js'),
+	enums = require('../enums.js');
+
 /**
  * @class
  * @classdesc Implementation of the Compressed Data Packet (Tag 8)
@@ -25,10 +28,12 @@
  * a Signature or One-Pass Signature packet, and contains a literal data
  * packet.
  */   
-function openpgp_packet_compressed() {
-	this.tag = 8;
-	this.packets = new openpgp_packetlist();
-	this.algorithm = openpgp.compression.uncompressed;
+function packet_compressed() {
+	/** @type {packetlist} */
+	this.packets = new packetlist();
+	/** @type {compression} */
+	this.algorithm = 'uncompressed';
+
 	this.compressed = null;
 
 	
@@ -42,7 +47,8 @@ function openpgp_packet_compressed() {
 	 */
 	this.read = function(bytes) {
 		// One octet that gives the algorithm used to compress the packet.
-		this.algorithm = bytes.charCodeAt(0);
+		this.algorithm = enums.read(enums.compression, bytes.charCodeAt(0));
+
 		// Compressed data, which makes up the remainder of the packet.
 		this.compressed = bytes.substr(1);
 
@@ -55,7 +61,8 @@ function openpgp_packet_compressed() {
 		if(this.compressed == null)
 			this.compress();
 
-		return String.fromCharCode(this.type) + this.compressed;
+		return String.fromCharCode(enums.write(enums.compression, this.algorithm)) 
+			+ this.compressed;
 	}
 
 
@@ -68,12 +75,11 @@ function openpgp_packet_compressed() {
 		var decompressed;
 
 		switch (this.algorithm) {
-		case openpgp.compression.uncompressed:
+		case 'uncompressed':
 			decompressed = this.compressed;
 			break;
 
-		case openpgp.compression.zip:
-			util.print_info('Decompressed packet [Type 1-ZIP]: ' + this.toString());
+		case 'zip':
 			var compData = this.compressed;
 
 			var radix = s2r(compData).replace(/\n/g,"");
@@ -83,8 +89,7 @@ function openpgp_packet_compressed() {
 			decompressed = unescape(jxg_obj.deflate()[0][0]);
 			break;
 
-		case openpgp.compression.zlib:
-			util.print_info('Decompressed packet [Type 2-ZLIB]: ' + this.toString());
+		case 'zlib':
 			//RFC 1950. Bits 0-3 Compression Method
 			var compressionMethod = this.compressed.charCodeAt(0) % 0x10;
 
@@ -106,17 +111,15 @@ function openpgp_packet_compressed() {
 			}
 			break;
 
-		case openpgp.compression.bzip2:
+		case 'bzip2':
 			// TODO: need to implement this
-			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+			throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
 			break;
 
 		default:
-			util.print_error("Compression algorithm unknown :"+this.type);
+			throw new Error("Compression algorithm unknown :" + this.alogrithm);
 			break;
 		}
-
-		util.print_debug("decompressed:"+util.hexstrdump(decompressed));
 
 		this.packets.read(decompressed);
 	}
@@ -128,22 +131,22 @@ function openpgp_packet_compressed() {
 	 * @return {String} The compressed data stored in attribute compressedData
 	 */
 	this.compress = function() {
-		switch (this.type) {
+		switch (this.algorithm) {
 
-		case openpgp.compression.uncompressed: // - Uncompressed
+		case 'uncompressed': // - Uncompressed
 			this.compressed = this.packets.write();
 			break;
 
-		case openpgp.compression.zip: // - ZIP [RFC1951]
+		case 'zip': // - ZIP [RFC1951]
 			util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
 			break;
 
-		case openpgp.compression.zlib: // - ZLIB [RFC1950]
+		case 'zlib': // - ZLIB [RFC1950]
 			// TODO: need to implement this
 			util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
 			break;
 
-		case openpgp.compression.bzip2: //  - BZip2 [BZ2]
+		case 'bzip2': //  - BZip2 [BZ2]
 			// TODO: need to implement this
 			util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
 			break;

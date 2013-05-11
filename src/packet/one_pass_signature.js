@@ -26,8 +26,10 @@
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
  */
-function openpgp_packet_one_pass_signature() {
-	this.tag = 4;
+
+var enums = require('../enums.js');
+
+function packet_one_pass_signature() {
 	this.version = null; // A one-octet version number.  The current version is 3.
 	this.type = null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
 	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
@@ -49,13 +51,14 @@ function openpgp_packet_one_pass_signature() {
 
 	     // A one-octet signature type.  Signature types are described in
 	     //   Section 5.2.1.
-		this.type = bytes.charCodeAt(mypos++);
+		this.type = enums.read(enums.signature, bytes.charCodeAt(mypos++));
 
 	     // A one-octet number describing the hash algorithm used.
-		this.hashAlgorithm = bytes.charCodeAt(mypos++);
+		this.hashAlgorithm = enums.read(enums.hash, bytes.charCodeAt(mypos++));
 
 	     // A one-octet number describing the public-key algorithm used.
-		this.publicKeyAlgorithm = bytes.charCodeAt(mypos++);
+		this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(mypos++));
+
 	     // An eight-octet number holding the Key ID of the signing key.
 		this.signingKeyId = new openpgp_type_keyid();
 		this.signingKeyId.read_packet(bytes,mypos);
@@ -80,13 +83,13 @@ function openpgp_packet_one_pass_signature() {
 	 *   that describes another signature to be applied to the same message data. 
 	 * @return {String} a string representation of a one-pass signature packet
 	 */
-	this.write = function(type, hashalgorithm, privatekey,length, nested) {
+	this.write = function(type, hashalgorithm, privatekey, length, nested) {
 		var result =""; 
 		
 		result += String.fromCharCode(3);
-		result += String.fromCharCode(type);
-		result += String.fromCharCode(this.hashAlgorithm);
-		result += String.fromCharCode(privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm);
+		result += String.fromCharCode(enums.write(enums.signature, type));
+		result += String.fromCharCode(enums.write(enums.hash, this.hashAlgorithm));
+		result += String.fromCharCode(enums.write(enums.publicKey, privatekey.algorithm));
 		result += privatekey.getKeyId();
 		if (nested)
 			result += String.fromCharCode(0);

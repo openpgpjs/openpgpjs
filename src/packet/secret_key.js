@@ -307,9 +307,3 @@ function openpgp_packet_secret_key() {
 
 openpgp_packet_secret_key.prototype = new openpgp_packet_public_key();
 
-
-function openpgp_packet_secret_subkey() {
-	openpgp_packet_secret_key.call(this);
-	this.tag = 7;
-}
-

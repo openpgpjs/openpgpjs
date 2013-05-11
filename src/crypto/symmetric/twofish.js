@@ -18,6 +18,8 @@
  *
  */
 
+var util = require('../../util/util.js');
+
 // added by Recurity Labs
 function TFencrypt(block, key) {
 	var block_copy = [].concat(block);

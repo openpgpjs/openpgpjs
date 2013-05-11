@@ -15,14 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @class
- * @classdesc Parent openpgp packet class. Operations focus on determining 
- * packet types and packet header.
- */
-function _openpgp_packet() {
+var enums = require('./enum.js');
 
-	this.read_simple_length = function(bytes) {
+
+module.exports = {
+	readSimpleLength: function(bytes) {
 		var len = 0,
 			offset,
 			type = bytes[0].charCodeAt();
@@ -40,7 +37,7 @@ function _openpgp_packet() {
 		}
 
 		return { len: len, offset: offset };
-	}
+	},
 
 	/**
 	 * Encodes a given integer of length to the openpgp length specifier to a
@@ -49,7 +46,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length The length to encode
 	 * @return {String} String with openpgp length representation
 	 */
-	this.encode_length = function(length) {
+	writeSimpleLength: function(length) {
 		var result = "";
 		if (length < 192) {
 			result += String.fromCharCode(length);
@@ -78,7 +75,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	this.write_packet_header = function(tag_type, length) {
+	writeHeader: function(tag_type, length) {
 		/* we're only generating v4 packet headers here */
 		var result = "";
 		result += String.fromCharCode(0xC0 | tag_type);
@@ -94,7 +91,7 @@ function _openpgp_packet() {
 	 * @param {Integer} length Length of the payload
 	 * @return {String} String of the header
 	 */
-	this.write_old_packet_header = function(tag_type, length) {
+	writeOldHeader: function(tag_type, length) {
 		var result = "";
 		if (length < 256) {
 			result += String.fromCharCode(0x80 | (tag_type << 2));
@@ -299,46 +296,5 @@ function _openpgp_packet() {
 			offset: mypos + real_packet_length
 		};
 	}
-
-
-
-	/**
-	 * @enum {Integer}
-	 * A list of packet type and numeric tags associated with them.
-	 */
-	this.type = {
-		reserved: 0,
-		public_key_encrypted_session_key: 1,
-		signature: 2,
-		sym_encrypted_session_key: 3,
-		one_pass_signature: 4,
-		secret_key: 5,
-		public_key: 6,
-		secret_subkey: 7,
-		compressed: 8,
-		symmetrically_encrypted: 9,
-		marker: 10,
-		literal: 11,
-		trust: 12,
-		userid: 13,
-		public_subkey: 14,
-		user_attribute: 17,
-		sym_encrypted_integrity_protected: 18,
-		modification_detection_code: 19
-	};
-
-	/*
-
-	TODO Invoke this code instead of putting a tag variable
-	inside each and every packet class. Right now we don't
-	know whether or not they have been loaded yet.
-
-	for(var i in this.type) {
-		var classname = 'openpgp_packet_' + i;
-		window[classname].prototype.tag = this.type[i];
-	}
-
-	*/
 }
 
-var openpgp_packet = new _openpgp_packet();

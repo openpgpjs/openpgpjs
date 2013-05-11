@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util/util.js');
+
 /**
  * @class
  * @classdesc Implementation of the User ID Packet (Tag 13)
@@ -24,13 +26,11 @@
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID. 
  */
-
-function openpgp_packet_userid() {
+function packet_userid() {
 	/** @type {String} A string containing the user id. Usually in the form
 	 * John Doe <john@example.com> 
 	 */
 	this.userid = '';
-	this.tag = 13;
 	
 	
 	/**
@@ -54,3 +54,5 @@ function openpgp_packet_userid() {
 		return util.encode_utf8(this.userid);
 	}
 }
+
+module.exports = packet_userid;

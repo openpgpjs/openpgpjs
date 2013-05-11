@@ -21,6 +21,8 @@
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
 
+var util = require('../../util/util.js');
+
 // added by Recurity Labs
 function desede(block,key) {
 	var key1 = key.substring(0,8);

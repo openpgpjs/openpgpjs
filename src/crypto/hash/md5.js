@@ -12,6 +12,8 @@
  * warranty of any kind.
  */
 
+var util = require('../../util/util.js');
+
 function MD5(entree) {
 	var hex = md5(entree);
 	var bin = util.hex2bin(hex);

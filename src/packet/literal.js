@@ -22,9 +22,8 @@
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
  */
-function openpgp_packet_literal() {
-	this.tag = 11;
-	this.format = openpgp_packet_literal.format.utf8;
+function literal() {
+	this.format = 'utf8';
 	this.data = '';
 	this.date = new Date();
 
@@ -36,7 +35,7 @@ function openpgp_packet_literal() {
 	 * @param {String} str Any native javascript string
 	 * @param {openpgp_packet_literaldata.format} format 
 	 */
-	this.set_data = function(str, format) {
+	this.set = function(str, format) {
 		this.format = format;
 		this.data = str;
 	}
@@ -47,10 +46,10 @@ function openpgp_packet_literal() {
 	 * @param {String} bytes The string of bytes
 	 * @param {openpgp_packet_literaldata.format} format
 	 */
-	this.set_data_bytes = function(bytes, format) {
+	this.setBytes = function(bytes, format) {
 		this.format = format;
 
-		if(format == openpgp_packet_literal.format.utf8)
+		if(format == 'utf8')
 			bytes = util.decode_utf8(bytes);
 
 		this.data = bytes;
@@ -60,8 +59,8 @@ function openpgp_packet_literal() {
 	 * Get the byte sequence representing the literal packet data
 	 * @returns {String} A sequence of bytes
 	 */
-	this.get_data_bytes = function() {
-		if(this.format == openpgp_packet_literal.format.utf8)
+	this.getBytes = function() {
+		if(this.format == 'utf8')
 			return util.encode_utf8(this.data);
 		else
 			return this.data;
@@ -83,7 +82,7 @@ function openpgp_packet_literal() {
 	this.read = function(bytes) {
 		// - A one-octet field that describes how the data is formatted.
 
-		var format = bytes[0];
+		var format = enums.read(bytes[0]);
 
 		var filename_len = bytes.charCodeAt(1);
 		this.filename = util.decode_utf8(bytes.substr(2, filename_len));
@@ -108,38 +107,12 @@ function openpgp_packet_literal() {
 		var data = this.get_data_bytes();
 
 		var result = '';
-		result += this.format;
+		result += enums.write(this.format);
 		result += String.fromCharCode(filename.length);
 		result += filename;
 		result += openpgp_packet_time_write(this.date);
 		result += data;
 		return result;
 	}
-
-	/**
-	 * Generates debug output (pretty print)
-	 * 
-	 * @return {String} String which gives some information about the keymaterial
-	 */
-	this.toString = function() {
-		return '5.9.  Literal Data Packet (Tag 11)\n' + '    length: '
-				+ this.packetLength + '\n' + '    format: ' + this.format
-				+ '\n' + '    filename:' + this.filename + '\n'
-				+ '    date:   ' + this.date + '\n' + '    data:  |'
-				+ this.data + '|\n' + '    rdata: |' + this.real_data + '|\n';
-	}
 }
 
-/**
- * Data types in the literal packet
- * @readonly
- * @enum {String}
- */
-openpgp_packet_literal.format = {
-	/** Binary data */
-	binary: 'b',
-	/** Text data */
-	text: 't',
-	/** Utf8 data */
-	utf8: 'u'
-};

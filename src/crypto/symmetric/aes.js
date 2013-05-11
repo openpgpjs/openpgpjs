@@ -12,6 +12,8 @@
  * materials provided with the application or distribution.
  */
 
+var util = require('../../util/util.js');
+
 // The round constants used in subkey expansion
 var Rcon = [ 
 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 

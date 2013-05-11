@@ -6,7 +6,7 @@
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
  */
-function openpgp_packetlist() {
+function packetlist() {
 	/** The number of packets contained within the list.
 	 * @readonly
 	 * @type {Integer} */
@@ -52,3 +52,5 @@ function openpgp_packetlist() {
 	}
 
 }
+
+module.exports = packetlist;

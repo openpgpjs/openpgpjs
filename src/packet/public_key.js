@@ -134,8 +134,3 @@ function openpgp_packet_public_key() {
 	}
 
 }
-
-function openpgp_packet_public_subkey() {
-	openpgp_packet_public_key.call(this);
-	this.tag = 14;
-}

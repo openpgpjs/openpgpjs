@@ -27,8 +27,6 @@
  * Such a packet MUST be ignored when received.
  */
 function openpgp_packet_marker() {
-	this.tag = 10;
-
 	/**
 	 * Parsing function for a literal data packet (tag 10).
 	 * 
