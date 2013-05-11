@@ -26,12 +26,11 @@
  * that form whole OpenPGP messages).
  */
 
-function openpgp_packet_symmetrically_encrypted() {
-	this.tag = 9;
+module.exports = function packet_symmetrically_encrypted() {
 	this.encrypted = null;
 	/** Decrypted packets contained within. 
 	 * @type {openpgp_packetlist} */
-	this.packets = new openpgp_packetlist();
+	this.packets;
 
 	
 

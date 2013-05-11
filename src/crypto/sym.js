@@ -17,6 +17,11 @@
 
 // The GPG4Browsers symmetric crypto interface
 
+var cfb = require('./cfb.js'),
+	cipher = require('./cipher');
+
+module.exports {
+
 /**
  * Symmetrically encrypts data using prefixedrandom, a key with length 
  * depending on the algorithm in openpgp_cfb mode with or without resync
@@ -30,22 +35,22 @@
  * @param {Boolean} openpgp_cfb
  * @return {String} Encrypted data
  */
-function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_cfb) {
+encrypt: function (prefixrandom, algo, key, data, openpgp_cfb) {
 	switch(algo) {
 		case 0: // Plaintext or unencrypted data
 			return data; // blockcipherencryptfn, plaintext, block_size, key
 		case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-			return openpgp_cfb_encrypt(prefixrandom, desede, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+			return cfb.encrypt(prefixrandom, cipher.des, data,8,key, openpgp_cfb).substring(0, data.length + 10);
 		case 3: // CAST5 (128 bit key, as per [RFC2144])
-			return openpgp_cfb_encrypt(prefixrandom, cast5_encrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+			return cfb.encrypt(prefixrandom, cipher.cast5, data,8,key, openpgp_cfb).substring(0, data.length + 10);
 		case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-			return openpgp_cfb_encrypt(prefixrandom, BFencrypt, data,8,key, openpgp_cfb).substring(0, data.length + 10);
+			return cfb.encrypt(prefixrandom, cipher.blowfish, data,8,key, openpgp_cfb).substring(0, data.length + 10);
 		case 7: // AES with 128-bit key [AES]
 		case 8: // AES with 192-bit key
 		case 9: // AES with 256-bit key
-			return openpgp_cfb_encrypt(prefixrandom, AESencrypt, data, 16, keyExpansion(key), openpgp_cfb).substring(0, data.length + 18);
+			return cfb.encrypt(prefixrandom, cipher.aes.encrypt, data, 16, cipher.aes.keyExpansion(key), openpgp_cfb).substring(0, data.length + 18);
 		case 10: // Twofish with 256-bit key [TWOFISH]
-			return openpgp_cfb_encrypt(prefixrandom, TFencrypt, data,16, key, openpgp_cfb).substring(0, data.length + 18);
+			return cfb.encrypt(prefixrandom, cipher.twofish, data,16, key, openpgp_cfb).substring(0, data.length + 18);
 		case 1: // IDEA [IDEA]
 			util.print_error("IDEA Algorithm not implemented");
 			return null;
@@ -64,7 +69,7 @@ function openpgp_crypto_symmetricEncrypt(prefixrandom, algo, key, data, openpgp_
  * otherwise use without the resync (for MDC encrypted data)
  * @return {String} Plaintext data
  */
-function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
+decrypt: function (algo, key, data, openpgp_cfb) {
 	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
 	var n = 0;
 	if (!openpgp_cfb)
@@ -73,17 +78,17 @@ function openpgp_crypto_symmetricDecrypt(algo, key, data, openpgp_cfb) {
 	case 0: // Plaintext or unencrypted data
 		return data;
 	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-		return openpgp_cfb_decrypt(desede, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+		return cfb.decrypt(cipher.des, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
 	case 3: // CAST5 (128 bit key, as per [RFC2144])
-		return openpgp_cfb_decrypt(cast5_encrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+		return cfb.decrypt(cipher.cast5, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
 	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		return openpgp_cfb_decrypt(BFencrypt, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
+		return cfb.decrypt(cipher.blowfish, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
 	case 7: // AES with 128-bit key [AES]
 	case 8: // AES with 192-bit key
 	case 9: // AES with 256-bit key
-		return openpgp_cfb_decrypt(AESencrypt, 16, keyExpansion(key), data, openpgp_cfb).substring(n, (data.length+n)-18);
+		return cfb.decrypt(cipher.aes.encrypt, 16, cipher.aes.keyExpansion(key), data, openpgp_cfb).substring(n, (data.length+n)-18);
 	case 10: // Twofish with 256-bit key [TWOFISH]
-		var result = openpgp_cfb_decrypt(TFencrypt, 16, key, data, openpgp_cfb).substring(n, (data.length+n)-18);
+		var result = cfb.decrypt(cipher.twofish, 16, key, data, openpgp_cfb).substring(n, (data.length+n)-18);
 		return result;
 	case 1: // IDEA [IDEA]
 		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));

@@ -15,6 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var publicKey = require('./public_key.js'),
+	util = require('../util'),
+	crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
@@ -24,10 +28,9 @@
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
  */
-function openpgp_packet_secret_key() {
-	openpgp_packet_public_key.call(this);
+function packet_secret_key() {
+	publicKey.call(this);
 
-	this.tag = 5;
 	this.encrypted = null;
 
 
@@ -43,7 +46,7 @@ function openpgp_packet_secret_key() {
 			return str_sha1;
 		else
 			return function(c) {
-					return openpgp_packet_number_write(util.calc_checksum(c), 2);
+					return util.writeNumber(util.calc_checksum(c), 2);
 				}
 	}
 
@@ -60,7 +63,7 @@ function openpgp_packet_secret_key() {
 		if(hash != hashtext)
 			throw new Error("Hash mismatch.");
 
-		var mpis = openpgp_crypto_getPrivateMpiCount(algorithm);
+		var mpis = crypto.getPrivateMpiCount(algorithm);
 
 		var j = 0;
 		var mpi = [];
@@ -74,7 +77,7 @@ function openpgp_packet_secret_key() {
 
 	function write_cleartext_mpi(hash_algorithm, mpi) {
 		var bytes= '';
-		var discard = openpgp_crypto_getPublicMpiCount(this.algorithm);
+		var discard = crypto.getPublicMpiCount(this.algorithm);
 
 		for(var i = discard; i < mpi.length; i++) {
 			bytes += mpi[i].write();
@@ -305,5 +308,6 @@ function openpgp_packet_secret_key() {
 	
 }
 
-openpgp_packet_secret_key.prototype = new openpgp_packet_public_key();
+packet_secret_key.prototype = new publicKey;
 
+module.exports = packet_secret_key;

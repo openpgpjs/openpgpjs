@@ -17,6 +17,11 @@
 
 // The GPG4Browsers crypto interface
 
+var random = require('./random.js'),
+	publicKey= require('./public_key'),
+	type_mpi = require('../type/mpi.js');
+
+module.exports = {
 /**
  * Encrypts data using the specified public key multiprecision integers 
  * and the specified algorithm.
@@ -26,19 +31,19 @@
  * @return {openpgp_type_mpi[]} if RSA an openpgp_type_mpi; 
  * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
  */
-function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
+publicKeyEncrypt: function(algo, publicMPIs, data) {
 	var result = (function() {
 		switch(algo) {
 		case 1: // RSA (Encrypt or Sign) [HAC]
 		case 2: // RSA Encrypt-Only [HAC]
 		case 3: // RSA Sign-Only [HAC]
-			var rsa = new RSA();
+			var rsa = new publicKey.rsa();
 			var n = publicMPIs[0].toBigInteger();
 			var e = publicMPIs[1].toBigInteger();
 			var m = data.toBigInteger();
 			return [rsa.encrypt(m,e,n)];
 		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-			var elgamal = new Elgamal();
+			var elgamal = new publicKey.elgamal();
 			var p = publicMPIs[0].toBigInteger();
 			var g = publicMPIs[1].toBigInteger();
 			var y = publicMPIs[2].toBigInteger();
@@ -50,11 +55,11 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
 	})();
 
 	return result.map(function(bn) {
-		var mpi = new openpgp_type_mpi();
+		var mpi = new type_mpi();
 		mpi.fromBigInteger(bn);
 		return mpi;
 	});
-}
+},
 
 /**
  * Decrypts data using the specified public key multiprecision integers of the private key,
@@ -68,13 +73,13 @@ function openpgp_crypto_asymetricEncrypt(algo, publicMPIs, data) {
  * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
  */
 
-function openpgp_crypto_asymetricDecrypt(algo, keyIntegers, dataIntegers) {
+publicKeyDecrypt: function (algo, keyIntegers, dataIntegers) {
 	var bn = (function() {
 		switch(algo) {
 		case 1: // RSA (Encrypt or Sign) [HAC]  
 		case 2: // RSA Encrypt-Only [HAC]
 		case 3: // RSA Sign-Only [HAC]
-			var rsa = new RSA();
+			var rsa = new publicKey.rsa();
 			// 0 and 1 are the public key.
 			var d = keyIntegers[2].toBigInteger();
 			var p = keyIntegers[3].toBigInteger();
@@ -83,7 +88,7 @@ function openpgp_crypto_asymetricDecrypt(algo, keyIntegers, dataIntegers) {
 			var m = dataIntegers[0].toBigInteger();
 			return rsa.decrypt(m, d, p, q, u);
 		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-			var elgamal = new Elgamal();
+			var elgamal = new publicKey.elgamal();
 			var x = keyIntegers[3].toBigInteger();
 			var c1 = dataIntegers[0].toBigInteger();
 			var c2 = dataIntegers[1].toBigInteger();
@@ -94,16 +99,16 @@ function openpgp_crypto_asymetricDecrypt(algo, keyIntegers, dataIntegers) {
 		}
 	})();
 
-	var result = new openpgp_type_mpi();
+	var result = new type_mpi();
 	result.fromBigInteger(bn);
 	return result;
-}
+},
 
 /** Returns the number of integers comprising the private key of an algorithm
  * @param {openpgp.publickey} algo The public key algorithm
  * @return {Integer} The number of integers.
  */
-function openpgp_crypto_getPrivateMpiCount(algo) {
+getPrivateMpiCount: function(algo) {
 	if (algo > 0 && algo < 4) {
 		//   Algorithm-Specific Fields for RSA secret keys:
 		//   - multiprecision integer (MPI) of RSA secret exponent d.
@@ -121,9 +126,9 @@ function openpgp_crypto_getPrivateMpiCount(algo) {
 		return 1;
 	}
 	else return 0;
-}
+},
 	
-function openpgp_crypto_getPublicMpiCount(algorithm) {
+getPublicMpiCount: function(algorithm) {
 	// - A series of multiprecision integers comprising the key material:
 	//   Algorithm-Specific Fields for RSA public keys:
 	//       - a multiprecision integer (MPI) of RSA public modulus n;
@@ -147,7 +152,7 @@ function openpgp_crypto_getPublicMpiCount(algorithm) {
 		return 4;
 	else
 		return 0;
-};
+},
 
 
 /**
@@ -156,21 +161,21 @@ function openpgp_crypto_getPublicMpiCount(algorithm) {
  * @return {String} Random bytes with length equal to the block
  * size of the cipher
  */
-function openpgp_crypto_getPrefixRandom(algo) {
+getPrefixRandom: function(algo) {
 	switch(algo) {
 	case 2:
 	case 3:
 	case 4:
-		return openpgp_crypto_getRandomBytes(8);
+		return random.getRandomBytes(8);
 	case 7:
 	case 8:
 	case 9:
 	case 10:
-		return openpgp_crypto_getRandomBytes(16);
+		return random.getRandomBytes(16);
 	default:
 		return null;
 	}
-}
+},
 
 /**
  * retrieve the MDC prefixed bytes by decrypting them
@@ -179,8 +184,7 @@ function openpgp_crypto_getPrefixRandom(algo) {
  * @param {String} data Encrypted data where the prefix is decrypted from
  * @return {String} Plain text data of the prefixed data
  */
-function openpgp_crypto_MDCSystemBytes(algo, key, data) {
-	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nencrypteddata:",data);
+MDCSystemBytes: function(algo, key, data) {
 	switch(algo) {
 	case 0: // Plaintext or unencrypted data
 		return data;
@@ -197,27 +201,26 @@ function openpgp_crypto_MDCSystemBytes(algo, key, data) {
 	case 10: 
 		return openpgp_cfb_mdc(TFencrypt, 16, key, data);
 	case 1: // IDEA [IDEA]
-		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
-		return null;
+		throw new Error('IDEA Algorithm not implemented');
 	default:
+		throw new Error('Invalid algorithm.');
 	}
-	return null;
-}
+},
 /**
  * Generating a session key for the specified symmetric algorithm
  * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
  * @return {String} Random bytes as a string to be used as a key
  */
-function openpgp_crypto_generateSessionKey(algo) {
-	return openpgp_crypto_getRandomBytes(openpgp_crypto_getKeyLength(algo)); 
-}
+generateSessionKey: function(algo) {
+	return random.getRandomBytes(this.getKeyLength(algo)); 
+},
 
 /**
  * Get the key length by symmetric algorithm id.
  * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
  * @return {String} Random bytes as a string to be used as a key
  */
-function openpgp_crypto_getKeyLength(algo) {
+getKeyLength: function(algo) {
 	switch (algo) {
 	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
 	case 8: // AES with 192-bit key
@@ -231,14 +234,14 @@ function openpgp_crypto_getKeyLength(algo) {
 		return 32;
 	}
 	return null;
-}
+},
 
 /**
  * Returns the block length of the specified symmetric encryption algorithm
  * @param {openpgp.symmetric} algo Symmetric algorithm idenhifier
  * @return {Integer} The number of bytes in a single block encrypted by the algorithm
  */
-function openpgp_crypto_getBlockLength(algo) {
+getBlockLength: function(algo) {
 	switch (algo) {
 	case  1: // - IDEA [IDEA]
 	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
@@ -254,214 +257,19 @@ function openpgp_crypto_getBlockLength(algo) {
 	default:
 		return 0;
 	}
-}
-/**
- * 
- * @param {Integer} algo public Key algorithm
- * @param {Integer} hash_algo Hash algorithm
- * @param {openpgp_type_mpi[]} msg_MPIs Signature multiprecision integers
- * @param {openpgp_type_mpi[]} publickey_MPIs Public key multiprecision integers 
- * @param {String} data Data on where the signature was computed on.
- * @return {Boolean} true if signature (sig_data was equal to data over hash)
- */
-function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-	var calc_hash = openpgp_crypto_hashData(hash_algo, data);
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var n = publickey_MPIs[0].toBigInteger();
-		var e = publickey_MPIs[1].toBigInteger();
-		var x = msg_MPIs[0].toBigInteger();
-		var dopublic = rsa.verify(x,e,n);
-		var hash  = openpgp_encoding_emsa_pkcs1_decode(hash_algo,dopublic.toMPI().substring(2));
-		if (hash == -1) {
-			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
-			return false;
-		}
-		return hash == calc_hash;
-		
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-		util.print_error("signing with Elgamal is not defined in the OpenPGP standard.");
-		return null;
-	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-		var dsa = new DSA();
-		var s1 = msg_MPIs[0].toBigInteger();
-		var s2 = msg_MPIs[1].toBigInteger();
-		var p = publickey_MPIs[0].toBigInteger();
-		var q = publickey_MPIs[1].toBigInteger();
-		var g = publickey_MPIs[2].toBigInteger();
-		var y = publickey_MPIs[3].toBigInteger();
-		var m = data;
-		var dopublic = dsa.verify(hash_algo,s1,s2,m,p,q,g,y);
-		return dopublic.compareTo(s1) == 0;
-	default:
-		return null;
-	}
-	
-}
-   
-/**
- * Create a signature on data using the specified algorithm
- * @param {Integer} hash_algo hash Algorithm to use (See RFC4880 9.4)
- * @param {Integer} algo Asymmetric cipher algorithm to use (See RFC4880 9.1)
- * @param {openpgp_type_mpi[]} publicMPIs Public key multiprecision integers 
- * of the private key 
- * @param {openpgp_type_mpi[]} secretMPIs Private key multiprecision 
- * integers which is used to sign the data
- * @param {String} data Data to be signed
- * @return {openpgp_type_mpi[]}
- */
-function openpgp_crypto_signData(hash_algo, algo, keyIntegers, data) {
-	
-	switch(algo) {
-	case 1: // RSA (Encrypt or Sign) [HAC]  
-	case 2: // RSA Encrypt-Only [HAC]
-	case 3: // RSA Sign-Only [HAC]
-		var rsa = new RSA();
-		var d = keyIntegers[2].toBigInteger();
-		var n = keyIntegers[0].toBigInteger();
-		var m = openpgp_encoding_emsa_pkcs1_encode(hash_algo, 
-			data, keyIntegers[0].byteLength());
-
-		util.print_debug("signing using RSA");
-		return rsa.sign(m, d, n).toMPI();
-	case 17: // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-		var dsa = new DSA();
-		util.print_debug("DSA Sign: q size in Bytes:"+keyIntegers[1].getByteLength());
-		var p = keyIntegers[0].toBigInteger();
-		var q = keyIntegers[1].toBigInteger();
-		var g = keyIntegers[2].toBigInteger();
-		var y = keyIntegers[3].toBigInteger();
-		var x = keyIntegers[4].toBigInteger();
-		var m = data;
-		var result = dsa.sign(hash_algo,m, g, p, q, x);
-		util.print_debug("signing using DSA\n result:"+util.hexstrdump(result[0])+"|"+util.hexstrdump(result[1]));
-		return result[0].toString() + result[1].toString();
-	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
-			util.print_debug("signing with Elgamal is not defined in the OpenPGP standard.");
-			return null;
-	default:
-		return null;
-	}	
-}
-
-/**
- * Create a hash on the specified data using the specified algorithm
- * @param {Integer} algo Hash algorithm type (see RFC4880 9.4)
- * @param {String} data Data to be hashed
- * @return {String} hash value
- */
-function openpgp_crypto_hashData(algo, data) {
-	var hash = null;
-	switch(algo) {
-	case 1: // - MD5 [HAC]
-		hash = MD5(data);
-		break;
-	case 2: // - SHA-1 [FIPS180]
-		hash = str_sha1(data);
-		break;
-	case 3: // - RIPE-MD/160 [HAC]
-		hash = RMDstring(data);
-		break;
-	case 8: // - SHA256 [FIPS180]
-		hash = str_sha256(data);
-		break;
-	case 9: // - SHA384 [FIPS180]
-		hash = str_sha384(data);
-		break;
-	case 10:// - SHA512 [FIPS180]
-		hash = str_sha512(data);
-		break;
-	case 11:// - SHA224 [FIPS180]
-		hash = str_sha224(data);
-	default:
-		break;
-	}
-	return hash;
-}
-
-/**
- * Returns the hash size in bytes of the specified hash algorithm type
- * @param {Integer} algo Hash algorithm type (See RFC4880 9.4)
- * @return {Integer} Size in bytes of the resulting hash
- */
-function openpgp_crypto_getHashByteLength(algo) {
-	var hash = null;
-	switch(algo) {
-	case 1: // - MD5 [HAC]
-		return 16;
-	case 2: // - SHA-1 [FIPS180]
-	case 3: // - RIPE-MD/160 [HAC]
-		return 20;
-	case 8: // - SHA256 [FIPS180]
-		return 32;
-	case 9: // - SHA384 [FIPS180]
-		return 48
-	case 10:// - SHA512 [FIPS180]
-		return 64;
-	case 11:// - SHA224 [FIPS180]
-		return 28;
-	}
-	return null;
-}
-
-/**
- * Retrieve secure random byte string of the specified length
- * @param {Integer} length Length in bytes to generate
- * @return {String} Random byte string
- */
-function openpgp_crypto_getRandomBytes(length) {
-	var result = '';
-	for (var i = 0; i < length; i++) {
-		result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
-	}
-	return result;
-}
-
-/**
- * Return a pseudo-random number in the specified range
- * @param {Integer} from Min of the random number
- * @param {Integer} to Max of the random number (max 32bit)
- * @return {Integer} A pseudo random number
- */
-function openpgp_crypto_getPseudoRandom(from, to) {
-	return Math.round(Math.random()*(to-from))+from;
-}
-
-/**
- * Return a secure random number in the specified range
- * @param {Integer} from Min of the random number
- * @param {Integer} to Max of the random number (max 32bit)
- * @return {Integer} A secure random number
- */
-function openpgp_crypto_getSecureRandom(from, to) {
-	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
-	var bits = ((to-from)).toString(2).length;
-	while ((buf[0] & (Math.pow(2, bits) -1)) > (to-from))
-		window.crypto.getRandomValues(buf);
-	return from+(Math.abs(buf[0] & (Math.pow(2, bits) -1)));
-}
-
-function openpgp_crypto_getSecureRandomOctet() {
-	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
-	return buf[0] & 0xFF;
-}
+},
 
 /**
  * Create a secure random big integer of bits length
  * @param {Integer} bits Bit length of the MPI to create
  * @return {BigInteger} Resulting big integer
  */
-function openpgp_crypto_getRandomBigInteger(bits) {
+getRandomBigInteger: function(bits) {
 	if (bits < 0)
 	   return null;
 	var numBytes = Math.floor((bits+7)/8);
 
-	var randomBits = openpgp_crypto_getRandomBytes(numBytes);
+	var randomBits = random.getRandomBytes(numBytes);
 	if (bits % 8 > 0) {
 		
 		randomBits = String.fromCharCode(
@@ -470,9 +278,9 @@ function openpgp_crypto_getRandomBigInteger(bits) {
 			randomBits.substring(1);
 	}
 	return new openpgp_type_mpi().create(randomBits).toBigInteger();
-}
+},
 
-function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
+getRandomBigIntegerInRange: function(min, max) {
 	if (max.compareTo(min) <= 0)
 		return;
 	var range = max.subtract(min);
@@ -481,18 +289,18 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 		r = openpgp_crypto_getRandomBigInteger(range.bitLength());
 	}
 	return min.add(r);
-}
+},
 
 
 //This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
-function openpgp_crypto_testRSA(key){
+testRSA: function(key){
 	debugger;
     var rsa = new RSA();
 	var mpi = new openpgp_type_mpi();
 	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
 	var msg = rsa.encrypt(mpi.toBigInteger(),key.ee,key.n);
 	var result = rsa.decrypt(msg, key.d, key.p, key.q, key.u);
-}
+},
 
 /**
  * @typedef {Object} openpgp_keypair
@@ -507,7 +315,7 @@ function openpgp_crypto_testRSA(key){
  * @param {Integer} numBits Number of bits to make the key to be generated
  * @return {openpgp_keypair}
  */
-function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
+generateKeyPair: function(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
 	var privKeyPacket;
 	var publicKeyPacket;
 	var d = new Date();
@@ -524,4 +332,6 @@ function openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, s2kHash, s
 		util.print_error("Unknown keytype "+keyType)
 	}
 	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
+}
+
 }

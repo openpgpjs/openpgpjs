@@ -149,3 +149,5 @@ function DSA() {
 	this.verify = verify;
 	// this.generate = generateKey;
 }
+
+module.exports = DSA;

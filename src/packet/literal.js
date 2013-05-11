@@ -15,6 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util'),
+	enums = require('../enums.js');
+
 /**
  * @class
  * @classdesc Implementation of the Literal Data Packet (Tag 11)
@@ -22,7 +25,7 @@
  * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
  */
-function literal() {
+module.exports = function packet_literal() {
 	this.format = 'utf8';
 	this.data = '';
 	this.date = new Date();
@@ -82,17 +85,17 @@ function literal() {
 	this.read = function(bytes) {
 		// - A one-octet field that describes how the data is formatted.
 
-		var format = enums.read(bytes[0]);
+		var format = enums.read(enums.literal, bytes[0].charCodeAt());
 
 		var filename_len = bytes.charCodeAt(1);
 		this.filename = util.decode_utf8(bytes.substr(2, filename_len));
 
-		this.date = openpgp_packet_time_read(bytes.substr(2
+		this.date = util.readDate(bytes.substr(2
 				+ filename_len, 4));
 
 		var data = bytes.substring(6 + filename_len);
 	
-		this.set_data_bytes(data, format);
+		this.setBytes(data, format);
 	}
 
 	/**
@@ -104,15 +107,14 @@ function literal() {
 	this.write = function() {
 		var filename = util.encode_utf8("msg.txt");
 
-		var data = this.get_data_bytes();
+		var data = this.getBytes();
 
 		var result = '';
-		result += enums.write(this.format);
+		result += String.fromCharCode(enums.write(enums.literal, this.format));
 		result += String.fromCharCode(filename.length);
 		result += filename;
-		result += openpgp_packet_time_write(this.date);
+		result += util.writeDate(this.date);
 		result += data;
 		return result;
 	}
 }
-

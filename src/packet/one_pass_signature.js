@@ -29,7 +29,7 @@
 
 var enums = require('../enums.js');
 
-function packet_one_pass_signature() {
+module.exports = function packet_one_pass_signature() {
 	this.version = null; // A one-octet version number.  The current version is 3.
 	this.type = null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
 	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)

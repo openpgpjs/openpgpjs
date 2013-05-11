@@ -74,3 +74,8 @@ function r2s(t) {
 	}
 	return r;
 }
+
+module.exports = {
+	encode: s2r,
+	decode: r2s
+}

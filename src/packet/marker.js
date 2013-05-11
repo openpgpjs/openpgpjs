@@ -26,7 +26,7 @@
  * 
  * Such a packet MUST be ignored when received.
  */
-function openpgp_packet_marker() {
+function packet_marker() {
 	/**
 	 * Parsing function for a literal data packet (tag 10).
 	 * 
@@ -47,3 +47,5 @@ function openpgp_packet_marker() {
 		return false;
 	}
 }
+
+module.exports = packet_marker;

@@ -31,15 +31,14 @@
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
  */
-function openpgp_packet_public_key_encrypted_session_key() {
-	this.tag = 1;
+module.exports = function packet_public_key_encrypted_session_key() {
 	this.version = 3;
 
-	this.public_key_id = new openpgp_type_keyid();
-	this.public_key_algorithm = openpgp.publickey.rsa_encrypt;
+	this.publicKeyId = new openpgp_type_keyid();
+	this.publicKeyAlgorithm = 'rsa_encrypt';
 
-	this.symmetric_key = null;
-	this.symmetric_algorithm = openpgp.symmetric.plaintext;
+	this.sessionKey = null;
+	this.sessionKeyAlgorithm = 'aes256';
 
 	/** @type {openpgp_type_mpi[]} */
 	this.encrypted = [];

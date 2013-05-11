@@ -15,7 +15,7 @@
 
 // CAST5 constructor
 
-var util = require('../../util/util.js');
+var util = require('../../util');
 
 function cast5_encrypt(block, key) {
 	var cast5 = new openpgp_symenc_cast5();

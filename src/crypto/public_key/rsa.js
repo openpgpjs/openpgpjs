@@ -17,10 +17,13 @@
 //
 // RSA implementation
 
+var BigInteger = require('./jsbn.js'),
+	random = require('../random.js');
+
 function SecureRandom(){
     function nextBytes(byteArray){
         for(var n = 0; n < byteArray.length;n++){
-            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+            byteArray[n] = random.getSecureRandomOctet();
         }
     }
     this.nextBytes = nextBytes;
@@ -133,3 +136,5 @@ function RSA() {
 	this.generate = generate;
 	this.keyObject = keyObject;
 }
+
+module.exports = RSA;

@@ -18,7 +18,7 @@
  *
  */
 
-var util = require('../../util/util.js');
+var util = require('../../util');
 
 // added by Recurity Labs
 function TFencrypt(block, key) {

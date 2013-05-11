@@ -456,10 +456,5 @@ function _openpgp () {
 	this.init = init;
 }
 
-var openpgp = new _openpgp();
-
-var crypto = require('./crypto');
-
-module.exports = crypto;
-module.exports.util = require('./util/util.js');
+module.exports = new _openpgp();
 

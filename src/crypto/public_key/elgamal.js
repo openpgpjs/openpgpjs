@@ -17,6 +17,9 @@
 //
 // ElGamal implementation
 
+var BigInteger = require('./jsbn.js'),
+	util = require('../../util');
+
 function Elgamal() {
 	
 	function encrypt(m,g,p,y) {
@@ -46,3 +49,5 @@ function Elgamal() {
 	this.encrypt = encrypt;
 	this.decrypt = decrypt;
 }
+
+module.exports = Elgamal;

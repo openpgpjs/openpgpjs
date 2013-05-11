@@ -31,7 +31,7 @@
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
  */
-function openpgp_packet_sym_encrypted_session_key() {
+module.exports = function packet_sym_encrypted_session_key() {
 	this.tag = 3;
 	this.private_algorithm = null;
 	this.algorithm = openpgp.symmetric.aes256;

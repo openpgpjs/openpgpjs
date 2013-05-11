@@ -27,8 +27,7 @@
  * packet.
  */
 
-function openpgp_packet_sym_encrypted_integrity_protected() {
-	this.tag = 18;
+module.exports = function packet_sym_encrypted_integrity_protected() {
 	/** The encrypted payload. */
 	this.encrypted = null; // string
 	/** @type {Boolean}
@@ -37,7 +36,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 	 * should be discarded.
 	 */
 	this.modification = false;
-	this.packets = new openpgp_packetlist();
+	this.packets;
 
 
 	this.read = function(bytes) {
@@ -116,9 +115,7 @@ function openpgp_packet_sym_encrypted_integrity_protected() {
 		var mdc = decrypted.substr(decrypted.length - 20, 20);
 
 		if(this.hash != mdc) {
-			this.packets = new openpgp_packetlist();
 			throw new Error('Modification detected.');
-			return;
 		}
 		else
 			this.packets.read(decrypted.substr(0, decrypted.length - 22));

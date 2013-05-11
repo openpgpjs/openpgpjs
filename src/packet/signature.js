@@ -15,6 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util'),
+	packet = require('./packet.js'),
+	enums = require('../enums.js'),
+	crypto = require('../crypto'),
+	type_mpi = require('../type/mpi.js');
+
 /**
  * @class
  * @classdesc Implementation of the Signature Packet (Tag 2)
@@ -24,8 +30,7 @@
  * some data.  The most common signatures are a signature of a file or a
  * block of text, and a signature that is a certification of a User ID.
  */
-function openpgp_packet_signature() {
-	this.tag = 2;
+module.exports = function packet_signature() {
 
 	this.signatureType = null;
 	this.hashAlgorithm = null;
@@ -94,7 +99,7 @@ function openpgp_packet_signature() {
 			this.signatureType = bytes[i++].charCodeAt();
 
 			// Four-octet creation time.
-			this.created = openpgp_packet_time_read(bytes.substr(i, 4));
+			this.created = util.readDate(bytes.substr(i, 4));
 			i += 4;
 			
 			// storing data appended to data which gets verified
@@ -119,7 +124,7 @@ function openpgp_packet_signature() {
 			function subpackets(bytes, signed) {
 				// Two-octet scalar octet count for following hashed subpacket
 				// data.
-				var subpacket_length = openpgp_packet_number_read(
+				var subpacket_length = util.readNumber(
 					bytes.substr(0, 2));
 
 				var i = 2;
@@ -128,7 +133,7 @@ function openpgp_packet_signature() {
 				var subpacked_read = 0;
 				while (i < 2 + subpacket_length) {
 
-					var len = openpgp_packet.read_simple_length(bytes.substr(i));
+					var len = packet.readSimpleLength(bytes.substr(i));
 					i += len.offset;
 
 					// Since it is trivial to add data to the unhashed portion of 
@@ -169,7 +174,7 @@ function openpgp_packet_signature() {
 
 	this.write = function() {
 		return this.signatureData + 
-			openpgp_packet_number_write(0, 2) + // Number of unsigned subpackets.
+			util.writeNumber(0, 2) + // Number of unsigned subpackets.
 			this.signedHashValue +
 			this.signature;
 	}
@@ -180,30 +185,34 @@ function openpgp_packet_signature() {
 	 * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. 
 	 */
 	this.sign = function(key, data) {
+		var signatureType = enums.write(enums.signature, this.signatureType),
+			publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
+			hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
 		var result = String.fromCharCode(4); 
-		result += String.fromCharCode(this.signatureType);
-		result += String.fromCharCode(this.publicKeyAlgorithm);
-		result += String.fromCharCode(this.hashAlgorithm);
+		result += String.fromCharCode(signatureType);
+		result += String.fromCharCode(publicKeyAlgorithm);
+		result += String.fromCharCode(hashAlgorithm);
 
 
 		// Add subpackets here
-		result += openpgp_packet_number_write(0, 2);
+		result += util.writeNumber(0, 2);
 
 
 		this.signatureData = result;
 
 		var trailer = this.calculateTrailer();
 		
-		var toHash = this.toSign(this.signatureType, data) + 
+		var toHash = this.toSign(signatureType, data) + 
 			this.signatureData + trailer;
-		var hash = openpgp_crypto_hashData(this.hashAlgorithm, toHash);
+
+		var hash = crypto.hash.digest(hashAlgorithm, toHash);
 		
 		this.signedHashValue = hash.substr(0, 2);
 
 
-		this.signature = openpgp_crypto_signData(this.hashAlgorithm, 
-			this.publicKeyAlgorithm, key.mpi, toHash);
+		this.signature = crypto.signature.sign(hashAlgorithm, 
+			publicKeyAlgorithm, key.mpi, toHash);
 	}
 
 	/**
@@ -215,7 +224,7 @@ function openpgp_packet_signature() {
 	 */
 	function write_sub_packet(type, data) {
 		var result = "";
-		result += openpgp_packet.encode_length(data.length+1);
+		result += packet.writeSimpleLength(data.length+1);
 		result += String.fromCharCode(type);
 		result += data;
 		return result;
@@ -240,10 +249,10 @@ function openpgp_packet_signature() {
 		// subpacket type
 		switch (type) {
 		case 2: // Signature Creation Time
-			this.created = openpgp_packet_time_read(bytes.substr(mypos));
+			this.created = util.readDate(bytes.substr(mypos));
 			break;
 		case 3: // Signature Expiration Time
-			var time = openpgp_packet_time_read(bytes.substr(mypos));
+			var time = util.readDate(bytes.substr(mypos));
 
 			this.signatureNeverExpires = time.getTime() == 0;
 			this.signatureExpirationTime = time;
@@ -263,7 +272,7 @@ function openpgp_packet_signature() {
 			this.revocable = bytes[mypos++].charCodeAt() == 1;
 			break;
 		case 9: // Key Expiration Time
-			var time = openpgp_packet_time_read(bytes.substr(mypos));
+			var time = util.readDate(bytes.substr(mypos));
 
 			this.keyExpirationTime = time;
 			this.keyNeverExpires = time.getTime() == 0;
@@ -296,9 +305,9 @@ function openpgp_packet_signature() {
 
 				// We extract key/value tuple from the byte stream.
 				mypos += 4;
-				var m = openpgp_packet_number_read(bytes.substr(mypos, 2));
+				var m = util.writeNumber(bytes.substr(mypos, 2));
 				mypos += 2
-				var n = openpgp_packet_number_read(bytes.substr(mypos, 2));
+				var n = util.writeNumber(bytes.substr(mypos, 2));
 				mypos += 2
 
 				var name = bytes.substr(mypos, m),
@@ -344,12 +353,12 @@ function openpgp_packet_signature() {
 			this.signatureTargetPublicKeyAlgorithm = bytes[mypos++].charCodeAt();
 			this.signatureTargetHashAlgorithm = bytes[mypos++].charCodeAt();
 
-			var len = openpgp_crypto_getHashByteLength(this.signatureTargetHashAlgorithm);
+			var len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
 			this.signatureTargetHash = bytes.substr(mypos, len);
 			break;
 		case 32: // Embedded Signature
-			this.embeddedSignature = new openpgp_packet_signature();
+			this.embeddedSignature = new packet_signature();
 			this.embeddedSignature.read(bytes.substr(mypos));
 			break;
 		default:
@@ -362,11 +371,11 @@ function openpgp_packet_signature() {
 
 	// Produces data to produce signature on
 	this.toSign = function(type, data) {
-		var t = openpgp_packet_signature.type;
+		var t = enums.signature
 
 		switch(type) {
 		case t.binary:
-			return data.literal.get_data_bytes();
+			return data.literal.getBytes();
 
 		case t.text:
 			return this.toSign(t.binary, data)
@@ -401,7 +410,7 @@ function openpgp_packet_signature() {
 			
 			return this.toSign(t.key, data) +
 				String.fromCharCode(tag) +
-				openpgp_packet_number_write(bytes.length, 4) +
+				util.writeNumber(bytes.length, 4) +
 				bytes;
 		}
 		case t.subkey_binding:
@@ -435,7 +444,7 @@ function openpgp_packet_signature() {
 		var trailer = '';
 		trailer += String.fromCharCode(4); // Version
 		trailer += String.fromCharCode(0xFF);
-		trailer += openpgp_packet_number_write(this.signatureData.length, 4);
+		trailer += util.writeNumber(this.signatureData.length, 4);
 		return trailer
 	}
 
@@ -447,30 +456,33 @@ function openpgp_packet_signature() {
 	 * @return {boolean} True if message is verified, else false.
 	 */
 	this.verify = function(key, data) {
+		var signatureType = enums.write(enums.signature, this.signatureType),
+			publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
+			hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-		var bytes = this.toSign(this.signatureType, data),
+		var bytes = this.toSign(signatureType, data),
 			trailer = this.calculateTrailer();
 
 
 		var mpicount = 0;
 		// Algorithm-Specific Fields for RSA signatures:
 		// 	    - multiprecision number (MPI) of RSA signature value m**d mod n.
-		if (this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4)
+		if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4)
 			mpicount = 1;
 		//    Algorithm-Specific Fields for DSA signatures:
 		//      - MPI of DSA value r.
 		//      - MPI of DSA value s.
-		else if (this.publicKeyAlgorithm == 17)
+		else if (publicKeyAlgorithm == 17)
 			mpicount = 2;
 		
 		var mpi = [], i = 0;
 		for (var j = 0; j < mpicount; j++) {
-			mpi[j] = new openpgp_type_mpi();
+			mpi[j] = new type_mpi();
 			i += mpi[j].read(this.signature.substr(i));
 		}
 
-		this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, 
-			this.hashAlgorithm, mpi, key.mpi, 
+		this.verified = crypto.signature.verify(publicKeyAlgorithm, 
+			hashAlgorithm, mpi, key.mpi, 
 			bytes + this.signatureData + trailer);
 
 		return this.verified;

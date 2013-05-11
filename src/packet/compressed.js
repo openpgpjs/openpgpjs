@@ -15,8 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var packetlist = require('./packetlist.js'),
-	enums = require('../enums.js');
+var enums = require('../enums.js');
 
 /**
  * @class
@@ -28,9 +27,9 @@ var packetlist = require('./packetlist.js'),
  * a Signature or One-Pass Signature packet, and contains a literal data
  * packet.
  */   
-function packet_compressed() {
+module.exports = function packet_compressed() {
 	/** @type {packetlist} */
-	this.packets = new packetlist();
+	this.packets;
 	/** @type {compression} */
 	this.algorithm = 'uncompressed';
 

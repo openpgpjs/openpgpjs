@@ -4,7 +4,7 @@ var openpgp = require('openpgp')
 unittests.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", function() {
 	var util = openpgp.util,
 		keyExpansion = openpgp.cipher.aes.keyExpansion,
-		AESencrypt = openpgp.cipher.aes.AESencrypt;
+		AESencrypt = openpgp.cipher.aes.encrypt;
 
 	var result = new Array();
 	function test_aes(input, key, output) {

@@ -20,6 +20,9 @@
 // - MPI size: (a << 8) | b 
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
+var BigInteger = require('../crypto/public_key/jsbn.js'),
+	util = require('../util');
+
 /**
  * @class
  * @classdescImplementation of type MPI (RFC4880 3.2)
@@ -30,7 +33,7 @@
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
  */
-function openpgp_type_mpi() {
+module.exports = function mpi() {
 	/** An implementation dependent integer */
 	this.data = null;
 
@@ -90,16 +93,6 @@ function openpgp_type_mpi() {
 
 	this.fromBigInteger = function(bn) {
 		this.data = bn.clone();
-	}
-
-	/**
-	 * Generates debug output (pretty print)
-	 * @return {String} String which gives some information about the mpi
-	 */
-	this.toString = function() {
-		var r = "    MPI("+this.mpiBitLength+"b/"+this.mpiByteLength+"B) : 0x";
-		r+=util.hexstrdump(this.MPI);
-		return r+'\n';
 	}
 }
 

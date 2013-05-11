@@ -2,13 +2,13 @@ module.exports = {
 	/** RFC4880, section 9.1 
 	 * @enum {String}
 	 */
-	openpgp.publicKey = {
+	publicKey: {
 		rsa_encrypt_sign: 1,
 		rsa_encrypt: 2,
 		rsa_sign: 3,
 		elgamal: 16,
 		dsa: 17
-	};
+	},
 
 	/** RFC4880, section 9.2 
 	 * @enum {String}
@@ -57,7 +57,6 @@ module.exports = {
 	 * A list of packet types and numeric tags associated with them.
 	 */
 	packet: {
-		reserved: 0,
 		public_key_encrypted_session_key: 1,
 		signature: 2,
 		sym_encrypted_session_key: 3,
@@ -201,7 +200,7 @@ module.exports = {
 
 	// Asserts validity and converts from string/integer to integer.
 	write: function(type, e) {
-		if(typeof n == 'number') {
+		if(typeof e == 'number') {
 			e = this.read(type, e);
 		}
 		
@@ -212,7 +211,7 @@ module.exports = {
 	// Converts from an integer to string.
 	read: function(type, e) {
 		for(var i in type)
-			if(type[i] == e) return type[e];
+			if(type[i] == e) return i;
 
 		throw new Error('Invalid enum value.');
 	}

@@ -17,9 +17,6 @@
 
 var secret_key = require('./secret_key.js');
 
-function secret_subkey() {
+module.exports = function secret_subkey() {
 	secret_key.call(this);
-	this.tag = 7;
 }
-
-module.exports = secret_subkey.js;

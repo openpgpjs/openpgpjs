@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var util = require('../util/util.js');
+var util = require('../util');
 
 /**
  * @class
@@ -26,7 +26,7 @@ var util = require('../util/util.js');
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID. 
  */
-function packet_userid() {
+module.exports = function packet_userid() {
 	/** @type {String} A string containing the user id. Usually in the form
 	 * John Doe <john@example.com> 
 	 */
@@ -54,5 +54,3 @@ function packet_userid() {
 		return util.encode_utf8(this.userid);
 	}
 }
-
-module.exports = packet_userid;

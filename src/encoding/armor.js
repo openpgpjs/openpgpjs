@@ -15,72 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * DeArmor an OpenPGP armored message; verify the checksum and return 
- * the encoded bytes
- * @param {String} text OpenPGP armored message
- * @returns {(Boolean|Object)} Either false in case of an error 
- * or an object with attribute "text" containing the message text
- * and an attribute "openpgp" containing the bytes.
- */
-function openpgp_encoding_dearmor(text) {
-	text = text.replace(/\r/g, '')
+var base64 = require('./base64.js');
 
-	var type = openpgp_encoding_get_type(text);
 
-	if (type != 2) {
-		var splittedtext = text.split('-----');
-
-		var data = { 
-			openpgp: openpgp_encoding_base64_decode(
-				splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[0]
-					.replace(/\n- /g,"\n")),
-			type: type
-		};
-
-		if (verifyCheckSum(data.openpgp, 
-			splittedtext[2]
-				.split('\n\n')[1]
-				.split("\n=")[1]
-				.split('\n')[0]))
-
-			return data;
-		else {
-			util.print_error("Ascii armor integrity check on message failed: '"
-				+ splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[1]
-					.split('\n')[0] 
-				+ "' should be '"
-				+ getCheckSum(data)) + "'";
-			return false;
-		}
-	} else {
-		var splittedtext = text.split('-----');
-
-		var result = {
-			text: splittedtext[2]
-				.replace(/\n- /g,"\n")
-				.split("\n\n")[1],
-			openpgp: openpgp_encoding_base64_decode(splittedtext[4]
-				.split("\n\n")[1]
-				.split("\n=")[0]),
-			type: type
-		};
-
-		if (verifyCheckSum(result.openpgp, splittedtext[4]
-			.split("\n\n")[1]
-			.split("\n=")[1]))
-
-				return result;
-		else {
-			util.print_error("Ascii armor integrity check on message failed");
-			return false;
-		}
-	}
-}
 
 /**
  * Finds out which Ascii Armoring type is used. This is an internal function
@@ -93,7 +30,7 @@ function openpgp_encoding_dearmor(text) {
  *         5 = PRIVATE KEY BLOCK
  *         null = unknown
  */
-function openpgp_encoding_get_type(text) {
+function get_type(text) {
 	var splittedtext = text.split('-----');
 	// BEGIN PGP MESSAGE, PART X/Y
 	// Used for multi-part messages, where the armor is split amongst Y
@@ -143,7 +80,7 @@ function openpgp_encoding_get_type(text) {
  * @version 2011-12-16
  * @returns {String} The header information
  */
-function openpgp_encoding_armor_addheader() {
+function armor_addheader() {
     var result = "";
 	if (openpgp.config.config.show_version) {
         result += "Version: "+openpgp.config.versionstring+'\r\n';
@@ -155,65 +92,7 @@ function openpgp_encoding_armor_addheader() {
     return result;
 }
 
-/**
- * Armor an OpenPGP binary packet block
- * @param {Integer} messagetype type of the message
- * @param data
- * @param {Integer} partindex
- * @param {Integer} parttotal
- * @returns {String} Armored text
- */
-function openpgp_encoding_armor(messagetype, data, partindex, parttotal) {
-	var result = "";
-	switch(messagetype) {
-	case 0:
-		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
-		break;
-	case 1:
-		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
-		break;
-	case 2:
-		result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: "+data.hash+"\r\n\r\n";
-		result += data.text.replace(/\n-/g,"\n- -");
-		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data.openpgp);
-		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
-		result += "-----END PGP SIGNATURE-----\r\n";
-		break;
-	case 3:
-		result += "-----BEGIN PGP MESSAGE-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP MESSAGE-----\r\n";
-		break;
-	case 4:
-		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
-		break;
-	case 5:
-		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-		result += openpgp_encoding_armor_addheader();
-		result += openpgp_encoding_base64_encode(data);
-		result += "\r\n="+getCheckSum(data)+"\r\n";
-		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
-		break;
-	}
 
-	return result;
-}
 
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
@@ -225,7 +104,7 @@ function getCheckSum(data) {
 	var str = "" + String.fromCharCode(c >> 16)+
 				   String.fromCharCode((c >> 8) & 0xFF)+
 				   String.fromCharCode(c & 0xFF);
-	return openpgp_encoding_base64_encode(str);
+	return base64_encode(str);
 }
 
 /**
@@ -281,3 +160,135 @@ function createcrc24(input) {
   return crc & 0xffffff;
 }
 
+/**
+ * DeArmor an OpenPGP armored message; verify the checksum and return 
+ * the encoded bytes
+ * @param {String} text OpenPGP armored message
+ * @returns {(Boolean|Object)} Either false in case of an error 
+ * or an object with attribute "text" containing the message text
+ * and an attribute "openpgp" containing the bytes.
+ */
+function dearmor(text) {
+	text = text.replace(/\r/g, '')
+
+	var type = get_type(text);
+
+	if (type != 2) {
+		var splittedtext = text.split('-----');
+
+		var data = { 
+			openpgp: base64_decode(
+				splittedtext[2]
+					.split('\n\n')[1]
+					.split("\n=")[0]
+					.replace(/\n- /g,"\n")),
+			type: type
+		};
+
+		if (verifyCheckSum(data.openpgp, 
+			splittedtext[2]
+				.split('\n\n')[1]
+				.split("\n=")[1]
+				.split('\n')[0]))
+
+			return data;
+		else {
+			util.print_error("Ascii armor integrity check on message failed: '"
+				+ splittedtext[2]
+					.split('\n\n')[1]
+					.split("\n=")[1]
+					.split('\n')[0] 
+				+ "' should be '"
+				+ getCheckSum(data)) + "'";
+			return false;
+		}
+	} else {
+		var splittedtext = text.split('-----');
+
+		var result = {
+			text: splittedtext[2]
+				.replace(/\n- /g,"\n")
+				.split("\n\n")[1],
+			openpgp: base64_decode(splittedtext[4]
+				.split("\n\n")[1]
+				.split("\n=")[0]),
+			type: type
+		};
+
+		if (verifyCheckSum(result.openpgp, splittedtext[4]
+			.split("\n\n")[1]
+			.split("\n=")[1]))
+
+				return result;
+		else {
+			util.print_error("Ascii armor integrity check on message failed");
+			return false;
+		}
+	}
+}
+
+
+/**
+ * Armor an OpenPGP binary packet block
+ * @param {Integer} messagetype type of the message
+ * @param data
+ * @param {Integer} partindex
+ * @param {Integer} parttotal
+ * @returns {String} Armored text
+ */
+function armor(messagetype, data, partindex, parttotal) {
+	var result = "";
+	switch(messagetype) {
+	case 0:
+		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE, PART "+partindex+"/"+parttotal+"-----\r\n";
+		break;
+	case 1:
+		result += "-----BEGIN PGP MESSAGE, PART "+partindex+"-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE, PART "+partindex+"-----\r\n";
+		break;
+	case 2:
+		result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: "+data.hash+"\r\n\r\n";
+		result += data.text.replace(/\n-/g,"\n- -");
+		result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data.openpgp);
+		result += "\r\n="+getCheckSum(data.openpgp)+"\r\n";
+		result += "-----END PGP SIGNATURE-----\r\n";
+		break;
+	case 3:
+		result += "-----BEGIN PGP MESSAGE-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP MESSAGE-----\r\n";
+		break;
+	case 4:
+		result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
+		break;
+	case 5:
+		result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
+		result += armor_addheader();
+		result += base64.encode(data);
+		result += "\r\n="+getCheckSum(data)+"\r\n";
+		result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
+		break;
+	}
+
+	return result;
+}
+
+module.exports = {
+	encode: armor,
+	decode: dearmor
+}

@@ -32,7 +32,7 @@
  *  User Attribute packet as a User ID packet with opaque contents, but
  *  an implementation may use any method desired.
  */
-function openpgp_packet_user_attribute() {
+module.exports = function packet_user_attribute() {
 	this.tag = 17;
 	this.attributes = [];
 

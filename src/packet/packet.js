@@ -15,7 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var enums = require('./enum.js');
+var enums = require('../enums.js'),
+	util = require('../util');
 
 
 module.exports = {
@@ -32,7 +33,7 @@ module.exports = {
 			len = ((bytes[0].charCodeAt() - 192) << 8) + (bytes[1].charCodeAt()) + 192;
 			offset = 2;
 		} else if (type == 255) {
-			len = openpgp_packet_integer_read(bytes.substr(1, 4));
+			len = util.readNumber(bytes.substr(1, 4));
 			offset = 5;
 		}
 
@@ -59,13 +60,10 @@ module.exports = {
 			result += String.fromCharCode((length - 192) & 0xFF);
 		} else {
 			result += String.fromCharCode(255);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
+			result += util.writeNumber(length, 4);
 		}
 		return result;
-	}
+	},
 
 	/**
 	 * Writes a packet header version 4 with the given tag_type and length to a
@@ -79,9 +77,9 @@ module.exports = {
 		/* we're only generating v4 packet headers here */
 		var result = "";
 		result += String.fromCharCode(0xC0 | tag_type);
-		result += this.encode_length(length);
+		result += this.writeSimpleLength(length);
 		return result;
-	}
+	},
 
 	/**
 	 * Writes a packet header Version 3 with the given tag_type and length to a
@@ -98,17 +96,13 @@ module.exports = {
 			result += String.fromCharCode(length);
 		} else if (length < 65536) {
 			result += String.fromCharCode(0x80 | (tag_type << 2) | 1);
-			result += String.fromCharCode(length >> 8);
-			result += String.fromCharCode(length & 0xFF);
+			result += util.writeNumber(length, 2);
 		} else {
 			result += String.fromCharCode(0x80 | (tag_type << 2) | 2);
-			result += String.fromCharCode((length >> 24) & 0xFF);
-			result += String.fromCharCode((length >> 16) & 0xFF);
-			result += String.fromCharCode((length >> 8) & 0xFF);
-			result += String.fromCharCode(length & 0xFF);
+			result += util.writeNumber(length, 4);
 		}
 		return result;
-	}
+	},
 
 	/**
 	 * Generic static Packet Parser function
@@ -118,7 +112,7 @@ module.exports = {
 	 * @param {integer} len Length of the input from position on
 	 * @return {Object} Returns a parsed openpgp_packet
 	 */
-	this.read_packet = function(input, position, len) {
+	read: function(input, position, len) {
 		// some sanity checks
 		if (input == null || input.length <= position
 				|| input.substring(position).length < 2
@@ -264,35 +258,9 @@ module.exports = {
 			bodydata = input.substring(mypos, mypos + real_packet_length);
 		}
 
-		// alert('tag type: '+this.tag+' length: '+packet_length);
-		var version = 1; // (old format; 2= new format)
-		// if (input[mypos++].charCodeAt() > 15)
-		// version = 2;
-
-		var names_by_tag = {};
-
-		for(var i in this.type)
-			names_by_tag[this.type[i]] = i;
-
-		var classname = 'openpgp_packet_' + names_by_tag[tag];
-
-		var packetclass = window[classname];
-
-		if(packetclass == undefined) {
-			throw classname;
-			util.print_error("openpgp.packet.js\n"
-					+ "[ERROR] openpgp_packet: failed to parse packet @:"
-					+ mypos + "\nchar:'"
-					+ util.hexstrdump(input.substring(mypos)) + "'\ninput:"
-					+ util.hexstrdump(input));
-			return null;
-		}
-
-		var result = new packetclass();
-		result.read(bodydata);
-
 		return { 
-			packet: result, 
+			tag: tag,
+			packet: bodydata,
 			offset: mypos + real_packet_length
 		};
 	}

@@ -24,8 +24,7 @@
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
  */
-function openpgp_packet_public_key() {
-	this.tag = 6;
+module.exports = function packet_public_key() {
 	/** Key creation date.
 	 * @type {Date} */
 	this.created = new Date();
@@ -34,7 +33,7 @@ function openpgp_packet_public_key() {
 	this.mpi = [];
 	/** Public key algorithm
 	 * @type {openpgp.publickey} */
-	this.algorithm = openpgp.publickey.rsa_sign;
+	this.algorithm = 'rsa_sign';
 
 
 	/**

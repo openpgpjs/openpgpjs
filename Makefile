@@ -31,7 +31,7 @@ lint:
 	@./scripts/lint.sh
 
 bundle:
-	@browserify -d -r ./src/openpgp.js:openpgp > ./resources/openpgp.js
+	@browserify -d -r ./src:openpgp > ./resources/openpgp.js
 minify:
 	@echo See http://code.google.com/closure/compiler/
 	@./scripts/minimize.sh

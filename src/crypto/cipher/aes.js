@@ -12,7 +12,7 @@
  * materials provided with the application or distribution.
  */
 
-var util = require('../../util/util.js');
+var util = require('../../util');
 
 // The round constants used in subkey expansion
 var Rcon = [ 
@@ -486,6 +486,6 @@ function AESencrypt(block, ctx)
 }
 
 module.exports = {
-	AESencrypt: AESencrypt,
+	encrypt: AESencrypt,
 	keyExpansion: keyExpansion
 }

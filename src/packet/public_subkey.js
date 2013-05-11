@@ -17,9 +17,6 @@
 
 var public_key = require('./public_key.js');
 
-function public_subkey() {
+module.exports = function public_subkey() {
 	public_key.call(this);
-	this.tag = 14;
 }
-
-module.exports = public_subkey;
