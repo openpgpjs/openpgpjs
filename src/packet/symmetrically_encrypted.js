@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
@@ -45,16 +47,16 @@ module.exports = function packet_symmetrically_encrypted() {
 	/**
 	 * Symmetrically decrypt the packet data
 	 * 
-	 * @param {Integer} symmetric_algorithm_type
+	 * @param {Integer} sessionKeyAlgorithm
 	 *             Symmetric key algorithm to use // See RFC4880 9.2
 	 * @param {String} key
 	 *             Key as string with the corresponding length to the
 	 *            algorithm
 	 * @return The decrypted data;
 	 */
-	this.decrypt = function(symmetric_algorithm_type, key) {
-		var decrypted = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encrypted, true);
+	this.decrypt = function(sessionKeyAlgorithm, key) {
+		var decrypted = crypto.symmetric.decrypt(
+				sessionKeyAlgorithm, key, this.encrypted, true);
 
 		this.packets.read(decrypted);
 	}
@@ -62,7 +64,7 @@ module.exports = function packet_symmetrically_encrypted() {
 	this.encrypt = function(algo, key) {
 		var data = this.packets.write();
 
-		this.encrypted = openpgp_crypto_symmetricEncrypt(
-				openpgp_crypto_getPrefixRandom(algo), algo, key, data, true);
+		this.encrypted = crypto.symmetric.encrypt(
+				crypto.getPrefixRandom(algo), algo, key, data, true);
 	}
 };

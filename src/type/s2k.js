@@ -15,6 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var enums = require('../enums.js'),
+	util = require('../util'),
+	crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Implementation of the String-to-key specifier (RFC4880 3.7)
@@ -24,15 +28,15 @@
    private keyring, and to convert passphrases to encryption keys for
    symmetrically encrypted messages.
  */
-function openpgp_type_s2k() {
+module.exports = function s2k() {
 	/** @type {openpgp.hash} */
-	this.algorithm = openpgp.hash.sha256;
+	this.algorithm = 'sha256';
 	/** @type {openpgp_type_s2k.type} */
-	this.type = openpgp_type_s2k.type.iterated;
+	this.type = 'iterated';
 	this.c = 96;
 	/** @type {openpgp_bytearray} 
 	 * Eight bytes of salt. */
-	this.salt = openpgp_crypto_getRandomBytes(8);
+	this.salt = crypto.random.getRandomBytes(8);
 
 
 	// Exponen bias, defined in RFC4880
@@ -49,21 +53,19 @@ function openpgp_type_s2k() {
 	 */
 	this.read = function(bytes) {
 		var i = 0;
-		this.type = bytes[i++].charCodeAt();
-		this.algorithm = bytes[i++].charCodeAt();
-
-		var t = openpgp_type_s2k.type;
+		this.type = enums.read(enums.s2k, bytes[i++].charCodeAt());
+		this.algorithm = enums.read(enums.hash, bytes[i++].charCodeAt());
 
 		switch (this.type) {
-		case t.simple:
+		case 'simple':
 			break;
 
-		case t.salted:
+		case 'salted':
 			this.salt = bytes.substr(i, 8);
 			i += 8;
 			break;
 
-		case t.iterated:
+		case 'iterated':
 			this.salt = bytes.substr(i, 8);
 			i += 8;
 
@@ -71,7 +73,7 @@ function openpgp_type_s2k() {
 			this.c = bytes[i++].charCodeAt();
 			break;
 
-		case t.gnu:
+		case 'gnu':
 			if(bytes.substr(i, 3) == "GNU") {
 				i += 3; // GNU
 				var gnuExtType = 1000 + bytes[i++].charCodeAt();
@@ -79,15 +81,15 @@ function openpgp_type_s2k() {
 					this.type = gnuExtType;
 					// GnuPG extension mode 1001 -- don't write secret key at all
 				} else {
-					util.print_error("unknown s2k gnu protection mode! "+this.type);
+					throw new Error("Unknown s2k gnu protection mode.");
 				}
 			} else {
-				util.print_error("unknown s2k type! "+this.type);
+				throw new Error("Unknown s2k type.");
 			}
 			break;
 
 		default:
-			util.print_error("unknown s2k type! "+this.type);
+			throw new Error("Unknown s2k type.");
 			break;
 		}
 
@@ -100,17 +102,16 @@ function openpgp_type_s2k() {
 	 * @return {String} Produced key of hashAlgorithm hash length
 	 */
 	this.write = function() {
-		var bytes = String.fromCharCode(this.type);
-		bytes += String.fromCharCode(this.algorithm);
+		var bytes = String.fromCharCode(enums.write(enums.s2k, this.type));
+		bytes += String.fromCharCode(enums.write(enums.hash, this.algorithm));
 
-		var t = openpgp_type_s2k.type;
 		switch(this.type) {
-			case t.simple:
+			case 'simple':
 				break;
-			case t.salted:
+			case 'salted':
 				bytes += this.salt;
 				break;
-			case t.iterated:
+			case 'iterated':
 				bytes += this.salt;
 				bytes += String.fromCharCode(this.c);
 				break;
@@ -130,17 +131,17 @@ function openpgp_type_s2k() {
 		passphrase = util.encode_utf8(passphrase);
 
 		function round(prefix, s2k) {
+			var algorithm = enums.write(enums.hash, s2k.algorithm);
 
-			var t = openpgp_type_s2k.type;
 			switch(s2k.type) {
-				case t.simple:
-					return openpgp_crypto_hashData(s2k.algorithm, prefix + passphrase);
+				case 'simple':
+					return crypto.hash.digest(algorithm, prefix + passphrase);
 
-				case t.salted:
-					return openpgp_crypto_hashData(s2k.algorithm, 
+				case 'salted':
+					return crypto.hash.digest(algorithm, 
 						prefix + s2k.salt + passphrase);
 
-				case t.iterated:
+				case 'iterated':
 					var isp = [],
 						count = s2k.get_count();
 						data = s2k.salt + passphrase;
@@ -153,7 +154,7 @@ function openpgp_type_s2k() {
 					if (isp.length > count)
 						isp = isp.substr(0, count);
 
-					return openpgp_crypto_hashData(s2k.algorithm, prefix + isp);
+					return crypto.hash.digest(algorithm, prefix + isp);
 			};
 		}
 		
@@ -170,13 +171,3 @@ function openpgp_type_s2k() {
 }
 
 
-
-/** A string to key specifier type
- * @enum {Integer}
- */
-openpgp_type_s2k.type = {
-	simple: 0,
-	salted: 1,
-	iterated: 3,
-	gnu: 101
-}

@@ -15,7 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var enums = require('../enums.js');
+var enums = require('../enums.js'),
+	JXG = require('../compression/jxg.js'),
+	base64 = require('../encoding/base64.js');
 
 /**
  * @class
@@ -81,7 +83,7 @@ module.exports = function packet_compressed() {
 		case 'zip':
 			var compData = this.compressed;
 
-			var radix = s2r(compData).replace(/\n/g,"");
+			var radix = base64.encode(compData).replace(/\n/g,"");
 			// no header in this case, directly call deflate
 			var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
 
@@ -99,7 +101,7 @@ module.exports = function packet_compressed() {
 			if (compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
 				// remove 4 bytes ADLER32 checksum from the end
 				var compData = this.compressed.substring(0, this.compressed.length - 4);
-				var radix = s2r(compData).replace(/\n/g,"");
+				var radix = base64.encode(compData).replace(/\n/g,"");
 				//TODO check ADLER32 checksum
 				decompressed = JXG.decompress(radix);
 				break;

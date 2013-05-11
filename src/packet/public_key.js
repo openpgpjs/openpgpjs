@@ -15,6 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util'),
+	type_mpi = require('../type/mpi.js'),
+	enums = require('../enums.js'),
+	crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
@@ -51,12 +56,12 @@ module.exports = function packet_public_key() {
 
 		if (version == 4) {
 			// - A four-octet number denoting the time that the key was created.
-			this.created = openpgp_packet_time_read(bytes.substr(1, 4));
+			this.created = util.readDate(bytes.substr(1, 4));
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
-			this.algorithm = bytes[5].charCodeAt();
+			this.algorithm = enums.read(enums.publicKey, bytes[5].charCodeAt());
 
-			var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
+			var mpicount = crypto.getPublicMpiCount(this.algorithm);
 			this.mpi = [];
 
 			var bmpi = bytes.substr(6);
@@ -66,7 +71,7 @@ module.exports = function packet_public_key() {
 				i < mpicount && p < bmpi.length; 
 				i++) {
 
-				this.mpi[i] = new openpgp_type_mpi();
+				this.mpi[i] = new type_mpi();
 
 				p += this.mpi[i].read(bmpi.substr(p))
 
@@ -94,10 +99,10 @@ module.exports = function packet_public_key() {
     this.writePublicKey = this.write = function() {
 		// Version
 		var result = String.fromCharCode(4);
-        result += openpgp_packet_time_write(this.created);
-		result += String.fromCharCode(this.algorithm);
+        result += util.writeDate(this.created);
+		result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
 
-		var mpicount = openpgp_crypto_getPublicMpiCount(this.algorithm);
+		var mpicount = crypto.getPublicMpiCount(this.algorithm);
 
 		for(var i = 0; i < mpicount; i++) {
 			result += this.mpi[i].write();
@@ -111,7 +116,7 @@ module.exports = function packet_public_key() {
 		var bytes = this.writePublicKey();
 
 		return String.fromCharCode(0x99) +
-			openpgp_packet_number_write(bytes.length, 2) +
+			util.writeNumber(bytes.length, 2) +
 			bytes;
 	}
 
@@ -129,7 +134,7 @@ module.exports = function packet_public_key() {
 	 */
 	this.getFingerprint = function() {
 		var toHash = this.writeOld();
-		return str_sha1(toHash, toHash.length);
+		return crypto.hash.sha1(toHash, toHash.length);
 	}
 
 }

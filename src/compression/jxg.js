@@ -1224,3 +1224,5 @@ JXG.Util.genUUID = function() {
     return uuid.join('');
 };
 
+
+module.exports = JXG;

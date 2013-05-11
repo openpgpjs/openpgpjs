@@ -15,6 +15,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var type_keyid = require('../type/keyid.js'),
+	util = require('../util'),
+	type_mpi = require('../type/mpi.js'),
+	enums = require('../enums.js'),
+	crypto = require('../crypto');
+	
+
 /**
  * @class
  * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
@@ -34,7 +41,7 @@
 module.exports = function packet_public_key_encrypted_session_key() {
 	this.version = 3;
 
-	this.publicKeyId = new openpgp_type_keyid();
+	this.publicKeyId = new type_keyid();
 	this.publicKeyAlgorithm = 'rsa_encrypt';
 
 	this.sessionKey = null;
@@ -53,40 +60,33 @@ module.exports = function packet_public_key_encrypted_session_key() {
 	 * @return {openpgp_packet_encrypteddata} Object representation
 	 */
 	this.read = function(bytes) {
-		if (bytes.length < 10) {
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n" 
-				+ 'invalid length');
-			return null;
-		}
 
 		this.version = bytes[0].charCodeAt();
-		this.public_key_id.read_packet(bytes, 1);
-		this.public_key_algorithm = bytes[9].charCodeAt();
+		this.publicKeyId.read(bytes.substr(1));
+		this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9].charCodeAt());
 
 		var i = 10;
 
-		switch (this.public_key_algorithm) {
+		var integerCount = (function(algo) {
+			switch (algo) {
+			case 'rsa_encrypt':
+			case 'rsa_encrypt_sign':
+				return 1;
 
-		case openpgp.publickey.rsa_encrypt:
-		case openpgp.publickey.rsa_encrypt_sign:
-			this.encrypted = [];
-			this.encrypted[0] = new openpgp_type_mpi();
-			this.encrypted[0].read(bytes.substr(i));
-			break;
+			case 'elgamal':
+				return 2;
 
-		case openpgp.publickey.elgamal:
-			this.encrypted = [];
-			this.encrypted[0] = new openpgp_type_mpi();
-			i += this.encrypted[0].read(bytes.substr(i));
-			this.encrypted[1] = new openpgp_type_mpi();
-			this.encrypted[1].read(bytes.substr(i));
-			break;
+			default:
+				throw new Error("Invalid algorithm.");
+			}
+		})(this.publicKeyAlgorithm);
 
-		default:
-			util.print_error("openpgp.packet.encryptedsessionkey.js\n"
-					+ "unknown public key packet algorithm type "
-					+ this.public_key_algorithm);
-			break;
+		this.encrypted = [];
+
+		for(var j = 0; j < integerCount; j++) {
+			var mpi = new type_mpi();
+			i += mpi.read(bytes.substr(i));
+			this.encrypted.push(mpi);
 		}
 	}
 
@@ -111,8 +111,9 @@ module.exports = function packet_public_key_encrypted_session_key() {
 	this.write = function() {
 
 		var result = String.fromCharCode(this.version);
-		result += this.public_key_id.bytes;
-		result += String.fromCharCode(this.public_key_algorithm);
+		result += this.publicKeyId.write();
+		result += String.fromCharCode(
+			enums.write(enums.publicKey, this.publicKeyAlgorithm));
 
 		for ( var i = 0; i < this.encrypted.length; i++) {
 			result += this.encrypted[i].write()
@@ -122,20 +123,20 @@ module.exports = function packet_public_key_encrypted_session_key() {
 	}
 
 	this.encrypt = function(key) {
-		
-		var data = String.fromCharCode(this.symmetric_algorithm);
-		data += this.symmetric_key;
-		var checksum = util.calc_checksum(this.symmetric_key);
-		data += String.fromCharCode((checksum >> 8) & 0xFF);
-		data += String.fromCharCode((checksum) & 0xFF);
+		var data = String.fromCharCode(
+			enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-		var mpi = new openpgp_type_mpi();
-		mpi.fromBytes(openpgp_encoding_eme_pkcs1_encode(
+		data += this.sessionKey;
+		var checksum = util.calc_checksum(this.sessionKey);
+		data += util.writeNumber(checksum, 2);
+
+		var mpi = new type_mpi();
+		mpi.fromBytes(crypto.pkcs1.eme.encode(
 			data,
 			key.mpi[0].byteLength()));
 
-		this.encrypted = openpgp_crypto_asymetricEncrypt(
-			this.public_key_algorithm, 
+		this.encrypted = crypto.publicKeyEncrypt(
+			this.publicKeyAlgorithm, 
 			key.mpi,
 			mpi);
 	}
@@ -151,26 +152,26 @@ module.exports = function packet_public_key_encrypted_session_key() {
 	 * @return {String} The unencrypted session key
 	 */
 	this.decrypt = function(key) {
-		var result = openpgp_crypto_asymetricDecrypt(
-				this.public_key_algorithm,
+		var result = crypto.publicKeyDecrypt(
+				this.publicKeyAlgorithm,
 				key.mpi,
 				this.encrypted).toBytes();
 
-		var checksum = ((result.charCodeAt(result.length - 2) << 8) 
-			+ result.charCodeAt(result.length - 1));
+		var checksum = util.readNumber(result.substr(result.length - 2));
 
-		var decoded = openpgp_encoding_eme_pkcs1_decode(
+		var decoded = crypto.pkcs1.eme.decode(
 			result,
 			key.mpi[0].byteLength());
 
 		var key = decoded.substring(1, decoded.length - 2);
 
 		if(checksum != util.calc_checksum(key)) {
-			util.print_error("Checksum mismatch");
+			throw new Error('Checksum mismatch');
 		}
 		else {
-			this.symmetric_key = key;
-			this.symmetric_algorithm = decoded.charCodeAt(0);
+			this.sessionKey = key;
+			this.sessionKeyAlgorithm = 
+				enums.read(enums.symmetric, decoded.charCodeAt(0));
 		}
 	}
 };

@@ -104,7 +104,7 @@ function getCheckSum(data) {
 	var str = "" + String.fromCharCode(c >> 16)+
 				   String.fromCharCode((c >> 8) & 0xFF)+
 				   String.fromCharCode(c & 0xFF);
-	return base64_encode(str);
+	return base64.encode(str);
 }
 
 /**
@@ -177,7 +177,7 @@ function dearmor(text) {
 		var splittedtext = text.split('-----');
 
 		var data = { 
-			openpgp: base64_decode(
+			openpgp: base64.decode(
 				splittedtext[2]
 					.split('\n\n')[1]
 					.split("\n=")[0]

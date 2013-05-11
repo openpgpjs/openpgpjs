@@ -15,6 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var type_s2k = require('../type/s2k.js'),
+	enums = require('../enums.js'),
+	crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
@@ -33,10 +37,10 @@
  */
 module.exports = function packet_sym_encrypted_session_key() {
 	this.tag = 3;
-	this.private_algorithm = null;
-	this.algorithm = openpgp.symmetric.aes256;
+	this.sessionKeyEncryptionAlgorithm = null;
+	this.sessionKeyAlgorithm = 'aes256';
 	this.encrypted = null;
-	this.s2k = new openpgp_type_s2k();
+	this.s2k = new type_s2k();
 
 	/**
 	 * Parsing function for a symmetric encrypted session key packet (tag 3).
@@ -53,7 +57,7 @@ module.exports = function packet_sym_encrypted_session_key() {
 		this.version = bytes[0].charCodeAt();
 
 		// A one-octet number describing the symmetric algorithm used.
-		var algo = bytes[1].charCodeAt();
+		var algo = enums.read(enums.symmetric, bytes[1].charCodeAt());
 
 		// A string-to-key (S2K) specifier, length as defined above.
 		var s2klength = this.s2k.read(bytes.substr(2));
@@ -64,18 +68,19 @@ module.exports = function packet_sym_encrypted_session_key() {
 
 		if(done < bytes.length) {
 			this.encrypted = bytes.substr(done);
-			this.private_algorithm = algo
+			this.sessionKeyEncryptionAlgorithm = algo
 		}
 		else
-			this.algorithm = algo;
+			this.sessionKeyAlgorithm = algo;
 	}
 
 	this.write = function() {
-		var algo = this.encrypted == null ? this.algorithm :
-			this.private_algorithm;
+		var algo = this.encrypted == null ? 
+			this.sessionKeyAlgorithm :
+			this.sessionKeyEncryptionAlgorithm;
 
 		var bytes = String.fromCharCode(this.version) +
-			String.fromCharCode(algo) +
+			String.fromCharCode(enums.write(enums.symmetric, algo)) +
 			this.s2k.write();
 
 		if(this.encrypted != null)
@@ -94,38 +99,41 @@ module.exports = function packet_sym_encrypted_session_key() {
 	 * @return {String} The unencrypted session key
 	 */
 	this.decrypt = function(passphrase) {
-		var algo = this.private_algorithm != null ?
-			this.private_algorithm :
-			this.algorithm
+		var algo = this.sessionKeyEncryptionAlgorithm != null ?
+			this.sessionKeyEncryptionAlgorithm :
+			this.sessionKeyAlgorithm;
 
-		var length = openpgp_crypto_getKeyLength(algo);
+
+		var length = crypto.getKeyLength(algo);
 		var key = this.s2k.produce_key(passphrase, length);
 
 		if(this.encrypted == null) {
-			this.key = key;
+			this.sessionKey = key;
 
 		} else {
-			var decrypted = openpgp_crypto_symmetricDecrypt(
-				this.private_algorithm, key, this.encrypted, true);
+			var decrypted = crypto.symmetric.decrypt(
+				this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
 
-			this.algorithm = decrypted[0].keyCodeAt();
-			this.key = decrypted.substr(1);
+			this.sessionKeyAlgorithm = enums.read(enums.symmetric,
+				decrypted[0].keyCodeAt());
+
+			this.sessionKey = decrypted.substr(1);
 		}
 	}
 
 	this.encrypt = function(passphrase) {
-		var length = openpgp_crypto_getKeyLength(this.private_algorithm);
+		var length = crypto.getKeyLength(this.sessionKeyEncryptionAlgorithm);
 		var key = this.s2k.produce_key(passphrase, length);
 
+		var private_key = String.fromCharCode(
+			enums.write(enums.symmetric, this.sessionKeyAlgorithm)) +
 
-		
-		var private_key = String.fromCharCode(this.algorithm) +
-			openpgp_crypto_getRandomBytes(
-				openpgp_crypto_getKeyLength(this.algorithm));
+			crypto.getRandomBytes(
+				crypto.getKeyLength(this.sessionKeyAlgorithm));
 
-		this.encrypted = openpgp_crypto_symmetricEncrypt(
-				openpgp_crypto_getPrefixRandom(this.private_algorithm), 
-				this.private_algorithm, key, private_key, true);
+		this.encrypted = crypto.symmetric.encrypt(
+				crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm), 
+				this.sessionKeyEncryptionAlgorithm, key, private_key, true);
 	}
 };
 

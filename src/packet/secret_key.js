@@ -16,8 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 var publicKey = require('./public_key.js'),
+	enums = require('../enums.js'),
 	util = require('../util'),
-	crypto = require('../crypto');
+	crypto = require('../crypto'),
+	type_mpi = require('../type/mpi.js'),
+	type_s2k = require('../type/s2k.js');
 
 /**
  * @class
@@ -35,15 +38,15 @@ function packet_secret_key() {
 
 
 	function get_hash_len(hash) {
-		if(hash == openpgp.hash.sha1)
+		if(hash == 'sha1')
 			return 20;
 		else
 			return 2;
 	}
 
 	function get_hash_fn(hash) {
-		if(hash == openpgp.hash.sha1)
-			return str_sha1;
+		if(hash == 'sha1')
+			return crypto.hash.sha1;
 		else
 			return function(c) {
 					return util.writeNumber(util.calc_checksum(c), 2);
@@ -67,17 +70,18 @@ function packet_secret_key() {
 
 		var j = 0;
 		var mpi = [];
+
 		for(var i = 0; i < mpis && j < cleartext.length; i++) {
-			mpi[i] = new openpgp_type_mpi();
+			mpi[i] = new type_mpi();
 			j += mpi[i].read(cleartext.substr(j));
 		}
 
 		return mpi;
 	}
 
-	function write_cleartext_mpi(hash_algorithm, mpi) {
+	function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
 		var bytes= '';
-		var discard = crypto.getPublicMpiCount(this.algorithm);
+		var discard = crypto.getPublicMpiCount(algorithm);
 
 		for(var i = discard; i < mpi.length; i++) {
 			bytes += mpi[i].write();
@@ -145,7 +149,7 @@ function packet_secret_key() {
 		if(!this.encrypted) {
 			bytes += String.fromCharCode(0);
 			
-			bytes += write_cleartext_mpi('mod', this.mpi);
+			bytes += write_cleartext_mpi('mod', this.algorithm, this.mpi);
 		} else {
 			bytes += this.encrypted;
 		}
@@ -162,47 +166,49 @@ function packet_secret_key() {
 	 */
     this.encrypt = function(passphrase) {
 
-		var s2k = new openpgp_type_s2k(),
-			symmetric = openpgp.symmetric.aes256,
-			cleartext = write_cleartext_mpi(openpgp.hash.sha1, this.mpi),
+		var s2k = new type_s2k(),
+			symmetric = 'aes256',
+			cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
 			key = produceEncryptionKey(s2k, passphrase, symmetric),
-			blockLen = openpgp_crypto_getBlockLength(symmetric),
-			iv = openpgp_crypto_getRandomBytes(blockLen);
+			blockLen = crypto.getBlockLength(symmetric),
+			iv = crypto.random.getRandomBytes(blockLen);
 
 
 		this.encrypted = '';
 		this.encrypted += String.fromCharCode(254);
-		this.encrypted += String.fromCharCode(symmetric);
+		this.encrypted += String.fromCharCode(enums.write(enums.symmetric, symmetric));
 		this.encrypted += s2k.write();
 		this.encrypted += iv;
 
-		console.log(cleartext);
+
+		var fn;
 
 		switch(symmetric) {
-		case 3:
-			this.encrypted += normal_cfb_encrypt(function(block, key) {
-				var cast5 = new openpgp_symenc_cast5();
-				cast5.setKey(key);
-				return cast5.encrypt(util.str2bin(block)); 
-			}, iv.length, key, cleartext, iv);
+		case 'cast5':
+			fn = crypto.cipher.cast5;
 			break;
-		case 7:
-		case 8:
-		case 9:
+		case 'aes128':
+		case 'aes192':
+		case 'aes256':
     		var fn = function(block,key) {
-    		    	return AESencrypt(util.str2bin(block),key);
+    		    	return crypto.cipher.aes.encrypt(util.str2bin(block),key);
     			}
-			this.encrypted += normal_cfb_encrypt(fn,
-					iv.length, new keyExpansion(key), cleartext, iv);
+
+			key = new crypto.cipher.aes.keyExpansion(key);
 			break;
+
 		default:
 			throw new Error("Unsupported symmetric encryption algorithm.");
 		}
+
+		console.log(cleartext);
+
+		this.encrypted += crypto.cfb.normalEncrypt(fn, iv.length, key, cleartext, iv);
     }
 
 	function produceEncryptionKey(s2k, passphrase, algorithm) {
 		return s2k.produce_key(passphrase,
-			openpgp_crypto_getKeyLength(algorithm));
+			crypto.getKeyLength(algorithm));
 	}
 
 	/**
@@ -229,77 +235,78 @@ function packet_secret_key() {
 	    //   octet symmetric encryption algorithm.
 	    if (s2k_usage == 255 || s2k_usage == 254) {
 	    	symmetric = this.encrypted[i++].charCodeAt();
+			symmetric = enums.read(enums.symmetric, symmetric);
 	     
 			// - [Optional] If string-to-key usage octet was 255 or 254, a
 			//   string-to-key specifier.  The length of the string-to-key
 			//   specifier is implied by its type, as described above.
-	    	var s2k = new openpgp_type_s2k();
+	    	var s2k = new type_s2k();
 	    	i += s2k.read(this.encrypted.substr(i));
 
 			key = produceEncryptionKey(s2k, passphrase, symmetric);
 	    } else {
 			symmetric = s2k_usage;
-			key = MD5(passphrase);
+			symmetric = enums.read(enums.symmetric, symmetric);
+			key = crypto.hash.md5(passphrase);
 		}
+
 	    
 	    // - [Optional] If secret data is encrypted (string-to-key usage octet
 	    //   not zero), an Initial Vector (IV) of the same length as the
 	    //   cipher's block size.
 		var iv = this.encrypted.substr(i, 
-			openpgp_crypto_getBlockLength(symmetric));
+			crypto.getBlockLength(symmetric));
 
 		i += iv.length;
 
 		var cleartext,
 			ciphertext = this.encrypted.substr(i);
 
-
     	switch (symmetric) {
-	    case  1: // - IDEA [IDEA]
+	    case  'idea': // - IDEA [IDEA]
 			throw new Error("IDEA is not implemented.");
 	    	return false;
-    	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-    		cleartext = normal_cfb_decrypt(function(block, key) {
-    			return des(key, block,1,null,0);
+    	case  'des': // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+    		cleartext = crypto.cfb.normal_decrypt(function(block, key) {
+    			return crypto.cipher.des(key, block,1,null,0);
     		}, iv.length, key, ciphertext, iv);
     		break;
-    	case  3: // - CAST5 (128 bit key, as per [RFC2144])
-    		cleartext = normal_cfb_decrypt(function(block, key) {
-        		var cast5 = new openpgp_symenc_cast5();
-        		cast5.setKey(key);
-        		return cast5.encrypt(util.str2bin(block)); 
-    		}, iv.length, util.str2bin(key.substring(0,16)), ciphertext, iv);
+    	case  'cast5': // - CAST5 (128 bit key, as per [RFC2144])
+    		cleartext = crypto.cfb.normalDecrypt(
+				function(block, key) {
+					var cast5 = new crypto.cipher.cast5.castClass();
+					cast5.setKey(key);
+					return cast5.encrypt(util.str2bin(block)); 
+				}
+			, iv.length, 
+			util.str2bin(key.substring(0,16)), ciphertext, iv);
     		break;
-	    case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	    case  'blowfish': // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 	    	cleartext = normal_cfb_decrypt(function(block, key) {
     			var blowfish = new Blowfish(key);
         		return blowfish.encrypt(block); 
     		}, iv.length, key, ciphertext, iv);
     		break;
-	    case  7: // - AES with 128-bit key [AES]
-    	case  8: // - AES with 192-bit key
-    	case  9: // - AES with 256-bit key
-    		cleartext = normal_cfb_decrypt(function(block,key){
-    		    	return AESencrypt(util.str2bin(block),key);
+	    case  'aes128': // - AES with 128-bit key [AES]
+    	case  'aes192': // - AES with 192-bit key
+    	case  'aes256': // - AES with 256-bit key
+    		cleartext = crypto.cfb.normalDecrypt(function(block,key){
+    		    	return crypto.cipher.aes.encrypt(util.str2bin(block),key);
     			},
-    			iv.length, new keyExpansion(key), 
+    			iv.length, new crypto.cipher.aes.keyExpansion(key), 
 					ciphertext, iv);
 	    	break;
-    	case 10: // - Twofish with 256-bit key [TWOFISH]
+    	case 'twofish': // - Twofish with 256-bit key [TWOFISH]
 			throw new Error("Twofish is not implemented.");
 	    	return false;
-    	case  5: // - Reserved
-    	case  6: // - Reserved
     	default:
 			throw new Error("Unknown symmetric algorithm.");
     		return false;
     	}
  
-		var hash;
-		if(s2k_usage == 254)
-			hash = openpgp.hash.sha1;
-		else
-			hash = 'mod';
+		var hash = s2k_usage == 254 ?
+			'sha1' :
+			'mod';
 
    	
 		this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,

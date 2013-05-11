@@ -18,6 +18,8 @@
 // The GPG4Browsers crypto interface
 
 var random = require('./random.js'),
+	cipher = require('./cipher'),
+	cfb = require('./cfb.js'),
 	publicKey= require('./public_key'),
 	type_mpi = require('../type/mpi.js');
 
@@ -34,21 +36,22 @@ module.exports = {
 publicKeyEncrypt: function(algo, publicMPIs, data) {
 	var result = (function() {
 		switch(algo) {
-		case 1: // RSA (Encrypt or Sign) [HAC]
-		case 2: // RSA Encrypt-Only [HAC]
-		case 3: // RSA Sign-Only [HAC]
+		case 'rsa_encrypt':
+		case 'rsa_encrypt_sign':
 			var rsa = new publicKey.rsa();
 			var n = publicMPIs[0].toBigInteger();
 			var e = publicMPIs[1].toBigInteger();
 			var m = data.toBigInteger();
 			return [rsa.encrypt(m,e,n)];
-		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+
+		case 'elgamal':
 			var elgamal = new publicKey.elgamal();
 			var p = publicMPIs[0].toBigInteger();
 			var g = publicMPIs[1].toBigInteger();
 			var y = publicMPIs[2].toBigInteger();
 			var m = data.toBigInteger();
 			return elgamal.encrypt(m,g,p,y);
+
 		default:
 			return [];
 		}
@@ -76,9 +79,8 @@ publicKeyEncrypt: function(algo, publicMPIs, data) {
 publicKeyDecrypt: function (algo, keyIntegers, dataIntegers) {
 	var bn = (function() {
 		switch(algo) {
-		case 1: // RSA (Encrypt or Sign) [HAC]  
-		case 2: // RSA Encrypt-Only [HAC]
-		case 3: // RSA Sign-Only [HAC]
+		case 'rsa_encrypt_sign':
+		case 'rsa_encrypt':
 			var rsa = new publicKey.rsa();
 			// 0 and 1 are the public key.
 			var d = keyIntegers[2].toBigInteger();
@@ -87,7 +89,7 @@ publicKeyDecrypt: function (algo, keyIntegers, dataIntegers) {
 			var u = keyIntegers[5].toBigInteger();
 			var m = dataIntegers[0].toBigInteger();
 			return rsa.decrypt(m, d, p, q, u);
-		case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+		case 'elgamal':
 			var elgamal = new publicKey.elgamal();
 			var x = keyIntegers[3].toBigInteger();
 			var c1 = dataIntegers[0].toBigInteger();
@@ -109,38 +111,45 @@ publicKeyDecrypt: function (algo, keyIntegers, dataIntegers) {
  * @return {Integer} The number of integers.
  */
 getPrivateMpiCount: function(algo) {
-	if (algo > 0 && algo < 4) {
+	switch(algo) {
+		case 'rsa_encrypt':
+		case 'rsa_encrypt_sign':
+		case 'rsa_sign':
 		//   Algorithm-Specific Fields for RSA secret keys:
 		//   - multiprecision integer (MPI) of RSA secret exponent d.
 		//   - MPI of RSA secret prime value p.
 		//   - MPI of RSA secret prime value q (p < q).
 		//   - MPI of u, the multiplicative inverse of p, mod q.
 		return 4;
-	} else if (algo == 16) {
+	case 'elgamal':
 		// Algorithm-Specific Fields for Elgamal secret keys:
 		//   - MPI of Elgamal secret exponent x.
 		return 1;
-	} else if (algo == 17) {
+	case 'dsa':
 		// Algorithm-Specific Fields for DSA secret keys:
 		//   - MPI of DSA secret exponent x.
 		return 1;
+	default:
+		throw new Error('Unknown algorithm');
 	}
-	else return 0;
 },
 	
-getPublicMpiCount: function(algorithm) {
+getPublicMpiCount: function(algo) {
 	// - A series of multiprecision integers comprising the key material:
 	//   Algorithm-Specific Fields for RSA public keys:
 	//       - a multiprecision integer (MPI) of RSA public modulus n;
 	//       - an MPI of RSA public encryption exponent e.
-	if (algorithm > 0 && algorithm < 4)
+	switch(algo) {
+		case 'rsa_encrypt':
+		case 'rsa_encrypt_sign':
+		case 'rsa_sign':
 		return 2;
 
 	//   Algorithm-Specific Fields for Elgamal public keys:
 	//     - MPI of Elgamal prime p;
 	//     - MPI of Elgamal group generator g;
 	//     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-	else if (algorithm == 16)
+		case 'elgamal':
 		return 3;
 
 	//   Algorithm-Specific Fields for DSA public keys:
@@ -148,10 +157,12 @@ getPublicMpiCount: function(algorithm) {
 	//       - MPI of DSA group order q (q is a prime divisor of p-1);
 	//       - MPI of DSA group generator g;
 	//       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-	else if (algorithm == 17)
+		case 'dsa':
 		return 4;
-	else
-		return 0;
+
+		default:
+			throw new Error('Unknown algorithm.');
+	}
 },
 
 
@@ -162,19 +173,7 @@ getPublicMpiCount: function(algorithm) {
  * size of the cipher
  */
 getPrefixRandom: function(algo) {
-	switch(algo) {
-	case 2:
-	case 3:
-	case 4:
-		return random.getRandomBytes(8);
-	case 7:
-	case 8:
-	case 9:
-	case 10:
-		return random.getRandomBytes(16);
-	default:
-		return null;
-	}
+	return random.getRandomBytes(this.getBlockLength(algo));
 },
 
 /**
@@ -185,22 +184,23 @@ getPrefixRandom: function(algo) {
  * @return {String} Plain text data of the prefixed data
  */
 MDCSystemBytes: function(algo, key, data) {
+
 	switch(algo) {
-	case 0: // Plaintext or unencrypted data
+	case 'plaintext': // Plaintext or unencrypted data
 		return data;
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-		return openpgp_cfb_mdc(desede, 8, key, data, openpgp_cfb);
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
-		return openpgp_cfb_mdc(cast5_encrypt, 8, key, data);
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		return openpgp_cfb_mdc(BFencrypt, 8, key, data);
-	case 7: // AES with 128-bit key [AES]
-	case 8: // AES with 192-bit key
-	case 9: // AES with 256-bit key
-		return openpgp_cfb_mdc(AESencrypt, 16, keyExpansion(key), data);
-	case 10: 
-		return openpgp_cfb_mdc(TFencrypt, 16, key, data);
-	case 1: // IDEA [IDEA]
+	case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+		return cfb.mdc(cipher.des, 8, key, data);
+	case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
+		return cfb.mdc(cipher.cast5, 8, key, data);
+	case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+		return cfb.mdc(cipher.blowfish, 8, key, data);
+	case 'aes128': // AES with 128-bit key [AES]
+	case 'aes192': // AES with 192-bit key
+	case 'aes256': // AES with 256-bit key
+		return cfb.mdc(cipher.aes.encrypt, 16, cipher.aes.keyExpansion(key), data);
+	case 'twofish': 
+		return cfb.mdc(cipher.twofish, 16, key, data);
+	case 'idea': // IDEA [IDEA]
 		throw new Error('IDEA Algorithm not implemented');
 	default:
 		throw new Error('Invalid algorithm.');
@@ -222,18 +222,19 @@ generateSessionKey: function(algo) {
  */
 getKeyLength: function(algo) {
 	switch (algo) {
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-	case 8: // AES with 192-bit key
+	case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+	case 'aes192': // AES with 192-bit key
 		return 24;
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	case 7: // AES with 128-bit key [AES]
+	case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
+	case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	case 'aes128': // AES with 128-bit key [AES]
 		return 16;
-	case 9: // AES with 256-bit key
-	case 10:// Twofish with 256-bit key [TWOFISH]
+	case 'aes256': // AES with 256-bit key
+	case 'twofish':// Twofish with 256-bit key [TWOFISH]
 		return 32;
+	default:
+		throw new Error('Invalid algorithm.');
 	}
-	return null;
 },
 
 /**
@@ -243,19 +244,18 @@ getKeyLength: function(algo) {
  */
 getBlockLength: function(algo) {
 	switch (algo) {
-	case  1: // - IDEA [IDEA]
-	case  2: // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-	case  3: // - CAST5 (128 bit key, as per [RFC2144])
+	case 'des':
+	case 'cast5':
 		return 8;
-	case  4: // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	case  7: // - AES with 128-bit key [AES]
-	case  8: // - AES with 192-bit key
-	case  9: // - AES with 256-bit key
+	case 'blowfish':
+	case 'aes128':
+	case 'aes192':
+	case 'aes256':
 		return 16;
-	case 10: // - Twofish with 256-bit key [TWOFISH]
+	case 'twofish':
 		return 32;	    		
 	default:
-		return 0;
+		throw new Error('Invalid algorithm.');
 	}
 },
 
@@ -277,61 +277,19 @@ getRandomBigInteger: function(bits) {
 						randomBits.charCodeAt(0)) +
 			randomBits.substring(1);
 	}
-	return new openpgp_type_mpi().create(randomBits).toBigInteger();
+	return new type_mpi().create(randomBits).toBigInteger();
 },
 
 getRandomBigIntegerInRange: function(min, max) {
 	if (max.compareTo(min) <= 0)
 		return;
+
 	var range = max.subtract(min);
-	var r = openpgp_crypto_getRandomBigInteger(range.bitLength());
+	var r = this.getRandomBigInteger(range.bitLength());
 	while (r > range) {
-		r = openpgp_crypto_getRandomBigInteger(range.bitLength());
+		r = this.getRandomBigInteger(range.bitLength());
 	}
 	return min.add(r);
 },
-
-
-//This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
-testRSA: function(key){
-	debugger;
-    var rsa = new RSA();
-	var mpi = new openpgp_type_mpi();
-	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
-	var msg = rsa.encrypt(mpi.toBigInteger(),key.ee,key.n);
-	var result = rsa.decrypt(msg, key.d, key.p, key.q, key.u);
-},
-
-/**
- * @typedef {Object} openpgp_keypair
- * @property {openpgp_packet_keymaterial} privateKey 
- * @property {openpgp_packet_keymaterial} publicKey
- */
-
-/**
- * Calls the necessary crypto functions to generate a keypair. 
- * Called directly by openpgp.js
- * @param {Integer} keyType Follows OpenPGP algorithm convention.
- * @param {Integer} numBits Number of bits to make the key to be generated
- * @return {openpgp_keypair}
- */
-generateKeyPair: function(keyType, numBits, passphrase, s2kHash, symmetricEncryptionAlgorithm){
-	var privKeyPacket;
-	var publicKeyPacket;
-	var d = new Date();
-	d = d.getTime()/1000;
-	var timePacket = String.fromCharCode(Math.floor(d/0x1000000%0x100)) + String.fromCharCode(Math.floor(d/0x10000%0x100)) + String.fromCharCode(Math.floor(d/0x100%0x100)) + String.fromCharCode(Math.floor(d%0x100));
-	switch(keyType){
-	case 1:
-	    var rsa = new RSA();
-	    var key = rsa.generate(numBits,"10001");
-	    privKeyPacket = new openpgp_packet_keymaterial().write_private_key(keyType, key, passphrase, s2kHash, symmetricEncryptionAlgorithm, timePacket);
-	    publicKeyPacket =  new openpgp_packet_keymaterial().write_public_key(keyType, key, timePacket);
-	    break;
-	default:
-		util.print_error("Unknown keytype "+keyType)
-	}
-	return {privateKey: privKeyPacket, publicKey: publicKeyPacket};
-}
 
 }

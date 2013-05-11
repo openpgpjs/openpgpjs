@@ -26,7 +26,7 @@ module.exports = {
 	getRandomBytes: function(length) {
 		var result = '';
 		for (var i = 0; i < length; i++) {
-			result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
+			result += String.fromCharCode(this.getSecureRandomOctet());
 		}
 		return result;
 	},

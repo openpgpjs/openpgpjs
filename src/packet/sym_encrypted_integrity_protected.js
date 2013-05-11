@@ -15,6 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util'),
+	crypto = require('../crypto');
+
 /**
  * @class
  * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data 
@@ -45,8 +48,7 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 		var version = bytes[0].charCodeAt();
 
 		if (version != 1) {
-			throw new Error('Version ' + version + ' of encrypted integrity protected' +
-				' packet is unsupported');
+			throw new Error('Invalid packet version.');
 		}
 
 		// - Encrypted data, the output of the selected symmetric-key cipher
@@ -61,10 +63,10 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 			+ this.encrypted;
 	}
 
-	this.encrypt = function(symmetric_algorithm, key) {
+	this.encrypt = function(sessionKeyAlgorithm, key) {
 		var bytes = this.packets.write()
 		
-		var prefixrandom = openpgp_crypto_getPrefixRandom(symmetric_algorithm);
+		var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
 		var prefix = prefixrandom
 				+ prefixrandom.charAt(prefixrandom.length - 2)
 				+ prefixrandom.charAt(prefixrandom.length - 1)
@@ -76,17 +78,12 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 		tohash += String.fromCharCode(0xD3);
 		tohash += String.fromCharCode(0x14);
 
-		util.print_debug_hexstr_dump("data to be hashed:"
-				, prefix + tohash);
 
-		tohash += str_sha1(prefix + tohash);
+		tohash += crypto.hash.sha1(prefix + tohash);
 
-		util.print_debug_hexstr_dump("hash:"
-				, tohash.substring(tohash.length - 20,
-						tohash.length));
 
-		this.encrypted = openpgp_crypto_symmetricEncrypt(prefixrandom,
-				symmetric_algorithm, key, tohash, false).substring(0,
+		this.encrypted = crypto.symmetric.encrypt(prefixrandom,
+				sessionKeyAlgorithm, key, tohash, false).substring(0,
 				prefix.length + tohash.length);
 	}
 
@@ -94,23 +91,22 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 	 * Decrypts the encrypted data contained in this object read_packet must
 	 * have been called before
 	 * 
-	 * @param {Integer} symmetric_algorithm_type
+	 * @param {Integer} sessionKeyAlgorithm
 	 *            The selected symmetric encryption algorithm to be used
 	 * @param {String} key The key of cipher blocksize length to be used
 	 * @return {String} The decrypted data of this packet
 	 */
-	this.decrypt = function(symmetric_algorithm_type, key) {
-		var decrypted = openpgp_crypto_symmetricDecrypt(
-				symmetric_algorithm_type, key, this.encrypted, false);
+	this.decrypt = function(sessionKeyAlgorithm, key) {
+		var decrypted = crypto.symmetric.decrypt(
+				sessionKeyAlgorithm, key, this.encrypted, false);
 
 
 		// there must be a modification detection code packet as the
 		// last packet and everything gets hashed except the hash itself
-		this.hash = str_sha1(
-			openpgp_crypto_MDCSystemBytes(symmetric_algorithm_type, key, this.encrypted)
+		this.hash = crypto.hash.sha1(
+			crypto.MDCSystemBytes(sessionKeyAlgorithm, key, this.encrypted)
 			+ decrypted.substring(0, decrypted.length - 20));
 
-		util.print_debug_hexstr_dump("calc hash = ", this.hash);
 
 		var mdc = decrypted.substr(decrypted.length - 20, 20);
 

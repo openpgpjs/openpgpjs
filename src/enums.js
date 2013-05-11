@@ -1,4 +1,16 @@
 module.exports = {
+
+
+	/** A string to key specifier type
+	 * @enum {Integer}
+	 */
+	s2k: {
+		simple: 0,
+		salted: 1,
+		iterated: 3,
+		gnu: 101
+	},
+
 	/** RFC4880, section 9.1 
 	 * @enum {String}
 	 */

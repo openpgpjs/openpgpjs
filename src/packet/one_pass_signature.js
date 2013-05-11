@@ -27,7 +27,8 @@
  * can compute the entire signed message in one pass.
  */
 
-var enums = require('../enums.js');
+var enums = require('../enums.js'),
+	type_keyid = require('../type/keyid.js');
 
 module.exports = function packet_one_pass_signature() {
 	this.version = null; // A one-octet version number.  The current version is 3.
@@ -60,8 +61,8 @@ module.exports = function packet_one_pass_signature() {
 		this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(mypos++));
 
 	     // An eight-octet number holding the Key ID of the signing key.
-		this.signingKeyId = new openpgp_type_keyid();
-		this.signingKeyId.read_packet(bytes,mypos);
+		this.signingKeyId = new type_keyid();
+		this.signingKeyId.read(bytes.substr(mypos));
 		mypos += 8;
 		
 	     // A one-octet number holding a flag showing whether the signature

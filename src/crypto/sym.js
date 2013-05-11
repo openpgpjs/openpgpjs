@@ -20,7 +20,7 @@
 var cfb = require('./cfb.js'),
 	cipher = require('./cipher');
 
-module.exports {
+module.exports = {
 
 /**
  * Symmetrically encrypts data using prefixedrandom, a key with length 
@@ -37,27 +37,24 @@ module.exports {
  */
 encrypt: function (prefixrandom, algo, key, data, openpgp_cfb) {
 	switch(algo) {
-		case 0: // Plaintext or unencrypted data
+		case 'plaintext': // Plaintext or unencrypted data
 			return data; // blockcipherencryptfn, plaintext, block_size, key
-		case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+		case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
 			return cfb.encrypt(prefixrandom, cipher.des, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 3: // CAST5 (128 bit key, as per [RFC2144])
+		case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
 			return cfb.encrypt(prefixrandom, cipher.cast5, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+		case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 			return cfb.encrypt(prefixrandom, cipher.blowfish, data,8,key, openpgp_cfb).substring(0, data.length + 10);
-		case 7: // AES with 128-bit key [AES]
-		case 8: // AES with 192-bit key
-		case 9: // AES with 256-bit key
+		case 'aes128': // AES with 128-bit key [AES]
+		case 'aes192': // AES with 192-bit key
+		case 'aes256': // AES with 256-bit key
 			return cfb.encrypt(prefixrandom, cipher.aes.encrypt, data, 16, cipher.aes.keyExpansion(key), openpgp_cfb).substring(0, data.length + 18);
-		case 10: // Twofish with 256-bit key [TWOFISH]
+		case 'twofish': // Twofish with 256-bit key [TWOFISH]
 			return cfb.encrypt(prefixrandom, cipher.twofish, data,16, key, openpgp_cfb).substring(0, data.length + 18);
-		case 1: // IDEA [IDEA]
-			util.print_error("IDEA Algorithm not implemented");
-			return null;
 		default:
-			return null;
+			throw new Error('Invalid algorithm.');
 	}
-}
+},
 
 /**
  * Symmetrically decrypts data using a key with length depending on the
@@ -70,30 +67,28 @@ encrypt: function (prefixrandom, algo, key, data, openpgp_cfb) {
  * @return {String} Plaintext data
  */
 decrypt: function (algo, key, data, openpgp_cfb) {
-	util.print_debug_hexstr_dump("openpgp_crypto_symmetricDecrypt:\nalgo:"+algo+"\nencrypteddata:",data);
 	var n = 0;
 	if (!openpgp_cfb)
 		n = 2;
 	switch(algo) {
-	case 0: // Plaintext or unencrypted data
+	case 'plaintext': // Plaintext or unencrypted data
 		return data;
-	case 2: // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
+	case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
 		return cfb.decrypt(cipher.des, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 3: // CAST5 (128 bit key, as per [RFC2144])
+	case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
 		return cfb.decrypt(cipher.cast5, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 4: // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+	case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
 		return cfb.decrypt(cipher.blowfish, 8, key, data, openpgp_cfb).substring(n, (data.length+n)-10);
-	case 7: // AES with 128-bit key [AES]
-	case 8: // AES with 192-bit key
-	case 9: // AES with 256-bit key
+	case 'aes128': // AES with 128-bit key [AES]
+	case 'aes192': // AES with 192-bit key
+	case 'aes256': // AES with 256-bit key
 		return cfb.decrypt(cipher.aes.encrypt, 16, cipher.aes.keyExpansion(key), data, openpgp_cfb).substring(n, (data.length+n)-18);
-	case 10: // Twofish with 256-bit key [TWOFISH]
+	case 'twofish': // Twofish with 256-bit key [TWOFISH]
 		var result = cfb.decrypt(cipher.twofish, 16, key, data, openpgp_cfb).substring(n, (data.length+n)-18);
 		return result;
-	case 1: // IDEA [IDEA]
-		util.print_error(""+ (algo == 1 ? "IDEA Algorithm not implemented" : "Twofish Algorithm not implemented"));
-		return null;
 	default:
+		throw new Error('Invalid algorithm');
 	}
-	return null;
+}
+
 }

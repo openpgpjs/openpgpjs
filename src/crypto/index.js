@@ -5,6 +5,10 @@ module.exports = {
 	cfb: require('./cfb.js'),
 	publicKey: require('./public_key'),
 	signature: require('./signature.js'),
+	random: require('./random.js'),
+	pkcs1: require('./pkcs1.js'),
+	symmetric: require('./sym.js')
+
 }
 
 var crypto = require('./crypto.js');

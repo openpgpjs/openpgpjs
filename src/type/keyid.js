@@ -23,7 +23,7 @@
    section "Enhanced Key Formats" below describes how Key IDs are
    formed.
  */
-function openpgp_type_keyid() {
+module.exports = function keyid() {
 	var bytes = '';
 
 	for(var i = 0; i < 8; i++)
@@ -35,19 +35,11 @@ function openpgp_type_keyid() {
 	 * id from input
 	 * @return {openpgp_type_keyid} This object
 	 */
-	function read_packet(input, position) {
-		this.bytes = input.substring(position, position+8);
-		return this;
+	this.read = function(bytes) {
+		this.bytes = bytes.substr(0, 8);
 	}
-	
-	/**
-	 * Generates debug output (pretty print)
-	 * @return {String} Key Id as hexadecimal string
-	 */
-	function toString() {
-		return util.hexstrdump(this.bytes);
+
+	this.write = function() {
+		return this.bytes;
 	}
-	
-	this.read_packet = read_packet;
-	this.toString = toString;
 };

@@ -18,6 +18,7 @@
 // RSA implementation
 
 var BigInteger = require('./jsbn.js'),
+	util = require('../../util'),
 	random = require('../random.js');
 
 function SecureRandom(){

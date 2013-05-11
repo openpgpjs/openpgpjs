@@ -40,7 +40,7 @@ unittests.register("Packet testing", function() {
 
 
 	var tests = [function() {
-		var message = new openpgp_packetlist();
+		var message = new openpgp.packet.list();
 
 		var literal = new openpgp.packet.literal();
 		literal.set('Hello world', 'utf8');
@@ -107,8 +107,8 @@ unittests.register("Packet testing", function() {
 
 		parsed[0].decrypt('test');
 
-		var key = parsed[0].key;
-		parsed[1].decrypt(parsed[0].algorithm, key);
+		var key = parsed[0].sessionKey;
+		parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key);
 		var compressed = parsed[1].packets[0];
 
 		var result = compressed.packets[0].data;
@@ -133,10 +133,10 @@ unittests.register("Packet testing", function() {
 			msg = new openpgp.packet.list(),
 			msg2 = new openpgp.packet.list();
 
-		enc.symmetric_key = '12345678901234567890123456789012';
-		enc.public_key_algorithm = 'rsa_encrypt';
-		enc.symmetric_algorithm = 'aes256';
-		enc.public_key_id.bytes = '12345678';
+		enc.sessionKey = '12345678901234567890123456789012';
+		enc.publicKeyAlgorithm = 'rsa_encrypt';
+		enc.sessionKeyAlgorithm = 'aes256';
+		enc.publicKeyId.bytes = '12345678';
 		enc.encrypt({ mpi: mpi });
 
 		msg.push(enc);
@@ -146,8 +146,8 @@ unittests.register("Packet testing", function() {
 		msg2[0].decrypt({ mpi: mpi });
 
 		return new test_result('Public key encrypted symmetric key packet', 
-			msg2[0].symmetric_key == enc.symmetric_key &&
-			msg2[0].symmetric_algorithm == enc.symmetric_algorithm);
+			msg2[0].sessionKey == enc.sessionKey &&
+			msg2[0].sessionKeyAlgorithm == enc.sessionKeyAlgorithm);
 	}, function() {
 		var armored_key = 
 			'-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
@@ -172,23 +172,23 @@ unittests.register("Packet testing", function() {
 			'-----END PGP PRIVATE KEY BLOCK-----';
 
 		key = new openpgp.packet.list();
-		key.read(openpgp.armor.decoce(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).openpgp);
 		key = key[0];
 
 		var enc = new openpgp.packet.public_key_encrypted_session_key(),
 			secret = '12345678901234567890123456789012';
 
-		enc.symmetric_key = secret;
-		enc.public_key_algorithm = openpgp.publickey.rsa_encrypt;
-		enc.symmetric_algorithm = openpgp.symmetric.aes256;
-		enc.public_key_id.bytes = '12345678';
+		enc.sessionKey = secret;
+		enc.publicKeyAlgorithm = 'rsa_encrypt';
+		enc.sessionKeyAlgorithm = 'aes256';
+		enc.publicKeyId.bytes = '12345678';
 
 		enc.encrypt(key);
 
 		enc.decrypt(key);
 
 		return new test_result('Secret key packet (reading, unencrpted)',
-			enc.symmetric_key == secret);
+			enc.sessionKey == secret);
 	}, function() {
 
 		var armored_key =
@@ -247,7 +247,7 @@ unittests.register("Packet testing", function() {
 		msg.read(openpgp.armor.decode(armored_msg).openpgp);
 
 		msg[0].decrypt(key);
-		msg[1].decrypt(msg[0].symmetric_algorithm, msg[0].symmetric_key);
+		msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
 		var text = msg[1].packets[0].packets[0].data;
 
@@ -267,12 +267,12 @@ unittests.register("Packet testing", function() {
 		msg.push(key_enc);
 		msg.push(enc);
 
-		key_enc.algorithm = algo;
+		key_enc.sessionKeyAlgorithm = algo;
 		key_enc.decrypt(passphrase);
 
-		var key = key_enc.key;
+		var key = key_enc.sessionKey;
 
-		literal.set_data('Hello world!', 'utf8');
+		literal.set('Hello world!', 'utf8');
 		enc.packets.push(literal);
 		enc.encrypt(algo, key);
 
@@ -281,8 +281,8 @@ unittests.register("Packet testing", function() {
 		msg2.read(msg.write());
 
 		msg2[0].decrypt(passphrase);
-		var key2 = msg2[0].key;
-		msg2[1].decrypt(msg2[0].algorithm, key2);
+		var key2 = msg2[0].sessionKey;
+		msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
 
 
 		return new test_result('Sym encrypted session key reading/writing', 
@@ -302,7 +302,7 @@ unittests.register("Packet testing", function() {
 			'-----END PGP MESSAGE-----';
 
 		var key = new openpgp.packet.list();
-		key.read(openpgp.armor.decoce(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).openpgp);
 		key = key[3];
 		key.decrypt('test');
 
@@ -310,7 +310,7 @@ unittests.register("Packet testing", function() {
 		msg.read(openpgp.armor.decode(armored_msg).openpgp);
 
 		msg[0].decrypt(key);
-		msg[1].decrypt(msg[0].symmetric_algorithm, msg[0].symmetric_key);
+		msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
 		var text = msg[1].packets[0].packets[0].data;
 
@@ -367,7 +367,7 @@ unittests.register("Packet testing", function() {
 
 
 		msg[0].decrypt(key[3]);
-		msg[1].decrypt(msg[0].symmetric_algorithm, msg[0].symmetric_key);
+		msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
 		var payload = msg[1].packets[0].packets
 
