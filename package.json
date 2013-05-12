@@ -1,0 +1,9 @@
+{
+	"name": "openpgp",
+	"version": "0.0.1",
+	"main": "./src/index.js",
+	"scripts": {
+		"install": "make bundle",
+		"test": "node ./test/test.js"
+	}
+}

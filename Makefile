@@ -31,10 +31,10 @@ lint:
 	@./scripts/lint.sh
 
 bundle:
-	@browserify -d -r ./src:openpgp > ./resources/openpgp.js
-minify:
-	@echo See http://code.google.com/closure/compiler/
-	@./scripts/minimize.sh
+	@browserify -d -r ./:openpgp > ./resources/openpgp.js
+
+bundle-test:
+	@browserify -d -r ./test/test-all.js:test-bundle.js > ./test/test-bundle.js
 
 test:
 	@echo to be implemented

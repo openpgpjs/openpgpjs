@@ -2,27 +2,8 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-<script type="text/javascript" src="../resources/openpgp.js"></script>
-
 <!-- unit test -->
-<script type="text/javascript" src="unittest.js"></script>
-<script type="text/javascript" src="example-test.js"></script>
-
-<script type="text/javascript" src="ciphers/hash/md5.js"></script>
-<script type="text/javascript" src="ciphers/hash/sha.js"></script>
-<script type="text/javascript" src="ciphers/hash/ripe-md.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/aes.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/cast5.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/des.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/blowfish.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/twofish.js"></script>
-
-<script type="text/javascript" src="general/packet.js"></script>
-
-<script type="text/javascript" src="ciphers/openpgp.crypto.js"></script>
-<script type="text/javascript" src="ciphers/openpgp.sigcheck.js"></script>
-
-<script type="text/javascript" src="general/openpgp.basic.js"></script>
+<script type="text/javascript" src="test-bundle.js"></script>
 <title>OpenPGP.js testpage</title>
 
 <style>
@@ -76,14 +57,14 @@
 </style>
 <script type="text/javascript">
 
-require('openpgp').util.debug = true;
 
+var test = require('test-bundle.js');
 
 function unit_tests() {
 	var table = document.getElementById('unittests');
 
 	var single_test = function() {
-		var result = unittests.run();
+		var result = test.run();
 
 		var html = '<tr class="unittestrow"><td rowspan="' +
 			result.tests.length + '" class="unittesttitle">' + result.title + '</td>';
@@ -101,7 +82,7 @@ function unit_tests() {
 
 		table.innerHTML += html;
 
-		if(unittests.tests.length > 0) {
+		if(test.tests.length > 0) {
 			setTimeout(single_test, 100);
 		}
 	}

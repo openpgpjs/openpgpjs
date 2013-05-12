@@ -251,6 +251,10 @@ function packet_secret_key() {
 		this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
 			this.algorithm));
 	}
+
+	this.generate = function(bits) {
+
+	}
 	
 }
 
