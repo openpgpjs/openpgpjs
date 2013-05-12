@@ -3,7 +3,12 @@ unittests.register("Twofish test with test vectors from http://www.schneier.com/
 	var openpgp = require('openpgp'),
 		util = openpgp.util;
 
-	function TFencrypt() { return [];}
+	function TFencrypt(block, key) {
+		var tf = new openpgp.cipher.twofish(key);
+
+		return tf.encrypt(block);
+	}
+
 
 	var result = new Array();
 	var start = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];

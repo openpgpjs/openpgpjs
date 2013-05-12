@@ -309,11 +309,11 @@ function TF(key) {
 	this.tf.open(util.str2bin(key),0);
 
 	this.encrypt = function(block) {
-		return tf.encrypt(block, 0);
+		return this.tf.encrypt([].concat(block), 0);
 	}
 }
 
 
 module.exports = TF;
 module.exports.keySize = TF.prototype.keySize = 32;
-module.exports.blockSize = TF.prototype.blockSize = 32;
+module.exports.blockSize = TF.prototype.blockSize = 16;
