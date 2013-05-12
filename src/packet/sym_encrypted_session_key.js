@@ -104,14 +104,14 @@ module.exports = function packet_sym_encrypted_session_key() {
 			this.sessionKeyAlgorithm;
 
 
-		var length = crypto.getKeyLength(algo);
+		var length = crypto.cipher[algo].keySize;
 		var key = this.s2k.produce_key(passphrase, length);
 
 		if(this.encrypted == null) {
 			this.sessionKey = key;
 
 		} else {
-			var decrypted = crypto.symmetric.decrypt(
+			var decrypted = crypto.cfb.decrypt(
 				this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
 
 			this.sessionKeyAlgorithm = enums.read(enums.symmetric,
@@ -131,7 +131,7 @@ module.exports = function packet_sym_encrypted_session_key() {
 			crypto.getRandomBytes(
 				crypto.getKeyLength(this.sessionKeyAlgorithm));
 
-		this.encrypted = crypto.symmetric.encrypt(
+		this.encrypted = crypto.cfb.encrypt(
 				crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm), 
 				this.sessionKeyEncryptionAlgorithm, key, private_key, true);
 	}

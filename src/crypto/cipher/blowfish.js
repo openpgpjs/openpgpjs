@@ -394,4 +394,18 @@ function BFencrypt(block,key) {
 	return bf.encrypt_block(block);
 }
 
-module.exports = BFencrypt;
+function BF(key) {
+	this.bf = new Blowfish();
+	this.bf.init(util.str2bin(key));
+
+	this.encrypt = function(block) {
+		return this.bf.encrypt_block(block);
+	}
+}
+
+
+module.exports = BF;
+module.exports.keySize = BF.prototype.keySize = 16;
+module.exports.blockSize = BF.prototype.blockSize = 16;
+
+

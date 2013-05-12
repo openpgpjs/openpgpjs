@@ -21,15 +21,7 @@
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
 
-var util = require('../../util');
 
-// added by Recurity Labs
-function desede(block,key) {
-	var key1 = key.substring(0,8);
-	var key2 = key.substring(8,16);
-	var key3 = key.substring(16,24);
-	return util.str2bin(des(des_createKeys(key3),des(des_createKeys(key2),des(des_createKeys(key1),util.bin2str(block), true, 0,null,null), false, 0,null,null), true, 0,null,null));
-}
 
 
 function des (keys, message, encrypt, mode, iv, padding) {
@@ -207,5 +199,26 @@ function des_createKeys (key) {
   return keys;
 } //end of des_createKeys
 
+var util = require('../../util');
 
-module.exports = desede;
+// added by Recurity Labs
+function Des(key) {
+	this.key = [];
+
+	for(var i = 0; i < 3; i++) {
+		this.key.push(key.substr(i * 8, 8));
+	}
+
+	this.encrypt = function(block) {
+		return util.str2bin(des(des_createKeys(this.key[2]),
+			des(des_createKeys(this.key[1]),
+			des(des_createKeys(this.key[0]),
+			util.bin2str(block), true, 0,null,null), 
+			false, 0,null,null), true, 0,null,null));
+	}
+}
+
+module.exports = Des;
+module.exports.keySize = Des.prototype.keySize = 24;
+module.exports.blockSize = Des.prototype.blockSize = 8;
+

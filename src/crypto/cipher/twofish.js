@@ -18,17 +18,7 @@
  *
  */
 
-var util = require('../../util');
 
-// added by Recurity Labs
-function TFencrypt(block, key) {
-	var block_copy = [].concat(block);
-	var tf = createTwofish();
-	tf.open(util.str2bin(key),0);
-	var result = tf.encrypt(block_copy, 0);
-	tf.close();
-	return result;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Math
@@ -302,4 +292,28 @@ function createTwofish() {
 	};
 }
 
-module.exports = TFencrypt;
+var util = require('../../util');
+
+// added by Recurity Labs
+function TFencrypt(block, key) {
+	var block_copy = [].concat(block);
+	var tf = createTwofish();
+	tf.open(util.str2bin(key),0);
+	var result = tf.encrypt(block_copy, 0);
+	tf.close();
+	return result;
+}
+
+function TF(key) {
+	this.tf = createTwofish();
+	this.tf.open(util.str2bin(key),0);
+
+	this.encrypt = function(block) {
+		return tf.encrypt(block, 0);
+	}
+}
+
+
+module.exports = TF;
+module.exports.keySize = TF.prototype.keySize = 32;
+module.exports.blockSize = TF.prototype.blockSize = 32;

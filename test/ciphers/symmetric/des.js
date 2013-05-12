@@ -1,8 +1,7 @@
 
 unittests.register("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
 	var openpgp = require('openpgp'),
-		util = openpgp.util,
-		desede = openpgp.cipher.des
+		util = openpgp.util;
 
 	var result = new Array();
 	var key = util.bin2str([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
@@ -32,13 +31,19 @@ unittests.register("TripleDES (EDE) cipher test with test vectors from http://cs
 	var res = true;
 	var j = 0;
 	for (var i = 0; i < testvectors.length; i++) {
-		var res2 = (util.bin2str(desede(testvectors[i][0], key)) == util.bin2str(testvectors[i][1]));
+		var des = new openpgp.cipher.des(key);
+
+		var encr = util.bin2str(des.encrypt(testvectors[i][0], key));
+		var res2 = encr	== util.bin2str(testvectors[i][1]);
+
 		res &= res2;
+
 		if (!res2) {
 		result[j] = new test_result("Testing vector with block "+
 				util.hexidump(testvectors[i][0])+
 				" and key "+util.hexstrdump(key)+
-				" should be "+util.hexidump(testvectors[i][1])+" != "+util.hexidump(desede(testvectors[i][0], key)),
+				" should be "+util.hexidump(testvectors[i][1])+" != "
+					+util.hexidump(encr),
 			false);
 		j++;
 		}

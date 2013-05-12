@@ -15,13 +15,7 @@
 
 // CAST5 constructor
 
-var util = require('../../util');
 
-function cast5_encrypt(block, key) {
-	var cast5 = new openpgp_symenc_cast5();
-	cast5.setKey(util.str2bin(key));
-	return cast5.encrypt(block);
-}
 
 function openpgp_symenc_cast5() {
 	this.BlockSize= 8;
@@ -547,6 +541,17 @@ function openpgp_symenc_cast5() {
 
 };
 
+var util = require('../../util');
 
-module.exports = cast5_encrypt;
-module.exports.castClass = openpgp_symenc_cast5;
+function cast5(key) {
+	this.cast5 = new openpgp_symenc_cast5();
+	this.cast5.setKey(util.str2bin(key));
+
+	this.encrypt = function(block) {
+		return this.cast5.encrypt(block);
+	}
+}
+
+module.exports = cast5;
+module.exports.blockSize = cast5.prototype.blockSize = 8;
+module.exports.keySize = cast5.prototype.keySize = 16;

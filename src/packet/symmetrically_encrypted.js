@@ -55,7 +55,7 @@ module.exports = function packet_symmetrically_encrypted() {
 	 * @return The decrypted data;
 	 */
 	this.decrypt = function(sessionKeyAlgorithm, key) {
-		var decrypted = crypto.symmetric.decrypt(
+		var decrypted = crypto.cfb.decrypt(
 				sessionKeyAlgorithm, key, this.encrypted, true);
 
 		this.packets.read(decrypted);
@@ -64,7 +64,7 @@ module.exports = function packet_symmetrically_encrypted() {
 	this.encrypt = function(algo, key) {
 		var data = this.packets.write();
 
-		this.encrypted = crypto.symmetric.encrypt(
-				crypto.getPrefixRandom(algo), algo, key, data, true);
+		this.encrypted = crypto.cfb.encrypt(
+				crypto.getPrefixRandom(algo), algo, data, key, true);
 	}
 };

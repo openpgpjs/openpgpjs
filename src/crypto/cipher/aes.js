@@ -485,7 +485,26 @@ function AESencrypt(block, ctx)
   return unpackBytes(b);
 }
 
-module.exports = {
-	encrypt: AESencrypt,
-	keyExpansion: keyExpansion
+function makeClass(length) {
+
+	var c = function(key) {
+		this.key = keyExpansion(key);
+
+		this.encrypt = function(block) {
+			return AESencrypt(block, this.key);
+		}
+	}
+
+	c.blockSize = c.prototype.blockSize = 16;
+	c.keySize = c.prototype.keySize = length / 8;
+
+	return c;
+}
+
+module.exports = {}
+
+var types = [128, 192, 256];
+
+for(var i in types ) {
+	module.exports[types[i]] = makeClass(types[i]);
 }

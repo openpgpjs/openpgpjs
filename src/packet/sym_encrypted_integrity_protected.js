@@ -82,8 +82,8 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 		tohash += crypto.hash.sha1(prefix + tohash);
 
 
-		this.encrypted = crypto.symmetric.encrypt(prefixrandom,
-				sessionKeyAlgorithm, key, tohash, false).substring(0,
+		this.encrypted = crypto.cfb.encrypt(prefixrandom,
+				sessionKeyAlgorithm, tohash, key, false).substring(0,
 				prefix.length + tohash.length);
 	}
 
@@ -97,14 +97,14 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
 	 * @return {String} The decrypted data of this packet
 	 */
 	this.decrypt = function(sessionKeyAlgorithm, key) {
-		var decrypted = crypto.symmetric.decrypt(
+		var decrypted = crypto.cfb.decrypt(
 				sessionKeyAlgorithm, key, this.encrypted, false);
 
 
 		// there must be a modification detection code packet as the
 		// last packet and everything gets hashed except the hash itself
 		this.hash = crypto.hash.sha1(
-			crypto.MDCSystemBytes(sessionKeyAlgorithm, key, this.encrypted)
+			crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted)
 			+ decrypted.substring(0, decrypted.length - 20));
 
 

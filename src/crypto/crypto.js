@@ -173,39 +173,9 @@ getPublicMpiCount: function(algo) {
  * size of the cipher
  */
 getPrefixRandom: function(algo) {
-	return random.getRandomBytes(this.getBlockLength(algo));
+	return random.getRandomBytes(cipher[algo].blockSize);
 },
 
-/**
- * retrieve the MDC prefixed bytes by decrypting them
- * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
- * @param {String} key Key as string. length is depending on the algorithm used
- * @param {String} data Encrypted data where the prefix is decrypted from
- * @return {String} Plain text data of the prefixed data
- */
-MDCSystemBytes: function(algo, key, data) {
-
-	switch(algo) {
-	case 'plaintext': // Plaintext or unencrypted data
-		return data;
-	case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-		return cfb.mdc(cipher.des, 8, key, data);
-	case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
-		return cfb.mdc(cipher.cast5, 8, key, data);
-	case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-		return cfb.mdc(cipher.blowfish, 8, key, data);
-	case 'aes128': // AES with 128-bit key [AES]
-	case 'aes192': // AES with 192-bit key
-	case 'aes256': // AES with 256-bit key
-		return cfb.mdc(cipher.aes.encrypt, 16, cipher.aes.keyExpansion(key), data);
-	case 'twofish': 
-		return cfb.mdc(cipher.twofish, 16, key, data);
-	case 'idea': // IDEA [IDEA]
-		throw new Error('IDEA Algorithm not implemented');
-	default:
-		throw new Error('Invalid algorithm.');
-	}
-},
 /**
  * Generating a session key for the specified symmetric algorithm
  * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
@@ -213,50 +183,6 @@ MDCSystemBytes: function(algo, key, data) {
  */
 generateSessionKey: function(algo) {
 	return random.getRandomBytes(this.getKeyLength(algo)); 
-},
-
-/**
- * Get the key length by symmetric algorithm id.
- * @param {Integer} algo Algorithm to use (see RFC4880 9.2)
- * @return {String} Random bytes as a string to be used as a key
- */
-getKeyLength: function(algo) {
-	switch (algo) {
-	case 'des': // TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-	case 'aes192': // AES with 192-bit key
-		return 24;
-	case 'cast5': // CAST5 (128 bit key, as per [RFC2144])
-	case 'blowfish': // Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	case 'aes128': // AES with 128-bit key [AES]
-		return 16;
-	case 'aes256': // AES with 256-bit key
-	case 'twofish':// Twofish with 256-bit key [TWOFISH]
-		return 32;
-	default:
-		throw new Error('Invalid algorithm.');
-	}
-},
-
-/**
- * Returns the block length of the specified symmetric encryption algorithm
- * @param {openpgp.symmetric} algo Symmetric algorithm idenhifier
- * @return {Integer} The number of bytes in a single block encrypted by the algorithm
- */
-getBlockLength: function(algo) {
-	switch (algo) {
-	case 'des':
-	case 'cast5':
-		return 8;
-	case 'blowfish':
-	case 'aes128':
-	case 'aes192':
-	case 'aes256':
-		return 16;
-	case 'twofish':
-		return 32;	    		
-	default:
-		throw new Error('Invalid algorithm.');
-	}
 },
 
 /**

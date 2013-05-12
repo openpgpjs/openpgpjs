@@ -15,7 +15,8 @@
  * materials provided with the application or distribution.
  */
 
-var util = require('../util');
+var util = require('../util'),
+	cipher = require('./cipher');
 
 module.exports = {
 
@@ -51,7 +52,10 @@ module.exports = {
 	 *  encryptedintegrityprotecteddata packet is not resyncing the IV.
 	 * @return {String} a string with the encrypted data
 	 */
-	encrypt: function (prefixrandom, blockcipherencryptfn, plaintext, block_size, key, resync) {
+	encrypt: function (prefixrandom, cipherfn, plaintext, key, resync) {
+		cipherfn = new cipher[cipherfn](key);
+		var block_size = cipherfn.blockSize;
+
 		var FR = new Array(block_size);
 		var FRE = new Array(block_size);
 
@@ -63,7 +67,7 @@ module.exports = {
 		
 		// 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
 		//     encryption of an all-zero value.
-		FRE = blockcipherencryptfn(FR, key);
+		FRE = cipherfn.encrypt(FR);
 		// 3.  FRE is xored with the first BS octets of random data prefixed to
 		//     the plaintext to produce C[1] through C[BS], the first BS octets
 		//     of ciphertext.
@@ -74,7 +78,7 @@ module.exports = {
 		
 		// 5.  FR is encrypted to produce FRE, the encryption of the first BS
 		// 	   octets of ciphertext.
-		FRE = blockcipherencryptfn(FR, key);
+		FRE = cipherfn.encrypt(FR);
 
 		// 6.  The left two octets of FRE get xored with the next two octets of
 		//     data that were prefixed to the plaintext.  This produces C[BS+1]
@@ -89,7 +93,7 @@ module.exports = {
 			for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
 		}
 		// 8.  FR is encrypted to produce FRE.
-		FRE = blockcipherencryptfn(FR, key);
+		FRE = cipherfn.encrypt(FR, key);
 		
 		if (resync) {
 			// 9.  FRE is xored with the first 8 octets of the given plaintext, now
@@ -102,7 +106,7 @@ module.exports = {
 				for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n+i);
 			
 				// 11. FR is encrypted to produce FRE.
-				FRE = blockcipherencryptfn(FR, key);
+				FRE = cipherfn.encrypt(FR);
 			
 				// 12. FRE is xored with the next 8 octets of plaintext, to produce the
 				// next 8 octets of ciphertext.  These are loaded into FR and the
@@ -124,7 +128,7 @@ module.exports = {
 				tempCiphertextString='';
 				
 				// 11. FR is encrypted to produce FRE.
-				FRE = blockcipherencryptfn(FR, key);
+				FRE = cipherfn.encrypt(FR);
 				
 				// 12. FRE is xored with the next 8 octets of plaintext, to produce the
 				//     next 8 octets of ciphertext.  These are loaded into FR and the
@@ -136,33 +140,40 @@ module.exports = {
 			ciphertext = tempCiphertext.join('');
 			
 		}
+
+		ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
+
 		return ciphertext;
 	},
 
 	/**
 	 * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-	 * @param {openpgp_block_cipher_fn} blockcipherencryptfn Cipher function to use
+	 * @param {openpgp_block_cipher_fn} cipherfn.encrypt Cipher function to use
 	 * @param {Integer} block_size Blocksize of the algorithm
 	 * @param {openpgp_byte_array} key The key for encryption
 	 * @param {String} ciphertext The encrypted data
 	 * @return {String} plaintext Data of D(ciphertext) with blocksize length +2
 	 */
-	mdc: function (blockcipherencryptfn, block_size, key, ciphertext) {
+	mdc: function (cipherfn, key, ciphertext) {
+		cipherfn = new cipher[cipherfn](key);
+		var block_size = cipherfn.blockSize;
+
 		var iblock = new Array(block_size);
 		var ablock = new Array(block_size);
 		var i;
 
+
 		// initialisation vector
 		for(i=0; i < block_size; i++) iblock[i] = 0;
 
-		iblock = blockcipherencryptfn(iblock, key);
+		iblock = cipherfn.encrypt(iblock);
 		for(i = 0; i < block_size; i++)
 		{
 			ablock[i] = ciphertext.charCodeAt(i);
 			iblock[i] ^= ablock[i];
 		}
 
-		ablock = blockcipherencryptfn(ablock, key);
+		ablock = cipherfn.encrypt(ablock);
 
 		return util.bin2str(iblock)+
 			String.fromCharCode(ablock[0]^ciphertext.charCodeAt(block_size))+
@@ -184,9 +195,10 @@ module.exports = {
 	 * @return {String} a string with the plaintext data
 	 */
 
-	decrypt: function (blockcipherencryptfn, block_size, key, ciphertext, resync)
-	{
-		util.print_debug("resync:"+resync);
+	decrypt: function (cipherfn, key, ciphertext, resync) {
+		cipherfn = new cipher[cipherfn](key);
+		var block_size = cipherfn.blockSize;
+
 		var iblock = new Array(block_size);
 		var ablock = new Array(block_size);
 		var i, n = '';
@@ -195,24 +207,20 @@ module.exports = {
 		// initialisation vector
 		for(i=0; i < block_size; i++) iblock[i] = 0;
 
-		iblock = blockcipherencryptfn(iblock, key);
+		iblock = cipherfn.encrypt(iblock, key);
 		for(i = 0; i < block_size; i++)
 		{
 			ablock[i] = ciphertext.charCodeAt(i);
 			iblock[i] ^= ablock[i];
 		}
 
-		ablock = blockcipherencryptfn(ablock, key);
+		ablock = cipherfn.encrypt(ablock, key);
 
-		util.print_debug("openpgp_cfb_decrypt:\niblock:"+util.hexidump(iblock)+"\nablock:"+util.hexidump(ablock)+"\n");
-		util.print_debug((ablock[0]^ciphertext.charCodeAt(block_size)).toString(16)+(ablock[1]^ciphertext.charCodeAt(block_size+1)).toString(16));
-		
 		// test check octets
 		if(iblock[block_size-2]!=(ablock[0]^ciphertext.charCodeAt(block_size))
 		|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
 		{
-			util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
-			return text.join('');
+			throw new Error('Invalid data.');
 		}
 		
 		/*  RFC4880: Tag 18 and Resync:
@@ -226,7 +234,7 @@ module.exports = {
 			for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i+2);
 			for(n=block_size+2; n<ciphertext.length; n+=block_size)
 			{
-				ablock = blockcipherencryptfn(iblock, key);
+				ablock = cipherfn.encrypt(iblock);
 
 				for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 				{
@@ -238,7 +246,7 @@ module.exports = {
 			for(i=0; i<block_size; i++) iblock[i] = ciphertext.charCodeAt(i);
 			for(n=block_size; n<ciphertext.length; n+=block_size)
 			{
-				ablock = blockcipherencryptfn(iblock, key);
+				ablock = cipherfn.encrypt(iblock);
 				for(i = 0; i<block_size && i+n < ciphertext.length; i++)
 				{
 					iblock[i] = ciphertext.charCodeAt(n+i);
@@ -246,12 +254,22 @@ module.exports = {
 				}
 			}
 		}
+
+		var n = resync ? 0 : 2;
+
+		text = text.join('');
+
+		text = text.substring(n, ciphertext.length - block_size - 2 + n);
+
 		
-		return text.join('');
+		return text;
 	},
 
 
-	normalEncrypt: function(blockcipherencryptfn, block_size, key, plaintext, iv) {
+	normalEncrypt: function(cipherfn, key, plaintext, iv) {
+		cipherfn = new cipher[cipherfn](key);
+		var block_size = cipherfn.blockSize;
+
 		var blocki ="";
 		var blockc = "";
 		var pos = 0;
@@ -259,7 +277,7 @@ module.exports = {
 		var tempBlock = [];
 		blockc = iv.substring(0,block_size);
 		while (plaintext.length > block_size*pos) {
-			var encblock = blockcipherencryptfn(blockc, key);
+			var encblock = cipherfn.encrypt(util.str2bin(blockc));
 			blocki = plaintext.substring((pos*block_size),(pos*block_size)+block_size);
 			for (var i=0; i < blocki.length; i++)
 				tempBlock.push(String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]));
@@ -271,7 +289,10 @@ module.exports = {
 		return cyphertext.join('');
 	},
 
-	normalDecrypt: function(blockcipherencryptfn, block_size, key, ciphertext, iv) { 
+	normalDecrypt: function(cipherfn, key, ciphertext, iv) { 
+		cipherfn = new cipher[cipherfn](key);
+		var block_size = cipherfn.blockSize;
+
 		var blockp ="";
 		var pos = 0;
 		var plaintext = [];
@@ -281,7 +302,7 @@ module.exports = {
 		else
 			blockp = iv.substring(0,block_size);
 		while (ciphertext.length > (block_size*pos)) {
-			var decblock = blockcipherencryptfn(blockp, key);
+			var decblock = cipherfn.encrypt(util.str2bin(blockp));
 			blockp = ciphertext.substring((pos*(block_size))+offset,(pos*(block_size))+(block_size)+offset);
 			for (var i=0; i < blockp.length; i++) {
 				plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));

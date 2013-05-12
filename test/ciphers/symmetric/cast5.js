@@ -1,12 +1,14 @@
 
 unittests.register("CAST-128 cipher test with test vectors from RFC2144", function() {
 	var openpgp = require('openpgp'),
-		util = openpgp.util,
-		cast5_encrypt = openpgp.cipher.cast5;
+		util = openpgp.util;
 
 	var result = new Array();
 	function test_cast(input, key, output) {
-		return (util.hexstrdump(util.bin2str(cast5_encrypt(input,util.bin2str(key)))) == util.hexstrdump(util.bin2str(output)));
+		var cast5 = new openpgp.cipher.cast5(util.bin2str(key));
+		var result = util.bin2str(cast5.encrypt(input));
+
+		return util.hexstrdump(result) == util.hexstrdump(util.bin2str(output));
 	};
 	
 	var testvectors = [[[0x01,0x23,0x45,0x67,0x12,0x34,0x56,0x78,0x23,0x45,0x67,0x89,0x34,0x56,0x78,0x9A],[0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF],[0x23,0x8B,0x4F,0xE5,0x84,0x7E,0x44,0xB2]]];

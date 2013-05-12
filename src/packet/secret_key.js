@@ -170,7 +170,7 @@ function packet_secret_key() {
 			symmetric = 'aes256',
 			cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
 			key = produceEncryptionKey(s2k, passphrase, symmetric),
-			blockLen = crypto.getBlockLength(symmetric),
+			blockLen = crypto.cipher[symmetric].blockSize,
 			iv = crypto.random.getRandomBytes(blockLen);
 
 
@@ -181,34 +181,13 @@ function packet_secret_key() {
 		this.encrypted += iv;
 
 
-		var fn;
 
-		switch(symmetric) {
-		case 'cast5':
-			fn = crypto.cipher.cast5;
-			break;
-		case 'aes128':
-		case 'aes192':
-		case 'aes256':
-    		var fn = function(block,key) {
-    		    	return crypto.cipher.aes.encrypt(util.str2bin(block),key);
-    			}
-
-			key = new crypto.cipher.aes.keyExpansion(key);
-			break;
-
-		default:
-			throw new Error("Unsupported symmetric encryption algorithm.");
-		}
-
-		console.log(cleartext);
-
-		this.encrypted += crypto.cfb.normalEncrypt(fn, iv.length, key, cleartext, iv);
+		this.encrypted += crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv);
     }
 
 	function produceEncryptionKey(s2k, passphrase, algorithm) {
 		return s2k.produce_key(passphrase,
-			crypto.getKeyLength(algorithm));
+			crypto.cipher[algorithm].keySize);
 	}
 
 	/**
@@ -255,55 +234,15 @@ function packet_secret_key() {
 	    //   not zero), an Initial Vector (IV) of the same length as the
 	    //   cipher's block size.
 		var iv = this.encrypted.substr(i, 
-			crypto.getBlockLength(symmetric));
+			crypto.cipher[symmetric].blockSize);
 
 		i += iv.length;
 
 		var cleartext,
 			ciphertext = this.encrypted.substr(i);
 
-    	switch (symmetric) {
-	    case  'idea': // - IDEA [IDEA]
-			throw new Error("IDEA is not implemented.");
-	    	return false;
-    	case  'des': // - TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)
-    		cleartext = crypto.cfb.normal_decrypt(function(block, key) {
-    			return crypto.cipher.des(key, block,1,null,0);
-    		}, iv.length, key, ciphertext, iv);
-    		break;
-    	case  'cast5': // - CAST5 (128 bit key, as per [RFC2144])
-    		cleartext = crypto.cfb.normalDecrypt(
-				function(block, key) {
-					var cast5 = new crypto.cipher.cast5.castClass();
-					cast5.setKey(key);
-					return cast5.encrypt(util.str2bin(block)); 
-				}
-			, iv.length, 
-			util.str2bin(key.substring(0,16)), ciphertext, iv);
-    		break;
-	    case  'blowfish': // - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
-	    	cleartext = normal_cfb_decrypt(function(block, key) {
-    			var blowfish = new Blowfish(key);
-        		return blowfish.encrypt(block); 
-    		}, iv.length, key, ciphertext, iv);
-    		break;
-	    case  'aes128': // - AES with 128-bit key [AES]
-    	case  'aes192': // - AES with 192-bit key
-    	case  'aes256': // - AES with 256-bit key
-    		cleartext = crypto.cfb.normalDecrypt(function(block,key){
-    		    	return crypto.cipher.aes.encrypt(util.str2bin(block),key);
-    			},
-    			iv.length, new crypto.cipher.aes.keyExpansion(key), 
-					ciphertext, iv);
-	    	break;
-    	case 'twofish': // - Twofish with 256-bit key [TWOFISH]
-			throw new Error("Twofish is not implemented.");
-	    	return false;
-    	default:
-			throw new Error("Unknown symmetric algorithm.");
-    		return false;
-    	}
- 
+ 		cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
+
 		var hash = s2k_usage == 254 ?
 			'sha1' :
 			'mod';
