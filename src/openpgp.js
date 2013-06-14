@@ -28,6 +28,44 @@
  * @class
  * @classdesc Main Openpgp.js class. Use this to initiate and make all calls to this library.
  */
+
+ 
+ if (typeof module !== 'undefined' && module.exports){
+
+	var fs = require("fs");
+	var sys = require('sys');
+
+
+	var _window = function(){};
+
+	_window.prototype = {
+		localStorage : {
+			getItem : function(item_name){
+				try {
+					return fs.readFileSync(item_name);
+				} catch (err) {
+					return null;
+				}
+			},
+			setItem : function(item_name,data){
+				try {
+					fs.writeFileSync(item_name,data);
+				} catch (err) {
+
+				}
+			}	
+		}
+	}
+
+
+	var showMessages = function(text){
+		sys.puts(text);
+	}
+
+	var window = new _window();
+}
+
+
 function _openpgp () {
 	this.tostring = "";
 	
@@ -458,4 +496,7 @@ function _openpgp () {
 
 var openpgp = new _openpgp();
 
+if (typeof module !== 'undefined' && module.exports){
+	exports.openpgp = openpgp;
+};
 

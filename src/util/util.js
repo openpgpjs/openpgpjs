@@ -184,7 +184,7 @@ var Util = function() {
 	 * style attribute where the debug message is HTMLencoded in. 
 	 */
 	this.print_debug = function(str) {
-		if (openpgp.config.debug) {
+		if (typeof openpgp.config !== "undefined" && openpgp.config.debug) {
 			str = openpgp_encoding_html_encode(str);
 			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
 		}
@@ -203,7 +203,7 @@ var Util = function() {
 	 * style attribute where the debug message is HTMLencoded in. 
 	 */
 	this.print_debug_hexstr_dump = function(str,strToHex) {
-		if (openpgp.config.debug) {
+		if (typeof openpgp.config !== "undefined" && openpgp.config.debug) {
 			str = str + this.hexstrdump(strToHex);
 			str = openpgp_encoding_html_encode(str);
 			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");

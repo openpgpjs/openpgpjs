@@ -317,10 +317,15 @@ function openpgp_crypto_getHashByteLength(algo) {
  */
 function openpgp_crypto_getRandomBytes(length) {
 	var result = '';
-	for (var i = 0; i < length; i++) {
-		result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
+	if (typeof module !== 'undefined' && module.exports){
+		var crypto = require('crypto');
+		return crypto.randomBytes(length).toString("utf16le");
+	} else {
+		for (var i = 0; i < length; i++) {
+			result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
+		}
+		return result;
 	}
-	return result;
 }
 
 /**
