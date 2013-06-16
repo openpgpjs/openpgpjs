@@ -643,9 +643,15 @@ function bnpMillerRabin(t) {
   t = (t+1)>>1;
   if(t > lowprimes.length) t = lowprimes.length;
   var a = nbi();
+  var j, bases = [];
   for(var i = 0; i < t; ++i) {
     //Pick bases at random, instead of starting at 2
-    a.fromInt(lowprimes[Math.floor(Math.random()*lowprimes.length)]);
+    for (;;) {
+      j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
+      if (bases.indexOf(j) == -1) break;
+    }
+    bases.push(j);
+    a.fromInt(j);
     var y = a.modPow(r,this);
     if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
       var j = 1;
