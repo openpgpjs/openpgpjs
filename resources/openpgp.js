@@ -1518,14 +1518,22 @@ BigInteger.ONE = nbv(1);
 //
 // RSA implementation
 
-function SecureRandom(){
-    function nextBytes(byteArray){
-        for(var n = 0; n < byteArray.length;n++){
-            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
-        }
-    }
-    this.nextBytes = nextBytes;
-}
+
+	function SecureRandom(){
+    	function nextBytes(byteArray){
+    		if (typeof module !== 'undefined' && module.exports){
+    			var crypto = require('crypto');
+    			var loop;
+  				var random = crypto.randomBytes(byteArray.length);
+  					for(loop = 0; loop < byteArray.length; ++loop) byteArray[loop] = random[loop];			
+    		} else {
+        		for(var n = 0; n < byteArray.length;n++){
+            		byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+        		}
+        	}
+    	}
+    	this.nextBytes = nextBytes;
+	}
 
 function RSA() {
 	/**
@@ -3962,7 +3970,12 @@ function openpgp_crypto_getRandomBytes(length) {
 	var result = '';
 	if (typeof module !== 'undefined' && module.exports){
 		var crypto = require('crypto');
-		return crypto.randomBytes(length).toString("utf16le");
+		var random = crypto.randomBytes(length);
+		var result = "";
+		for (var i = 0; i < length; i++) {
+			result += String.fromCharCode(random[i]);
+		}
+		return result;
 	} else {
 		for (var i = 0; i < length; i++) {
 			result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
@@ -3998,7 +4011,15 @@ function openpgp_crypto_getSecureRandom(from, to) {
 
 function openpgp_crypto_getSecureRandomOctet() {
 	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
+	if (typeof module !== 'undefined' && module.exports){
+		var crypto = require('crypto');
+		var sys = require('sys');
+		buf[0] = crypto.randomBytes(1);
+		sys.puts(buf[0]);
+		return buf[0];
+	} else {
+		window.crypto.getRandomValues(buf);	
+	}	
 	return buf[0] & 0xFF;
 }
 
@@ -7388,7 +7409,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130614";
+	this.versionstring ="OpenPGP.js v.1.20130617";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage

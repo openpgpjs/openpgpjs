@@ -319,7 +319,12 @@ function openpgp_crypto_getRandomBytes(length) {
 	var result = '';
 	if (typeof module !== 'undefined' && module.exports){
 		var crypto = require('crypto');
-		return crypto.randomBytes(length).toString("utf16le");
+		var random = crypto.randomBytes(length);
+		var result = "";
+		for (var i = 0; i < length; i++) {
+			result += String.fromCharCode(random[i]);
+		}
+		return result;
 	} else {
 		for (var i = 0; i < length; i++) {
 			result += String.fromCharCode(openpgp_crypto_getSecureRandomOctet());
@@ -355,7 +360,15 @@ function openpgp_crypto_getSecureRandom(from, to) {
 
 function openpgp_crypto_getSecureRandomOctet() {
 	var buf = new Uint32Array(1);
-	window.crypto.getRandomValues(buf);
+	if (typeof module !== 'undefined' && module.exports){
+		var crypto = require('crypto');
+		var sys = require('sys');
+		buf[0] = crypto.randomBytes(1);
+		sys.puts(buf[0]);
+		return buf[0];
+	} else {
+		window.crypto.getRandomValues(buf);	
+	}	
 	return buf[0] & 0xFF;
 }
 
