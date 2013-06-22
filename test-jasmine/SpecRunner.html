@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Jasmine Spec Runner</title>
+
+    <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.3.1/jasmine_favicon.png">
+    <link rel="stylesheet" type="text/css" href="lib/jasmine-1.3.1/jasmine.css">
+    <script type="text/javascript" src="lib/jasmine-1.3.1/jasmine.js"></script>
+    <script type="text/javascript" src="lib/jasmine-1.3.1/jasmine-html.js"></script>
+
+    <!-- include source files here... -->
+
+    <script type="text/javascript" src="../resources/jquery.min.js"></script>
+    <script type="text/javascript" src="../src/ciphers/hash/sha.js"></script>
+    <script type="text/javascript" src="../src/ciphers/hash/md5.js"></script>
+    <script type="text/javascript" src="../src/ciphers/hash/ripe-md.js"></script>
+
+    <!-- crypto libs -->
+    <script type="text/javascript" src="../src/ciphers/symmetric/aes.js"></script>
+    <script type="text/javascript" src="../src/ciphers/symmetric/cast5.js"></script>
+    <script type="text/javascript" src="../src/ciphers/symmetric/dessrc.js"></script>
+    <script type="text/javascript" src="../src/ciphers/symmetric/twofish.js"></script>
+    <script type="text/javascript" src="../src/ciphers/symmetric/blowfish.js"></script>
+
+    <script type="text/javascript" src="../src/ciphers/asymmetric/jsbn.js"></script>
+    <script type="text/javascript" src="../src/ciphers/asymmetric/jsbn2.js"></script>
+    <script type="text/javascript" src="../src/ciphers/asymmetric/dsa.js"></script>
+    <script type="text/javascript" src="../src/ciphers/asymmetric/elgamal.js"></script>
+    <script type="text/javascript" src="../src/ciphers/asymmetric/rsa.js"></script>
+
+    <script type="text/javascript" src="../src/ciphers/openpgp.crypto.sym.js"></script>
+    <script type="text/javascript" src="../src/ciphers/openpgp.crypto.js"></script>
+    <script type="text/javascript" src="../src/ciphers/openpgp.cfb.js"></script>
+
+    <!-- compression -->
+
+    <!-- encoding -->
+    <script type="text/javascript" src="../src/encoding/base64.js"></script>
+    <script type="text/javascript" src="../src/encoding/openpgp.encoding.asciiarmor.js"></script>
+    <script type="text/javascript" src="../src/encoding/openpgp.encoding.js"></script>
+
+    <!-- openpgp types -->
+    <script type="text/javascript" src="../src/type/openpgp.type.keyid.js"></script>
+    <script type="text/javascript" src="../src/type/openpgp.type.mpi.js"></script>
+    <script type="text/javascript" src="../src/type/openpgp.type.s2k.js"></script>
+
+    <!-- openpgp packets -->
+    <script type="text/javascript" src="../src/packet/openpgp.packet.compressed.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.encrypteddata.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.encryptedintegrityprotecteddata.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.encryptedsessionkey.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.keymaterial.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.literaldata.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.marker.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.modificationdetectioncode.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.onepasssignature.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.signature.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.userattribute.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.userid.js"></script>
+    <script type="text/javascript" src="../src/packet/openpgp.packet.js"></script>
+
+    <!--  openpgp impl. -->
+    <script type="text/javascript" src="../src/openpgp.js"></script>
+    <script type="text/javascript" src="../src/config/openpgp.config.js"></script>
+    <script type="text/javascript" src="../src/openpgp.keyring.js"></script>
+    <script type="text/javascript" src="../src/openpgp.msg.message.js"></script>
+    <script type="text/javascript" src="../src/openpgp.msg.privatekey.js"></script>
+    <script type="text/javascript" src="../src/openpgp.msg.publickey.js"></script>
+    <script type="text/javascript" src="../src/util/util.js"></script>
+
+    <!-- TESTS -->
+    <script type="text/javascript" src="ciphers/openpgp.crypto.js"></script>
+    <script type="text/javascript" src="ciphers/openpgp.sigcheck.js"></script>
+    <script type="text/javascript" src="ciphers/hash/md5.js"></script>
+    <script type="text/javascript" src="ciphers/hash/ripe-md.js"></script>
+    <script type="text/javascript" src="ciphers/hash/sha.js"></script>
+    <script type="text/javascript" src="ciphers/symmetric/aes.js"></script>
+    <script type="text/javascript" src="ciphers/symmetric/blowfish.js"></script>
+    <script type="text/javascript" src="ciphers/symmetric/cast5.js"></script>
+    <script type="text/javascript" src="ciphers/symmetric/des.js"></script>
+    <script type="text/javascript" src="ciphers/symmetric/twofish.js"></script>
+    <script type="text/javascript" src="write_encrypted_message.js"></script>
+    <script type="text/javascript" src="write_signed_and_encrypted_message.js"></script>
+    <script type="text/javascript" src="generate_key_pair.js"></script>
+
+
+
+    <script type="text/javascript">
+        // this function must be defined or openpgpjs blows up
+        function showMessages(msg) { };
+    </script>
+    
+    <script type="text/javascript">
+        (function () {
+            var jasmineEnv = jasmine.getEnv();
+            jasmineEnv.updateInterval = 1000;
+
+            var htmlReporter = new jasmine.HtmlReporter();
+
+            jasmineEnv.addReporter(htmlReporter);
+
+            jasmineEnv.specFilter = function (spec) {
+                return htmlReporter.specFilter(spec);
+            };
+
+            var currentWindowOnload = window.onload;
+
+            window.onload = function () {
+                if (currentWindowOnload) {
+                    currentWindowOnload();
+                }
+                execJasmine();
+            };
+
+            function execJasmine() {
+                jasmineEnv.execute();
+            }
+
+        })();
+  </script>
+
+</head>
+
+<body>
+</body>
+</html>
