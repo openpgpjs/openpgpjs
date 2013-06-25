@@ -25,6 +25,8 @@
  */
 function openpgp_encoding_deArmor(text) {
 	text = text.replace(/\r/g, '')
+	// remove whitespace of blank line to allow later split at \n\n
+	text = text.replace(/\n\s+\n/, '\n\n');
 
 	var type = openpgp_encoding_get_type(text);
 
