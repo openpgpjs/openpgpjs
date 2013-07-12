@@ -7383,7 +7383,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130627";
+	this.versionstring ="OpenPGP.js v.1.20130712";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -13204,7 +13204,11 @@ var Util = function() {
 	 * @return {String} A native javascript string
 	 */
 	this.decode_utf8 = function(utf8) {
-		return decodeURIComponent(escape(utf8));
+		try {
+      return decodeURIComponent(escape(utf8));
+    } catch (e) {
+      return utf8;
+    }
 	};
 
 	var str2bin = function(str, result) {
