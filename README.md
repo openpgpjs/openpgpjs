@@ -12,7 +12,8 @@ You can [sign up](http://list.openpgpjs.org/) for our mailing list and ask for h
 A jsdoc build of our code comments is available at [doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](doc/openpgp.html).
 
 # How do I get involved?
-You want to help, great! Go ahead and fork our repo, make your changes and make a pull request. Please be sure that you run `make minify` from the root directory to concatenate and minify the library into the `resources/` directory.
+You want to help, great! Go ahead and fork our repo, make your changes
+and make a pull request. **For any significant changes, use the "devel" branch. This will eventually be merged into the current master.** Please be sure that you run `make minify` from the root directory to concatenate and minify the library into the `resources/` directory.
 
 It is extra awesome if you write tests for the code you change. Our test coverage is relatively weak, so if you can add cases that is great.
 
