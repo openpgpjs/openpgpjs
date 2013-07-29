@@ -669,7 +669,7 @@ function openpgp_packet_keymaterial() {
 			var f = this.getFingerprint();
 			return f.substring(12,20);
 		} else if (this.version == 3 && this.publicKeyAlgorithm > 0 && this.publicKeyAlgorithm < 4) {
-			var key_id = this.MPIs[0].substring((this.MPIs[0].mpiByteLength-8));
+			var key_id = this.MPIs[0].MPI.substring((this.MPIs[0].mpiByteLength-8));
 			util.print_debug("openpgp.msg.publickey read_nodes:\n"+"V3 key ID: "+key_id);
 			return key_id;
 		}
