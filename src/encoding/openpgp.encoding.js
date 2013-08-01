@@ -46,7 +46,11 @@ function openpgp_encoding_base64_decode(message) {
 function openpgp_encoding_html_encode(message) {
 	if (message == null)
 		return "";
-	return $('<div/>').text(message).html();
+	if (typeof $ !== "undefined")
+		return $('<div/>').text(message).html();
+	else 
+		return escape(message);
+
 }
 
 /**

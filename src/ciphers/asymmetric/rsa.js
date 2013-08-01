@@ -17,14 +17,22 @@
 //
 // RSA implementation
 
-function SecureRandom(){
-    function nextBytes(byteArray){
-        for(var n = 0; n < byteArray.length;n++){
-            byteArray[n] = openpgp_crypto_getSecureRandomOctet();
-        }
-    }
-    this.nextBytes = nextBytes;
-}
+
+	function SecureRandom(){
+    	function nextBytes(byteArray){
+    		if (typeof module !== 'undefined' && module.exports){
+    			var crypto = require('crypto');
+    			var loop;
+  				var random = crypto.randomBytes(byteArray.length);
+  					for(loop = 0; loop < byteArray.length; ++loop) byteArray[loop] = random[loop];			
+    		} else {
+        		for(var n = 0; n < byteArray.length;n++){
+            		byteArray[n] = openpgp_crypto_getSecureRandomOctet();
+        		}
+        	}
+    	}
+    	this.nextBytes = nextBytes;
+	}
 
 function RSA() {
 	/**
