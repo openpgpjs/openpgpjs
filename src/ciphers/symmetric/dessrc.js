@@ -53,11 +53,13 @@ function des (keys, message, encrypt, mode, iv, padding) {
   else {looping = encrypt ? new Array (0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array (94, 62, -2, 32, 64, 2, 30, -2, -2);}
 
   //pad the message depending on the padding parameter
-  if (padding == 2) message += "        "; //pad the message with spaces
-  else if (padding == 1) {temp = 8-(len%8); message += String.fromCharCode (temp,temp,temp,temp,temp,temp,temp,temp); if (temp==8) len+=8;} //PKCS7 padding
-  else if (!padding) message += "\0\0\0\0\0\0\0\0"; //pad the message out with null bytes
+  //only add padding if encrypting - note that you need to use the same padding option for both encrypt and decrypt
+  if (encrypt) {
+    message = des_addPadding(message, padding);
+    len = message.length;
+  }
 
-  //store the result here
+    //store the result here
   result = "";
   tempresult = "";
 
@@ -125,8 +127,13 @@ function des (keys, message, encrypt, mode, iv, padding) {
 
   //return the result as an array
   result += tempresult;
-  result = result.replace(/\0*$/g, "");
-  return result;
+    
+  //only remove padding if decrypting - note that you need to use the same padding option for both encrypt and decrypt
+  if (!encrypt) {
+    result = des_removePadding(result, padding);
+  }
+
+    return result;
 } //end of des
 
 
@@ -205,4 +212,32 @@ function des_createKeys (key) {
   return keys;
 } //end of des_createKeys
 
+
+function des_addPadding(message, padding) {
+    var padLength = 8 - (message.length % 8);
+    if ((padding == 2) && (padLength < 8)) {            //pad the message with spaces
+        message += "        ".substr(0, padLength);
+    }
+    else if (padding == 1) {                            //PKCS7 padding
+        message += String.fromCharCode(padLength, padLength, padLength, padLength, padLength, padLength, padLength, padLength).substr(0, padLength);
+    }
+    else if (!padding && (padLength < 8)) {             //pad the message out with null bytes
+        message += "\0\0\0\0\0\0\0\0".substr(0, padLength);
+    }
+    return message;
+}
+
+function des_removePadding(message, padding) {
+    if (padding == 2) {         // space padded
+        message = message.replace(/ *$/g, "");
+    }
+    else if (padding == 1) {    // PKCS7
+        var padCount = message.charCodeAt(message.length - 1);
+        message = message.substr(0, message.length - padCount);
+    }
+    else if (!padding) {        // null padding
+        message = message.replace(/\0*$/g, "");
+    }
+    return message;
+}
 
