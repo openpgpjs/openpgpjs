@@ -34,8 +34,6 @@ module.exports = function packet_symmetrically_encrypted() {
 	 * @type {openpgp_packetlist} */
 	this.packets;
 
-	
-
 	this.read = function(bytes) {
 		this.encrypted = bytes;
 	}

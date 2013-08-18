@@ -17,6 +17,11 @@
 //
 // A Digital signature algorithm implementation
 
+var BigInteger = require('./jsbn.js'),
+  crypto = require('../crypto.js'),
+  hashModule = require('../hash'),
+	util = require('../../util');
+
 function DSA() {
 	// s1 = ((g**s) mod p) mod q
 	// s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
@@ -26,9 +31,9 @@ function DSA() {
 		// of leftmost bits equal to the number of bits of q.  This (possibly
 		// truncated) hash function result is treated as a number and used
 		// directly in the DSA signature algorithm.
-		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
+		var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo,m),q.bitLength());
 		var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-		var k = openpgp_crypto_getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
+		var k = crypto.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
 		var s1 = (g.modPow(k,p)).mod(q); 
 		var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
 		var result = new Array();
@@ -71,7 +76,7 @@ function DSA() {
 	this.select_hash_algorithm = select_hash_algorithm;
 	
 	function verify(hashalgo, s1,s2,m,p,q,g,y) {
-		var hashed_data = util.getLeftNBits(openpgp_crypto_hashData(hashalgo,m),q.bitLength());
+		var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo,m),q.bitLength());
 		var hash = new BigInteger(util.hexstrdump(hashed_data), 16); 
 		if (BigInteger.ZERO.compareTo(s1) > 0 ||
 				s1.compareTo(q) > 0 ||

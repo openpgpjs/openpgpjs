@@ -1,6 +1,4 @@
-var unit = require('../../unit.js')
-
-
+var unit = require('../../unit.js');
 
 unit.register("MD5 test with test vectors from RFC 1321", function() {
 	var openpgp = require('../../../'),
