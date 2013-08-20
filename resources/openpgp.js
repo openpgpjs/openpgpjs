@@ -7383,7 +7383,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130712";
+	this.versionstring ="OpenPGP.js v.1.20130820";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8351,6 +8351,7 @@ function _openpgp () {
 		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
 		
 		var publicKeyString = privKey.privateKeyPacket.publicKey.data;
+		userId = util.encode_utf8(userId); // needs same encoding as in userIdString
 		var hashData = String.fromCharCode(0x99)+ String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) 
 			+ String.fromCharCode((publicKeyString.length) & 0xFF) +publicKeyString+String.fromCharCode(0xB4) +
 			String.fromCharCode((userId.length) >> 24) +String.fromCharCode(((userId.length) >> 16) & 0xFF) 
