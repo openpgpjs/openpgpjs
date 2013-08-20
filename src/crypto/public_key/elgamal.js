@@ -18,36 +18,36 @@
 // ElGamal implementation
 
 var BigInteger = require('./jsbn.js'),
-	util = require('../../util');
+  random = require('../random.js'),
+  util = require('../../util');
 
 function Elgamal() {
-	
-	function encrypt(m,g,p,y) {
-		//  choose k in {2,...,p-2}
-		var two = BigInteger.ONE.add(BigInteger.ONE);
-		var pMinus2 = p.subtract(two);
-		var k = openpgp_crypto_getRandomBigIntegerInRange(two, pMinus2);
-		var k = k.mod(pMinus2).add(BigInteger.ONE);
-		var c = new Array();
-		c[0] = g.modPow(k, p);
-		c[1] = y.modPow(k, p).multiply(m).mod(p).toMPI();
-		c[0] = c[0].toMPI();
-		return c;
-	}
-	
-	function decrypt(c1,c2,p,x) {
-		util.print_debug("Elgamal Decrypt:\nc1:"+util.hexstrdump(c1.toMPI())+"\n"+
-			  "c2:"+util.hexstrdump(c2.toMPI())+"\n"+
-			  "p:"+util.hexstrdump(p.toMPI())+"\n"+
-			  "x:"+util.hexstrdump(x.toMPI()));
-		return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
-		//var c = c1.pow(x).modInverse(p); // c0^-a mod p
-	    //return c.multiply(c2).mod(p);
-	}
-	
-	// signing and signature verification using Elgamal is not required by OpenPGP.
-	this.encrypt = encrypt;
-	this.decrypt = decrypt;
+
+  function encrypt(m,g,p,y) {
+    //  choose k in {2,...,p-2}
+    var two = BigInteger.ONE.add(BigInteger.ONE);
+    var pMinus2 = p.subtract(two);
+    var k = random.getRandomBigIntegerInRange(two, pMinus2);
+    k = k.mod(pMinus2).add(BigInteger.ONE);
+    var c = [];
+    c[0] = g.modPow(k, p);
+    c[1] = y.modPow(k, p).multiply(m).mod(p);
+    return c;
+  }
+
+  function decrypt(c1,c2,p,x) {
+    util.print_debug("Elgamal Decrypt:\nc1:"+util.hexstrdump(c1.toMPI())+"\n"+
+        "c2:"+util.hexstrdump(c2.toMPI())+"\n"+
+        "p:"+util.hexstrdump(p.toMPI())+"\n"+
+        "x:"+util.hexstrdump(x.toMPI()));
+    return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
+    //var c = c1.pow(x).modInverse(p); // c0^-a mod p
+      //return c.multiply(c2).mod(p);
+  }
+
+  // signing and signature verification using Elgamal is not required by OpenPGP.
+  this.encrypt = encrypt;
+  this.decrypt = decrypt;
 }
 
 module.exports = Elgamal;

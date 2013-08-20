@@ -1,5 +1,4 @@
-module.exports = {
-
+var enums = {
 
 	/** A string to key specifier type
 	 * @enum {Integer}
@@ -229,6 +228,4 @@ module.exports = {
 	}
 }
 
-
-
-
+module.exports = enums;

@@ -1,6 +1,6 @@
 var unit = require('../unit.js');
 
-unit.register("Functional testing of openpgp_crypto_* methods", function() {
+unit.register("Functional testing of openpgp.crypto.* methods", function() {
 	var openpgp = require('../../');
   var util = openpgp.util;
   var result = [];
@@ -224,7 +224,6 @@ unit.register("Functional testing of openpgp_crypto_* methods", function() {
   }
 
   //Originally we passed public and secret MPI separately, now they are joined. Is this what we want to do long term?
-  debugger;
   // RSA
   var RSAsignedData = openpgp.signature.sign(2, 1, RSApubMPIs.concat(RSAsecMPIs), "foobar");
   var RSAsignedDataMPI = new openpgp.mpi();
@@ -243,32 +242,29 @@ unit.register("Functional testing of openpgp_crypto_* methods", function() {
   result[1] = new unit.result("Testing DSA Sign and Verify",
       openpgp.signature.verify(17, 2, DSAmsgMPIs, DSApubMPIs, "foobar"));
   
-  var symmAlgo = 9; // AES256
+  var symmAlgo = "aes256"; // AES256
   var symmKey = openpgp.generateSessionKey(symmAlgo);
-  var symmencDataOCFB = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo),symmAlgo, symmKey, "foobar",true);
-  var symmencDataCFB  = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo),symmAlgo, symmKey, "foobar",false);
+  var symmencDataOCFB = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobar", symmKey, true);
+  var symmencDataCFB  = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobar", symmKey, false);
   
   result[2] = new unit.result("Testing symmetric encrypt and decrypt with OpenPGP CFB resync",
       openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true) == "foobar");
   result[3] = new unit.result("Testing symmetric encrypt and decrypt without OpenPGP CFB resync (used in modification detection code \"MDC\" packets)",
       openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobar");
-
-  var RSAEncryptedData = openpgp.cfb.encrypt(1, RSApubMPIs, new openpgp.mpi().create(openpgp_encoding_eme_pkcs1_encode(symmKey, RSApubMPIs[0].mpiByteLength)));
-  var RSAEncryptedDataMPI = new openpgp.mpi();
-  RSAEncryptedDataMPI.read(RSAEncryptedData, 0,RSAEncryptedData.length);
+  
+  var RSAUnencryptedData = new openpgp.mpi();
+  RSAUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, RSApubMPIs[0].mpiByteLength));
+  var RSAEncryptedData = openpgp.publicKeyEncrypt("rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData);
 
   result[4] = new unit.result("Testing asymmetric encrypt and decrypt using RSA with eme_pkcs1 padding",
-      openpgp_encoding_eme_pkcs1_decode(openpgp.cfb.decrypt(1, RSApubMPIs.concat(RSAsecMPIs), [RSAEncryptedDataMPI]).toMPI().substring(2), RSApubMPIs[0].mpiByteLength) == symmKey);
+      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData).write().substring(2), RSApubMPIs[0].mpiByteLength) == symmKey);
 
-  var ElgamalEncryptedData = openpgp.cfb.encrypt(16, ElgamalpubMPIs, new openpgp.mpi().create(openpgp_encoding_eme_pkcs1_encode(symmKey, ElgamalpubMPIs[0].mpiByteLength)));
-  var ElgamalEncryptedDataMPIs = [];
-  ElgamalEncryptedDataMPIs[0] = new openpgp.mpi();
-  ElgamalEncryptedDataMPIs[0].read(ElgamalEncryptedData[0], 0, ElgamalEncryptedData[0].length);
-  ElgamalEncryptedDataMPIs[1] = new openpgp.mpi();
-  ElgamalEncryptedDataMPIs[1].read(ElgamalEncryptedData[1], 0, ElgamalEncryptedData[1].length);
+  var ElgamalUnencryptedData = new openpgp.mpi();
+  ElgamalUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].mpiByteLength));
+  var ElgamalEncryptedData = openpgp.publicKeyEncrypt("elgamal", ElgamalpubMPIs, ElgamalUnencryptedData);
 
   result[5] = new unit.result("Testing asymmetric encrypt and decrypt using Elgamal with eme_pkcs1 padding",
-      openpgp_encoding_eme_pkcs1_decode(openpgp.cfb.decrypt(16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedDataMPIs).toMPI().substring(2), ElgamalpubMPIs[0].mpiByteLength) == symmKey);
+      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData).write().substring(2), ElgamalpubMPIs[0].mpiByteLength) == symmKey);
 
   return result;
 });

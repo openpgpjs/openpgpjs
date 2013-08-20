@@ -19,8 +19,7 @@
 
 var random = require('./random.js'),
   cipher = require('./cipher'),
-  cfb = require('./cfb.js'),
-  publicKey= require('./public_key'),
+  publicKey = require('./public_key'),
   type_mpi = require('../type/mpi.js');
 
 module.exports = {
@@ -182,44 +181,7 @@ getPrefixRandom: function(algo) {
  * @return {String} Random bytes as a string to be used as a key
  */
 generateSessionKey: function(algo) {
-  return random.getRandomBytes(this.getKeyLength(algo)); 
+  return random.getRandomBytes(cipher[algo].keySize); 
 },
 
-/**
- * Create a secure random big integer of bits length
- * @param {Integer} bits Bit length of the MPI to create
- * @return {BigInteger} Resulting big integer
- */
-getRandomBigInteger: function(bits) {
-  if (bits < 0) {
-     return null;
-  }
-  var numBytes = Math.floor((bits+7)/8);
-
-  var randomBits = random.getRandomBytes(numBytes);
-  if (bits % 8 > 0) {
-    
-    randomBits = String.fromCharCode(
-            (Math.pow(2,bits % 8)-1) &
-            randomBits.charCodeAt(0)) +
-      randomBits.substring(1);
-  }
-  var mpi = new type_mpi();
-  mpi.fromBytes(randomBits);
-  return mpi.toBigInteger();
-},
-
-getRandomBigIntegerInRange: function(min, max) {
-  if (max.compareTo(min) <= 0) {
-    return;
-  }
-
-  var range = max.subtract(min);
-  var r = this.getRandomBigInteger(range.bitLength());
-  while (r > range) {
-    r = this.getRandomBigInteger(range.bitLength());
-  }
-  return min.add(r);
-},
-
-}
+};

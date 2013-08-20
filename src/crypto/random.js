@@ -17,6 +17,8 @@
 
 // The GPG4Browsers crypto interface
 
+var type_mpi = require('../type/mpi.js');
+
 module.exports = {
 	/**
 	 * Retrieve secure random byte string of the specified length
@@ -60,5 +62,43 @@ module.exports = {
 		var buf = new Uint32Array(1);
 		window.crypto.getRandomValues(buf);
 		return buf[0] & 0xFF;
-	}
-}
+	},
+
+  /**
+   * Create a secure random big integer of bits length
+   * @param {Integer} bits Bit length of the MPI to create
+   * @return {BigInteger} Resulting big integer
+   */
+  getRandomBigInteger: function(bits) {
+    if (bits < 0) {
+       return null;
+    }
+    var numBytes = Math.floor((bits+7)/8);
+
+    var randomBits = this.getRandomBytes(numBytes);
+    if (bits % 8 > 0) {
+      
+      randomBits = String.fromCharCode(
+              (Math.pow(2,bits % 8)-1) &
+              randomBits.charCodeAt(0)) +
+        randomBits.substring(1);
+    }
+    var mpi = new type_mpi();
+    mpi.fromBytes(randomBits);
+    return mpi.toBigInteger();
+  },
+
+  getRandomBigIntegerInRange: function(min, max) {
+    if (max.compareTo(min) <= 0) {
+      return;
+    }
+
+    var range = max.subtract(min);
+    var r = this.getRandomBigInteger(range.bitLength());
+    while (r > range) {
+      r = this.getRandomBigInteger(range.bitLength());
+    }
+    return min.add(r);
+  }
+
+};
