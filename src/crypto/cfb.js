@@ -259,7 +259,7 @@ module.exports = {
 
 		text = text.join('');
 
-		text = text.substring(n, ciphertext.length - block_size - 2 + n);
+		text = text.substring(n, ciphertext.length - block_size - 2);
 
 		
 		return text;

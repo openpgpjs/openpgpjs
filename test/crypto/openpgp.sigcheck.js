@@ -1,5 +1,8 @@
-unittests.register("Testing of binary signature checking", function() {
-  var result = new Array();
+var unit = require('../unit.js');
+
+unit.register("Testing of binary signature checking", function() {
+  var openpgp = require('../../');
+  var result = [];
   var priv_key = openpgp.read_privateKey([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
@@ -163,5 +166,5 @@ unittests.register("Testing of binary signature checking", function() {
           pubKey.length == 1 && 
           msg2[1].signature.verify(msg2[0].data, pubKey[0]));
   return result;
-})
+});
 

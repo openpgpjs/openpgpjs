@@ -191,43 +191,43 @@ unit.register("Functional testing of openpgp.crypto.* methods", function() {
   var i;
   for (i = 0; i < 2; i++) {
     RSApubMPIs[i] = new openpgp.mpi();
-    RSApubMPIs[i].read(RSApubMPIstrs[i],0,RSApubMPIstrs[i].length);
+    RSApubMPIs[i].read(RSApubMPIstrs[i]);
   }
 
   var RSAsecMPIs = [];
   for (i = 0; i < 4; i++) {
     RSAsecMPIs[i] = new openpgp.mpi();
-    RSAsecMPIs[i].read(RSAsecMPIstrs[i],0,RSAsecMPIstrs[i].length);
+    RSAsecMPIs[i].read(RSAsecMPIstrs[i]);
   }
     
   var DSAsecMPIs = [];
   for (i = 0; i < 1; i++) {
     DSAsecMPIs[i] = new openpgp.mpi();
-    DSAsecMPIs[i].read(DSAsecMPIstrs[i],0,DSAsecMPIstrs[i].length);
+    DSAsecMPIs[i].read(DSAsecMPIstrs[i]);
   }
     
   var DSApubMPIs = [];
   for (i = 0; i < 4; i++) {
     DSApubMPIs[i] = new openpgp.mpi();
-    DSApubMPIs[i].read(DSApubMPIstrs[i],0,DSApubMPIstrs[i].length);
+    DSApubMPIs[i].read(DSApubMPIstrs[i]);
   }
   var ElgamalsecMPIs = [];
   for (i = 0; i < 1; i++) {
     ElgamalsecMPIs[i] = new openpgp.mpi();
-    ElgamalsecMPIs[i].read(ElgamalsecMPIstrs[i],0,ElgamalsecMPIstrs[i].length);
+    ElgamalsecMPIs[i].read(ElgamalsecMPIstrs[i]);
   }
     
   var ElgamalpubMPIs = [];
   for (i = 0; i < 3; i++) {
     ElgamalpubMPIs[i] = new openpgp.mpi();
-    ElgamalpubMPIs[i].read(ElgamalpubMPIstrs[i],0,ElgamalpubMPIstrs[i].length);
+    ElgamalpubMPIs[i].read(ElgamalpubMPIstrs[i]);
   }
 
   //Originally we passed public and secret MPI separately, now they are joined. Is this what we want to do long term?
   // RSA
   var RSAsignedData = openpgp.signature.sign(2, 1, RSApubMPIs.concat(RSAsecMPIs), "foobar");
   var RSAsignedDataMPI = new openpgp.mpi();
-  RSAsignedDataMPI.read(RSAsignedData, 0, RSAsignedData.length);
+  RSAsignedDataMPI.read(RSAsignedData);
   result[0] = new unit.result("Testing RSA Sign and Verify",
       openpgp.signature.verify(1, 2, [RSAsignedDataMPI], RSApubMPIs, "foobar"));
 
@@ -237,20 +237,20 @@ unit.register("Functional testing of openpgp.crypto.* methods", function() {
   var DSAmsgMPIs = [];
     DSAmsgMPIs[0] = new openpgp.mpi();
     DSAmsgMPIs[1] = new openpgp.mpi();
-    DSAmsgMPIs[0].read(DSAsignedData, 0, DSAsignedData.length);
-    DSAmsgMPIs[1].read(DSAsignedData, DSAmsgMPIs[0].packetLength, DSAsignedData.length);
+    DSAmsgMPIs[0].read(DSAsignedData.substring(0,34));
+    DSAmsgMPIs[1].read(DSAsignedData.substring(34,68));
   result[1] = new unit.result("Testing DSA Sign and Verify",
       openpgp.signature.verify(17, 2, DSAmsgMPIs, DSApubMPIs, "foobar"));
   
   var symmAlgo = "aes256"; // AES256
   var symmKey = openpgp.generateSessionKey(symmAlgo);
-  var symmencDataOCFB = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobar", symmKey, true);
-  var symmencDataCFB  = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobar", symmKey, false);
+  var symmencDataOCFB = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, true);
+  var symmencDataCFB  = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, false);
   
   result[2] = new unit.result("Testing symmetric encrypt and decrypt with OpenPGP CFB resync",
-      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true) == "foobar");
+      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true) == "foobarfoobar1234567890");
   result[3] = new unit.result("Testing symmetric encrypt and decrypt without OpenPGP CFB resync (used in modification detection code \"MDC\" packets)",
-      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobar");
+      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobarfoobar1234567890");
   
   var RSAUnencryptedData = new openpgp.mpi();
   RSAUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, RSApubMPIs[0].mpiByteLength));
