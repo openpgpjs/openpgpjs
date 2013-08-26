@@ -18,6 +18,7 @@
 // The GPG4Browsers crypto interface
 
 var type_mpi = require('../type/mpi.js');
+var uheprng = require('./uheprng.js');
 
 module.exports = {
 	/**
@@ -50,18 +51,13 @@ module.exports = {
 	 * @return {Integer} A secure random number
 	 */
 	getSecureRandom: function(from, to) {
-		var buf = new Uint32Array(1);
-		window.crypto.getRandomValues(buf);
-		var bits = ((to-from)).toString(2).length;
-		while ((buf[0] & (Math.pow(2, bits) -1)) > (to-from))
-			window.crypto.getRandomValues(buf);
-		return from+(Math.abs(buf[0] & (Math.pow(2, bits) -1)));
+    var num = uheprng(to - from);
+    return num + from;
 	},
 
 	getSecureRandomOctet: function() {
-		var buf = new Uint32Array(1);
-		window.crypto.getRandomValues(buf);
-		return buf[0] & 0xFF;
+    var num = uheprng.string(1);
+		return num & 0xFF;
 	},
 
   /**
