@@ -181,3 +181,5 @@ function Mash() {
 	};
   return mash;
 }
+
+modules.exports = uheprng();
