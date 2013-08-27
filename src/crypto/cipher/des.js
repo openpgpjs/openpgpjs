@@ -47,9 +47,11 @@ function des (keys, message, encrypt, mode, iv, padding) {
   else {looping = encrypt ? new Array (0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array (94, 62, -2, 32, 64, 2, 30, -2, -2);}
 
   //pad the message depending on the padding parameter
-  if (padding == 2) message += "        "; //pad the message with spaces
-  else if (padding == 1) {temp = 8-(len%8); message += String.fromCharCode (temp,temp,temp,temp,temp,temp,temp,temp); if (temp==8) len+=8;} //PKCS7 padding
-  else if (!padding) message += "\0\0\0\0\0\0\0\0"; //pad the message out with null bytes
+  //only add padding if encrypting - note that you need to use the same padding option for both encrypt and decrypt
+  if (encrypt) {
+    message = des_addPadding(message, padding);
+    len = message.length;
+  }
 
   //store the result here
   result = "";
@@ -119,7 +121,12 @@ function des (keys, message, encrypt, mode, iv, padding) {
 
   //return the result as an array
   result += tempresult;
-  result = result.replace(/\0*$/g, "");
+    
+  //only remove padding if decrypting - note that you need to use the same padding option for both encrypt and decrypt
+  if (!encrypt) {
+    result = des_removePadding(result, padding);
+  }
+
   return result;
 } //end of des
 
@@ -199,6 +206,36 @@ function des_createKeys (key) {
   return keys;
 } //end of des_createKeys
 
+
+function des_addPadding(message, padding) {
+    var padLength = 8 - (message.length % 8);
+    if ((padding == 2) && (padLength < 8)) {            //pad the message with spaces
+        message += "        ".substr(0, padLength);
+    }
+    else if (padding == 1) {                            //PKCS7 padding
+        message += String.fromCharCode(padLength, padLength, padLength, padLength, padLength, padLength, padLength, padLength).substr(0, padLength);
+    }
+    else if (!padding && (padLength < 8)) {             //pad the message out with null bytes
+        message += "\0\0\0\0\0\0\0\0".substr(0, padLength);
+    }
+    return message;
+}
+
+function des_removePadding(message, padding) {
+    if (padding == 2) {         // space padded
+        message = message.replace(/ *$/g, "");
+    }
+    else if (padding == 1) {    // PKCS7
+        var padCount = message.charCodeAt(message.length - 1);
+        message = message.substr(0, message.length - padCount);
+    }
+    else if (!padding) {        // null padding
+        message = message.replace(/\0*$/g, "");
+    }
+    return message;
+}
+
+
 var util = require('../../util');
 
 // added by Recurity Labs
@@ -218,7 +255,27 @@ function Des(key) {
 	}
 }
 
-module.exports = Des;
-module.exports.keySize = Des.prototype.keySize = 24;
-module.exports.blockSize = Des.prototype.blockSize = 8;
+Des.keySize = Des.prototype.keySize = 24;
+Des.blockSize = Des.prototype.blockSize = 8;
+
+// This is "original" DES - Des is actually Triple DES.
+// This is only exported so we can unit test.
+function OriginalDes(key) {
+    this.key = key;
+
+    this.encrypt = function (block, padding) {
+        var keys = des_createKeys(this.key);
+        return util.str2bin(des(keys, util.bin2str(block), true, 0, null, padding));
+    }
+
+    this.decrypt = function (block, padding) {
+        var keys = des_createKeys(this.key);
+        return util.str2bin(des(keys, util.bin2str(block), false, 0, null, padding));
+    }
+}
+
+module.exports = {
+    des: Des,
+    originalDes: OriginalDes
+}
 
