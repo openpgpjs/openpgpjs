@@ -1,6 +1,9 @@
 
+var desModule = require('./des.js');
+
 module.exports = {
-	des: require('./des.js'),
+    des: desModule['des'],
+    originalDes: desModule['originalDes'],
 	cast5: require('./cast5.js'),
 	twofish: require('./twofish.js'),
 	blowfish: require('./blowfish.js')
