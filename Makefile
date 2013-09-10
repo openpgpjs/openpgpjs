@@ -9,13 +9,16 @@ help:
 	@echo "ext-chr-gmail  - creates the Google Chrome / Google Mail extension"
 	@echo "documentation  - generates documentation. Requires jsdoc (3.2) in PATH"
 
+install:
+	@bower install
+
 update: update-me update-deps
 
 update-me:
 	@git pull
 
 update-deps:
-	@git submodule foreach git pull
+	@bower update
 
 example:
 	@mkdir -p build
