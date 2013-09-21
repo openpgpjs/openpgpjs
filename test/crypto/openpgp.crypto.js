@@ -253,18 +253,18 @@ unit.register("Functional testing of openpgp.crypto.* methods", function() {
       openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobarfoobar1234567890");
   
   var RSAUnencryptedData = new openpgp.mpi();
-  RSAUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, RSApubMPIs[0].mpiByteLength));
+  RSAUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
   var RSAEncryptedData = openpgp.publicKeyEncrypt("rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData);
 
   result[4] = new unit.result("Testing asymmetric encrypt and decrypt using RSA with eme_pkcs1 padding",
-      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData).write().substring(2), RSApubMPIs[0].mpiByteLength) == symmKey);
+      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData).write().substring(2), RSApubMPIs[0].byteLength()) == symmKey);
 
   var ElgamalUnencryptedData = new openpgp.mpi();
-  ElgamalUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].mpiByteLength));
+  ElgamalUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
   var ElgamalEncryptedData = openpgp.publicKeyEncrypt("elgamal", ElgamalpubMPIs, ElgamalUnencryptedData);
 
   result[5] = new unit.result("Testing asymmetric encrypt and decrypt using Elgamal with eme_pkcs1 padding",
-      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData).write().substring(2), ElgamalpubMPIs[0].mpiByteLength) == symmKey);
+      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData).write().substring(2), ElgamalpubMPIs[0].byteLength()) == symmKey);
 
   return result;
 });
