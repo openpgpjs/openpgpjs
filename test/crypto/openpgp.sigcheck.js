@@ -3,6 +3,7 @@ var unit = require('../unit.js');
 unit.register("Testing of binary signature checking", function() {
   var openpgp = require('../../');
   var result = [];
+  debugger;
   var priv_key = openpgp.read_privateKey([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
