@@ -32,29 +32,42 @@ function openpgp_encoding_deArmor(text) {
 
 	if (type != 2) {
 		var splittedtext = text.split('-----');
+		// splittedtext[0] - should be the empty string
+		// splittedtext[1] - should be BEGIN...
+		// splittedtext[2] - the message and checksum
+		// splittedtest[3] - should be END...
+
+		// chunks separated by blank lines
+		var splittedChunks = splittedtext[2]
+			.split('\n\n');
+		var messageAndChecksum = splittedtext[2]
+			.split('\n\n')[1]
+			.split('\n=');
+
+		var message = messageAndChecksum[0]
+			.replace(/\n- /g,"\n");
+		// sometimes, there's a blank line between message and checksum
+		var checksum;
+		if(messageAndChecksum.length == 1){
+			// blank line
+			checksum = splittedtext[2]
+				.replace(/[\n=]/g, "");
+		} else {
+			// no blank line
+			checksum = messageAndChecksum[1]
+				.split('\n')[0];
+		}
 
 		var data = { 
-			openpgp: openpgp_encoding_base64_decode(
-				splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[0]
-					.replace(/\n- /g,"\n")),
+			openpgp: openpgp_encoding_base64_decode(message)
 			type: type
 		};
 
-		if (verifyCheckSum(data.openpgp, 
-			splittedtext[2]
-				.split('\n\n')[1]
-				.split("\n=")[1]
-				.split('\n')[0]))
-
+		if (verifyCheckSum(data.openpgp, checksum)) {
 			return data;
-		else {
+		} else {
 			util.print_error("Ascii armor integrity check on message failed: '"
-				+ splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[1]
-					.split('\n')[0] 
+				+ checksum
 				+ "' should be '"
 				+ getCheckSum(data)) + "'";
 			return false;
