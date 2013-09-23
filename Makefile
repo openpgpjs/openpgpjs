@@ -36,6 +36,7 @@ minify:
 
 test:
 	@echo to be implemented
+	@echo Open test/index.html instead
 
 documentation:
 	@jsdoc src -r -d doc
