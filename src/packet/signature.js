@@ -375,7 +375,7 @@ module.exports = function packet_signature() {
 
 		switch(type) {
 		case t.binary:
-			return data.literal.getBytes();
+			return data.getBytes();
 
 		case t.text:
 			return this.toSign(t.binary, data)

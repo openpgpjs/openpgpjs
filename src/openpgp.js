@@ -48,99 +48,16 @@ function _openpgp () {
 	}
 	
 	/**
-	 * reads several publicKey objects from a ascii armored
-	 * representation an returns openpgp_msg_publickey packets
-	 * @param {String} armoredText OpenPGP armored text containing
-	 * the public key(s)
-	 * @return {openpgp_msg_publickey[]} on error the function
-	 * returns null
-	 */
-	function read_publicKey(armoredText) {
-		var mypos = 0;
-		var publicKeys = [];
-		var publicKeyCount = 0;
-		var input = armor.decode(armoredText.replace(/\r/g,'')).openpgp;
-		var l = input.length;
-		while (mypos != input.length) {
-			var first_packet = packet.io.read(input, mypos, l);
-			// public key parser
-			if (input[mypos].charCodeAt() == 0x99 || first_packet.tagType == 6) {
-				publicKeys[publicKeyCount] = new openpgp_msg_publickey();				
-				publicKeys[publicKeyCount].header = input.substring(mypos,mypos+3);
-				if (input[mypos].charCodeAt() == 0x99) {
-					// parse the length and read a tag6 packet
-					mypos++;
-					var l = (input[mypos++].charCodeAt() << 8)
-							| input[mypos++].charCodeAt();
-					publicKeys[publicKeyCount].publicKeyPacket = new openpgp_packet_keymaterial();
-					publicKeys[publicKeyCount].publicKeyPacket.header = publicKeys[publicKeyCount].header;
-					publicKeys[publicKeyCount].publicKeyPacket.read_tag6(input, mypos, l);
-					mypos += publicKeys[publicKeyCount].publicKeyPacket.packetLength;
-					mypos += publicKeys[publicKeyCount].read_nodes(publicKeys[publicKeyCount].publicKeyPacket, input, mypos, (input.length - mypos));
-				} else {
-					publicKeys[publicKeyCount] = new openpgp_msg_publickey();
-					publicKeys[publicKeyCount].publicKeyPacket = first_packet;
-					mypos += first_packet.headerLength+first_packet.packetLength;
-					mypos += publicKeys[publicKeyCount].read_nodes(first_packet, input, mypos, input.length -mypos);
-				}
-			} else {
-				util.print_error("no public key found!");
-				return null;
-			}
-			publicKeys[publicKeyCount].data = input.substring(0,mypos);
-			publicKeyCount++;
-		}
-		return publicKeys;
-	}
-	
-	/**
-	 * reads several privateKey objects from a ascii armored
-	 * representation an returns openpgp_msg_privatekey objects
-	 * @param {String} armoredText OpenPGP armored text containing
-	 * the private key(s)
-	 * @return {openpgp_msg_privatekey[]} on error the function
-	 * returns null
-	 */
-	function read_privateKey(armoredText) {
-		var privateKeys = [];
-		var privateKeyCount = 0;
-		var mypos = 0;
-		var input = armor.decode(armoredText.replace(/\r/g,'')).openpgp;
-		var l = input.length;
-		while (mypos != input.length) {
-			var first_packet = packet.io.read(input, mypos, l);
-			if (first_packet.tagType == 5) {
-				privateKeys[privateKeys.length] = new openpgp_msg_privatekey();
-				mypos += first_packet.headerLength+first_packet.packetLength;
-				mypos += privateKeys[privateKeyCount].read_nodes(first_packet, input, mypos, l);
-			// other blocks	            
-			} else {
-				util.print_error('no block packet found!');
-				return null;
-			}
-			privateKeys[privateKeyCount].data = input.substring(0,mypos);
-			privateKeyCount++;
-		}
-		return privateKeys;		
-	}
-
-	/**
 	 * reads message packets out of an OpenPGP armored text and
 	 * returns an array of message objects
 	 * @param {String} armoredText text to be parsed
 	 * @return {openpgp_msg_message[]} on error the function
 	 * returns null
 	 */
-	function read_message(armoredText) {
-		var dearmored;
-		try{
-    		dearmored = armor.decode(armoredText.replace(/\r/g,''));
-		}
-		catch(e){
-    		util.print_error('no message found!');
-    		return null;
-		}
-		return read_messages_dearmored(dearmored);
+	function readArmoredPackets(armoredText) {
+    //TODO how do we want to handle bad text? Exception throwing
+		var input = armor.decode(armoredText.replace(/\r/g,'')).openpgp;
+		return readDearmoredPackets(input);
 		}
 		
 	/**
@@ -152,143 +69,31 @@ function _openpgp () {
 	 * @return {openpgp_msg_message[]} on error the function
 	 * returns null
 	 */
-	function read_messages_dearmored(input){
-		var messageString = input.openpgp;
-		var signatureText = input.text; //text to verify signatures against. Modified by Tag11.
-		var messages = [];
-		var messageCount = 0;
-		var mypos = 0;
-		var l = messageString.length;
-		while (mypos < messageString.length) {
-			var first_packet = packet.io.read(messageString, mypos, l);
-			if (!first_packet) {
-				break;
-			}
-			// public key parser (definition from the standard:)
-			// OpenPGP Message      :- Encrypted Message | Signed Message |
-			//                         Compressed Message | Literal Message.
-			// Compressed Message   :- Compressed Data Packet.
-			// 
-			// Literal Message      :- Literal Data Packet.
-			// 
-			// ESK                  :- Public-Key Encrypted Session Key Packet |
-			//                         Symmetric-Key Encrypted Session Key Packet.
-			// 
-			// ESK Sequence         :- ESK | ESK Sequence, ESK.
-			// 
-			// Encrypted Data       :- Symmetrically Encrypted Data Packet |
-			//                         Symmetrically Encrypted Integrity Protected Data Packet
-			// 
-			// Encrypted Message    :- Encrypted Data | ESK Sequence, Encrypted Data.
-			// 
-			// One-Pass Signed Message :- One-Pass Signature Packet,
-			//                         OpenPGP Message, Corresponding Signature Packet.
-
-			// Signed Message       :- Signature Packet, OpenPGP Message |
-			//                         One-Pass Signed Message.
-			if (first_packet.tagType ==  1 ||
-           (first_packet.tagType == 2 && first_packet.signatureType < 16) ||
-             first_packet.tagType ==  3 ||
-         first_packet.tagType ==  4 ||
-				 first_packet.tagType ==  8 ||
-				 first_packet.tagType ==  9 ||
-				 first_packet.tagType == 10 ||
-				 first_packet.tagType == 11 ||
-				 first_packet.tagType == 18 ||
-				 first_packet.tagType == 19) {
-				messages[messages.length] = new openpgp_msg_message();
-				messages[messageCount].messagePacket = first_packet;
-				messages[messageCount].type = input.type;
-				// Encrypted Message
-				if (first_packet.tagType == 9 ||
-				    first_packet.tagType == 1 ||
-				    first_packet.tagType == 3 ||
-				    first_packet.tagType == 18) {
-					if (first_packet.tagType == 9) {
-						util.print_error("unexpected openpgp packet");
-						break;
-					} else if (first_packet.tagType == 1) {
-						util.print_debug("session key found:\n "+first_packet.toString());
-						var issessionkey = true;
-						messages[messageCount].sessionKeys = new Array();
-						var sessionKeyCount = 0;
-						while (issessionkey) {
-							messages[messageCount].sessionKeys[sessionKeyCount] = first_packet;
-							mypos += first_packet.packetLength + first_packet.headerLength;
-							l -= (first_packet.packetLength + first_packet.headerLength);
-							first_packet = packet.io.read(messageString, mypos, l);
-							
-							if (first_packet.tagType != 1 && first_packet.tagType != 3)
-								issessionkey = false;
-							sessionKeyCount++;
-						}
-						if (first_packet.tagType == 18 || first_packet.tagType == 9) {
-							util.print_debug("encrypted data found:\n "+first_packet.toString());
-							messages[messageCount].encryptedData = first_packet;
-							mypos += first_packet.packetLength+first_packet.headerLength;
-							l -= (first_packet.packetLength+first_packet.headerLength);
-							messageCount++;
-							
-						} else {
-							util.print_debug("something is wrong: "+first_packet.tagType);
-						}
-						
-					} else if (first_packet.tagType == 18) {
-						util.print_debug("symmetric encrypted data");
-						break;
-					}
-				} else 
-					if (first_packet.tagType == 2 && first_packet.signatureType < 3) {
-					// Signed Message
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-						messages[messageCount].text = signatureText;
-						messages[messageCount].signature = first_packet;
-            messageCount++;
-				} else 
-					// Signed Message
-					if (first_packet.tagType == 4) {
-						//TODO: Implement check
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				} else 
-					if (first_packet.tagType == 8) {
-					// Compressed Message
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-            var decompressedText = first_packet.decompress();
-            messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
-				} else
-					// Marker Packet (Obsolete Literal Packet) (Tag 10)
-					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
-					if (first_packet.tagType == 10) {
-						// reset messages
-						messages.length = 0;
-						// continue with next packet
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				} else 
-					if (first_packet.tagType == 11) {
-					// Literal Message -- work is already done in packet.io.read
-					mypos += first_packet.packetLength + first_packet.headerLength;
-					l -= (first_packet.packetLength + first_packet.headerLength);
-					signatureText = first_packet.data;
-					messages[messageCount].data = first_packet.data;
-					messageCount++;
-				} else 
-					if (first_packet.tagType == 19) {
-					// Modification Detect Code
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				}
-			} else {
-				util.print_error('no message found!');
-				return null;
-			}
-		}
-		
-		return messages;
+	function readDearmoredPackets(input){
+    var packetList = new packet.list();
+    packetList.read(input);
+    return packetList;
 	}
+
+  function encryptMessage(publicKeyPacketlist, message) {
+
+  }
+
+  function encryptAndSignMessage(publicKeyPacketlist, privateKeyPacketlist, message) {
+
+  }
+
+  function decryptMessage(privateKeyPacketlist, messagePacketlist) {
+
+  }
+
+  function decryptAndVerifyMessage(privateKeyPacketlist, publicKeyPacketlist, messagePacketlist) {
+
+  }
+
+  function verifyMessage(publicKeyPacketlist, messagePacketlist) {
+
+  }
 	
 	/**
 	 * creates a binary string representation of an encrypted and signed message.
@@ -454,10 +259,8 @@ function _openpgp () {
 	this.write_signed_message = write_signed_message; 
 	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
 	this.write_encrypted_message = write_encrypted_message;
-	this.read_message = read_message;
-	this.read_messages_dearmored = read_messages_dearmored;
-	this.read_publicKey = read_publicKey;
-	this.read_privateKey = read_privateKey;
+	this.readArmoredPackets = readArmoredPackets;
+	this.readDearmoredPackets = readDearmoredPackets;
 	this.init = init;
 }
 

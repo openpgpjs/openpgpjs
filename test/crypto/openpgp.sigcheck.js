@@ -2,9 +2,9 @@ var unit = require('../unit.js');
 
 unit.register("Testing of binary signature checking", function() {
   var openpgp = require('../../');
+  var keyring = require('../../src/openpgp.keyring.js');
   var result = [];
-  debugger;
-  var priv_key = openpgp.read_privateKey([
+  var priv_key = openpgp.readArmoredPackets([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -33,7 +33,7 @@ unit.register("Testing of binary signature checking", function() {
         '=LSrW',
         '-----END PGP PRIVATE KEY BLOCK-----'
       ].join("\n"));
-  var pub_key = openpgp.read_publicKey(
+  var pub_key = openpgp.readArmoredPackets(
       [ '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -52,7 +52,7 @@ unit.register("Testing of binary signature checking", function() {
         '=b2Ln',
         '-----END PGP PUBLIC KEY BLOCK-----'
       ].join("\n"));
-  var msg = openpgp.read_message([
+  var msg = openpgp.readArmoredPackets([
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -69,17 +69,18 @@ unit.register("Testing of binary signature checking", function() {
         '=4iGt',
         '-----END PGP MESSAGE-----'
       ].join("\n"));
-  priv_key[0].subKeys[0].decryptSecretMPIs("abcd");
-  var ret = msg[0].decryptAndVerifySignature(
-      { key: priv_key[0], keymaterial: priv_key[0].subKeys[0]},
-      msg[0].sessionKeys[0],
-      [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
-  result[0] = new test_result("Testing signature checking on CAST5-enciphered message",
-          ret.validSignatures[0] == true);
+  //TODO need both?
+  priv_key[0].decrypt("abcd");
+  priv_key[3].decrypt("abcd");
+  msg[0].decrypt(priv_key[3]);
+  msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+  msg[1].packets[2].verify(pub_key[0], msg[1].packets[1]);
+  result[0] = new unit.result("Testing signature checking on CAST5-enciphered message",
+          msg[1].packets[2].verified === true);
 
   // exercises the GnuPG s2k type 1001 extension:
   // the secrets on the primary key have been stripped.
-  var priv_key_gnupg_ext = openpgp.read_privateKey([
+  var priv_key_gnupg_ext = openpgp.readArmoredPackets([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -107,19 +108,16 @@ unit.register("Testing of binary signature checking", function() {
         '=GQsY',
         '-----END PGP PRIVATE KEY BLOCK-----',
       ].join("\n"));
-  priv_key_gnupg_ext[0].subKeys[0].decryptSecretMPIs("abcd");
-  var ret2 = msg[0].decryptAndVerifySignature(
-      { key: priv_key_gnupg_ext[0], keymaterial: priv_key_gnupg_ext[0].subKeys[0]},
-      msg[0].sessionKeys[0],
-      [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
-  result[1] = new test_result("Testing GnuPG stripped-key extensions",
-          priv_key_gnupg_ext[0].privateKeyPacket.s2k.type == 1001 &&
-          ret.validSignatures[0] == true);
+  priv_key_gnupg_ext[3].decrypt("abcd");
+  msg[0].decrypt(priv_key_gnupg_ext[3]);
+  msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+  msg[1].packets[2].verify(pub_key[0], msg[1].packets[1]);
+  result[1] = new unit.result("Testing GnuPG stripped-key extensions",
+          msg[1].packets[2].verified === true);
 
   // Exercises the ability of openpgp_keyring.getPublicKeysForKeyId to return subkeys
-  var test_keyring = new openpgp_keyring();
-  test_keyring.init();
-  test_keyring.importPublicKey([
+  keyring.init();
+  keyring.importPacketlist([
         '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -151,7 +149,7 @@ unit.register("Testing of binary signature checking", function() {
         '-----END PGP PUBLIC KEY BLOCK-----'
         ].join("\n"));
 
-  var msg2 = openpgp.read_message([
+  var msg2 = openpgp.readArmoredPackets([
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -161,8 +159,8 @@ unit.register("Testing of binary signature checking", function() {
         '=WaSx',
         '-----END PGP MESSAGE-----'
         ].join("\n"));
-  var pubKey = test_keyring.getPublicKeysForKeyId(msg2[1].signature.issuerKeyId);
-  result[2] = new test_result("Testing keyring public subkey support",
+  var pubKey = keyring.getPacketlistForKeyId(msg2[1].signature.issuerKeyId);
+  result[2] = new unit.result("Testing keyring public subkey support",
           pubKey != null && 
           pubKey.length == 1 && 
           msg2[1].signature.verify(msg2[0].data, pubKey[0]));

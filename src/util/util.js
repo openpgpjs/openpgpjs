@@ -17,18 +17,16 @@
 
 var Util = function() {
 
-
-
 	this.readNumber = function (bytes) {
 		var n = 0;
 
 		for(var i = 0; i < bytes.length; i++) {
 			n <<= 8;
-			n += bytes[i].charCodeAt()
+			n += bytes[i].charCodeAt();
 		}
 
 		return n;
-	}
+	};
 
 	this.writeNumber = function(n, bytes) {
 		var b = '';
@@ -37,7 +35,7 @@ var Util = function() {
 		}
 
 		return b;
-	}
+	};
 
 
 
@@ -46,13 +44,13 @@ var Util = function() {
 		var d = new Date();
 		d.setTime(n * 1000);
 		return d;
-	}
+	};
 
 	this.writeDate = function(time) {
 		var numeric = Math.round(time.getTime() / 1000);
 
 		return this.writeNumber(numeric, 4);
-	}
+	};
 
     this.emailRegEx = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
 	
@@ -333,6 +331,7 @@ var Util = function() {
 		}
 		return "unknown";
 	};
+
 };
 
 /**
