@@ -54,7 +54,8 @@ function s2r(t) {
 			r += "\n";
 		r += '=';
 	}
-
+  	if (r.charAt(r.length-1)==="\n")
+    		r=r.slice(0,-1);
 	return r;
 }
 
