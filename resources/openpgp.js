@@ -1329,7 +1329,7 @@ function openpgp_config() {
     keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
   };
 
-  this.versionstring = "OpenPGP.js v0.0.1.20131008";
+  this.versionstring = "OpenPGP.js v0.0.1.20131009";
   this.commentstring = "http://openpgpjs.org";
   /**
    * Reads the config out of the HTML5 local storage
@@ -7906,9 +7906,15 @@ function bnpMillerRabin(t) {
   t = (t + 1) >> 1;
   if (t > lowprimes.length) t = lowprimes.length;
   var a = nbi();
+  var j, bases = [];
   for (var i = 0; i < t; ++i) {
     //Pick bases at random, instead of starting at 2
-    a.fromInt(lowprimes[Math.floor(Math.random() * lowprimes.length)]);
+    for (;;) {
+      j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
+      if (bases.indexOf(j) == -1) break;
+    }
+    bases.push(j);
+    a.fromInt(j);
     var y = a.modPow(r, this);
     if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
       var j = 1;
