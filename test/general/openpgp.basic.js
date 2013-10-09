@@ -1,14 +1,11 @@
+var unit = require('../unit.js');
 
-unittests.register("Encryption/decryption", function() {
-
-openpgp.init();
-
-
-
-function test(passphrase, userid, message) {
-	var key = openpgp.generate_key_pair(1, 512, userid, passphrase),
-		priv_key = key.privateKey,
-		pub_key = openpgp.read_publicKey(key.publicKeyArmored);
+unit.register("Encryption/decryption", function() {
+  var openpgp = require('../../');
+  var keyring = require('../../src/openpgp.keyring.js');
+  var result = [];
+	var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 
+                                    'Test McTestington <test@example.com>', 'hello world');
 
 	var info = '\npassphrase: ' + passphrase + '\n'
 			+ 'userid: ' + userid + '\n'
@@ -46,11 +43,11 @@ function test(passphrase, userid, message) {
 		}
 	}
 
-	var decrypted = ''
-	if (keymat != null) {
+	var decrypted = '';
+	if (keymat !== null) {
 		if (!keymat.keymaterial.decryptSecretMPIs(passphrase)) {
 			return new test_result("Password for secrect key was incorrect!", 
-				+ info, false)
+				+ info, false);
 		}
 
 		decrypted = msg[0].decrypt(keymat, sesskey);
@@ -58,12 +55,11 @@ function test(passphrase, userid, message) {
 		return new test_result("No private key found!" + info, false);
 	}
 		
-	return new test_result(message + ' == ' + decrypted + info, message == decrypted);
-}
+	result.push(new test_result(message + ' == ' + decrypted + info, message == decrypted));
 
-var result = []
-result.push(test('password', 'Test McTestington <test@example.com>', 'hello world'));
-result.push(test('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć'));
+  //result.push(test('password', 'Test McTestington <test@example.com>', 'hello world'));
+  //result.push(test('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć'));
 
-return result
+  return result;
 });
+

@@ -14,3 +14,4 @@ require('./crypto/cipher/twofish.js');
 require('./crypto/openpgp.crypto.js');
 require('./crypto/openpgp.sigcheck.js');
 
+require('./general/openpgp.basic.js');

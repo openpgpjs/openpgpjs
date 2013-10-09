@@ -253,6 +253,7 @@ function packet_secret_key() {
 	}
 
 	this.generate = function(bits) {
+    this.mpi;
 
 	}
 	

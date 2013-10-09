@@ -159,11 +159,13 @@ unit.register("Testing of binary signature checking", function() {
         '=WaSx',
         '-----END PGP MESSAGE-----'
         ].join("\n"));
-  var pubKey = keyring.getPacketlistForKeyId(msg2[1].signature.issuerKeyId);
+  var packetlists = keyring.getPacketlistsForKeyId(msg2[0].signingKeyId.write());
+  var pubKey = packetlists[0];
+  msg2[2].verify(pubKey[3], msg2[1]);
   result[2] = new unit.result("Testing keyring public subkey support",
-          pubKey != null && 
-          pubKey.length == 1 && 
-          msg2[1].signature.verify(msg2[0].data, pubKey[0]));
+          packetlists !== null && 
+          packetlists.length == 1 && 
+          msg2[2].verified);
   return result;
 });
 

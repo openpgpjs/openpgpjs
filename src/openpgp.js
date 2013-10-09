@@ -94,6 +94,22 @@ function _openpgp () {
   function verifyMessage(publicKeyPacketlist, messagePacketlist) {
 
   }
+
+  function signMessage(privateKeyPacketlist, messagePacketlist) {
+
+  }
+
+	function generateKeyPair(keyType, numBits, userId, passphrase) {
+    debugger;
+    var packetlist = new packet.list();
+
+    var secretKeyPacket = new packet.secret_key();
+    var userIdPacket = new packet.userid();
+    var signaturePacket = new packet.signature();
+    var secretSubkeyPacket = new packet.secret_subkey();
+    var overallSignaturePacket = new packet.signature();
+
+  }
 	
 	/**
 	 * creates a binary string representation of an encrypted and signed message.
@@ -255,7 +271,7 @@ function _openpgp () {
 		return {privateKey : privKey, privateKeyArmored: privArmored, publicKeyArmored: publicArmored};
 	}
 	
-	this.generate_key_pair = generate_key_pair;
+	this.generateKeyPair = generateKeyPair;
 	this.write_signed_message = write_signed_message; 
 	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
 	this.write_encrypted_message = write_encrypted_message;

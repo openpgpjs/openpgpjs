@@ -57,38 +57,62 @@ var keyring = function() {
 	}
 	this.store = store;
 
-  function checkForEmailAndPacketMatch(email, packetType){
+  function emailPacketCheck(packet, email) {
+    var emailMatch = false;
+    var packetEmail;
     email = email.toLowerCase();
+    if (packet.tag == enums.packet.userid) {
+      packetEmail = packet.userid;
+      //we need to get just the email from the userid packet
+      packetEmail = packetEmail.split('<')[1].split('<')[0].trim.toLowerCase();
+      if (packetEmail == email) {
+        emailMatch = true;
+      }
+    }
+    return emailMatch;
+  }
+
+  function idPacketCheck(packet, id) {
+    if (packet.getKeyId && packet.getKeyId() == id) {
+      return true;
+    }
+    return false;
+  }
+
+  function helperCheckIdentityAndPacketMatch(identityFunction, identityInput, packetType, packetlist) {
+    var packet;
+    for (var l = 0; l < packetlist.length; l++) {
+      packet = packetlist[l];
+      identityMatch = identityFunction(packet, identityInput);
+      if (!packetType) {
+        packetMatch = true;
+      }
+      else if (packet.tag == packetType) {
+        packetMatch = true;
+      }
+      if (packetMatch && identityMatch) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function checkForIdentityAndPacketMatch(identityFunction, identityInput, packetType) {
 		var results = [];
     var packetlist;
-    var packet;
-    var packetEmail;
-    var emailMatch;
+    var identityMatch;
     var packetMatch;
     for (var p = 0; p < this.parsedPacketlists.length; p++) {
-      emailMatch = false;
+      identityMatch = false;
       packetMatch = false;
       packetlist = this.parsedPacketlists[p];
-      for (var l = 0; l < packetlist.length; l++) {
-        packet = packetlist[l];
-        if (packet.tag == enums.packet.userid) {
-          packetEmail = packet.userid;
-          //we need to get just the email from the userid packet
-          packetEmail = packetEmail.split('<')[1].split('<')[0].trim.toLowerCase();
-          if (packetEmail == email) {
-            emailMatch = true;
-          }
-        }
-        if (packet.tag == packetType) {
-          packetMatch = true;
-        }
-      }
-      if (packetMatch && emailMatch) {
+      if (helperCheckIdentityAndPacketMatch(identityFunction, identityInput, packetType, packetlist)) {
         results.push(packetlist);
       }
     }
 		return results;
   }
+  this.checkForIdentityAndPacketMatch = checkForIdentityAndPacketMatch;
 
 	/**
 	 * searches all public keys in the keyring matching the address or address part of the user ids
@@ -96,7 +120,7 @@ var keyring = function() {
 	 * @return {openpgp_msg_publickey[]} The public keys associated with provided email address.
 	 */
 	function getPublicKeyForAddress(email) {
-    return checkForEmailAndPacketMatch(email, enums.packet.public_key);
+    return checkForIdentityAndPacketMatch(emailPacketCheck, email, enums.packet.public_key);
 	}
 	this.getPublicKeyForAddress = getPublicKeyForAddress;
 
@@ -106,7 +130,7 @@ var keyring = function() {
 	 * @return {openpgp_msg_privatekey[]} private keys found
 	 */
 	function getPrivateKeyForAddress(email_address) {
-    return checkForEmailAndPacketMatch(email, enums.packet.secret_key);
+    return checkForIdentityAndPacketMatch(emailPacketCheck, email, enums.packet.secret_key);
 	}
 	this.getPrivateKeyForAddress = getPrivateKeyForAddress;
 
@@ -115,12 +139,12 @@ var keyring = function() {
 	 * @param {String} keyId provided as string of hex number (lowercase)
 	 * @return {openpgp_msg_privatekey[]} public keys found
 	 */
-	function getPacketlistForKeyId(keyId) {
+	function getPacketlistsForKeyId(keyId) {
+    return this.checkForIdentityAndPacketMatch(idPacketCheck, keyId);
 	}
-	this.getPacketlistForKeyId = getPacketlistForKeyId;
+	this.getPacketlistsForKeyId = getPacketlistsForKeyId;
 	
 	/**
-   * TODO test
 	 * Imports a packet list (public or private key block) from an ascii armored message 
 	 * @param {String} armored message to read the packets/key from
 	 */
