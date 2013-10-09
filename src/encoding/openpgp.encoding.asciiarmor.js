@@ -24,7 +24,7 @@
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
-	text = text.replace(/\r/g, '')
+	text = text.replace(/\r/g, '');
 	// remove whitespace of blank line to allow later split at \n\n
 	text = text.replace(/\n\s+\n/, '\n\n');
 
@@ -59,7 +59,7 @@ function openpgp_encoding_deArmor(text) {
 		}
 
 		var data = { 
-			openpgp: openpgp_encoding_base64_decode(message)
+			openpgp: openpgp_encoding_base64_decode(message),
 			type: type
 		};
 

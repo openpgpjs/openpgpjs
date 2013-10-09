@@ -1430,9 +1430,15 @@ function bnpMillerRabin(t) {
   t = (t+1)>>1;
   if(t > lowprimes.length) t = lowprimes.length;
   var a = nbi();
+  var j, bases = [];
   for(var i = 0; i < t; ++i) {
     //Pick bases at random, instead of starting at 2
-    a.fromInt(lowprimes[Math.floor(Math.random()*lowprimes.length)]);
+    for (;;) {
+      j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
+      if (bases.indexOf(j) == -1) break;
+    }
+    bases.push(j);
+    a.fromInt(j);
     var y = a.modPow(r,this);
     if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
       var j = 1;
@@ -7418,7 +7424,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20130825";
+	this.versionstring ="OpenPGP.js v.1.20131009";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -7506,7 +7512,8 @@ function s2r(t) {
 			r += "\n";
 		r += '=';
 	}
-
+  	if (r.charAt(r.length-1)==="\n")
+    		r=r.slice(0,-1);
 	return r;
 }
 
@@ -7552,7 +7559,7 @@ function r2s(t) {
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
-	text = text.replace(/\r/g, '')
+	text = text.replace(/\r/g, '');
 	// remove whitespace of blank line to allow later split at \n\n
 	text = text.replace(/\n\s+\n/, '\n\n');
 
@@ -7560,29 +7567,42 @@ function openpgp_encoding_deArmor(text) {
 
 	if (type != 2) {
 		var splittedtext = text.split('-----');
+		// splittedtext[0] - should be the empty string
+		// splittedtext[1] - should be BEGIN...
+		// splittedtext[2] - the message and checksum
+		// splittedtest[3] - should be END...
+
+		// chunks separated by blank lines
+		var splittedChunks = splittedtext[2]
+			.split('\n\n');
+		var messageAndChecksum = splittedtext[2]
+			.split('\n\n')[1]
+			.split('\n=');
+
+		var message = messageAndChecksum[0]
+			.replace(/\n- /g,"\n");
+		// sometimes, there's a blank line between message and checksum
+		var checksum;
+		if(messageAndChecksum.length == 1){
+			// blank line
+			checksum = splittedtext[2]
+				.replace(/[\n=]/g, "");
+		} else {
+			// no blank line
+			checksum = messageAndChecksum[1]
+				.split('\n')[0];
+		}
 
 		var data = { 
-			openpgp: openpgp_encoding_base64_decode(
-				splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[0]
-					.replace(/\n- /g,"\n")),
+			openpgp: openpgp_encoding_base64_decode(message),
 			type: type
 		};
 
-		if (verifyCheckSum(data.openpgp, 
-			splittedtext[2]
-				.split('\n\n')[1]
-				.split("\n=")[1]
-				.split('\n')[0]))
-
+		if (verifyCheckSum(data.openpgp, checksum)) {
 			return data;
-		else {
+		} else {
 			util.print_error("Ascii armor integrity check on message failed: '"
-				+ splittedtext[2]
-					.split('\n\n')[1]
-					.split("\n=")[1]
-					.split('\n')[0] 
+				+ checksum
 				+ "' should be '"
 				+ getCheckSum(data)) + "'";
 			return false;
@@ -8354,8 +8374,8 @@ function _openpgp () {
 	 * This can be directly used to OpenPGP armor the message
 	 */
 	function write_signed_message(privatekey, messagetext) {
-		var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/,"\r\n"), privatekey);
-		var result = {text: messagetext.replace(/\r\n/g,"\n").replace(/\n/,"\r\n"), openpgp: sig.openpgp, hash: sig.hash};
+		var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
+		var result = {text: messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), openpgp: sig.openpgp, hash: sig.hash};
 		return openpgp_encoding_armor(2,result, null, null)
 	}
 	
