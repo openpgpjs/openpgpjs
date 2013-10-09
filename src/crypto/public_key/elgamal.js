@@ -23,7 +23,7 @@ var BigInteger = require('./jsbn.js'),
 
 function Elgamal() {
 
-  function encrypt(m,g,p,y) {
+  function encrypt(m, g, p, y) {
     //  choose k in {2,...,p-2}
     var two = BigInteger.ONE.add(BigInteger.ONE);
     var pMinus2 = p.subtract(two);
@@ -35,14 +35,14 @@ function Elgamal() {
     return c;
   }
 
-  function decrypt(c1,c2,p,x) {
-    util.print_debug("Elgamal Decrypt:\nc1:"+util.hexstrdump(c1.toMPI())+"\n"+
-        "c2:"+util.hexstrdump(c2.toMPI())+"\n"+
-        "p:"+util.hexstrdump(p.toMPI())+"\n"+
-        "x:"+util.hexstrdump(x.toMPI()));
+  function decrypt(c1, c2, p, x) {
+    util.print_debug("Elgamal Decrypt:\nc1:" + util.hexstrdump(c1.toMPI()) + "\n" +
+      "c2:" + util.hexstrdump(c2.toMPI()) + "\n" +
+      "p:" + util.hexstrdump(p.toMPI()) + "\n" +
+      "x:" + util.hexstrdump(x.toMPI()));
     return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
     //var c = c1.pow(x).modInverse(p); // c0^-a mod p
-      //return c.multiply(c2).mod(p);
+    //return c.multiply(c2).mod(p);
   }
 
   // signing and signature verification using Elgamal is not required by OpenPGP.

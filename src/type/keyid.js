@@ -24,22 +24,22 @@
    formed.
  */
 module.exports = function keyid() {
-	var bytes = '';
+  var bytes = '';
 
-	for(var i = 0; i < 8; i++)
-		bytes += String.fromCharCode(0);
-	/**
-	 * Parsing method for a key id
-	 * @param {String} input Input to read the key id from 
-	 * @param {integer} position Position where to start reading the key 
-	 * id from input
-	 * @return {openpgp_type_keyid} This object
-	 */
-	this.read = function(bytes) {
-		this.bytes = bytes.substr(0, 8);
-	}
+  for (var i = 0; i < 8; i++)
+    bytes += String.fromCharCode(0);
+  /**
+   * Parsing method for a key id
+   * @param {String} input Input to read the key id from 
+   * @param {integer} position Position where to start reading the key 
+   * id from input
+   * @return {openpgp_type_keyid} This object
+   */
+  this.read = function(bytes) {
+    this.bytes = bytes.substr(0, 8);
+  }
 
-	this.write = function() {
-		return this.bytes;
-	}
+  this.write = function() {
+    return this.bytes;
+  }
 };

@@ -9,6 +9,5 @@ module.exports.keyid = require('./type/keyid.js');
 module.exports.armor = require('./encoding/armor.js');
 module.exports.enums = require('./enums.js');
 
-for(var i in crypto)
-	module.exports[i] = crypto[i];
-
+for (var i in crypto)
+  module.exports[i] = crypto[i];

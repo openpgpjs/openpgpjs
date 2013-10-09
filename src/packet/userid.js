@@ -27,30 +27,30 @@ var util = require('../util');
  * specifies the length of the User ID. 
  */
 module.exports = function packet_userid() {
-	/** @type {String} A string containing the user id. Usually in the form
-	 * John Doe <john@example.com> 
-	 */
-	this.userid = '';
-	
-	
-	/**
-	 * Parsing function for a user id packet (tag 13).
-	 * @param {String} input payload of a tag 13 packet
-	 * @param {Integer} position position to start reading from the input string
-	 * @param {Integer} len length of the packet or the remaining length of input 
-	 * at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		this.userid = util.decode_utf8(bytes);
-	}
+  /** @type {String} A string containing the user id. Usually in the form
+   * John Doe <john@example.com> 
+   */
+  this.userid = '';
 
-	/**
-	 * Creates a string representation of the user id packet
-	 * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
-	 * @return {String} string representation
-	 */
-	this.write = function() {
-		return util.encode_utf8(this.userid);
-	}
+
+  /**
+   * Parsing function for a user id packet (tag 13).
+   * @param {String} input payload of a tag 13 packet
+   * @param {Integer} position position to start reading from the input string
+   * @param {Integer} len length of the packet or the remaining length of input 
+   * at position
+   * @return {openpgp_packet_encrypteddata} object representation
+   */
+  this.read = function(bytes) {
+    this.userid = util.decode_utf8(bytes);
+  }
+
+  /**
+   * Creates a string representation of the user id packet
+   * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
+   * @return {String} string representation
+   */
+  this.write = function() {
+    return util.encode_utf8(this.userid);
+  }
 }

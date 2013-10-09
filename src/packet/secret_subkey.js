@@ -18,5 +18,5 @@
 var secret_key = require('./secret_key.js');
 
 module.exports = function secret_subkey() {
-	secret_key.call(this);
+  secret_key.call(this);
 }

@@ -28,75 +28,75 @@
  */
 
 var enums = require('../enums.js'),
-	type_keyid = require('../type/keyid.js');
+  type_keyid = require('../type/keyid.js');
 
 module.exports = function packet_one_pass_signature() {
-	this.version = null; // A one-octet version number.  The current version is 3.
-	this.type = null; 	 // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
-	this.hashAlgorithm = null; 	   // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
-	this.publicKeyAlgorithm = null;	     // A one-octet number describing the public-key algorithm used. (See RFC4880 9.1)
-	this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
-	this.flags = null; 	//  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
+  this.version = null; // A one-octet version number.  The current version is 3.
+  this.type = null; // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
+  this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
+  this.publicKeyAlgorithm = null; // A one-octet number describing the public-key algorithm used. (See RFC4880 9.1)
+  this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
+  this.flags = null; //  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
 
-	/**
-	 * parsing function for a one-pass signature packet (tag 4).
-	 * @param {String} bytes payload of a tag 4 packet
-	 * @param {Integer} position position to start reading from the bytes string
-	 * @param {Integer} len length of the packet or the remaining length of bytes at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		var mypos = 0;
-		// A one-octet version number.  The current version is 3.
-		this.version = bytes.charCodeAt(mypos++);
+  /**
+   * parsing function for a one-pass signature packet (tag 4).
+   * @param {String} bytes payload of a tag 4 packet
+   * @param {Integer} position position to start reading from the bytes string
+   * @param {Integer} len length of the packet or the remaining length of bytes at position
+   * @return {openpgp_packet_encrypteddata} object representation
+   */
+  this.read = function(bytes) {
+    var mypos = 0;
+    // A one-octet version number.  The current version is 3.
+    this.version = bytes.charCodeAt(mypos++);
 
-	     // A one-octet signature type.  Signature types are described in
-	     //   Section 5.2.1.
-		this.type = enums.read(enums.signature, bytes.charCodeAt(mypos++));
+    // A one-octet signature type.  Signature types are described in
+    //   Section 5.2.1.
+    this.type = enums.read(enums.signature, bytes.charCodeAt(mypos++));
 
-	     // A one-octet number describing the hash algorithm used.
-		this.hashAlgorithm = enums.read(enums.hash, bytes.charCodeAt(mypos++));
+    // A one-octet number describing the hash algorithm used.
+    this.hashAlgorithm = enums.read(enums.hash, bytes.charCodeAt(mypos++));
 
-	     // A one-octet number describing the public-key algorithm used.
-		this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(mypos++));
+    // A one-octet number describing the public-key algorithm used.
+    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(mypos++));
 
-	     // An eight-octet number holding the Key ID of the signing key.
-		this.signingKeyId = new type_keyid();
-		this.signingKeyId.read(bytes.substr(mypos));
-		mypos += 8;
-		
-	     // A one-octet number holding a flag showing whether the signature
-	     //   is nested.  A zero value indicates that the next packet is
-	     //   another One-Pass Signature packet that describes another
-	     //   signature to be applied to the same message data.
-		this.flags = bytes.charCodeAt(mypos++);
-		return this;
-	}
+    // An eight-octet number holding the Key ID of the signing key.
+    this.signingKeyId = new type_keyid();
+    this.signingKeyId.read(bytes.substr(mypos));
+    mypos += 8;
 
-	/**
-	 * creates a string representation of a one-pass signature packet
-	 * @param {Integer} type Signature types as described in RFC4880 Section 5.2.1.
-	 * @param {Integer} hashalgorithm the hash algorithm used within the signature
-	 * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
-	 * @param {Integer} length length of data to be signed
-	 * @param {boolean} nested boolean showing whether the signature is nested. 
-	 *  "true" indicates that the next packet is another One-Pass Signature packet
-	 *   that describes another signature to be applied to the same message data. 
-	 * @return {String} a string representation of a one-pass signature packet
-	 */
-	this.write = function(type, hashalgorithm, privatekey, length, nested) {
-		var result =""; 
-		
-		result += String.fromCharCode(3);
-		result += String.fromCharCode(enums.write(enums.signature, type));
-		result += String.fromCharCode(enums.write(enums.hash, this.hashAlgorithm));
-		result += String.fromCharCode(enums.write(enums.publicKey, privatekey.algorithm));
-		result += privatekey.getKeyId();
-		if (nested)
-			result += String.fromCharCode(0);
-		else
-			result += String.fromCharCode(1);
-		
-		return result;
-	}
+    // A one-octet number holding a flag showing whether the signature
+    //   is nested.  A zero value indicates that the next packet is
+    //   another One-Pass Signature packet that describes another
+    //   signature to be applied to the same message data.
+    this.flags = bytes.charCodeAt(mypos++);
+    return this;
+  }
+
+  /**
+   * creates a string representation of a one-pass signature packet
+   * @param {Integer} type Signature types as described in RFC4880 Section 5.2.1.
+   * @param {Integer} hashalgorithm the hash algorithm used within the signature
+   * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
+   * @param {Integer} length length of data to be signed
+   * @param {boolean} nested boolean showing whether the signature is nested. 
+   *  "true" indicates that the next packet is another One-Pass Signature packet
+   *   that describes another signature to be applied to the same message data. 
+   * @return {String} a string representation of a one-pass signature packet
+   */
+  this.write = function(type, hashalgorithm, privatekey, length, nested) {
+    var result = "";
+
+    result += String.fromCharCode(3);
+    result += String.fromCharCode(enums.write(enums.signature, type));
+    result += String.fromCharCode(enums.write(enums.hash, this.hashAlgorithm));
+    result += String.fromCharCode(enums.write(enums.publicKey, privatekey.algorithm));
+    result += privatekey.getKeyId();
+    if (nested)
+      result += String.fromCharCode(0);
+    else
+      result += String.fromCharCode(1);
+
+    return result;
+  }
 };

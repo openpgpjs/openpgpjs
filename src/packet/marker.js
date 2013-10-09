@@ -27,25 +27,25 @@
  * Such a packet MUST be ignored when received.
  */
 function packet_marker() {
-	/**
-	 * Parsing function for a literal data packet (tag 10).
-	 * 
-	 * @param {String} input Payload of a tag 10 packet
-	 * @param {Integer} position
-	 *            Position to start reading from the input string
-	 * @param {Integer} len
-	 *            Length of the packet or the remaining length of
-	 *            input at position
-	 * @return {openpgp_packet_encrypteddata} Object representation
-	 */
-	this.read = function(bytes) {
-		if (bytes[0].charCodeAt() == 0x50 && // P
-				bytes[1].charCodeAt() == 0x47 && // G
-				bytes[2].charCodeAt() == 0x50) // P
-			return true;
-		// marker packet does not contain "PGP"
-		return false;
-	}
+  /**
+   * Parsing function for a literal data packet (tag 10).
+   * 
+   * @param {String} input Payload of a tag 10 packet
+   * @param {Integer} position
+   *            Position to start reading from the input string
+   * @param {Integer} len
+   *            Length of the packet or the remaining length of
+   *            input at position
+   * @return {openpgp_packet_encrypteddata} Object representation
+   */
+  this.read = function(bytes) {
+    if (bytes[0].charCodeAt() == 0x50 && // P
+    bytes[1].charCodeAt() == 0x47 && // G
+    bytes[2].charCodeAt() == 0x50) // P
+      return true;
+    // marker packet does not contain "PGP"
+    return false;
+  }
 }
 
 module.exports = packet_marker;

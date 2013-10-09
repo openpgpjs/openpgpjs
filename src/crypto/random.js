@@ -20,49 +20,49 @@
 var type_mpi = require('../type/mpi.js');
 
 module.exports = {
-	/**
-	 * Retrieve secure random byte string of the specified length
-	 * @param {Integer} length Length in bytes to generate
-	 * @return {String} Random byte string
-	 */
-	getRandomBytes: function(length) {
-		var result = '';
-		for (var i = 0; i < length; i++) {
-			result += String.fromCharCode(this.getSecureRandomOctet());
-		}
-		return result;
-	},
+  /**
+   * Retrieve secure random byte string of the specified length
+   * @param {Integer} length Length in bytes to generate
+   * @return {String} Random byte string
+   */
+  getRandomBytes: function(length) {
+    var result = '';
+    for (var i = 0; i < length; i++) {
+      result += String.fromCharCode(this.getSecureRandomOctet());
+    }
+    return result;
+  },
 
-	/**
-	 * Return a pseudo-random number in the specified range
-	 * @param {Integer} from Min of the random number
-	 * @param {Integer} to Max of the random number (max 32bit)
-	 * @return {Integer} A pseudo random number
-	 */
-	getPseudoRandom: function(from, to) {
-		return Math.round(Math.random()*(to-from))+from;
-	},
+  /**
+   * Return a pseudo-random number in the specified range
+   * @param {Integer} from Min of the random number
+   * @param {Integer} to Max of the random number (max 32bit)
+   * @return {Integer} A pseudo random number
+   */
+  getPseudoRandom: function(from, to) {
+    return Math.round(Math.random() * (to - from)) + from;
+  },
 
-	/**
-	 * Return a secure random number in the specified range
-	 * @param {Integer} from Min of the random number
-	 * @param {Integer} to Max of the random number (max 32bit)
-	 * @return {Integer} A secure random number
-	 */
-	getSecureRandom: function(from, to) {
-		var buf = new Uint32Array(1);
-		window.crypto.getRandomValues(buf);
-		var bits = ((to-from)).toString(2).length;
-		while ((buf[0] & (Math.pow(2, bits) -1)) > (to-from))
-			window.crypto.getRandomValues(buf);
-		return from+(Math.abs(buf[0] & (Math.pow(2, bits) -1)));
-	},
+  /**
+   * Return a secure random number in the specified range
+   * @param {Integer} from Min of the random number
+   * @param {Integer} to Max of the random number (max 32bit)
+   * @return {Integer} A secure random number
+   */
+  getSecureRandom: function(from, to) {
+    var buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    var bits = ((to - from)).toString(2).length;
+    while ((buf[0] & (Math.pow(2, bits) - 1)) > (to - from))
+      window.crypto.getRandomValues(buf);
+    return from + (Math.abs(buf[0] & (Math.pow(2, bits) - 1)));
+  },
 
-	getSecureRandomOctet: function() {
-		var buf = new Uint32Array(1);
-		window.crypto.getRandomValues(buf);
-		return buf[0] & 0xFF;
-	},
+  getSecureRandomOctet: function() {
+    var buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    return buf[0] & 0xFF;
+  },
 
   /**
    * Create a secure random big integer of bits length
@@ -71,16 +71,16 @@ module.exports = {
    */
   getRandomBigInteger: function(bits) {
     if (bits < 0) {
-       return null;
+      return null;
     }
-    var numBytes = Math.floor((bits+7)/8);
+    var numBytes = Math.floor((bits + 7) / 8);
 
     var randomBits = this.getRandomBytes(numBytes);
     if (bits % 8 > 0) {
-      
+
       randomBits = String.fromCharCode(
-              (Math.pow(2,bits % 8)-1) &
-              randomBits.charCodeAt(0)) +
+      (Math.pow(2, bits % 8) - 1) &
+        randomBits.charCodeAt(0)) +
         randomBits.substring(1);
     }
     var mpi = new type_mpi();

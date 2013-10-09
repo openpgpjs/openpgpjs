@@ -5,5 +5,15 @@
 	"scripts": {
 		"install": "make bundle",
 		"test": "node ./test/test.js"
-	}
+	},
+  "devDependencies": {
+    "browserify": "~2.33",
+    "grunt": "~0.4.1",
+    "grunt-browserify": "~1.2.8",
+    "grunt-contrib-uglify": "*",
+    "grunt-text-replace": "*",
+    "grunt-jsbeautifier": "*",
+    "grunt-contrib-jshint": "*",
+    "grunt-jsdoc": "*"
+  }
 }

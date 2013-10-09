@@ -33,24 +33,24 @@
  *  an implementation may use any method desired.
  */
 module.exports = function packet_user_attribute() {
-	this.tag = 17;
-	this.attributes = [];
+  this.tag = 17;
+  this.attributes = [];
 
-	/**
-	 * parsing function for a user attribute packet (tag 17).
-	 * @param {String} input payload of a tag 17 packet
-	 * @param {Integer} position position to start reading from the input string
-	 * @param {Integer} len length of the packet or the remaining length of input at position
-	 * @return {openpgp_packet_encrypteddata} object representation
-	 */
-	this.read = function(bytes) {
-		var i = 0;
-		while(i < bytes.length) {
-			var len = openpgp_packet.read_simple_length(bytes);
+  /**
+   * parsing function for a user attribute packet (tag 17).
+   * @param {String} input payload of a tag 17 packet
+   * @param {Integer} position position to start reading from the input string
+   * @param {Integer} len length of the packet or the remaining length of input at position
+   * @return {openpgp_packet_encrypteddata} object representation
+   */
+  this.read = function(bytes) {
+    var i = 0;
+    while (i < bytes.length) {
+      var len = openpgp_packet.read_simple_length(bytes);
 
-			i += len.offset;
-			this.attributes.push(bytes.substr(i, len.len));
-			i += len.len;
-		}
-	}
+      i += len.offset;
+      this.attributes.push(bytes.substr(i, len.len));
+      i += len.len;
+    }
+  }
 };

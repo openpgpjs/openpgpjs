@@ -20,78 +20,82 @@
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   hashModule = require('../hash'),
-	util = require('../../util');
+  util = require('../../util');
 
 function DSA() {
-	// s1 = ((g**s) mod p) mod q
-	// s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
-	function sign(hashalgo, m, g, p, q, x) {
-		// If the output size of the chosen hash is larger than the number of
-		// bits of q, the hash result is truncated to fit by taking the number
-		// of leftmost bits equal to the number of bits of q.  This (possibly
-		// truncated) hash function result is treated as a number and used
-		// directly in the DSA signature algorithm.
-		var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo,m),q.bitLength());
-		var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-		var k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
-		var s1 = (g.modPow(k,p)).mod(q); 
-		var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
-		var result = new Array();
-		result[0] = s1.toMPI();
-		result[1] = s2.toMPI();
-		return result;
-	}
-	function select_hash_algorithm(q) {
-		var usersetting = openpgp.config.config.prefer_hash_algorithm;
-		/*
-		 * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-		 * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-		 * 2048-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-		 * 3072-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-		 */
-		switch (Math.round(q.bitLength() / 8)) {
-		case 20: // 1024 bit
-			if (usersetting != 2 &&
-				usersetting > 11 &&
-				usersetting != 10 &&
-				usersetting < 8)
-				return 2; // prefer sha1
-			return usersetting;
-		case 28: // 2048 bit
-			if (usersetting > 11 &&
-					usersetting < 8)
-					return 11;
-			return usersetting;
-		case 32: // 4096 bit // prefer sha224
-			if (usersetting > 10 &&
-					usersetting < 8)
-					return 8; // prefer sha256
-			return usersetting;
-		default:
-			util.print_debug("DSA select hash algorithm: returning null for an unknown length of q");
-			return null;
-			
-		}
-	}
-	this.select_hash_algorithm = select_hash_algorithm;
-	
-	function verify(hashalgo, s1,s2,m,p,q,g,y) {
-		var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo,m),q.bitLength());
-		var hash = new BigInteger(util.hexstrdump(hashed_data), 16); 
-		if (BigInteger.ZERO.compareTo(s1) > 0 ||
-				s1.compareTo(q) > 0 ||
-				BigInteger.ZERO.compareTo(s2) > 0 ||
-				s2.compareTo(q) > 0) {
-			util.print_error("invalid DSA Signature");
-			return null;
-		}
-		var w = s2.modInverse(q);
-		var u1 = hash.multiply(w).mod(q);
-		var u2 = s1.multiply(w).mod(q);
-		return g.modPow(u1,p).multiply(y.modPow(u2,p)).mod(p).mod(q);
-	}
-	
-	/*
+  // s1 = ((g**s) mod p) mod q
+  // s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
+  function sign(hashalgo, m, g, p, q, x) {
+    // If the output size of the chosen hash is larger than the number of
+    // bits of q, the hash result is truncated to fit by taking the number
+    // of leftmost bits equal to the number of bits of q.  This (possibly
+    // truncated) hash function result is treated as a number and used
+    // directly in the DSA signature algorithm.
+    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+    var k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
+    var s1 = (g.modPow(k, p)).mod(q);
+    var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
+    var result = new Array();
+    result[0] = s1.toMPI();
+    result[1] = s2.toMPI();
+    return result;
+  }
+
+  function select_hash_algorithm(q) {
+    var usersetting = openpgp.config.config.prefer_hash_algorithm;
+    /*
+     * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
+     * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
+     * 2048-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
+     * 3072-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
+     */
+    switch (Math.round(q.bitLength() / 8)) {
+      case 20:
+        // 1024 bit
+        if (usersetting != 2 &&
+          usersetting > 11 &&
+          usersetting != 10 &&
+          usersetting < 8)
+          return 2; // prefer sha1
+        return usersetting;
+      case 28:
+        // 2048 bit
+        if (usersetting > 11 &&
+          usersetting < 8)
+          return 11;
+        return usersetting;
+      case 32:
+        // 4096 bit // prefer sha224
+        if (usersetting > 10 &&
+          usersetting < 8)
+          return 8; // prefer sha256
+        return usersetting;
+      default:
+        util.print_debug("DSA select hash algorithm: returning null for an unknown length of q");
+        return null;
+
+    }
+  }
+  this.select_hash_algorithm = select_hash_algorithm;
+
+  function verify(hashalgo, s1, s2, m, p, q, g, y) {
+    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+    if (BigInteger.ZERO.compareTo(s1) > 0 ||
+      s1.compareTo(q) > 0 ||
+      BigInteger.ZERO.compareTo(s2) > 0 ||
+      s2.compareTo(q) > 0) {
+      util.print_error("invalid DSA Signature");
+      return null;
+    }
+    var w = s2.modInverse(q);
+    var u1 = hash.multiply(w).mod(q);
+    var u2 = s1.multiply(w).mod(q);
+    return g.modPow(u1, p).multiply(y.modPow(u2, p)).mod(p).mod(q);
+  }
+
+  /*
 	 * unused code. This can be used as a start to write a key generator
 	 * function.
 	
@@ -150,9 +154,9 @@ function DSA() {
         s = (k.modInverse(q).multiply(hash.add(x.multiply(r)))).mod(q);
 	    return s;
 	} */
-	this.sign = sign;
-	this.verify = verify;
-	// this.generate = generateKey;
+  this.sign = sign;
+  this.verify = verify;
+  // this.generate = generateKey;
 }
 
 module.exports = DSA;

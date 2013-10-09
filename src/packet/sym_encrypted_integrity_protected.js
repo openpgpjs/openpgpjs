@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 var util = require('../util'),
-	crypto = require('../crypto');
+  crypto = require('../crypto');
 
 /**
  * @class
@@ -31,89 +31,86 @@ var util = require('../util'),
  */
 
 module.exports = function packet_sym_encrypted_integrity_protected() {
-	/** The encrypted payload. */
-	this.encrypted = null; // string
-	/** @type {Boolean}
-	 * If after decrypting the packet this is set to true,
-	 * a modification has been detected and thus the contents
-	 * should be discarded.
-	 */
-	this.modification = false;
-	this.packets;
+  /** The encrypted payload. */
+  this.encrypted = null; // string
+  /** @type {Boolean}
+   * If after decrypting the packet this is set to true,
+   * a modification has been detected and thus the contents
+   * should be discarded.
+   */
+  this.modification = false;
+  this.packets;
 
 
-	this.read = function(bytes) {
-		// - A one-octet version number. The only currently defined value is
-		// 1.
-		var version = bytes[0].charCodeAt();
+  this.read = function(bytes) {
+    // - A one-octet version number. The only currently defined value is
+    // 1.
+    var version = bytes[0].charCodeAt();
 
-		if (version != 1) {
-			throw new Error('Invalid packet version.');
-		}
+    if (version != 1) {
+      throw new Error('Invalid packet version.');
+    }
 
-		// - Encrypted data, the output of the selected symmetric-key cipher
-		//   operating in Cipher Feedback mode with shift amount equal to the
-		//   block size of the cipher (CFB-n where n is the block size).
-		this.encrypted = bytes.substr(1);
-	}
+    // - Encrypted data, the output of the selected symmetric-key cipher
+    //   operating in Cipher Feedback mode with shift amount equal to the
+    //   block size of the cipher (CFB-n where n is the block size).
+    this.encrypted = bytes.substr(1);
+  }
 
-	this.write = function() {
-		
-		return String.fromCharCode(1) // Version
-			+ this.encrypted;
-	}
+  this.write = function() {
 
-	this.encrypt = function(sessionKeyAlgorithm, key) {
-		var bytes = this.packets.write()
-		
-		var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
-		var prefix = prefixrandom
-				+ prefixrandom.charAt(prefixrandom.length - 2)
-				+ prefixrandom.charAt(prefixrandom.length - 1)
+    return String.fromCharCode(1) // Version
+    + this.encrypted;
+  }
 
-		var tohash = bytes;
+  this.encrypt = function(sessionKeyAlgorithm, key) {
+    var bytes = this.packets.write()
 
+    var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
+    var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length -
+      1)
 
-		// Modification detection code packet.
-		tohash += String.fromCharCode(0xD3);
-		tohash += String.fromCharCode(0x14);
+    var tohash = bytes;
 
 
-		tohash += crypto.hash.sha1(prefix + tohash);
+    // Modification detection code packet.
+    tohash += String.fromCharCode(0xD3);
+    tohash += String.fromCharCode(0x14);
 
 
-		this.encrypted = crypto.cfb.encrypt(prefixrandom,
-				sessionKeyAlgorithm, tohash, key, false).substring(0,
-				prefix.length + tohash.length);
-	}
-
-	/**
-	 * Decrypts the encrypted data contained in this object read_packet must
-	 * have been called before
-	 * 
-	 * @param {Integer} sessionKeyAlgorithm
-	 *            The selected symmetric encryption algorithm to be used
-	 * @param {String} key The key of cipher blocksize length to be used
-	 * @return {String} The decrypted data of this packet
-	 */
-	this.decrypt = function(sessionKeyAlgorithm, key) {
-		var decrypted = crypto.cfb.decrypt(
-				sessionKeyAlgorithm, key, this.encrypted, false);
+    tohash += crypto.hash.sha1(prefix + tohash);
 
 
-		// there must be a modification detection code packet as the
-		// last packet and everything gets hashed except the hash itself
-		this.hash = crypto.hash.sha1(
-			crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted)
-			+ decrypted.substring(0, decrypted.length - 20));
+    this.encrypted = crypto.cfb.encrypt(prefixrandom,
+      sessionKeyAlgorithm, tohash, key, false).substring(0,
+      prefix.length + tohash.length);
+  }
+
+  /**
+   * Decrypts the encrypted data contained in this object read_packet must
+   * have been called before
+   * 
+   * @param {Integer} sessionKeyAlgorithm
+   *            The selected symmetric encryption algorithm to be used
+   * @param {String} key The key of cipher blocksize length to be used
+   * @return {String} The decrypted data of this packet
+   */
+  this.decrypt = function(sessionKeyAlgorithm, key) {
+    var decrypted = crypto.cfb.decrypt(
+      sessionKeyAlgorithm, key, this.encrypted, false);
 
 
-		var mdc = decrypted.substr(decrypted.length - 20, 20);
+    // there must be a modification detection code packet as the
+    // last packet and everything gets hashed except the hash itself
+    this.hash = crypto.hash.sha1(
+      crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted) + decrypted.substring(0, decrypted.length - 20));
 
-		if(this.hash != mdc) {
-			throw new Error('Modification detected.');
-		}
-		else
-			this.packets.read(decrypted.substr(0, decrypted.length - 22));
-	}
+
+    var mdc = decrypted.substr(decrypted.length - 20, 20);
+
+    if (this.hash != mdc) {
+      throw new Error('Modification detected.');
+    } else
+      this.packets.read(decrypted.substr(0, decrypted.length - 22));
+  }
 };

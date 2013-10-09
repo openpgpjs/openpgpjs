@@ -1,8 +1,6 @@
-
-
 var packetParser = require('./packet.js'),
-	packets = require('./all_packets.js'),
-	enums = require('../enums.js');
+  packets = require('./all_packets.js'),
+  enums = require('../enums.js');
 
 /**
  * @class
@@ -11,59 +9,59 @@ var packetParser = require('./packet.js'),
  * are stored as numerical indices.
  */
 module.exports = function packetlist() {
-	/** The number of packets contained within the list.
-	 * @readonly
-	 * @type {Integer} */
-	this.length = 0;
+  /** The number of packets contained within the list.
+   * @readonly
+   * @type {Integer} */
+  this.length = 0;
 
 
 
-	/**
-	 * Reads a stream of binary data and interprents it as a list of packets.
-	 * @param {openpgp_bytearray} An array of bytes.
-	 */
-	this.read = function(bytes) {
-		var i = 0;
+  /**
+   * Reads a stream of binary data and interprents it as a list of packets.
+   * @param {openpgp_bytearray} An array of bytes.
+   */
+  this.read = function(bytes) {
+    var i = 0;
 
-		while(i < bytes.length) {
-			var parsed = packetParser.read(bytes, i, bytes.length - i);
-			i = parsed.offset;
+    while (i < bytes.length) {
+      var parsed = packetParser.read(bytes, i, bytes.length - i);
+      i = parsed.offset;
 
-			var tag = enums.read(enums.packet, parsed.tag);
-			var packet = new packets[tag]();
+      var tag = enums.read(enums.packet, parsed.tag);
+      var packet = new packets[tag]();
 
-			this.push(packet);
+      this.push(packet);
 
-			packet.read(parsed.packet);
-		}
-	}
+      packet.read(parsed.packet);
+    }
+  }
 
-	/**
-	 * Creates a binary representation of openpgp objects contained within the
-	 * class instance.
-	 * @returns {openpgp_bytearray} An array of bytes containing valid openpgp packets.
-	 */
-	this.write = function() {
-		var bytes = '';
+  /**
+   * Creates a binary representation of openpgp objects contained within the
+   * class instance.
+   * @returns {openpgp_bytearray} An array of bytes containing valid openpgp packets.
+   */
+  this.write = function() {
+    var bytes = '';
 
-		for(var i = 0; i < this.length; i++) {
-			var packetbytes = this[i].write();
-			bytes += packetParser.writeHeader(this[i].tag, packetbytes.length);
-			bytes += packetbytes;
-		}
-		
-		return bytes;
-	}
+    for (var i = 0; i < this.length; i++) {
+      var packetbytes = this[i].write();
+      bytes += packetParser.writeHeader(this[i].tag, packetbytes.length);
+      bytes += packetbytes;
+    }
 
-	/**
-	 * Adds a packet to the list. This is the only supported method of doing so;
-	 * writing to packetlist[i] directly will result in an error.
-	 */
-	this.push = function(packet) {
-		packet.packets = new packetlist();
+    return bytes;
+  }
 
-		this[this.length] = packet;
-		this.length++;
-	}
+  /**
+   * Adds a packet to the list. This is the only supported method of doing so;
+   * writing to packetlist[i] directly will result in an error.
+   */
+  this.push = function(packet) {
+    packet.packets = new packetlist();
+
+    this[this.length] = packet;
+    this.length++;
+  }
 
 }

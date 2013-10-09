@@ -18,5 +18,5 @@
 var public_key = require('./public_key.js');
 
 module.exports = function public_subkey() {
-	public_key.call(this);
+  public_key.call(this);
 }

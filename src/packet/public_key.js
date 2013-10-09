@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 var util = require('../util'),
-	type_mpi = require('../type/mpi.js'),
-	enums = require('../enums.js'),
-	crypto = require('../crypto');
+  type_mpi = require('../type/mpi.js'),
+  enums = require('../enums.js'),
+  crypto = require('../crypto');
 
 /**
  * @class
@@ -30,111 +30,108 @@ var util = require('../util'),
  * major versions.  Consequently, this section is complex.
  */
 module.exports = function packet_public_key() {
-	/** Key creation date.
-	 * @type {Date} */
-	this.created = new Date();
-	/** A list of multiprecision integers
-	 * @type {openpgp_type_mpi} */
-	this.mpi = [];
-	/** Public key algorithm
-	 * @type {openpgp.publickey} */
-	this.algorithm = 'rsa_sign';
+  /** Key creation date.
+   * @type {Date} */
+  this.created = new Date();
+  /** A list of multiprecision integers
+   * @type {openpgp_type_mpi} */
+  this.mpi = [];
+  /** Public key algorithm
+   * @type {openpgp.publickey} */
+  this.algorithm = 'rsa_sign';
 
 
-	/**
-	 * Internal Parser for public keys as specified in RFC 4880 section 
-	 * 5.5.2 Public-Key Packet Formats
-	 * called by read_tag&lt;num&gt;
-	 * @param {String} input Input string to read the packet from
-	 * @param {Integer} position Start position for the parser
-	 * @param {Integer} len Length of the packet or remaining length of input
-	 * @return {Object} This object with attributes set by the parser
-	 */  
-	this.readPublicKey = this.read = function(bytes) {
-		// A one-octet version number (3 or 4).
-		var version = bytes[0].charCodeAt();
+  /**
+   * Internal Parser for public keys as specified in RFC 4880 section 
+   * 5.5.2 Public-Key Packet Formats
+   * called by read_tag&lt;num&gt;
+   * @param {String} input Input string to read the packet from
+   * @param {Integer} position Start position for the parser
+   * @param {Integer} len Length of the packet or remaining length of input
+   * @return {Object} This object with attributes set by the parser
+   */
+  this.readPublicKey = this.read = function(bytes) {
+    // A one-octet version number (3 or 4).
+    var version = bytes[0].charCodeAt();
 
-		if (version == 4) {
-			// - A four-octet number denoting the time that the key was created.
-			this.created = util.readDate(bytes.substr(1, 4));
-			
-			// - A one-octet number denoting the public-key algorithm of this key.
-			this.algorithm = enums.read(enums.publicKey, bytes[5].charCodeAt());
+    if (version == 4) {
+      // - A four-octet number denoting the time that the key was created.
+      this.created = util.readDate(bytes.substr(1, 4));
 
-			var mpicount = crypto.getPublicMpiCount(this.algorithm);
-			this.mpi = [];
+      // - A one-octet number denoting the public-key algorithm of this key.
+      this.algorithm = enums.read(enums.publicKey, bytes[5].charCodeAt());
 
-			var bmpi = bytes.substr(6);
-			var p = 0;
+      var mpicount = crypto.getPublicMpiCount(this.algorithm);
+      this.mpi = [];
 
-			for (var i = 0; 
-				i < mpicount && p < bmpi.length; 
-				i++) {
+      var bmpi = bytes.substr(6);
+      var p = 0;
 
-				this.mpi[i] = new type_mpi();
+      for (var i = 0; i < mpicount && p < bmpi.length; i++) {
 
-				p += this.mpi[i].read(bmpi.substr(p))
+        this.mpi[i] = new type_mpi();
 
-				if(p > bmpi.length)
-					util.print_error("openpgp.packet.keymaterial.js\n"
-						+'error reading MPI @:'+p);
-			}
+        p += this.mpi[i].read(bmpi.substr(p))
 
-			return p + 6;
-		} else {
-			throw new Error('Version ' + version + ' of the key packet is unsupported.');
-		}
-	}
+        if (p > bmpi.length)
+          util.print_error("openpgp.packet.keymaterial.js\n" + 'error reading MPI @:' + p);
+      }
 
-	/*
-     * Same as write_private_key, but has less information because of 
-	 * public key.
-     * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
-	 * IE 1 corresponds to RSA.
-     * @param {RSA.keyObject} key
-     * @param timePacket
-     * @return {Object} {body: [string]OpenPGP packet body contents, 
-	 * header: [string] OpenPGP packet header, string: [string] header+body}
-     */
-    this.writePublicKey = this.write = function() {
-		// Version
-		var result = String.fromCharCode(4);
-        result += util.writeDate(this.created);
-		result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+      return p + 6;
+    } else {
+      throw new Error('Version ' + version + ' of the key packet is unsupported.');
+    }
+  }
 
-		var mpicount = crypto.getPublicMpiCount(this.algorithm);
+  /*
+   * Same as write_private_key, but has less information because of 
+   * public key.
+   * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
+   * IE 1 corresponds to RSA.
+   * @param {RSA.keyObject} key
+   * @param timePacket
+   * @return {Object} {body: [string]OpenPGP packet body contents, 
+   * header: [string] OpenPGP packet header, string: [string] header+body}
+   */
+  this.writePublicKey = this.write = function() {
+    // Version
+    var result = String.fromCharCode(4);
+    result += util.writeDate(this.created);
+    result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
 
-		for(var i = 0; i < mpicount; i++) {
-			result += this.mpi[i].write();
-		}
+    var mpicount = crypto.getPublicMpiCount(this.algorithm);
 
-		return result;
-	}
+    for (var i = 0; i < mpicount; i++) {
+      result += this.mpi[i].write();
+    }
 
-	// Write an old version packet - it's used by some of the internal routines.
-	this.writeOld = function() {
-		var bytes = this.writePublicKey();
+    return result;
+  }
 
-		return String.fromCharCode(0x99) +
-			util.writeNumber(bytes.length, 2) +
-			bytes;
-	}
+  // Write an old version packet - it's used by some of the internal routines.
+  this.writeOld = function() {
+    var bytes = this.writePublicKey();
 
-	/**
-	 * Calculates the key id of the key 
-	 * @return {String} A 8 byte key id
-	 */
-	this.getKeyId = function() {
-		return this.getFingerprint().substr(12, 8);
-	}
-	
-	/**
-	 * Calculates the fingerprint of the key
-	 * @return {String} A string containing the fingerprint
-	 */
-	this.getFingerprint = function() {
-		var toHash = this.writeOld();
-		return crypto.hash.sha1(toHash, toHash.length);
-	}
+    return String.fromCharCode(0x99) +
+      util.writeNumber(bytes.length, 2) +
+      bytes;
+  }
+
+  /**
+   * Calculates the key id of the key 
+   * @return {String} A 8 byte key id
+   */
+  this.getKeyId = function() {
+    return this.getFingerprint().substr(12, 8);
+  }
+
+  /**
+   * Calculates the fingerprint of the key
+   * @return {String} A string containing the fingerprint
+   */
+  this.getFingerprint = function() {
+    var toHash = this.writeOld();
+    return crypto.hash.sha1(toHash, toHash.length);
+  }
 
 }

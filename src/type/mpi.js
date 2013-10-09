@@ -21,7 +21,7 @@
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 var BigInteger = require('../crypto/public_key/jsbn.js'),
-	util = require('../util');
+  util = require('../util');
 
 /**
  * @class
@@ -34,65 +34,64 @@ var BigInteger = require('../crypto/public_key/jsbn.js'),
  * actual integer.
  */
 module.exports = function mpi() {
-	/** An implementation dependent integer */
-	this.data = null;
+  /** An implementation dependent integer */
+  this.data = null;
 
-	/**
-	 * Parsing function for a mpi (RFC 4880 3.2).
-	 * @param {String} input Payload of mpi data
-	 * @param {Integer} position Position to start reading from the input 
-	 * string
-	 * @param {Integer} len Length of the packet or the remaining length of 
-	 * input at position
-	 * @return {openpgp_type_mpi} Object representation
-	 */
-	this.read = function(bytes) {
-		var bits = (bytes[0].charCodeAt() << 8) | bytes[1].charCodeAt();
-		
-		// Additional rules:
-		//
-		//    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
-		//
-		//    The length field of an MPI describes the length starting from its
-		//	  most significant non-zero bit.  Thus, the MPI [00 02 01] is not
-		//    formed correctly.  It should be [00 01 01].
+  /**
+   * Parsing function for a mpi (RFC 4880 3.2).
+   * @param {String} input Payload of mpi data
+   * @param {Integer} position Position to start reading from the input 
+   * string
+   * @param {Integer} len Length of the packet or the remaining length of 
+   * input at position
+   * @return {openpgp_type_mpi} Object representation
+   */
+  this.read = function(bytes) {
+    var bits = (bytes[0].charCodeAt() << 8) | bytes[1].charCodeAt();
 
-		// TODO: Verification of this size method! This size calculation as
-		// 		 specified above is not applicable in JavaScript
-		var bytelen = Math.ceil(bits / 8);
-		
-		var raw = bytes.substr(2, bytelen);
-		this.fromBytes(raw);
+    // Additional rules:
+    //
+    //    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
+    //
+    //    The length field of an MPI describes the length starting from its
+    //	  most significant non-zero bit.  Thus, the MPI [00 02 01] is not
+    //    formed correctly.  It should be [00 01 01].
 
-		return 2 + bytelen;
-	}
+    // TODO: Verification of this size method! This size calculation as
+    // 		 specified above is not applicable in JavaScript
+    var bytelen = Math.ceil(bits / 8);
 
-	this.fromBytes = function(bytes) {
-		this.data = new BigInteger(util.hexstrdump(bytes), 16); 
-	}
+    var raw = bytes.substr(2, bytelen);
+    this.fromBytes(raw);
 
-	this.toBytes = function() {
-		return this.write().substr(2);
-	}
+    return 2 + bytelen;
+  }
 
-	this.byteLength = function() {
-		return this.toBytes().length;
-	}
+  this.fromBytes = function(bytes) {
+    this.data = new BigInteger(util.hexstrdump(bytes), 16);
+  }
 
-	/**
-	 * Converts the mpi object to a string as specified in RFC4880 3.2
-	 * @return {String} mpi Byte representation
-	 */
-	this.write = function() {
-		return this.data.toMPI();
-	}
+  this.toBytes = function() {
+    return this.write().substr(2);
+  }
 
-	this.toBigInteger = function() {
-		return this.data.clone();
-	}
+  this.byteLength = function() {
+    return this.toBytes().length;
+  }
 
-	this.fromBigInteger = function(bn) {
-		this.data = bn.clone();
-	}
+  /**
+   * Converts the mpi object to a string as specified in RFC4880 3.2
+   * @return {String} mpi Byte representation
+   */
+  this.write = function() {
+    return this.data.toMPI();
+  }
+
+  this.toBigInteger = function() {
+    return this.data.clone();
+  }
+
+  this.fromBigInteger = function(bn) {
+    this.data = bn.clone();
+  }
 }
-
