@@ -65,9 +65,10 @@ function openpgp_config() {
 	 */
 	function read() {
 		var cf = null;
-		if (typeof chrome === 'undefined' || typeof chrome.runtime === 'undefined') {
+		try {
 			cf = JSON.parse(window.localStorage.getItem("config"));
-		}
+		} catch(e) {}
+
 		if (cf == null) {
 			this.config = this.default_config;
 			this.write();
@@ -85,9 +86,9 @@ function openpgp_config() {
 	 * Writes the config to HTML5 local storage
 	 */
 	function write() {
-		if (typeof chrome === 'undefined' || typeof chrome.runtime === 'undefined') {
+		try {
 			window.localStorage.setItem("config",JSON.stringify(this.config));
-		}
+		} catch(e) {}
 	}
 
 	this.read = read;
