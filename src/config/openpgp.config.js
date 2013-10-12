@@ -64,7 +64,11 @@ function openpgp_config() {
 	 * if config is null the default config will be used
 	 */
 	function read() {
-		var cf = JSON.parse(window.localStorage.getItem("config"));
+		var cf = null;
+		try {
+			cf = JSON.parse(window.localStorage.getItem("config"));
+		} catch(e) {}
+
 		if (cf == null) {
 			this.config = this.default_config;
 			this.write();
@@ -82,7 +86,9 @@ function openpgp_config() {
 	 * Writes the config to HTML5 local storage
 	 */
 	function write() {
-		window.localStorage.setItem("config",JSON.stringify(this.config));
+		try {
+			window.localStorage.setItem("config",JSON.stringify(this.config));
+		} catch(e) {}
 	}
 
 	this.read = read;
