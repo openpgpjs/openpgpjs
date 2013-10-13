@@ -53,18 +53,40 @@ function openpgp_config() {
 			show_comment: true,
 			integrity_protect: true,
 			composition_behavior: 0,
-			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
+			keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
+			has_localStorage: 1,
+			has_randomValues: 1
 	};
 
 	this.versionstring ="OpenPGP.js VERSION";
 	this.commentstring ="http://openpgpjs.org";
+
+	try {
+		if (typeof window !== 'undefined') {
+			if (!window.localstorage) {
+				this.default_config.has_localStorage = 0;
+			}
+			if (!window.getRandomValues) {
+				this.default_config.has_randomValues = 0;
+			}
+		}
+		else {
+			this.default_config.has_localStorage = 0;
+			this.default_config.has_randomValues = 0;
+		}
+	}
+	catch (e) { // Need this for environments where access to window throws an exception
+		this.default_config.has_localStorage = 0;
+			this.default_config.has_randomValues = 0;
+	}
+
 	/**
 	 * Reads the config out of the HTML5 local storage
 	 * and initializes the object config.
 	 * if config is null the default config will be used
 	 */
 	function read() {
-		var cf = (window.localStorage) ? JSON.parse(window.localStorage.getItem("config")) : null;
+		var cf = (this.default_config.has_localStorage) ? JSON.parse(window.localStorage.getItem("config")) : null;
 		if (cf == null) {
 			this.config = this.default_config;
 			this.write();
@@ -82,7 +104,7 @@ function openpgp_config() {
 	 * Writes the config to HTML5 local storage
 	 */
 	function write() {
-		window.localStorage && window.localStorage.setItem("config",JSON.stringify(this.config));
+		this.default_config.has_localStorage == 1 && window.localStorage.setItem("config",JSON.stringify(this.config));
 	}
 
 	this.read = read;

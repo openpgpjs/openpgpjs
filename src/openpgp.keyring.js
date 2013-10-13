@@ -29,7 +29,7 @@ function openpgp_keyring() {
 	function init() {
 		var sprivatekeys = null;
 		var spublickeys = null;
-		if (window.localStorage) {
+		if (openpgp.config.has_localStorage) {
 			sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
 			spublickeys = JSON.parse(window.localStorage.getItem("publickeys"));			
 		}
@@ -73,7 +73,7 @@ function openpgp_keyring() {
 	 * The privateKeys array and publicKeys array gets Stringified using JSON
 	 */
 	function store() {
-		if (window.localStorage) {
+		if (openpgp.config.has_localStorage) {
 			var priv = new Array();
 			for (var i = 0; i < this.privateKeys.length; i++) {
 				priv[i] = this.privateKeys[i].armored;
