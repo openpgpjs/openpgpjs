@@ -50,7 +50,7 @@ function packet_secret_key() {
     else
       return function(c) {
         return util.writeNumber(util.calc_checksum(c), 2);
-    }
+    };
   }
 
   // Helper function
@@ -129,7 +129,7 @@ function packet_secret_key() {
         this.algorithm));
     }
 
-  }
+  };
 
   /*
      * Creates an OpenPGP key packet for the given key. much 
@@ -156,7 +156,7 @@ function packet_secret_key() {
     }
 
     return bytes;
-  }
+  };
 
 
 
@@ -181,10 +181,8 @@ function packet_secret_key() {
     this.encrypted += s2k.write();
     this.encrypted += iv;
 
-
-
     this.encrypted += crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv);
-  }
+  };
 
   function produceEncryptionKey(s2k, passphrase, algorithm) {
     return s2k.produce_key(passphrase,
@@ -251,12 +249,11 @@ function packet_secret_key() {
 
     this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
       this.algorithm));
-  }
+  };
 
-  this.generate = function(bits) {
-    this.mpi;
-
-  }
+  this.generate = function(bits, passphrase) {
+    this.mpi = crypto.generateMpi(this.algorithm, bits);
+  };
 
 }
 

@@ -393,7 +393,7 @@ module.exports = function packet_signature() {
 
   // Produces data to produce signature on
   this.toSign = function(type, data) {
-    var t = enums.signature
+    var t = enums.signature;
 
     switch (type) {
       case t.binary:
@@ -405,7 +405,7 @@ module.exports = function packet_signature() {
           .replace(/\n/g, '\r\n');
 
       case t.standalone:
-        return ''
+        return '';
 
       case t.cert_generic:
       case t.cert_persona:
@@ -415,18 +415,16 @@ module.exports = function packet_signature() {
         {
           var packet, tag;
 
-          if (data.userid != undefined) {
+          if (data.userid !== undefined) {
             tag = 0xB4;
             packet = data.userid;
-          } else if (data.userattribute != undefined) {
-            tag = 0xD1
+          } else if (data.userattribute !== undefined) {
+            tag = 0xD1;
             packet = data.userattribute;
           } else throw new Error('Either a userid or userattribute packet needs to be ' +
               'supplied for certification.');
 
-
           var bytes = packet.write();
-
 
           return this.toSign(t.key, data) +
             String.fromCharCode(tag) +

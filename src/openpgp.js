@@ -24,6 +24,7 @@
 var armor = require('./encoding/armor.js');
 var packet = require('./packet');
 var util = require('./util');
+var enums = require('./enums.js');
 
 /**
  * GPG4Browsers Core interface. A single instance is hold
@@ -104,11 +105,22 @@ function _openpgp() {
     var packetlist = new packet.list();
 
     var secretKeyPacket = new packet.secret_key();
+    secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
+    secretKeyPacket.generate(numBits);
+    secretKeyPacket.encrypt(passphrase);
+
     var userIdPacket = new packet.userid();
+    userIdPacket.read(userId);
+
     var signaturePacket = new packet.signature();
     var secretSubkeyPacket = new packet.secret_subkey();
     var overallSignaturePacket = new packet.signature();
 
+    packetlist.push(secretKeyPacket);
+    packetlist.push(userIdPacket);
+    packetlist.push(signaturePacket);
+    packetlist.push(secretSubkeyPacket);
+    packetlist.push(overallSignaturePacket);
   }
 
   /**

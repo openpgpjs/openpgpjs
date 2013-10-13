@@ -1329,7 +1329,7 @@ function openpgp_config() {
     keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
   };
 
-  this.versionstring = "OpenPGP.js v0.0.1.20131009";
+  this.versionstring = "OpenPGP.js v0.0.1.20131013";
   this.commentstring = "http://openpgpjs.org";
   /**
    * Reads the config out of the HTML5 local storage
@@ -4170,6 +4170,35 @@ module.exports = {
       default:
         throw new Error('Unknown algorithm.');
     }
+  },
+
+  generateMpi: function(algo, bits) {
+    var result = (function() {
+      switch (algo) {
+        case 'rsa_encrypt':
+        case 'rsa_encrypt_sign':
+        case 'rsa_sign':
+          //remember "publicKey" refers to the crypto/public_key dir
+          var rsa = new publicKey.rsa();
+          var keyObject = rsa.generate(bits, "10001");
+          var output = [];
+          output.push(keyObject.n);
+          output.push(keyObject.ee);
+          output.push(keyObject.d);
+          output.push(keyObject.p);
+          output.push(keyObject.q);
+          output.push(keyObject.u);
+          return output;
+        default:
+          throw new Error('Unsupported algorithm for key generation.');
+      }
+    })();
+
+    return result.map(function(bn) {
+      var mpi = new type_mpi();
+      mpi.fromBigInteger(bn);
+      return mpi;
+    });
   },
 
 
@@ -9138,6 +9167,7 @@ function openpgp_key() {
 var armor = require('./encoding/armor.js');
 var packet = require('./packet');
 var util = require('./util');
+var enums = require('./enums.js');
 
 /**
  * GPG4Browsers Core interface. A single instance is hold
@@ -9218,11 +9248,22 @@ function _openpgp() {
     var packetlist = new packet.list();
 
     var secretKeyPacket = new packet.secret_key();
+    secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
+    secretKeyPacket.generate(numBits);
+    secretKeyPacket.encrypt(passphrase);
+
     var userIdPacket = new packet.userid();
+    userIdPacket.read(userId);
+
     var signaturePacket = new packet.signature();
     var secretSubkeyPacket = new packet.secret_subkey();
     var overallSignaturePacket = new packet.signature();
 
+    packetlist.push(secretKeyPacket);
+    packetlist.push(userIdPacket);
+    packetlist.push(signaturePacket);
+    packetlist.push(secretSubkeyPacket);
+    packetlist.push(overallSignaturePacket);
   }
 
   /**
@@ -9415,7 +9456,7 @@ function _openpgp() {
 
 module.exports = new _openpgp();
 
-},{"./encoding/armor.js":24,"./packet":34,"./util":55}],30:[function(require,module,exports){
+},{"./encoding/armor.js":24,"./enums.js":26,"./packet":34,"./util":55}],30:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -10943,7 +10984,7 @@ function packet_secret_key() {
     else
       return function(c) {
         return util.writeNumber(util.calc_checksum(c), 2);
-    }
+    };
   }
 
   // Helper function
@@ -11022,7 +11063,7 @@ function packet_secret_key() {
         this.algorithm));
     }
 
-  }
+  };
 
   /*
      * Creates an OpenPGP key packet for the given key. much 
@@ -11049,7 +11090,7 @@ function packet_secret_key() {
     }
 
     return bytes;
-  }
+  };
 
 
 
@@ -11074,10 +11115,8 @@ function packet_secret_key() {
     this.encrypted += s2k.write();
     this.encrypted += iv;
 
-
-
     this.encrypted += crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv);
-  }
+  };
 
   function produceEncryptionKey(s2k, passphrase, algorithm) {
     return s2k.produce_key(passphrase,
@@ -11144,12 +11183,11 @@ function packet_secret_key() {
 
     this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
       this.algorithm));
-  }
+  };
 
-  this.generate = function(bits) {
-    this.mpi;
-
-  }
+  this.generate = function(bits, passphrase) {
+    this.mpi = crypto.generateMpi(this.algorithm, bits);
+  };
 
 }
 
@@ -11577,7 +11615,7 @@ module.exports = function packet_signature() {
 
   // Produces data to produce signature on
   this.toSign = function(type, data) {
-    var t = enums.signature
+    var t = enums.signature;
 
     switch (type) {
       case t.binary:
@@ -11589,7 +11627,7 @@ module.exports = function packet_signature() {
           .replace(/\n/g, '\r\n');
 
       case t.standalone:
-        return ''
+        return '';
 
       case t.cert_generic:
       case t.cert_persona:
@@ -11599,18 +11637,16 @@ module.exports = function packet_signature() {
         {
           var packet, tag;
 
-          if (data.userid != undefined) {
+          if (data.userid !== undefined) {
             tag = 0xB4;
             packet = data.userid;
-          } else if (data.userattribute != undefined) {
-            tag = 0xD1
+          } else if (data.userattribute !== undefined) {
+            tag = 0xD1;
             packet = data.userattribute;
           } else throw new Error('Either a userid or userattribute packet needs to be ' +
               'supplied for certification.');
 
-
           var bytes = packet.write();
-
 
           return this.toSign(t.key, data) +
             String.fromCharCode(tag) +
@@ -12811,5 +12847,5 @@ var Util = function() {
  */
 module.exports = new Util();
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55])
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,13,14,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55])
 ;

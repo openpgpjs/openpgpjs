@@ -164,6 +164,35 @@ module.exports = {
     }
   },
 
+  generateMpi: function(algo, bits) {
+    var result = (function() {
+      switch (algo) {
+        case 'rsa_encrypt':
+        case 'rsa_encrypt_sign':
+        case 'rsa_sign':
+          //remember "publicKey" refers to the crypto/public_key dir
+          var rsa = new publicKey.rsa();
+          var keyObject = rsa.generate(bits, "10001");
+          var output = [];
+          output.push(keyObject.n);
+          output.push(keyObject.ee);
+          output.push(keyObject.d);
+          output.push(keyObject.p);
+          output.push(keyObject.q);
+          output.push(keyObject.u);
+          return output;
+        default:
+          throw new Error('Unsupported algorithm for key generation.');
+      }
+    })();
+
+    return result.map(function(bn) {
+      var mpi = new type_mpi();
+      mpi.fromBigInteger(bn);
+      return mpi;
+    });
+  },
+
 
   /**
    * generate random byte prefix as string for the specified algorithm
