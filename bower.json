@@ -1,0 +1,10 @@
+{
+  "name": "openpgpjs",
+  "version": "1.0.0",
+  "homepage": "https://github.com/openpgpjs/openpgpjs",
+  "description": "OpenPGP implementation for JavaScript",
+  "main": "openpgp.js",
+  "dependencies": {
+    "sjcl": "bitwiseshiftleft/sjcl#1a6c455cad62db24d80b3b8ea6fe2def6a440fb9"
+  }
+}
