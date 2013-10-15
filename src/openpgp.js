@@ -37,18 +37,6 @@ function _openpgp() {
   this.tostring = "";
 
   /**
-   * initializes the library:
-   * - reading the keyring from local storage
-   * - reading the config from local storage
-   */
-  function init() {
-    this.config = new openpgp_config();
-    this.config.read();
-    this.keyring = new openpgp_keyring();
-    this.keyring.init();
-  }
-
-  /**
    * reads message packets out of an OpenPGP armored text and
    * returns an array of message objects
    * @param {String} armoredText text to be parsed
@@ -112,15 +100,38 @@ function _openpgp() {
     var userIdPacket = new packet.userid();
     userIdPacket.read(userId);
 
+    var dataToSign = {};
+    dataToSign.userid = userIdPacket;
+    dataToSign.key = secretKeyPacket;
     var signaturePacket = new packet.signature();
+    signaturePacket.signatureType = enums.signature.cert_casual;
+    signaturePacket.publicKeyAlgorithm = keyType;
+    //TODO we should load preferred hash from config, or as input to this function
+    signaturePacket.hashAlgorithm = enums.hash.sha256;
+    signaturePacket.sign(secretKeyPacket, dataToSign);
+
     var secretSubkeyPacket = new packet.secret_subkey();
-    var overallSignaturePacket = new packet.signature();
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
+    secretSubkeyPacket.generate(numBits);
+    secretSubkeyPacket.encrypt(passphrase);
+
+    dataToSign = {};
+    dataToSign.key = secretKeyPacket;
+    dataToSign.bind = secretSubkeyPacket;
+    var subkeySignaturePacket = new packet.signature();
+    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+    subkeySignaturePacket.publicKeyAlgorithm = keyType;
+    //TODO we should load preferred hash from config, or as input to this function
+    subkeySignaturePacket.hashAlgorithm = enums.hash.sha256;
+    subkeySignaturePacket.sign(secretSubkeyPacket, dataToSign);
 
     packetlist.push(secretKeyPacket);
     packetlist.push(userIdPacket);
     packetlist.push(signaturePacket);
     packetlist.push(secretSubkeyPacket);
-    packetlist.push(overallSignaturePacket);
+    packetlist.push(subkeySignaturePacket);
+
+    var armored = armor.encode(5, packetlist.write(), this.config);
   }
 
   /**
@@ -308,7 +319,6 @@ function _openpgp() {
   this.write_encrypted_message = write_encrypted_message;
   this.readArmoredPackets = readArmoredPackets;
   this.readDearmoredPackets = readDearmoredPackets;
-  this.init = init;
 }
 
 module.exports = new _openpgp();

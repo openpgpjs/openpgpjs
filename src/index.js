@@ -8,6 +8,7 @@ module.exports.s2k = require('./type/s2k.js');
 module.exports.keyid = require('./type/keyid.js');
 module.exports.armor = require('./encoding/armor.js');
 module.exports.enums = require('./enums.js');
+module.exports.config = require('./config');
 
 for (var i in crypto)
   module.exports[i] = crypto[i];

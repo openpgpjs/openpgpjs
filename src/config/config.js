@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var enums = require('../enums.js');
+
 /**
  *
  * This object contains configuration values and implements
@@ -27,63 +29,32 @@
  * @class
  * @classdesc Implementation of the GPG4Browsers config object
  */
-function openpgp_config() {
+var config = function() {
   /**
-   * The variable with the actual configuration
    * @property {Integer} prefer_hash_algorithm
    * @property {Integer} encryption_cipher
    * @property {Integer} compression
    * @property {Boolean} show_version
    * @property {Boolean} show_comment
    * @property {Boolean} integrity_protect
-   * @property {Integer} composition_behavior
    * @property {String} keyserver
    */
-  this.config = null;
-
-  /**
-   * The default config object which is used if no
-   * configuration was in place
-   */
-  this.default_config = {
-    prefer_hash_algorithm: 8,
-    encryption_cipher: 9,
-    compression: 1,
-    show_version: true,
-    show_comment: true,
-    integrity_protect: true,
-    composition_behavior: 0,
-    keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
-  };
+  this.prefer_hash_algorithm = enums.hash.sha256;
+  this.encryption_cipher = enums.symmetric.aes256;
+  this.compression = enums.compression.zip;
+  this.show_version = true;
+  this.show_comment = true;
+  this.integrity_protect = true;
+  this.keyserver = "keyserver.linux.it"; // "pgp.mit.edu:11371"
 
   this.versionstring = "OpenPGP.js VERSION";
   this.commentstring = "http://openpgpjs.org";
-  /**
-   * Reads the config out of the HTML5 local storage
-   * and initializes the object config.
-   * if config is null the default config will be used
-   */
-  function read() {
-    var cf = JSON.parse(window.localStorage.getItem("config"));
-    if (cf == null) {
-      this.config = this.default_config;
-      this.write();
-    } else
-      this.config = cf;
-  }
 
   /**
    * If enabled, debug messages will be printed
    */
   this.debug = false;
 
-  /**
-   * Writes the config to HTML5 local storage
-   */
-  function write() {
-    window.localStorage.setItem("config", JSON.stringify(this.config));
-  }
+};
 
-  this.read = read;
-  this.write = write;
-}
+module.exports = new config();
