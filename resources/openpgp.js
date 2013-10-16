@@ -1320,7 +1320,7 @@ var config = function() {
   this.integrity_protect = true;
   this.keyserver = "keyserver.linux.it"; // "pgp.mit.edu:11371"
 
-  this.versionstring = "OpenPGP.js v0.0.1.20131014";
+  this.versionstring = "OpenPGP.js v0.0.1.20131015";
   this.commentstring = "http://openpgpjs.org";
 
   /**
@@ -8995,6 +8995,34 @@ var enums = {
     third_party: 80
   },
 
+  signatureSubpacket: {
+    signature_creation_time: 2,
+    signature_expiration_time: 3,
+    exportable_certification: 4,
+    trust_signature: 5,
+    regular_expression: 6,
+    revocable: 7,
+    reserved: 8,
+    key_expiration_time: 9,
+    placeholder_backwards_compatibility: 10,
+    preferred_symmetric_algorithms: 11,
+    revocation_key: 12,
+    issuer: 16,
+    notification_data: 20,
+    preferred_hash_algorithms: 21,
+    preferred_compression_algorithms: 22,
+    key_server_preferences: 23,
+    preferred_key_server: 24,
+    primary_user_id: 25,
+    policy_uri: 26,
+    key_flags: 27,
+    signers_user_id: 28,
+    reason_for_revocation: 29,
+    features: 30,
+    signature_target: 31,
+    embedded_signature: 32
+  },
+
   // Asserts validity and converts from string/integer to integer.
   write: function(type, e) {
     if (typeof e == 'number') {
@@ -9249,7 +9277,8 @@ function _openpgp() {
     dataToSign.userid = userIdPacket;
     dataToSign.key = secretKeyPacket;
     var signaturePacket = new packet.signature();
-    signaturePacket.signatureType = enums.signature.cert_casual;
+    signaturePacket.issuerKeyId = secretKeyPacket.getKeyId();
+    signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function
     signaturePacket.hashAlgorithm = enums.hash.sha256;
@@ -9264,6 +9293,7 @@ function _openpgp() {
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
     var subkeySignaturePacket = new packet.signature();
+    subkeySignaturePacket.issuerKeyId = secretSubkeyPacket.getKeyId();
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function
@@ -11307,6 +11337,7 @@ module.exports = function packet_signature() {
 
   this.verified = false;
 
+  this.subpacketsData = "";
 
   /**
    * parsing function for a signature packet (tag 2).
@@ -11404,14 +11435,15 @@ module.exports = function packet_signature() {
     i += 2;
 
     this.signature = bytes.substr(i);
-  }
+  };
 
   this.write = function() {
     return this.signatureData +
-      util.writeNumber(0, 2) + // Number of unsigned subpackets.
-    this.signedHashValue +
+      util.writeNumber(this.subpacketsData.length, 2) + // Number of unsigned subpackets.
+    this.subpacketsData +
+      this.signedHashValue +
       this.signature;
-  }
+  };
 
   /**
    * Signs provided data. This needs to be done prior to serialization.
@@ -11428,10 +11460,24 @@ module.exports = function packet_signature() {
     result += String.fromCharCode(publicKeyAlgorithm);
     result += String.fromCharCode(hashAlgorithm);
 
+    //Calculate subpackets
+    var creationTimeSubpacket = write_sub_packet(enums.signatureSubpacket.signature_creation_time,
+      util.writeDate(new Date()));
+    var creationTimeHash = crypto.hash.digest(hashAlgorithm, creationTimeSubpacket);
+    this.subpacketsData = creationTimeSubpacket;
+
+    var subpacketsHashLength = creationTimeHash.length;
+
+    var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId());
+    var issuerHash = crypto.hash.digest(hashAlgorithm, issuerSubpacket);
+    this.subpacketsData += issuerSubpacket;
+
+    subpacketsHashLength += issuerHash.length;
 
     // Add subpackets here
-    result += util.writeNumber(0, 2);
-
+    result += util.writeNumber(subpacketsHashLength, 2);
+    result += creationTimeHash;
+    result += issuerHash;
 
     this.signatureData = result;
 
@@ -11444,10 +11490,9 @@ module.exports = function packet_signature() {
 
     this.signedHashValue = hash.substr(0, 2);
 
-
     this.signature = crypto.signature.sign(hashAlgorithm,
       publicKeyAlgorithm, key.mpi, toHash);
-  }
+  };
 
   /**
    * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)

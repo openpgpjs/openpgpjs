@@ -104,7 +104,8 @@ function _openpgp() {
     dataToSign.userid = userIdPacket;
     dataToSign.key = secretKeyPacket;
     var signaturePacket = new packet.signature();
-    signaturePacket.signatureType = enums.signature.cert_casual;
+    signaturePacket.issuerKeyId = secretKeyPacket.getKeyId();
+    signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function
     signaturePacket.hashAlgorithm = enums.hash.sha256;
@@ -119,6 +120,7 @@ function _openpgp() {
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
     var subkeySignaturePacket = new packet.signature();
+    subkeySignaturePacket.issuerKeyId = secretSubkeyPacket.getKeyId();
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function

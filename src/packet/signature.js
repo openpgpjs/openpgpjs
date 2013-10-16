@@ -73,6 +73,7 @@ module.exports = function packet_signature() {
 
   this.verified = false;
 
+  this.subpacketsData = "";
 
   /**
    * parsing function for a signature packet (tag 2).
@@ -170,14 +171,15 @@ module.exports = function packet_signature() {
     i += 2;
 
     this.signature = bytes.substr(i);
-  }
+  };
 
   this.write = function() {
     return this.signatureData +
-      util.writeNumber(0, 2) + // Number of unsigned subpackets.
-    this.signedHashValue +
+      util.writeNumber(this.subpacketsData.length, 2) + // Number of unsigned subpackets.
+    this.subpacketsData +
+      this.signedHashValue +
       this.signature;
-  }
+  };
 
   /**
    * Signs provided data. This needs to be done prior to serialization.
@@ -194,10 +196,24 @@ module.exports = function packet_signature() {
     result += String.fromCharCode(publicKeyAlgorithm);
     result += String.fromCharCode(hashAlgorithm);
 
+    //Calculate subpackets
+    var creationTimeSubpacket = write_sub_packet(enums.signatureSubpacket.signature_creation_time,
+      util.writeDate(new Date()));
+    var creationTimeHash = crypto.hash.digest(hashAlgorithm, creationTimeSubpacket);
+    this.subpacketsData = creationTimeSubpacket;
+
+    var subpacketsHashLength = creationTimeHash.length;
+
+    var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId());
+    var issuerHash = crypto.hash.digest(hashAlgorithm, issuerSubpacket);
+    this.subpacketsData += issuerSubpacket;
+
+    subpacketsHashLength += issuerHash.length;
 
     // Add subpackets here
-    result += util.writeNumber(0, 2);
-
+    result += util.writeNumber(subpacketsHashLength, 2);
+    result += creationTimeHash;
+    result += issuerHash;
 
     this.signatureData = result;
 
@@ -210,10 +226,9 @@ module.exports = function packet_signature() {
 
     this.signedHashValue = hash.substr(0, 2);
 
-
     this.signature = crypto.signature.sign(hashAlgorithm,
       publicKeyAlgorithm, key.mpi, toHash);
-  }
+  };
 
   /**
    * creates a string representation of a sub signature packet (See RFC 4880 5.2.3.1)

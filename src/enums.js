@@ -209,6 +209,34 @@ var enums = {
     third_party: 80
   },
 
+  signatureSubpacket: {
+    signature_creation_time: 2,
+    signature_expiration_time: 3,
+    exportable_certification: 4,
+    trust_signature: 5,
+    regular_expression: 6,
+    revocable: 7,
+    reserved: 8,
+    key_expiration_time: 9,
+    placeholder_backwards_compatibility: 10,
+    preferred_symmetric_algorithms: 11,
+    revocation_key: 12,
+    issuer: 16,
+    notification_data: 20,
+    preferred_hash_algorithms: 21,
+    preferred_compression_algorithms: 22,
+    key_server_preferences: 23,
+    preferred_key_server: 24,
+    primary_user_id: 25,
+    policy_uri: 26,
+    key_flags: 27,
+    signers_user_id: 28,
+    reason_for_revocation: 29,
+    features: 30,
+    signature_target: 31,
+    embedded_signature: 32
+  },
+
   // Asserts validity and converts from string/integer to integer.
   write: function(type, e) {
     if (typeof e == 'number') {
