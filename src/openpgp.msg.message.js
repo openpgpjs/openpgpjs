@@ -39,7 +39,18 @@ function openpgp_msg_message() {
 	 * @return {String} plaintext of the message or null on error
 	 */
 	function decrypt(private_key, sessionkey) {
-        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+		var textParts = this.decryptAndVerifySignature(private_key, sessionkey);
+		if (textParts == null) {
+			return null;
+		}
+		var texts = [];
+		for (var i=0; i<textParts.length; i++) {
+			if (textParts[i].signatureValid == false) {
+				return null;
+			}
+			texts.push(textParts[i].text);
+		}
+		return texts.join("\n");
 	}
 
 	/**
@@ -48,7 +59,7 @@ function openpgp_msg_message() {
 	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
 	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
 	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return {String} plaintext of the message or null on error
+	 * @return {Array} an array of objects like {text,signatureValid} per signature packet, or null on error.
 	 */
 	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
 		if (private_key == null || sessionkey == null || sessionkey == "")
@@ -56,22 +67,41 @@ function openpgp_msg_message() {
 		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
 		if (decrypted == null)
 			return null;
-		var packet;
-		var position = 0;
-		var len = decrypted.length;
-		var validSignatures = new Array();
 		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
 		
 		var messages = openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
+		var texts = [];
 		for(var m in messages){
-			if(messages[m].data){
-				this.text = messages[m].data;
-			}
-			if(messages[m].signature){
-			    validSignatures.push(messages[m].verifySignature(pubkey));
+			if (messages[m].signature) {
+				texts.push({text:messages[m].text, signatureValid:messages[m].verifySignature(pubkey)})
 			}
 		}
-		return {text:this.text, validSignatures:validSignatures};
+		return texts;
+	}
+
+	/**
+	 * Decrypts a message and generates user interface message out of the found.
+	 * Signatures will be ignored.
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @return {String} plaintext of the message or null on error
+	 */
+	function decryptWithoutVerification(private_key, sessionkey) {
+		if (private_key == null || sessionkey == null || sessionkey == "")
+			return null;
+		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
+		if (decrypted == null)
+			return null;
+		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
+
+		var messages = openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
+		var texts = [];
+		for(var m in messages){
+			if(messages[m].data){
+				texts.push(messages[m].data);
+			}
+		}
+		return texts;
 	}
 	
 	/**
@@ -131,6 +161,7 @@ function openpgp_msg_message() {
 	}
 	this.decrypt = decrypt;
 	this.decryptAndVerifySignature = decryptAndVerifySignature;
+	this.decryptWithoutVerification = decryptWithoutVerification;
 	this.verifySignature = verifySignature;
 	this.toString = toString;
 }

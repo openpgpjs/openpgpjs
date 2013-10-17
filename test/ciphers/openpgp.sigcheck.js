@@ -71,7 +71,7 @@ unittests.register("Testing of binary signature checking", function() {
       msg[0].sessionKeys[0],
       [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
   result[0] = new test_result("Testing signature checking on CAST5-enciphered message",
-          ret.validSignatures[0] == true);
+          ret[0].signatureValid == true);
 
   // exercises the GnuPG s2k type 1001 extension:
   // the secrets on the primary key have been stripped.
@@ -110,7 +110,7 @@ unittests.register("Testing of binary signature checking", function() {
       [{obj:pub_key[0], keyId: pub_key[0].getKeyId()}]);
   result[1] = new test_result("Testing GnuPG stripped-key extensions",
           priv_key_gnupg_ext[0].privateKeyPacket.s2k.type == 1001 &&
-          ret.validSignatures[0] == true);
+          ret[0].signatureValid == true);
 
   // Exercises the ability of openpgp_keyring.getPublicKeysForKeyId to return subkeys
   var test_keyring = new openpgp_keyring();

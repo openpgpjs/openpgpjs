@@ -207,7 +207,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	if(iblock[block_size-2]!=(ablock[0]^ciphertext.charCodeAt(block_size))
 	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
 	{
-		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
+		util.print_error("error during decryption. Symmectric encrypted data not valid.");
 		return text.join('');
 	}
 	
