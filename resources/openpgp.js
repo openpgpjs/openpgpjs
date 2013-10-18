@@ -1320,7 +1320,7 @@ var config = function() {
   this.integrity_protect = true;
   this.keyserver = "keyserver.linux.it"; // "pgp.mit.edu:11371"
 
-  this.versionstring = "OpenPGP.js v0.0.1.20131015";
+  this.versionstring = "OpenPGP.js v0.0.1.20131017";
   this.commentstring = "http://openpgpjs.org";
 
   /**
@@ -11337,8 +11337,6 @@ module.exports = function packet_signature() {
 
   this.verified = false;
 
-  this.subpacketsData = "";
-
   /**
    * parsing function for a signature packet (tag 2).
    * @param {String} bytes payload of a tag 2 packet
@@ -11439,9 +11437,8 @@ module.exports = function packet_signature() {
 
   this.write = function() {
     return this.signatureData +
-      util.writeNumber(this.subpacketsData.length, 2) + // Number of unsigned subpackets.
-    this.subpacketsData +
-      this.signedHashValue +
+      util.writeNumber(0, 2) + // Number of unsigned subpackets.
+    this.signedHashValue +
       this.signature;
   };
 
@@ -11463,21 +11460,12 @@ module.exports = function packet_signature() {
     //Calculate subpackets
     var creationTimeSubpacket = write_sub_packet(enums.signatureSubpacket.signature_creation_time,
       util.writeDate(new Date()));
-    var creationTimeHash = crypto.hash.digest(hashAlgorithm, creationTimeSubpacket);
-    this.subpacketsData = creationTimeSubpacket;
-
-    var subpacketsHashLength = creationTimeHash.length;
 
     var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId());
-    var issuerHash = crypto.hash.digest(hashAlgorithm, issuerSubpacket);
-    this.subpacketsData += issuerSubpacket;
-
-    subpacketsHashLength += issuerHash.length;
 
     // Add subpackets here
-    result += util.writeNumber(subpacketsHashLength, 2);
-    result += creationTimeHash;
-    result += issuerHash;
+    result += util.writeNumber(creationTimeSubpacket.length + issuerSubpacket.length, 2);
+    result += creationTimeSubpacket + issuerSubpacket;
 
     this.signatureData = result;
 
