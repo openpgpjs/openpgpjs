@@ -17,6 +17,7 @@
 
 var util = require('../util'),
   type_mpi = require('../type/mpi.js'),
+  type_keyid = require('../type/keyid.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto');
 
@@ -122,7 +123,9 @@ module.exports = function packet_public_key() {
    * @return {String} A 8 byte key id
    */
   this.getKeyId = function() {
-    return this.getFingerprint().substr(12, 8);
+    var keyid = new type_keyid();
+    keyid.read(this.getFingerprint().substr(12, 8));
+    return keyid;
   }
 
   /**
