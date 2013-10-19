@@ -67,6 +67,15 @@ function _openpgp() {
     return packetList;
   }
 
+  //TODO I think longterm we might actually want to just make key a subclass of packetlist
+  //passphrase is optional, this should work for both public and private
+  function getKeyFromPacketlist(keyPacketlist, passphrase){
+    var parsedKey = new key();
+    parsedKey.packets = keyPacketlist;
+    parsedKey.decrypt(passphrase);
+    return parsedKey;
+  }
+
   function encryptMessage(publicKeys, message) {
 
     var packetList = new packet.list();
@@ -109,23 +118,23 @@ function _openpgp() {
 
   }
 
-  function encryptAndSignMessage(publicKeys, privateKeyPacketlist, message) {
+  function encryptAndSignMessage(publicKeys, privateKey, message) {
 
   }
 
-  function decryptMessage(privateKeyPacketlist, messagePacketlist) {
+  function decryptMessage(privateKey, messagePacketlist) {
 
   }
 
-  function decryptAndVerifyMessage(privateKeyPacketlist, publicKeyPacketlist, messagePacketlist) {
+  function decryptAndVerifyMessage(privateKey, publicKeys, messagePacketlist) {
 
   }
 
-  function verifyMessage(publicKeyPacketlist, messagePacketlist) {
+  function verifyMessage(publicKeys, messagePacketlist) {
 
   }
 
-  function signMessage(privateKeyPacketlist, messagePacketlist) {
+  function signMessage(privateKey, messagePacketlist) {
 
   }
 
@@ -144,7 +153,6 @@ function _openpgp() {
    * privateKeyArmored: [string], publicKeyArmored: [string]}
    */
   function generateKeyPair(keyType, numBits, userId, passphrase) {
-    debugger;
     var packetlist = new packet.list();
 
     var secretKeyPacket = new packet.secret_key();
@@ -330,6 +338,7 @@ function _openpgp() {
   this.encryptMessage = encryptMessage;
   this.readArmoredPackets = readArmoredPackets;
   this.readDearmoredPackets = readDearmoredPackets;
+  this.getKeyFromPacketlist = getKeyFromPacketlist;
 }
 
 module.exports = new _openpgp();

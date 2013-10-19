@@ -13,17 +13,12 @@ unit.register("Encryption/decryption", function() {
         + 'message: ' + message;
 
     var keyPacketlist = openpgp.readArmoredPackets(key);
-    if(!priv_key.decryptSecretMPIs(passphrase)) {
-      return new test_result('Generating a decryptable private key failed'
-        + info,
-        false);
-    }
+    debugger;
+    var privKey = openpgp.getKeyFromPacketlist(keyPacketlist, passphrase);
 
-    var encrypted = openpgp.write_signed_and_encrypted_message(priv_key,
-      pub_key, message);
+    var encrypted = openpgp.encryptMessage(keyPacketlist, message);
 
     openpgp.keyring.importPublicKey(key.publicKeyArmored);
-
 
     var msg = openpgp.read_message(encrypted);
     var keymat = null;
