@@ -39,7 +39,7 @@ module.exports = function key() {
         return this.packets[i];
 
     return null;
-  }
+  };
 
   /** Returns all the private and public subkeys 
    * @returns {openpgp_packet_subkey[]} */
@@ -53,19 +53,18 @@ module.exports = function key() {
         subkeys.push(this.packets[i]);
 
     return subkeys;
-  }
+  };
 
   this.getAllKeys = function() {
     return [this.getKey()].concat(this.getSubkeys());
-  }
-
+  };
 
   this.getSigningKey = function() {
 
     var signing = ['rsa_encrypt_sign', 'rsa_sign', 'dsa'];
     signing = signing.map(function(s) {
       return openpgp.publickey[s];
-    })
+    });
 
     var keys = this.getAllKeys();
 
@@ -74,12 +73,12 @@ module.exports = function key() {
         return keys[i];
 
     return null;
-  }
+  };
 
   function getPreferredSignatureHashAlgorithm() {
     var pkey = this.getSigningKey();
-    if (pkey == null) {
-      util.print_error("private key is for encryption only! Cannot create a signature.")
+    if (pkey === null) {
+      util.print_error("private key is for encryption only! Cannot create a signature.");
       return null;
     }
     if (pkey.publicKey.publicKeyAlgorithm == 17) {
@@ -99,11 +98,11 @@ module.exports = function key() {
     // V4: by convention subkeys are prefered for encryption service
     // V3: keys MUST NOT have subkeys
     var isValidSignKey = function(key) {
-      return key.algorithm != enums.read(enums.publicKey, enums.publicKey.dsa) 
-             && key.algorithm != enums.read(enums.publicKey, enums.publicKey.rsa_sign) 
-             //TODO verify key
-             //&& keys.verifyKey()
-    }
+      return key.algorithm != enums.read(enums.publicKey, enums.publicKey.dsa) && key.algorithm != enums.read(enums.publicKey,
+        enums.publicKey.rsa_sign);
+      //TODO verify key
+      //&& keys.verifyKey()
+    };
     var subKeys = this.getSubkeys();
 
     for (var j = 0; j < subKeys.length; j++) {
@@ -114,22 +113,20 @@ module.exports = function key() {
     // if no valid subkey for encryption, use primary key
     var primaryKey = this.getKey();
     if (isValidSignKey(primaryKey)) {
-      return primaryKey;  
+      return primaryKey;
     }
     return null;
-  }
-
-
+  };
 
   this.decrypt = function(passphrase) {
     var keys = this.getAllKeys();
 
     for (var i in keys)
       if (keys[i].tag == enums.packet.secret_subkey ||
-        keys[i].tag == enums.packet.secret_key)
-
+        keys[i].tag == enums.packet.secret_key) {
         keys[i].decrypt(passphrase);
-  }
+      }
+  };
 
 
   // TODO need to implement this
@@ -139,4 +136,4 @@ module.exports = function key() {
   }
 
 
-}
+};

@@ -91,7 +91,7 @@ module.exports = function packet_one_pass_signature() {
     result += String.fromCharCode(enums.write(enums.signature, type));
     result += String.fromCharCode(enums.write(enums.hash, this.hashAlgorithm));
     result += String.fromCharCode(enums.write(enums.publicKey, privatekey.algorithm));
-    result += privatekey.getKeyId();
+    result += privatekey.getKeyId().write();
     if (nested)
       result += String.fromCharCode(0);
     else

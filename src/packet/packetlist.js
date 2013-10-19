@@ -14,8 +14,6 @@ module.exports = function packetlist() {
    * @type {Integer} */
   this.length = 0;
 
-
-
   /**
    * Reads a stream of binary data and interprents it as a list of packets.
    * @param {openpgp_bytearray} An array of bytes.

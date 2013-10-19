@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 var base64 = require('./base64.js');
-
-
+var enums = require('../enums.js');
 
 /**
  * Finds out which Ascii Armoring type is used. This is an internal function
@@ -36,14 +35,14 @@ function get_type(text) {
   // Used for multi-part messages, where the armor is split amongst Y
   // parts, and this is the Xth part out of Y.
   if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
-    return 0;
+    return enums.armor.multipart_section;
   } else
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
   if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
-    return 1;
+    return enums.armor.multipart_last;
 
   } else
   // BEGIN PGP SIGNATURE
@@ -51,25 +50,25 @@ function get_type(text) {
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
   // for detached signatures.
   if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
-    return 2;
+    return enums.armor.signed;
 
   } else
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
   if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
-    return 3;
+    return enums.armor.message;
 
   } else
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
   if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
-    return 4;
+    return enums.armor.public_key;
 
   } else
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
   if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
-    return 5;
+    return enums.armor.private_key;
   }
 }
 
@@ -184,7 +183,7 @@ function createcrc24(input) {
   }
 
   for (var j = index; j < input.length; j++) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff]
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff];
   }
   return crc & 0xffffff;
 }
@@ -198,7 +197,7 @@ function createcrc24(input) {
  * and an attribute "openpgp" containing the bytes.
  */
 function dearmor(text) {
-  text = text.replace(/\r/g, '')
+  text = text.replace(/\r/g, '');
 
   var type = get_type(text);
 
@@ -265,21 +264,21 @@ function dearmor(text) {
 function armor(messagetype, data, options, partindex, parttotal) {
   var result = "";
   switch (messagetype) {
-    case 0:
+    case enums.armor.multipart_section:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       result += armor_addheader(options);
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       break;
-    case 1:
+    case enums.armor.mutlipart_last:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
       result += armor_addheader(options);
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "-----\r\n";
       break;
-    case 2:
+    case enums.armor.signed:
       result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: " + data.hash + "\r\n\r\n";
       result += data.text.replace(/\n-/g, "\n- -");
       result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
@@ -288,21 +287,21 @@ function armor(messagetype, data, options, partindex, parttotal) {
       result += "\r\n=" + getCheckSum(data.openpgp) + "\r\n";
       result += "-----END PGP SIGNATURE-----\r\n";
       break;
-    case 3:
+    case enums.armor.message:
       result += "-----BEGIN PGP MESSAGE-----\r\n";
       result += armor_addheader(options);
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE-----\r\n";
       break;
-    case 4:
+    case enums.armor.public_key:
       result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
       result += armor_addheader(options);
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
       break;
-    case 5:
+    case enums.armor.private_key:
       result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
       result += armor_addheader(options);
       result += base64.encode(data);
@@ -317,4 +316,4 @@ function armor(messagetype, data, options, partindex, parttotal) {
 module.exports = {
   encode: armor,
   decode: dearmor
-}
+};

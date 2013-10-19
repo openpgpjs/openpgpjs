@@ -197,7 +197,7 @@ module.exports = function packet_signature() {
     var creationTimeSubpacket = write_sub_packet(enums.signatureSubpacket.signature_creation_time,
       util.writeDate(new Date()));
 
-    var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId());
+    var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId().write());
 
     // Add subpackets here
     result += util.writeNumber(creationTimeSubpacket.length + issuerSubpacket.length, 2);

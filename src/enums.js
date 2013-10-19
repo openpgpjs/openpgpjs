@@ -237,13 +237,22 @@ var enums = {
     embedded_signature: 32
   },
 
+  armor: {
+    multipart_section: 0,
+    multipart_last: 1,
+    signed: 2,
+    message: 3,
+    public_key: 4,
+    private_key: 5
+  },
+
   // Asserts validity and converts from string/integer to integer.
   write: function(type, e) {
     if (typeof e == 'number') {
       e = this.read(type, e);
     }
 
-    if (type[e] != undefined) {
+    if (type[e] !== undefined) {
       return type[e];
     } else throw new Error('Invalid enum value.');
   },

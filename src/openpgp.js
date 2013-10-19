@@ -83,7 +83,7 @@ function _openpgp() {
       var encryptionKey = pubKey.getEncryptionKey();
       if (encryptionKey) {
         var pkESKeyPacket = new packet.public_key_encrypted_session_key();
-        pkESKeyPacket.publicKeyId = encryptionKey.getKeyId(); 
+        pkESKeyPacket.publicKeyId = encryptionKey.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKey.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         //TODO get preferred algo from signature
@@ -93,7 +93,7 @@ function _openpgp() {
       }
     });
 
-    var symEncryptedPacket; 
+    var symEncryptedPacket;
     if (config.integrity_protect) {
       symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
     } else {
@@ -104,12 +104,12 @@ function _openpgp() {
     symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
     packetList.push(symEncryptedPacket);
 
-    var armored = armor.encode(3, packetList.write(), config);
+    var armored = armor.encode(enums.armor.message, packetList.write(), config);
     return armored;
 
   }
 
-  function encryptAndSignMessage(publicKeyPacketlist, privateKeyPacketlist, message) {
+  function encryptAndSignMessage(publicKeys, privateKeyPacketlist, message) {
 
   }
 
@@ -129,6 +129,20 @@ function _openpgp() {
 
   }
 
+  /**
+   * TODO: update this doc
+   * generates a new key pair for openpgp. Beta stage. Currently only 
+   * supports RSA keys, and no subkeys.
+   * @param {Integer} keyType to indicate what type of key to make. 
+   * RSA is 1. Follows algorithms outlined in OpenPGP.
+   * @param {Integer} numBits number of bits for the key creation. (should 
+   * be 1024+, generally)
+   * @param {String} userId assumes already in form of "User Name 
+   * <username@email.com>"
+   * @param {String} passphrase The passphrase used to encrypt the resulting private key
+   * @return {Object} {privateKey: [openpgp_msg_privatekey], 
+   * privateKeyArmored: [string], publicKeyArmored: [string]}
+   */
   function generateKeyPair(keyType, numBits, userId, passphrase) {
     debugger;
     var packetlist = new packet.list();
@@ -145,7 +159,7 @@ function _openpgp() {
     dataToSign.userid = userIdPacket;
     dataToSign.key = secretKeyPacket;
     var signaturePacket = new packet.signature();
-    signaturePacket.issuerKeyId = secretKeyPacket.getKeyId();
+    signaturePacket.issuerKeyId = secretKeyPacket.getKeyId().write();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function
@@ -161,7 +175,7 @@ function _openpgp() {
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
     var subkeySignaturePacket = new packet.signature();
-    subkeySignaturePacket.issuerKeyId = secretSubkeyPacket.getKeyId();
+    subkeySignaturePacket.issuerKeyId = secretSubkeyPacket.getKeyId().write();
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = keyType;
     //TODO we should load preferred hash from config, or as input to this function
@@ -174,7 +188,8 @@ function _openpgp() {
     packetlist.push(secretSubkeyPacket);
     packetlist.push(subkeySignaturePacket);
 
-    var armored = armor.encode(5, packetlist.write(), this.config);
+    var armored = armor.encode(enums.armor.private_key, packetlist.write(), this.config);
+    return armored;
   }
 
   /**
@@ -307,53 +322,6 @@ function _openpgp() {
       hash: sig.hash
     };
     return armor.encode(2, result, null, null);
-  }
-
-  /**
-   * generates a new key pair for openpgp. Beta stage. Currently only 
-   * supports RSA keys, and no subkeys.
-   * @param {Integer} keyType to indicate what type of key to make. 
-   * RSA is 1. Follows algorithms outlined in OpenPGP.
-   * @param {Integer} numBits number of bits for the key creation. (should 
-   * be 1024+, generally)
-   * @param {String} userId assumes already in form of "User Name 
-   * <username@email.com>"
-   * @param {String} passphrase The passphrase used to encrypt the resulting private key
-   * @return {Object} {privateKey: [openpgp_msg_privatekey], 
-   * privateKeyArmored: [string], publicKeyArmored: [string]}
-   */
-  function generate_key_pair(keyType, numBits, userId, passphrase) {
-    var userIdPacket = new openpgp_packet_userid();
-    var userIdString = userIdPacket.write_packet(userId);
-
-    var keyPair = openpgp_crypto_generateKeyPair(keyType, numBits, passphrase, openpgp.config.config.prefer_hash_algorithm,
-      3);
-    var privKeyString = keyPair.privateKey;
-    var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string, 3, privKeyString.string.length);
-    if (!privKeyPacket.decryptSecretMPIs(passphrase))
-      util.print_error('Issue creating key. Unable to read resulting private key');
-    var privKey = new openpgp_msg_privatekey();
-    privKey.privateKeyPacket = privKeyPacket;
-    privKey.getPreferredSignatureHashAlgorithm = function() {
-      return openpgp.config.config.prefer_hash_algorithm
-    }; //need to override this to solve catch 22 to generate signature. 8 is value for SHA256
-
-    var publicKeyString = privKey.privateKeyPacket.publicKey.data;
-    var hashData = String.fromCharCode(0x99) + String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) + String.fromCharCode((
-      publicKeyString.length) & 0xFF) + publicKeyString + String.fromCharCode(0xB4) +
-      String.fromCharCode((userId.length) >> 24) + String.fromCharCode(((userId.length) >> 16) & 0xFF) + String.fromCharCode(((
-      userId.length) >> 8) & 0xFF) + String.fromCharCode((userId.length) & 0xFF) + userId;
-    var signature = new openpgp_packet_signature();
-    signature = signature.write_message_signature(16, hashData, privKey);
-    var publicArmored = armor.encode(4, keyPair.publicKey.string + userIdString + signature.openpgp);
-
-    var privArmored = armor.encode(5, privKeyString.string + userIdString + signature.openpgp);
-
-    return {
-      privateKey: privKey,
-      privateKeyArmored: privArmored,
-      publicKeyArmored: publicArmored
-    };
   }
 
   this.generateKeyPair = generateKeyPair;

@@ -73,7 +73,7 @@ var keyring = function() {
   }
 
   function idPacketCheck(packet, id) {
-    if (packet.getKeyId && packet.getKeyId() == id) {
+    if (packet.getKeyId && packet.getKeyId().write() == id) {
       return true;
     }
     return false;
