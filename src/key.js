@@ -15,6 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var packet = require('./packet');
+var enums = require('./enums.js');
+
+
 /**
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a master key. 
@@ -22,15 +26,16 @@
  * user ids, user attributes.
  */
 
-function openpgp_key() {
-  this.packets = new openpgp_packetlist();
+module.exports = function key() {
 
-  /** Returns the master key (secret or public)
+  this.packets = new packet.list();
+
+  /** Returns the primary key (secret or public)
    * @returns {openpgp_packet_secret_key|openpgp_packet_public_key|null} */
   this.getKey = function() {
     for (var i = 0; i < this.packets.length; i++)
-      if (this.packets[i].tag == openpgp_packets.tags.public_key ||
-        this.packets[i].tag == openpgp_packets.tags.secret_key)
+      if (this.packets[i].tag == enums.packet.public_key ||
+        this.packets[i].tag == enums.packet.secret_key)
         return this.packets[i];
 
     return null;
@@ -43,8 +48,8 @@ function openpgp_key() {
     var subkeys = [];
 
     for (var i = 0; i < this.packets.length; i++)
-      if (this.packets[i].tag == openpgp_packet.tags.public_subkey ||
-        this.packets[i].tag == openpgp_packet.tags.secret_subkey)
+      if (this.packets[i].tag == enums.packet.public_subkey ||
+        this.packets[i].tag == enums.packet.secret_subkey)
         subkeys.push(this.packets[i]);
 
     return subkeys;
@@ -84,15 +89,44 @@ function openpgp_key() {
     //TODO implement: https://tools.ietf.org/html/rfc4880#section-5.2.3.8
     //separate private key preference from digest preferences
     return openpgp.config.config.prefer_hash_algorithm;
-
   }
+
+  /**
+   * Finds an encryption key for this key
+   * @returns null if no encryption key has been found
+   */
+  this.getEncryptionKey = function() {
+    // V4: by convention subkeys are prefered for encryption service
+    // V3: keys MUST NOT have subkeys
+    var isValidSignKey = function(key) {
+      return key.algorithm != enums.read(enums.publicKey, enums.publicKey.dsa) 
+             && key.algorithm != enums.read(enums.publicKey, enums.publicKey.rsa_sign) 
+             //TODO verify key
+             //&& keys.verifyKey()
+    }
+    var subKeys = this.getSubkeys();
+
+    for (var j = 0; j < subKeys.length; j++) {
+      if (isValidSignKey(subKeys[j])) {
+        return subKeys[j];
+      }
+    }
+    // if no valid subkey for encryption, use primary key
+    var primaryKey = this.getKey();
+    if (isValidSignKey(primaryKey)) {
+      return primaryKey;  
+    }
+    return null;
+  }
+
+
 
   this.decrypt = function(passphrase) {
     var keys = this.getAllKeys();
 
     for (var i in keys)
-      if (keys[i].tag == openpgp_packet.tags.secret_subkey ||
-        keys[i].tag == openpgp_packet.tags.secret_key)
+      if (keys[i].tag == enums.packet.secret_subkey ||
+        keys[i].tag == enums.packet.secret_key)
 
         keys[i].decrypt(passphrase);
   }

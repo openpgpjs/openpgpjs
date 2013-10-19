@@ -25,6 +25,9 @@ var armor = require('./encoding/armor.js');
 var packet = require('./packet');
 var util = require('./util');
 var enums = require('./enums.js');
+var crypto = require('./crypto');
+var key = require('./key.js');
+var config = require('./config');
 
 /**
  * GPG4Browsers Core interface. A single instance is hold
@@ -64,7 +67,45 @@ function _openpgp() {
     return packetList;
   }
 
-  function encryptMessage(publicKeyPacketlist, message) {
+  function encryptMessage(publicKeys, message) {
+
+    var packetList = new packet.list();
+
+    var literalDataPacket = new packet.literal();
+    literalDataPacket.set(message, 'utf8');
+
+    //TODO get preferred algo from signature
+    var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
+
+    publicKeys.forEach(function(publicKeyPacketlist) {
+      var pubKey = new key();
+      pubKey.packets = publicKeyPacketlist;
+      var encryptionKey = pubKey.getEncryptionKey();
+      if (encryptionKey) {
+        var pkESKeyPacket = new packet.public_key_encrypted_session_key();
+        pkESKeyPacket.publicKeyId = encryptionKey.getKeyId(); 
+        pkESKeyPacket.publicKeyAlgorithm = encryptionKey.algorithm;
+        pkESKeyPacket.sessionKey = sessionKey;
+        //TODO get preferred algo from signature
+        pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
+        pkESKeyPacket.encrypt(encryptionKey);
+        packetList.push(pkESKeyPacket);
+      }
+    });
+
+    var symEncryptedPacket; 
+    if (config.integrity_protect) {
+      symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
+    } else {
+      symEncryptedPacket = new packet.symmetrically_encrypted();
+    }
+    symEncryptedPacket.packets = literalDataPacket;
+    //TODO get preferred algo from signature
+    symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
+    packetList.push(symEncryptedPacket);
+
+    var armored = armor.encode(3, packetList.write(), config);
+    return armored;
 
   }
 
@@ -318,7 +359,7 @@ function _openpgp() {
   this.generateKeyPair = generateKeyPair;
   this.write_signed_message = write_signed_message;
   this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
-  this.write_encrypted_message = write_encrypted_message;
+  this.encryptMessage = encryptMessage;
   this.readArmoredPackets = readArmoredPackets;
   this.readDearmoredPackets = readDearmoredPackets;
 }
