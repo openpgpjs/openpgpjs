@@ -26,7 +26,6 @@ var packet = require('./packet');
 var util = require('./util');
 var enums = require('./enums.js');
 var crypto = require('./crypto');
-var key = require('./key.js');
 var config = require('./config');
 
 /**
@@ -40,56 +39,20 @@ function _openpgp() {
   this.tostring = "";
 
   /**
-   * reads message packets out of an OpenPGP armored text and
-   * returns an array of message objects
-   * @param {String} armoredText text to be parsed
-   * @return {openpgp_msg_message[]} on error the function
-   * returns null
+   * encrypts message with keys
+   * @param  {[key]} keys    array of keys, used to encrypt the message
+   * @param  {String} message text message as native JavaScript string
+   * @return {String}         encrypted ASCII armored message 
    */
-  function readArmoredPackets(armoredText) {
-    //TODO how do we want to handle bad text? Exception throwing
-    var input = armor.decode(armoredText.replace(/\r/g, '')).openpgp;
-    return readDearmoredPackets(input);
-  }
+  function encryptMessage(keys, message) {
 
-  /**
-   * reads message packets out of an OpenPGP armored text and
-   * returns an array of message objects. Can be called externally or internally.
-   * External call will parse a de-armored messaged and return messages found.
-   * Internal will be called to read packets wrapped in other packets (i.e. compressed)
-   * @param {String} input dearmored text of OpenPGP packets, to be parsed
-   * @return {openpgp_msg_message[]} on error the function
-   * returns null
-   */
-  function readDearmoredPackets(input) {
-    var packetList = new packet.list();
-    packetList.read(input);
-    return packetList;
-  }
-
-  //TODO I think longterm we might actually want to just make key a subclass of packetlist
-  //passphrase is optional, this should work for both public and private
-  function getKeyFromPacketlist(keyPacketlist, passphrase){
-    var parsedKey = new key();
-    parsedKey.packets = keyPacketlist;
-    parsedKey.decrypt(passphrase);
-    return parsedKey;
-  }
-
-  function encryptMessage(publicKeys, message) {
-
-    var packetList = new packet.list();
-
-    var literalDataPacket = new packet.literal();
-    literalDataPacket.set(message, 'utf8');
+    var messagePacketlist = new packet.list();
 
     //TODO get preferred algo from signature
     var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
 
-    publicKeys.forEach(function(publicKeyPacketlist) {
-      var pubKey = new key();
-      pubKey.packets = publicKeyPacketlist;
-      var encryptionKey = pubKey.getEncryptionKey();
+    keys.forEach(function(key) {
+      var encryptionKey = key.getEncryptionKey();
       if (encryptionKey) {
         var pkESKeyPacket = new packet.public_key_encrypted_session_key();
         pkESKeyPacket.publicKeyId = encryptionKey.getKeyId();
@@ -98,9 +61,14 @@ function _openpgp() {
         //TODO get preferred algo from signature
         pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
         pkESKeyPacket.encrypt(encryptionKey);
-        packetList.push(pkESKeyPacket);
+        messagePacketlist.push(pkESKeyPacket);
       }
     });
+
+    var literalDataPacket = new packet.literal();
+    literalDataPacket.set(message, 'utf8');
+    var literalDataPacketlist = new packet.list();
+    literalDataPacketlist.push(literalDataPacket);
 
     var symEncryptedPacket;
     if (config.integrity_protect) {
@@ -108,22 +76,27 @@ function _openpgp() {
     } else {
       symEncryptedPacket = new packet.symmetrically_encrypted();
     }
-    symEncryptedPacket.packets = literalDataPacket;
+    symEncryptedPacket.packets = literalDataPacketlist;
     //TODO get preferred algo from signature
     symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
-    packetList.push(symEncryptedPacket);
+    messagePacketlist.push(symEncryptedPacket);
 
-    var armored = armor.encode(enums.armor.message, packetList.write(), config);
+    var armored = armor.encode(enums.armor.message, messagePacketlist.write(), config);
     return armored;
-
   }
 
   function encryptAndSignMessage(publicKeys, privateKey, message) {
 
   }
 
-  function decryptMessage(privateKey, messagePacketlist) {
-
+  /**
+   * decrypts message
+   * @param  {[key]} decrypted privateKey
+   * @param  {message} message the message object with the encrypted data
+   * @return {String}         decrypted message as as native JavaScript string
+   */
+  function decryptMessage(privateKey, message) {
+    return message.decrypt(privateKey);
   }
 
   function decryptAndVerifyMessage(privateKey, publicKeys, messagePacketlist) {
@@ -336,9 +309,8 @@ function _openpgp() {
   this.write_signed_message = write_signed_message;
   this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
   this.encryptMessage = encryptMessage;
-  this.readArmoredPackets = readArmoredPackets;
-  this.readDearmoredPackets = readDearmoredPackets;
-  this.getKeyFromPacketlist = getKeyFromPacketlist;
+  this.decryptMessage = decryptMessage;
+
 }
 
 module.exports = new _openpgp();

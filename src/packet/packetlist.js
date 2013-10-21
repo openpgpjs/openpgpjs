@@ -62,4 +62,38 @@ module.exports = function packetlist() {
     this.length++;
   }
 
+    /**
+   * Creates a new packetList with all packets that pass the test implemented by the provided function.
+   */
+   this.filter = function(callback) {
+
+    var filtered = new packetlist();
+
+    for (var i = 0; i < this.length; i++) {
+      if (callback(this[i], i, this)) {
+        filtered.push(this[i]);
+      }
+    }
+
+    return filtered; 
+   }
+
+   /**
+   * Creates a new packetList with all packets from the given type
+   */
+   this.filterByType = function(packetType) {
+     return this.filter(function(packet) {
+       return packet.tag == packetType;
+     });
+   } 
+
+   /**
+    * Executes the provided callback once for each element
+    */
+   this.forEach = function(callback) {
+     for (var i = 0; i < this.length; i++) {
+      callback(this[i]);
+    }
+   }
+
 }

@@ -15,14 +15,31 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var packet = require('./packet');
+var enums = require('./enums.js');
+var armor = require('./encoding/armor.js');
+
 /**
  * @class
  * @classdesc A generic message containing one or more literal packets.
  */
 
-function openpgp_message() {
-  this.packets = new openpgp_packetlist();
+function message(packetlist) {
 
+  this.packets = packetlist || new packet.list();
+
+  /**
+   * Returns the key IDs of the public keys to which the session key is encrypted
+   * @return {[keyId]} keyId provided as string of hex number (lowercase)
+   */
+  this.getKeyIds = function() {
+    var keyIds = [];
+    var pkESKeyPacketlist = this.packets.filterByType(enums.packet.public_key_encrypted_session_key);
+    pkESKeyPacketlist.forEach(function(packet) {
+      keyIds.push(packet.publicKeyId.toHex());
+    });
+    return keyIds;
+  }
 
   function generic_decrypt(packets, passphrase) {
     var sessionkey;
@@ -44,7 +61,39 @@ function openpgp_message() {
    * @return {} plaintext of the message or null on error
    */
   this.decrypt = function(key) {
-    return this.decryptAndVerifySignature(private_key, sessionkey)
+    var decryptedMessages = [];
+    var keyids = key.getKeyids();
+    var pkESKeyPacketlist = this.packets.filterByType(enums.packet.public_key_encrypted_session_key);
+    outer: for (var i = 0; i < pkESKeyPacketlist.length; i++) {
+      var pkESKeyPacket = pkESKeyPacketlist[i];
+      for (var j = 0; j < keyids.length; j++) {
+        if (pkESKeyPacket.publicKeyId.equals(keyids[j])) {
+          pkESKeyPacket.decrypt(key.getKeyById(pkESKeyPacket.publicKeyId));
+          var symEncryptedPacketlist = this.packets.filter(function(packet) {
+            return packet.tag == enums.packet.symmetrically_encrypted || packet.tag == enums.packet.sym_encrypted_integrity_protected;
+          });
+          for (var k = 0; k < symEncryptedPacketlist.length; k++) {
+            var symEncryptedPacket = symEncryptedPacketlist[k];
+            symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
+            for (var l = 0; l < symEncryptedPacket.packets.length; l++) {
+              var dataPacket = symEncryptedPacket.packets[l];
+              switch (dataPacket.tag) {
+                case enums.packet.literal:
+                  decryptedMessages.push(dataPacket.getBytes());
+                  break;
+                case enums.packet.compressed:
+                  //TODO
+                  break;
+                default:
+                  //TODO
+              }
+            }
+          }
+          break outer;
+        }
+      }
+    }
+    return decryptedMessages;
   }
 
   /**
@@ -124,3 +173,19 @@ function openpgp_message() {
     return result;
   }
 }
+
+/**
+ * reads an OpenPGP armored message and returns a message object
+ * @param {String} armoredText text to be parsed
+ * @return {key} new message object
+ */
+message.readArmored = function(armoredText) {
+  //TODO how do we want to handle bad text? Exception throwing
+  var input = armor.decode(armoredText).openpgp;
+  var packetlist = new packet.list();
+  packetlist.read(input);
+  var newMessage = new message(packetlist);
+  return newMessage;
+}
+
+module.exports = message;

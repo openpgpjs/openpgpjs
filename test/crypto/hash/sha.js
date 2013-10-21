@@ -2,7 +2,7 @@ var unit = require('../../unit.js');
 
 
 unit.register("SHA* test with test vectors from NIST FIPS 180-2", function() {
-	var openpgp = require('../../../'),
+	var openpgp = require('../../../src'),
 		util = openpgp.util,
 		hash = openpgp.hash;
 
