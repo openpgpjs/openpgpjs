@@ -6,7 +6,7 @@ unit.register("CAST-128 cipher test with test vectors from RFC2144", function() 
 
 	var result = [];
 	function test_cast(input, key, output) {
-		var cast5 = new openpgp.cipher.cast5(util.bin2str(key));
+		var cast5 = new openpgp.crypto.cipher.cast5(util.bin2str(key));
 		var result = util.bin2str(cast5.encrypt(input));
 
 		return util.hexstrdump(result) == util.hexstrdump(util.bin2str(output));

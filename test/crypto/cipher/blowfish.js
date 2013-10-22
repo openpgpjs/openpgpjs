@@ -3,11 +3,11 @@ var unit = require('../../unit.js');
 unit.register("Blowfish cipher test with test vectors from http://www.schneier.com/code/vectors.txt", function() {
   var openpgp = require('../../../'),
     util = openpgp.util,
-    BFencrypt = openpgp.cipher.blowfish;
+    BFencrypt = openpgp.crypto.cipher.blowfish;
 
   var result = [];
   function test_bf(input, key, output) {
-    var blowfish = new openpgp.cipher.blowfish(util.bin2str(key));
+    var blowfish = new openpgp.crypto.cipher.blowfish(util.bin2str(key));
     var result = util.bin2str(blowfish.encrypt(input));
 
     return (util.hexstrdump(result) == util.hexstrdump(util.bin2str(output)));

@@ -52,15 +52,15 @@ function _openpgp() {
     var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
 
     keys.forEach(function(key) {
-      var encryptionKey = key.getEncryptionKey();
-      if (encryptionKey) {
+      var encryptionKeyPacket = key.getEncryptionKeyPacket();
+      if (encryptionKeyPacket) {
         var pkESKeyPacket = new packet.public_key_encrypted_session_key();
-        pkESKeyPacket.publicKeyId = encryptionKey.getKeyId();
-        pkESKeyPacket.publicKeyAlgorithm = encryptionKey.algorithm;
+        pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
+        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         //TODO get preferred algo from signature
         pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
-        pkESKeyPacket.encrypt(encryptionKey);
+        pkESKeyPacket.encrypt(encryptionKeyPacket);
         messagePacketlist.push(pkESKeyPacket);
       }
     });
@@ -91,12 +91,12 @@ function _openpgp() {
 
   /**
    * decrypts message
-   * @param  {[key]} decrypted privateKey
+   * @param  {secret_subkey|packet_secret_key} privateKeyPacket the private key packet (with decrypted secret part) the message is encrypted with
    * @param  {message} message the message object with the encrypted data
    * @return {String}         decrypted message as as native JavaScript string
    */
-  function decryptMessage(privateKey, message) {
-    return message.decrypt(privateKey);
+  function decryptMessage(privateKeyPacket, message) {
+    return message.decrypt(privateKeyPacket);
   }
 
   function decryptAndVerifyMessage(privateKey, publicKeys, messagePacketlist) {

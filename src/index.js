@@ -1,6 +1,7 @@
 
 module.exports = require('./openpgp.js');
 module.exports.key = require('./key.js');
+module.exports.keyring = require('./keyring.js');
 module.exports.message = require('./message.js');
 module.exports.util = require('./util');
 module.exports.packet = require('./packet');

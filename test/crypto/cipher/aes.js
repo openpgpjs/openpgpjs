@@ -7,7 +7,7 @@ unit.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", fun
   var result = new Array();
 
   function test_aes(input, key, output) {
-    var aes = new openpgp.cipher.aes128(util.bin2str(key));
+    var aes = new openpgp.crypto.cipher.aes128(util.bin2str(key));
 
     var result = util.bin2str(aes.encrypt(input));
 

@@ -140,7 +140,11 @@ var Util = function() {
    * @return {String} A native javascript string
    */
   this.decode_utf8 = function(utf8) {
-    return decodeURIComponent(escape(utf8));
+    try {
+      return decodeURIComponent(escape(utf8));
+    } catch (e) {
+      return utf8;
+    }
   };
 
   var str2bin = function(str, result) {

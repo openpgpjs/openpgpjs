@@ -2,7 +2,7 @@ var unit = require('../unit.js');
 
 unit.register("Key generation/encryption/decryption", function() {
   var openpgp = require('../../');
-  var keyring = require('../../src/openpgp.keyring.js');
+  var keyring = openpgp.keyring;
   var result = [];
   var testHelper = function(passphrase, userid, message) {
     var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 
@@ -12,46 +12,31 @@ unit.register("Key generation/encryption/decryption", function() {
         + 'userid: ' + userid + '\n'
         + 'message: ' + message;
 
-    var keyPacketlist = openpgp.readArmoredPackets(key);
     debugger;
-    var privKey = openpgp.getKeyFromPacketlist(keyPacketlist, passphrase);
+    var privKey = openpgp.key.readArmored(key);
 
-    var encrypted = openpgp.encryptMessage(keyPacketlist, message);
+    var encrypted = openpgp.encryptMessage([privKey], message);
 
-    openpgp.keyring.importPublicKey(key.publicKeyArmored);
-
-    var msg = openpgp.read_message(encrypted);
-    var keymat = null;
-    var sesskey = null;
+    var msg = openpgp.message.readArmored(encrypted);
 
     // Find the private (sub)key for the session key of the message
-    for (var i = 0; i< msg[0].sessionKeys.length; i++) {
-      if (priv_key.privateKeyPacket.publicKey.getKeyId().write() == msg[0].sessionKeys[i].keyId.bytes) {
-        keymat = { key: priv_key, keymaterial: priv_key.privateKeyPacket};
-        sesskey = msg[0].sessionKeys[i];
-        break;
-      }
-      for (var j = 0; j < priv_key.subKeys.length; j++) {
-        if (priv_key.subKeys[j].publicKey.getKeyId().write() == msg[0].sessionKeys[i].keyId.bytes) {
-          keymat = { key: priv_key, keymaterial: priv_key.subKeys[j]};
-          sesskey = msg[0].sessionKeys[i];
-          break;
-        }
-      }
+    var privKeyPacket = privKey.getKeyPacketByIds(msg.getKeyIds());
+
+    if (!privKeyPacket) {
+      return new unit.result("No private key found!" + info, false);
     }
 
-    var decrypted = '';
-    if (keymat !== null) {
-      if (!keymat.keymaterial.decryptSecretMPIs(passphrase)) {
-        return new test_result("Password for secrect key was incorrect!", 
-          + info, false);
+    try {
+      if (!privKeyPacket.decrypt(passphrase)) {
+        return new unit.result("Password for secrect key was incorrect!" + info, false);
       }
-
-      decrypted = msg[0].decrypt(keymat, sesskey);
-    } else {
-      return new test_result("No private key found!" + info, false);
+    } catch (e) {
+      return new unit.result("Exception on decrypt of private key packet!" + info, false);
     }
-    return new test_result(message + ' == ' + decrypted + info, message == decrypted);
+
+    var decrypted = msg.decrypt(privKeyPacket)[0];
+
+    return new unit.result(message + ' == ' + decrypted + info, message == decrypted);
   };
 
   result.push(testHelper('password', 'Test McTestington <test@example.com>', 'hello world'));
@@ -61,7 +46,9 @@ unit.register("Key generation/encryption/decryption", function() {
 });
 
 unit.register("Encryption/decryption", function() {
-  var openpgp = require('../../src');
+  var openpgp = require('../../');
+
+  var result = [];
 
   var pub_key = 
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -155,10 +142,14 @@ unit.register("Encryption/decryption", function() {
 
   var privKey = openpgp.key.readArmored(priv_key);
 
-  privKey.decrypt('hello world');
+  var privKeyPacket = privKey.getKeyPacketByIds(message.getKeyIds());
 
-  var decrypted = openpgp.decryptMessage(privKey, message);
+  privKeyPacket.decrypt('hello world');
 
-  return new test_result('Encrypt plain text and afterwards decrypt leads to same result', plaintext == decrypted);
+  var decrypted = openpgp.decryptMessage(privKeyPacket, message);
+
+  result[0] = new unit.result('Encrypt plain text and afterwards decrypt leads to same result', plaintext == decrypted);
+
+  return result;
 
 });

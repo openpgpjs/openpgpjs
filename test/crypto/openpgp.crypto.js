@@ -225,14 +225,14 @@ unit.register("Functional testing of openpgp.crypto.* methods", function() {
 
   //Originally we passed public and secret MPI separately, now they are joined. Is this what we want to do long term?
   // RSA
-  var RSAsignedData = openpgp.signature.sign(2, 1, RSApubMPIs.concat(RSAsecMPIs), "foobar");
+  var RSAsignedData = openpgp.crypto.signature.sign(2, 1, RSApubMPIs.concat(RSAsecMPIs), "foobar");
   var RSAsignedDataMPI = new openpgp.mpi();
   RSAsignedDataMPI.read(RSAsignedData);
   result[0] = new unit.result("Testing RSA Sign and Verify",
-      openpgp.signature.verify(1, 2, [RSAsignedDataMPI], RSApubMPIs, "foobar"));
+      openpgp.crypto.signature.verify(1, 2, [RSAsignedDataMPI], RSApubMPIs, "foobar"));
 
   // DSA 
-  var DSAsignedData = openpgp.signature.sign(2, 17, DSApubMPIs.concat(DSAsecMPIs), "foobar");
+  var DSAsignedData = openpgp.crypto.signature.sign(2, 17, DSApubMPIs.concat(DSAsecMPIs), "foobar");
   
   var DSAmsgMPIs = [];
     DSAmsgMPIs[0] = new openpgp.mpi();
@@ -240,31 +240,31 @@ unit.register("Functional testing of openpgp.crypto.* methods", function() {
     DSAmsgMPIs[0].read(DSAsignedData.substring(0,34));
     DSAmsgMPIs[1].read(DSAsignedData.substring(34,68));
   result[1] = new unit.result("Testing DSA Sign and Verify",
-      openpgp.signature.verify(17, 2, DSAmsgMPIs, DSApubMPIs, "foobar"));
+      openpgp.crypto.signature.verify(17, 2, DSAmsgMPIs, DSApubMPIs, "foobar"));
   
   var symmAlgo = "aes256"; // AES256
-  var symmKey = openpgp.generateSessionKey(symmAlgo);
-  var symmencDataOCFB = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, true);
-  var symmencDataCFB  = openpgp.cfb.encrypt(openpgp.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, false);
+  var symmKey = openpgp.crypto.generateSessionKey(symmAlgo);
+  var symmencDataOCFB = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, true);
+  var symmencDataCFB  = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, false);
   
   result[2] = new unit.result("Testing symmetric encrypt and decrypt with OpenPGP CFB resync",
-      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true) == "foobarfoobar1234567890");
+      openpgp.crypto.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true) == "foobarfoobar1234567890");
   result[3] = new unit.result("Testing symmetric encrypt and decrypt without OpenPGP CFB resync (used in modification detection code \"MDC\" packets)",
-      openpgp.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobarfoobar1234567890");
+      openpgp.crypto.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false) == "foobarfoobar1234567890");
   
   var RSAUnencryptedData = new openpgp.mpi();
-  RSAUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
-  var RSAEncryptedData = openpgp.publicKeyEncrypt("rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData);
+  RSAUnencryptedData.fromBytes(openpgp.crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
+  var RSAEncryptedData = openpgp.crypto.publicKeyEncrypt("rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData);
 
   result[4] = new unit.result("Testing asymmetric encrypt and decrypt using RSA with eme_pkcs1 padding",
-      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData).write().substring(2), RSApubMPIs[0].byteLength()) == symmKey);
+      openpgp.crypto.pkcs1.eme.decode(openpgp.crypto.publicKeyDecrypt("rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData).write().substring(2), RSApubMPIs[0].byteLength()) == symmKey);
 
   var ElgamalUnencryptedData = new openpgp.mpi();
-  ElgamalUnencryptedData.fromBytes(openpgp.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
-  var ElgamalEncryptedData = openpgp.publicKeyEncrypt("elgamal", ElgamalpubMPIs, ElgamalUnencryptedData);
+  ElgamalUnencryptedData.fromBytes(openpgp.crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
+  var ElgamalEncryptedData = openpgp.crypto.publicKeyEncrypt("elgamal", ElgamalpubMPIs, ElgamalUnencryptedData);
 
   result[5] = new unit.result("Testing asymmetric encrypt and decrypt using Elgamal with eme_pkcs1 padding",
-      openpgp.pkcs1.eme.decode(openpgp.publicKeyDecrypt("elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData).write().substring(2), ElgamalpubMPIs[0].byteLength()) == symmKey);
+      openpgp.crypto.pkcs1.eme.decode(openpgp.crypto.publicKeyDecrypt("elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData).write().substring(2), ElgamalpubMPIs[0].byteLength()) == symmKey);
 
   return result;
 });

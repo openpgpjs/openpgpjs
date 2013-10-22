@@ -3,7 +3,7 @@ var unit = require('../../unit.js');
 unit.register("MD5 test with test vectors from RFC 1321", function() {
 	var openpgp = require('../../../'),
 		util = openpgp.util,
-		MD5 = openpgp.hash.md5;
+		MD5 = openpgp.crypto.hash.md5;
 
 	var result = new Array();
 	result[0] = new unit.result("MD5 (\"\") = d41d8cd98f00b204e9800998ecf8427e",

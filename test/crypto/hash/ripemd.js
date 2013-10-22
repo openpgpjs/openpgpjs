@@ -4,7 +4,7 @@ unit.register("RIPE-MD 160 bits test with test vectors from http://homes.esat.ku
 
 	var openpgp = require('../../../'),
 		util = openpgp.util,
-		RMDstring = openpgp.hash.ripemd;
+		RMDstring = openpgp.crypto.hash.ripemd;
 
 	var result = new Array();
 	result[0] = new unit.result("RMDstring (\"\") = 9c1185a5c5e9fc54612808977ee8f548b2258d31",
