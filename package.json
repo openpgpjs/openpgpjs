@@ -1,0 +1,25 @@
+{
+    "name": "openpgpjs",
+    "version": "0.1.0-dev",
+    "engines": {
+        "node": ">=0.8"
+    },
+    "scripts": {
+        "pretest": "make minify",
+        "test": "grunt test",
+        "start": "grunt dev"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "grunt": "0.4.1",
+        "mocha": "1.13.0",
+        "phantomjs": "1.9.1-9",
+        "requirejs": "2.1.8",
+        "chai": "1.7.2",
+        "sinon": "1.7.3",
+        "phantomjs": "1.9.1-9",
+        "grunt-contrib-connect": "0.5.0",
+        "grunt-contrib-copy": "0.4.1",
+        "grunt-mocha": "0.4.1"
+    }
+}
