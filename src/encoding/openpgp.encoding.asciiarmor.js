@@ -26,7 +26,7 @@
 function openpgp_encoding_deArmor(text) {
 	text = text.replace(/\r/g, '');
 	// remove whitespace of blank line to allow later split at \n\n
-	text = text.replace(/\n\s+\n/, '\n\n');
+	text = text.replace(/\n[ \t]\n/, '\n\n');
 
 	var type = openpgp_encoding_get_type(text);
 
@@ -74,11 +74,13 @@ function openpgp_encoding_deArmor(text) {
 		}
 	} else {
 		var splittedtext = text.split('-----');
+		var messageText = splittedtext[2].replace(/\n- /g,"\n");
+		// 1. Strip the header line from the message text, delimited by two \n characters
+		// 2. Trim the last (and only the last) line break, as it doesn't belong to the message text
+		messageText = messageText.substring(messageText.indexOf("\n\n")+2, messageText.length-1);
 
 		var result = {
-			text: splittedtext[2]
-				.replace(/\n- /g,"\n")
-				.split("\n\n")[1],
+			text: messageText,
 			openpgp: openpgp_encoding_base64_decode(splittedtext[4]
 				.split("\n\n")[1]
 				.split("\n=")[0]),
