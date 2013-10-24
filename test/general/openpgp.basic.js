@@ -2,7 +2,6 @@ var unit = require('../unit.js');
 
 unit.register("Key generation/encryption/decryption", function() {
   var openpgp = require('../../');
-  var keyring = openpgp.keyring;
   var result = [];
   var testHelper = function(passphrase, userid, message) {
     var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 

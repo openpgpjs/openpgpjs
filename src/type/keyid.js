@@ -27,11 +27,15 @@ var util = require('../util');
  */
 module.exports = function keyid() {
 
-  this.bytes = '';
-
+  // initialize keyid with 0x0000000000000000
+  var strArray = [];
+  var zero = String.fromCharCode(0);
   for (var i = 0; i < 8; i++) {
-    this.bytes += String.fromCharCode(0);
+    strArray[i] = zero;
   }
+  this.bytes = strArray.join('');
+
+
   /**
    * Parsing method for a key id
    * @param {String} input Input to read the key id from 

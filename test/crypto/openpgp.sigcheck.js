@@ -2,7 +2,7 @@ var unit = require('../unit.js');
 
 unit.register("Testing of binary signature checking", function() {
   var openpgp = require('../../');
-  var keyring = openpgp.keyring;
+  var keyring = require('../../src/keyring.js');
   var result = [];
   var priv_key = openpgp.key.readArmored([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
