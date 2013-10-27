@@ -226,7 +226,7 @@ function _openpgp_packet() {
 						break;
 					}
 				}
-				real_packet_length = mypos2;
+				real_packet_length = mypos2 - mypos;
 				// 4.2.2.3. Five-Octet Lengths
 			} else {
 				mypos++;

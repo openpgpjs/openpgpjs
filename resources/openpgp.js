@@ -7424,7 +7424,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131017";
+	this.versionstring ="OpenPGP.js v.1.20131026";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8790,23 +8790,23 @@ function openpgp_msg_message() {
 		return texts;
 	}
 
-    /**
-     * Decrypts and returns children messages
+	/**
+	 * Decrypts and returns children messages
 	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
 	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
 	 * @return {Array} array of openpgp_msg_message's
-     */
-    function decryptMessages(private_key, sessionkey) {
+	 */
+	function decryptMessages(private_key, sessionkey) {
 		if (private_key == null || sessionkey == null || sessionkey == "") {
 			return null;
-        }
+		}
 		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
 		if (decrypted == null) {
 			return null;
-        }
+		}
 		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
 		return openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
-    }
+	}
 	
 	/**
 	 * Verifies a message signature. This function can be called after read_message if the message was signed only.
@@ -8816,16 +8816,16 @@ function openpgp_msg_message() {
 	function verifySignature(pubkey) {
 		var result = false;
 		if (this.signature.tagType == 2) {
-		    if(!pubkey || pubkey.length == 0){
-			    var pubkey;
-			    if (this.signature.version == 4) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
-			    } else if (this.signature.version == 3) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
-			    } else {
-				    util.print_error("unknown signature type on message!");
-				    return false;
-			    }
+			if(!pubkey || pubkey.length == 0){
+				var pubkey;
+				if (this.signature.version == 4) {
+					pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
+				} else if (this.signature.version == 3) {
+					pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
+				} else {
+					util.print_error("unknown signature type on message!");
+					return false;
+				}
 			}
 			if (pubkey.length == 0)
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
@@ -8866,7 +8866,7 @@ function openpgp_msg_message() {
 	this.decrypt = decrypt;
 	this.decryptAndVerifySignature = decryptAndVerifySignature;
 	this.decryptWithoutVerification = decryptWithoutVerification;
-    this.decryptMessages = decryptMessages;
+	this.decryptMessages = decryptMessages;
 	this.verifySignature = verifySignature;
 	this.toString = toString;
 }
@@ -10203,7 +10203,7 @@ function _openpgp_packet() {
 						break;
 					}
 				}
-				real_packet_length = mypos2;
+				real_packet_length = mypos2 - mypos;
 				// 4.2.2.3. Five-Octet Lengths
 			} else {
 				mypos++;
