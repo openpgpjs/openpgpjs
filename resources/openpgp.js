@@ -7424,7 +7424,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131026";
+	this.versionstring ="OpenPGP.js v.1.20131028";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8765,7 +8765,7 @@ function openpgp_msg_message() {
 		var messages = this.decryptMessages(private_key, sessionkey);
 		var texts = [];
 		for(var m in messages){
-			if (messages[m].signature) {
+			if (messages[m].messagePacket.tagType == 2) {
 				texts.push({text:messages[m].text, signatureValid:messages[m].verifySignature(pubkey)})
 			}
 		}
@@ -8783,7 +8783,7 @@ function openpgp_msg_message() {
 		var messages = this.decryptMessages(private_key, sessionkey);
 		var texts = [];
 		for(var m in messages){
-			if(messages[m].data){
+			if(messages[m].messagePacket.tagType == 11) {
 				texts.push(messages[m].data);
 			}
 		}

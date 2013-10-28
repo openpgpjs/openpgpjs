@@ -65,7 +65,7 @@ function openpgp_msg_message() {
 		var messages = this.decryptMessages(private_key, sessionkey);
 		var texts = [];
 		for(var m in messages){
-			if (messages[m].signature) {
+			if (messages[m].messagePacket.tagType == 2) {
 				texts.push({text:messages[m].text, signatureValid:messages[m].verifySignature(pubkey)})
 			}
 		}
@@ -83,7 +83,7 @@ function openpgp_msg_message() {
 		var messages = this.decryptMessages(private_key, sessionkey);
 		var texts = [];
 		for(var m in messages){
-			if(messages[m].data){
+			if(messages[m].messagePacket.tagType == 11) {
 				texts.push(messages[m].data);
 			}
 		}
