@@ -154,11 +154,11 @@ function openpgp_packet_encryptedsessionkey() {
 		return this;
 	}
 	/**
-	 * Decrypts the session key (only for public key encrypted session key
-	 * packets (tag 1)
+	 * Decrypts this session key (only for public key encrypted session key
+	 * packets (tag 1) and uses it to decrypt msg.
 	 * 
 	 * @param {openpgp_msg_message} msg
-	 *            The message object (with member encryptedData
+	 *            The message object (with member encryptedData)
 	 * @param {openpgp_msg_privatekey} key
 	 *            Private key with secMPIs unlocked
 	 * @return {String} The unencrypted session key

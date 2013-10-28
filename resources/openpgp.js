@@ -3566,7 +3566,7 @@ function openpgp_cfb_decrypt(blockcipherencryptfn, block_size, key, ciphertext, 
 	if(iblock[block_size-2]!=(ablock[0]^ciphertext.charCodeAt(block_size))
 	|| iblock[block_size-1]!=(ablock[1]^ciphertext.charCodeAt(block_size+1)))
 	{
-		util.print_eror("error duding decryption. Symmectric encrypted data not valid.");
+		util.print_error("error during decryption. Symmectric encrypted data not valid.");
 		return text.join('');
 	}
 	
@@ -7424,7 +7424,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131009";
+	this.versionstring ="OpenPGP.js v.1.20131028";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -8104,11 +8104,11 @@ function _openpgp () {
 	function read_message(armoredText) {
 		var dearmored;
 		try{
-    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+			dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
 		}
 		catch(e){
-    		util.print_error('no message found!');
-    		return null;
+			util.print_error('no message found!');
+			return null;
 		}
 		return read_messages_dearmored(dearmored);
 		}
@@ -8157,23 +8157,25 @@ function _openpgp () {
 			// Signed Message       :- Signature Packet, OpenPGP Message |
 			//                         One-Pass Signed Message.
 			if (first_packet.tagType ==  1 ||
-			    (first_packet.tagType == 2 && first_packet.signatureType < 16) ||
-			     first_packet.tagType ==  3 ||
-			     first_packet.tagType ==  4 ||
+				(first_packet.tagType == 2 && first_packet.signatureType < 16) ||
+				 first_packet.tagType ==  3 ||
+				 first_packet.tagType ==  4 ||
 				 first_packet.tagType ==  8 ||
 				 first_packet.tagType ==  9 ||
 				 first_packet.tagType == 10 ||
 				 first_packet.tagType == 11 ||
 				 first_packet.tagType == 18 ||
 				 first_packet.tagType == 19) {
-				messages[messages.length] = new openpgp_msg_message();
+				if (!messages[messageCount]) {
+					messages[messageCount] = new openpgp_msg_message();
+				}
 				messages[messageCount].messagePacket = first_packet;
 				messages[messageCount].type = input.type;
 				// Encrypted Message
 				if (first_packet.tagType == 9 ||
-				    first_packet.tagType == 1 ||
-				    first_packet.tagType == 3 ||
-				    first_packet.tagType == 18) {
+					first_packet.tagType == 1 ||
+					first_packet.tagType == 3 ||
+					first_packet.tagType == 18) {
 					if (first_packet.tagType == 9) {
 						util.print_error("unexpected openpgp packet");
 						break;
@@ -8214,7 +8216,7 @@ function _openpgp () {
 						l -= (first_packet.packetLength + first_packet.headerLength);
 						messages[messageCount].text = signatureText;
 						messages[messageCount].signature = first_packet;
-				        messageCount++;
+						messageCount++;
 				} else 
 					// Signed Message
 					if (first_packet.tagType == 4) {
@@ -8226,8 +8228,8 @@ function _openpgp () {
 					// Compressed Message
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
-				        var decompressedText = first_packet.decompress();
-				        messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
+						var decompressedText = first_packet.decompress();
+						messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
 				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
@@ -8400,7 +8402,7 @@ function _openpgp () {
 		var privKeyString = keyPair.privateKey;
 		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length);
 		if(!privKeyPacket.decryptSecretMPIs(passphrase))
-		    util.print_error('Issue creating key. Unable to read resulting private key');
+			util.print_error('Issue creating key. Unable to read resulting private key');
 		var privKey = new openpgp_msg_privatekey();
 		privKey.privateKeyPacket = privKeyPacket;
 		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
@@ -8739,7 +8741,18 @@ function openpgp_msg_message() {
 	 * @return {String} plaintext of the message or null on error
 	 */
 	function decrypt(private_key, sessionkey) {
-        return this.decryptAndVerifySignature(private_key, sessionkey).text;
+		var textParts = this.decryptAndVerifySignature(private_key, sessionkey);
+		if (textParts == null) {
+			return null;
+		}
+		var texts = [];
+		for (var i=0; i<textParts.length; i++) {
+			if (textParts[i].signatureValid == false) {
+				return null;
+			}
+			texts.push(textParts[i].text);
+		}
+		return texts.join("\n");
 	}
 
 	/**
@@ -8748,30 +8761,53 @@ function openpgp_msg_message() {
 	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
 	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
 	 * @param {openpgp_msg_publickey} pubkey Array of public keys to check signature against. If not provided, checks local keystore.
-	 * @return {String} plaintext of the message or null on error
+	 * @return {Array} an array of objects like {text,signatureValid} per signature packet, or null on error.
 	 */
 	function decryptAndVerifySignature(private_key, sessionkey, pubkey) {
-		if (private_key == null || sessionkey == null || sessionkey == "")
-			return null;
-		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
-		if (decrypted == null)
-			return null;
-		var packet;
-		var position = 0;
-		var len = decrypted.length;
-		var validSignatures = new Array();
-		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
-		
-		var messages = openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
+		var messages = this.decryptMessages(private_key, sessionkey);
+		var texts = [];
 		for(var m in messages){
-			if(messages[m].data){
-				this.text = messages[m].data;
-			}
-			if(messages[m].signature){
-			    validSignatures.push(messages[m].verifySignature(pubkey));
+			if (messages[m].messagePacket.tagType == 2) {
+				texts.push({text:messages[m].text, signatureValid:messages[m].verifySignature(pubkey)})
 			}
 		}
-		return {text:this.text, validSignatures:validSignatures};
+		return texts;
+	}
+
+	/**
+	 * Decrypts a message and generates user interface message out of the found.
+	 * Signatures will be ignored.
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @return {String} plaintext of the message or null on error
+	 */
+	function decryptWithoutVerification(private_key, sessionkey) {
+		var messages = this.decryptMessages(private_key, sessionkey);
+		var texts = [];
+		for(var m in messages){
+			if(messages[m].messagePacket.tagType == 11) {
+				texts.push(messages[m].data);
+			}
+		}
+		return texts;
+	}
+
+	/**
+	 * Decrypts and returns children messages
+	 * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)
+	 * @param {openpgp_packet_encryptedsessionkey} sessionkey the session key to be used to decrypt the message
+	 * @return {Array} array of openpgp_msg_message's
+	 */
+	function decryptMessages(private_key, sessionkey) {
+		if (private_key == null || sessionkey == null || sessionkey == "") {
+			return null;
+		}
+		var decrypted = sessionkey.decrypt(this, private_key.keymaterial);
+		if (decrypted == null) {
+			return null;
+		}
+		util.print_debug_hexstr_dump("openpgp.msg.messge decrypt:\n",decrypted);
+		return openpgp.read_messages_dearmored({text: decrypted, openpgp: decrypted});
 	}
 	
 	/**
@@ -8782,16 +8818,16 @@ function openpgp_msg_message() {
 	function verifySignature(pubkey) {
 		var result = false;
 		if (this.signature.tagType == 2) {
-		    if(!pubkey || pubkey.length == 0){
-			    var pubkey;
-			    if (this.signature.version == 4) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
-			    } else if (this.signature.version == 3) {
-				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
-			    } else {
-				    util.print_error("unknown signature type on message!");
-				    return false;
-			    }
+			if(!pubkey || pubkey.length == 0){
+				var pubkey;
+				if (this.signature.version == 4) {
+					pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
+				} else if (this.signature.version == 3) {
+					pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.keyId);
+				} else {
+					util.print_error("unknown signature type on message!");
+					return false;
+				}
 			}
 			if (pubkey.length == 0)
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
@@ -8831,6 +8867,8 @@ function openpgp_msg_message() {
 	}
 	this.decrypt = decrypt;
 	this.decryptAndVerifySignature = decryptAndVerifySignature;
+	this.decryptWithoutVerification = decryptWithoutVerification;
+	this.decryptMessages = decryptMessages;
 	this.verifySignature = verifySignature;
 	this.toString = toString;
 }
@@ -9869,11 +9907,11 @@ function openpgp_packet_encryptedsessionkey() {
 		return this;
 	}
 	/**
-	 * Decrypts the session key (only for public key encrypted session key
-	 * packets (tag 1)
+	 * Decrypts this session key (only for public key encrypted session key
+	 * packets (tag 1) and uses it to decrypt msg.
 	 * 
 	 * @param {openpgp_msg_message} msg
-	 *            The message object (with member encryptedData
+	 *            The message object (with member encryptedData)
 	 * @param {openpgp_msg_privatekey} key
 	 *            Private key with secMPIs unlocked
 	 * @return {String} The unencrypted session key
@@ -10167,7 +10205,7 @@ function _openpgp_packet() {
 						break;
 					}
 				}
-				real_packet_length = mypos2;
+				real_packet_length = mypos2 - mypos;
 				// 4.2.2.3. Five-Octet Lengths
 			} else {
 				mypos++;
