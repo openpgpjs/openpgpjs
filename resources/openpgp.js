@@ -8104,11 +8104,11 @@ function _openpgp () {
 	function read_message(armoredText) {
 		var dearmored;
 		try{
-    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+			dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
 		}
 		catch(e){
-    		util.print_error('no message found!');
-    		return null;
+			util.print_error('no message found!');
+			return null;
 		}
 		return read_messages_dearmored(dearmored);
 		}
@@ -8157,23 +8157,25 @@ function _openpgp () {
 			// Signed Message       :- Signature Packet, OpenPGP Message |
 			//                         One-Pass Signed Message.
 			if (first_packet.tagType ==  1 ||
-			    (first_packet.tagType == 2 && first_packet.signatureType < 16) ||
-			     first_packet.tagType ==  3 ||
-			     first_packet.tagType ==  4 ||
+				(first_packet.tagType == 2 && first_packet.signatureType < 16) ||
+				 first_packet.tagType ==  3 ||
+				 first_packet.tagType ==  4 ||
 				 first_packet.tagType ==  8 ||
 				 first_packet.tagType ==  9 ||
 				 first_packet.tagType == 10 ||
 				 first_packet.tagType == 11 ||
 				 first_packet.tagType == 18 ||
 				 first_packet.tagType == 19) {
-				messages[messages.length] = new openpgp_msg_message();
+				if (!messages[messageCount]) {
+					messages[messageCount] = new openpgp_msg_message();
+				}
 				messages[messageCount].messagePacket = first_packet;
 				messages[messageCount].type = input.type;
 				// Encrypted Message
 				if (first_packet.tagType == 9 ||
-				    first_packet.tagType == 1 ||
-				    first_packet.tagType == 3 ||
-				    first_packet.tagType == 18) {
+					first_packet.tagType == 1 ||
+					first_packet.tagType == 3 ||
+					first_packet.tagType == 18) {
 					if (first_packet.tagType == 9) {
 						util.print_error("unexpected openpgp packet");
 						break;
@@ -8214,7 +8216,7 @@ function _openpgp () {
 						l -= (first_packet.packetLength + first_packet.headerLength);
 						messages[messageCount].text = signatureText;
 						messages[messageCount].signature = first_packet;
-				        messageCount++;
+						messageCount++;
 				} else 
 					// Signed Message
 					if (first_packet.tagType == 4) {
@@ -8226,8 +8228,8 @@ function _openpgp () {
 					// Compressed Message
 						mypos += first_packet.packetLength + first_packet.headerLength;
 						l -= (first_packet.packetLength + first_packet.headerLength);
-				        var decompressedText = first_packet.decompress();
-				        messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
+						var decompressedText = first_packet.decompress();
+						messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
 				} else
 					// Marker Packet (Obsolete Literal Packet) (Tag 10)
 					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
@@ -8400,7 +8402,7 @@ function _openpgp () {
 		var privKeyString = keyPair.privateKey;
 		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length);
 		if(!privKeyPacket.decryptSecretMPIs(passphrase))
-		    util.print_error('Issue creating key. Unable to read resulting private key');
+			util.print_error('Issue creating key. Unable to read resulting private key');
 		var privKey = new openpgp_msg_privatekey();
 		privKey.privateKeyPacket = privKeyPacket;
 		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
