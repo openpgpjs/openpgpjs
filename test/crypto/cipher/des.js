@@ -74,7 +74,7 @@ unit.register("TripleDES (EDE) cipher test with test vectors from http://csrc.ni
   var res = true;
   var j = 0;
   for (var i = 0; i < testvectors.length; i++) {
-    var des = new openpgp.cipher.des(key);
+    var des = new openpgp.crypto.cipher.des(key);
 
     var encr = util.bin2str(des.encrypt(testvectors[i][0], key));
     var res2 = encr == util.bin2str(testvectors[i][1]);
@@ -130,7 +130,7 @@ unit.register("DES encrypt/decrypt padding tests", function () {
 	                  [[0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D], [0xCA, 0x59, 0x61, 0x3A, 0x83, 0x23, 0x26, 0xDD]],
 	                  [[0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F], [0x83, 0x25, 0x79, 0x06, 0x54, 0xA4, 0x44, 0xD9]]];
 
-    var des = new openpgp.cipher.originalDes(key);
+    var des = new openpgp.crypto.cipher.originalDes(key);
 
     var res = true;
     var j = 0;

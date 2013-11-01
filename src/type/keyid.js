@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var util = require('../util');
+
 /**
  * @class
  * @classdesc Implementation of type key id (RFC4880 3.3)
@@ -24,10 +26,16 @@
    formed.
  */
 module.exports = function keyid() {
-  var bytes = '';
 
-  for (var i = 0; i < 8; i++)
-    bytes += String.fromCharCode(0);
+  // initialize keyid with 0x0000000000000000
+  var strArray = [];
+  var zero = String.fromCharCode(0);
+  for (var i = 0; i < 8; i++) {
+    strArray[i] = zero;
+  }
+  this.bytes = strArray.join('');
+
+
   /**
    * Parsing method for a key id
    * @param {String} input Input to read the key id from 
@@ -41,5 +49,13 @@ module.exports = function keyid() {
 
   this.write = function() {
     return this.bytes;
+  }
+
+  this.toHex = function() {
+    return util.hexstrdump(this.bytes);
+  }
+
+  this.equals = function(keyid) {
+    return this.bytes == keyid.bytes;
   }
 };

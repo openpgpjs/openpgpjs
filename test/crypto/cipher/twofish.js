@@ -5,7 +5,7 @@ unit.register("Twofish test with test vectors from http://www.schneier.com/code/
     util = openpgp.util;
 
   function TFencrypt(block, key) {
-    var tf = new openpgp.cipher.twofish(key);
+    var tf = new openpgp.crypto.cipher.twofish(key);
 
     return tf.encrypt(block);
   }

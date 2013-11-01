@@ -2,9 +2,9 @@ var unit = require('../unit.js');
 
 unit.register("Testing of binary signature checking", function() {
   var openpgp = require('../../');
-  var keyring = require('../../src/openpgp.keyring.js');
+  var keyring = require('../../src/keyring.js');
   var result = [];
-  var priv_key = openpgp.readArmoredPackets([
+  var priv_key = openpgp.key.readArmored([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -32,8 +32,8 @@ unit.register("Testing of binary signature checking", function() {
         'AKC8omYPPomN1E/UJFfXdLDIMi5LoA==',
         '=LSrW',
         '-----END PGP PRIVATE KEY BLOCK-----'
-      ].join("\n"));
-  var pub_key = openpgp.readArmoredPackets(
+      ].join("\n")).packets;
+  var pub_key = openpgp.key.readArmored(
       [ '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -51,8 +51,8 @@ unit.register("Testing of binary signature checking", function() {
         'EplqEakMckCtikEnpxYe',
         '=b2Ln',
         '-----END PGP PUBLIC KEY BLOCK-----'
-      ].join("\n"));
-  var msg = openpgp.readArmoredPackets([
+      ].join("\n")).packets;
+  var msg = openpgp.message.readArmored([
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -68,7 +68,7 @@ unit.register("Testing of binary signature checking", function() {
         'aOU=',
         '=4iGt',
         '-----END PGP MESSAGE-----'
-      ].join("\n"));
+      ].join("\n")).packets;
   //TODO need both?
   priv_key[0].decrypt("abcd");
   priv_key[3].decrypt("abcd");
@@ -80,7 +80,7 @@ unit.register("Testing of binary signature checking", function() {
 
   // exercises the GnuPG s2k type 1001 extension:
   // the secrets on the primary key have been stripped.
-  var priv_key_gnupg_ext = openpgp.readArmoredPackets([
+  var priv_key_gnupg_ext = openpgp.key.readArmored([
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -107,7 +107,7 @@ unit.register("Testing of binary signature checking", function() {
         'iY3UT9QkV9d0sMgyLkug',
         '=GQsY',
         '-----END PGP PRIVATE KEY BLOCK-----',
-      ].join("\n"));
+      ].join("\n")).packets;
   priv_key_gnupg_ext[3].decrypt("abcd");
   msg[0].decrypt(priv_key_gnupg_ext[3]);
   msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -149,7 +149,7 @@ unit.register("Testing of binary signature checking", function() {
         '-----END PGP PUBLIC KEY BLOCK-----'
         ].join("\n"));
 
-  var msg2 = openpgp.readArmoredPackets([
+  var msg2 = openpgp.message.readArmored([
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -158,7 +158,7 @@ unit.register("Testing of binary signature checking", function() {
         'AJ9zh4zsK4GIPuEu81YPNmHsju7DYg==',
         '=WaSx',
         '-----END PGP MESSAGE-----'
-        ].join("\n"));
+        ].join("\n")).packets;
   var packetlists = keyring.getPacketlistsForKeyId(msg2[0].signingKeyId.write());
   var pubKey = packetlists[0];
   msg2[2].verify(pubKey[3], msg2[1]);
