@@ -32,6 +32,7 @@ var config = require('./config');
 
   this.packets = packetlist || new packet.list();
 
+  this.passphrase = null;
 
   /** 
    * Returns the primary key packet (secret or public)
@@ -86,22 +87,12 @@ var config = require('./config');
     return keyIds;
   }
 
-  /** 
-   * Returns key IDs of all key packets in hex
-   * @returns {[String]} 
-   */
-  this.getKeyIdsHex = function() {
-    return this.getKeyIds().map(function(keyId) {
-      return keyId.toHex();
-    });
-  }
-
   /**
-   * Returns first key packet which match to an array of key IDs
+   * Returns first key packet for given array of key IDs
    * @param  {[keyid]} keyIds 
    * @return {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null}       
    */
-  this.getKeyPacketByIds = function(keyIds) {
+  this.getKeyPacket = function(keyIds) {
     var keys = this.getAllKeyPackets();
     for (var i = 0; i < keys.length; i++) {
       var keyId = keys[i].getKeyId(); 
@@ -116,12 +107,36 @@ var config = require('./config');
   }
 
   /**
+   * Returns first private key packet for given array of key IDs
+   * @param  {[keyid]} keyIds
+   * @param  {Boolean} decrypted decrypt private key packet
+   * @return {secret_subkey|packet_secret_key|null}       
+   */
+  this.getPrivateKeyPacket = function(keyIds, decrypted) {
+    var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
+    for (var i = 0; i < keys.length; i++) {
+      var keyId = keys[i].getKeyId(); 
+      for (var j = 0; j < keyIds.length; j++) {
+        if (keyId.equals(keyIds[j])) {
+          //TODO return only verified keys
+          if (decrypted) {
+            if (!this.passphrase) throw new Error('No passphrase to decrypt key.');
+            keys[i].decrypt(this.passphrase);
+          }
+          return keys[i];
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Returns true if this is a public key
    * @return {Boolean}
    */
   this.isPublic = function() {
     var publicKeyPackets = this.packets.filterByTag(enums.packet.public_key);
-    return publicKeyPackets.length !== 0 ? true : false;
+    return publicKeyPackets.length ? true : false;
   }
 
   /**
@@ -130,7 +145,7 @@ var config = require('./config');
    */
   this.isPrivate = function() {
     var privateKeyPackets = this.packets.filterByTag(enums.packet.private_key);
-    return privateKeyPackets.length !== 0 ? true : false;
+    return privateKeyPackets.length ? true : false;
   }
 
   /**
@@ -202,16 +217,25 @@ var config = require('./config');
    * @return {undefined}
    */
   this.decrypt = function(passphrase) {
-    //TODO boolean return value
+    //TODO return value
     var keys = this.getAllKeyPackets();
-
-    for (var i in keys)
+    for (var i in keys) {
       if (keys[i].tag == enums.packet.secret_subkey ||
         keys[i].tag == enums.packet.secret_key) {
-        keys[i].decrypt(passphrase);
+          if (!passphrase && !this.passphrase) throw new Error('No passphrase to decrypt key.');
+          keys[i].decrypt(passphrase || this.passphrase);
       }
+    }
   }
 
+  /**
+   * Unlocks the key with passphrase, decryption of secret keys deferred. This allows to decrypt the required private key packets on demand
+   * @param  {String} passphrase 
+   * @return {undefined}
+   */
+  this.unlock = function(passphrase) {
+    this.passphrase = passphrase;
+  }
 
   // TODO
   this.verify = function() {

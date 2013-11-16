@@ -11,31 +11,21 @@ unit.register("Key generation/encryption/decryption", function() {
         + 'userid: ' + userid + '\n'
         + 'message: ' + message;
 
-    debugger;
     var privKey = openpgp.key.readArmored(key);
 
     var encrypted = openpgp.encryptMessage([privKey], message);
 
     var msg = openpgp.message.readArmored(encrypted);
 
-    // Find the private (sub)key for the session key of the message
-    var privKeyPacket = privKey.getKeyPacketByIds(msg.getKeyIds());
-
-    if (!privKeyPacket) {
-      return new unit.result("No private key found!" + info, false);
-    }
+    privKey.unlock(passphrase);
 
     try {
-      if (!privKeyPacket.decrypt(passphrase)) {
-        return new unit.result("Password for secrect key was incorrect!" + info, false);
-      }
+      var decrypted = openpgp.decryptMessage(privKey, msg);
+      return new unit.result(message + ' == ' + decrypted + info, message == decrypted);
     } catch (e) {
       return new unit.result("Exception on decrypt of private key packet!" + info, false);
     }
 
-    var decrypted = msg.decrypt(privKeyPacket)[0];
-
-    return new unit.result(message + ' == ' + decrypted + info, message == decrypted);
   };
 
   result.push(testHelper('password', 'Test McTestington <test@example.com>', 'hello world'));
@@ -117,21 +107,7 @@ unit.register("Encryption/decryption", function() {
       '=lw5e',
       '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-  var armored = 
-     ['-----BEGIN PGP MESSAGE-----',
-      'Version: OpenPGP.js VERSION',
-      'Comment: http://openpgpjs.org',
-      '',
-      'wYwD4IT3RGwgLJcBA/wN8H9qUvsJwsarDOcsczk1L9Iif47jy+3vF6LcpSgA',
-      'DfKSARWvatyakvEJmuCNfcpzS8NUPnFA51p0VWmI7FnYG5LkPVUIHb4sN07G',
-      '9PeqhaayZIeNVvS6DoYuxiTG2sbDmyrv6MMSLivs7VcTAN6L7XXJRI2IumOS',
-      'x2WFgYNKANJFAQmen4R4IGf9nZDI7NJ4QHUlK1GENgLix9RzMK+Cri6p9Gx5',
-      '4MDV23jgCBWrUHfFYximgcXiUk0NfpVD3x6chcnKUKJv',
-      '=Eaix',
-      '-----END PGP MESSAGE-----'].join('\n');
-
-
-  var plaintext = 'short message';
+  var plaintext = 'short message\nnext line\n한국어/조선말';
 
   var key = openpgp.key.readArmored(pub_key);
 
@@ -141,11 +117,9 @@ unit.register("Encryption/decryption", function() {
 
   var privKey = openpgp.key.readArmored(priv_key);
 
-  var privKeyPacket = privKey.getKeyPacketByIds(message.getKeyIds());
+  privKey.unlock('hello world');
 
-  privKeyPacket.decrypt('hello world');
-
-  var decrypted = openpgp.decryptMessage(privKeyPacket, message);
+  var decrypted = openpgp.decryptMessage(privKey, message);
 
   result[0] = new unit.result('Encrypt plain text and afterwards decrypt leads to same result', plaintext == decrypted);
 

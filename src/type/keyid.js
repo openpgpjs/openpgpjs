@@ -25,7 +25,7 @@ var util = require('../util');
    section "Enhanced Key Formats" below describes how Key IDs are
    formed.
  */
-module.exports = function keyid() {
+function keyid() {
 
   // initialize keyid with 0x0000000000000000
   var strArray = [];
@@ -58,4 +58,10 @@ module.exports = function keyid() {
   this.equals = function(keyid) {
     return this.bytes == keyid.bytes;
   }
-};
+}
+
+keyid.mapToHex = function(keyid) {
+  return keyid.toHex();
+}
+
+module.exports = keyid;

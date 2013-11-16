@@ -18,6 +18,8 @@
 var packet = require('./packet');
 var enums = require('./enums.js');
 var armor = require('./encoding/armor.js');
+var config = require('./config');
+var crypto = require('./crypto');
 
 /**
  * @class
@@ -32,9 +34,9 @@ function message(packetlist) {
    * Returns the key IDs of the public keys to which the session key is encrypted
    * @return {[keyId]} array of keyid objects
    */
-  this.getKeyIds = function() {
+  this.getEncryptionKeyIds = function() {
     var keyIds = [];
-    var pkESKeyPacketlist = this.packets.filterByType(enums.packet.public_key_encrypted_session_key);
+    var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
     pkESKeyPacketlist.forEach(function(packet) {
       keyIds.push(packet.publicKeyId);
     });
@@ -42,51 +44,78 @@ function message(packetlist) {
   }
 
   /**
-   * Returns the key IDs in hex of the public keys to which the session key is encrypted
-   * @return {[String]} keyId provided as string of hex numbers (lowercase)
+   * Decrypt the message
+   * @param {key} privateKey unlocked private key for which the message is encrypted (corresponding to the session key)
+   * @return {[message]} new message with decrypted content
    */
-  this.getKeyIdsHex = function() {
-    return this.getKeyIds().map(function(keyId) {
-      return keyId.toHex();
-    });
-  }
-
-  /**
-   * Decrypts the message
-   * @param {secret_subkey|packet_secret_key} privateKeyPacket the private key packet (with decrypted secret part) the message is encrypted with (corresponding to the session key)
-   * @return {[String]} array with plaintext of decrypted messages
-   */
-  this.decrypt = function(privateKeyPacket) {
-    var decryptedMessages = [];
-    var pkESKeyPacketlist = this.packets.filterByType(enums.packet.public_key_encrypted_session_key);
+  this.decrypt = function(privateKey) {
+    var encryptionKeyIds = this.getEncryptionKeyIds();
+    if (!encryptionKeyIds.length) {
+      // nothing to decrypt return unmodified message
+      return this;
+    }
+    var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds, true);
+    var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
+    var pkESKeyPacket;
     for (var i = 0; i < pkESKeyPacketlist.length; i++) {
-      var pkESKeyPacket = pkESKeyPacketlist[i];
-      if (pkESKeyPacket.publicKeyId.equals(privateKeyPacket.getKeyId())) {
+      if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
+        pkESKeyPacket = pkESKeyPacketlist[i];
         pkESKeyPacket.decrypt(privateKeyPacket);
-        var symEncryptedPacketlist = this.packets.filter(function(packet) {
-          return packet.tag == enums.packet.symmetrically_encrypted || packet.tag == enums.packet.sym_encrypted_integrity_protected;
-        });
-        for (var k = 0; k < symEncryptedPacketlist.length; k++) {
-          var symEncryptedPacket = symEncryptedPacketlist[k];
-          symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
-          for (var l = 0; l < symEncryptedPacket.packets.length; l++) {
-            var dataPacket = symEncryptedPacket.packets[l];
-            switch (dataPacket.tag) {
-              case enums.packet.literal:
-                decryptedMessages.push(dataPacket.getBytes());
-                break;
-              case enums.packet.compressed:
-                //TODO
-                break;
-              default:
-                //TODO
-            }
-          }
-        }
         break;
       }
     }
-    return decryptedMessages;
+    if (pkESKeyPacket) {
+      var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetrically_encrypted, enums.packet.sym_encrypted_integrity_protected);
+      if (symEncryptedPacketlist.length !== 0) {
+        var symEncryptedPacket = symEncryptedPacketlist[0];
+        symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
+        return new message(symEncryptedPacket.packets);
+      }
+    }
+  }
+
+  /**
+   * Get literal data that is the body of the message
+   * @return {String|null} literal body of the message as string
+   */
+  this.getLiteral = function() {
+    var literal = this.packets.findPacket(enums.packet.literal);
+    return literal && literal.data || null;
+  }
+
+  /**
+   * Encrypt the message
+   * @param  {[key]} keys array of keys, used to encrypt the message
+   * @return {[message]} new message with encrypted content
+   */
+  this.encrypt = function(keys) {
+    var packetlist = new packet.list();
+    //TODO get preferred algo from signature
+    var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
+    keys.forEach(function(key) {
+      var encryptionKeyPacket = key.getEncryptionKeyPacket();
+      if (encryptionKeyPacket) {
+        var pkESKeyPacket = new packet.public_key_encrypted_session_key();
+        pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
+        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+        pkESKeyPacket.sessionKey = sessionKey;
+        //TODO get preferred algo from signature
+        pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
+        pkESKeyPacket.encrypt(encryptionKeyPacket);
+        packetlist.push(pkESKeyPacket);
+      }
+    });
+    var symEncryptedPacket;
+    if (config.integrity_protect) {
+      symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
+    } else {
+      symEncryptedPacket = new packet.symmetrically_encrypted();
+    }
+    symEncryptedPacket.packets = this.packets;
+    //TODO get preferred algo from signature
+    symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
+    packetlist.push(symEncryptedPacket);
+    return new message(packetlist);
   }
 
   /**
@@ -170,7 +199,7 @@ function message(packetlist) {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @return {key} new message object
+ * @return {message} new message object
  */
 message.readArmored = function(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
@@ -179,6 +208,21 @@ message.readArmored = function(armoredText) {
   var packetlist = new packet.list();
   packetlist.read(input);
   var newMessage = new message(packetlist);
+  return newMessage;
+}
+
+/**
+ * creates new message object from text
+ * @param {String} text
+ * @return {message} new message object
+ */
+message.fromText = function(text) {
+  var literalDataPacket = new packet.literal();
+  // text will be converted to UTF8
+  literalDataPacket.set(text);
+  var literalDataPacketlist = new packet.list();
+  literalDataPacketlist.push(literalDataPacket);
+  var newMessage = new message(literalDataPacketlist);
   return newMessage;
 }
 

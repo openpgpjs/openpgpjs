@@ -26,35 +26,40 @@ var util = require('../util'),
  * is not to be further interpreted.
  */
 module.exports = function packet_literal() {
-  this.format = 'utf8';
-  this.data = '';
+  this.format = 'utf8'; // default format for literal data packets
+  this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();
 
 
   /**
    * Set the packet data to a javascript native string or a squence of 
-   * bytes. Conversion to a proper utf8 encoding takes place when the 
+   * bytes. Conversion to the provided format takes place when the 
    * packet is written.
    * @param {String} str Any native javascript string
-   * @param {openpgp_packet_literaldata.format} format 
+   * @param {'utf8|'binary'|'text'} format The format the packet data will be written to,
+   *                                defaults to 'utf8'
    */
   this.set = function(str, format) {
-    this.format = format;
+    this.format = format || this.format;
     this.data = str;
   }
 
   /**
-   * Set the packet data to value represented by the provided string
-   * of bytes together with the appropriate conversion format.
+   * Set the packet data to value represented by the provided string of bytes.
    * @param {String} bytes The string of bytes
-   * @param {openpgp_packet_literaldata.format} format
+   * @param {'utf8|'binary'|'text'} format The format of the string of bytes
    */
   this.setBytes = function(bytes, format) {
     this.format = format;
-
-    if (format == 'utf8')
-      bytes = util.decode_utf8(bytes);
-
+    switch (format) {
+      case 'utf8':
+        bytes = util.decode_utf8(bytes);
+        bytes = bytes.replace(/\r\n/g, '\n');
+        break;
+      case 'text':
+        bytes = bytes.replace(/\r\n/g, '\n');
+        break;
+    }
     this.data = bytes;
   }
 
@@ -63,10 +68,17 @@ module.exports = function packet_literal() {
    * @returns {String} A sequence of bytes
    */
   this.getBytes = function() {
-    if (this.format == 'utf8')
-      return util.encode_utf8(this.data);
-    else
-      return this.data;
+    var bytes = this.data;
+    switch (this.format) {
+      case 'utf8':
+        bytes = bytes.replace(/\n/g, '\r\n');
+        bytes = util.encode_utf8(bytes);
+        break;
+      case 'text':
+        bytes = bytes.replace(/\n/g, '\r\n');
+        break;
+    }
+    return bytes;
   }
 
 

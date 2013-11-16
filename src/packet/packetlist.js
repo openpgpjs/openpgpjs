@@ -62,10 +62,10 @@ module.exports = function packetlist() {
     this.length++;
   }
 
-    /**
-   * Creates a new packetList with all packets that pass the test implemented by the provided function.
-   */
-   this.filter = function(callback) {
+  /**
+  * Creates a new packetList with all packets that pass the test implemented by the provided function.
+  */
+  this.filter = function(callback) {
 
     var filtered = new packetlist();
 
@@ -75,25 +75,54 @@ module.exports = function packetlist() {
       }
     }
 
-    return filtered; 
-   }
+    return filtered;
+  }
 
-   /**
-   * Creates a new packetList with all packets from the given type
-   */
-   this.filterByType = function(packetType) {
-     return this.filter(function(packet) {
-       return packet.tag == packetType;
-     });
-   } 
+  /**
+  * Creates a new packetList with all packets from the given types
+  */
+  this.filterByTag = function() {
+    var args = Array.prototype.slice.call(arguments);
+    var filtered = new packetlist();
+    var that = this;
 
-   /**
-    * Executes the provided callback once for each element
-    */
-   this.forEach = function(callback) {
-     for (var i = 0; i < this.length; i++) {
+    for (var i = 0; i < this.length; i++) {
+      if (args.some(function(packetType) {return that[i].tag == packetType})) {
+        filtered.push(this[i]);
+      }
+    }
+
+    return filtered;
+  } 
+
+  /**
+  * Executes the provided callback once for each element
+  */
+  this.forEach = function(callback) {
+    for (var i = 0; i < this.length; i++) {
       callback(this[i]);
     }
-   }
+  }
+
+  /**
+   * Traverses packet tree and returns first matching packet
+   * @param  {enums.packet} type The packet type
+   * @return {[type]}      
+   */
+  this.findPacket = function(type) {
+    var packetlist = this.filterByTag(type);
+    if (packetlist.length) {
+      return packetlist[0];
+    } else {
+      var found = null;
+      for (var i = 0; i < this.length; i++) {
+        if (this[i].packets.length) {
+          found = this[i].packets.findPacket(type);
+          if (found) return found;
+        }
+      }
+    }
+    return null;
+  }
 
 }

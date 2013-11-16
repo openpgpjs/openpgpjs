@@ -17,6 +17,7 @@
 
 var base64 = require('./base64.js');
 var enums = require('../enums.js');
+var config = require('../config');
 
 /**
  * Finds out which Ascii Armoring type is used. This is an internal function
@@ -79,13 +80,13 @@ function get_type(text) {
  * @version 2011-12-16
  * @returns {String} The header information
  */
-function armor_addheader(options) {
+function armor_addheader() {
   var result = "";
-  if (options.show_version) {
-    result += "Version: " + options.versionstring + '\r\n';
+  if (config.show_version) {
+    result += "Version: " + config.versionstring + '\r\n';
   }
-  if (options.show_comment) {
-    result += "Comment: " + options.commentstring + '\r\n';
+  if (config.show_comment) {
+    result += "Comment: " + config.commentstring + '\r\n';
   }
   result += '\r\n';
   return result;
@@ -234,7 +235,7 @@ function dearmor(text) {
       text: splittedtext[2]
         .replace(/\n- /g, "\n")
         .split("\n\n")[1],
-      openpgp: base64_decode(splittedtext[4]
+      openpgp: base64.decode(splittedtext[4]
         .split("\n\n")[1]
         .split("\n=")[0]),
       type: type
@@ -261,19 +262,19 @@ function dearmor(text) {
  * @param {Integer} parttotal
  * @returns {String} Armored text
  */
-function armor(messagetype, data, options, partindex, parttotal) {
+function armor(messagetype, data, partindex, parttotal) {
   var result = "";
   switch (messagetype) {
     case enums.armor.multipart_section:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       break;
     case enums.armor.mutlipart_last:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "-----\r\n";
@@ -282,28 +283,28 @@ function armor(messagetype, data, options, partindex, parttotal) {
       result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: " + data.hash + "\r\n\r\n";
       result += data.text.replace(/\n-/g, "\n- -");
       result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data.openpgp);
       result += "\r\n=" + getCheckSum(data.openpgp) + "\r\n";
       result += "-----END PGP SIGNATURE-----\r\n";
       break;
     case enums.armor.message:
       result += "-----BEGIN PGP MESSAGE-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP MESSAGE-----\r\n";
       break;
     case enums.armor.public_key:
       result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
       break;
     case enums.armor.private_key:
       result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-      result += armor_addheader(options);
+      result += armor_addheader();
       result += base64.encode(data);
       result += "\r\n=" + getCheckSum(data) + "\r\n";
       result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";

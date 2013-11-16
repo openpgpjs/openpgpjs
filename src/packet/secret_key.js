@@ -33,8 +33,10 @@ var publicKey = require('./public_key.js'),
  */
 function packet_secret_key() {
   publicKey.call(this);
-
+  // encrypted secret-key data
   this.encrypted = null;
+  // indicator if secret-key data is available in decrypted form
+  this.isDecrypted = false;
 
 
   function get_hash_len(hash) {
@@ -127,6 +129,7 @@ function packet_secret_key() {
 
       this.mpi = this.mpi.concat(parse_cleartext_mpi('mod', bytes.substr(1),
         this.algorithm));
+      this.isDecrypted = true;
     }
 
   };
@@ -200,7 +203,7 @@ function packet_secret_key() {
    * @return {Boolean} True if the passphrase was correct; false if not
    */
   this.decrypt = function(passphrase) {
-    if (!this.encrypted)
+    if (this.isDecrypted)
       return;
 
     var i = 0,
@@ -249,10 +252,12 @@ function packet_secret_key() {
 
     this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
       this.algorithm));
+    this.isDecrypted = true;
   };
 
   this.generate = function(bits, passphrase) {
     this.mpi = crypto.generateMpi(this.algorithm, bits);
+    this.isDecrypted = true;
   };
 
 }

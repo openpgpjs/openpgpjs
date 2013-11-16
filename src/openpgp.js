@@ -25,8 +25,8 @@ var armor = require('./encoding/armor.js');
 var packet = require('./packet');
 var util = require('./util');
 var enums = require('./enums.js');
-var crypto = require('./crypto');
 var config = require('./config');
+var message = require('./message.js');
 
 /**
  * GPG4Browsers Core interface. A single instance is hold
@@ -36,52 +36,17 @@ var config = require('./config');
  * @classdesc Main Openpgp.js class. Use this to initiate and make all calls to this library.
  */
 function _openpgp() {
-  this.tostring = "";
 
   /**
    * encrypts message with keys
    * @param  {[key]} keys    array of keys, used to encrypt the message
-   * @param  {String} message text message as native JavaScript string
+   * @param  {String} text message as native JavaScript string
    * @return {String}         encrypted ASCII armored message 
    */
-  function encryptMessage(keys, message) {
-
-    var messagePacketlist = new packet.list();
-
-    //TODO get preferred algo from signature
-    var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
-
-    keys.forEach(function(key) {
-      var encryptionKeyPacket = key.getEncryptionKeyPacket();
-      if (encryptionKeyPacket) {
-        var pkESKeyPacket = new packet.public_key_encrypted_session_key();
-        pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
-        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
-        pkESKeyPacket.sessionKey = sessionKey;
-        //TODO get preferred algo from signature
-        pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
-        pkESKeyPacket.encrypt(encryptionKeyPacket);
-        messagePacketlist.push(pkESKeyPacket);
-      }
-    });
-
-    var literalDataPacket = new packet.literal();
-    literalDataPacket.set(message, 'utf8');
-    var literalDataPacketlist = new packet.list();
-    literalDataPacketlist.push(literalDataPacket);
-
-    var symEncryptedPacket;
-    if (config.integrity_protect) {
-      symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
-    } else {
-      symEncryptedPacket = new packet.symmetrically_encrypted();
-    }
-    symEncryptedPacket.packets = literalDataPacketlist;
-    //TODO get preferred algo from signature
-    symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
-    messagePacketlist.push(symEncryptedPacket);
-
-    var armored = armor.encode(enums.armor.message, messagePacketlist.write(), config);
+  function encryptMessage(keys, text) {
+    var msg = message.fromText(text);
+    msg = msg.encrypt(keys);
+    var armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
   }
 
@@ -91,12 +56,14 @@ function _openpgp() {
 
   /**
    * decrypts message
-   * @param  {secret_subkey|packet_secret_key} privateKeyPacket the private key packet (with decrypted secret part) the message is encrypted with
+   * @param  {key} privateKey unlocked private key
    * @param  {message} message the message object with the encrypted data
-   * @return {String}         decrypted message as as native JavaScript string
+   * @return {String|null}         decrypted message as as native JavaScript string
+   *                               or null if no literal data found
    */
-  function decryptMessage(privateKeyPacket, message) {
-    return message.decrypt(privateKeyPacket);
+  function decryptMessage(privateKey, message) {
+    message = message.decrypt(privateKey);
+    return message.getLiteral();
   }
 
   function decryptAndVerifyMessage(privateKey, publicKeys, messagePacketlist) {
@@ -169,7 +136,7 @@ function _openpgp() {
     packetlist.push(secretSubkeyPacket);
     packetlist.push(subkeySignaturePacket);
 
-    var armored = armor.encode(enums.armor.private_key, packetlist.write(), this.config);
+    var armored = armor.encode(enums.armor.private_key, packetlist.write());
     return armored;
   }
 
