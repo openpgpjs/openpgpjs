@@ -7,9 +7,9 @@
 		"test": ""
 	},
   "devDependencies": {
-    "browserify": "~2.33",
+    "browserify": "~2.35",
     "grunt": "~0.4.1",
-    "grunt-browserify": "~1.2.8",
+    "grunt-browserify": "~1.2.11",
     "grunt-contrib-uglify": "*",
     "grunt-text-replace": "*",
     "grunt-jsbeautifier": "*",
