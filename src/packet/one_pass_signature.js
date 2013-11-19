@@ -41,9 +41,7 @@ module.exports = function packet_one_pass_signature() {
   /**
    * parsing function for a one-pass signature packet (tag 4).
    * @param {String} bytes payload of a tag 4 packet
-   * @param {Integer} position position to start reading from the bytes string
-   * @param {Integer} len length of the packet or the remaining length of bytes at position
-   * @return {openpgp_packet_encrypteddata} object representation
+   * @return {packet_one_pass_signature} object representation
    */
   this.read = function(bytes) {
     var mypos = 0;
@@ -75,27 +73,17 @@ module.exports = function packet_one_pass_signature() {
 
   /**
    * creates a string representation of a one-pass signature packet
-   * @param {Integer} type Signature types as described in RFC4880 Section 5.2.1.
-   * @param {Integer} hashalgorithm the hash algorithm used within the signature
-   * @param {openpgp_msg_privatekey} privatekey the private key used to generate the signature
-   * @param {Integer} length length of data to be signed
-   * @param {boolean} nested boolean showing whether the signature is nested. 
-   *  "true" indicates that the next packet is another One-Pass Signature packet
-   *   that describes another signature to be applied to the same message data. 
    * @return {String} a string representation of a one-pass signature packet
    */
-  this.write = function(type, hashalgorithm, privatekey, length, nested) {
+  this.write = function() {
     var result = "";
 
     result += String.fromCharCode(3);
-    result += String.fromCharCode(enums.write(enums.signature, type));
+    result += String.fromCharCode(enums.write(enums.signature, this.type));
     result += String.fromCharCode(enums.write(enums.hash, this.hashAlgorithm));
-    result += String.fromCharCode(enums.write(enums.publicKey, privatekey.algorithm));
-    result += privatekey.getKeyId().write();
-    if (nested)
-      result += String.fromCharCode(0);
-    else
-      result += String.fromCharCode(1);
+    result += String.fromCharCode(enums.write(enums.publicKey, this.publicKeyAlgorithm));
+    result += this.signingKeyId.write();
+    result += String.fromCharCode(this.flags);
 
     return result;
   }

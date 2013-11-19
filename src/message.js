@@ -120,6 +120,39 @@ function message(packetlist) {
   }
 
   /**
+   * Sign the message (the literal data packet of the message)
+   * @param  {key} privateKey private key with decrypted secret key data for signing
+   * @return {[message]}      new message with encrypted content
+   */
+  this.sign = function(privateKey) {
+
+    var packetlist = new packet.list();
+    
+    var onePassSig = new packet.one_pass_signature();
+    onePassSig.type = enums.signature.text;
+    //TODO get preferred hashg algo from signature
+    onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
+    onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+    packetlist.push(onePassSig);
+    
+    var literalDataPacket = this.packets.findPacket(enums.packet.literal);
+    if (!literalDataPacket) throw new Error('No literal data packet to sign.');
+    packetlist.push(literalDataPacket);
+
+    var signaturePacket = new packet.signature();
+    signaturePacket.signatureType = enums.signature.text;
+    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    signaturePacket.sign(signingKeyPacket, literalDataPacket);
+    packetlist.push(signaturePacket);
+
+    return new message(packetlist);
+  }
+
+  /**
    * Decrypts a message and generates user interface message out of the found.
    * MDC will be verified as well as message signatures
    * @param {openpgp_msg_privatekey} private_key the private the message is encrypted with (corresponding to the session key)

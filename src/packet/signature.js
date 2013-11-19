@@ -400,12 +400,9 @@ module.exports = function packet_signature() {
 
     switch (type) {
       case t.binary:
-        return data.getBytes();
-
+      // conversion to CRLF line endings done in literal data packet
       case t.text:
-        return this.toSign(t.binary, data)
-          .replace(/\r\n/g, '\n')
-          .replace(/\n/g, '\r\n');
+        return data.getBytes();
 
       case t.standalone:
         return '';

@@ -133,7 +133,7 @@ unit.register("Message encryption/decryption", function() {
   } catch (e) {
     error = e;
   }
-  result.push(new unit.result('Calling decryptMessage with not encrypted key packet leads to exception: \'' + (error || '') + '\'', error));
+  result.push(new unit.result('Calling decryptMessage with not decrypted key packet leads to exception: \'' + (error || '') + '\'', error));
 
   success = privKey.decryptKeyPacket(keyids, 'hello world');
 

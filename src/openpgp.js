@@ -38,10 +38,10 @@ var message = require('./message.js');
 function _openpgp() {
 
   /**
-   * encrypts message with keys
-   * @param  {[key]} keys    array of keys, used to encrypt the message
+   * encrypts message text with keys
+   * @param  {[key]}  keys array of keys, used to encrypt the message
    * @param  {String} text message as native JavaScript string
-   * @return {String}         encrypted ASCII armored message 
+   * @return {String}      encrypted ASCII armored message
    */
   function encryptMessage(keys, text) {
     var msg = message.fromText(text);
@@ -50,16 +50,27 @@ function _openpgp() {
     return armored;
   }
 
-  function encryptAndSignMessage(publicKeys, privateKey, message) {
-
+  /**
+   * signs message text and encrypts it
+   * @param  {[key]}  publicKeys array of keys, used to encrypt the message
+   * @param  {key}    privateKey private key with decrypted secret key data for signing
+   * @param  {String} text       message as native JavaScript string
+   * @return {String}            encrypted ASCII armored message
+   */
+  function signAndEncryptMessage(publicKeys, privateKey, text) {
+    var msg = message.fromText(text);
+    msg = msg.sign(privateKey);
+    msg = msg.encrypt(publicKeys);
+    var armored = armor.encode(enums.armor.message, msg.packets.write());
+    return armored;
   }
 
   /**
    * decrypts message
-   * @param  {key} privateKey private key with decrypted secret key data
-   * @param  {message} message the message object with the encrypted data
-   * @return {String|null}         decrypted message as as native JavaScript string
-   *                               or null if no literal data found
+   * @param  {key}     privateKey private key with decrypted secret key data
+   * @param  {message} message    the message object with the encrypted data
+   * @return {String|null}        decrypted message as as native JavaScript string
+   *                              or null if no literal data found
    */
   function decryptMessage(privateKey, message) {
     message = message.decrypt(privateKey);
@@ -274,7 +285,7 @@ function _openpgp() {
 
   this.generateKeyPair = generateKeyPair;
   this.write_signed_message = write_signed_message;
-  this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
+  this.signAndEncryptMessage = signAndEncryptMessage;
   this.encryptMessage = encryptMessage;
   this.decryptMessage = decryptMessage;
 
