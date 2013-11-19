@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+var config = require('../config');
+
 var Util = function() {
 
   this.readNumber = function(bytes) {
@@ -221,16 +223,11 @@ var Util = function() {
   /**
    * Helper function to print a debug message. Debug 
    * messages are only printed if
-   * openpgp.config.debug is set to true. The calling
-   * Javascript context MUST define
-   * a "showMessages(text)" function. Line feeds ('\n')
-   * are automatically converted to HTML line feeds '<br/>'
+   * openpgp.config.debug is set to true.
    * @param {String} str String of the debug message
-   * @return {String} An HTML tt entity containing a paragraph with a 
-   * style attribute where the debug message is HTMLencoded in. 
    */
   this.print_debug = function(str) {
-    if (this.debug) {
+    if (config.debug) {
       console.log(str);
     }
   };
@@ -238,17 +235,12 @@ var Util = function() {
   /**
    * Helper function to print a debug message. Debug 
    * messages are only printed if
-   * openpgp.config.debug is set to true. The calling
-   * Javascript context MUST define
-   * a "showMessages(text)" function. Line feeds ('\n')
-   * are automatically converted to HTML line feeds '<br/>'
+   * openpgp.config.debug is set to true.
    * Different than print_debug because will call hexstrdump iff necessary.
    * @param {String} str String of the debug message
-   * @return {String} An HTML tt entity containing a paragraph with a 
-   * style attribute where the debug message is HTMLencoded in. 
    */
   this.print_debug_hexstr_dump = function(str, strToHex) {
-    if (this.debug) {
+    if (config.debug) {
       str = str + this.hexstrdump(strToHex);
       console.log(str);
     }
@@ -256,30 +248,20 @@ var Util = function() {
 
   /**
    * Helper function to print an error message. 
-   * The calling Javascript context MUST define
-   * a "showMessages(text)" function. Line feeds ('\n')
-   * are automatically converted to HTML line feeds '<br/>'
    * @param {String} str String of the error message
-   * @return {String} A HTML paragraph entity with a style attribute 
-   * containing the HTML encoded error message
    */
   this.print_error = function(str) {
-    if (this.debug)
+    if (config.debug)
       throw str;
     console.log(str);
   };
 
   /**
    * Helper function to print an info message. 
-   * The calling Javascript context MUST define
-   * a "showMessages(text)" function. Line feeds ('\n')
-   * are automatically converted to HTML line feeds '<br/>'.
    * @param {String} str String of the info message
-   * @return {String} A HTML paragraph entity with a style attribute 
-   * containing the HTML encoded info message
    */
   this.print_info = function(str) {
-    if (this.debug)
+    if (config.debug)
       console.log(str);
   };
 

@@ -45,7 +45,7 @@ function message(packetlist) {
 
   /**
    * Decrypt the message
-   * @param {key} privateKey unlocked private key for which the message is encrypted (corresponding to the session key)
+   * @param {key} privateKey private key with decrypted secret data           
    * @return {[message]} new message with decrypted content
    */
   this.decrypt = function(privateKey) {
@@ -54,7 +54,8 @@ function message(packetlist) {
       // nothing to decrypt return unmodified message
       return this;
     }
-    var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds, true);
+    var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds);
+    if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
     var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
     var pkESKeyPacket;
     for (var i = 0; i < pkESKeyPacketlist.length; i++) {

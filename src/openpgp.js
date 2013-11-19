@@ -56,7 +56,7 @@ function _openpgp() {
 
   /**
    * decrypts message
-   * @param  {key} privateKey unlocked private key
+   * @param  {key} privateKey private key with decrypted secret key data
    * @param  {message} message the message object with the encrypted data
    * @return {String|null}         decrypted message as as native JavaScript string
    *                               or null if no literal data found

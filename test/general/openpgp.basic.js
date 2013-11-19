@@ -17,7 +17,9 @@ unit.register("Key generation/encryption/decryption", function() {
 
     var msg = openpgp.message.readArmored(encrypted);
 
-    privKey.unlock(passphrase);
+    var keyids = msg.getEncryptionKeyIds();
+
+    privKey.decryptKeyPacket(keyids, passphrase);
 
     try {
       var decrypted = openpgp.decryptMessage(privKey, msg);
@@ -34,7 +36,7 @@ unit.register("Key generation/encryption/decryption", function() {
   return result;
 });
 
-unit.register("Encryption/decryption", function() {
+unit.register("Message encryption/decryption", function() {
   var openpgp = require('../../');
 
   var result = [];
@@ -117,11 +119,29 @@ unit.register("Encryption/decryption", function() {
 
   var privKey = openpgp.key.readArmored(priv_key);
 
-  privKey.unlock('hello world');
+  // get key IDs the message is encrypted for
+  var keyids = message.getEncryptionKeyIds();
 
-  var decrypted = openpgp.decryptMessage(privKey, message);
+  // decrypt only required key packets
+  var success = privKey.decryptKeyPacket(keyids, 'hello what?')
 
-  result[0] = new unit.result('Encrypt plain text and afterwards decrypt leads to same result', plaintext == decrypted);
+  result.push(new unit.result('Decrypting key packet with wrong password returns false', !success));
+
+  var decrypted, error;
+  try {
+    decrypted = openpgp.decryptMessage(privKey, message);
+  } catch (e) {
+    error = e;
+  }
+  result.push(new unit.result('Calling decryptMessage with not encrypted key packet leads to exception: \'' + (error || '') + '\'', error));
+
+  success = privKey.decryptKeyPacket(keyids, 'hello world');
+
+  result.push(new unit.result('Decrypting key packet with correct password returns true', success));
+
+  decrypted = openpgp.decryptMessage(privKey, message);
+
+  result.push(new unit.result('Encrypt plain text and afterwards decrypt leads to same result', plaintext == decrypted));
 
   return result;
 

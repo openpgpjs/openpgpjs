@@ -67,7 +67,7 @@ function packet_secret_key() {
     var hash = hashfn(cleartext);
 
     if (hash != hashtext)
-      throw new Error("Hash mismatch.");
+      return new Error("Hash mismatch.");
 
     var mpis = crypto.getPrivateMpiCount(algorithm);
 
@@ -126,9 +126,10 @@ function packet_secret_key() {
       // - Plain or encrypted multiprecision integers comprising the secret
       //   key data.  These algorithm-specific fields are as described
       //   below.
-
-      this.mpi = this.mpi.concat(parse_cleartext_mpi('mod', bytes.substr(1),
-        this.algorithm));
+      var parsedMPI = parse_cleartext_mpi('mod', bytes.substr(1), this.algorithm);
+      if (parsedMPI instanceof Error)
+        throw parsedMPI;
+      this.mpi = this.mpi.concat(parsedMPI);
       this.isDecrypted = true;
     }
 
@@ -200,11 +201,12 @@ function packet_secret_key() {
    * 
    * @param {String} str_passphrase The passphrase for this private key 
    * as string
-   * @return {Boolean} True if the passphrase was correct; false if not
+   * @return {Boolean} True if the passphrase was correct or MPI already
+   *                   decrypted; false if not
    */
   this.decrypt = function(passphrase) {
     if (this.isDecrypted)
-      return;
+      return true;
 
     var i = 0,
       symmetric,
@@ -249,10 +251,12 @@ function packet_secret_key() {
       'sha1' :
       'mod';
 
-
-    this.mpi = this.mpi.concat(parse_cleartext_mpi(hash, cleartext,
-      this.algorithm));
+    var parsedMPI = parse_cleartext_mpi(hash, cleartext, this.algorithm);
+    if (parsedMPI instanceof Error)
+      return false;
+    this.mpi = this.mpi.concat(parsedMPI);
     this.isDecrypted = true;
+    return true;
   };
 
   this.generate = function(bits, passphrase) {

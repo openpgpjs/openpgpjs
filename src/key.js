@@ -32,8 +32,6 @@ var config = require('./config');
 
   this.packets = packetlist || new packet.list();
 
-  this.passphrase = null;
-
   /** 
    * Returns the primary key packet (secret or public)
    * @returns {packet_secret_key|packet_public_key|null} 
@@ -87,18 +85,11 @@ var config = require('./config');
     return keyIds;
   }
 
-  /**
-   * Returns first key packet for given array of key IDs
-   * @param  {[keyid]} keyIds 
-   * @return {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null}       
-   */
-  this.getKeyPacket = function(keyIds) {
-    var keys = this.getAllKeyPackets();
+  function findKey(keys, keyIds) {
     for (var i = 0; i < keys.length; i++) {
       var keyId = keys[i].getKeyId(); 
       for (var j = 0; j < keyIds.length; j++) {
         if (keyId.equals(keyIds[j])) {
-          //TODO return only verified keys
           return keys[i];
         }
       }
@@ -107,27 +98,23 @@ var config = require('./config');
   }
 
   /**
+   * Returns first public key packet for given array of key IDs
+   * @param  {[keyid]} keyIds 
+   * @return {public_subkey|packet_public_key|null}       
+   */
+  this.getPublicKeyPacket = function(keyIds) {
+    var keys = this.packets.filterByTag(enums.packet.public_key, enums.packet.public_subkey);
+    return findKey(keys, keyIds);
+  }
+
+  /**
    * Returns first private key packet for given array of key IDs
    * @param  {[keyid]} keyIds
-   * @param  {Boolean} decrypted decrypt private key packet
    * @return {secret_subkey|packet_secret_key|null}       
    */
-  this.getPrivateKeyPacket = function(keyIds, decrypted) {
+  this.getPrivateKeyPacket = function(keyIds) {
     var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
-    for (var i = 0; i < keys.length; i++) {
-      var keyId = keys[i].getKeyId(); 
-      for (var j = 0; j < keyIds.length; j++) {
-        if (keyId.equals(keyIds[j])) {
-          //TODO return only verified keys
-          if (decrypted) {
-            if (!this.passphrase) throw new Error('No passphrase to decrypt key.');
-            keys[i].decrypt(this.passphrase);
-          }
-          return keys[i];
-        }
-      }
-    }
-    return null;
+    return findKey(keys, keyIds);
   }
 
   /**
@@ -214,27 +201,36 @@ var config = require('./config');
   /**
    * Decrypts all secret key and subkey packets
    * @param  {String} passphrase 
-   * @return {undefined}
+   * @return {Boolean} true if all key and subkey packets decrypted successfully
    */
   this.decrypt = function(passphrase) {
-    //TODO return value
-    var keys = this.getAllKeyPackets();
-    for (var i in keys) {
-      if (keys[i].tag == enums.packet.secret_subkey ||
-        keys[i].tag == enums.packet.secret_key) {
-          if (!passphrase && !this.passphrase) throw new Error('No passphrase to decrypt key.');
-          keys[i].decrypt(passphrase || this.passphrase);
-      }
+    var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
+    for (var i = 0; i < keys.length; i++) {
+      var success = keys[i].decrypt(passphrase);
+      if (!success) return false;
     }
+    return true;
   }
 
   /**
-   * Unlocks the key with passphrase, decryption of secret keys deferred. This allows to decrypt the required private key packets on demand
+   * Decrypts specific key packets by key ID
+   * @param  {[keyid]} keyIds
    * @param  {String} passphrase 
-   * @return {undefined}
+   * @return {Boolean} true if all key packets decrypted successfully
    */
-  this.unlock = function(passphrase) {
-    this.passphrase = passphrase;
+  this.decryptKeyPacket = function(keyIds, passphrase) {
+    //TODO return value
+    var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
+    for (var i = 0; i < keys.length; i++) {
+      var keyId = keys[i].getKeyId(); 
+      for (var j = 0; j < keyIds.length; j++) {
+        if (keyId.equals(keyIds[j])) {
+          var success = keys[i].decrypt(passphrase);
+          if (!success) return false;
+        }
+      }
+    }
+    return true;
   }
 
   // TODO
