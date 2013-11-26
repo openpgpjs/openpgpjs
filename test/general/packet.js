@@ -1,5 +1,8 @@
+var unit = require('../unit.js');
 
-unittests.register("Packet testing", function() {
+unit.register("Packet testing", function() {
+
+	var openpgp = require('../../');
 
 	var armored_key =
 		'-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
@@ -61,7 +64,7 @@ unittests.register("Packet testing", function() {
 
 		msg2[0].decrypt(algo, key);
 
-		return new test_result('Symmetrically encrypted packet', 
+		return new unit.result('Symmetrically encrypted packet', 
 			msg2[0].packets[0].data == literal.data);
 
 	}, function() {
@@ -84,7 +87,7 @@ unittests.register("Packet testing", function() {
 
 		msg2[0].decrypt(algo, key);
 
-		return new test_result('Sym. encrypted integrity protected packet', 
+		return new unit.result('Sym. encrypted integrity protected packet', 
 			msg2[0].packets[0].data == literal.data);
 	
 	}, function() {
@@ -113,12 +116,12 @@ unittests.register("Packet testing", function() {
 
 		var result = compressed.packets[0].data;
 
-		return new test_result('Sym encrypted session key with a compressed packet',
+		return new unit.result('Sym encrypted session key with a compressed packet',
 			result == 'Hello world!\n');
 
 	}, function() {
 	
-		var rsa = new openpgp.publicKey.rsa(),
+		var rsa = new openpgp.crypto.publicKey.rsa(),
 			mpi = rsa.generate(512, "10001")
 
 		var mpi = [mpi.n, mpi.ee, mpi.d, mpi.p, mpi.q, mpi.u];
@@ -145,7 +148,7 @@ unittests.register("Packet testing", function() {
 
 		msg2[0].decrypt({ mpi: mpi });
 
-		return new test_result('Public key encrypted symmetric key packet', 
+		return new unit.result('Public key encrypted symmetric key packet', 
 			msg2[0].sessionKey == enc.sessionKey &&
 			msg2[0].sessionKeyAlgorithm == enc.sessionKeyAlgorithm);
 	}, function() {
@@ -187,7 +190,7 @@ unittests.register("Packet testing", function() {
 
 		enc.decrypt(key);
 
-		return new test_result('Secret key packet (reading, unencrpted)',
+		return new unit.result('Secret key packet (reading, unencrpted)',
 			enc.sessionKey == secret);
 	}, function() {
 
@@ -252,7 +255,7 @@ unittests.register("Packet testing", function() {
 		var text = msg[1].packets[0].packets[0].data;
 
 
-		return new test_result('Public key encrypted packet (reading, GPG)',
+		return new unit.result('Public key encrypted packet (reading, GPG)',
 			text == 'Hello world!');
 	}, function() {
 
@@ -285,7 +288,7 @@ unittests.register("Packet testing", function() {
 		msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
 
 
-		return new test_result('Sym encrypted session key reading/writing', 
+		return new unit.result('Sym encrypted session key reading/writing', 
 			msg2[1].packets[0].data == literal.data);
 	
 	}, function() {
@@ -316,7 +319,7 @@ unittests.register("Packet testing", function() {
 
 
 
-		return new test_result('Secret key encryption/decryption test',
+		return new unit.result('Secret key encryption/decryption test',
 			text == 'Hello world!');
 	}, function() {
 	
@@ -338,7 +341,7 @@ unittests.register("Packet testing", function() {
 			})
 
 
-		return new test_result('Secret key reading with signature verification.',
+		return new unit.result('Secret key reading with signature verification.',
 			verified == true);
 	}, function() {
 
@@ -373,20 +376,17 @@ unittests.register("Packet testing", function() {
 
 
 
-		var verified = payload[2].verify(key[0],
-			{
-				literal: payload[1]
-			});
+		var verified = payload[2].verify(key[0], payload[1]);
 
 
 
-		return new test_result('Reading a signed, encrypted message.',
+		return new unit.result('Reading a signed, encrypted message.',
 			verified == true);
 	}, function() {
 		var key = new openpgp.packet.list();
 		key.push(new openpgp.packet.secret_key);
 
-		var rsa = new openpgp.publicKey.rsa(),
+		var rsa = new openpgp.crypto.publicKey.rsa(),
 			mpi = rsa.generate(512, "10001")
 
 
@@ -409,14 +409,13 @@ unittests.register("Packet testing", function() {
 		key2[0].decrypt('hello');
 	
 	
-		return new test_result('Writing and encryptio of a secret key packet.',
+		return new unit.result('Writing and encryptio of a secret key packet.',
 			key[0].mpi.toString() == key2[0].mpi.toString());
 	}, function() {
-		var openpgp = require('openpgp');
 
 		var key = new openpgp.packet.secret_key();
 
-		var rsa = new openpgp.publicKey.rsa,
+		var rsa = new openpgp.crypto.publicKey.rsa,
 			mpi = rsa.generate(512, "10001")
 
 		var mpi = [mpi.n, mpi.ee, mpi.d, mpi.p, mpi.q, mpi.u];
@@ -439,7 +438,7 @@ unittests.register("Packet testing", function() {
 		signature.publicKeyAlgorithm = 'rsa_sign';
 		signature.signatureType = 'binary';
 
-		signature.sign(key, { literal: literal });
+		signature.sign(key, literal);
 
 		signed.push(literal);
 		signed.push(signature);
@@ -449,10 +448,10 @@ unittests.register("Packet testing", function() {
 		var signed2 = new openpgp.packet.list();
 		signed2.read(raw);
 
-		var verified = signed2[1].verify(key, { literal: signed2[0] });
+		var verified = signed2[1].verify(key, signed2[0]);
 	
 	
-		return new test_result('Writing and verification of a signature packet.',
+		return new unit.result('Writing and verification of a signature packet.',
 			verified == true);
 	}];
 

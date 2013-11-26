@@ -33,6 +33,7 @@ var util = require('../util'),
  */
 module.exports = function packet_signature() {
 
+  this.version = null;
   this.signatureType = null;
   this.hashAlgorithm = null;
   this.publicKeyAlgorithm = null;
@@ -85,9 +86,9 @@ module.exports = function packet_signature() {
   this.read = function(bytes) {
     var i = 0;
 
-    var version = bytes[i++].charCodeAt();
+    this.version = bytes[i++].charCodeAt();
     // switch on version (3 and 4)
-    switch (version) {
+    switch (this.version) {
       case 3:
         // One-octet length of following hashed material. MUST be 5.
         if (bytes[i++].charCodeAt() != 5)
@@ -104,7 +105,7 @@ module.exports = function packet_signature() {
         i += 4;
 
         // storing data appended to data which gets verified
-        this.signatureData = bytes.substring(position, i);
+        this.signatureData = bytes.substring(sigpos, i);
 
         // Eight-octet Key ID of signer.
         this.issuerKeyId.read(bytes.substring(i, i + 8));
@@ -570,6 +571,8 @@ module.exports = function packet_signature() {
   this.calculateTrailer = function() {
     // calculating the trailer
     var trailer = '';
+    // V3 signatures don't have a trailer
+    if (this.version == 3) return trailer;
     trailer += String.fromCharCode(4); // Version
     trailer += String.fromCharCode(0xFF);
     trailer += util.writeNumber(this.signatureData.length, 4);

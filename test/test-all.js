@@ -11,7 +11,9 @@ require('./crypto/cipher/cast5.js');
 require('./crypto/cipher/des.js');
 require('./crypto/cipher/twofish.js');
 
-require('./crypto/openpgp.crypto.js');
-require('./crypto/openpgp.sigcheck.js');
+require('./crypto/crypto.js');
 
-require('./general/openpgp.basic.js');
+require('./general/basic.js');
+require('./general/keyring.js');
+require('./general/packet.js');
+require('./general/signature.js');
