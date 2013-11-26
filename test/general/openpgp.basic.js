@@ -5,7 +5,7 @@ unit.register("Key generation/encryption/decryption", function() {
   var result = [];
   var testHelper = function(passphrase, userid, message) {
     var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 
-                                      userid, message, passphrase);
+                                      userid, passphrase);
 
     var info = '\npassphrase: ' + passphrase + '\n'
         + 'userid: ' + userid + '\n'

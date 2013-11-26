@@ -216,13 +216,12 @@ var enums = {
     trust_signature: 5,
     regular_expression: 6,
     revocable: 7,
-    reserved: 8,
     key_expiration_time: 9,
     placeholder_backwards_compatibility: 10,
     preferred_symmetric_algorithms: 11,
     revocation_key: 12,
     issuer: 16,
-    notification_data: 20,
+    notation_data: 20,
     preferred_hash_algorithms: 21,
     preferred_compression_algorithms: 22,
     key_server_preferences: 23,
@@ -235,6 +234,25 @@ var enums = {
     features: 30,
     signature_target: 31,
     embedded_signature: 32
+  },
+
+  keyFlags: {
+    // 0x01 - This key may be used to certify other keys.
+    certify_keys: 1,
+    // 0x02 - This key may be used to sign data.
+    sign_data: 2,
+    // 0x04 - This key may be used to encrypt communications.
+    encrypt_communication: 4,
+    // 0x08 - This key may be used to encrypt storage.
+    encrypt_storage: 8,
+    // 0x10 - The private component of this key may have been split
+    //        by a secret-sharing mechanism.
+    split_private_key: 16,
+    // 0x20 - This key may be used for authentication.
+    authentication: 32,
+    // 0x80 - The private component of this key may be in the
+    //        possession of more than one person.
+    shared_private_key: 128
   },
 
   armor: {

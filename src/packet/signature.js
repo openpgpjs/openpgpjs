@@ -19,7 +19,8 @@ var util = require('../util'),
   packet = require('./packet.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto'),
-  type_mpi = require('../type/mpi.js');
+  type_mpi = require('../type/mpi.js'),
+  type_keyid = require('../type/keyid.js');
 
 /**
  * @class
@@ -40,7 +41,7 @@ module.exports = function packet_signature() {
   this.signedHashValue = null;
   this.mpi = null;
 
-  this.created = null;
+  this.created = new Date();
   this.signatureExpirationTime = null;
   this.signatureNeverExpires = null;
   this.exportable = null;
@@ -54,8 +55,8 @@ module.exports = function packet_signature() {
   this.revocationKeyClass = null;
   this.revocationKeyAlgorithm = null;
   this.revocationKeyFingerprint = null;
-  this.issuerKeyId = null;
-  this.notation = {};
+  this.issuerKeyId = new type_keyid();
+  this.notation = null;
   this.preferredHashAlgorithms = null;
   this.preferredCompressionAlgorithms = null;
   this.keyServerPreferences = null;
@@ -66,6 +67,7 @@ module.exports = function packet_signature() {
   this.signersUserId = null;
   this.reasonForRevocationFlag = null;
   this.reasonForRevocationString = null;
+  this.features = null;
   this.signatureTargetPublicKeyAlgorithm = null;
   this.signatureTargetHashAlgorithm = null;
   this.signatureTargetHash = null;
@@ -105,7 +107,7 @@ module.exports = function packet_signature() {
         this.signatureData = bytes.substring(position, i);
 
         // Eight-octet Key ID of signer.
-        this.issuerKeyId = bytes.substring(i, i + 8);
+        this.issuerKeyId.read(bytes.substring(i, i + 8));
         i += 8;
 
         // One-octet public-key algorithm.
@@ -193,15 +195,10 @@ module.exports = function packet_signature() {
     result += String.fromCharCode(publicKeyAlgorithm);
     result += String.fromCharCode(hashAlgorithm);
 
-    //Calculate subpackets
-    var creationTimeSubpacket = write_sub_packet(enums.signatureSubpacket.signature_creation_time,
-      util.writeDate(new Date()));
+    this.issuerKeyId = key.getKeyId();
 
-    var issuerSubpacket = write_sub_packet(enums.signatureSubpacket.issuer, key.getKeyId().write());
-
-    // Add subpackets here
-    result += util.writeNumber(creationTimeSubpacket.length + issuerSubpacket.length, 2);
-    result += creationTimeSubpacket + issuerSubpacket;
+    // Add hashed subpackets
+    result += this.write_all_sub_packets();
 
     this.signatureData = result;
 
@@ -216,6 +213,116 @@ module.exports = function packet_signature() {
 
     this.signature = crypto.signature.sign(hashAlgorithm,
       publicKeyAlgorithm, key.mpi, toHash);
+  };
+
+  /**
+   * Creates string of bytes with all subpacket data
+   * @return {String} a string-representation of a all subpacket data
+   */
+  this.write_all_sub_packets = function() {
+    var sub = enums.signatureSubpacket;
+    var result = '';
+    var bytes = '';
+    if (this.created !== null) {
+      result += write_sub_packet(sub.signature_creation_time, util.writeDate(this.created));
+    }
+    if (this.signatureExpirationTime !== null) {
+      result += write_sub_packet(sub.signature_expiration_time, util.writeDate(this.signatureExpirationTime));
+    }
+    if (this.exportable !== null) {
+      result += write_sub_packet(sub.exportable_certification, String.fromCharCode(this.exportable ? 1 : 0));
+    }
+    if (this.trustLevel !== null) {
+      bytes = String.fromCharCode(this.trustLevel) + String.fromCharCode(this.trustAmount);
+      result += write_sub_packet(sub.trust_signature, bytes);
+    }
+    if (this.regularExpression !== null) {
+      result += write_sub_packet(sub.regular_expression, this.regularExpression);
+    }
+    if (this.revocable !== null) {
+      result += write_sub_packet(sub.revocable, String.fromCharCode(this.revocable ? 1 : 0));
+    }
+    if (this.keyExpirationTime !== null) {
+      result += write_sub_packet(sub.key_expiration_time, util.writeDate(this.keyExpirationTime));
+    }
+    if (this.preferredSymmetricAlgorithms !== null) {
+      bytes = util.bin2str(this.preferredSymmetricAlgorithms);
+      result += write_sub_packet(sub.preferred_symmetric_algorithms, bytes);
+    }
+    if (this.revocationKeyClass !== null) {
+      bytes = String.fromCharCode(this.revocationKeyClass);
+      bytes += String.fromCharCode(this.revocationKeyAlgorithm);
+      bytes += this.revocationKeyFingerprint;
+      result += write_sub_packet(sub.revocation_key, bytes);
+    }
+    if (!this.issuerKeyId.isNull()) {
+      result += write_sub_packet(sub.issuer, this.issuerKeyId.write());
+    }
+    if (this.notation !== null) {
+      for (var name in this.notation) {
+        if (this.notation.hasOwnProperty(name)) {
+          var value = this.notation[name];
+          bytes = String.fromCharCode(0x80);
+          bytes += String.fromCharCode(0);
+          bytes += String.fromCharCode(0);
+          bytes += String.fromCharCode(0);
+          // 2 octets of name length
+          bytes += util.writeNumber(name.length, 2);
+          // 2 octets of value length
+          bytes += util.writeNumber(value.length, 2);
+          bytes += name + value;
+          result += write_sub_packet(sub.notation_data, bytes);
+        }
+      }
+    } 
+    if (this.preferredHashAlgorithms !== null) {
+      bytes = util.bin2str(this.preferredHashAlgorithms);
+      result += write_sub_packet(sub.preferred_hash_algorithms, bytes);
+    }
+    if (this.preferredCompressionAlgorithms !== null) {
+      bytes = util.bin2str(this.preferredCompressionAlgorithms);
+      result += write_sub_packet(sub.preferred_hash_algorithms, bytes);
+    }
+    if (this.keyServerPreferences !== null) {
+      bytes = util.bin2str(this.keyServerPreferences);
+      result += write_sub_packet(sub.key_server_preferences, bytes);
+    }
+    if (this.preferredKeyServer !== null) {
+      result += write_sub_packet(sub.preferred_key_server, this.preferredKeyServer);
+    }
+    if (this.isPrimaryUserID !== null) {
+      result += write_sub_packet(sub.primary_user_id, String.fromCharCode(this.isPrimaryUserID ? 1 : 0));
+    }
+    if (this.policyURI !== null) {
+      result += write_sub_packet(sub.policy_uri, this.policyURI); 
+    }
+    if (this.keyFlags !== null) {
+      bytes = util.bin2str(this.keyFlags);
+      result += write_sub_packet(sub.key_flags, bytes);
+    }
+    if (this.signersUserId !== null) {
+      result += write_sub_packet(sub.signers_user_id, this.signersUserId); 
+    }
+    if (this.reasonForRevocationFlag !== null) {
+      bytes = String.fromCharCode(this.reasonForRevocationFlag);
+      bytes += this.reasonForRevocationString;
+      result += write_sub_packet(sub.reason_for_revocation, bytes);
+    }
+    if (this.features !== null) {
+      bytes = util.bin2str(this.features);
+      result += write_sub_packet(sub.features, bytes);
+    }
+    if (this.signatureTargetPublicKeyAlgorithm !== null) {
+      bytes = String.fromCharCode(this.signatureTargetPublicKeyAlgorithm);
+      bytes += String.fromCharCode(this.signatureTargetHashAlgorithm);
+      bytes += this.signatureTargetHash;
+      result += write_sub_packet(sub.signature_target, bytes);
+    }
+    if (this.embeddedSignature !== null) {
+      result += write_sub_packet(sub.embedded_signature, this.embeddedSignature.write());
+    }
+    result = util.writeNumber(result.length, 2) + result;
+    return result;
   };
 
   /**
@@ -309,7 +416,7 @@ module.exports = function packet_signature() {
 
       case 16:
         // Issuer
-        this.issuerKeyId = bytes.substr(mypos, 8);
+        this.issuerKeyId.read(bytes.substr(mypos));
         break;
 
       case 20:
@@ -319,14 +426,15 @@ module.exports = function packet_signature() {
 
           // We extract key/value tuple from the byte stream.
           mypos += 4;
-          var m = util.writeNumber(bytes.substr(mypos, 2));
+          var m = util.readNumber(bytes.substr(mypos, 2));
           mypos += 2
-          var n = util.writeNumber(bytes.substr(mypos, 2));
+          var n = util.readNumber(bytes.substr(mypos, 2));
           mypos += 2
 
           var name = bytes.substr(mypos, m),
             value = bytes.substr(mypos + m, n);
 
+          this.notation = this.notation || {};
           this.notation[name] = value;
         } else throw new Error("Unsupported notation flag.");
         break;
@@ -450,7 +558,7 @@ module.exports = function packet_signature() {
         return this.toSign(t.key, data);
       case t.timestamp:
         return '';
-      case t.thrid_party:
+      case t.third_party:
         throw new Error('Not implemented');
         break;
       default:

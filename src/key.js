@@ -136,6 +136,37 @@ var config = require('./config');
   }
 
   /**
+   * Returns key as public key
+   * @return {key} public key
+   */
+  this.toPublic = function() {
+    for (var i = 0; i < this.packets.length; i++) {
+      if (this.packets[i].tag == enums.packet.secret_key) {
+        var bytes = this.packets[i].writePublicKey();
+        var pubKeyPacket = new packet.public_key();
+        pubKeyPacket.read(bytes);
+        this.packets[i] = pubKeyPacket;
+      }
+      if (this.packets[i].tag == enums.packet.secret_subkey) {
+        var bytes = this.packets[i].writePublicKey();
+        var pubSubkeyPacket = new packet.public_subkey();
+        pubSubkeyPacket.read(bytes);
+        this.packets[i] = pubSubkeyPacket;
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Returns ASCII armored text of key
+   * @return {String} ASCII armor
+   */
+  this.armor = function() {
+    var type = this.isPublic() ? enums.armor.public_key : enums.armor.private_key;
+    return armor.encode(type, this.packets.write());
+  }
+
+  /**
    * Returns first key packet that is available for signing
    * @return {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null}
    */

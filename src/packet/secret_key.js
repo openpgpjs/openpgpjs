@@ -102,9 +102,6 @@ function packet_secret_key() {
   /**
    * Internal parser for private keys as specified in RFC 4880 section 5.5.3
    * @param {String} bytes Input string to read the packet from
-   * @param {Integer} position Start position for the parser
-   * @param {Integer} len Length of the packet or remaining length of bytes
-   * @return {Object} This object with attributes set by the parser
    */
   this.read = function(bytes) {
     // - A Public-Key or Public-Subkey packet, as described above.
@@ -135,19 +132,9 @@ function packet_secret_key() {
 
   };
 
-  /*
-     * Creates an OpenPGP key packet for the given key. much 
-	 * TODO in regards to s2k, subkeys.
-     * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
-	 * IE 1 corresponds to RSA.
-     * @param {RSA.keyObject} key
-     * @param passphrase
-     * @param s2kHash
-     * @param symmetricEncryptionAlgorithm
-     * @param timePacket
-     * @return {Object} {body: [string]OpenPGP packet body contents, 
-		header: [string] OpenPGP packet header, string: [string] header+body}
-     */
+  /** Creates an OpenPGP key packet for the given key.
+    * @return {String} A string of bytes containing the secret key OpenPGP packet
+    */
   this.write = function() {
     var bytes = this.writePublicKey();
 
@@ -259,7 +246,7 @@ function packet_secret_key() {
     return true;
   };
 
-  this.generate = function(bits, passphrase) {
+  this.generate = function(bits) {
     this.mpi = crypto.generateMpi(this.algorithm, bits);
     this.isDecrypted = true;
   };

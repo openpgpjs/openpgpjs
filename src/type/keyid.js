@@ -27,13 +27,7 @@ var util = require('../util');
  */
 function keyid() {
 
-  // initialize keyid with 0x0000000000000000
-  var strArray = [];
-  var zero = String.fromCharCode(0);
-  for (var i = 0; i < 8; i++) {
-    strArray[i] = zero;
-  }
-  this.bytes = strArray.join('');
+  this.bytes = '';
 
 
   /**
@@ -57,6 +51,10 @@ function keyid() {
 
   this.equals = function(keyid) {
     return this.bytes == keyid.bytes;
+  }
+
+  this.isNull = function() {
+    return this.bytes === '';
   }
 }
 
