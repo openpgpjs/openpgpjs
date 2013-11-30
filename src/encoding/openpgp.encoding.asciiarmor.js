@@ -24,19 +24,28 @@
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
+	var reSplit = /^-----[^-]+-----$\n/m;
+
 	text = text.replace(/\r/g, '');
 
 	var type = openpgp_encoding_get_type(text);
 
+	var splittedtext = text.split(reSplit);
+
+	// IE has a bug in split with a re. If the pattern matches the beginning of the
+	// string it doesn't create an empty array element 0. So we need to detect this
+	// so we know the index of the data we are interested in.
+	var indexBase = 1;
+
+	if (text.search(reSplit) != splittedtext[0].length) {
+		indexBase = 0;
+	}
+
 	if (type != 2) {
-		var splittedtext = text.split('-----');
-		// splittedtext[0] - should be the empty string
-		// splittedtext[1] - should be BEGIN...
-		// splittedtext[2] - \nthe message and checksum
-		// splittedtext[3] - should be END...
+		// splittedtext[indexBase] - the message and checksum
 
 		// chunks separated by blank lines
-		var msg = openpgp_encoding_split_headers(splittedtext[2].slice(1));
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
 		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
 		var data = { 
@@ -54,20 +63,15 @@ function openpgp_encoding_deArmor(text) {
 			return false;
 		}
 	} else {
-		var splittedtext = text.split('-----');
-		// splittedtext[0] - should be the empty string
-		// splittedtext[1] - should be BEGIN PGP SIGNED MESSAGE
-		// splittedtext[2] - \nthe message
-		// splittedtext[3] - should be BEGIN PGP SIGNATURE
-		// splittedtext[4] - \nthe signature and checksum
-		// splittedtext[5] - should be END PGP SIGNATURE
+		// splittedtext[indexBase] - the message
+		// splittedtext[indexBase + 1] - the signature and checksum
 
-		var msg = openpgp_encoding_split_headers(splittedtext[2].slice(1));
-		var sig = openpgp_encoding_split_headers(splittedtext[4].slice(1));
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
+		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1]);
 		var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
 		var result = {
-			text:  msg.body.replace(/\n\n$/, "\n").replace(/\n/g, "\r\n"),
+			text:  msg.body.replace(/\n$/, "").replace(/\n/g, "\r\n"),
 			openpgp: openpgp_encoding_base64_decode(sig_sum.body),
 			type: type
 		};
@@ -137,18 +141,20 @@ function openpgp_encoding_split_checksum(text) {
  *         null = unknown
  */
 function openpgp_encoding_get_type(text) {
-	var splittedtext = text.split('-----');
+	var reHeader = /^-----([^-]+)-----$\n/m;
+
+	var header = text.match(reHeader);
 	// BEGIN PGP MESSAGE, PART X/Y
 	// Used for multi-part messages, where the armor is split amongst Y
 	// parts, and this is the Xth part out of Y.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
 		return 0;
 	} else
 		// BEGIN PGP MESSAGE, PART X
 		// Used for multi-part messages, where this is the Xth part of an
 		// unspecified number of parts. Requires the MESSAGE-ID Armor
 		// Header to be used.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
 		return 1;
 
 	} else
@@ -156,25 +162,25 @@ function openpgp_encoding_get_type(text) {
 		// Used for detached signatures, OpenPGP/MIME signatures, and
 		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
 		// for detached signatures.
-	if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
+	if (header[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
 		return 2;
 
 	} else
   	    // BEGIN PGP MESSAGE
 	    // Used for signed, encrypted, or compressed files.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE/)) {
 		return 3;
 
 	} else
 		// BEGIN PGP PUBLIC KEY BLOCK
 		// Used for armoring public keys.
-	if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
+	if (header[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
 		return 4;
 
 	} else
 		// BEGIN PGP PRIVATE KEY BLOCK
 		// Used for armoring private keys.
-	if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
+	if (header[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
 		return 5;
 	}
 }
