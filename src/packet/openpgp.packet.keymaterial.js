@@ -135,7 +135,7 @@ function openpgp_packet_keymaterial() {
 			
 		    // - A two-octet number denoting the time in days that this key is
 		    //   valid.  If this number is zero, then it does not expire.
-			this.expiration = (input.charCodeAt(mypos++) << 8) & input.charCodeAt(mypos++);
+			this.expiration = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 	
 		    // - A one-octet number denoting the public-key algorithm of this key.
 			this.publicKeyAlgorithm = input.charCodeAt(mypos++);

@@ -69,7 +69,7 @@ function openpgp_encoding_deArmor(text) {
 			util.print_error("Ascii armor integrity check on message failed: '"
 				+ checksum
 				+ "' should be '"
-				+ getCheckSum(data)) + "'";
+				+ getCheckSum(data) + "'");
 			return false;
 		}
 	} else {
