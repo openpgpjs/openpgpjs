@@ -389,7 +389,6 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 
 //This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
 function openpgp_crypto_testRSA(key){
-	debugger;
     var rsa = new RSA();
 	var mpi = new openpgp_type_mpi();
 	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
