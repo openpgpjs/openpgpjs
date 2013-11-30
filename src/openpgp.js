@@ -130,7 +130,7 @@ function _openpgp () {
 	function read_message(armoredText) {
 		var dearmored;
 		try{
-    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+    		dearmored = openpgp_encoding_deArmor(armoredText);
 		}
 		catch(e){
     		util.print_error('no message found!');

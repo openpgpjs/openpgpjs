@@ -497,14 +497,21 @@ function openpgp_packet_signature() {
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
+			} else {
+				this.verified = false;
 			}
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
 			if (this.version == 4) {
+				var tohash = data
+					.replace(/\r\n/g,"\n")
+					.replace(/[\t ]+\n/g, "\n")
+					.replace(/\n/g,"\r\n");
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-				return this.verified;
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
+			} else {
+				this.verified = false;
 			}
 			break;
 				
@@ -630,6 +637,7 @@ function openpgp_packet_signature() {
 			// document) that cannot include a target subpacket.
 		default:
 			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
+			this.verified = false;
 			break;
 		}
 		return this.verified;

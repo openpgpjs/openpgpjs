@@ -25,8 +25,6 @@
  */
 function openpgp_encoding_deArmor(text) {
 	text = text.replace(/\r/g, '');
-	// remove whitespace of blank line to allow later split at \n\n
-	text = text.replace(/\n\s+\n/, '\n\n');
 
 	var type = openpgp_encoding_get_type(text);
 
@@ -34,67 +32,97 @@ function openpgp_encoding_deArmor(text) {
 		var splittedtext = text.split('-----');
 		// splittedtext[0] - should be the empty string
 		// splittedtext[1] - should be BEGIN...
-		// splittedtext[2] - the message and checksum
-		// splittedtest[3] - should be END...
+		// splittedtext[2] - \nthe message and checksum
+		// splittedtext[3] - should be END...
 
 		// chunks separated by blank lines
-		var splittedChunks = splittedtext[2]
-			.split('\n\n');
-		var messageAndChecksum = splittedtext[2]
-			.split('\n\n')[1]
-			.split('\n=');
-
-		var message = messageAndChecksum[0]
-			.replace(/\n- /g,"\n");
-		// sometimes, there's a blank line between message and checksum
-		var checksum;
-		if(messageAndChecksum.length == 1){
-			// blank line
-			checksum = splittedtext[2]
-				.replace(/[\n=]/g, "");
-		} else {
-			// no blank line
-			checksum = messageAndChecksum[1]
-				.split('\n')[0];
-		}
+		var msg = openpgp_encoding_split_headers(splittedtext[2].slice(1));
+		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
 		var data = { 
-			openpgp: openpgp_encoding_base64_decode(message),
+			openpgp: openpgp_encoding_base64_decode(msg_sum.body),
 			type: type
 		};
 
-		if (verifyCheckSum(data.openpgp, checksum)) {
+		if (verifyCheckSum(data.openpgp, msg_sum.checksum)) {
 			return data;
 		} else {
 			util.print_error("Ascii armor integrity check on message failed: '"
-				+ checksum
+				+ msg_sum.checksum
 				+ "' should be '"
 				+ getCheckSum(data) + "'");
 			return false;
 		}
 	} else {
 		var splittedtext = text.split('-----');
+		// splittedtext[0] - should be the empty string
+		// splittedtext[1] - should be BEGIN PGP SIGNED MESSAGE
+		// splittedtext[2] - \nthe message
+		// splittedtext[3] - should be BEGIN PGP SIGNATURE
+		// splittedtext[4] - \nthe signature and checksum
+		// splittedtext[5] - should be END PGP SIGNATURE
+
+		var msg = openpgp_encoding_split_headers(splittedtext[2].slice(1));
+		var sig = openpgp_encoding_split_headers(splittedtext[4].slice(1));
+		var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
 		var result = {
-			text: splittedtext[2]
-				.replace(/\n- /g,"\n")
-				.split("\n\n")[1],
-			openpgp: openpgp_encoding_base64_decode(splittedtext[4]
-				.split("\n\n")[1]
-				.split("\n=")[0]),
+			text:  msg.body.replace(/\n\n$/, "\n").replace(/\n/g, "\r\n"),
+			openpgp: openpgp_encoding_base64_decode(sig_sum.body),
 			type: type
 		};
 
-		if (verifyCheckSum(result.openpgp, splittedtext[4]
-			.split("\n\n")[1]
-			.split("\n=")[1]))
-
-				return result;
-		else {
+		if (verifyCheckSum(result.openpgp, sig_sum.checksum)) {
+			return result;
+		} else {
 			util.print_error("Ascii armor integrity check on message failed");
 			return false;
 		}
 	}
+}
+
+/**
+ * Splits a message into two parts, the headers and the body. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error 
+ * or an object with attribute "headers" containing the headers and
+ * and an attribute "body" containing the body.
+ */
+function openpgp_encoding_split_headers(text) {
+	var reEmptyLine = /^[\t ]*\n/m;
+	var headers = "";
+	var body = text;
+
+	var matchResult = reEmptyLine.exec(text);
+
+	if (matchResult != null) {
+		headers = text.slice(0, matchResult.index);
+		body = text.slice(matchResult.index + matchResult[0].length);
+	}
+
+	return { headers: headers, body: body };
+}
+
+/**
+ * Splits a message into two parts, the body and the checksum. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error 
+ * or an object with attribute "body" containing the body
+ * and an attribute "checksum" containing the checksum.
+ */
+function openpgp_encoding_split_checksum(text) {
+	var reChecksumStart = /^=/m;
+	var body = text;
+	var checksum = "";
+
+	var matchResult = reChecksumStart.exec(text);
+
+	if (matchResult != null) {
+		body = text.slice(0, matchResult.index);
+		checksum = text.slice(matchResult.index + 1);
+	}
+
+	return { body: body, checksum: checksum };
 }
 
 /**
@@ -124,7 +152,7 @@ function openpgp_encoding_get_type(text) {
 		return 1;
 
 	} else
-		// BEGIN PGP SIGNATURE
+		// BEGIN PGP SIGNED MESSAGE
 		// Used for detached signatures, OpenPGP/MIME signatures, and
 		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
 		// for detached signatures.
