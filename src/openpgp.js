@@ -38,7 +38,7 @@ var message = require('./message.js');
 function _openpgp() {
 
   /**
-   * encrypts message text with keys
+   * Encrypts message text with keys
    * @param  {[key]}  keys array of keys, used to encrypt the message
    * @param  {String} text message as native JavaScript string
    * @return {String}      encrypted ASCII armored message
@@ -51,7 +51,7 @@ function _openpgp() {
   }
 
   /**
-   * signs message text and encrypts it
+   * Signs message text and encrypts it
    * @param  {[key]}  publicKeys array of keys, used to encrypt the message
    * @param  {key}    privateKey private key with decrypted secret key data for signing
    * @param  {String} text       message as native JavaScript string
@@ -59,14 +59,14 @@ function _openpgp() {
    */
   function signAndEncryptMessage(publicKeys, privateKey, text) {
     var msg = message.fromText(text);
-    msg = msg.sign(privateKey);
+    msg = msg.sign([privateKey]);
     msg = msg.encrypt(publicKeys);
     var armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
   }
 
   /**
-   * decrypts message
+   * Decrypts message
    * @param  {key}     privateKey private key with decrypted secret key data
    * @param  {message} message    the message object with the encrypted data
    * @return {String|null}        decrypted message as as native JavaScript string
@@ -74,11 +74,27 @@ function _openpgp() {
    */
   function decryptMessage(privateKey, message) {
     message = message.decrypt(privateKey);
-    return message.getLiteral();
+    return message.getText();
   }
 
-  function decryptAndVerifyMessage(privateKey, publicKeys, messagePacketlist) {
-
+  /**
+   * Decrypts message and verifies signatures
+   * @param  {key}     privateKey private key with decrypted secret key data
+   * @param  {[key]}   publicKeys public keys to verify signatures
+   * @param  {message} message    the message object with signed and encrypted data
+   * @return {{'text': String, signatures: [{'keyid': keyid, 'status': Boolean}]}}
+   *                              decrypted message as as native JavaScript string
+   *                              with verified signatures or null if no literal data found
+   */
+  function decryptAndVerifyMessage(privateKey, publicKeys, message) {
+    var result = {};
+    message = message.decrypt(privateKey);
+    result.text = message.getText();
+    if (result.text) {
+      result.signatures = message.verify(publicKeys);
+      return result;
+    }
+    return null;
   }
 
   function verifyMessage(publicKeys, messagePacketlist) {
@@ -286,6 +302,7 @@ function _openpgp() {
   this.generateKeyPair = generateKeyPair;
   this.write_signed_message = write_signed_message;
   this.signAndEncryptMessage = signAndEncryptMessage;
+  this.decryptAndVerifyMessage = decryptAndVerifyMessage
   this.encryptMessage = encryptMessage;
   this.decryptMessage = decryptMessage;
 

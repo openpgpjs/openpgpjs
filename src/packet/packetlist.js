@@ -56,7 +56,7 @@ module.exports = function packetlist() {
    * writing to packetlist[i] directly will result in an error.
    */
   this.push = function(packet) {
-    packet.packets = new packetlist();
+    packet.packets = packet.packets || new packetlist();
 
     this[this.length] = packet;
     this.length++;

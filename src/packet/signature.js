@@ -122,26 +122,21 @@ module.exports = function packet_signature() {
         this.publicKeyAlgorithm = bytes[i++].charCodeAt();
         this.hashAlgorithm = bytes[i++].charCodeAt();
 
-
-        function subpackets(bytes, signed) {
-          // Two-octet scalar octet count for following hashed subpacket
-          // data.
+        function subpackets(bytes) {
+          // Two-octet scalar octet count for following subpacket data.
           var subpacket_length = util.readNumber(
             bytes.substr(0, 2));
 
           var i = 2;
 
-          // Hashed subpacket data set (zero or more subpackets)
+          // subpacket data set (zero or more subpackets)
           var subpacked_read = 0;
           while (i < 2 + subpacket_length) {
 
             var len = packet.readSimpleLength(bytes.substr(i));
             i += len.offset;
 
-            // Since it is trivial to add data to the unhashed portion of 
-            // the packet we simply ignore all unauthenticated data.
-            if (signed)
-              this.read_sub_packet(bytes.substr(i, len.len));
+            this.read_sub_packet(bytes.substr(i, len.len));
 
             i += len.len;
           }
@@ -149,6 +144,7 @@ module.exports = function packet_signature() {
           return i;
         }
 
+        // hashed subpackets
         i += subpackets.call(this, bytes.substr(i), true);
 
         // A V4 signature hashes the packet body
@@ -159,6 +155,7 @@ module.exports = function packet_signature() {
         // subpacket body.
         this.signatureData = bytes.substr(0, i);
 
+        // unhashed subpackets
         i += subpackets.call(this, bytes.substr(i), false);
 
         break;
@@ -582,8 +579,8 @@ module.exports = function packet_signature() {
 
   /**
    * verifys the signature packet. Note: not signature types are implemented
-   * @param {String} data data which on the signature applies
-   * @param {openpgp_msg_privatekey} key the public key to verify the signature
+   * @param {String|Object} data data which on the signature applies
+   * @param {public_subkey|packet_public_key} key the public key to verify the signature
    * @return {boolean} True if message is verified, else false.
    */
   this.verify = function(key, data) {

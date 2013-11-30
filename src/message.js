@@ -20,6 +20,7 @@ var enums = require('./enums.js');
 var armor = require('./encoding/armor.js');
 var config = require('./config');
 var crypto = require('./crypto');
+var util = require('./util');
 
 /**
  * @class
@@ -31,7 +32,7 @@ function message(packetlist) {
   this.packets = packetlist || new packet.list();
 
   /**
-   * Returns the key IDs of the public keys to which the session key is encrypted
+   * Returns the key IDs of the keys to which the session key is encrypted
    * @return {[keyId]} array of keyid objects
    */
   this.getEncryptionKeyIds = function() {
@@ -40,6 +41,28 @@ function message(packetlist) {
     pkESKeyPacketlist.forEach(function(packet) {
       keyIds.push(packet.publicKeyId);
     });
+    return keyIds;
+  }
+
+  /**
+   * Returns the key IDs of the keys that signed the message
+   * @return {[keyId]} array of keyid objects
+   */
+  this.getSigningKeyIds = function() {
+    var keyIds = [];
+    var msg = this.unwrapCompressed();
+    // search for one pass signatures
+    var onePassSigList = msg.packets.filterByTag(enums.packet.one_pass_signature);
+    onePassSigList.forEach(function(packet) {
+      keyIds.push(packet.signingKeyId);
+    });
+    // if nothing found look for signature packets
+    if (!keyIds.length) {
+      var signatureList = msg.packets.filterByTag(enums.packet.signature);
+      signatureList.forEach(function(packet) {
+        keyIds.push(packet.issuerKeyId);
+      });
+    }
     return keyIds;
   }
 
@@ -79,9 +102,28 @@ function message(packetlist) {
    * Get literal data that is the body of the message
    * @return {String|null} literal body of the message as string
    */
-  this.getLiteral = function() {
+  this.getLiteralData = function() {
     var literal = this.packets.findPacket(enums.packet.literal);
     return literal && literal.data || null;
+  }
+
+  /**
+   * Get literal data as text
+   * @return {String|null} literal body of the message interpreted as text
+   */
+  this.getText = function() {
+    var literal = this.packets.findPacket(enums.packet.literal);
+    if (literal) {
+      var data = literal.data;
+      if (literal.format == enums.read(enums.literal, enums.literal.binary)
+        || literal.format == enums.read(enums.literal, enums.literal.text)) {
+        // text in a literal packet with format 'binary' or 'text' could be utf8, therefore decode
+        data = util.decode_utf8(data);
+      }
+      return data;
+    } else {
+      return null;
+    }
   }
 
   /**
@@ -121,35 +163,91 @@ function message(packetlist) {
 
   /**
    * Sign the message (the literal data packet of the message)
-   * @param  {key} privateKey private key with decrypted secret key data for signing
-   * @return {[message]}      new message with encrypted content
+   * @param  {[key]} privateKey private keys with decrypted secret key data for signing
+   * @return {message}      new message with signed content
    */
-  this.sign = function(privateKey) {
+  this.sign = function(privateKeys) {
 
     var packetlist = new packet.list();
-    
-    var onePassSig = new packet.one_pass_signature();
-    onePassSig.type = enums.signature.text;
-    //TODO get preferred hashg algo from signature
-    onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
-    var signingKeyPacket = privateKey.getSigningKeyPacket();
-    onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    onePassSig.signingKeyId = signingKeyPacket.getKeyId();
-    packetlist.push(onePassSig);
-    
+
     var literalDataPacket = this.packets.findPacket(enums.packet.literal);
     if (!literalDataPacket) throw new Error('No literal data packet to sign.');
-    packetlist.push(literalDataPacket);
+    
+    var literalFormat = enums.write(enums.literal, literalDataPacket.format);
+    var signatureType = literalFormat == enums.literal.binary 
+                        ? enums.signature.binary : enums.signature.text; 
+    
+    for (var i = 0; i < privateKeys.length; i++) {
+      var onePassSig = new packet.one_pass_signature();
+      onePassSig.type = signatureType;
+      //TODO get preferred hashg algo from key signature
+      onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
+      var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+      onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
+      onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+      packetlist.push(onePassSig);
+    }
 
-    var signaturePacket = new packet.signature();
-    signaturePacket.signatureType = enums.signature.text;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-    signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
+    packetlist.push(literalDataPacket);
+    
+    for (var i = privateKeys.length - 1; i >= 0; i--) {
+      var signaturePacket = new packet.signature();
+      signaturePacket.signatureType = signatureType;
+      signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+      signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+      if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+      signaturePacket.sign(signingKeyPacket, literalDataPacket);
+      packetlist.push(signaturePacket);
+    }
 
     return new message(packetlist);
+  }
+
+  /**
+   * Verify message signatures
+   * @param {[key]} publicKeys public keys to verify signatures
+   * @return {[{'keyid': keyid, 'valid': Boolean}]} list of signer's keyid and validity of signature
+   */
+  this.verify = function(publicKeys) {
+    var result = [];
+    var msg = this.unwrapCompressed();
+    var literalDataList = msg.packets.filterByTag(enums.packet.literal);
+    if (literalDataList.length !== 1) throw new Error('Can only verify message with one literal data packet.');
+    var signatureList = msg.packets.filterByTag(enums.packet.signature);
+    publicKeys.forEach(function(pubKey) {
+      for (var i = 0; i < signatureList.length; i++) {
+        var publicKeyPacket = pubKey.getPublicKeyPacket([signatureList[i].issuerKeyId]);
+        if (publicKeyPacket) {
+          var verifiedSig = {};
+          verifiedSig.keyid = signatureList[i].issuerKeyId;
+          verifiedSig.status = signatureList[i].verify(publicKeyPacket, literalDataList[0]);
+          result.push(verifiedSig);
+          break;
+        }
+      }
+    });
+    return result;
+  }
+
+  /**
+   * Unwrap compressed message
+   * @return {message} message Content of compressed message
+   */
+  this.unwrapCompressed = function() {
+    var compressed = this.packets.filterByTag(enums.packet.compressed);
+    if (compressed.length) {
+      return new message(compressed[0].packets);
+    } else {
+      return this;
+    }
+  }
+
+  /**
+   * Returns ASCII armored text of message
+   * @return {String} ASCII armor
+   */
+  this.armor = function() {
+    return armor.encode(enums.armor.message, this.packets.write());
   }
 
   /**

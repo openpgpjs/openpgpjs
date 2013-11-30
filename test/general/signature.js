@@ -137,6 +137,38 @@ unit.register("Signature testing", function() {
       '=h/aX',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
+var pub_key_arm3 =
+      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      'Version: GnuPG v2.0.19 (GNU/Linux)',
+      '',
+      'mQENBFKV0FUBCACtZliApy01KBGbGNB36YGH4lpr+5KoqF1I8A5IT0YeNjyGisOk',
+      'WsDsUzOqaNvgzQ82I3MY/jQV5rLBhH/6LiRmCA16WkKcqBrHfNGIxJ+Q+ofVBHUb',
+      'aS9ClXYI88j747QgWzirnLuEA0GfilRZcewII1pDA/G7+m1HwV4qHsPataYLeboq',
+      'hPA3h1EVVQFMAcwlqjOuS8+weHQRfNVRGQdRMm6H7166PseDVRUHdkJpVaKFhptg',
+      'rDoNI0lO+UujdqeF1o5tVZ0j/s7RbyBvdLTXNuBbcpq93ceSWuJPZmi1XztQXKYe',
+      'y0f+ltgVtZDEc7TGV5WDX9erRECCcA3+s7J3ABEBAAG0G0pTIENyeXB0byA8ZGlm',
+      'ZmllQGhvbWUub3JnPokBPwQTAQIAKQUCUpXQVQIbAwUJCWYBgAcLCQgHAwIBBhUI',
+      'AgkKCwQWAgMBAh4BAheAAAoJENvyI+hwU030yRAIAKX/mGEgi/miqasbbQoyK/CS',
+      'a7sRxgZwOWQLdi2xxpE5V4W4HJIDNLJs5vGpRN4mmcNK2fmJAh74w0PskmVgJEhP',
+      'dFJ14UC3fFPq5nbqkBl7hU0tDP5jZxo9ruQZfDOWpHKxOCz5guYJ0CW97bz4fChZ',
+      'NFDyfU7VsJQwRIoViVcMCipP0fVZQkIhhwpzQpmVmN8E0a6jWezTZv1YpMdlzbEf',
+      'H79l3StaOh9/Un9CkIyqEWdYiKvIYms9nENyehN7r/OKYN3SW+qlt5GaL+ws+N1w',
+      '6kEZjPFwnsr+Y4A3oHcAwXq7nfOz71USojSmmo8pgdN8je16CP98vw3/k6TncLS5',
+      'AQ0EUpXQVQEIAMEjHMeqg7B04FliUFWr/8C6sJDb492MlGAWgghIbnuJfXAnUGdN',
+      'oAzn0S+n93Y/qHbW6YcjHD4/G+kK3MuxthAFqcVjdHZQXK0rkhXO/u1co7v1cdtk',
+      'OTEcyOpyLXolM/1S2UYImhrml7YulTHMnWVja7xu6QIRso+7HBFT/u9D47L/xXrX',
+      'MzXFVZfBtVY+yoeTrOY3OX9cBMOAu0kuN9eT18Yv2yi6XMzP3iONVHtl6HfFrAA7',
+      'kAtx4ne0jgAPWZ+a8hMy59on2ZFs/AvSpJtSc1kw/vMTWkyVP1Ky20vAPHQ6Ej5q',
+      '1NGJ/JbcFgolvEeI/3uDueLjj4SdSIbLOXMAEQEAAYkBJQQYAQIADwUCUpXQVQIb',
+      'DAUJCWYBgAAKCRDb8iPocFNN9NLkB/wO4iRxia0zf4Kw2RLVZG8qcuo3Bw9UTXYY',
+      'lI0AutoLNnSURMLLCq6rcJ0BCXGj/2iZ0NBxZq3t5vbRh6uUv+hpiSxK1nF7AheN',
+      '4aAAzhbWx0UDTF04ebG/neE4uDklRIJLhif6+Bwu+EUeTlGbDj7fqGSsNe8g92w7',
+      '1e41rF/9CMoOswrKgIjXAou3aexogWcHvKY2D+1q9exORe1rIa1+sUGl5PG2wsEs',
+      'znN6qtN5gMlGY1ofWDY+I02gO4qzaZ/FxRZfittCw7v5dmQYKot9qRi2Kx3Fvw+h',
+      'ivFBpC4TWgppFBnJJnAsFXZJQcejMW4nEmOViRQXY8N8PepQmgsu',
+      '=ummy',
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+
 
   var tests = [function() {
     var priv_key = openpgp.key.readArmored(priv_key_arm1).packets;
@@ -229,6 +261,103 @@ unit.register("Signature testing", function() {
     var pub_key = openpgp.key.readArmored(pub_key_arm2).packets;
     sMsg[0].packets[2].verify(pub_key[3], sMsg[0].packets[1]);
     return new unit.result("Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)", sMsg[0].packets[2].verified);
+  }, function() {
+
+    var msg_armor = 
+       ['-----BEGIN PGP MESSAGE-----',
+        'Version: GnuPG v2.0.19 (GNU/Linux)',
+        '',
+        'hIwD4IT3RGwgLJcBBADEBdm+GEW7IV1K/Bykg0nB0WYO08ai7/8/+Y/O9xu6RiU0',
+        'q7/jWuKms7kSjw9gxMCjf2dGnAuT4Cg505Kj5WfeBuHh618ovO8qo4h0qHyp1/y3',
+        'o1P0IXPAb+LGJOeO7DyM9Xp2AOBiIKOVWzFTg+MBZOc+XZEVx3FioHfm9SSDudLA',
+        'WAEkDakCG6MRFj/7SmOiV8mQKH+YPMKT69eDZW7hjINabrpM2pdRU7c9lC7CMUBx',
+        'Vj7wZsQBMASSC8f2rhpGA2iKvYMsmW3g9R1xkvj1MXWftSPUS4jeNTAgEwvvF6Af',
+        'cP+OYSXKlTbwfEr73ES2O3/IFE9sHRjPqWaxWuv4DDQ5YfIxE54C1aE8Aq5/QaIH',
+        'v38TUSia0yEMCc/tJd58DikkT07AF162tcx9Ro0ZjhudyuvUyXIfPfxA+XWR2pdz',
+        'ifxyV4zia9RvaCUY8vXGM+gQJ3NNXx2LkZA3kWUEyxFVL1Vl/XUQY0M6U+uccSk4',
+        'eMXm6eyEWDcj0lBRckqKoKo1w/uan11jPuHsnRz6jO9DsuKEz79UDgI=',
+        '=cFi7',
+        '-----END PGP MESSAGE-----'].join('\n');
+
+    var plaintext = 'short message\nnext line\n한국어/조선말';
+    var esMsg = openpgp.message.readArmored(msg_armor);
+    var pubKey = openpgp.key.readArmored(pub_key_arm2);
+    var privKey = openpgp.key.readArmored(priv_key_arm2);
+
+    var keyids = esMsg.getEncryptionKeyIds();
+    privKey.decryptKeyPacket(keyids, 'hello world');
+
+    var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
+    var verified = decrypted.text == plaintext && decrypted.signatures[0].status;
+
+    return new unit.result("Verify signature of signed and encrypted message from GPG2 with openpgp.decryptAndVerifyMessage", verified);
+  }, function() {
+
+    var msg_armor = 
+      ['-----BEGIN PGP MESSAGE-----',
+      'Version: Encryption Desktop 10.3.0 (Build 9307)',
+      'Charset: utf-8',
+      '',
+      'qANQR1DBjAPghPdEbCAslwED/2S4oNvCjO5TdLUMMUuVOQc8fi6c5XIBu7Y09fEX',
+      'Jm/UrkDHVgmPojLGBDF0CYENNZOVrNfpahY7A3r4HPzGucBzCO1uxuUIKjhtNAAM',
+      'mjD939ernjooOZrM6xDuRaX8adG0LSxpNaVJGxXd/EdlmKDJbYDI6aJ5INrUxzAR',
+      'DAqw0sBSAXgRWgiH6IIiAo5y5WFEDEN9sGStaEQT2wd32kX73M4iZuMt/GM2agiB',
+      'sWb7yLcNHiJ/3OnTfDg9+T543kFq9FlwFbwqygO/wm9e/kgMBq0ZsFOfV+GRtXep',
+      '3qNbJsmzGvdqiUHb/+hkdE191jaSVcO/zaMW4N0Vc1IwIEhZ8I9+9bKwusdVhHT5',
+      'MySnhIogv+0Ilag/aY+UiCt+Zcie69T7Eix48fC/VVW5w3INf1T2CMmDm5ZLZFRN',
+      'oyqzb9Vsgu1gS7SCb6qTbnbV9PlSyU4wJB6siX8hz/U0urokT5se3uYRjiV0KbkA',
+      'zl1/r/wCrmwX4Gl9VN9+33cQgYZAlJLsRw8N82GhbVweZS8qwv24GQ==',
+      '=nx90',
+      '-----END PGP MESSAGE-----'].join('\n');
+
+    var plaintext = 'short message\nnext line\n한국어/조선말\n\n';
+    var esMsg = openpgp.message.readArmored(msg_armor);
+    var pubKey = openpgp.key.readArmored(pub_key_arm2);
+    var privKey = openpgp.key.readArmored(priv_key_arm2);
+
+    var keyids = esMsg.getEncryptionKeyIds();
+    privKey.decryptKeyPacket(keyids, 'hello world');
+
+    var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
+    var verified = decrypted.text == plaintext && decrypted.signatures[0].status;
+
+    return new unit.result("Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decryptAndVerifyMessage", verified);
+  }, function() {
+
+    var msg_armor = 
+     ['-----BEGIN PGP MESSAGE-----',
+      'Version: GnuPG v2.0.19 (GNU/Linux)',
+      '',
+      'owGbwMvMwMF4+5Pyi4Jg3y8ME8DcBy3fXXIUdKYzrjFNYilJrSgJmsXDXJyRX1Si',
+      'kJtaXJyYnsqVBxRVyMnMS+V6O3XOq61r30zbov9m4YY3LQteL5/QMYeFgZGDgY2V',
+      'CaSRgYtTAGZiYxYLwySbQk07ptZel6gmjrKyBWsyWdkOG3oscLBdIpXXfDdb6fNv',
+      '8ULN5L1ed+xNo79P2dBotWud6vn7e9dtLJ7o12PunnvEz8gyyvP4/As/los0xsnZ',
+      'H+8ublrhvGtLxJUZuUKZO6QdHq2Nepuw8OrfiMXPBDQXXpV2q11Ze+rD3lndgv/C',
+      'bJQNOhll0J0H839jFvt/16m20h/ZmDoWqJywapnypjdIjcXr+7rJFess40yenV7Q',
+      '2LSu/EX6Aq29x+dv+GPUMfuhTNE3viWWUR4PD6T7XfmdViUwmSf8fkRNUn/t3a2n',
+      'cq46Xr36seCor/OLp0atSZwHrjx2SU5zPLheZn+zw/0d1/YZnD7AEeP9s/Cuycyv',
+      'CZ5HZNKufvB8fsh+dfdSXW0GfqkPfxk36Vw8ufpjaoZDyt2nxxg/6D4KS3UvZzv3',
+      'axdLZ9yd0OJNZv4P501If24W4vTGz6nI7Ser8Yd2PiOvE5MWMT0wLZQ+zPX1sv0/',
+      's8PvkyWmVM0O0fB/ZSHovHNNPffDg/rWhzOmXQ9/7vTn477F+aWm5sYzJ75/BQA=',
+      '=+L0S',
+      '-----END PGP MESSAGE-----'].join('\n');
+
+    var plaintext = 'short message\nnext line\n한국어/조선말';
+    var sMsg = openpgp.message.readArmored(msg_armor);
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2);
+    var pubKey3 = openpgp.key.readArmored(pub_key_arm3);
+
+    var keyids = sMsg.getSigningKeyIds();
+
+    var verified = pubKey2.getPublicKeyPacket(keyids) && pubKey3.getPublicKeyPacket(keyids);
+
+    verified = verified && sMsg.getText() == plaintext;
+
+    var verifiedSig = sMsg.verify([pubKey2, pubKey3]);
+    
+    verified = verified && verifiedSig[0].status && verifiedSig[1].status;
+
+    return new unit.result("Verify signed message with two one pass signatures", verified);
   }];
 
   var results = [];
