@@ -60,14 +60,14 @@ function _openpgp () {
 		while (mypos != input.length) {
 			var first_packet = openpgp_packet.read_packet(input, mypos, l);
 			// public key parser
-			if (input[mypos].charCodeAt() == 0x99 || first_packet.tagType == 6) {
+			if (input.charCodeAt(mypos) == 0x99 || first_packet.tagType == 6) {
 				publicKeys[publicKeyCount] = new openpgp_msg_publickey();				
 				publicKeys[publicKeyCount].header = input.substring(mypos,mypos+3);
-				if (input[mypos].charCodeAt() == 0x99) {
+				if (input.charCodeAt(mypos) == 0x99) {
 					// parse the length and read a tag6 packet
 					mypos++;
-					var l = (input[mypos++].charCodeAt() << 8)
-							| input[mypos++].charCodeAt();
+					var l = (input.charCodeAt(mypos++) << 8)
+							| input.charCodeAt(mypos++);
 					publicKeys[publicKeyCount].publicKeyPacket = new openpgp_packet_keymaterial();
 					publicKeys[publicKeyCount].publicKeyPacket.header = publicKeys[publicKeyCount].header;
 					publicKeys[publicKeyCount].publicKeyPacket.read_tag6(input, mypos, l);

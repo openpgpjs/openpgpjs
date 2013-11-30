@@ -55,27 +55,27 @@ function openpgp_packet_userattribute() {
 		while (len != total_len) {
 			var current_len = 0;
 			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
+			if (input.charCodeAt(mypos) < 192) {
+				packet_length = input.charCodeAt(mypos++);
 				current_len = 1;
 			// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-					+ (input[mypos++].charCodeAt()) + 192;
+			} else if (input.charCodeAt(mypos) >= 192 && input.charCodeAt(mypos) < 224) {
+				packet_length = ((input.charCodeAt(mypos++) - 192) << 8)
+					+ (input.charCodeAt(mypos++)) + 192;
 				current_len = 2;
 			// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+			} else if (input.charCodeAt(mypos) > 223 && input.charCodeAt(mypos) < 255) {
+				packet_length = 1 << (input.charCodeAt(mypos++) & 0x1F);
 				current_len = 1;
 			// 4.2.2.3. Five-Octet Lengths
 			} else {
 				current_len = 5;
 				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+				packet_length = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					| (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			}
 			
-			var subpackettype = input[mypos++].charCodeAt();
+			var subpackettype = input.charCodeAt(mypos++);
 			packet_length--;
 			current_len++;
 			this.userattributes[count] = new Array();

@@ -125,20 +125,20 @@ function openpgp_packet_keymaterial() {
 	function read_pub_key(input, position, len) {
 		var mypos = position;
 		// A one-octet version number (3 or 4).
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		if (this.version == 3) {
 			// A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-				(input[mypos++].charCodeAt() << 16) |
-				(input[mypos++].charCodeAt() <<  8) |
-				(input[mypos++].charCodeAt()))*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) |
+				(input.charCodeAt(mypos++) << 16) |
+				(input.charCodeAt(mypos++) <<  8) |
+				(input.charCodeAt(mypos++)))*1000);
 			
 		    // - A two-octet number denoting the time in days that this key is
 		    //   valid.  If this number is zero, then it does not expire.
-			this.expiration = (input[mypos++].charCodeAt() << 8) & input[mypos++].charCodeAt();
+			this.expiration = (input.charCodeAt(mypos++) << 8) & input.charCodeAt(mypos++);
 	
 		    // - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 			var mpicount = 0;
 		    // - A series of multiprecision integers comprising the key material:
 			//   Algorithm-Specific Fields for RSA public keys:
@@ -174,13 +174,13 @@ function openpgp_packet_keymaterial() {
 			this.packetLength = mypos-position;
 		} else if (this.version == 4) {
 			// - A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-			(input[mypos++].charCodeAt() << 16) |
-			(input[mypos++].charCodeAt() <<  8) |
-			(input[mypos++].charCodeAt()))*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) |
+			(input.charCodeAt(mypos++) << 16) |
+			(input.charCodeAt(mypos++) <<  8) |
+			(input.charCodeAt(mypos++)))*1000);
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 			var mpicount = 0;
 		    // - A series of multiprecision integers comprising the key material:
 			//   Algorithm-Specific Fields for RSA public keys:
@@ -236,7 +236,7 @@ function openpgp_packet_keymaterial() {
 	    // - A Public-Key or Public-Subkey packet, as described above.
 	    this.publicKey = new openpgp_packet_keymaterial();
 		if (this.publicKey.read_pub_key(input,position, len) == null) {
-			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input[position].charCodeAt()+" "+position+" "+len+"\n Aborting here...");
+			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input.charCodeAt(position)+" "+position+" "+len+"\n Aborting here...");
 			return null;
 		}
 		this.publicKey.header = openpgp_packet.write_old_packet_header(6,this.publicKey.packetLength);
@@ -248,7 +248,7 @@ function openpgp_packet_keymaterial() {
 	    //   indicates that the secret-key data is not encrypted.  255 or 254
 	    //   indicates that a string-to-key specifier is being given.  Any
 	    //   other value is a symmetric-key encryption algorithm identifier.
-	    this.s2kUsageConventions = input[mypos++].charCodeAt();
+	    this.s2kUsageConventions = input.charCodeAt(mypos++);
 	    
 	    if (this.s2kUsageConventions == 0)
 	    	this.hasUnencryptedSecretKeyData = true;
@@ -256,7 +256,7 @@ function openpgp_packet_keymaterial() {
 	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
 	    //   octet symmetric encryption algorithm.
 	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
-	    	this.symmetricEncryptionAlgorithm = input[mypos++].charCodeAt();
+	    	this.symmetricEncryptionAlgorithm = input.charCodeAt(mypos++);
 	    }
 	     
 	    // - [Optional] If string-to-key usage octet was 255 or 254, a
@@ -354,8 +354,8 @@ function openpgp_packet_keymaterial() {
 	    	}
 	    	// checksum because s2k usage convention is 0
 	        this.checksum = new Array(); 
-		    this.checksum[0] = input[mypos++].charCodeAt();
-		    this.checksum[1] = input[mypos++].charCodeAt();
+		    this.checksum[0] = input.charCodeAt(mypos++);
+		    this.checksum[1] = input.charCodeAt(mypos++);
 	    }
 	    return this;
 	}

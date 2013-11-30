@@ -49,7 +49,7 @@ var Util = function() {
 	    var c=0;
 	    var h;
 	    while(c<e){
-	        h=str[c++].charCodeAt().toString(16);
+	        h=str.charCodeAt(c++).toString(16);
 	        while(h.length<2) h="0"+h;
 	        r.push(""+h);
 	    }
