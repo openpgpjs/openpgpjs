@@ -20,9 +20,6 @@
  * @classdesc Decoded public key object for internal openpgp.js use
  */
 function openpgp_msg_publickey() {
-	this.data;
-	this.position;
-	this.len;
 	this.tostring = "OPENPGP PUBLIC KEY\n";
 	this.bindingSignature = null;
 	this.publicKeyPacket = null;
