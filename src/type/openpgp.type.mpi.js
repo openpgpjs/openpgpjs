@@ -47,7 +47,7 @@ function openpgp_type_mpi() {
 	function read(input, position, len) {
 		var mypos = position;
 		
-		this.mpiBitLength = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+		this.mpiBitLength = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 		
 		// Additional rules:
 		//

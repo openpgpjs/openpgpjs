@@ -52,11 +52,11 @@ function openpgp_packet_encryptedsessionkey() {
 			return null;
 		}
 
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		this.keyId = new openpgp_type_keyid();
 		this.keyId.read_packet(input, mypos);
 		mypos += 8;
-		this.publicKeyAlgorithmUsed = input[mypos++].charCodeAt();
+		this.publicKeyAlgorithmUsed = input.charCodeAt(mypos++);
 
 		switch (this.publicKeyAlgorithmUsed) {
 		case 1:

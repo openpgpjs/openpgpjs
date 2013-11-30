@@ -70,13 +70,7 @@ function openpgp_packet_userid() {
 	 */
 	this.read_packet = function(input, position, len) {
 		this.packetLength = len;
-
-		var bytes = '';
-		for ( var i = 0; i < len; i++) {
-			bytes += input[position + i];
-		}
-
-		this.set_text_bytes(bytes);
+		this.set_text_bytes(input.substr(position, len));
 		return this;
 	}
 

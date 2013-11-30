@@ -33,17 +33,17 @@ function openpgp_type_s2k() {
 	 */
 	function read(input, position) {
 		var mypos = position;
-		this.type = input[mypos++].charCodeAt();
+		this.type = input.charCodeAt(mypos++);
 		switch (this.type) {
 		case 0: // Simple S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 			this.s2kLength = 1;
 			break;
 
 		case 1: // Salted S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Octets 2-9: 8-octet salt value
 			this.saltValue = input.substring(mypos, mypos+8);
@@ -53,7 +53,7 @@ function openpgp_type_s2k() {
 
 		case 3: // Iterated and Salted S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Octets 2-9: 8-octet salt value
 			this.saltValue = input.substring(mypos, mypos+8);
@@ -61,16 +61,16 @@ function openpgp_type_s2k() {
 
 			// Octet 10: count, a one-octet, coded value
 			this.EXPBIAS = 6;
-			var c = input[mypos++].charCodeAt();
+			var c = input.charCodeAt(mypos++);
 			this.count = (16 + (c & 15)) << ((c >> 4) + this.EXPBIAS);
 			this.s2kLength = 10;
 			break;
 
 		case 101:
 			if(input.substring(mypos+1, mypos+4) == "GNU") {
-				this.hashAlgorithm = input[mypos++].charCodeAt();
+				this.hashAlgorithm = input.charCodeAt(mypos++);
 				mypos += 3; // GNU
-				var gnuExtType = 1000 + input[mypos++].charCodeAt();
+				var gnuExtType = 1000 + input.charCodeAt(mypos++);
 				if(gnuExtType == 1001) {
 					this.type = gnuExtType;
 					this.s2kLength = 5;

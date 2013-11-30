@@ -41,9 +41,9 @@ function openpgp_packet_marker() {
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = 3;
-		if (input[position].charCodeAt() == 0x50 && // P
-				input[position + 1].charCodeAt() == 0x47 && // G
-				input[position + 2].charCodeAt() == 0x50) // P
+		if (input.charCodeAt(position) == 0x50 && // P
+				input.charCodeAt(position + 1) == 0x47 && // G
+				input.charCodeAt(position + 2) == 0x50) // P
 			return this;
 		// marker packet does not contain "PGP"
 		return null;
