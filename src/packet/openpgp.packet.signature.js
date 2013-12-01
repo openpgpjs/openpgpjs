@@ -708,7 +708,7 @@ function openpgp_packet_signature() {
 	function getIssuer() {
 		 if (this.version == 4)
 			 return this.issuerKeyId;
-		 if (this.verions == 4)
+		 if (this.version == 3)
 			 return this.keyId;
 		 return null;
 	}
