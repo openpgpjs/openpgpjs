@@ -12109,19 +12109,25 @@ function openpgp_packet_signature() {
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData);
 			} else {
 				this.verified = false;
 			}
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
+			var tohash = data
+				.replace(/\r\n/g,"\n")
+				.replace(/[\t ]+\n/g, "\n")
+				.replace(/\n/g,"\r\n");
 			if (this.version == 4) {
-				var tohash = data
-					.replace(/\r\n/g,"\n")
-					.replace(/[\t ]+\n/g, "\n")
-					.replace(/\n/g,"\r\n");
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData);
 			} else {
 				this.verified = false;
 			}
@@ -12132,13 +12138,12 @@ function openpgp_packet_signature() {
 			// It is calculated identically to a signature over a zero-length
 			// binary document.  Note that it doesn't make sense to have a V3
 			// standalone signature.
-			if (this.version == 3) {
-				this.verified = false;
-				break;
-				}
-			
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			if (this.version == 4) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+			} else {
+				this.verified = false;
+			}
 			break;
 		case 16:			
 			// 0x10: Generic certification of a User ID and Public-Key packet.
