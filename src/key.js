@@ -283,7 +283,7 @@ var config = require('./config');
 key.readArmored = function(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-key armored texts
-  var input = armor.decode(armoredText).openpgp;
+  var input = armor.decode(armoredText).data;
   var packetlist = new packet.list();
   packetlist.read(input);
   var newKey = new key(packetlist);

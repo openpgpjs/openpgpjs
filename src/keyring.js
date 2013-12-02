@@ -150,7 +150,7 @@ var keyring = function() {
   function importPacketlist(armored) {
     this.armoredPacketlists.push(armored);
 
-    var dearmored = armor.decode(armored.replace(/\r/g, '')).openpgp;
+    var dearmored = armor.decode(armored.replace(/\r/g, '')).data;
 
     packetlist = new packet.list();
     packetlist.read(dearmored);

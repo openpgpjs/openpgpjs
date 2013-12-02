@@ -103,7 +103,7 @@ unit.register("Packet testing", function() {
 
 
 
-		var msgbytes = openpgp.armor.decode(msg).openpgp;
+		var msgbytes = openpgp.armor.decode(msg).data;
 
 		var parsed = new openpgp.packet.list();
 		parsed.read(msgbytes);
@@ -175,7 +175,7 @@ unit.register("Packet testing", function() {
 			'-----END PGP PRIVATE KEY BLOCK-----';
 
 		key = new openpgp.packet.list();
-		key.read(openpgp.armor.decode(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).data);
 		key = key[0];
 
 		var enc = new openpgp.packet.public_key_encrypted_session_key(),
@@ -243,11 +243,11 @@ unit.register("Packet testing", function() {
 
 
 		var key = new openpgp.packet.list();
-		key.read(openpgp.armor.decode(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).data);
 		key = key[3];
 
 		var msg = new openpgp.packet.list();
-		msg.read(openpgp.armor.decode(armored_msg).openpgp);
+		msg.read(openpgp.armor.decode(armored_msg).data);
 
 		msg[0].decrypt(key);
 		msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -305,12 +305,12 @@ unit.register("Packet testing", function() {
 			'-----END PGP MESSAGE-----';
 
 		var key = new openpgp.packet.list();
-		key.read(openpgp.armor.decode(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).data);
 		key = key[3];
 		key.decrypt('test');
 
 		var msg = new openpgp.packet.list();
-		msg.read(openpgp.armor.decode(armored_msg).openpgp);
+		msg.read(openpgp.armor.decode(armored_msg).data);
 
 		msg[0].decrypt(key);
 		msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -325,7 +325,7 @@ unit.register("Packet testing", function() {
 	
 
 		var key = new openpgp.packet.list();
-		key.read(openpgp.armor.decode(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).data);
 
 
 		var verified = key[2].verify(key[0],
@@ -362,11 +362,11 @@ unit.register("Packet testing", function() {
 			'-----END PGP MESSAGE-----'
 
 		var key = new openpgp.packet.list();
-		key.read(openpgp.armor.decode(armored_key).openpgp);
+		key.read(openpgp.armor.decode(armored_key).data);
 		key[3].decrypt('test')
 
 		var msg = new openpgp.packet.list();
-		msg.read(openpgp.armor.decode(armored_msg).openpgp);
+		msg.read(openpgp.armor.decode(armored_msg).data);
 
 
 		msg[0].decrypt(key[3]);

@@ -195,7 +195,7 @@ function createcrc24(input) {
  * @param {String} text OpenPGP armored message
  * @returns {(Boolean|Object)} Either false in case of an error 
  * or an object with attribute "text" containing the message text
- * and an attribute "openpgp" containing the bytes.
+ * and an attribute "data" containing the bytes.
  */
 function dearmor(text) {
   text = text.replace(/\r/g, '');
@@ -205,8 +205,8 @@ function dearmor(text) {
   if (type != 2) {
     var splittedtext = text.split('-----');
 
-    var data = {
-      openpgp: base64.decode(
+    var result = {
+      data: base64.decode(
         splittedtext[2]
         .split('\n\n')[1]
         .split("\n=")[0]
@@ -214,18 +214,18 @@ function dearmor(text) {
       type: type
     };
 
-    if (verifyCheckSum(data.openpgp,
+    if (verifyCheckSum(result.data,
       splittedtext[2]
       .split('\n\n')[1]
       .split("\n=")[1]
       .split('\n')[0]))
 
-      return data;
+      return result;
     else {
       util.print_error("Ascii armor integrity check on message failed: '" + splittedtext[2]
         .split('\n\n')[1]
         .split("\n=")[1]
-        .split('\n')[0] + "' should be '" + getCheckSum(data)) + "'";
+        .split('\n')[0] + "' should be '" + getCheckSum(result.data)) + "'";
       return false;
     }
   } else {
@@ -235,13 +235,13 @@ function dearmor(text) {
       text: splittedtext[2]
         .replace(/\n- /g, "\n")
         .split("\n\n")[1],
-      openpgp: base64.decode(splittedtext[4]
+      data: base64.decode(splittedtext[4]
         .split("\n\n")[1]
         .split("\n=")[0]),
       type: type
     };
 
-    if (verifyCheckSum(result.openpgp, splittedtext[4]
+    if (verifyCheckSum(result.data, splittedtext[4]
       .split("\n\n")[1]
       .split("\n=")[1]))
 
@@ -257,56 +257,57 @@ function dearmor(text) {
 /**
  * Armor an OpenPGP binary packet block
  * @param {Integer} messagetype type of the message
- * @param data
+ * @param body
  * @param {Integer} partindex
  * @param {Integer} parttotal
  * @returns {String} Armored text
  */
-function armor(messagetype, data, partindex, parttotal) {
+function armor(messagetype, body, partindex, parttotal) {
   var result = "";
   switch (messagetype) {
     case enums.armor.multipart_section:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data);
-      result += "\r\n=" + getCheckSum(data) + "\r\n";
+      result += base64.encode(body);
+      result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       break;
     case enums.armor.mutlipart_last:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data);
-      result += "\r\n=" + getCheckSum(data) + "\r\n";
+      result += base64.encode(body);
+      result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "-----\r\n";
       break;
     case enums.armor.signed:
-      result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: " + data.hash + "\r\n\r\n";
-      result += data.text.replace(/\n-/g, "\n- -");
+      result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n";
+      result += "Hash: " + body.hash + "\r\n\r\n";
+      result += body.text.replace(/\n-/g, "\n- -");
       result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data.openpgp);
-      result += "\r\n=" + getCheckSum(data.openpgp) + "\r\n";
+      result += base64.encode(body.data);
+      result += "\r\n=" + getCheckSum(body.data) + "\r\n";
       result += "-----END PGP SIGNATURE-----\r\n";
       break;
     case enums.armor.message:
       result += "-----BEGIN PGP MESSAGE-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data);
-      result += "\r\n=" + getCheckSum(data) + "\r\n";
+      result += base64.encode(body);
+      result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE-----\r\n";
       break;
     case enums.armor.public_key:
       result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data);
-      result += "\r\n=" + getCheckSum(data) + "\r\n";
+      result += base64.encode(body);
+      result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
       break;
     case enums.armor.private_key:
       result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
       result += armor_addheader();
-      result += base64.encode(data);
-      result += "\r\n=" + getCheckSum(data) + "\r\n";
+      result += base64.encode(body);
+      result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
       break;
   }
