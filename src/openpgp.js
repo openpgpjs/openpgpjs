@@ -26,6 +26,7 @@ var packet = require('./packet');
 var enums = require('./enums.js');
 var config = require('./config');
 var message = require('./message.js');
+var cleartext = require('./cleartext.js');
 
 
 /**
@@ -88,15 +89,34 @@ function decryptAndVerifyMessage(privateKey, publicKeys, message) {
   return null;
 }
 
+/**
+ * Signs a cleartext message
+ * @param  {[Key]}  privateKeys private key with decrypted secret key data to sign cleartext
+ * @param  {String} text        cleartext
+ * @return {String}             ASCII armored message
+ */
 function signClearMessage(privateKeys, text) {
-
+  var cleartextMessage = new cleartext.CleartextMessage(text);
+  cleartextMessage.sign(privateKeys);
+  return cleartextMessage.armor();
 }
 
+/**
+ * Verifies signatures of cleartext signed message
+ * @param  {[Key]}            publicKeys public keys to verify signatures
+ * @param  {CleartextMessage} message    cleartext message object with signatures
+ * @return {{'text': String, signatures: [{'keyid': keyid, 'status': Boolean}]}}
+ *                                       cleartext with status of verified signatures
+ */
 function verifyClearSignedMessage(publicKeys, message) {
-
+  var result = {};
+  if (!(message instanceof cleartext.CleartextMessage)) {
+    throw new Error('Parameter [message] needs to be of type CleartextMessage.');
+  }
+  result.text = message.getText();
+  result.signatures = message.verify(publicKeys);
+  return result;
 }
-
-
 
 /**
  * TODO: update this doc

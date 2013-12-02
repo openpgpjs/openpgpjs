@@ -26,6 +26,7 @@ var util = require('./util');
  * @class
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
+ * @param  {packetlist} packetlist The packets that form this message
  * See http://tools.ietf.org/html/rfc4880#section-11.3
  */
 

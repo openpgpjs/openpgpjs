@@ -349,7 +349,7 @@ var pub_key_arm3 =
 
     var keyids = sMsg.getSigningKeyIds();
 
-    var verified = pubKey2.getPublicKeyPacket(keyids) && pubKey3.getPublicKeyPacket(keyids);
+    var verified = pubKey2.getPublicKeyPacket(keyids) !== null && pubKey3.getPublicKeyPacket(keyids) !== null;
 
     verified = verified && sMsg.getText() == plaintext;
 
@@ -358,6 +358,65 @@ var pub_key_arm3 =
     verified = verified && verifiedSig[0].status && verifiedSig[1].status;
 
     return new unit.result("Verify signed message with two one pass signatures", verified);
+  }, function() {
+
+    var msg_armor = 
+     ['-----BEGIN PGP SIGNED MESSAGE-----',
+      'Hash: SHA256',
+      '',
+      'short message',
+      'next line',
+      '한국어/조선말',
+      '-----BEGIN PGP SIGNATURE-----',
+      'Version: GnuPG v2.0.19 (GNU/Linux)',
+      '',
+      'iJwEAQEIAAYFAlKcju8ACgkQ4IT3RGwgLJci6gP/dCmIraUa6AGpJxzGfK+jYpjl',
+      'G0KunFyGmyPxeJVnPi2bBp3EPIbiayQ71CcDe9DKpF046tora07AA9eo+/YbvJ9P',
+      'PWeScw3oj/ejsmKQoDBGzyDMFUphevnhgc5lENjovJqmiu6FKjNmADTxcZ/qFTOq',
+      '44EWTgdW3IqXFkNpKjeJARwEAQEIAAYFAlKcju8ACgkQ2/Ij6HBTTfQi6gf9HxhE',
+      'ycLDhQ8iyC090TaYwsDytScU2vOMiI5rJCy2tfDV0pfn+UekYGMnKxZTpwtmno1j',
+      'mVOlieENszz5IcehS5TYwk4lmRFjoba+Z8qwPEYhYxP29GMbmRIsH811sQHFTigo',
+      'LI2t4pSSSUpAiXd9y6KtvkWcGGn8IfkNHCEHPh1ov28QvH0+ByIiKYK5N6ZB8hEo',
+      '0uMYhKQPVJdPCvMkAxQCRPw84EvmxuJ0HMCeSB9tHQXpz5un2m8D9yiGpBQPnqlW',
+      'vCCq7fgaUz8ksxvQ9bSwv0iIIbbBdTP7Z8y2c1Oof6NDl7irH+QCeNT7IIGs8Smn',
+      'BEzv/FqkQAhjy3Krxg==',
+      '=3Pkl',
+      '-----END PGP SIGNATURE-----'].join('\n');
+
+    var plaintext = 'short message\nnext line\n한국어/조선말';
+    var csMsg = openpgp.cleartext.readArmored(msg_armor);
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2);
+    var pubKey3 = openpgp.key.readArmored(pub_key_arm3);
+
+    var keyids = csMsg.getSigningKeyIds();
+
+    var verified = pubKey2.getPublicKeyPacket(keyids) !== null && pubKey3.getPublicKeyPacket(keyids) !== null;
+
+    var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg);
+
+    verified = verified && cleartextSig.text == plaintext;
+
+    verified = verified && cleartextSig.signatures[0].status && cleartextSig.signatures[1].status;
+
+    return new unit.result("Verify cleartext signed message with two signatures with openpgp.verifyClearSignedMessage", verified);
+  }, function() {
+
+    var plaintext = 'short message\nnext line\n한국어/조선말';
+    var pubKey = openpgp.key.readArmored(pub_key_arm2);
+    var privKey = openpgp.key.readArmored(priv_key_arm2);
+    privKey.getSigningKeyPacket().decrypt('hello world');
+
+    var clearSignedArmor = openpgp.signClearMessage([privKey], plaintext);
+
+    var csMsg = openpgp.cleartext.readArmored(clearSignedArmor);
+    
+    var cleartextSig = openpgp.verifyClearSignedMessage([pubKey], csMsg);
+
+    var verified = cleartextSig.text == plaintext;
+
+    verified = verified && cleartextSig.signatures[0].status;
+
+    return new unit.result("Sign text with openpgp.signClearMessage and verify with openpgp.verifyClearSignedMessage leads to same cleartext and valid signatures", verified);
   }];
 
   var results = [];
