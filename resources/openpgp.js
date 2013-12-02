@@ -3834,6 +3834,8 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
 			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
 			return false;
 		}
+		util.print_debug('hash: '+util.hexdump(hash));
+		util.print_debug('calc_hash: '+util.hexdump(calc_hash));
 		return hash == calc_hash;
 		
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
@@ -7420,7 +7422,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131130";
+	this.versionstring ="OpenPGP.js v.1.20131201";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -7576,7 +7578,7 @@ function openpgp_encoding_deArmor(text) {
 		// splittedtext[indexBase] - the message and checksum
 
 		// chunks separated by blank lines
-		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
 		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
 		var data = { 
@@ -7597,8 +7599,8 @@ function openpgp_encoding_deArmor(text) {
 		// splittedtext[indexBase] - the message
 		// splittedtext[indexBase + 1] - the signature and checksum
 
-		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
-		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1]);
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
+		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1].replace(/^- /mg, ''));
 		var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
 		var result = {
@@ -11713,7 +11715,7 @@ function openpgp_packet_signature() {
 					input.charCodeAt(mypos++))* 1000);
 			
 			// storing data appended to data which gets verified
-			this.signatureData = input.substring(position, mypos);
+			this.signatureData = input.substring(sigpos, mypos);
 			
 			// Eight-octet Key ID of signer.
 			this.keyId = input.substring(mypos, mypos +8);
@@ -12122,6 +12124,11 @@ function openpgp_packet_signature() {
 				.replace(/\r\n/g,"\n")
 				.replace(/[\t ]+\n/g, "\n")
 				.replace(/\n/g,"\r\n");
+			if (openpgp.config.debug) {
+				util.print_debug('tohash: '+util.hexdump(tohash));
+				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
+				util.print_debug('trailer: '+util.hexdump(trailer));
+			}
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
@@ -13368,6 +13375,8 @@ var Util = function() {
 		return checksum.s;
 	};
 	
+	this.printLevel = { error: 1, warning: 2, info: 3, debug: 4 };
+
 	/**
 	 * Helper function to print a debug message. Debug 
 	 * messages are only printed if
@@ -13381,8 +13390,7 @@ var Util = function() {
 	 */
 	this.print_debug = function(str) {
 		if (openpgp.config.debug) {
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -13401,8 +13409,7 @@ var Util = function() {
 	this.print_debug_hexstr_dump = function(str,strToHex) {
 		if (openpgp.config.debug) {
 			str = str + this.hexstrdump(strToHex);
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -13416,8 +13423,7 @@ var Util = function() {
 	 * containing the HTML encoded error message
 	 */
 	this.print_error = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>ERROR:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.error, str);
 	};
 	
 	/**
@@ -13430,15 +13436,39 @@ var Util = function() {
 	 * containing the HTML encoded info message
 	 */
 	this.print_info = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>INFO:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.info, str);
 	};
 	
 	this.print_warning = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>WARNING:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.warning, str);
 	};
 	
+	this.print_output = function(level, str) {
+		var html;
+		str = openpgp_encoding_html_encode(str).replace(/\n/g,"<br>");
+		if (level == this.printLevel.debug) {
+			html = "<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str+"</p></tt>";
+		} else {
+			var color, heading;
+			switch (level) {
+				case this.printLevel.error:
+					color = "FF8888";
+					heading = "ERROR";
+					break;
+				case this.printLevel.warning:
+					color = 'FFAA88';
+					heading = "WARNING";
+					break;
+				case this.printLevel.info:
+					color = '88FF88';
+					heading = 'INFO';
+					break;
+			}
+			html = "<p style=\"font-size: 80%; background-color: #"+color+"; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>"+heading+":</b></span>"+str+"</p>";
+		}
+		showMessages(html);
+	}
+
 	this.getLeftNBits = function (string, bitcount) {
 		var rest = bitcount % 8;
 		if (rest == 0)

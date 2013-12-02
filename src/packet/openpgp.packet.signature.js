@@ -101,7 +101,7 @@ function openpgp_packet_signature() {
 					input.charCodeAt(mypos++))* 1000);
 			
 			// storing data appended to data which gets verified
-			this.signatureData = input.substring(position, mypos);
+			this.signatureData = input.substring(sigpos, mypos);
 			
 			// Eight-octet Key ID of signer.
 			this.keyId = input.substring(mypos, mypos +8);
@@ -510,6 +510,11 @@ function openpgp_packet_signature() {
 				.replace(/\r\n/g,"\n")
 				.replace(/[\t ]+\n/g, "\n")
 				.replace(/\n/g,"\r\n");
+			if (openpgp.config.debug) {
+				util.print_debug('tohash: '+util.hexdump(tohash));
+				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
+				util.print_debug('trailer: '+util.hexdump(trailer));
+			}
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);

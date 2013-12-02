@@ -45,7 +45,7 @@ function openpgp_encoding_deArmor(text) {
 		// splittedtext[indexBase] - the message and checksum
 
 		// chunks separated by blank lines
-		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
 		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
 		var data = { 
@@ -66,8 +66,8 @@ function openpgp_encoding_deArmor(text) {
 		// splittedtext[indexBase] - the message
 		// splittedtext[indexBase + 1] - the signature and checksum
 
-		var msg = openpgp_encoding_split_headers(splittedtext[indexBase]);
-		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1]);
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
+		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1].replace(/^- /mg, ''));
 		var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
 		var result = {

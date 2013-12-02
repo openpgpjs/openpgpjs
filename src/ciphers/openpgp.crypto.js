@@ -185,6 +185,8 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
 			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
 			return false;
 		}
+		util.print_debug('hash: '+util.hexdump(hash));
+		util.print_debug('calc_hash: '+util.hexdump(calc_hash));
 		return hash == calc_hash;
 		
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
