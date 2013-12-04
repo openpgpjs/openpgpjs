@@ -131,7 +131,8 @@ define(function(require) {
      */
     PGP.prototype.decrypt = function(ciphertext, senderKey, callback) {
         var privateKey = openpgp.keyring.exportPrivateKey(0).obj;
-        senderKey = openpgp.read_publicKey(senderKey)[0];
+        var publicKey = openpgp.read_publicKey(senderKey)[0];
+        var pubKeys = [{armored: senderKey, obj: publicKey, keyId: publicKey.getKeyId()}];
 
         var msg = openpgp.read_message(ciphertext)[0];
         var keymat = null;
@@ -159,7 +160,7 @@ define(function(require) {
             }
         }
         if (keymat !== null) {
-            var decrypted = msg.decryptAndVerifySignature(keymat, sesskey, senderKey);
+            var decrypted = msg.decryptAndVerifySignature(keymat, sesskey, pubKeys);
             callback(null, decrypted);
 
         } else {
