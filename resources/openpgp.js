@@ -7422,7 +7422,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131201";
+	this.versionstring ="OpenPGP.js v.1.20131202";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -7570,6 +7570,8 @@ function openpgp_encoding_deArmor(text) {
 	// so we know the index of the data we are interested in.
 	var indexBase = 1;
 
+	var result, checksum;
+
 	if (text.search(reSplit) != splittedtext[0].length) {
 		indexBase = 0;
 	}
@@ -7581,20 +7583,11 @@ function openpgp_encoding_deArmor(text) {
 		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
 		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
-		var data = { 
+		result = { 
 			openpgp: openpgp_encoding_base64_decode(msg_sum.body),
 			type: type
 		};
-
-		if (verifyCheckSum(data.openpgp, msg_sum.checksum)) {
-			return data;
-		} else {
-			util.print_error("Ascii armor integrity check on message failed: '"
-				+ msg_sum.checksum
-				+ "' should be '"
-				+ getCheckSum(data) + "'");
-			return false;
-		}
+		checksum = msg_sum.checksum;
 	} else {
 		// splittedtext[indexBase] - the message
 		// splittedtext[indexBase + 1] - the signature and checksum
@@ -7603,18 +7596,23 @@ function openpgp_encoding_deArmor(text) {
 		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1].replace(/^- /mg, ''));
 		var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
-		var result = {
+		result = {
 			text:  msg.body.replace(/\n$/, "").replace(/\n/g, "\r\n"),
 			openpgp: openpgp_encoding_base64_decode(sig_sum.body),
 			type: type
 		};
 
-		if (verifyCheckSum(result.openpgp, sig_sum.checksum)) {
-			return result;
-		} else {
-			util.print_error("Ascii armor integrity check on message failed");
-			return false;
-		}
+		checksum = sig_sum.checksum;
+	}
+
+	if (!verifyCheckSum(result.openpgp, checksum)) {
+		util.print_error("Ascii armor integrity check on message failed: '"
+			+ checksum
+			+ "' should be '"
+			+ getCheckSum(result) + "'");
+		return false;
+	} else {
+		return result;
 	}
 }
 
