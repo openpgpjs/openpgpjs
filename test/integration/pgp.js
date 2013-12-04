@@ -160,7 +160,7 @@ define(function(require) {
         }
         if (keymat !== null) {
             var decrypted = msg.decryptAndVerifySignature(keymat, sesskey, senderKey);
-            callback(null, decrypted.text);
+            callback(null, decrypted);
 
         } else {
             callback({

@@ -4,7 +4,7 @@
 require.config({
     baseUrl: './',
     paths: {
-        openpgp: '../../resources/openpgp.min'
+        openpgp: '../../resources/openpgp'
     },
     shim: {
         openpgp: {
