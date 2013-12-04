@@ -27,6 +27,7 @@ var enums = require('./enums.js');
 var config = require('./config');
 var message = require('./message.js');
 var cleartext = require('./cleartext.js');
+var key = require('./key.js');
 
 
 /**
@@ -119,90 +120,23 @@ function verifyClearSignedMessage(publicKeys, message) {
 }
 
 /**
- * TODO: update this doc
- * generates a new key pair for openpgp. Beta stage. Currently only 
- * supports RSA keys, and no subkeys.
- * @param {Integer} keyType to indicate what type of key to make. 
- * RSA is 1. Follows algorithms outlined in OpenPGP.
- * @param {Integer} numBits number of bits for the key creation. (should 
- * be 1024+, generally)
- * @param {String} userId assumes already in form of "User Name 
- * <username@email.com>"
- * @param {String} passphrase The passphrase used to encrypt the resulting private key
- * @return {Object} {privateKey: [openpgp_msg_privatekey], 
- * privateKeyArmored: [string], publicKeyArmored: [string]}
+ * Generates a new OpenPGP key pair. Currently only supports RSA keys.
+ * Primary and subkey will be of same type.
+ * @param {Integer} keyType    to indicate what type of key to make. 
+ *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
+ * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String}  passphrase The passphrase used to encrypt the resulting private key
+ * @return {Object} {key: [Key], privateKeyArmored: [String], publicKeyArmored: [String]}
  */
 function generateKeyPair(keyType, numBits, userId, passphrase) {
-  var packetlist = new packet.list();
-
-  var secretKeyPacket = new packet.secret_key();
-  secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
-  secretKeyPacket.generate(numBits);
-  secretKeyPacket.encrypt(passphrase);
-
-  var userIdPacket = new packet.userid();
-  userIdPacket.read(userId);
-
-  var dataToSign = {};
-  dataToSign.userid = userIdPacket;
-  dataToSign.key = secretKeyPacket;
-  var signaturePacket = new packet.signature();
-  signaturePacket.signatureType = enums.signature.cert_generic;
-  signaturePacket.publicKeyAlgorithm = keyType;
-  //TODO we should load preferred hash from config, or as input to this function
-  signaturePacket.hashAlgorithm = enums.hash.sha256;
-  signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-  signaturePacket.sign(secretKeyPacket, dataToSign);
-
-  var secretSubkeyPacket = new packet.secret_subkey();
-  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
-  secretSubkeyPacket.generate(numBits);
-  secretSubkeyPacket.encrypt(passphrase);
-
-  dataToSign = {};
-  dataToSign.key = secretKeyPacket;
-  dataToSign.bind = secretSubkeyPacket;
-  var subkeySignaturePacket = new packet.signature();
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = keyType;
-  //TODO we should load preferred hash from config, or as input to this function
-  subkeySignaturePacket.hashAlgorithm = enums.hash.sha256;
-  subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
-
-  packetlist.push(secretKeyPacket);
-  packetlist.push(userIdPacket);
-  packetlist.push(signaturePacket);
-  packetlist.push(secretSubkeyPacket);
-  packetlist.push(subkeySignaturePacket);
-
-  var armored = armor.encode(enums.armor.private_key, packetlist.write());
-  return armored;
+  var result = {};
+  var newKey = key.generate(keyType, numBits, userId, passphrase);
+  result.key = newKey;
+  result.privateKeyArmored = newKey.armor();
+  result.publicKeyArmored = newKey.toPublic().armor();
+  return result;
 }
-
-/**
- * creates a binary string representation a signed message.
- * The message will be signed with the specified private key.
- * @param {Object} privatekey {obj: [openpgp_msg_privatekey]}
- * - the private key to be used to sign the message 
- * @param {String} messagetext message text to sign
- * @return {Object} {Object: text [String]}, openpgp: {String} a binary
- *  string representation of the message which can be OpenPGP
- *   armored(openpgp) and a text representation of the message (text). 
- * This can be directly used to OpenPGP armor the message
- */
-/*
-function write_signed_message(privatekey, messagetext) {
-  var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g, "\n").replace(/\n/,
-    "\r\n"), privatekey);
-  var result = {
-    text: messagetext.replace(/\r\n/g, "\n").replace(/\n/, "\r\n"),
-    openpgp: sig.openpgp,
-    hash: sig.hash
-  };
-  return armor.encode(2, result, null, null);
-}
-*/
 
 exports.encryptMessage = encryptMessage;
 exports.signAndEncryptMessage = signAndEncryptMessage;

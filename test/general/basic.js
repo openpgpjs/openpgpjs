@@ -11,7 +11,7 @@ unit.register("Key generation/encryption/decryption", function() {
         + 'userid: ' + userid + '\n'
         + 'message: ' + message;
 
-    var privKey = openpgp.key.readArmored(key);
+    var privKey = openpgp.key.readArmored(key.privateKeyArmored);
 
     var encrypted = openpgp.encryptMessage([privKey], message);
 

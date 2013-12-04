@@ -142,21 +142,26 @@ Key.prototype.isPrivate = function() {
  * @return {key} public key
  */
 Key.prototype.toPublic = function() {
+  var packetlist = new packet.list();
   for (var i = 0; i < this.packets.length; i++) {
-    if (this.packets[i].tag == enums.packet.secret_key) {
-      var bytes = this.packets[i].writePublicKey();
-      var pubKeyPacket = new packet.public_key();
-      pubKeyPacket.read(bytes);
-      this.packets[i] = pubKeyPacket;
-    }
-    if (this.packets[i].tag == enums.packet.secret_subkey) {
-      var bytes = this.packets[i].writePublicKey();
-      var pubSubkeyPacket = new packet.public_subkey();
-      pubSubkeyPacket.read(bytes);
-      this.packets[i] = pubSubkeyPacket;
+    switch (this.packets[i].tag) {
+      case enums.packet.secret_key:
+        var bytes = this.packets[i].writePublicKey();
+        var pubKeyPacket = new packet.public_key();
+        pubKeyPacket.read(bytes);
+        packetlist.push(pubKeyPacket);
+        break;
+      case enums.packet.secret_subkey:
+        var bytes = this.packets[i].writePublicKey();
+        var pubSubkeyPacket = new packet.public_subkey();
+        pubSubkeyPacket.read(bytes);
+        packetlist.push(pubSubkeyPacket);
+        break;
+      default:
+        packetlist.push(this.packets[i]);
     }
   }
-  return this;
+  return new Key(packetlist);
 };
 
 /**
@@ -275,21 +280,79 @@ Key.prototype.revoke = function() {
 
 };
 
-
 /**
- * reads an OpenPGP armored text and returns a key object
+ * Reads an OpenPGP armored text and returns a key object
  * @param {String} armoredText text to be parsed
  * @return {key} new key object
  */
 function readArmored(armoredText) {
-  //TODO how do we want to handle bad text? Exception throwing
-  //TODO don't accept non-key armored texts
-  var input = armor.decode(armoredText).data;
+  var input = armor.decode(armoredText);
+  if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
+    throw new Error('Armored text not of type key');
+  }
   var packetlist = new packet.list();
-  packetlist.read(input);
+  packetlist.read(input.data);
   var newKey = new Key(packetlist);
   return newKey;
 }
 
+/**
+ * Generates a new OpenPGP key. Currently only supports RSA keys.
+ * Primary and subkey will be of same type.
+ * @param {Integer} keyType    to indicate what type of key to make. 
+ *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {Integer} numBits    number of bits for the key creation.
+ * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String}  passphrase The passphrase used to encrypt the resulting private key
+ * @return {Key}
+ */
+function generate(keyType, numBits, userId, passphrase) {
+  var packetlist = new packet.list();
+
+  var secretKeyPacket = new packet.secret_key();
+  secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
+  secretKeyPacket.generate(numBits);
+  secretKeyPacket.encrypt(passphrase);
+
+  var userIdPacket = new packet.userid();
+  userIdPacket.read(userId);
+
+  var dataToSign = {};
+  dataToSign.userid = userIdPacket;
+  dataToSign.key = secretKeyPacket;
+  var signaturePacket = new packet.signature();
+  signaturePacket.signatureType = enums.signature.cert_generic;
+  signaturePacket.publicKeyAlgorithm = keyType;
+  //TODO we should load preferred hash from config, or as input to this function
+  signaturePacket.hashAlgorithm = enums.hash.sha256;
+  signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+  signaturePacket.sign(secretKeyPacket, dataToSign);
+
+  var secretSubkeyPacket = new packet.secret_subkey();
+  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
+  secretSubkeyPacket.generate(numBits);
+  secretSubkeyPacket.encrypt(passphrase);
+
+  dataToSign = {};
+  dataToSign.key = secretKeyPacket;
+  dataToSign.bind = secretSubkeyPacket;
+  var subkeySignaturePacket = new packet.signature();
+  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = keyType;
+  //TODO we should load preferred hash from config, or as input to this function
+  subkeySignaturePacket.hashAlgorithm = enums.hash.sha256;
+  subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+
+  packetlist.push(secretKeyPacket);
+  packetlist.push(userIdPacket);
+  packetlist.push(signaturePacket);
+  packetlist.push(secretSubkeyPacket);
+  packetlist.push(subkeySignaturePacket);
+
+  return new Key(packetlist);
+}
+
 exports.Key = Key;
 exports.readArmored = readArmored;
+exports.generate = generate;
