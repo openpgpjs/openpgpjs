@@ -4,10 +4,14 @@
 require.config({
     baseUrl: './',
     paths: {
-        openpgp: '../../resources/openpgp'
+        openpgp: '../../resources/openpgp',
+        jquery: '../../resources/jquery.min'
     },
     shim: {
         openpgp: {
+            exports: 'window'
+        },
+        jquery: {
             exports: 'window'
         }
     }

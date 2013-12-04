@@ -1,11 +1,15 @@
 /**
  * High level crypto api that handles all calls to OpenPGP.js
  */
+function showMessages(str) {
+};
+
 define(function(require) {
     'use strict';
 
     var openpgp = require('openpgp').openpgp,
-        util = require('openpgp').util;
+        util = require('openpgp').util,
+        jquery = require('jquery').jquery;
 
     var PGP = function() {
         openpgp.init();
