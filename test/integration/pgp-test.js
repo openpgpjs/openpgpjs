@@ -157,34 +157,62 @@ define(function(require) {
 			});
 
 			describe('Verify clearsign from gpg', function() {
-                var clearsign_msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
-                    'Hash: SHA1\r\n' +
-                    '\r\n' +
-                    'This is a test message.\r\n' +
-                    '\r\n' +
-                    'This paragraph is separated form the next by a line of dashes.\r\n' +
-                    '\r\n' +
-                    '- --------------------------------------------------------------------------\r\n' +
-                    '\r\n' +
-                    'The next paragraph has a number of blank lines between this one and it.\r\n' +
-                    '\r\n' +
-                    '\r\n' +
-                    '\r\n' +
-                    '\r\n' +
-                    '\r\n' +
-                    '\r\n' +
-                    'This is the last paragraph.\r\n' +
-                    '\r\n' +
-                    '- --\r\n' +
-                    '\r\n' +
-                    'Joe Test\r\n' +
-                    '-----BEGIN PGP SIGNATURE-----\r\n' +
-                    'Version: GnuPG v1.4.15 (GNU/Linux)\r\n' +
-                    '\r\n' +
-                    'iFwEAQECAAYFAlKf5LcACgkQ9vYOm0LN/0ybVwH8CItdDh4kWKVcyUx3Q3hWZnWd\r\n' +
-                    'zP9CUbIa9uToIPABjV3GOTDM3ZgiP0/SE6Al5vG8hlx+/u2piVojoLovk/4LnA==\r\n' +
-                    '=i6ew\r\n' +
-                    '-----END PGP SIGNATURE-----\r\n';
+			    var v3_clearsign_msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
+				'Hash: SHA1\r\n' +
+				'\r\n' +
+				'This is a test message.\r\n' +
+				'\r\n' +
+				'This paragraph is separated form the next by a line of dashes.\r\n' +
+				'\r\n' +
+				'- --------------------------------------------------------------------------\r\n' +
+				'\r\n' +
+				'The next paragraph has a number of blank lines between this one and it.\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'This is the last paragraph.\r\n' +
+				'\r\n' +
+				'- --\r\n' +
+				'\r\n' +
+				'Joe Test\r\n' +
+				'-----BEGIN PGP SIGNATURE-----\r\n' +
+				'Version: GnuPG v1.4.15 (GNU/Linux)\r\n' +
+				'\r\n' +
+				'iQBVAwUBUp/7GPb2DptCzf9MAQKviQH6A6Pqa63kxWI+atMiaSXz5uifgsBoiOof\r\n' +
+				'E3/oVTIGyGTgB7KnwZiFkDMFrUNREJVSQGt6+4nxje8gARcuYpMnWw==\r\n' +
+				'=lOCC\r\n' +
+				'-----END PGP SIGNATURE-----\r\n';
+			    var v4_clearsign_msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
+				'Hash: SHA1\r\n' +
+				'\r\n' +
+				'This is a test message.\r\n' +
+				'\r\n' +
+				'This paragraph is separated form the next by a line of dashes.\r\n' +
+				'\r\n' +
+				'- --------------------------------------------------------------------------\r\n' +
+				'\r\n' +
+				'The next paragraph has a number of blank lines between this one and it.\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'\r\n' +
+				'This is the last paragraph.\r\n' +
+				'\r\n' +
+				'- --\r\n' +
+				'\r\n' +
+				'Joe Test\r\n' +
+				'-----BEGIN PGP SIGNATURE-----\r\n' +
+				'Version: GnuPG v1.4.15 (GNU/Linux)\r\n' +
+				'\r\n' +
+				'iFwEAQECAAYFAlKf5LcACgkQ9vYOm0LN/0ybVwH8CItdDh4kWKVcyUx3Q3hWZnWd\r\n' +
+				'zP9CUbIa9uToIPABjV3GOTDM3ZgiP0/SE6Al5vG8hlx+/u2piVojoLovk/4LnA==\r\n' +
+				'=i6ew\r\n' +
+				'-----END PGP SIGNATURE-----\r\n';
 
 			    beforeEach(function(done) {
 				pgp.importKeys({
@@ -197,9 +225,9 @@ define(function(require) {
 				});
 			    });
 
-			    describe('Verify', function() {
+			    describe('Verify V3 signature', function() {
 				it('should work', function(done) {
-				    pgp.verify(clearsign_msg, pubkey, function(err, pt) {
+				    pgp.verify(v3_clearsign_msg, pubkey, function(err, pt) {
 					expect(err).to.not.exist;
 					expect(pt).to.be.true;
 					done();
@@ -207,7 +235,15 @@ define(function(require) {
 				});
 			    });
 
+			    describe('Verify V4 signature', function() {
+				it('should work', function(done) {
+				    pgp.verify(v4_clearsign_msg, pubkey, function(err, pt) {
+					expect(err).to.not.exist;
+					expect(pt).to.be.true;
+					done();
+				    });
+				});
+			    });
 			});
-
 		    });
 		});
