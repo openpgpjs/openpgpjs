@@ -300,7 +300,7 @@ function _openpgp () {
 	 */
 	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
 		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
+		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r/g,'').replace(/\n/g,"\r\n"));
 		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		for (var i = 0; i < publickeys.length; i++) {
 			var onepasssignature = new openpgp_packet_onepasssignature();
@@ -357,7 +357,7 @@ function _openpgp () {
 	 */
 	function write_encrypted_message(publickeys, messagetext) {
 		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
+		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r/g,'').replace(/\n/g,"\r\n"));
 		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		result = literal;
 		
@@ -400,9 +400,10 @@ function _openpgp () {
 	 * This can be directly used to OpenPGP armor the message
 	 */
 	function write_signed_message(privatekey, messagetext) {
-		var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
-		var result = {text: messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), openpgp: sig.openpgp, hash: sig.hash};
-		return openpgp_encoding_armor(2,result, null, null)
+		var canonicalMsgText = messagetext.replace(/\r/g,'').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
+		var sig = new openpgp_packet_signature().write_message_signature(1, canonicalMsgText, privatekey);
+		var result = {text: canonicalMsgText, openpgp: sig.openpgp, hash: sig.hash};
+		return openpgp_encoding_armor(2, result, null, null)
 	}
 	
 	/**
