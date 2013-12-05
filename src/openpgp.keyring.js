@@ -27,8 +27,12 @@ function openpgp_keyring() {
 	 * This method is called by openpgp.init().
 	 */
 	function init() {
-		var sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
-		var spublickeys = JSON.parse(window.localStorage.getItem("publickeys"));
+		var sprivatekeys = null;
+		var spublickeys = null;
+		if (openpgp.config.has_localStorage) {
+			sprivatekeys = JSON.parse(window.localStorage.getItem("privatekeys"));
+			spublickeys = JSON.parse(window.localStorage.getItem("publickeys"));			
+		}
 		if (sprivatekeys == null || sprivatekeys.length == 0) {
 			sprivatekeys = new Array();
 		}
@@ -68,17 +72,19 @@ function openpgp_keyring() {
 	 * Saves the current state of the keyring to HTML5 local storage.
 	 * The privateKeys array and publicKeys array gets Stringified using JSON
 	 */
-	function store() { 
-		var priv = new Array();
-		for (var i = 0; i < this.privateKeys.length; i++) {
-			priv[i] = this.privateKeys[i].armored;
+	function store() {
+		if (openpgp.config.has_localStorage) {
+			var priv = new Array();
+			for (var i = 0; i < this.privateKeys.length; i++) {
+				priv[i] = this.privateKeys[i].armored;
+			}
+			var pub = new Array();
+			for (var i = 0; i < this.publicKeys.length; i++) {
+				pub[i] = this.publicKeys[i].armored;
+			}
+			window.localStorage.setItem("privatekeys",JSON.stringify(priv));
+			window.localStorage.setItem("publickeys",JSON.stringify(pub));
 		}
-		var pub = new Array();
-		for (var i = 0; i < this.publicKeys.length; i++) {
-			pub[i] = this.publicKeys[i].armored;
-		}
-		window.localStorage.setItem("privatekeys",JSON.stringify(priv));
-		window.localStorage.setItem("publickeys",JSON.stringify(pub));
 	}
 	this.store = store;
 	/**
