@@ -248,7 +248,7 @@ function openpgp_packet_signature() {
 		result2 += openpgp_crypto_signData(hash_algo,privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm,
 				publickey.MPIs,
 				privatekey.privateKeyPacket.secMPIs,
-				data+result+trailer);
+				hashData+result+trailer);
 		return {openpgp: (openpgp_packet.write_packet_header(2, (result+result2).length)+result + result2), 
 				hash: util.get_hashAlgorithmString(hash_algo)};
 	}
