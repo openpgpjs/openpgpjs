@@ -506,18 +506,18 @@ function openpgp_packet_signature() {
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
-			var tohash = data.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
+			var canonicalMsgText = data.replace(/\r/g,'').replace(/\n/g,"\r\n");
 			if (openpgp.config.debug) {
-				util.print_debug('tohash: '+util.hexdump(tohash));
+				util.print_debug('canonicalMsgText: '+util.hexdump(canonicalMsgText));
 				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
 				util.print_debug('trailer: '+util.hexdump(trailer));
 			}
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
+					this.MPIs, key.obj.publicKeyPacket.MPIs, canonicalMsgText+this.signatureData+trailer);
 			} else if (this.version == 3) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData);
+					this.MPIs, key.obj.publicKeyPacket.MPIs, canonicalMsgText+this.signatureData);
 			} else {
 				this.verified = false;
 			}
