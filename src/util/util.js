@@ -267,7 +267,7 @@ var Util = function() {
 			}
 			html = "<p style=\"font-size: 80%; background-color: #"+color+"; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>"+heading+":</b></span>"+str+"</p>";
 		}
-		if (showMessages) {
+		if (typeof showMessages === "function") {
 			// only call function if defined
 			showMessages(html);
 		}
