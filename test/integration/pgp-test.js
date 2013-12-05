@@ -118,7 +118,11 @@ define(function(require) {
 			});
 
 			describe('Encryption', function() {
-			    var message = 'Hello, World!',
+			    var message = 'asdfs\n\nThursday, Nov 21, 2013 7:38 PM asdf@example.com wrote:\n' +
+					                '> asdf\n' +
+					                '> \n' +
+					                '> Thursday, Nov 21, 2013 7:32 PM asdf@example.com wrote:\n' +
+					                '> > secret 3',
 				ciphertext;
 
 			    beforeEach(function(done) {
