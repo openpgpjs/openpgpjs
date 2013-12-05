@@ -49,7 +49,7 @@ var Util = function() {
 	    var c=0;
 	    var h;
 	    while(c<e){
-	        h=str[c++].charCodeAt().toString(16);
+	        h=str.charCodeAt(c++).toString(16);
 	        while(h.length<2) h="0"+h;
 	        r.push(""+h);
 	    }
@@ -176,6 +176,8 @@ var Util = function() {
 		return checksum.s;
 	};
 	
+	this.printLevel = { error: 1, warning: 2, info: 3, debug: 4 };
+
 	/**
 	 * Helper function to print a debug message. Debug 
 	 * messages are only printed if
@@ -189,8 +191,7 @@ var Util = function() {
 	 */
 	this.print_debug = function(str) {
 		if (openpgp.config.debug) {
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -209,8 +210,7 @@ var Util = function() {
 	this.print_debug_hexstr_dump = function(str,strToHex) {
 		if (openpgp.config.debug) {
 			str = str + this.hexstrdump(strToHex);
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -224,8 +224,7 @@ var Util = function() {
 	 * containing the HTML encoded error message
 	 */
 	this.print_error = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>ERROR:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.error, str);
 	};
 	
 	/**
@@ -238,15 +237,39 @@ var Util = function() {
 	 * containing the HTML encoded info message
 	 */
 	this.print_info = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>INFO:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.info, str);
 	};
 	
 	this.print_warning = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>WARNING:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.warning, str);
 	};
 	
+	this.print_output = function(level, str) {
+		var html;
+		str = openpgp_encoding_html_encode(str).replace(/\n/g,"<br>");
+		if (level == this.printLevel.debug) {
+			html = "<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str+"</p></tt>";
+		} else {
+			var color, heading;
+			switch (level) {
+				case this.printLevel.error:
+					color = "FF8888";
+					heading = "ERROR";
+					break;
+				case this.printLevel.warning:
+					color = 'FFAA88';
+					heading = "WARNING";
+					break;
+				case this.printLevel.info:
+					color = '88FF88';
+					heading = 'INFO';
+					break;
+			}
+			html = "<p style=\"font-size: 80%; background-color: #"+color+"; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>"+heading+":</b></span>"+str+"</p>";
+		}
+		showMessages(html);
+	}
+
 	this.getLeftNBits = function (string, bitcount) {
 		var rest = bitcount % 8;
 		if (rest == 0)

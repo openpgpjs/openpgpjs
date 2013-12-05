@@ -200,595 +200,6 @@ function Elgamal() {
  * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
  * All Rights Reserved.
  *
- * Modified by Recurity Labs GmbH 
- * 
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- *
- * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
- * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
- * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
- * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * In addition, the following condition applies:
- *
- * All redistributions must retain an intact copy of this copyright notice
- * and disclaimer.
- */
-
-// Basic JavaScript BN library - subset useful for RSA encryption.
-
-// Bits per digit
-var dbits;
-
-// JavaScript engine analysis
-var canary = 0xdeadbeefcafe;
-var j_lm = ((canary&0xffffff)==0xefcafe);
-
-// (public) Constructor
-function BigInteger(a,b,c) {
-  if(a != null)
-    if("number" == typeof a) this.fromNumber(a,b,c);
-    else if(b == null && "string" != typeof a) this.fromString(a,256);
-    else this.fromString(a,b);
-}
-
-// return new, unset BigInteger
-function nbi() { return new BigInteger(null); }
-
-// am: Compute w_j += (x*this_i), propagate carries,
-// c is initial carry, returns final carry.
-// c < 3*dvalue, x < 2*dvalue, this_i < dvalue
-// We need to select the fastest one that works in this environment.
-
-// am1: use a single mult and divide to get the high bits,
-// max digit bits should be 26 because
-// max internal value = 2*dvalue^2-2*dvalue (< 2^53)
-function am1(i,x,w,j,c,n) {
-  while(--n >= 0) {
-    var v = x*this[i++]+w[j]+c;
-    c = Math.floor(v/0x4000000);
-    w[j++] = v&0x3ffffff;
-  }
-  return c;
-}
-// am2 avoids a big mult-and-extract completely.
-// Max digit bits should be <= 30 because we do bitwise ops
-// on values up to 2*hdvalue^2-hdvalue-1 (< 2^31)
-function am2(i,x,w,j,c,n) {
-  var xl = x&0x7fff, xh = x>>15;
-  while(--n >= 0) {
-    var l = this[i]&0x7fff;
-    var h = this[i++]>>15;
-    var m = xh*l+h*xl;
-    l = xl*l+((m&0x7fff)<<15)+w[j]+(c&0x3fffffff);
-    c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
-    w[j++] = l&0x3fffffff;
-  }
-  return c;
-}
-// Alternately, set max digit bits to 28 since some
-// browsers slow down when dealing with 32-bit numbers.
-function am3(i,x,w,j,c,n) {
-  var xl = x&0x3fff, xh = x>>14;
-  while(--n >= 0) {
-    var l = this[i]&0x3fff;
-    var h = this[i++]>>14;
-    var m = xh*l+h*xl;
-    l = xl*l+((m&0x3fff)<<14)+w[j]+c;
-    c = (l>>28)+(m>>14)+xh*h;
-    w[j++] = l&0xfffffff;
-  }
-  return c;
-}
-if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
-  BigInteger.prototype.am = am2;
-  dbits = 30;
-}
-else if(j_lm && (navigator.appName != "Netscape")) {
-  BigInteger.prototype.am = am1;
-  dbits = 26;
-}
-else { // Mozilla/Netscape seems to prefer am3
-  BigInteger.prototype.am = am3;
-  dbits = 28;
-}
-
-BigInteger.prototype.DB = dbits;
-BigInteger.prototype.DM = ((1<<dbits)-1);
-BigInteger.prototype.DV = (1<<dbits);
-
-var BI_FP = 52;
-BigInteger.prototype.FV = Math.pow(2,BI_FP);
-BigInteger.prototype.F1 = BI_FP-dbits;
-BigInteger.prototype.F2 = 2*dbits-BI_FP;
-
-// Digit conversions
-var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz";
-var BI_RC = new Array();
-var rr,vv;
-rr = "0".charCodeAt(0);
-for(vv = 0; vv <= 9; ++vv) BI_RC[rr++] = vv;
-rr = "a".charCodeAt(0);
-for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
-rr = "A".charCodeAt(0);
-for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
-
-function int2char(n) { return BI_RM.charAt(n); }
-function intAt(s,i) {
-  var c = BI_RC[s.charCodeAt(i)];
-  return (c==null)?-1:c;
-}
-
-// (protected) copy this to r
-function bnpCopyTo(r) {
-  for(var i = this.t-1; i >= 0; --i) r[i] = this[i];
-  r.t = this.t;
-  r.s = this.s;
-}
-
-// (protected) set from integer value x, -DV <= x < DV
-function bnpFromInt(x) {
-  this.t = 1;
-  this.s = (x<0)?-1:0;
-  if(x > 0) this[0] = x;
-  else if(x < -1) this[0] = x+DV;
-  else this.t = 0;
-}
-
-// return bigint initialized to value
-function nbv(i) { var r = nbi(); r.fromInt(i); return r; }
-
-// (protected) set from string and radix
-function bnpFromString(s,b) {
-  var k;
-  if(b == 16) k = 4;
-  else if(b == 8) k = 3;
-  else if(b == 256) k = 8; // byte array
-  else if(b == 2) k = 1;
-  else if(b == 32) k = 5;
-  else if(b == 4) k = 2;
-  else { this.fromRadix(s,b); return; }
-  this.t = 0;
-  this.s = 0;
-  var i = s.length, mi = false, sh = 0;
-  while(--i >= 0) {
-    var x = (k==8)?s[i]&0xff:intAt(s,i);
-    if(x < 0) {
-      if(s.charAt(i) == "-") mi = true;
-      continue;
-    }
-    mi = false;
-    if(sh == 0)
-      this[this.t++] = x;
-    else if(sh+k > this.DB) {
-      this[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
-      this[this.t++] = (x>>(this.DB-sh));
-    }
-    else
-      this[this.t-1] |= x<<sh;
-    sh += k;
-    if(sh >= this.DB) sh -= this.DB;
-  }
-  if(k == 8 && (s[0]&0x80) != 0) {
-    this.s = -1;
-    if(sh > 0) this[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
-  }
-  this.clamp();
-  if(mi) BigInteger.ZERO.subTo(this,this);
-}
-
-// (protected) clamp off excess high words
-function bnpClamp() {
-  var c = this.s&this.DM;
-  while(this.t > 0 && this[this.t-1] == c) --this.t;
-}
-
-// (public) return string representation in given radix
-function bnToString(b) {
-  if(this.s < 0) return "-"+this.negate().toString(b);
-  var k;
-  if(b == 16) k = 4;
-  else if(b == 8) k = 3;
-  else if(b == 2) k = 1;
-  else if(b == 32) k = 5;
-  else if(b == 4) k = 2;
-  else return this.toRadix(b);
-  var km = (1<<k)-1, d, m = false, r = "", i = this.t;
-  var p = this.DB-(i*this.DB)%k;
-  if(i-- > 0) {
-    if(p < this.DB && (d = this[i]>>p) > 0) { m = true; r = int2char(d); }
-    while(i >= 0) {
-      if(p < k) {
-        d = (this[i]&((1<<p)-1))<<(k-p);
-        d |= this[--i]>>(p+=this.DB-k);
-      }
-      else {
-        d = (this[i]>>(p-=k))&km;
-        if(p <= 0) { p += this.DB; --i; }
-      }
-      if(d > 0) m = true;
-      if(m) r += int2char(d);
-    }
-  }
-  return m?r:"0";
-}
-
-// (public) -this
-function bnNegate() { var r = nbi(); BigInteger.ZERO.subTo(this,r); return r; }
-
-// (public) |this|
-function bnAbs() { return (this.s<0)?this.negate():this; }
-
-// (public) return + if this > a, - if this < a, 0 if equal
-function bnCompareTo(a) {
-  var r = this.s-a.s;
-  if(r != 0) return r;
-  var i = this.t;
-  r = i-a.t;
-  if(r != 0) return r;
-  while(--i >= 0) if((r=this[i]-a[i]) != 0) return r;
-  return 0;
-}
-
-// returns bit length of the integer x
-function nbits(x) {
-  var r = 1, t;
-  if((t=x>>>16) != 0) { x = t; r += 16; }
-  if((t=x>>8) != 0) { x = t; r += 8; }
-  if((t=x>>4) != 0) { x = t; r += 4; }
-  if((t=x>>2) != 0) { x = t; r += 2; }
-  if((t=x>>1) != 0) { x = t; r += 1; }
-  return r;
-}
-
-// (public) return the number of bits in "this"
-function bnBitLength() {
-  if(this.t <= 0) return 0;
-  return this.DB*(this.t-1)+nbits(this[this.t-1]^(this.s&this.DM));
-}
-
-// (protected) r = this << n*DB
-function bnpDLShiftTo(n,r) {
-  var i;
-  for(i = this.t-1; i >= 0; --i) r[i+n] = this[i];
-  for(i = n-1; i >= 0; --i) r[i] = 0;
-  r.t = this.t+n;
-  r.s = this.s;
-}
-
-// (protected) r = this >> n*DB
-function bnpDRShiftTo(n,r) {
-  for(var i = n; i < this.t; ++i) r[i-n] = this[i];
-  r.t = Math.max(this.t-n,0);
-  r.s = this.s;
-}
-
-// (protected) r = this << n
-function bnpLShiftTo(n,r) {
-  var bs = n%this.DB;
-  var cbs = this.DB-bs;
-  var bm = (1<<cbs)-1;
-  var ds = Math.floor(n/this.DB), c = (this.s<<bs)&this.DM, i;
-  for(i = this.t-1; i >= 0; --i) {
-    r[i+ds+1] = (this[i]>>cbs)|c;
-    c = (this[i]&bm)<<bs;
-  }
-  for(i = ds-1; i >= 0; --i) r[i] = 0;
-  r[ds] = c;
-  r.t = this.t+ds+1;
-  r.s = this.s;
-  r.clamp();
-}
-
-// (protected) r = this >> n
-function bnpRShiftTo(n,r) {
-  r.s = this.s;
-  var ds = Math.floor(n/this.DB);
-  if(ds >= this.t) { r.t = 0; return; }
-  var bs = n%this.DB;
-  var cbs = this.DB-bs;
-  var bm = (1<<bs)-1;
-  r[0] = this[ds]>>bs;
-  for(var i = ds+1; i < this.t; ++i) {
-    r[i-ds-1] |= (this[i]&bm)<<cbs;
-    r[i-ds] = this[i]>>bs;
-  }
-  if(bs > 0) r[this.t-ds-1] |= (this.s&bm)<<cbs;
-  r.t = this.t-ds;
-  r.clamp();
-}
-
-// (protected) r = this - a
-function bnpSubTo(a,r) {
-  var i = 0, c = 0, m = Math.min(a.t,this.t);
-  while(i < m) {
-    c += this[i]-a[i];
-    r[i++] = c&this.DM;
-    c >>= this.DB;
-  }
-  if(a.t < this.t) {
-    c -= a.s;
-    while(i < this.t) {
-      c += this[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c += this.s;
-  }
-  else {
-    c += this.s;
-    while(i < a.t) {
-      c -= a[i];
-      r[i++] = c&this.DM;
-      c >>= this.DB;
-    }
-    c -= a.s;
-  }
-  r.s = (c<0)?-1:0;
-  if(c < -1) r[i++] = this.DV+c;
-  else if(c > 0) r[i++] = c;
-  r.t = i;
-  r.clamp();
-}
-
-// (protected) r = this * a, r != this,a (HAC 14.12)
-// "this" should be the larger one if appropriate.
-function bnpMultiplyTo(a,r) {
-  var x = this.abs(), y = a.abs();
-  var i = x.t;
-  r.t = i+y.t;
-  while(--i >= 0) r[i] = 0;
-  for(i = 0; i < y.t; ++i) r[i+x.t] = x.am(0,y[i],r,i,0,x.t);
-  r.s = 0;
-  r.clamp();
-  if(this.s != a.s) BigInteger.ZERO.subTo(r,r);
-}
-
-// (protected) r = this^2, r != this (HAC 14.16)
-function bnpSquareTo(r) {
-  var x = this.abs();
-  var i = r.t = 2*x.t;
-  while(--i >= 0) r[i] = 0;
-  for(i = 0; i < x.t-1; ++i) {
-    var c = x.am(i,x[i],r,2*i,0,1);
-    if((r[i+x.t]+=x.am(i+1,2*x[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
-      r[i+x.t] -= x.DV;
-      r[i+x.t+1] = 1;
-    }
-  }
-  if(r.t > 0) r[r.t-1] += x.am(i,x[i],r,2*i,0,1);
-  r.s = 0;
-  r.clamp();
-}
-
-// (protected) divide this by m, quotient and remainder to q, r (HAC 14.20)
-// r != q, this != m.  q or r may be null.
-function bnpDivRemTo(m,q,r) {
-  var pm = m.abs();
-  if(pm.t <= 0) return;
-  var pt = this.abs();
-  if(pt.t < pm.t) {
-    if(q != null) q.fromInt(0);
-    if(r != null) this.copyTo(r);
-    return;
-  }
-  if(r == null) r = nbi();
-  var y = nbi(), ts = this.s, ms = m.s;
-  var nsh = this.DB-nbits(pm[pm.t-1]);	// normalize modulus
-  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
-  else { pm.copyTo(y); pt.copyTo(r); }
-  var ys = y.t;
-  var y0 = y[ys-1];
-  if(y0 == 0) return;
-  var yt = y0*(1<<this.F1)+((ys>1)?y[ys-2]>>this.F2:0);
-  var d1 = this.FV/yt, d2 = (1<<this.F1)/yt, e = 1<<this.F2;
-  var i = r.t, j = i-ys, t = (q==null)?nbi():q;
-  y.dlShiftTo(j,t);
-  if(r.compareTo(t) >= 0) {
-    r[r.t++] = 1;
-    r.subTo(t,r);
-  }
-  BigInteger.ONE.dlShiftTo(ys,t);
-  t.subTo(y,y);	// "negative" y so we can replace sub with am later
-  while(y.t < ys) y[y.t++] = 0;
-  while(--j >= 0) {
-    // Estimate quotient digit
-    var qd = (r[--i]==y0)?this.DM:Math.floor(r[i]*d1+(r[i-1]+e)*d2);
-    if((r[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
-      y.dlShiftTo(j,t);
-      r.subTo(t,r);
-      while(r[i] < --qd) r.subTo(t,r);
-    }
-  }
-  if(q != null) {
-    r.drShiftTo(ys,q);
-    if(ts != ms) BigInteger.ZERO.subTo(q,q);
-  }
-  r.t = ys;
-  r.clamp();
-  if(nsh > 0) r.rShiftTo(nsh,r);	// Denormalize remainder
-  if(ts < 0) BigInteger.ZERO.subTo(r,r);
-}
-
-// (public) this mod a
-function bnMod(a) {
-  var r = nbi();
-  this.abs().divRemTo(a,null,r);
-  if(this.s < 0 && r.compareTo(BigInteger.ZERO) > 0) a.subTo(r,r);
-  return r;
-}
-
-// Modular reduction using "classic" algorithm
-function Classic(m) { this.m = m; }
-function cConvert(x) {
-  if(x.s < 0 || x.compareTo(this.m) >= 0) return x.mod(this.m);
-  else return x;
-}
-function cRevert(x) { return x; }
-function cReduce(x) { x.divRemTo(this.m,null,x); }
-function cMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
-function cSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
-
-Classic.prototype.convert = cConvert;
-Classic.prototype.revert = cRevert;
-Classic.prototype.reduce = cReduce;
-Classic.prototype.mulTo = cMulTo;
-Classic.prototype.sqrTo = cSqrTo;
-
-// (protected) return "-1/this % 2^DB"; useful for Mont. reduction
-// justification:
-//         xy == 1 (mod m)
-//         xy =  1+km
-//   xy(2-xy) = (1+km)(1-km)
-// x[y(2-xy)] = 1-k^2m^2
-// x[y(2-xy)] == 1 (mod m^2)
-// if y is 1/x mod m, then y(2-xy) is 1/x mod m^2
-// should reduce x and y(2-xy) by m^2 at each step to keep size bounded.
-// JS multiply "overflows" differently from C/C++, so care is needed here.
-function bnpInvDigit() {
-  if(this.t < 1) return 0;
-  var x = this[0];
-  if((x&1) == 0) return 0;
-  var y = x&3;		// y == 1/x mod 2^2
-  y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
-  y = (y*(2-(x&0xff)*y))&0xff;	// y == 1/x mod 2^8
-  y = (y*(2-(((x&0xffff)*y)&0xffff)))&0xffff;	// y == 1/x mod 2^16
-  // last step - calculate inverse mod DV directly;
-  // assumes 16 < DB <= 32 and assumes ability to handle 48-bit ints
-  y = (y*(2-x*y%this.DV))%this.DV;		// y == 1/x mod 2^dbits
-  // we really want the negative inverse, and -DV < y < DV
-  return (y>0)?this.DV-y:-y;
-}
-
-// Montgomery reduction
-function Montgomery(m) {
-  this.m = m;
-  this.mp = m.invDigit();
-  this.mpl = this.mp&0x7fff;
-  this.mph = this.mp>>15;
-  this.um = (1<<(m.DB-15))-1;
-  this.mt2 = 2*m.t;
-}
-
-// xR mod m
-function montConvert(x) {
-  var r = nbi();
-  x.abs().dlShiftTo(this.m.t,r);
-  r.divRemTo(this.m,null,r);
-  if(x.s < 0 && r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r,r);
-  return r;
-}
-
-// x/R mod m
-function montRevert(x) {
-  var r = nbi();
-  x.copyTo(r);
-  this.reduce(r);
-  return r;
-}
-
-// x = x/R mod m (HAC 14.32)
-function montReduce(x) {
-  while(x.t <= this.mt2)	// pad x so am has enough room later
-    x[x.t++] = 0;
-  for(var i = 0; i < this.m.t; ++i) {
-    // faster way of calculating u0 = x[i]*mp mod DV
-    var j = x[i]&0x7fff;
-    var u0 = (j*this.mpl+(((j*this.mph+(x[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
-    // use am to combine the multiply-shift-add into one call
-    j = i+this.m.t;
-    x[j] += this.m.am(0,u0,x,i,0,this.m.t);
-    // propagate carry
-    while(x[j] >= x.DV) { x[j] -= x.DV; x[++j]++; }
-  }
-  x.clamp();
-  x.drShiftTo(this.m.t,x);
-  if(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
-}
-
-// r = "x^2/R mod m"; x != r
-function montSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
-
-// r = "xy/R mod m"; x,y != r
-function montMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
-
-Montgomery.prototype.convert = montConvert;
-Montgomery.prototype.revert = montRevert;
-Montgomery.prototype.reduce = montReduce;
-Montgomery.prototype.mulTo = montMulTo;
-Montgomery.prototype.sqrTo = montSqrTo;
-
-// (protected) true iff this is even
-function bnpIsEven() { return ((this.t>0)?(this[0]&1):this.s) == 0; }
-
-// (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
-function bnpExp(e,z) {
-  if(e > 0xffffffff || e < 1) return BigInteger.ONE;
-  var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e)-1;
-  g.copyTo(r);
-  while(--i >= 0) {
-    z.sqrTo(r,r2);
-    if((e&(1<<i)) > 0) z.mulTo(r2,g,r);
-    else { var t = r; r = r2; r2 = t; }
-  }
-  return z.revert(r);
-}
-
-// (public) this^e % m, 0 <= e < 2^32
-function bnModPowInt(e,m) {
-  var z;
-  if(e < 256 || m.isEven()) z = new Classic(m); else z = new Montgomery(m);
-  return this.exp(e,z);
-}
-
-// protected
-BigInteger.prototype.copyTo = bnpCopyTo;
-BigInteger.prototype.fromInt = bnpFromInt;
-BigInteger.prototype.fromString = bnpFromString;
-BigInteger.prototype.clamp = bnpClamp;
-BigInteger.prototype.dlShiftTo = bnpDLShiftTo;
-BigInteger.prototype.drShiftTo = bnpDRShiftTo;
-BigInteger.prototype.lShiftTo = bnpLShiftTo;
-BigInteger.prototype.rShiftTo = bnpRShiftTo;
-BigInteger.prototype.subTo = bnpSubTo;
-BigInteger.prototype.multiplyTo = bnpMultiplyTo;
-BigInteger.prototype.squareTo = bnpSquareTo;
-BigInteger.prototype.divRemTo = bnpDivRemTo;
-BigInteger.prototype.invDigit = bnpInvDigit;
-BigInteger.prototype.isEven = bnpIsEven;
-BigInteger.prototype.exp = bnpExp;
-
-// public
-BigInteger.prototype.toString = bnToString;
-BigInteger.prototype.negate = bnNegate;
-BigInteger.prototype.abs = bnAbs;
-BigInteger.prototype.compareTo = bnCompareTo;
-BigInteger.prototype.bitLength = bnBitLength;
-BigInteger.prototype.mod = bnMod;
-BigInteger.prototype.modPowInt = bnModPowInt;
-
-// "constants"
-BigInteger.ZERO = nbv(0);
-BigInteger.ONE = nbv(1);
-
-/*
- * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
- * All Rights Reserved.
- *
  * Modified by Recurity Labs GmbH
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -1505,6 +916,595 @@ BigInteger.prototype.toMPI = bnToMPI;
 
 // JSBN-specific extension
 BigInteger.prototype.square = bnSquare;
+/*
+ * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
+ * All Rights Reserved.
+ *
+ * Modified by Recurity Labs GmbH 
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
+ * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
+ * RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER OR NOT ADVISED OF
+ * THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF LIABILITY, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * In addition, the following condition applies:
+ *
+ * All redistributions must retain an intact copy of this copyright notice
+ * and disclaimer.
+ */
+
+// Basic JavaScript BN library - subset useful for RSA encryption.
+
+// Bits per digit
+var dbits;
+
+// JavaScript engine analysis
+var canary = 0xdeadbeefcafe;
+var j_lm = ((canary&0xffffff)==0xefcafe);
+
+// (public) Constructor
+function BigInteger(a,b,c) {
+  if(a != null)
+    if("number" == typeof a) this.fromNumber(a,b,c);
+    else if(b == null && "string" != typeof a) this.fromString(a,256);
+    else this.fromString(a,b);
+}
+
+// return new, unset BigInteger
+function nbi() { return new BigInteger(null); }
+
+// am: Compute w_j += (x*this_i), propagate carries,
+// c is initial carry, returns final carry.
+// c < 3*dvalue, x < 2*dvalue, this_i < dvalue
+// We need to select the fastest one that works in this environment.
+
+// am1: use a single mult and divide to get the high bits,
+// max digit bits should be 26 because
+// max internal value = 2*dvalue^2-2*dvalue (< 2^53)
+function am1(i,x,w,j,c,n) {
+  while(--n >= 0) {
+    var v = x*this[i++]+w[j]+c;
+    c = Math.floor(v/0x4000000);
+    w[j++] = v&0x3ffffff;
+  }
+  return c;
+}
+// am2 avoids a big mult-and-extract completely.
+// Max digit bits should be <= 30 because we do bitwise ops
+// on values up to 2*hdvalue^2-hdvalue-1 (< 2^31)
+function am2(i,x,w,j,c,n) {
+  var xl = x&0x7fff, xh = x>>15;
+  while(--n >= 0) {
+    var l = this[i]&0x7fff;
+    var h = this[i++]>>15;
+    var m = xh*l+h*xl;
+    l = xl*l+((m&0x7fff)<<15)+w[j]+(c&0x3fffffff);
+    c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
+    w[j++] = l&0x3fffffff;
+  }
+  return c;
+}
+// Alternately, set max digit bits to 28 since some
+// browsers slow down when dealing with 32-bit numbers.
+function am3(i,x,w,j,c,n) {
+  var xl = x&0x3fff, xh = x>>14;
+  while(--n >= 0) {
+    var l = this[i]&0x3fff;
+    var h = this[i++]>>14;
+    var m = xh*l+h*xl;
+    l = xl*l+((m&0x3fff)<<14)+w[j]+c;
+    c = (l>>28)+(m>>14)+xh*h;
+    w[j++] = l&0xfffffff;
+  }
+  return c;
+}
+if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
+  BigInteger.prototype.am = am2;
+  dbits = 30;
+}
+else if(j_lm && (navigator.appName != "Netscape")) {
+  BigInteger.prototype.am = am1;
+  dbits = 26;
+}
+else { // Mozilla/Netscape seems to prefer am3
+  BigInteger.prototype.am = am3;
+  dbits = 28;
+}
+
+BigInteger.prototype.DB = dbits;
+BigInteger.prototype.DM = ((1<<dbits)-1);
+BigInteger.prototype.DV = (1<<dbits);
+
+var BI_FP = 52;
+BigInteger.prototype.FV = Math.pow(2,BI_FP);
+BigInteger.prototype.F1 = BI_FP-dbits;
+BigInteger.prototype.F2 = 2*dbits-BI_FP;
+
+// Digit conversions
+var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz";
+var BI_RC = new Array();
+var rr,vv;
+rr = "0".charCodeAt(0);
+for(vv = 0; vv <= 9; ++vv) BI_RC[rr++] = vv;
+rr = "a".charCodeAt(0);
+for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+rr = "A".charCodeAt(0);
+for(vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+
+function int2char(n) { return BI_RM.charAt(n); }
+function intAt(s,i) {
+  var c = BI_RC[s.charCodeAt(i)];
+  return (c==null)?-1:c;
+}
+
+// (protected) copy this to r
+function bnpCopyTo(r) {
+  for(var i = this.t-1; i >= 0; --i) r[i] = this[i];
+  r.t = this.t;
+  r.s = this.s;
+}
+
+// (protected) set from integer value x, -DV <= x < DV
+function bnpFromInt(x) {
+  this.t = 1;
+  this.s = (x<0)?-1:0;
+  if(x > 0) this[0] = x;
+  else if(x < -1) this[0] = x+DV;
+  else this.t = 0;
+}
+
+// return bigint initialized to value
+function nbv(i) { var r = nbi(); r.fromInt(i); return r; }
+
+// (protected) set from string and radix
+function bnpFromString(s,b) {
+  var k;
+  if(b == 16) k = 4;
+  else if(b == 8) k = 3;
+  else if(b == 256) k = 8; // byte array
+  else if(b == 2) k = 1;
+  else if(b == 32) k = 5;
+  else if(b == 4) k = 2;
+  else { this.fromRadix(s,b); return; }
+  this.t = 0;
+  this.s = 0;
+  var i = s.length, mi = false, sh = 0;
+  while(--i >= 0) {
+    var x = (k==8)?s[i]&0xff:intAt(s,i);
+    if(x < 0) {
+      if(s.charAt(i) == "-") mi = true;
+      continue;
+    }
+    mi = false;
+    if(sh == 0)
+      this[this.t++] = x;
+    else if(sh+k > this.DB) {
+      this[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
+      this[this.t++] = (x>>(this.DB-sh));
+    }
+    else
+      this[this.t-1] |= x<<sh;
+    sh += k;
+    if(sh >= this.DB) sh -= this.DB;
+  }
+  if(k == 8 && (s[0]&0x80) != 0) {
+    this.s = -1;
+    if(sh > 0) this[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
+  }
+  this.clamp();
+  if(mi) BigInteger.ZERO.subTo(this,this);
+}
+
+// (protected) clamp off excess high words
+function bnpClamp() {
+  var c = this.s&this.DM;
+  while(this.t > 0 && this[this.t-1] == c) --this.t;
+}
+
+// (public) return string representation in given radix
+function bnToString(b) {
+  if(this.s < 0) return "-"+this.negate().toString(b);
+  var k;
+  if(b == 16) k = 4;
+  else if(b == 8) k = 3;
+  else if(b == 2) k = 1;
+  else if(b == 32) k = 5;
+  else if(b == 4) k = 2;
+  else return this.toRadix(b);
+  var km = (1<<k)-1, d, m = false, r = "", i = this.t;
+  var p = this.DB-(i*this.DB)%k;
+  if(i-- > 0) {
+    if(p < this.DB && (d = this[i]>>p) > 0) { m = true; r = int2char(d); }
+    while(i >= 0) {
+      if(p < k) {
+        d = (this[i]&((1<<p)-1))<<(k-p);
+        d |= this[--i]>>(p+=this.DB-k);
+      }
+      else {
+        d = (this[i]>>(p-=k))&km;
+        if(p <= 0) { p += this.DB; --i; }
+      }
+      if(d > 0) m = true;
+      if(m) r += int2char(d);
+    }
+  }
+  return m?r:"0";
+}
+
+// (public) -this
+function bnNegate() { var r = nbi(); BigInteger.ZERO.subTo(this,r); return r; }
+
+// (public) |this|
+function bnAbs() { return (this.s<0)?this.negate():this; }
+
+// (public) return + if this > a, - if this < a, 0 if equal
+function bnCompareTo(a) {
+  var r = this.s-a.s;
+  if(r != 0) return r;
+  var i = this.t;
+  r = i-a.t;
+  if(r != 0) return r;
+  while(--i >= 0) if((r=this[i]-a[i]) != 0) return r;
+  return 0;
+}
+
+// returns bit length of the integer x
+function nbits(x) {
+  var r = 1, t;
+  if((t=x>>>16) != 0) { x = t; r += 16; }
+  if((t=x>>8) != 0) { x = t; r += 8; }
+  if((t=x>>4) != 0) { x = t; r += 4; }
+  if((t=x>>2) != 0) { x = t; r += 2; }
+  if((t=x>>1) != 0) { x = t; r += 1; }
+  return r;
+}
+
+// (public) return the number of bits in "this"
+function bnBitLength() {
+  if(this.t <= 0) return 0;
+  return this.DB*(this.t-1)+nbits(this[this.t-1]^(this.s&this.DM));
+}
+
+// (protected) r = this << n*DB
+function bnpDLShiftTo(n,r) {
+  var i;
+  for(i = this.t-1; i >= 0; --i) r[i+n] = this[i];
+  for(i = n-1; i >= 0; --i) r[i] = 0;
+  r.t = this.t+n;
+  r.s = this.s;
+}
+
+// (protected) r = this >> n*DB
+function bnpDRShiftTo(n,r) {
+  for(var i = n; i < this.t; ++i) r[i-n] = this[i];
+  r.t = Math.max(this.t-n,0);
+  r.s = this.s;
+}
+
+// (protected) r = this << n
+function bnpLShiftTo(n,r) {
+  var bs = n%this.DB;
+  var cbs = this.DB-bs;
+  var bm = (1<<cbs)-1;
+  var ds = Math.floor(n/this.DB), c = (this.s<<bs)&this.DM, i;
+  for(i = this.t-1; i >= 0; --i) {
+    r[i+ds+1] = (this[i]>>cbs)|c;
+    c = (this[i]&bm)<<bs;
+  }
+  for(i = ds-1; i >= 0; --i) r[i] = 0;
+  r[ds] = c;
+  r.t = this.t+ds+1;
+  r.s = this.s;
+  r.clamp();
+}
+
+// (protected) r = this >> n
+function bnpRShiftTo(n,r) {
+  r.s = this.s;
+  var ds = Math.floor(n/this.DB);
+  if(ds >= this.t) { r.t = 0; return; }
+  var bs = n%this.DB;
+  var cbs = this.DB-bs;
+  var bm = (1<<bs)-1;
+  r[0] = this[ds]>>bs;
+  for(var i = ds+1; i < this.t; ++i) {
+    r[i-ds-1] |= (this[i]&bm)<<cbs;
+    r[i-ds] = this[i]>>bs;
+  }
+  if(bs > 0) r[this.t-ds-1] |= (this.s&bm)<<cbs;
+  r.t = this.t-ds;
+  r.clamp();
+}
+
+// (protected) r = this - a
+function bnpSubTo(a,r) {
+  var i = 0, c = 0, m = Math.min(a.t,this.t);
+  while(i < m) {
+    c += this[i]-a[i];
+    r[i++] = c&this.DM;
+    c >>= this.DB;
+  }
+  if(a.t < this.t) {
+    c -= a.s;
+    while(i < this.t) {
+      c += this[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c += this.s;
+  }
+  else {
+    c += this.s;
+    while(i < a.t) {
+      c -= a[i];
+      r[i++] = c&this.DM;
+      c >>= this.DB;
+    }
+    c -= a.s;
+  }
+  r.s = (c<0)?-1:0;
+  if(c < -1) r[i++] = this.DV+c;
+  else if(c > 0) r[i++] = c;
+  r.t = i;
+  r.clamp();
+}
+
+// (protected) r = this * a, r != this,a (HAC 14.12)
+// "this" should be the larger one if appropriate.
+function bnpMultiplyTo(a,r) {
+  var x = this.abs(), y = a.abs();
+  var i = x.t;
+  r.t = i+y.t;
+  while(--i >= 0) r[i] = 0;
+  for(i = 0; i < y.t; ++i) r[i+x.t] = x.am(0,y[i],r,i,0,x.t);
+  r.s = 0;
+  r.clamp();
+  if(this.s != a.s) BigInteger.ZERO.subTo(r,r);
+}
+
+// (protected) r = this^2, r != this (HAC 14.16)
+function bnpSquareTo(r) {
+  var x = this.abs();
+  var i = r.t = 2*x.t;
+  while(--i >= 0) r[i] = 0;
+  for(i = 0; i < x.t-1; ++i) {
+    var c = x.am(i,x[i],r,2*i,0,1);
+    if((r[i+x.t]+=x.am(i+1,2*x[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
+      r[i+x.t] -= x.DV;
+      r[i+x.t+1] = 1;
+    }
+  }
+  if(r.t > 0) r[r.t-1] += x.am(i,x[i],r,2*i,0,1);
+  r.s = 0;
+  r.clamp();
+}
+
+// (protected) divide this by m, quotient and remainder to q, r (HAC 14.20)
+// r != q, this != m.  q or r may be null.
+function bnpDivRemTo(m,q,r) {
+  var pm = m.abs();
+  if(pm.t <= 0) return;
+  var pt = this.abs();
+  if(pt.t < pm.t) {
+    if(q != null) q.fromInt(0);
+    if(r != null) this.copyTo(r);
+    return;
+  }
+  if(r == null) r = nbi();
+  var y = nbi(), ts = this.s, ms = m.s;
+  var nsh = this.DB-nbits(pm[pm.t-1]);	// normalize modulus
+  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
+  else { pm.copyTo(y); pt.copyTo(r); }
+  var ys = y.t;
+  var y0 = y[ys-1];
+  if(y0 == 0) return;
+  var yt = y0*(1<<this.F1)+((ys>1)?y[ys-2]>>this.F2:0);
+  var d1 = this.FV/yt, d2 = (1<<this.F1)/yt, e = 1<<this.F2;
+  var i = r.t, j = i-ys, t = (q==null)?nbi():q;
+  y.dlShiftTo(j,t);
+  if(r.compareTo(t) >= 0) {
+    r[r.t++] = 1;
+    r.subTo(t,r);
+  }
+  BigInteger.ONE.dlShiftTo(ys,t);
+  t.subTo(y,y);	// "negative" y so we can replace sub with am later
+  while(y.t < ys) y[y.t++] = 0;
+  while(--j >= 0) {
+    // Estimate quotient digit
+    var qd = (r[--i]==y0)?this.DM:Math.floor(r[i]*d1+(r[i-1]+e)*d2);
+    if((r[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
+      y.dlShiftTo(j,t);
+      r.subTo(t,r);
+      while(r[i] < --qd) r.subTo(t,r);
+    }
+  }
+  if(q != null) {
+    r.drShiftTo(ys,q);
+    if(ts != ms) BigInteger.ZERO.subTo(q,q);
+  }
+  r.t = ys;
+  r.clamp();
+  if(nsh > 0) r.rShiftTo(nsh,r);	// Denormalize remainder
+  if(ts < 0) BigInteger.ZERO.subTo(r,r);
+}
+
+// (public) this mod a
+function bnMod(a) {
+  var r = nbi();
+  this.abs().divRemTo(a,null,r);
+  if(this.s < 0 && r.compareTo(BigInteger.ZERO) > 0) a.subTo(r,r);
+  return r;
+}
+
+// Modular reduction using "classic" algorithm
+function Classic(m) { this.m = m; }
+function cConvert(x) {
+  if(x.s < 0 || x.compareTo(this.m) >= 0) return x.mod(this.m);
+  else return x;
+}
+function cRevert(x) { return x; }
+function cReduce(x) { x.divRemTo(this.m,null,x); }
+function cMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
+function cSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
+
+Classic.prototype.convert = cConvert;
+Classic.prototype.revert = cRevert;
+Classic.prototype.reduce = cReduce;
+Classic.prototype.mulTo = cMulTo;
+Classic.prototype.sqrTo = cSqrTo;
+
+// (protected) return "-1/this % 2^DB"; useful for Mont. reduction
+// justification:
+//         xy == 1 (mod m)
+//         xy =  1+km
+//   xy(2-xy) = (1+km)(1-km)
+// x[y(2-xy)] = 1-k^2m^2
+// x[y(2-xy)] == 1 (mod m^2)
+// if y is 1/x mod m, then y(2-xy) is 1/x mod m^2
+// should reduce x and y(2-xy) by m^2 at each step to keep size bounded.
+// JS multiply "overflows" differently from C/C++, so care is needed here.
+function bnpInvDigit() {
+  if(this.t < 1) return 0;
+  var x = this[0];
+  if((x&1) == 0) return 0;
+  var y = x&3;		// y == 1/x mod 2^2
+  y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
+  y = (y*(2-(x&0xff)*y))&0xff;	// y == 1/x mod 2^8
+  y = (y*(2-(((x&0xffff)*y)&0xffff)))&0xffff;	// y == 1/x mod 2^16
+  // last step - calculate inverse mod DV directly;
+  // assumes 16 < DB <= 32 and assumes ability to handle 48-bit ints
+  y = (y*(2-x*y%this.DV))%this.DV;		// y == 1/x mod 2^dbits
+  // we really want the negative inverse, and -DV < y < DV
+  return (y>0)?this.DV-y:-y;
+}
+
+// Montgomery reduction
+function Montgomery(m) {
+  this.m = m;
+  this.mp = m.invDigit();
+  this.mpl = this.mp&0x7fff;
+  this.mph = this.mp>>15;
+  this.um = (1<<(m.DB-15))-1;
+  this.mt2 = 2*m.t;
+}
+
+// xR mod m
+function montConvert(x) {
+  var r = nbi();
+  x.abs().dlShiftTo(this.m.t,r);
+  r.divRemTo(this.m,null,r);
+  if(x.s < 0 && r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r,r);
+  return r;
+}
+
+// x/R mod m
+function montRevert(x) {
+  var r = nbi();
+  x.copyTo(r);
+  this.reduce(r);
+  return r;
+}
+
+// x = x/R mod m (HAC 14.32)
+function montReduce(x) {
+  while(x.t <= this.mt2)	// pad x so am has enough room later
+    x[x.t++] = 0;
+  for(var i = 0; i < this.m.t; ++i) {
+    // faster way of calculating u0 = x[i]*mp mod DV
+    var j = x[i]&0x7fff;
+    var u0 = (j*this.mpl+(((j*this.mph+(x[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
+    // use am to combine the multiply-shift-add into one call
+    j = i+this.m.t;
+    x[j] += this.m.am(0,u0,x,i,0,this.m.t);
+    // propagate carry
+    while(x[j] >= x.DV) { x[j] -= x.DV; x[++j]++; }
+  }
+  x.clamp();
+  x.drShiftTo(this.m.t,x);
+  if(x.compareTo(this.m) >= 0) x.subTo(this.m,x);
+}
+
+// r = "x^2/R mod m"; x != r
+function montSqrTo(x,r) { x.squareTo(r); this.reduce(r); }
+
+// r = "xy/R mod m"; x,y != r
+function montMulTo(x,y,r) { x.multiplyTo(y,r); this.reduce(r); }
+
+Montgomery.prototype.convert = montConvert;
+Montgomery.prototype.revert = montRevert;
+Montgomery.prototype.reduce = montReduce;
+Montgomery.prototype.mulTo = montMulTo;
+Montgomery.prototype.sqrTo = montSqrTo;
+
+// (protected) true iff this is even
+function bnpIsEven() { return ((this.t>0)?(this[0]&1):this.s) == 0; }
+
+// (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
+function bnpExp(e,z) {
+  if(e > 0xffffffff || e < 1) return BigInteger.ONE;
+  var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e)-1;
+  g.copyTo(r);
+  while(--i >= 0) {
+    z.sqrTo(r,r2);
+    if((e&(1<<i)) > 0) z.mulTo(r2,g,r);
+    else { var t = r; r = r2; r2 = t; }
+  }
+  return z.revert(r);
+}
+
+// (public) this^e % m, 0 <= e < 2^32
+function bnModPowInt(e,m) {
+  var z;
+  if(e < 256 || m.isEven()) z = new Classic(m); else z = new Montgomery(m);
+  return this.exp(e,z);
+}
+
+// protected
+BigInteger.prototype.copyTo = bnpCopyTo;
+BigInteger.prototype.fromInt = bnpFromInt;
+BigInteger.prototype.fromString = bnpFromString;
+BigInteger.prototype.clamp = bnpClamp;
+BigInteger.prototype.dlShiftTo = bnpDLShiftTo;
+BigInteger.prototype.drShiftTo = bnpDRShiftTo;
+BigInteger.prototype.lShiftTo = bnpLShiftTo;
+BigInteger.prototype.rShiftTo = bnpRShiftTo;
+BigInteger.prototype.subTo = bnpSubTo;
+BigInteger.prototype.multiplyTo = bnpMultiplyTo;
+BigInteger.prototype.squareTo = bnpSquareTo;
+BigInteger.prototype.divRemTo = bnpDivRemTo;
+BigInteger.prototype.invDigit = bnpInvDigit;
+BigInteger.prototype.isEven = bnpIsEven;
+BigInteger.prototype.exp = bnpExp;
+
+// public
+BigInteger.prototype.toString = bnToString;
+BigInteger.prototype.negate = bnNegate;
+BigInteger.prototype.abs = bnAbs;
+BigInteger.prototype.compareTo = bnCompareTo;
+BigInteger.prototype.bitLength = bnBitLength;
+BigInteger.prototype.mod = bnMod;
+BigInteger.prototype.modPowInt = bnModPowInt;
+
+// "constants"
+BigInteger.ZERO = nbv(0);
+BigInteger.ONE = nbv(1);
+
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -3834,6 +3834,8 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
 			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
 			return false;
 		}
+		util.print_debug('hash: '+util.hexdump(hash));
+		util.print_debug('calc_hash: '+util.hexdump(calc_hash));
 		return hash == calc_hash;
 		
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
@@ -4038,7 +4040,6 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 
 //This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
 function openpgp_crypto_testRSA(key){
-	debugger;
     var rsa = new RSA();
 	var mpi = new openpgp_type_mpi();
 	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));
@@ -6485,9 +6486,6 @@ JXG.Util.Unzip = function (barray){
                 X = currentTree[xtreepos];
             }
         }
-        if (debug)
-        	document.write("ret3");
-        return -1;
     };
     
     function DeflateLoop() {
@@ -6929,7 +6927,7 @@ JXG.Util.Unzip.prototype.unzip = function() {
 			CRC = 0xffffffff;
 			SIZE = 0;
 			
-			if (size = 0 && fileOut.charAt(fileout.length-1)=="/"){
+			if (size == 0 && fileOut.charAt(fileout.length-1)=="/"){
 				//skipdir
 				if (debug)
 					alert("skipdir");
@@ -7424,7 +7422,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131009";
+	this.versionstring ="OpenPGP.js v.1.20131204";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage
@@ -7559,77 +7557,107 @@ function r2s(t) {
  * and an attribute "openpgp" containing the bytes.
  */
 function openpgp_encoding_deArmor(text) {
+	var reSplit = /^-----[^-]+-----$\n/m;
+
 	text = text.replace(/\r/g, '');
-	// remove whitespace of blank line to allow later split at \n\n
-	text = text.replace(/\n\s+\n/, '\n\n');
 
 	var type = openpgp_encoding_get_type(text);
 
+	var splittedtext = text.split(reSplit);
+
+	// IE has a bug in split with a re. If the pattern matches the beginning of the
+	// string it doesn't create an empty array element 0. So we need to detect this
+	// so we know the index of the data we are interested in.
+	var indexBase = 1;
+
+	var result, checksum;
+
+	if (text.search(reSplit) != splittedtext[0].length) {
+		indexBase = 0;
+	}
+
 	if (type != 2) {
-		var splittedtext = text.split('-----');
-		// splittedtext[0] - should be the empty string
-		// splittedtext[1] - should be BEGIN...
-		// splittedtext[2] - the message and checksum
-		// splittedtest[3] - should be END...
+		// splittedtext[indexBase] - the message and checksum
 
 		// chunks separated by blank lines
-		var splittedChunks = splittedtext[2]
-			.split('\n\n');
-		var messageAndChecksum = splittedtext[2]
-			.split('\n\n')[1]
-			.split('\n=');
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
+		var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
-		var message = messageAndChecksum[0]
-			.replace(/\n- /g,"\n");
-		// sometimes, there's a blank line between message and checksum
-		var checksum;
-		if(messageAndChecksum.length == 1){
-			// blank line
-			checksum = splittedtext[2]
-				.replace(/[\n=]/g, "");
-		} else {
-			// no blank line
-			checksum = messageAndChecksum[1]
-				.split('\n')[0];
-		}
-
-		var data = { 
-			openpgp: openpgp_encoding_base64_decode(message),
+		result = { 
+			openpgp: openpgp_encoding_base64_decode(msg_sum.body),
 			type: type
 		};
-
-		if (verifyCheckSum(data.openpgp, checksum)) {
-			return data;
-		} else {
-			util.print_error("Ascii armor integrity check on message failed: '"
-				+ checksum
-				+ "' should be '"
-				+ getCheckSum(data)) + "'";
-			return false;
-		}
+		checksum = msg_sum.checksum;
 	} else {
-		var splittedtext = text.split('-----');
+		// splittedtext[indexBase] - the message
+		// splittedtext[indexBase + 1] - the signature and checksum
 
-		var result = {
-			text: splittedtext[2]
-				.replace(/\n- /g,"\n")
-				.split("\n\n")[1],
-			openpgp: openpgp_encoding_base64_decode(splittedtext[4]
-				.split("\n\n")[1]
-				.split("\n=")[0]),
+		var msg = openpgp_encoding_split_headers(splittedtext[indexBase].replace(/^- /mg, ''));
+		var sig = openpgp_encoding_split_headers(splittedtext[indexBase + 1].replace(/^- /mg, ''));
+		var sig_sum = openpgp_encoding_split_checksum(sig.body);
+
+		result = {
+			text:  msg.body.replace(/\n$/, "").replace(/\n/g, "\r\n"),
+			openpgp: openpgp_encoding_base64_decode(sig_sum.body),
 			type: type
 		};
 
-		if (verifyCheckSum(result.openpgp, splittedtext[4]
-			.split("\n\n")[1]
-			.split("\n=")[1]))
-
-				return result;
-		else {
-			util.print_error("Ascii armor integrity check on message failed");
-			return false;
-		}
+		checksum = sig_sum.checksum;
 	}
+
+	if (!verifyCheckSum(result.openpgp, checksum)) {
+		util.print_error("Ascii armor integrity check on message failed: '"
+			+ checksum
+			+ "' should be '"
+			+ getCheckSum(result) + "'");
+		return false;
+	} else {
+		return result;
+	}
+}
+
+/**
+ * Splits a message into two parts, the headers and the body. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error 
+ * or an object with attribute "headers" containing the headers and
+ * and an attribute "body" containing the body.
+ */
+function openpgp_encoding_split_headers(text) {
+	var reEmptyLine = /^[\t ]*\n/m;
+	var headers = "";
+	var body = text;
+
+	var matchResult = reEmptyLine.exec(text);
+
+	if (matchResult != null) {
+		headers = text.slice(0, matchResult.index);
+		body = text.slice(matchResult.index + matchResult[0].length);
+	}
+
+	return { headers: headers, body: body };
+}
+
+/**
+ * Splits a message into two parts, the body and the checksum. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error 
+ * or an object with attribute "body" containing the body
+ * and an attribute "checksum" containing the checksum.
+ */
+function openpgp_encoding_split_checksum(text) {
+	var reChecksumStart = /^=/m;
+	var body = text;
+	var checksum = "";
+
+	var matchResult = reChecksumStart.exec(text);
+
+	if (matchResult != null) {
+		body = text.slice(0, matchResult.index);
+		checksum = text.slice(matchResult.index + 1);
+	}
+
+	return { body: body, checksum: checksum };
 }
 
 /**
@@ -7644,44 +7672,46 @@ function openpgp_encoding_deArmor(text) {
  *         null = unknown
  */
 function openpgp_encoding_get_type(text) {
-	var splittedtext = text.split('-----');
+	var reHeader = /^-----([^-]+)-----$\n/m;
+
+	var header = text.match(reHeader);
 	// BEGIN PGP MESSAGE, PART X/Y
 	// Used for multi-part messages, where the armor is split amongst Y
 	// parts, and this is the Xth part out of Y.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
 		return 0;
 	} else
 		// BEGIN PGP MESSAGE, PART X
 		// Used for multi-part messages, where this is the Xth part of an
 		// unspecified number of parts. Requires the MESSAGE-ID Armor
 		// Header to be used.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
 		return 1;
 
 	} else
-		// BEGIN PGP SIGNATURE
+		// BEGIN PGP SIGNED MESSAGE
 		// Used for detached signatures, OpenPGP/MIME signatures, and
 		// cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
 		// for detached signatures.
-	if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
+	if (header[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
 		return 2;
 
 	} else
   	    // BEGIN PGP MESSAGE
 	    // Used for signed, encrypted, or compressed files.
-	if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
+	if (header[1].match(/BEGIN PGP MESSAGE/)) {
 		return 3;
 
 	} else
 		// BEGIN PGP PUBLIC KEY BLOCK
 		// Used for armoring public keys.
-	if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
+	if (header[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
 		return 4;
 
 	} else
 		// BEGIN PGP PRIVATE KEY BLOCK
 		// Used for armoring private keys.
-	if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
+	if (header[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
 		return 5;
 	}
 }
@@ -8034,14 +8064,14 @@ function _openpgp () {
 		while (mypos != input.length) {
 			var first_packet = openpgp_packet.read_packet(input, mypos, l);
 			// public key parser
-			if (input[mypos].charCodeAt() == 0x99 || first_packet.tagType == 6) {
+			if (input.charCodeAt(mypos) == 0x99 || first_packet.tagType == 6) {
 				publicKeys[publicKeyCount] = new openpgp_msg_publickey();				
 				publicKeys[publicKeyCount].header = input.substring(mypos,mypos+3);
-				if (input[mypos].charCodeAt() == 0x99) {
+				if (input.charCodeAt(mypos) == 0x99) {
 					// parse the length and read a tag6 packet
 					mypos++;
-					var l = (input[mypos++].charCodeAt() << 8)
-							| input[mypos++].charCodeAt();
+					var l = (input.charCodeAt(mypos++) << 8)
+							| input.charCodeAt(mypos++);
 					publicKeys[publicKeyCount].publicKeyPacket = new openpgp_packet_keymaterial();
 					publicKeys[publicKeyCount].publicKeyPacket.header = publicKeys[publicKeyCount].header;
 					publicKeys[publicKeyCount].publicKeyPacket.read_tag6(input, mypos, l);
@@ -8104,7 +8134,7 @@ function _openpgp () {
 	function read_message(armoredText) {
 		var dearmored;
 		try{
-    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
+    		dearmored = openpgp_encoding_deArmor(armoredText);
 		}
 		catch(e){
     		util.print_error('no message found!');
@@ -8782,7 +8812,7 @@ function openpgp_msg_message() {
 	function verifySignature(pubkey) {
 		var result = false;
 		if (this.signature.tagType == 2) {
-		    if(!pubkey || pubkey.length == 0){
+		    if (!pubkey || pubkey.length == 0) {
 			    var pubkey;
 			    if (this.signature.version == 4) {
 				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
@@ -8793,14 +8823,14 @@ function openpgp_msg_message() {
 				    return false;
 			    }
 			}
-			if (pubkey.length == 0)
+			if (pubkey.length == 0) {
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
-			else {
+			} else {
 				for (var i = 0 ; i < pubkey.length; i++) {
-					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
-					if (this.signature.verify(tohash, pubkey[i])) {
+					if (this.signature.verify(this.text, pubkey[i])) {
 						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
 						result = true;
+						break;
 					} else {
 						util.print_error("Signature verification failed: Bad Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
 					}
@@ -9049,9 +9079,6 @@ function openpgp_msg_privatekey() {
  * @classdesc Decoded public key object for internal openpgp.js use
  */
 function openpgp_msg_publickey() {
-	this.data;
-	this.position;
-	this.len;
 	this.tostring = "OPENPGP PUBLIC KEY\n";
 	this.bindingSignature = null;
 	this.publicKeyPacket = null;
@@ -9609,7 +9636,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 		this.packetLength = len;
 		// - A one-octet version number. The only currently defined value is
 		// 1.
-		this.version = input[position].charCodeAt();
+		this.version = input.charCodeAt(position);
 		if (this.version != 1) {
 			util
 					.print_error('openpgp.packet.encryptedintegrityprotecteddata.js\nunknown encrypted integrity protected data packet version: '
@@ -9767,11 +9794,11 @@ function openpgp_packet_encryptedsessionkey() {
 			return null;
 		}
 
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		this.keyId = new openpgp_type_keyid();
 		this.keyId.read_packet(input, mypos);
 		mypos += 8;
-		this.publicKeyAlgorithmUsed = input[mypos++].charCodeAt();
+		this.publicKeyAlgorithmUsed = input.charCodeAt(mypos++);
 
 		switch (this.publicKeyAlgorithmUsed) {
 		case 1:
@@ -10047,7 +10074,7 @@ function _openpgp_packet() {
 		// some sanity checks
 		if (input == null || input.length <= position
 				|| input.substring(position).length < 2
-				|| (input[position].charCodeAt() & 0x80) == 0) {
+				|| (input.charCodeAt(position) & 0x80) == 0) {
 			util
 					.print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
 			return null;
@@ -10057,18 +10084,18 @@ function _openpgp_packet() {
 		var format = -1;
 
 		format = 0; // 0 = old format; 1 = new format
-		if ((input[mypos].charCodeAt() & 0x40) != 0) {
+		if ((input.charCodeAt(mypos) & 0x40) != 0) {
 			format = 1;
 		}
 
 		var packet_length_type;
 		if (format) {
 			// new format header
-			tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
+			tag = input.charCodeAt(mypos) & 0x3F; // bit 5-0
 		} else {
 			// old format header
-			tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
-			packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
+			tag = (input.charCodeAt(mypos) & 0x3F) >> 2; // bit 5-2
+			packet_length_type = input.charCodeAt(mypos) & 0x03; // bit 1-0
 		}
 
 		// header octet parsing done
@@ -10084,19 +10111,19 @@ function _openpgp_packet() {
 			switch (packet_length_type) {
 			case 0: // The packet has a one-octet length. The header is 2 octets
 				// long.
-				packet_length = input[mypos++].charCodeAt();
+				packet_length = input.charCodeAt(mypos++);
 				break;
 			case 1: // The packet has a two-octet length. The header is 3 octets
 				// long.
-				packet_length = (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
+				packet_length = (input.charCodeAt(mypos++) << 8)
+						| input.charCodeAt(mypos++);
 				break;
 			case 2: // The packet has a four-octet length. The header is 5
 				// octets long.
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
+				packet_length = (input.charCodeAt(mypos++) << 24)
+						| (input.charCodeAt(mypos++) << 16)
+						| (input.charCodeAt(mypos++) << 8)
+						| input.charCodeAt(mypos++);
 				break;
 			default:
 				// 3 - The packet is of indeterminate length. The header is 1
@@ -10117,50 +10144,50 @@ function _openpgp_packet() {
 		{
 
 			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
+			if (input.charCodeAt(mypos) < 192) {
+				packet_length = input.charCodeAt(mypos++);
 				util.print_debug("1 byte length:" + packet_length);
 				// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192
-					&& input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-						+ (input[mypos++].charCodeAt()) + 192;
+			} else if (input.charCodeAt(mypos) >= 192
+					&& input.charCodeAt(mypos) < 224) {
+				packet_length = ((input.charCodeAt(mypos++) - 192) << 8)
+						+ (input.charCodeAt(mypos++)) + 192;
 				util.print_debug("2 byte length:" + packet_length);
 				// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223
-					&& input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+			} else if (input.charCodeAt(mypos) > 223
+					&& input.charCodeAt(mypos) < 255) {
+				packet_length = 1 << (input.charCodeAt(mypos++) & 0x1F);
 				util.print_debug("4 byte length:" + packet_length);
 				// EEEK, we're reading the full data here...
 				var mypos2 = mypos + packet_length;
 				bodydata = input.substring(mypos, mypos + packet_length);
 				while (true) {
-					if (input[mypos2].charCodeAt() < 192) {
-						var tmplen = input[mypos2++].charCodeAt();
+					if (input.charCodeAt(mypos2) < 192) {
+						var tmplen = input.charCodeAt(mypos2++);
 						packet_length += tmplen;
 						bodydata += input.substring(mypos2, mypos2 + tmplen);
 						mypos2 += tmplen;
 						break;
-					} else if (input[mypos2].charCodeAt() >= 192
-							&& input[mypos2].charCodeAt() < 224) {
-						var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8)
-								+ (input[mypos2++].charCodeAt()) + 192;
+					} else if (input.charCodeAt(mypos2) >= 192
+							&& input.charCodeAt(mypos2) < 224) {
+						var tmplen = ((input.charCodeAt(mypos2++) - 192) << 8)
+								+ (input.charCodeAt(mypos2++)) + 192;
 						packet_length += tmplen;
 						bodydata += input.substring(mypos2, mypos2 + tmplen);
 						mypos2 += tmplen;
 						break;
-					} else if (input[mypos2].charCodeAt() > 223
-							&& input[mypos2].charCodeAt() < 255) {
-						var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
+					} else if (input.charCodeAt(mypos2) > 223
+							&& input.charCodeAt(mypos2) < 255) {
+						var tmplen = 1 << (input.charCodeAt(mypos2++) & 0x1F);
 						packet_length += tmplen;
 						bodydata += input.substring(mypos2, mypos2 + tmplen);
 						mypos2 += tmplen;
 					} else {
 						mypos2++;
-						var tmplen = (input[mypos2++].charCodeAt() << 24)
-								| (input[mypos2++].charCodeAt() << 16)
-								| (input[mypos2++].charCodeAt() << 8)
-								| input[mypos2++].charCodeAt();
+						var tmplen = (input.charCodeAt(mypos2++) << 24)
+								| (input.charCodeAt(mypos2++) << 16)
+								| (input.charCodeAt(mypos2++) << 8)
+								| input.charCodeAt(mypos2++);
 						bodydata += input.substring(mypos2, mypos2 + tmplen);
 						packet_length += tmplen;
 						mypos2 += tmplen;
@@ -10171,10 +10198,10 @@ function _openpgp_packet() {
 				// 4.2.2.3. Five-Octet Lengths
 			} else {
 				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24)
-						| (input[mypos++].charCodeAt() << 16)
-						| (input[mypos++].charCodeAt() << 8)
-						| input[mypos++].charCodeAt();
+				packet_length = (input.charCodeAt(mypos++) << 24)
+						| (input.charCodeAt(mypos++) << 16)
+						| (input.charCodeAt(mypos++) << 8)
+						| input.charCodeAt(mypos++);
 			}
 		}
 
@@ -10190,7 +10217,7 @@ function _openpgp_packet() {
 
 		// alert('tag type: '+this.tag+' length: '+packet_length);
 		var version = 1; // (old format; 2= new format)
-		// if (input[mypos++].charCodeAt() > 15)
+		// if (input.charCodeAt(mypos++) > 15)
 		// version = 2;
 
 		switch (tag) {
@@ -10473,20 +10500,20 @@ function openpgp_packet_keymaterial() {
 	function read_pub_key(input, position, len) {
 		var mypos = position;
 		// A one-octet version number (3 or 4).
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		if (this.version == 3) {
 			// A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-				(input[mypos++].charCodeAt() << 16) |
-				(input[mypos++].charCodeAt() <<  8) |
-				(input[mypos++].charCodeAt()))*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) |
+				(input.charCodeAt(mypos++) << 16) |
+				(input.charCodeAt(mypos++) <<  8) |
+				(input.charCodeAt(mypos++)))*1000);
 			
 		    // - A two-octet number denoting the time in days that this key is
 		    //   valid.  If this number is zero, then it does not expire.
-			this.expiration = (input[mypos++].charCodeAt() << 8) & input[mypos++].charCodeAt();
+			this.expiration = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 	
 		    // - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 			var mpicount = 0;
 		    // - A series of multiprecision integers comprising the key material:
 			//   Algorithm-Specific Fields for RSA public keys:
@@ -10522,13 +10549,13 @@ function openpgp_packet_keymaterial() {
 			this.packetLength = mypos-position;
 		} else if (this.version == 4) {
 			// - A four-octet number denoting the time that the key was created.
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) |
-			(input[mypos++].charCodeAt() << 16) |
-			(input[mypos++].charCodeAt() <<  8) |
-			(input[mypos++].charCodeAt()))*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) |
+			(input.charCodeAt(mypos++) << 16) |
+			(input.charCodeAt(mypos++) <<  8) |
+			(input.charCodeAt(mypos++)))*1000);
 			
 			// - A one-octet number denoting the public-key algorithm of this key.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 			var mpicount = 0;
 		    // - A series of multiprecision integers comprising the key material:
 			//   Algorithm-Specific Fields for RSA public keys:
@@ -10584,7 +10611,7 @@ function openpgp_packet_keymaterial() {
 	    // - A Public-Key or Public-Subkey packet, as described above.
 	    this.publicKey = new openpgp_packet_keymaterial();
 		if (this.publicKey.read_pub_key(input,position, len) == null) {
-			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input[position].charCodeAt()+" "+position+" "+len+"\n Aborting here...");
+			util.print_error("openpgp.packet.keymaterial.js\n"+"Failed reading public key portion of a private key: "+input.charCodeAt(position)+" "+position+" "+len+"\n Aborting here...");
 			return null;
 		}
 		this.publicKey.header = openpgp_packet.write_old_packet_header(6,this.publicKey.packetLength);
@@ -10596,7 +10623,7 @@ function openpgp_packet_keymaterial() {
 	    //   indicates that the secret-key data is not encrypted.  255 or 254
 	    //   indicates that a string-to-key specifier is being given.  Any
 	    //   other value is a symmetric-key encryption algorithm identifier.
-	    this.s2kUsageConventions = input[mypos++].charCodeAt();
+	    this.s2kUsageConventions = input.charCodeAt(mypos++);
 	    
 	    if (this.s2kUsageConventions == 0)
 	    	this.hasUnencryptedSecretKeyData = true;
@@ -10604,7 +10631,7 @@ function openpgp_packet_keymaterial() {
 	    // - [Optional] If string-to-key usage octet was 255 or 254, a one-
 	    //   octet symmetric encryption algorithm.
 	    if (this.s2kUsageConventions == 255 || this.s2kUsageConventions == 254) {
-	    	this.symmetricEncryptionAlgorithm = input[mypos++].charCodeAt();
+	    	this.symmetricEncryptionAlgorithm = input.charCodeAt(mypos++);
 	    }
 	     
 	    // - [Optional] If string-to-key usage octet was 255 or 254, a
@@ -10702,8 +10729,8 @@ function openpgp_packet_keymaterial() {
 	    	}
 	    	// checksum because s2k usage convention is 0
 	        this.checksum = new Array(); 
-		    this.checksum[0] = input[mypos++].charCodeAt();
-		    this.checksum[1] = input[mypos++].charCodeAt();
+		    this.checksum[0] = input.charCodeAt(mypos++);
+		    this.checksum[1] = input.charCodeAt(mypos++);
 	    }
 	    return this;
 	}
@@ -11363,9 +11390,9 @@ function openpgp_packet_marker() {
 	 */
 	function read_packet(input, position, len) {
 		this.packetLength = 3;
-		if (input[position].charCodeAt() == 0x50 && // P
-				input[position + 1].charCodeAt() == 0x47 && // G
-				input[position + 2].charCodeAt() == 0x50) // P
+		if (input.charCodeAt(position) == 0x50 && // P
+				input.charCodeAt(position + 1) == 0x47 && // G
+				input.charCodeAt(position + 2) == 0x50) // P
 			return this;
 		// marker packet does not contain "PGP"
 		return null;
@@ -11669,37 +11696,37 @@ function openpgp_packet_signature() {
 		var mypos = position;
 		this.packetLength = len;
 		// alert('starting parsing signature: '+position+' '+this.packetLength);
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		// switch on version (3 and 4)
 		switch (this.version) {
 		case 3:
 			// One-octet length of following hashed material. MUST be 5.
-			if (input[mypos++].charCodeAt() != 5)
+			if (input.charCodeAt(mypos++) != 5)
 				util.print_debug("openpgp.packet.signature.js\n"+'invalid One-octet length of following hashed material.  MUST be 5. @:'+(mypos-1));
 			var sigpos = mypos;
 			// One-octet signature type.
-			this.signatureType = input[mypos++].charCodeAt();
+			this.signatureType = input.charCodeAt(mypos++);
 
 			// Four-octet creation time.
-			this.creationTime = new Date(((input[mypos++].charCodeAt()) << 24 |
-					(input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8) |
-					input[mypos++].charCodeAt())* 1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++)) << 24 |
+					(input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8) |
+					input.charCodeAt(mypos++))* 1000);
 			
 			// storing data appended to data which gets verified
-			this.signatureData = input.substring(position, mypos);
+			this.signatureData = input.substring(sigpos, mypos);
 			
 			// Eight-octet Key ID of signer.
 			this.keyId = input.substring(mypos, mypos +8);
 			mypos += 8;
 
 			// One-octet public-key algorithm.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 
 			// One-octet hash algorithm.
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Two-octet field holding left 16 bits of signed hash value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			this.signedHashValue = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			var mpicount = 0;
 			// Algorithm-Specific Fields for RSA signatures:
 			// 	    - multiprecision integer (MPI) of RSA signature value m**d mod n.
@@ -11723,13 +11750,13 @@ function openpgp_packet_signature() {
 			}
 		break;
 		case 4:
-			this.signatureType = input[mypos++].charCodeAt();
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.signatureType = input.charCodeAt(mypos++);
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Two-octet scalar octet count for following hashed subpacket
 			// data.
-			var hashed_subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+			var hashed_subpacket_count = (input.charCodeAt(mypos++) << 8) + input.charCodeAt(mypos++);
 
 			// Hashed subpacket data set (zero or more subpackets)
 			var subpacket_length = 0;
@@ -11749,7 +11776,7 @@ function openpgp_packet_signature() {
 			// alert("signatureData: "+util.hexstrdump(this.signatureData));
 			
 			// Two-octet scalar octet count for the following unhashed subpacket
-			var subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+			var subpacket_count = (input.charCodeAt(mypos++) << 8) + input.charCodeAt(mypos++);
 				
 			// Unhashed subpacket data set (zero or more subpackets).
 			subpacket_length = 0;
@@ -11765,7 +11792,7 @@ function openpgp_packet_signature() {
 			mypos += subpacket_count;
 			// Two-octet field holding the left 16 bits of the signed hash
 			// value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			this.signedHashValue = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			// One or more multiprecision integers comprising the signature.
 			// This portion is algorithm specific, as described above.
 			var mpicount = 0;
@@ -11861,39 +11888,39 @@ function openpgp_packet_signature() {
 		var mypos = position;
 		var subplen = 0;
 		// alert('starting signature subpackage read at position:'+position+' length:'+len);
-		if (input[mypos].charCodeAt() < 192) {
-			subplen = input[mypos++].charCodeAt();
-		} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-			subplen = ((input[mypos++].charCodeAt() - 192) << 8) + (input[mypos++].charCodeAt()) + 192;
-		} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-			subplen = 1 << (input[mypos++].charCodeAt() & 0x1F);
-		} else if (input[mypos].charCodeAt() < 255) {
+		if (input.charCodeAt(mypos) < 192) {
+			subplen = input.charCodeAt(mypos++);
+		} else if (input.charCodeAt(mypos) >= 192 && input.charCodeAt(mypos) < 224) {
+			subplen = ((input.charCodeAt(mypos++) - 192) << 8) + (input.charCodeAt(mypos++)) + 192;
+		} else if (input.charCodeAt(mypos) > 223 && input.charCodeAt(mypos) < 255) {
+			subplen = 1 << (input.charCodeAt(mypos++) & 0x1F);
+		} else if (input.charCodeAt(mypos) < 255) {
 			mypos++;
-			subplen = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					|  (input[mypos++].charCodeAt() << 8) |  input[mypos++].charCodeAt();
+			subplen = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					|  (input.charCodeAt(mypos++) << 8) |  input.charCodeAt(mypos++);
 		}
 		
-		var type = input[mypos++].charCodeAt() & 0x7F;
+		var type = input.charCodeAt(mypos++) & 0x7F;
 		// alert('signature subpacket type '+type+" with length: "+subplen);
 		// subpacket type
 		switch (type) {
 		case 2: // Signature Creation Time
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt())*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					| (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++))*1000);
 			break;
 		case 3: // Signature Expiration Time
-			this.signatureExpirationTime =  (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
+			this.signatureExpirationTime =  (input.charCodeAt(mypos++) << 24)
+					| (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8)
+					| input.charCodeAt(mypos++);
 			this.signatureNeverExpires = (this.signature_expiration_time == 0);
 			
 			break;
 		case 4: // Exportable Certification
-			this.exportable = input[mypos++].charCodeAt() == 1;
+			this.exportable = input.charCodeAt(mypos++) == 1;
 			break;
 		case 5: // Trust Signature
-			this.trustLevel = input[mypos++].charCodeAt();
-			this.trustAmount = input[mypos++].charCodeAt();
+			this.trustLevel = input.charCodeAt(mypos++);
+			this.trustAmount = input.charCodeAt(mypos++);
 			break;
 		case 6: // Regular Expression
 			this.regular_expression = new String();
@@ -11901,29 +11928,29 @@ function openpgp_packet_signature() {
 				this.regular_expression += (input[mypos++]);
 			break;
 		case 7: // Revocable
-			this.revocable = input[mypos++].charCodeAt() == 1;
+			this.revocable = input.charCodeAt(mypos++) == 1;
 			break;
 		case 9: // Key Expiration Time
-			this.keyExpirationTime = (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
+			this.keyExpirationTime = (input.charCodeAt(mypos++) << 24)
+					| (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8)
+					| input.charCodeAt(mypos++);
 			this.keyNeverExpires = (this.keyExpirationTime == 0);
 			break;
 		case 11: // Preferred Symmetric Algorithms
 			this.preferredSymmetricAlgorithms = new Array();
 			for (var i = 0; i < subplen-1; i++) {
-				this.preferredSymmetricAlgorithms = input[mypos++].charCodeAt();
+				this.preferredSymmetricAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 12: // Revocation Key
 			// (1 octet of class, 1 octet of public-key algorithm ID, 20
 			// octets of
 			// fingerprint)
-			this.revocationKeyClass = input[mypos++].charCodeAt();
-			this.revocationKeyAlgorithm = input[mypos++].charCodeAt();
+			this.revocationKeyClass = input.charCodeAt(mypos++);
+			this.revocationKeyAlgorithm = input.charCodeAt(mypos++);
 			this.revocationKeyFingerprint = new Array();
 			for ( var i = 0; i < 20; i++) {
-				this.revocationKeyFingerprint = input[mypos++].charCodeAt();
+				this.revocationKeyFingerprint = input.charCodeAt(mypos++);
 			}
 			break;
 		case 16: // Issuer
@@ -11931,12 +11958,12 @@ function openpgp_packet_signature() {
 			mypos += 8;
 			break;
 		case 20: // Notation Data
-			this.notationFlags = (input[mypos++].charCodeAt() << 24) | 
-								 (input[mypos++].charCodeAt() << 16) |
-								 (input[mypos++].charCodeAt() <<  8) | 
-								 (input[mypos++].charCodeAt());
-			var nameLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
-			var valueLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
+			this.notationFlags = (input.charCodeAt(mypos++) << 24) | 
+								 (input.charCodeAt(mypos++) << 16) |
+								 (input.charCodeAt(mypos++) <<  8) | 
+								 (input.charCodeAt(mypos++));
+			var nameLength = (input.charCodeAt(mypos++) <<  8) | (input.charCodeAt(mypos++));
+			var valueLength = (input.charCodeAt(mypos++) <<  8) | (input.charCodeAt(mypos++));
 			this.notationName = "";
 			for (var i = 0; i < nameLength; i++) {
 				this.notationName += input[mypos++];
@@ -11949,19 +11976,19 @@ function openpgp_packet_signature() {
 		case 21: // Preferred Hash Algorithms
 			this.preferredHashAlgorithms = new Array();
 			for (var i = 0; i < subplen-1; i++) {
-				this.preferredHashAlgorithms = input[mypos++].charCodeAt();
+				this.preferredHashAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 22: // Preferred Compression Algorithms
 			this.preferredCompressionAlgorithms = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.preferredCompressionAlgorithms = input[mypos++].charCodeAt();
+				this.preferredCompressionAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 23: // Key Server Preferences
 			this.keyServerPreferences = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.keyServerPreferences = input[mypos++].charCodeAt();
+				this.keyServerPreferences = input.charCodeAt(mypos++);
 			}
 			break;
 		case 24: // Preferred Key Server
@@ -11982,7 +12009,7 @@ function openpgp_packet_signature() {
 		case 27: // Key Flags
 			this.keyFlags = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.keyFlags = input[mypos++].charCodeAt();
+				this.keyFlags = input.charCodeAt(mypos++);
 			}
 			break;
 		case 28: // Signer's User ID
@@ -11992,7 +12019,7 @@ function openpgp_packet_signature() {
 			}
 			break;
 		case 29: // Reason for Revocation
-			this.reasonForRevocationFlag = input[mypos++].charCodeAt();
+			this.reasonForRevocationFlag = input.charCodeAt(mypos++);
 			this.reasonForRevocationString = new String();
 			for ( var i = 0; i < subplen -2; i++) {
 				this.reasonForRevocationString += input[mypos++];
@@ -12003,8 +12030,8 @@ function openpgp_packet_signature() {
 			return subplen+1;
 		case 31: // Signature Target
 			// (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
-			this.signatureTargetPublicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.signatureTargetHashAlgorithm = input[mypos++].charCodeAt();
+			this.signatureTargetPublicKeyAlgorithm = input.charCodeAt(mypos++);
+			this.signatureTargetHashAlgorithm = input.charCodeAt(mypos++);
 			var signatureTargetHashAlgorithmLength = 0;
 			switch(this.signatureTargetHashAlgorithm) {
 			case  1: // - MD5 [HAC]                             "MD5"
@@ -12082,14 +12109,32 @@ function openpgp_packet_signature() {
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData);
+			} else {
+				this.verified = false;
 			}
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
+			var tohash = data
+				.replace(/\r\n/g,"\n")
+				.replace(/[\t ]+\n/g, "\n")
+				.replace(/\n/g,"\r\n");
+			if (openpgp.config.debug) {
+				util.print_debug('tohash: '+util.hexdump(tohash));
+				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
+				util.print_debug('trailer: '+util.hexdump(trailer));
+			}
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-				return this.verified;
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData);
+			} else {
+				this.verified = false;
 			}
 			break;
 				
@@ -12098,13 +12143,12 @@ function openpgp_packet_signature() {
 			// It is calculated identically to a signature over a zero-length
 			// binary document.  Note that it doesn't make sense to have a V3
 			// standalone signature.
-			if (this.version == 3) {
-				this.verified = false;
-				break;
-				}
-			
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			if (this.version == 4) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+			} else {
+				this.verified = false;
+			}
 			break;
 		case 16:			
 			// 0x10: Generic certification of a User ID and Public-Key packet.
@@ -12215,6 +12259,7 @@ function openpgp_packet_signature() {
 			// document) that cannot include a target subpacket.
 		default:
 			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
+			this.verified = false;
 			break;
 		}
 		return this.verified;
@@ -12285,7 +12330,7 @@ function openpgp_packet_signature() {
 	function getIssuer() {
 		 if (this.version == 4)
 			 return this.issuerKeyId;
-		 if (this.verions == 4)
+		 if (this.version == 3)
 			 return this.keyId;
 		 return null;
 	}
@@ -12369,27 +12414,27 @@ function openpgp_packet_userattribute() {
 		while (len != total_len) {
 			var current_len = 0;
 			// 4.2.2.1. One-Octet Lengths
-			if (input[mypos].charCodeAt() < 192) {
-				packet_length = input[mypos++].charCodeAt();
+			if (input.charCodeAt(mypos) < 192) {
+				packet_length = input.charCodeAt(mypos++);
 				current_len = 1;
 			// 4.2.2.2. Two-Octet Lengths
-			} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-				packet_length = ((input[mypos++].charCodeAt() - 192) << 8)
-					+ (input[mypos++].charCodeAt()) + 192;
+			} else if (input.charCodeAt(mypos) >= 192 && input.charCodeAt(mypos) < 224) {
+				packet_length = ((input.charCodeAt(mypos++) - 192) << 8)
+					+ (input.charCodeAt(mypos++)) + 192;
 				current_len = 2;
 			// 4.2.2.4. Partial Body Lengths
-			} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-				packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+			} else if (input.charCodeAt(mypos) > 223 && input.charCodeAt(mypos) < 255) {
+				packet_length = 1 << (input.charCodeAt(mypos++) & 0x1F);
 				current_len = 1;
 			// 4.2.2.3. Five-Octet Lengths
 			} else {
 				current_len = 5;
 				mypos++;
-				packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+				packet_length = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					| (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			}
 			
-			var subpackettype = input[mypos++].charCodeAt();
+			var subpackettype = input.charCodeAt(mypos++);
 			packet_length--;
 			current_len++;
 			this.userattributes[count] = new Array();
@@ -12539,13 +12584,7 @@ function openpgp_packet_userid() {
 	 */
 	this.read_packet = function(input, position, len) {
 		this.packetLength = len;
-
-		var bytes = '';
-		for ( var i = 0; i < len; i++) {
-			bytes += input[position + i];
-		}
-
-		this.set_text_bytes(bytes);
+		this.set_text_bytes(input.substr(position, len));
 		return this;
 	}
 
@@ -12929,7 +12968,7 @@ function openpgp_type_mpi() {
 	function read(input, position, len) {
 		var mypos = position;
 		
-		this.mpiBitLength = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+		this.mpiBitLength = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 		
 		// Additional rules:
 		//
@@ -13050,17 +13089,17 @@ function openpgp_type_s2k() {
 	 */
 	function read(input, position) {
 		var mypos = position;
-		this.type = input[mypos++].charCodeAt();
+		this.type = input.charCodeAt(mypos++);
 		switch (this.type) {
 		case 0: // Simple S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 			this.s2kLength = 1;
 			break;
 
 		case 1: // Salted S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Octets 2-9: 8-octet salt value
 			this.saltValue = input.substring(mypos, mypos+8);
@@ -13070,7 +13109,7 @@ function openpgp_type_s2k() {
 
 		case 3: // Iterated and Salted S2K
 			// Octet 1: hash algorithm
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Octets 2-9: 8-octet salt value
 			this.saltValue = input.substring(mypos, mypos+8);
@@ -13078,16 +13117,16 @@ function openpgp_type_s2k() {
 
 			// Octet 10: count, a one-octet, coded value
 			this.EXPBIAS = 6;
-			var c = input[mypos++].charCodeAt();
+			var c = input.charCodeAt(mypos++);
 			this.count = (16 + (c & 15)) << ((c >> 4) + this.EXPBIAS);
 			this.s2kLength = 10;
 			break;
 
 		case 101:
 			if(input.substring(mypos+1, mypos+4) == "GNU") {
-				this.hashAlgorithm = input[mypos++].charCodeAt();
+				this.hashAlgorithm = input.charCodeAt(mypos++);
 				mypos += 3; // GNU
-				var gnuExtType = 1000 + input[mypos++].charCodeAt();
+				var gnuExtType = 1000 + input.charCodeAt(mypos++);
 				if(gnuExtType == 1001) {
 					this.type = gnuExtType;
 					this.s2kLength = 5;
@@ -13207,7 +13246,7 @@ var Util = function() {
 	    var c=0;
 	    var h;
 	    while(c<e){
-	        h=str[c++].charCodeAt().toString(16);
+	        h=str.charCodeAt(c++).toString(16);
 	        while(h.length<2) h="0"+h;
 	        r.push(""+h);
 	    }
@@ -13334,6 +13373,8 @@ var Util = function() {
 		return checksum.s;
 	};
 	
+	this.printLevel = { error: 1, warning: 2, info: 3, debug: 4 };
+
 	/**
 	 * Helper function to print a debug message. Debug 
 	 * messages are only printed if
@@ -13347,8 +13388,7 @@ var Util = function() {
 	 */
 	this.print_debug = function(str) {
 		if (openpgp.config.debug) {
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -13367,8 +13407,7 @@ var Util = function() {
 	this.print_debug_hexstr_dump = function(str,strToHex) {
 		if (openpgp.config.debug) {
 			str = str + this.hexstrdump(strToHex);
-			str = openpgp_encoding_html_encode(str);
-			showMessages("<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"<br>")+"</p></tt>");
+			this.print_output(this.printLevel.debug, str);
 		}
 	};
 	
@@ -13382,8 +13421,7 @@ var Util = function() {
 	 * containing the HTML encoded error message
 	 */
 	this.print_error = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>ERROR:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.error, str);
 	};
 	
 	/**
@@ -13396,15 +13434,39 @@ var Util = function() {
 	 * containing the HTML encoded info message
 	 */
 	this.print_info = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>INFO:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.info, str);
 	};
 	
 	this.print_warning = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("<p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>WARNING:</b></span>	"+str.replace(/\n/g,"<br>")+"</p>");
+		this.print_output(this.printLevel.warning, str);
 	};
 	
+	this.print_output = function(level, str) {
+		var html;
+		str = openpgp_encoding_html_encode(str).replace(/\n/g,"<br>");
+		if (level == this.printLevel.debug) {
+			html = "<tt><p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str+"</p></tt>";
+		} else {
+			var color, heading;
+			switch (level) {
+				case this.printLevel.error:
+					color = "FF8888";
+					heading = "ERROR";
+					break;
+				case this.printLevel.warning:
+					color = 'FFAA88';
+					heading = "WARNING";
+					break;
+				case this.printLevel.info:
+					color = '88FF88';
+					heading = 'INFO';
+					break;
+			}
+			html = "<p style=\"font-size: 80%; background-color: #"+color+"; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\"><span style=\"color: #888;\"><b>"+heading+":</b></span>"+str+"</p>";
+		}
+		showMessages(html);
+	}
+
 	this.getLeftNBits = function (string, bitcount) {
 		var rest = bitcount % 8;
 		if (rest == 0)

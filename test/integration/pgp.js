@@ -1,11 +1,15 @@
 /**
  * High level crypto api that handles all calls to OpenPGP.js
  */
+function showMessages(str) {
+}
+
 define(function(require) {
     'use strict';
 
     var openpgp = require('openpgp').openpgp,
-        util = require('openpgp').util;
+        util = require('openpgp').util,
+        jquery = require('jquery').jquery;
 
     var PGP = function() {
         openpgp.init();
@@ -131,7 +135,8 @@ define(function(require) {
      */
     PGP.prototype.decrypt = function(ciphertext, senderKey, callback) {
         var privateKey = openpgp.keyring.exportPrivateKey(0).obj;
-        senderKey = openpgp.read_publicKey(senderKey)[0];
+        var publicKey = openpgp.read_publicKey(senderKey)[0];
+        var pubKeys = [ { armored: senderKey, obj: publicKey, keyId: publicKey.getKeyId() } ];
 
         var msg = openpgp.read_message(ciphertext)[0];
         var keymat = null;
@@ -159,14 +164,27 @@ define(function(require) {
             }
         }
         if (keymat !== null) {
-            var decrypted = msg.decryptAndVerifySignature(keymat, sesskey, senderKey);
-            callback(null, decrypted.text);
+            var decrypted = msg.decryptAndVerifySignature(keymat, sesskey, pubKeys);
+            callback(null, decrypted);
 
         } else {
             callback({
                 errMsg: 'No private key found!'
             });
         }
+    };
+
+    /**
+     * Verify a clearsign message for a single sender
+     */
+    PGP.prototype.verify = function(message, senderKey, callback) {
+        var publicKey = openpgp.read_publicKey(senderKey)[0];
+        var pubKeys = [ { armored: senderKey, obj: publicKey, keyId: publicKey.getKeyId() } ];
+
+        var msg = openpgp.read_message(message)[0];
+
+        var verified = msg.verifySignature(pubKeys);
+        callback(null, verified);
     };
 
     return PGP;

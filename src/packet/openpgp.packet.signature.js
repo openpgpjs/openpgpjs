@@ -84,37 +84,37 @@ function openpgp_packet_signature() {
 		var mypos = position;
 		this.packetLength = len;
 		// alert('starting parsing signature: '+position+' '+this.packetLength);
-		this.version = input[mypos++].charCodeAt();
+		this.version = input.charCodeAt(mypos++);
 		// switch on version (3 and 4)
 		switch (this.version) {
 		case 3:
 			// One-octet length of following hashed material. MUST be 5.
-			if (input[mypos++].charCodeAt() != 5)
+			if (input.charCodeAt(mypos++) != 5)
 				util.print_debug("openpgp.packet.signature.js\n"+'invalid One-octet length of following hashed material.  MUST be 5. @:'+(mypos-1));
 			var sigpos = mypos;
 			// One-octet signature type.
-			this.signatureType = input[mypos++].charCodeAt();
+			this.signatureType = input.charCodeAt(mypos++);
 
 			// Four-octet creation time.
-			this.creationTime = new Date(((input[mypos++].charCodeAt()) << 24 |
-					(input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8) |
-					input[mypos++].charCodeAt())* 1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++)) << 24 |
+					(input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8) |
+					input.charCodeAt(mypos++))* 1000);
 			
 			// storing data appended to data which gets verified
-			this.signatureData = input.substring(position, mypos);
+			this.signatureData = input.substring(sigpos, mypos);
 			
 			// Eight-octet Key ID of signer.
 			this.keyId = input.substring(mypos, mypos +8);
 			mypos += 8;
 
 			// One-octet public-key algorithm.
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
 
 			// One-octet hash algorithm.
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Two-octet field holding left 16 bits of signed hash value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			this.signedHashValue = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			var mpicount = 0;
 			// Algorithm-Specific Fields for RSA signatures:
 			// 	    - multiprecision integer (MPI) of RSA signature value m**d mod n.
@@ -138,13 +138,13 @@ function openpgp_packet_signature() {
 			}
 		break;
 		case 4:
-			this.signatureType = input[mypos++].charCodeAt();
-			this.publicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.hashAlgorithm = input[mypos++].charCodeAt();
+			this.signatureType = input.charCodeAt(mypos++);
+			this.publicKeyAlgorithm = input.charCodeAt(mypos++);
+			this.hashAlgorithm = input.charCodeAt(mypos++);
 
 			// Two-octet scalar octet count for following hashed subpacket
 			// data.
-			var hashed_subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+			var hashed_subpacket_count = (input.charCodeAt(mypos++) << 8) + input.charCodeAt(mypos++);
 
 			// Hashed subpacket data set (zero or more subpackets)
 			var subpacket_length = 0;
@@ -164,7 +164,7 @@ function openpgp_packet_signature() {
 			// alert("signatureData: "+util.hexstrdump(this.signatureData));
 			
 			// Two-octet scalar octet count for the following unhashed subpacket
-			var subpacket_count = (input[mypos++].charCodeAt() << 8) + input[mypos++].charCodeAt();
+			var subpacket_count = (input.charCodeAt(mypos++) << 8) + input.charCodeAt(mypos++);
 				
 			// Unhashed subpacket data set (zero or more subpackets).
 			subpacket_length = 0;
@@ -180,7 +180,7 @@ function openpgp_packet_signature() {
 			mypos += subpacket_count;
 			// Two-octet field holding the left 16 bits of the signed hash
 			// value.
-			this.signedHashValue = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+			this.signedHashValue = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
 			// One or more multiprecision integers comprising the signature.
 			// This portion is algorithm specific, as described above.
 			var mpicount = 0;
@@ -276,39 +276,39 @@ function openpgp_packet_signature() {
 		var mypos = position;
 		var subplen = 0;
 		// alert('starting signature subpackage read at position:'+position+' length:'+len);
-		if (input[mypos].charCodeAt() < 192) {
-			subplen = input[mypos++].charCodeAt();
-		} else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-			subplen = ((input[mypos++].charCodeAt() - 192) << 8) + (input[mypos++].charCodeAt()) + 192;
-		} else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-			subplen = 1 << (input[mypos++].charCodeAt() & 0x1F);
-		} else if (input[mypos].charCodeAt() < 255) {
+		if (input.charCodeAt(mypos) < 192) {
+			subplen = input.charCodeAt(mypos++);
+		} else if (input.charCodeAt(mypos) >= 192 && input.charCodeAt(mypos) < 224) {
+			subplen = ((input.charCodeAt(mypos++) - 192) << 8) + (input.charCodeAt(mypos++)) + 192;
+		} else if (input.charCodeAt(mypos) > 223 && input.charCodeAt(mypos) < 255) {
+			subplen = 1 << (input.charCodeAt(mypos++) & 0x1F);
+		} else if (input.charCodeAt(mypos) < 255) {
 			mypos++;
-			subplen = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					|  (input[mypos++].charCodeAt() << 8) |  input[mypos++].charCodeAt();
+			subplen = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					|  (input.charCodeAt(mypos++) << 8) |  input.charCodeAt(mypos++);
 		}
 		
-		var type = input[mypos++].charCodeAt() & 0x7F;
+		var type = input.charCodeAt(mypos++) & 0x7F;
 		// alert('signature subpacket type '+type+" with length: "+subplen);
 		// subpacket type
 		switch (type) {
 		case 2: // Signature Creation Time
-			this.creationTime = new Date(((input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16)
-					| (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt())*1000);
+			this.creationTime = new Date(((input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16)
+					| (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++))*1000);
 			break;
 		case 3: // Signature Expiration Time
-			this.signatureExpirationTime =  (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
+			this.signatureExpirationTime =  (input.charCodeAt(mypos++) << 24)
+					| (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8)
+					| input.charCodeAt(mypos++);
 			this.signatureNeverExpires = (this.signature_expiration_time == 0);
 			
 			break;
 		case 4: // Exportable Certification
-			this.exportable = input[mypos++].charCodeAt() == 1;
+			this.exportable = input.charCodeAt(mypos++) == 1;
 			break;
 		case 5: // Trust Signature
-			this.trustLevel = input[mypos++].charCodeAt();
-			this.trustAmount = input[mypos++].charCodeAt();
+			this.trustLevel = input.charCodeAt(mypos++);
+			this.trustAmount = input.charCodeAt(mypos++);
 			break;
 		case 6: // Regular Expression
 			this.regular_expression = new String();
@@ -316,29 +316,29 @@ function openpgp_packet_signature() {
 				this.regular_expression += (input[mypos++]);
 			break;
 		case 7: // Revocable
-			this.revocable = input[mypos++].charCodeAt() == 1;
+			this.revocable = input.charCodeAt(mypos++) == 1;
 			break;
 		case 9: // Key Expiration Time
-			this.keyExpirationTime = (input[mypos++].charCodeAt() << 24)
-					| (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() << 8)
-					| input[mypos++].charCodeAt();
+			this.keyExpirationTime = (input.charCodeAt(mypos++) << 24)
+					| (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) << 8)
+					| input.charCodeAt(mypos++);
 			this.keyNeverExpires = (this.keyExpirationTime == 0);
 			break;
 		case 11: // Preferred Symmetric Algorithms
 			this.preferredSymmetricAlgorithms = new Array();
 			for (var i = 0; i < subplen-1; i++) {
-				this.preferredSymmetricAlgorithms = input[mypos++].charCodeAt();
+				this.preferredSymmetricAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 12: // Revocation Key
 			// (1 octet of class, 1 octet of public-key algorithm ID, 20
 			// octets of
 			// fingerprint)
-			this.revocationKeyClass = input[mypos++].charCodeAt();
-			this.revocationKeyAlgorithm = input[mypos++].charCodeAt();
+			this.revocationKeyClass = input.charCodeAt(mypos++);
+			this.revocationKeyAlgorithm = input.charCodeAt(mypos++);
 			this.revocationKeyFingerprint = new Array();
 			for ( var i = 0; i < 20; i++) {
-				this.revocationKeyFingerprint = input[mypos++].charCodeAt();
+				this.revocationKeyFingerprint = input.charCodeAt(mypos++);
 			}
 			break;
 		case 16: // Issuer
@@ -346,12 +346,12 @@ function openpgp_packet_signature() {
 			mypos += 8;
 			break;
 		case 20: // Notation Data
-			this.notationFlags = (input[mypos++].charCodeAt() << 24) | 
-								 (input[mypos++].charCodeAt() << 16) |
-								 (input[mypos++].charCodeAt() <<  8) | 
-								 (input[mypos++].charCodeAt());
-			var nameLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
-			var valueLength = (input[mypos++].charCodeAt() <<  8) | (input[mypos++].charCodeAt());
+			this.notationFlags = (input.charCodeAt(mypos++) << 24) | 
+								 (input.charCodeAt(mypos++) << 16) |
+								 (input.charCodeAt(mypos++) <<  8) | 
+								 (input.charCodeAt(mypos++));
+			var nameLength = (input.charCodeAt(mypos++) <<  8) | (input.charCodeAt(mypos++));
+			var valueLength = (input.charCodeAt(mypos++) <<  8) | (input.charCodeAt(mypos++));
 			this.notationName = "";
 			for (var i = 0; i < nameLength; i++) {
 				this.notationName += input[mypos++];
@@ -364,19 +364,19 @@ function openpgp_packet_signature() {
 		case 21: // Preferred Hash Algorithms
 			this.preferredHashAlgorithms = new Array();
 			for (var i = 0; i < subplen-1; i++) {
-				this.preferredHashAlgorithms = input[mypos++].charCodeAt();
+				this.preferredHashAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 22: // Preferred Compression Algorithms
 			this.preferredCompressionAlgorithms = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.preferredCompressionAlgorithms = input[mypos++].charCodeAt();
+				this.preferredCompressionAlgorithms = input.charCodeAt(mypos++);
 			}
 			break;
 		case 23: // Key Server Preferences
 			this.keyServerPreferences = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.keyServerPreferences = input[mypos++].charCodeAt();
+				this.keyServerPreferences = input.charCodeAt(mypos++);
 			}
 			break;
 		case 24: // Preferred Key Server
@@ -397,7 +397,7 @@ function openpgp_packet_signature() {
 		case 27: // Key Flags
 			this.keyFlags = new Array();
 			for ( var i = 0; i < subplen-1; i++) {
-				this.keyFlags = input[mypos++].charCodeAt();
+				this.keyFlags = input.charCodeAt(mypos++);
 			}
 			break;
 		case 28: // Signer's User ID
@@ -407,7 +407,7 @@ function openpgp_packet_signature() {
 			}
 			break;
 		case 29: // Reason for Revocation
-			this.reasonForRevocationFlag = input[mypos++].charCodeAt();
+			this.reasonForRevocationFlag = input.charCodeAt(mypos++);
 			this.reasonForRevocationString = new String();
 			for ( var i = 0; i < subplen -2; i++) {
 				this.reasonForRevocationString += input[mypos++];
@@ -418,8 +418,8 @@ function openpgp_packet_signature() {
 			return subplen+1;
 		case 31: // Signature Target
 			// (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
-			this.signatureTargetPublicKeyAlgorithm = input[mypos++].charCodeAt();
-			this.signatureTargetHashAlgorithm = input[mypos++].charCodeAt();
+			this.signatureTargetPublicKeyAlgorithm = input.charCodeAt(mypos++);
+			this.signatureTargetHashAlgorithm = input.charCodeAt(mypos++);
 			var signatureTargetHashAlgorithmLength = 0;
 			switch(this.signatureTargetHashAlgorithm) {
 			case  1: // - MD5 [HAC]                             "MD5"
@@ -497,14 +497,32 @@ function openpgp_packet_signature() {
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData);
+			} else {
+				this.verified = false;
 			}
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
+			var tohash = data
+				.replace(/\r\n/g,"\n")
+				.replace(/[\t ]+\n/g, "\n")
+				.replace(/\n/g,"\r\n");
+			if (openpgp.config.debug) {
+				util.print_debug('tohash: '+util.hexdump(tohash));
+				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
+				util.print_debug('trailer: '+util.hexdump(trailer));
+			}
 			if (this.version == 4) {
 				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
-					this.MPIs, key.obj.publicKeyPacket.MPIs, data+this.signatureData+trailer);
-				return this.verified;
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData+trailer);
+			} else if (this.version == 3) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+					this.MPIs, key.obj.publicKeyPacket.MPIs, tohash+this.signatureData);
+			} else {
+				this.verified = false;
 			}
 			break;
 				
@@ -513,13 +531,12 @@ function openpgp_packet_signature() {
 			// It is calculated identically to a signature over a zero-length
 			// binary document.  Note that it doesn't make sense to have a V3
 			// standalone signature.
-			if (this.version == 3) {
-				this.verified = false;
-				break;
-				}
-			
-			this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
+			if (this.version == 4) {
+				this.verified = openpgp_crypto_verifySignature(this.publicKeyAlgorithm, this.hashAlgorithm, 
 					this.MPIs, key.obj.publicKeyPacket.MPIs, this.signatureData+trailer);
+			} else {
+				this.verified = false;
+			}
 			break;
 		case 16:			
 			// 0x10: Generic certification of a User ID and Public-Key packet.
@@ -630,6 +647,7 @@ function openpgp_packet_signature() {
 			// document) that cannot include a target subpacket.
 		default:
 			util.print_error("openpgp.packet.signature.js\n"+"signature verification for type"+ this.signatureType+" not implemented");
+			this.verified = false;
 			break;
 		}
 		return this.verified;
@@ -700,7 +718,7 @@ function openpgp_packet_signature() {
 	function getIssuer() {
 		 if (this.version == 4)
 			 return this.issuerKeyId;
-		 if (this.verions == 4)
+		 if (this.version == 3)
 			 return this.keyId;
 		 return null;
 	}

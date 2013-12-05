@@ -343,9 +343,6 @@ JXG.Util.Unzip = function (barray){
                 X = currentTree[xtreepos];
             }
         }
-        if (debug)
-        	document.write("ret3");
-        return -1;
     };
     
     function DeflateLoop() {
@@ -787,7 +784,7 @@ JXG.Util.Unzip.prototype.unzip = function() {
 			CRC = 0xffffffff;
 			SIZE = 0;
 			
-			if (size = 0 && fileOut.charAt(fileout.length-1)=="/"){
+			if (size == 0 && fileOut.charAt(fileout.length-1)=="/"){
 				//skipdir
 				if (debug)
 					alert("skipdir");

@@ -185,6 +185,8 @@ function openpgp_crypto_verifySignature(algo, hash_algo, msg_MPIs, publickey_MPI
 			util.print_error("PKCS1 padding in message or key incorrect. Aborting...");
 			return false;
 		}
+		util.print_debug('hash: '+util.hexdump(hash));
+		util.print_debug('calc_hash: '+util.hexdump(calc_hash));
 		return hash == calc_hash;
 		
 	case 16: // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
@@ -389,7 +391,6 @@ function openpgp_crypto_getRandomBigIntegerInRange(min, max) {
 
 //This is a test method to ensure that encryption/decryption with a given 1024bit RSAKey object functions as intended
 function openpgp_crypto_testRSA(key){
-	debugger;
     var rsa = new RSA();
 	var mpi = new openpgp_type_mpi();
 	mpi.create(openpgp_encoding_eme_pkcs1_encode('ABABABAB', 128));

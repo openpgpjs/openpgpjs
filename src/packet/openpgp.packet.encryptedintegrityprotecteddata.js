@@ -49,7 +49,7 @@ function openpgp_packet_encryptedintegrityprotecteddata() {
 		this.packetLength = len;
 		// - A one-octet version number. The only currently defined value is
 		// 1.
-		this.version = input[position].charCodeAt();
+		this.version = input.charCodeAt(position);
 		if (this.version != 1) {
 			util
 					.print_error('openpgp.packet.encryptedintegrityprotecteddata.js\nunknown encrypted integrity protected data packet version: '

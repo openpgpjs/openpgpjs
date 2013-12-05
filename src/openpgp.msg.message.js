@@ -82,7 +82,7 @@ function openpgp_msg_message() {
 	function verifySignature(pubkey) {
 		var result = false;
 		if (this.signature.tagType == 2) {
-		    if(!pubkey || pubkey.length == 0){
+		    if (!pubkey || pubkey.length == 0) {
 			    var pubkey;
 			    if (this.signature.version == 4) {
 				    pubkey = openpgp.keyring.getPublicKeysForKeyId(this.signature.issuerKeyId);
@@ -93,14 +93,14 @@ function openpgp_msg_message() {
 				    return false;
 			    }
 			}
-			if (pubkey.length == 0)
+			if (pubkey.length == 0) {
 				util.print_warning("Unable to verify signature of issuer: "+util.hexstrdump(this.signature.issuerKeyId)+". Public key not found in keyring.");
-			else {
+			} else {
 				for (var i = 0 ; i < pubkey.length; i++) {
-					var tohash = this.text.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
-					if (this.signature.verify(tohash, pubkey[i])) {
+					if (this.signature.verify(this.text, pubkey[i])) {
 						util.print_info("Found Good Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[i].obj.getKeyId()).substring(8)+")");
 						result = true;
+						break;
 					} else {
 						util.print_error("Signature verification failed: Bad Signature from "+pubkey[i].obj.userIds[0].text+" (0x"+util.hexstrdump(pubkey[0].obj.getKeyId()).substring(8)+")");
 					}
