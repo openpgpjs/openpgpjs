@@ -156,7 +156,7 @@ define(function(require) {
 
 			});
 
-			describe('Clearsign from gpg verification', function() {
+			describe('Verify clearsign from gpg', function() {
                 var clearsign_msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
                     'Hash: SHA1\r\n' +
                     '\r\n' +
