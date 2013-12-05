@@ -506,10 +506,7 @@ function openpgp_packet_signature() {
 			break;
 
 		case 1: // 0x01: Signature of a canonical text document.
-			var tohash = data
-				.replace(/\r\n/g,"\n")
-				.replace(/[\t ]+\n/g, "\n")
-				.replace(/\n/g,"\r\n");
+			var tohash = data.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n");
 			if (openpgp.config.debug) {
 				util.print_debug('tohash: '+util.hexdump(tohash));
 				util.print_debug('signatureData: '+util.hexdump(this.signatureData));
