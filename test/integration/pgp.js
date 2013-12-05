@@ -174,5 +174,18 @@ define(function(require) {
         }
     };
 
+    /**
+     * Verify a clearsign message for a single sender
+     */
+    PGP.prototype.verify = function(message, senderKey, callback) {
+        var publicKey = openpgp.read_publicKey(senderKey)[0];
+        var pubKeys = [ { armored: senderKey, obj: publicKey, keyId: publicKey.getKeyId() } ];
+
+        var msg = openpgp.read_message(message)[0];
+
+        var verified = msg.verifySignature(pubKeys);
+        callback(null, verified);
+    };
+
     return PGP;
 });

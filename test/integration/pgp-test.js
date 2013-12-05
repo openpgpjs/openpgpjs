@@ -38,123 +38,176 @@ define(function(require) {
                 '=ULta\n' +
                 '-----END PGP PRIVATE KEY BLOCK-----';
 
-        beforeEach(function() {
-            pgp = new PGP();
-        });
+			beforeEach(function() {
+			    pgp = new PGP();
+			});
 
-        afterEach(function() {});
+			afterEach(function() {});
 
-        describe('Generate key pair', function() {
-            it('should fail', function(done) {
-                pgp.generateKeys({
-                    emailAddress: 'test@t-onlinede',
-                    keySize: keySize,
-                    passphrase: passphrase
-                }, function(err, keys) {
-                    expect(err).to.exist;
-                    expect(keys).to.not.exist;
-                    done();
-                });
-            });
-            it('should fail', function(done) {
-                pgp.generateKeys({
-                    emailAddress: 'testt-online.de',
-                    keySize: keySize,
-                    passphrase: passphrase
-                }, function(err, keys) {
-                    expect(err).to.exist;
-                    expect(keys).to.not.exist;
-                    done();
-                });
-            });
-            it('should work', function(done) {
-                pgp.generateKeys({
-                    emailAddress: user,
-                    keySize: keySize,
-                    passphrase: passphrase
-                }, function(err, keys) {
-                    expect(err).to.not.exist;
-                    expect(keys.keyId).to.exist;
-                    expect(keys.privateKeyArmored).to.exist;
-                    expect(keys.publicKeyArmored).to.exist;
-                    done();
-                });
-            });
-        });
+			describe('Generate key pair', function() {
+			    it('should fail', function(done) {
+				pgp.generateKeys({
+				    emailAddress: 'test@t-onlinede',
+				    keySize: keySize,
+				    passphrase: passphrase
+				}, function(err, keys) {
+				    expect(err).to.exist;
+				    expect(keys).to.not.exist;
+				    done();
+				});
+			    });
+			    it('should fail', function(done) {
+				pgp.generateKeys({
+				    emailAddress: 'testt-online.de',
+				    keySize: keySize,
+				    passphrase: passphrase
+				}, function(err, keys) {
+				    expect(err).to.exist;
+				    expect(keys).to.not.exist;
+				    done();
+				});
+			    });
+			    it('should work', function(done) {
+				pgp.generateKeys({
+				    emailAddress: user,
+				    keySize: keySize,
+				    passphrase: passphrase
+				}, function(err, keys) {
+				    expect(err).to.not.exist;
+				    expect(keys.keyId).to.exist;
+				    expect(keys.privateKeyArmored).to.exist;
+				    expect(keys.publicKeyArmored).to.exist;
+				    done();
+				});
+			    });
+			});
 
-        describe('Import/Export key pair', function() {
-            it('should fail', function(done) {
-                pgp.importKeys({
-                    passphrase: 'asd',
-                    privateKeyArmored: privkey,
-                    publicKeyArmored: pubkey
-                }, function(err) {
-                    expect(err).to.exist;
+			describe('Import/Export key pair', function() {
+			    it('should fail', function(done) {
+				pgp.importKeys({
+				    passphrase: 'asd',
+				    privateKeyArmored: privkey,
+				    publicKeyArmored: pubkey
+				}, function(err) {
+				    expect(err).to.exist;
 
-                    pgp.exportKeys(function(err, keys) {
-                        expect(err).to.exist;
-                        expect(keys).to.not.exist;
-                        done();
-                    });
-                });
-            });
-            it('should work', function(done) {
-                pgp.importKeys({
-                    passphrase: passphrase,
-                    privateKeyArmored: privkey,
-                    publicKeyArmored: pubkey
-                }, function(err) {
-                    expect(err).to.not.exist;
+				    pgp.exportKeys(function(err, keys) {
+					expect(err).to.exist;
+					expect(keys).to.not.exist;
+					done();
+				    });
+				});
+			    });
+			    it('should work', function(done) {
+				pgp.importKeys({
+				    passphrase: passphrase,
+				    privateKeyArmored: privkey,
+				    publicKeyArmored: pubkey
+				}, function(err) {
+				    expect(err).to.not.exist;
 
-                    pgp.exportKeys(function(err, keys) {
-                        expect(err).to.not.exist;
-                        expect(keys.keyId).to.equal(keyId);
-                        expect(keys.privateKeyArmored).to.equal(privkey);
-                        expect(keys.publicKeyArmored).to.equal(pubkey);
-                        done();
-                    });
-                });
-            });
-        });
+				    pgp.exportKeys(function(err, keys) {
+					expect(err).to.not.exist;
+					expect(keys.keyId).to.equal(keyId);
+					expect(keys.privateKeyArmored).to.equal(privkey);
+					expect(keys.publicKeyArmored).to.equal(pubkey);
+					done();
+				    });
+				});
+			    });
+			});
 
-        describe('Encryption', function() {
-            var message = 'Hello, World!',
-                ciphertext;
+			describe('Encryption', function() {
+			    var message = 'Hello, World!',
+				ciphertext;
 
-            beforeEach(function(done) {
-                pgp.importKeys({
-                    passphrase: passphrase,
-                    privateKeyArmored: privkey,
-                    publicKeyArmored: pubkey
-                }, function(err) {
-                    expect(err).to.not.exist;
-                    done();
-                });
-            });
+			    beforeEach(function(done) {
+				pgp.importKeys({
+				    passphrase: passphrase,
+				    privateKeyArmored: privkey,
+				    publicKeyArmored: pubkey
+				}, function(err) {
+				    expect(err).to.not.exist;
+				    done();
+				});
+			    });
 
-            describe('Encrypt and Sign', function() {
-                it('should work', function(done) {
-                    pgp.encrypt(message, [pubkey], function(err, ct) {
-                        expect(err).to.not.exist;
-                        expect(ct).to.exist;
-                        ciphertext = ct;
-                        done();
-                    });
-                });
-            });
+			    describe('Encrypt and Sign', function() {
+				it('should work', function(done) {
+				    pgp.encrypt(message, [pubkey], function(err, ct) {
+					expect(err).to.not.exist;
+					expect(ct).to.exist;
+					ciphertext = ct;
+					done();
+				    });
+				});
+			    });
 
-            describe('Decrypt and Verify', function() {
-                it('should work', function(done) {
-                    pgp.decrypt(ciphertext, pubkey, function(err, pt) {
-                        expect(err).to.not.exist;
-                        expect(pt.text).to.equal(message);
-                        expect(pt.validSignatures[0]).to.be.true;
-                        done();
-                    });
-                });
-            });
+			    describe('Decrypt and Verify', function() {
+				it('should work', function(done) {
+				    pgp.decrypt(ciphertext, pubkey, function(err, pt) {
+					expect(err).to.not.exist;
+					expect(pt.text).to.equal(message);
+					expect(pt.validSignatures[0]).to.be.true;
+					done();
+				    });
+				});
+			    });
 
-        });
+			});
 
-    });
-});
+			describe('Clearsign from gpg verification', function() {
+                var clearsign_msg = '-----BEGIN PGP SIGNED MESSAGE-----\r\n' +
+                    'Hash: SHA1\r\n' +
+                    '\r\n' +
+                    'This is a test message.\r\n' +
+                    '\r\n' +
+                    'This paragraph is separated form the next by a line of dashes.\r\n' +
+                    '\r\n' +
+                    '- --------------------------------------------------------------------------\r\n' +
+                    '\r\n' +
+                    'The next paragraph has a number of blank lines between this one and it.\r\n' +
+                    '\r\n' +
+                    '\r\n' +
+                    '\r\n' +
+                    '\r\n' +
+                    '\r\n' +
+                    '\r\n' +
+                    'This is the last paragraph.\r\n' +
+                    '\r\n' +
+                    '- --\r\n' +
+                    '\r\n' +
+                    'Joe Test\r\n' +
+                    '-----BEGIN PGP SIGNATURE-----\r\n' +
+                    'Version: GnuPG v1.4.15 (GNU/Linux)\r\n' +
+                    '\r\n' +
+                    'iFwEAQECAAYFAlKf5LcACgkQ9vYOm0LN/0ybVwH8CItdDh4kWKVcyUx3Q3hWZnWd\r\n' +
+                    'zP9CUbIa9uToIPABjV3GOTDM3ZgiP0/SE6Al5vG8hlx+/u2piVojoLovk/4LnA==\r\n' +
+                    '=i6ew\r\n' +
+                    '-----END PGP SIGNATURE-----\r\n';
+
+			    beforeEach(function(done) {
+				pgp.importKeys({
+				    passphrase: passphrase,
+				    privateKeyArmored: privkey,
+				    publicKeyArmored: pubkey
+				}, function(err) {
+				    expect(err).to.not.exist;
+				    done();
+				});
+			    });
+
+			    describe('Verify', function() {
+				it('should work', function(done) {
+				    pgp.verify(clearsign_msg, pubkey, function(err, pt) {
+					expect(err).to.not.exist;
+					expect(pt).to.be.true;
+					done();
+				    });
+				});
+			    });
+
+			});
+
+		    });
+		});
