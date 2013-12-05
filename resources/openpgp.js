@@ -7422,7 +7422,7 @@ function openpgp_config() {
 			keyserver: "keyserver.linux.it" // "pgp.mit.edu:11371"
 	};
 
-	this.versionstring ="OpenPGP.js v.1.20131202";
+	this.versionstring ="OpenPGP.js v.1.20131204";
 	this.commentstring ="http://openpgpjs.org";
 	/**
 	 * Reads the config out of the HTML5 local storage

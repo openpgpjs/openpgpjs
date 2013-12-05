@@ -132,7 +132,7 @@ define(function(require) {
                 });
             });
 
-            describe('Encrypt', function() {
+            describe('Encrypt and Sign', function() {
                 it('should work', function(done) {
                     pgp.encrypt(message, [pubkey], function(err, ct) {
                         expect(err).to.not.exist;
@@ -143,11 +143,12 @@ define(function(require) {
                 });
             });
 
-            describe('Decrypt', function() {
+            describe('Decrypt and Verify', function() {
                 it('should work', function(done) {
                     pgp.decrypt(ciphertext, pubkey, function(err, pt) {
                         expect(err).to.not.exist;
-                        expect(pt).to.equal(message);
+                        expect(pt.text).to.equal(message);
+                        expect(pt.validSignatures[0]).to.be.true;
                         done();
                     });
                 });
