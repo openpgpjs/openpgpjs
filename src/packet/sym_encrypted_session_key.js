@@ -54,10 +54,10 @@ module.exports = function packet_sym_encrypted_session_key() {
    */
   this.read = function(bytes) {
     // A one-octet version number. The only currently defined version is 4.
-    this.version = bytes[0].charCodeAt();
+    this.version = bytes.charCodeAt(0);
 
     // A one-octet number describing the symmetric algorithm used.
-    var algo = enums.read(enums.symmetric, bytes[1].charCodeAt());
+    var algo = enums.read(enums.symmetric, bytes.charCodeAt(1));
 
     // A string-to-key (S2K) specifier, length as defined above.
     var s2klength = this.s2k.read(bytes.substr(2));

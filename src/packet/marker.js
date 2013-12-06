@@ -39,9 +39,9 @@ function packet_marker() {
    * @return {openpgp_packet_encrypteddata} Object representation
    */
   this.read = function(bytes) {
-    if (bytes[0].charCodeAt() == 0x50 && // P
-    bytes[1].charCodeAt() == 0x47 && // G
-    bytes[2].charCodeAt() == 0x50) // P
+    if (bytes.charCodeAt(0) == 0x50 && // P
+    bytes.charCodeAt(1) == 0x47 && // G
+    bytes.charCodeAt(2) == 0x50) // P
       return true;
     // marker packet does not contain "PGP"
     return false;

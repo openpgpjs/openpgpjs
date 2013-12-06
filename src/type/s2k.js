@@ -53,8 +53,8 @@ module.exports = function s2k() {
    */
   this.read = function(bytes) {
     var i = 0;
-    this.type = enums.read(enums.s2k, bytes[i++].charCodeAt());
-    this.algorithm = enums.read(enums.hash, bytes[i++].charCodeAt());
+    this.type = enums.read(enums.s2k, bytes.charCodeAt(i++));
+    this.algorithm = enums.read(enums.hash, bytes.charCodeAt(i++));
 
     switch (this.type) {
       case 'simple':
@@ -70,13 +70,13 @@ module.exports = function s2k() {
         i += 8;
 
         // Octet 10: count, a one-octet, coded value
-        this.c = bytes[i++].charCodeAt();
+        this.c = bytes.charCodeAt(i++);
         break;
 
       case 'gnu':
         if (bytes.substr(i, 3) == "GNU") {
           i += 3; // GNU
-          var gnuExtType = 1000 + bytes[i++].charCodeAt();
+          var gnuExtType = 1000 + bytes.charCodeAt(i++);
           if (gnuExtType == 1001) {
             this.type = gnuExtType;
             // GnuPG extension mode 1001 -- don't write secret key at all

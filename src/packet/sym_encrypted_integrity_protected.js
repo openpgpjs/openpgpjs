@@ -45,7 +45,7 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
   this.read = function(bytes) {
     // - A one-octet version number. The only currently defined value is
     // 1.
-    var version = bytes[0].charCodeAt();
+    var version = bytes.charCodeAt(0);
 
     if (version != 1) {
       throw new Error('Invalid packet version.');

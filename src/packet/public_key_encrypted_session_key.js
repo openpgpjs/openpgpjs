@@ -61,9 +61,9 @@ module.exports = function packet_public_key_encrypted_session_key() {
    */
   this.read = function(bytes) {
 
-    this.version = bytes[0].charCodeAt();
+    this.version = bytes.charCodeAt(0);
     this.publicKeyId.read(bytes.substr(1));
-    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9].charCodeAt());
+    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(9));
 
     var i = 10;
 

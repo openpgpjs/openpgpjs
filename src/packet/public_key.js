@@ -53,14 +53,14 @@ module.exports = function packet_public_key() {
    */
   this.readPublicKey = this.read = function(bytes) {
     // A one-octet version number (3 or 4).
-    var version = bytes[0].charCodeAt();
+    var version = bytes.charCodeAt(0);
 
     if (version == 4) {
       // - A four-octet number denoting the time that the key was created.
       this.created = util.readDate(bytes.substr(1, 4));
 
       // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes[5].charCodeAt());
+      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(5));
 
       var mpicount = crypto.getPublicMpiCount(this.algorithm);
       this.mpi = [];

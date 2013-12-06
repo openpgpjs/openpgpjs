@@ -97,7 +97,7 @@ module.exports = function packet_literal() {
   this.read = function(bytes) {
     // - A one-octet field that describes how the data is formatted.
 
-    var format = enums.read(enums.literal, bytes[0].charCodeAt());
+    var format = enums.read(enums.literal, bytes.charCodeAt(0));
 
     var filename_len = bytes.charCodeAt(1);
     this.filename = util.decode_utf8(bytes.substr(2, filename_len));
