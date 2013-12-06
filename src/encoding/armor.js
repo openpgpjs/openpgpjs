@@ -199,7 +199,7 @@ function createcrc24(input) {
  * or an object with attribute "headers" containing the headers and
  * and an attribute "body" containing the body.
  */
-function openpgp_encoding_split_headers(text) {
+function split_headers(text) {
   var reEmptyLine = /^[\t ]*\n/m;
   var headers = "";
   var body = text;
@@ -221,7 +221,7 @@ function openpgp_encoding_split_headers(text) {
  * or an object with attribute "body" containing the body
  * and an attribute "checksum" containing the checksum.
  */
-function openpgp_encoding_split_checksum(text) {
+function split_checksum(text) {
   var reChecksumStart = /^=/m;
   var body = text;
   var checksum = "";
@@ -265,30 +265,30 @@ function dearmor(text) {
   }
 
   if (type != 2) {
-    var msg = openpgp_encoding_split_headers(splittext[indexBase].replace(/^- /mg, ''));
-    var msg_sum = openpgp_encoding_split_checksum(msg.body);
+    var msg = split_headers(splittext[indexBase].replace(/^- /mg, ''));
+    var msg_sum = split_checksum(msg.body);
 
     result = {
-      openpgp: openpgp_encoding_base64_decode(msg_sum.body),
+      data: base64.decode(msg_sum.body),
       type: type
     };
 
     checksum = msg_sum.checksum;
   } else {
-    var msg = openpgp_encoding_split_headers(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
-    var sig = openpgp_encoding_split_headers(splittext[indexBase + 1].replace(/^- /mg, ''));
-    var sig_sum = openpgp_encoding_split_checksum(sig.body);
+    var msg = split_headers(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
+    var sig = split_headers(splittext[indexBase + 1].replace(/^- /mg, ''));
+    var sig_sum = split_checksum(sig.body);
 
     result = {
       text:  msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
-      openpgp: openpgp_encoding_base64_decode(sig_sum.body),
+      data: base64.decode(sig_sum.body),
       type: type
     };
 
     checksum = sig_sum.checksum;
   }
 
-  if (!verifyCheckSum(result.openpgp, checksum)) {
+  if (!verifyCheckSum(result.data, checksum)) {
     util.print_error("Ascii armor integrity check on message failed: '"
       + checksum
       + "' should be '"

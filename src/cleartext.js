@@ -33,7 +33,7 @@ function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(packetlist);
   }
-  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/,"\r\n");
+  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
   this.packets = packetlist || new packet.list();
 }
 

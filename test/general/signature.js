@@ -310,7 +310,7 @@ var pub_key_arm3 =
       '=nx90',
       '-----END PGP MESSAGE-----'].join('\n');
 
-    var plaintext = 'short message\nnext line\n한국어/조선말\n\n';
+    var plaintext = 'short message\r\nnext line\r\n한국어/조선말\r\n\r\n';
     var esMsg = openpgp.message.readArmored(msg_armor);
     var pubKey = openpgp.key.readArmored(pub_key_arm2);
     var privKey = openpgp.key.readArmored(priv_key_arm2);
@@ -394,7 +394,7 @@ var pub_key_arm3 =
 
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg);
 
-    verified = verified && cleartextSig.text == plaintext;
+    verified = verified && cleartextSig.text == plaintext.replace(/\r/g,'').replace(/[\t ]+\n/g,"\n").replace(/\n/g,"\r\n");
 
     verified = verified && cleartextSig.signatures[0].status && cleartextSig.signatures[1].status;
 
@@ -412,7 +412,7 @@ var pub_key_arm3 =
     
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey], csMsg);
 
-    var verified = cleartextSig.text == plaintext;
+    var verified = cleartextSig.text == plaintext.replace(/\r/g,'').replace(/[\t ]+\n/g,"\n").replace(/\n/g,"\r\n");
 
     verified = verified && cleartextSig.signatures[0].status;
 
