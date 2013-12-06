@@ -55,7 +55,7 @@ function _openpgp () {
 		var mypos = 0;
 		var publicKeys = new Array();
 		var publicKeyCount = 0;
-		var input = openpgp_encoding_deArmor(armoredText.replace(/\r/g,'')).openpgp;
+		var input = openpgp_encoding_deArmor(armoredText).openpgp;
 		var l = input.length;
 		while (mypos != input.length) {
 			var first_packet = openpgp_packet.read_packet(input, mypos, l);
@@ -101,7 +101,7 @@ function _openpgp () {
 		var privateKeys = new Array();
 		var privateKeyCount = 0;
 		var mypos = 0;
-		var input = openpgp_encoding_deArmor(armoredText.replace(/\r/g,'')).openpgp;
+		var input = openpgp_encoding_deArmor(armoredText).openpgp;
 		var l = input.length;
 		while (mypos != input.length) {
 			var first_packet = openpgp_packet.read_packet(input, mypos, l);
@@ -300,7 +300,7 @@ function _openpgp () {
 	 */
 	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
 		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r/g,'').replace(/\n/g,"\r\n"));
+		var literal = new openpgp_packet_literaldata().write_packet(messagetext);
 		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		for (var i = 0; i < publickeys.length; i++) {
 			var onepasssignature = new openpgp_packet_onepasssignature();
@@ -310,7 +310,7 @@ function _openpgp () {
 			else
 				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
 			util.print_debug_hexstr_dump("onepasssigstr: |"+onepasssigstr+"|\n",onepasssigstr);
-			var datasignature = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
+			var datasignature = new openpgp_packet_signature().write_message_signature(1, messagetext, privatekey);
 			util.print_debug_hexstr_dump("datasignature: |"+datasignature.openpgp+"|\n",datasignature.openpgp);
 			if (i == 0) {
 				result = onepasssigstr+literal+datasignature.openpgp;
@@ -357,7 +357,7 @@ function _openpgp () {
 	 */
 	function write_encrypted_message(publickeys, messagetext) {
 		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r/g,'').replace(/\n/g,"\r\n"));
+		var literal = new openpgp_packet_literaldata().write_packet(messagetext);
 		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
 		result = literal;
 		

@@ -241,16 +241,14 @@ function openpgp_packet_signature() {
 		trailer += String.fromCharCode(((result.length) >> 16) & 0xFF);
 		trailer += String.fromCharCode(((result.length) >> 8) & 0xFF);
 		trailer += String.fromCharCode((result.length) & 0xFF);
-		var result2 = String.fromCharCode(0);
-		result2 += String.fromCharCode(0);
-		var hash = openpgp_crypto_hashData(hash_algo, data+result+trailer);
-		util.print_debug("DSA Signature is calculated with:|"+data+result+trailer+"|\n"+util.hexstrdump(data+result+trailer)+"\n hash:"+util.hexstrdump(hash));
-		result2 += hash.charAt(0);
-		result2 += hash.charAt(1);
+		var hashData = signature_type == 1 ? data.replace(/\r/g, '').replace(/\n/g, "\r\n") : data;
+		var hash = openpgp_crypto_hashData(hash_algo, hashData+result+trailer);
+		util.print_debug("Signature is calculated with:|"+hashData+result+trailer+"|\n"+util.hexstrdump(hashData+result+trailer)+"\n hash:"+util.hexstrdump(hash));
+		var result2 = String.fromCharCode(0) + String.fromCharCode(0) + hash.charAt(0) + hash.charAt(1);
 		result2 += openpgp_crypto_signData(hash_algo,privatekey.privateKeyPacket.publicKey.publicKeyAlgorithm,
 				publickey.MPIs,
 				privatekey.privateKeyPacket.secMPIs,
-				data+result+trailer);
+				hashData+result+trailer);
 		return {openpgp: (openpgp_packet.write_packet_header(2, (result+result2).length)+result + result2), 
 				hash: util.get_hashAlgorithmString(hash_algo)};
 	}

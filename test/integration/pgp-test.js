@@ -151,7 +151,7 @@ define(function(require) {
 				it('should work', function(done) {
 				    pgp.decrypt(ciphertext, pubkey, function(err, pt) {
 					expect(err).to.not.exist;
-					expect(pt.text).to.equal(message.replace(/\r/g,'').replace(/\n/g,"\r\n"));
+					expect(pt.text).to.equal(message);
 					expect(pt.validSignatures[0]).to.be.true;
 					done();
 				    });
