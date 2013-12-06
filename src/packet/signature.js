@@ -506,9 +506,10 @@ module.exports = function packet_signature() {
 
     switch (type) {
       case t.binary:
-      // conversion to CRLF line endings done in literal data packet
-      case t.text:
         return data.getBytes();
+
+      case t.text:
+        return data.getBytes().replace(/\r/g, '').replace(/\n/g, "\r\n");
 
       case t.standalone:
         return '';

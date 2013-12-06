@@ -33,7 +33,7 @@ function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(packetlist);
   }
-  this.text = text;
+  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/,"\r\n");
   this.packets = packetlist || new packet.list();
 }
 
@@ -63,7 +63,6 @@ CleartextMessage.prototype.sign = function(privateKeys) {
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-    // use literal data packet to convert to canonical <CR><LF> line endings
     var literalDataPacket = new packet.literal();
     literalDataPacket.setBytes(this.text, enums.read(enums.literal, enums.literal.text));
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
@@ -87,7 +86,6 @@ CleartextMessage.prototype.verify = function(publicKeys) {
       if (publicKeyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
-        // use literal data packet to convert to canonical <CR><LF> line endings
         var literalDataPacket = new packet.literal();
         literalDataPacket.setBytes(that.text, enums.read(enums.literal, enums.literal.text));
         verifiedSig.status = signatureList[i].verify(publicKeyPacket, literalDataPacket);

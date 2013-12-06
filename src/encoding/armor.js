@@ -31,18 +31,21 @@ var config = require('../config');
  *         null = unknown
  */
 function get_type(text) {
-  var splittedtext = text.split('-----');
+  var reHeader = /^-----([^-]+)-----$\n/m;
+
+  var header = text.match(reHeader);
+
   // BEGIN PGP MESSAGE, PART X/Y
   // Used for multi-part messages, where the armor is split amongst Y
   // parts, and this is the Xth part out of Y.
-  if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
+  if (header[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
     return enums.armor.multipart_section;
   } else
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
-  if (splittedtext[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
+  if (header[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
     return enums.armor.multipart_last;
 
   } else
@@ -50,25 +53,25 @@ function get_type(text) {
   // Used for detached signatures, OpenPGP/MIME signatures, and
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
   // for detached signatures.
-  if (splittedtext[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
+  if (header[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
     return enums.armor.signed;
 
   } else
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
-  if (splittedtext[1].match(/BEGIN PGP MESSAGE/)) {
+  if (header[1].match(/BEGIN PGP MESSAGE/)) {
     return enums.armor.message;
 
   } else
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
-  if (splittedtext[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
+  if (header[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
     return enums.armor.public_key;
 
   } else
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
-  if (splittedtext[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
+  if (header[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
     return enums.armor.private_key;
   }
 }
@@ -108,7 +111,7 @@ function getCheckSum(data) {
 }
 
 /**
- * Calculates the checksum over the given data and compares it with the 
+ * Calculates the checksum over the given data and compares it with the
  * given base64 encoded checksum
  * @param {String} data Data to create a CRC-24 checksum for
  * @param {String} checksum Base64 encoded checksum
@@ -190,66 +193,109 @@ function createcrc24(input) {
 }
 
 /**
- * DeArmor an OpenPGP armored message; verify the checksum and return 
+ * Splits a message into two parts, the headers and the body. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error
+ * or an object with attribute "headers" containing the headers and
+ * and an attribute "body" containing the body.
+ */
+function openpgp_encoding_split_headers(text) {
+  var reEmptyLine = /^[\t ]*\n/m;
+  var headers = "";
+  var body = text;
+
+  var matchResult = reEmptyLine.exec(text);
+
+  if (matchResult != null) {
+    headers = text.slice(0, matchResult.index);
+    body = text.slice(matchResult.index + matchResult[0].length);
+  }
+
+  return { headers: headers, body: body };
+}
+
+/**
+ * Splits a message into two parts, the body and the checksum. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {(Boolean|Object)} Either false in case of an error
+ * or an object with attribute "body" containing the body
+ * and an attribute "checksum" containing the checksum.
+ */
+function openpgp_encoding_split_checksum(text) {
+  var reChecksumStart = /^=/m;
+  var body = text;
+  var checksum = "";
+
+  var matchResult = reChecksumStart.exec(text);
+
+  if (matchResult != null) {
+    body = text.slice(0, matchResult.index);
+    checksum = text.slice(matchResult.index + 1);
+  }
+
+  return { body: body, checksum: checksum };
+}
+
+/**
+ * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
- * @returns {(Boolean|Object)} Either false in case of an error 
+ * @returns {(Boolean|Object)} Either false in case of an error
  * or an object with attribute "text" containing the message text
  * and an attribute "data" containing the bytes.
  */
 function dearmor(text) {
+  var reSplit = /^-----[^-]+-----$\n/m;
+
   text = text.replace(/\r/g, '');
 
   var type = get_type(text);
 
+  var splittext = text.split(reSplit);
+
+  // IE has a bug in split with a re. If the pattern matches the beginning of the
+  // string it doesn't create an empty array element 0. So we need to detect this
+  // so we know the index of the data we are interested in.
+  var indexBase = 1;
+
+  var result, checksum;
+
+  if (text.search(reSplit) != splittext[0].length) {
+    indexBase = 0;
+  }
+
   if (type != 2) {
-    var splittedtext = text.split('-----');
+    var msg = openpgp_encoding_split_headers(splittext[indexBase].replace(/^- /mg, ''));
+    var msg_sum = openpgp_encoding_split_checksum(msg.body);
 
-    var result = {
-      data: base64.decode(
-        splittedtext[2]
-        .split('\n\n')[1]
-        .split("\n=")[0]
-        .replace(/\n- /g, "\n")),
+    result = {
+      openpgp: openpgp_encoding_base64_decode(msg_sum.body),
       type: type
     };
 
-    if (verifyCheckSum(result.data,
-      splittedtext[2]
-      .split('\n\n')[1]
-      .split("\n=")[1]
-      .split('\n')[0]))
-
-      return result;
-    else {
-      util.print_error("Ascii armor integrity check on message failed: '" + splittedtext[2]
-        .split('\n\n')[1]
-        .split("\n=")[1]
-        .split('\n')[0] + "' should be '" + getCheckSum(result.data) + "'");
-      return false;
-    }
+    checksum = msg_sum.checksum;
   } else {
-    var splittedtext = text.split('-----');
+    var msg = openpgp_encoding_split_headers(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
+    var sig = openpgp_encoding_split_headers(splittext[indexBase + 1].replace(/^- /mg, ''));
+    var sig_sum = openpgp_encoding_split_checksum(sig.body);
 
-    var result = {
-      text: splittedtext[2]
-        .replace(/\n- /g, "\n")
-        .split("\n\n")[1],
-      data: base64.decode(splittedtext[4]
-        .split("\n\n")[1]
-        .split("\n=")[0]),
+    result = {
+      text:  msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
+      openpgp: openpgp_encoding_base64_decode(sig_sum.body),
       type: type
     };
 
-    if (verifyCheckSum(result.data, splittedtext[4]
-      .split("\n\n")[1]
-      .split("\n=")[1]))
+    checksum = sig_sum.checksum;
+  }
 
-      return result;
-    else {
-      util.print_error("Ascii armor integrity check on message failed");
-      return false;
-    }
+  if (!verifyCheckSum(result.openpgp, checksum)) {
+    util.print_error("Ascii armor integrity check on message failed: '"
+      + checksum
+      + "' should be '"
+      + getCheckSum(result) + "'");
+    return false;
+  } else {
+    return result;
   }
 }
 

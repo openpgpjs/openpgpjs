@@ -51,36 +51,17 @@ module.exports = function packet_literal() {
    */
   this.setBytes = function(bytes, format) {
     this.format = format;
-    switch (format) {
-      case 'utf8':
-        bytes = util.decode_utf8(bytes);
-        bytes = bytes.replace(/\r\n/g, '\n');
-        break;
-      case 'text':
-        bytes = bytes.replace(/\r\n/g, '\n');
-        break;
-    }
-    this.data = bytes;
+    this.data = format == 'utf8' ? util.decode_utf8(bytes) : bytes;
   }
+
 
   /**
    * Get the byte sequence representing the literal packet data
    * @returns {String} A sequence of bytes
    */
   this.getBytes = function() {
-    var bytes = this.data;
-    switch (this.format) {
-      case 'utf8':
-        bytes = bytes.replace(/\n/g, '\r\n');
-        bytes = util.encode_utf8(bytes);
-        break;
-      case 'text':
-        bytes = bytes.replace(/\n/g, '\r\n');
-        break;
-    }
-    return bytes;
+    return this.format == 'utf8' ? util.encode_utf8(this.data) : this.data;
   }
-
 
 
   /**
