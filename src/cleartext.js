@@ -56,6 +56,8 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
   var packetlist = new packet.list();  
+  var literalDataPacket = new packet.literal();
+  literalDataPacket.setBytes(this.text, enums.read(enums.literal, enums.literal.utf8));
   for (var i = 0; i < privateKeys.length; i++) {
     var signaturePacket = new packet.signature();
     signaturePacket.signatureType = enums.signature.text;
@@ -63,8 +65,6 @@ CleartextMessage.prototype.sign = function(privateKeys) {
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-    var literalDataPacket = new packet.literal();
-    literalDataPacket.setBytes(this.text, enums.read(enums.literal, enums.literal.text));
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
@@ -80,14 +80,14 @@ CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];
   var signatureList = this.packets.filterByTag(enums.packet.signature);
   var that = this;
+  var literalDataPacket = new packet.literal();
+  literalDataPacket.setBytes(that.text, enums.read(enums.literal, enums.literal.utf8));
   publicKeys.forEach(function(pubKey) {
     for (var i = 0; i < signatureList.length; i++) {
       var publicKeyPacket = pubKey.getPublicKeyPacket([signatureList[i].issuerKeyId]);
       if (publicKeyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
-        var literalDataPacket = new packet.literal();
-        literalDataPacket.setBytes(that.text, enums.read(enums.literal, enums.literal.text));
         verifiedSig.status = signatureList[i].verify(publicKeyPacket, literalDataPacket);
         result.push(verifiedSig);
         break;
