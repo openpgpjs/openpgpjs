@@ -225,7 +225,7 @@ function dearmor(text) {
       util.print_error("Ascii armor integrity check on message failed: '" + splittedtext[2]
         .split('\n\n')[1]
         .split("\n=")[1]
-        .split('\n')[0] + "' should be '" + getCheckSum(result.data)) + "'";
+        .split('\n')[0] + "' should be '" + getCheckSum(result.data) + "'");
       return false;
     }
   } else {
