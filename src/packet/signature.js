@@ -86,19 +86,19 @@ module.exports = function packet_signature() {
   this.read = function(bytes) {
     var i = 0;
 
-    this.version = bytes[i++].charCodeAt();
+    this.version = bytes.charCodeAt(i++);
     // switch on version (3 and 4)
     switch (this.version) {
       case 3:
         // One-octet length of following hashed material. MUST be 5.
-        if (bytes[i++].charCodeAt() != 5)
+        if (bytes.charCodeAt(i++) != 5)
           util.print_debug("openpgp.packet.signature.js\n" +
             'invalid One-octet length of following hashed material.' +
             'MUST be 5. @:' + (i - 1));
 
         var sigpos = i;
         // One-octet signature type.
-        this.signatureType = bytes[i++].charCodeAt();
+        this.signatureType = bytes.charCodeAt(i++);
 
         // Four-octet creation time.
         this.created = util.readDate(bytes.substr(i, 4));
@@ -112,15 +112,15 @@ module.exports = function packet_signature() {
         i += 8;
 
         // One-octet public-key algorithm.
-        this.publicKeyAlgorithm = bytes[i++].charCodeAt();
+        this.publicKeyAlgorithm = bytes.charCodeAt(i++);
 
         // One-octet hash algorithm.
-        this.hashAlgorithm = bytes[i++].charCodeAt();
+        this.hashAlgorithm = bytes.charCodeAt(i++);
         break;
       case 4:
-        this.signatureType = bytes[i++].charCodeAt();
-        this.publicKeyAlgorithm = bytes[i++].charCodeAt();
-        this.hashAlgorithm = bytes[i++].charCodeAt();
+        this.signatureType = bytes.charCodeAt(i++);
+        this.publicKeyAlgorithm = bytes.charCodeAt(i++);
+        this.hashAlgorithm = bytes.charCodeAt(i++);
 
         function subpackets(bytes) {
           // Two-octet scalar octet count for following subpacket data.
@@ -347,12 +347,12 @@ module.exports = function packet_signature() {
       this[prop] = [];
 
       for (var i = 0; i < bytes.length; i++) {
-        this[prop].push(bytes[i].charCodeAt());
+        this[prop].push(bytes.charCodeAt(i));
       }
     }
 
     // The leftwost bit denotes a "critical" packet, but we ignore it.
-    var type = bytes[mypos++].charCodeAt() & 0x7F;
+    var type = bytes.charCodeAt(mypos++) & 0x7F;
 
     // subpacket type
     switch (type) {
@@ -370,12 +370,12 @@ module.exports = function packet_signature() {
         break;
       case 4:
         // Exportable Certification
-        this.exportable = bytes[mypos++].charCodeAt() == 1;
+        this.exportable = bytes.charCodeAt(mypos++) == 1;
         break;
       case 5:
         // Trust Signature
-        this.trustLevel = bytes[mypos++].charCodeAt();
-        this.trustAmount = bytes[mypos++].charCodeAt();
+        this.trustLevel = bytes.charCodeAt(mypos++);
+        this.trustAmount = bytes.charCodeAt(mypos++);
         break;
       case 6:
         // Regular Expression
@@ -383,7 +383,7 @@ module.exports = function packet_signature() {
         break;
       case 7:
         // Revocable
-        this.revocable = bytes[mypos++].charCodeAt() == 1;
+        this.revocable = bytes.charCodeAt(mypos++) == 1;
         break;
       case 9:
         // Key Expiration Time
@@ -398,7 +398,7 @@ module.exports = function packet_signature() {
         this.preferredSymmetricAlgorithms = [];
 
         while (mypos != bytes.length) {
-          this.preferredSymmetricAlgorithms.push(bytes[mypos++].charCodeAt());
+          this.preferredSymmetricAlgorithms.push(bytes.charCodeAt(mypos++));
         }
 
         break;
@@ -407,8 +407,8 @@ module.exports = function packet_signature() {
         // (1 octet of class, 1 octet of public-key algorithm ID, 20
         // octets of
         // fingerprint)
-        this.revocationKeyClass = bytes[mypos++].charCodeAt();
-        this.revocationKeyAlgorithm = bytes[mypos++].charCodeAt();
+        this.revocationKeyClass = bytes.charCodeAt(mypos++);
+        this.revocationKeyAlgorithm = bytes.charCodeAt(mypos++);
         this.revocationKeyFingerprint = bytes.substr(mypos, 20);
         break;
 
@@ -420,7 +420,7 @@ module.exports = function packet_signature() {
       case 20:
         // Notation Data
         // We don't know how to handle anything but a text flagged data.
-        if (bytes[mypos].charCodeAt() == 0x80) {
+        if (bytes.charCodeAt(mypos) == 0x80) {
 
           // We extract key/value tuple from the byte stream.
           mypos += 4;
@@ -470,7 +470,7 @@ module.exports = function packet_signature() {
         break;
       case 29:
         // Reason for Revocation
-        this.reasonForRevocationFlag = bytes[mypos++].charCodeAt();
+        this.reasonForRevocationFlag = bytes.charCodeAt(mypos++);
         this.reasonForRevocationString = bytes.substr(mypos);
         break;
       case 30:
@@ -480,8 +480,8 @@ module.exports = function packet_signature() {
       case 31:
         // Signature Target
         // (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
-        this.signatureTargetPublicKeyAlgorithm = bytes[mypos++].charCodeAt();
-        this.signatureTargetHashAlgorithm = bytes[mypos++].charCodeAt();
+        this.signatureTargetPublicKeyAlgorithm = bytes.charCodeAt(mypos++);
+        this.signatureTargetHashAlgorithm = bytes.charCodeAt(mypos++);
 
         var len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
@@ -506,9 +506,10 @@ module.exports = function packet_signature() {
 
     switch (type) {
       case t.binary:
-      // conversion to CRLF line endings done in literal data packet
-      case t.text:
         return data.getBytes();
+
+      case t.text:
+        return data.getBytes().replace(/\r/g, '').replace(/\n/g, "\r\n");
 
       case t.standalone:
         return '';

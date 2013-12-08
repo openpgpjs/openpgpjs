@@ -47,7 +47,7 @@ module.exports = function mpi() {
    * @return {openpgp_type_mpi} Object representation
    */
   this.read = function(bytes) {
-    var bits = (bytes[0].charCodeAt() << 8) | bytes[1].charCodeAt();
+    var bits = (bytes.charCodeAt(0) << 8) | bytes.charCodeAt(1);
 
     // Additional rules:
     //

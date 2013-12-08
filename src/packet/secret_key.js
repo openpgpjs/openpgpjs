@@ -114,7 +114,7 @@ function packet_secret_key() {
     //   indicates that the secret-key data is not encrypted.  255 or 254
     //   indicates that a string-to-key specifier is being given.  Any
     //   other value is a symmetric-key encryption algorithm identifier.
-    var isEncrypted = bytes[0].charCodeAt();
+    var isEncrypted = bytes.charCodeAt(0);
 
     if (isEncrypted) {
       this.encrypted = bytes;
@@ -199,12 +199,12 @@ function packet_secret_key() {
       symmetric,
       key;
 
-    var s2k_usage = this.encrypted[i++].charCodeAt();
+    var s2k_usage = this.encrypted.charCodeAt(i++);
 
     // - [Optional] If string-to-key usage octet was 255 or 254, a one-
     //   octet symmetric encryption algorithm.
     if (s2k_usage == 255 || s2k_usage == 254) {
-      symmetric = this.encrypted[i++].charCodeAt();
+      symmetric = this.encrypted.charCodeAt(i++);
       symmetric = enums.read(enums.symmetric, symmetric);
 
       // - [Optional] If string-to-key usage octet was 255 or 254, a

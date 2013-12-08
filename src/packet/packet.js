@@ -23,14 +23,14 @@ module.exports = {
   readSimpleLength: function(bytes) {
     var len = 0,
       offset,
-      type = bytes[0].charCodeAt();
+      type = bytes.charCodeAt(0);
 
 
     if (type < 192) {
-      len = bytes[0].charCodeAt();
+      len = bytes.charCodeAt(0);
       offset = 1;
     } else if (type < 255) {
-      len = ((bytes[0].charCodeAt() - 192) << 8) + (bytes[1].charCodeAt()) + 192;
+      len = ((bytes.charCodeAt(0) - 192) << 8) + (bytes.charCodeAt(1)) + 192;
       offset = 2;
     } else if (type == 255) {
       len = util.readNumber(bytes.substr(1, 4));
@@ -117,7 +117,7 @@ module.exports = {
    */
   read: function(input, position, len) {
     // some sanity checks
-    if (input == null || input.length <= position || input.substring(position).length < 2 || (input[position].charCodeAt() &
+    if (input == null || input.length <= position || input.substring(position).length < 2 || (input.charCodeAt(position) &
       0x80) == 0) {
       util
         .print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
@@ -129,18 +129,18 @@ module.exports = {
     var packet_length;
 
     format = 0; // 0 = old format; 1 = new format
-    if ((input[mypos].charCodeAt() & 0x40) != 0) {
+    if ((input.charCodeAt(mypos) & 0x40) != 0) {
       format = 1;
     }
 
     var packet_length_type;
     if (format) {
       // new format header
-      tag = input[mypos].charCodeAt() & 0x3F; // bit 5-0
+      tag = input.charCodeAt(mypos) & 0x3F; // bit 5-0
     } else {
       // old format header
-      tag = (input[mypos].charCodeAt() & 0x3F) >> 2; // bit 5-2
-      packet_length_type = input[mypos].charCodeAt() & 0x03; // bit 1-0
+      tag = (input.charCodeAt(mypos) & 0x3F) >> 2; // bit 5-2
+      packet_length_type = input.charCodeAt(mypos) & 0x03; // bit 1-0
     }
 
     // header octet parsing done
@@ -157,18 +157,18 @@ module.exports = {
         case 0:
           // The packet has a one-octet length. The header is 2 octets
           // long.
-          packet_length = input[mypos++].charCodeAt();
+          packet_length = input.charCodeAt(mypos++);
           break;
         case 1:
           // The packet has a two-octet length. The header is 3 octets
           // long.
-          packet_length = (input[mypos++].charCodeAt() << 8) | input[mypos++].charCodeAt();
+          packet_length = (input.charCodeAt(mypos++) << 8) | input.charCodeAt(mypos++);
           break;
         case 2:
           // The packet has a four-octet length. The header is 5
           // octets long.
-          packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() <<
-            8) | input[mypos++].charCodeAt();
+          packet_length = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) <<
+            8) | input.charCodeAt(mypos++);
           break;
         default:
           // 3 - The packet is of indeterminate length. The header is 1
@@ -189,42 +189,42 @@ module.exports = {
     {
 
       // 4.2.2.1. One-Octet Lengths
-      if (input[mypos].charCodeAt() < 192) {
-        packet_length = input[mypos++].charCodeAt();
+      if (input.charCodeAt(mypos) < 192) {
+        packet_length = input.charCodeAt(mypos++);
         util.print_debug("1 byte length:" + packet_length);
         // 4.2.2.2. Two-Octet Lengths
-      } else if (input[mypos].charCodeAt() >= 192 && input[mypos].charCodeAt() < 224) {
-        packet_length = ((input[mypos++].charCodeAt() - 192) << 8) + (input[mypos++].charCodeAt()) + 192;
+      } else if (input.charCodeAt(mypos) >= 192 && input.charCodeAt(mypos) < 224) {
+        packet_length = ((input.charCodeAt(mypos++) - 192) << 8) + (input.charCodeAt(mypos++)) + 192;
         util.print_debug("2 byte length:" + packet_length);
         // 4.2.2.4. Partial Body Lengths
-      } else if (input[mypos].charCodeAt() > 223 && input[mypos].charCodeAt() < 255) {
-        packet_length = 1 << (input[mypos++].charCodeAt() & 0x1F);
+      } else if (input.charCodeAt(mypos) > 223 && input.charCodeAt(mypos) < 255) {
+        packet_length = 1 << (input.charCodeAt(mypos++) & 0x1F);
         util.print_debug("4 byte length:" + packet_length);
         // EEEK, we're reading the full data here...
         var mypos2 = mypos + packet_length;
         bodydata = input.substring(mypos, mypos + packet_length);
         while (true) {
-          if (input[mypos2].charCodeAt() < 192) {
-            var tmplen = input[mypos2++].charCodeAt();
+          if (input.charCodeAt(mypos2) < 192) {
+            var tmplen = input.charCodeAt(mypos2++);
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
             break;
-          } else if (input[mypos2].charCodeAt() >= 192 && input[mypos2].charCodeAt() < 224) {
-            var tmplen = ((input[mypos2++].charCodeAt() - 192) << 8) + (input[mypos2++].charCodeAt()) + 192;
+          } else if (input.charCodeAt(mypos2) >= 192 && input.charCodeAt(mypos2) < 224) {
+            var tmplen = ((input.charCodeAt(mypos2++) - 192) << 8) + (input.charCodeAt(mypos2++)) + 192;
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
             break;
-          } else if (input[mypos2].charCodeAt() > 223 && input[mypos2].charCodeAt() < 255) {
-            var tmplen = 1 << (input[mypos2++].charCodeAt() & 0x1F);
+          } else if (input.charCodeAt(mypos2) > 223 && input.charCodeAt(mypos2) < 255) {
+            var tmplen = 1 << (input.charCodeAt(mypos2++) & 0x1F);
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
           } else {
             mypos2++;
-            var tmplen = (input[mypos2++].charCodeAt() << 24) | (input[mypos2++].charCodeAt() << 16) | (input[mypos2++]
-              .charCodeAt() << 8) | input[mypos2++].charCodeAt();
+            var tmplen = (input.charCodeAt(mypos2++) << 24) | (input.charCodeAt(mypos2++) << 16) | (input[mypos2++]
+              .charCodeAt() << 8) | input.charCodeAt(mypos2++);
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             packet_length += tmplen;
             mypos2 += tmplen;
@@ -235,8 +235,8 @@ module.exports = {
         // 4.2.2.3. Five-Octet Lengths
       } else {
         mypos++;
-        packet_length = (input[mypos++].charCodeAt() << 24) | (input[mypos++].charCodeAt() << 16) | (input[mypos++].charCodeAt() <<
-          8) | input[mypos++].charCodeAt();
+        packet_length = (input.charCodeAt(mypos++) << 24) | (input.charCodeAt(mypos++) << 16) | (input.charCodeAt(mypos++) <<
+          8) | input.charCodeAt(mypos++);
       }
     }
 
