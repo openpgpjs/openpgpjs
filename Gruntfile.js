@@ -4,9 +4,40 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
-      dist: {
+      openpgp: {
         files: {
-          'resources/openpgp.js': ['src/**/*.js']
+          'resources/openpgp.js': []
+        },
+        options: {
+          alias: './src/:openpgp'
+        }
+      },
+      openpgp_debug: {
+        files: {
+          'resources/openpgp.debug.js': []
+        },
+        options: {
+          debug: true,
+          alias: './src/:openpgp'
+        }
+      },
+      unittests: {
+        files: {
+          'test/test-bundle.js': []
+        },
+        options: {
+          debug: true,
+          alias: './test/test-all.js:test-bundle.js'
+        }
+      },
+      ci_tests: {
+        files: {
+          'test/lib/ci-tests-bundle.js': []
+        },
+        options: {
+          debug: true,
+          alias: './test/ci-tests-all.js:ci-tests',
+          external: [ 'openpgp' ]
         }
       }
     },
@@ -51,6 +82,22 @@ module.exports = function(grunt) {
           destination: "doc"
         }
       }
+    },
+
+    copy: {
+      npm: {
+        expand: true,
+        flatten: true,
+        cwd: 'node_modules/',
+        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'sinon/pkg/sinon.js'],
+        dest: 'test/lib/'
+      },
+      openpgp: {
+        expand: true,
+        cwd: 'resources/',
+        src: ['openpgp.debug.js', 'jquery.min.js'],
+        dest: 'test/lib/'
+      }
     }
   });
 
@@ -63,9 +110,24 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jsdoc');
 
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['jsbeautifier', 'browserify', 'replace', 'uglify']);
+    grunt.task.run(['browserify', 'replace', 'uglify']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
     grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
   });
   grunt.registerTask('documentation', ['jsdoc']);
+
+  // Load the plugin(s)
+  grunt.loadNpmTasks('grunt-contrib-copy');
+
+  // Alias the `mocha_phantomjs` task to run `mocha-phantomjs`
+  grunt.registerTask('mocha_phantomjs', 'mocha-phantomjs', function () {
+    var done = this.async();
+    require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/ci-tests.html', function (err, stdout) {
+      grunt.log.write(stdout);
+      done(err);
+    });
+  });
+
+  // Test/Dev tasks
+  grunt.registerTask('test', ['copy', 'mocha_phantomjs']);
 };

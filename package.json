@@ -1,14 +1,24 @@
 {
-	"name": "openpgp",
-	"version": "0.0.1",
-	"main": "./src/index.js",
-	"scripts": {
-		"pretest": "make bundle && make bundle-test",
-		"test": ""
-	},
+  "name": "openpgp",
+  "version": "0.0.1",
+  "engines": {
+      "node": ">=0.8"
+  },
+  "main": "./src/index.js",
+  "scripts": {
+    "pretest": "grunt browserify",
+    "test": "grunt test",
+    "start": "grunt dev"
+  },
   "devDependencies": {
     "browserify": "~2.35",
-    "grunt": "~0.4.1",
+    "grunt": "~0.4.2",
+    "mocha": "~1.15.1",
+    "mocha-phantomjs": "~3.1.6",
+    "phantomjs": "~1.9.2-5",
+    "chai": "~1.8.1",
+    "sinon": "~1.7.3",
+    "grunt-contrib-copy": "~0.4.1",
     "grunt-browserify": "~1.2.11",
     "grunt-contrib-uglify": "*",
     "grunt-text-replace": "*",

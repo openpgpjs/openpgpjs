@@ -3,3 +3,5 @@ build/
 .DS_Store
 node_modules/
 npm*
+test/lib/
+test/test-bundle.js
