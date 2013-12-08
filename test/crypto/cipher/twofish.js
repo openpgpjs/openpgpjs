@@ -1,7 +1,7 @@
 var unit = require('../../unit.js');
 
 unit.register("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.txt", function() {
-  var openpgp = require('../../../'),
+  var openpgp = require('openpgp'),
     util = openpgp.util;
 
   function TFencrypt(block, key) {

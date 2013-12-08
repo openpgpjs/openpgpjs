@@ -1,7 +1,7 @@
 var unit = require('../unit.js');
 
 unit.register("Key generation/encryption/decryption", function() {
-  var openpgp = require('../../');
+  var openpgp = require('openpgp');
   var result = [];
   var testHelper = function(passphrase, userid, message) {
     var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 
@@ -37,7 +37,7 @@ unit.register("Key generation/encryption/decryption", function() {
 });
 
 unit.register("Message encryption/decryption", function() {
-  var openpgp = require('../../');
+  var openpgp = require('openpgp');
 
   var result = [];
 

@@ -23,11 +23,12 @@ module.exports = function(grunt) {
       },
       unittests: {
         files: {
-          'test/test-bundle.js': []
+          'test/lib/test-bundle.js': []
         },
         options: {
           debug: true,
-          alias: './test/test-all.js:test-bundle.js'
+          alias: './test/test-all.js:unittests',
+          external: [ 'openpgp' ]
         }
       },
       ci_tests: {

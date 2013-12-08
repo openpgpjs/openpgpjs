@@ -1,7 +1,7 @@
 var unit = require('../../unit.js');
 
 unit.register("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
-  var openpgp = require('../../../'),
+  var openpgp = require('openpgp'),
     util = openpgp.util;
 
   var result = [];
@@ -99,7 +99,7 @@ unit.register("TripleDES (EDE) cipher test with test vectors from http://csrc.ni
 
 
 unit.register("DES encrypt/decrypt padding tests", function () {
-    var openpgp = require('../../../'),
+    var openpgp = require('openpgp'),
       util = openpgp.util;
 
     var result = [];

@@ -1,7 +1,7 @@
 var unit = require('../unit.js');
 
 unit.register("Keyring testing", function() {
-  var openpgp = require('../../');
+  var openpgp = require('openpgp');
   var keyring = require('../../src/keyring.js');
   var result = [];
 

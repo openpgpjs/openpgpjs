@@ -1,5 +1,5 @@
-var openpgp = require('openpgp');
-    //keyring = require('../../src/keyring.js');
+var openpgp = require('openpgp'),
+    keyring = require('../src/keyring.js');
 
 'use strict';
 
@@ -61,17 +61,17 @@ describe('Openpgp integration tests', function() {
         });
     });
 
-//    describe('Import key pair', function() {
-//        it('should work', function(done) {
-//            // clear any keypair already in the keychain
-//            keyring.init();
-//            // import private key
-//            keyring.importPacketlist(privkey);
-//            // import public key
-//            keyring.importPacketlist(pubkey);
-//            done();
-//        });
-//    });
+    describe('Import key pair', function() {
+        it('should work', function(done) {
+            // clear any keypair already in the keychain
+            keyring.init();
+            // import private key
+            keyring.importKey(privkey);
+            // import public key
+            keyring.importKey(pubkey);
+            done();
+        });
+    });
 
     describe('Encryption', function() {
         var message = 'asdfs\n\nThursday, Nov 21, 2013 7:38 PM asdf@example.com wrote:\n' +

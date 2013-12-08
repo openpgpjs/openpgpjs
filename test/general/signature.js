@@ -1,7 +1,7 @@
 var unit = require('../unit.js');
 
 unit.register("Signature testing", function() {
-  var openpgp = require('../../');
+  var openpgp = require('openpgp');
 
       var priv_key_arm1 =
         [ '-----BEGIN PGP PRIVATE KEY BLOCK-----',

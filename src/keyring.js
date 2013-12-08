@@ -15,17 +15,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var packet = require('./packet');
-var enums = require('./enums.js');
-var armor = require('./encoding/armor.js');
+var openpgp = require('openpgp');
 
 /**
  * @class
  * @classdesc The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  */
 var keyring = function() {
-  this.armoredPacketlists = [];
-  this.parsedPacketlists = [];
+  this.keys = [];
 
   /**
    * Initialization routine for the keyring. This method reads the 
@@ -33,17 +30,15 @@ var keyring = function() {
    * This method is called by openpgp.init().
    */
   function init() {
-    var armoredPacketlists = JSON.parse(window.localStorage.getItem("armoredPacketlists"));
-    if (armoredPacketlists === null || armoredPacketlists.length === 0) {
-      armoredPacketlists = [];
-    }
-    this.armoredPacketlists = armoredPacketlists;
-
-    var packetlist;
-    for (var i = 0; i < armoredPacketlists.length; i++) {
-      packetlist = new packet.list();
-      packetlist.read(armoredPacketlists[i]);
-      this.parsedPacketlists.push(packetlist);
+    var armoredKeys = JSON.parse(window.localStorage.getItem("armoredKeys"));
+    if (armoredKeys !== null && armoredKeys.length === 0) {
+      var key;
+      for (var i = 0; i < armoredKeys.length; i++) {
+        key = openpgp.key.readArmored(armoredKeys[i]);
+        this.keys.push(key);
+      }
+    } else {
+      this.keys = [];
     }
   }
   this.init = init;
@@ -53,60 +48,50 @@ var keyring = function() {
    * The privateKeys array and publicKeys array gets Stringified using JSON
    */
   function store() {
-    window.localStorage.setItem("armoredPacketlists", JSON.stringify(this.armoredPacketlists));
+    var armoredKeys = [];
+    for (var i = 0; i < this.keys.length; i++) {
+      armoredKeys.push(this.keys[i].armor());
+    }
+    window.localStorage.setItem("armoredKeys", JSON.stringify(armoredKeys));
   }
   this.store = store;
 
-  function emailPacketCheck(packet, email) {
-    var emailMatch = false;
-    var packetEmail;
+  function emailKeyCheck(key, email) {
     email = email.toLowerCase();
-    if (packet.tag == enums.packet.userid) {
-      packetEmail = packet.userid;
-      //we need to get just the email from the userid packet
-      packetEmail = packetEmail.split('<')[1].split('<')[0].trim.toLowerCase();
-      if (packetEmail == email) {
-        emailMatch = true;
-      }
-    }
-    return emailMatch;
-  }
-
-  function idPacketCheck(packet, id) {
-    if (packet.getKeyId && packet.getKeyId().write() == id) {
-      return true;
-    }
-    return false;
-  }
-
-  function helperCheckIdentityAndPacketMatch(identityFunction, identityInput, packetType, packetlist) {
-    var packet;
-    for (var l = 0; l < packetlist.length; l++) {
-      packet = packetlist[l];
-      identityMatch = identityFunction(packet, identityInput);
-      if (!packetType) {
-        packetMatch = true;
-      } else if (packet.tag == packetType) {
-        packetMatch = true;
-      }
-      if (packetMatch && identityMatch) {
+    var keyEmails = key.getUserIds();
+    for (var i; i < keyEmails.length; i++) {
+      //we need to get just the email from the userid key
+      keyEmail = keyEmails[i].split('<')[1].split('>')[0].trim().toLowerCase();
+      if (keyEmail == email) {
         return true;
       }
     }
     return false;
   }
 
-  function checkForIdentityAndPacketMatch(identityFunction, identityInput, packetType) {
+  function idKeyCheck(key, id) {
+    var keyid = key.getKeyId();
+    if (keyid && keyid.write() == id) {
+      return true;
+    }
+    return false;
+  }
+
+  function checkForIdentityAndPacketMatch(identityFunction, identityInput, keyType) {
     var results = [];
-    var packetlist;
-    var identityMatch;
-    var packetMatch;
-    for (var p = 0; p < this.parsedPacketlists.length; p++) {
-      identityMatch = false;
-      packetMatch = false;
-      packetlist = this.parsedPacketlists[p];
-      if (helperCheckIdentityAndPacketMatch(identityFunction, identityInput, packetType, packetlist)) {
-        results.push(packetlist);
+    for (var p = 0; p < this.keys.length; p++) {
+      var key = this.keys[p];
+      switch (keyType) {
+        case openpgp.enums.packet.public_key:
+          if (key.isPublic() && identityFunction(identityInput, key)) {
+            results.push(key);
+          }
+          break;
+        case openpgp.enums.packet.private_key:
+          if (key.isPrivate() && identityFunction(identityInput, key)) {
+            results.push(key);
+          }
+          break;
       }
     }
     return results;
@@ -115,74 +100,76 @@ var keyring = function() {
 
   /**
    * searches all public keys in the keyring matching the address or address part of the user ids
-   * @param {String} email_address
-   * @return {openpgp_msg_publickey[]} The public keys associated with provided email address.
+   * @param {String} email email address to search for
+   * @return {openpgp.key.Key[]} The public keys associated with provided email address.
    */
   function getPublicKeyForAddress(email) {
-    return checkForIdentityAndPacketMatch(emailPacketCheck, email, enums.packet.public_key);
+    return checkForIdentityAndPacketMatch(emailPacketCheck, email, openpgp.enums.packet.public_key);
   }
   this.getPublicKeyForAddress = getPublicKeyForAddress;
 
   /**
    * Searches the keyring for a private key containing the specified email address
-   * @param {String} email_address email address to search for
-   * @return {openpgp_msg_privatekey[]} private keys found
+   * @param {String} email email address to search for
+   * @return {openpgp.key.Key[]} private keys found
    */
-  function getPrivateKeyForAddress(email_address) {
-    return checkForIdentityAndPacketMatch(emailPacketCheck, email, enums.packet.secret_key);
+  function getPrivateKeyForAddress(email) {
+    return checkForIdentityAndPacketMatch(emailPacketCheck, email, openpgp.enums.packet.secret_key);
   }
   this.getPrivateKeyForAddress = getPrivateKeyForAddress;
 
   /**
    * Searches the keyring for public keys having the specified key id
    * @param {String} keyId provided as string of hex number (lowercase)
-   * @return {openpgp_msg_privatekey[]} public keys found
+   * @return {openpgp.key.Key[]} public keys found
    */
-  function getPacketlistsForKeyId(keyId) {
+  function getKeysForKeyId(keyId) {
     return this.checkForIdentityAndPacketMatch(idPacketCheck, keyId);
   }
-  this.getPacketlistsForKeyId = getPacketlistsForKeyId;
+  this.getKeysForKeyId = getKeysForKeyId;
 
   /**
-   * Imports a packet list (public or private key block) from an ascii armored message 
-   * @param {String} armored message to read the packets/key from
+   * Imports a key from an ascii armored message
+   * @param {String} armored message to read the keys/key from
    */
-  function importPacketlist(armored) {
-    this.armoredPacketlists.push(armored);
-
-    var dearmored = armor.decode(armored.replace(/\r/g, '')).data;
-
-    packetlist = new packet.list();
-    packetlist.read(dearmored);
-    this.parsedPacketlists.push(packetlist);
+  function importKey(armored) {
+    this.keys.push(openpgp.key.readArmored(armored));
 
     return true;
   }
-  this.importPacketlist = importPacketlist;
+  this.importKey = importKey;
 
   /**
-   * TODO
-   * returns the openpgp_msg_privatekey representation of the public key at public key ring index  
-   * @param {Integer} index the index of the public key within the publicKeys array
-   * @return {openpgp_msg_privatekey} the public key object
+   * returns the armored message representation of the key at key ring index
+   * @param {Integer} index the index of the key within the array
+   * @return {String} armored message representing the key object
    */
-  function exportPublicKey(index) {
-    return this.publicKey[index];
+  function exportKey(index) {
+    return this.keys[index].armor();
   }
-  this.exportPublicKey = exportPublicKey;
+  this.exportKey = exportKey;
 
   /**
-   * TODO
    * Removes a public key from the public key keyring at the specified index 
    * @param {Integer} index the index of the public key within the publicKeys array
-   * @return {openpgp_msg_privatekey} The public key object which has been removed
+   * @return {openpgp.key.Key} The public key object which has been removed
    */
-  function removePublicKey(index) {
-    var removed = this.publicKeys.splice(index, 1);
-    this.store();
+  function removeKey(index) {
+    var removed = this.keys.splice(index, 1);
+
     return removed;
   }
-  this.removePublicKey = removePublicKey;
+  this.removeKey = removeKey;
+
+  /**
+   * returns the armored message representation of the public key portion of the key at key ring index
+   * @param {Integer} index the index of the key within the array
+   * @return {String} armored message representing the public key object
+   */
+  function exportPublicKey(index) {
+    return this.keys[index].toPublic().armor();
+  }
+  this.exportPublicKey = exportPublicKey;
 
 };
 
