@@ -506,10 +506,8 @@ module.exports = function packet_signature() {
 
     switch (type) {
       case t.binary:
-        return data.getBytes();
-
       case t.text:
-        return data.getBytes().replace(/\r/g, '').replace(/\n/g, "\r\n");
+        return data.getBytes();
 
       case t.standalone:
         return '';

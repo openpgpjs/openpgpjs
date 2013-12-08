@@ -310,7 +310,7 @@ var pub_key_arm3 =
       '=nx90',
       '-----END PGP MESSAGE-----'].join('\n');
 
-    var plaintext = 'short message\r\nnext line\r\n한국어/조선말\r\n\r\n';
+    var plaintext = 'short message\nnext line\n한국어/조선말\n\n';
     var esMsg = openpgp.message.readArmored(msg_armor);
     var pubKey = openpgp.key.readArmored(pub_key_arm2);
     var privKey = openpgp.key.readArmored(priv_key_arm2);
@@ -394,7 +394,7 @@ var pub_key_arm3 =
 
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg);
 
-    verified = verified && cleartextSig.text == plaintext.replace(/\r/g,'').replace(/[\t ]+\n/g,"\n").replace(/\n/g,"\r\n");
+    verified = verified && cleartextSig.text == plaintext;
 
     verified = verified && cleartextSig.signatures[0].status && cleartextSig.signatures[1].status;
 
@@ -412,11 +412,43 @@ var pub_key_arm3 =
     
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey], csMsg);
 
-    var verified = cleartextSig.text == plaintext.replace(/\r/g,'').replace(/[\t ]+\n/g,"\n").replace(/\n/g,"\r\n");
+    var verified = cleartextSig.text == plaintext.replace(/\r/g,'');
 
     verified = verified && cleartextSig.signatures[0].status;
 
     return new unit.result("Sign text with openpgp.signClearMessage and verify with openpgp.verifyClearSignedMessage leads to same cleartext and valid signatures", verified);
+  }, function() {
+
+    var msg_armor = 
+     ['-----BEGIN PGP SIGNED MESSAGE-----',
+      'Hash: SHA256',
+      '',
+      'äöü',
+      'some',
+      'more',
+      '-----BEGIN PGP SIGNATURE-----',
+      'Version: GnuPG v2.0.19 (GNU/Linux)',
+      '',
+      'iJwEAQEIAAYFAlKkbS8ACgkQ4IT3RGwgLJf/4wQAiG8s4CwL+YcvVaY/UVEuVCN+',
+      '7Z/y9kNIU3MuPQy/7kiAV/f3mE488363LelrLuppZRpAmbYFmFCklK/xgXF1MfRQ',
+      'J7ZGW0PrxQPi8KR8kSPzaUjkzUk86sARB0LeIxcG+5T/qh7fDXCRRyXPom5Ebqsf',
+      'XCEfvvdJ60zitnlFiIY=',
+      '=dm/N',
+      '-----END PGP SIGNATURE-----'].join('\n');
+
+    var plaintext = 'äöü\nsome\nmore';
+    var csMsg = openpgp.cleartext.readArmored(msg_armor);
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2);
+
+    var keyids = csMsg.getSigningKeyIds();
+
+    var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2], csMsg);
+
+    var verified = cleartextSig.text == plaintext;
+
+    verified = verified && cleartextSig.signatures[0].status;
+
+    return new unit.result("Verify cleartext signed message with CP-1252 character encoding", verified);
   }];
 
   var results = [];
