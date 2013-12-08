@@ -31,7 +31,8 @@ lint:
 	@./scripts/lint.sh
 
 bundle:
-	@browserify -d -r ./src/:openpgp > ./resources/openpgp.js
+	@browserify -r ./src/:openpgp > ./resources/openpgp.js
+	@browserify -d -r ./src/:openpgp > ./resources/openpgp.debug.js
 
 bundle-test:
 	@browserify -d -r ./test/test-all.js:test-bundle.js > ./test/test-bundle.js
