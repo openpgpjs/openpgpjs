@@ -265,7 +265,7 @@ function dearmor(text) {
   }
 
   if (type != 2) {
-    var msg = split_headers(splittext[indexBase].replace(/^- /mg, ''));
+    var msg = split_headers(splittext[indexBase]);
     var msg_sum = split_checksum(msg.body);
 
     result = {
@@ -275,6 +275,7 @@ function dearmor(text) {
 
     checksum = msg_sum.checksum;
   } else {
+    // Reverse dash-escaping for msg and remove trailing whitespace at end of line
     var msg = split_headers(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
     var sig = split_headers(splittext[indexBase + 1].replace(/^- /mg, ''));
     var sig_sum = split_checksum(sig.body);

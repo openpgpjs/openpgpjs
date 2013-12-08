@@ -33,6 +33,7 @@ function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(packetlist);
   }
+  // normalize EOL to canonical form <CR><LF>
   this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
   this.packets = packetlist || new packet.list();
 }
@@ -57,7 +58,7 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 CleartextMessage.prototype.sign = function(privateKeys) {
   var packetlist = new packet.list();  
   var literalDataPacket = new packet.literal();
-  literalDataPacket.setBytes(this.text, enums.read(enums.literal, enums.literal.utf8));
+  literalDataPacket.setText(this.text);
   for (var i = 0; i < privateKeys.length; i++) {
     var signaturePacket = new packet.signature();
     signaturePacket.signatureType = enums.signature.text;
@@ -79,9 +80,10 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];
   var signatureList = this.packets.filterByTag(enums.packet.signature);
-  var that = this;
   var literalDataPacket = new packet.literal();
-  literalDataPacket.setBytes(that.text, enums.read(enums.literal, enums.literal.utf8));
+  // we assume that cleartext signature is generated based on UTF8 cleartext,
+  // fails for other encodings, see CP-1252 test case in test/signature.js
+  literalDataPacket.setText(this.text);
   publicKeys.forEach(function(pubKey) {
     for (var i = 0; i < signatureList.length; i++) {
       var publicKeyPacket = pubKey.getPublicKeyPacket([signatureList[i].issuerKeyId]);
@@ -102,7 +104,8 @@ CleartextMessage.prototype.verify = function(publicKeys) {
  * @return {String} cleartext of message
  */
 CleartextMessage.prototype.getText = function() {
-  return this.text;
+  // normalize end of line to \n
+  return this.text.replace(/\r\n/g,"\n");
 };
 
 /**

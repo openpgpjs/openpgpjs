@@ -120,13 +120,7 @@ Message.prototype.getLiteralData = function() {
 Message.prototype.getText = function() {
   var literal = this.packets.findPacket(enums.packet.literal);
   if (literal) {
-    var data = literal.data;
-    if (literal.format == enums.read(enums.literal, enums.literal.binary)
-      || literal.format == enums.read(enums.literal, enums.literal.text)) {
-      // text in a literal packet with format 'binary' or 'text' could be utf8, therefore decode
-      data = util.decode_utf8(data);
-    }
-    return data;
+    return literal.getText();
   } else {
     return null;
   }
@@ -279,7 +273,21 @@ function readArmored(armoredText) {
 function fromText(text) {
   var literalDataPacket = new packet.literal();
   // text will be converted to UTF8
-  literalDataPacket.set(text);
+  literalDataPacket.setText(text);
+  var literalDataPacketlist = new packet.list();
+  literalDataPacketlist.push(literalDataPacket);
+  var newMessage = new Message(literalDataPacketlist);
+  return newMessage;
+}
+
+/**
+ * creates new message object from binary data
+ * @param {String} bytes
+ * @return {message} new message object
+ */
+function fromBinary(bytes) {
+  var literalDataPacket = new packet.literal();
+  literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
   var literalDataPacketlist = new packet.list();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);

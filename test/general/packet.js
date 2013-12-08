@@ -46,7 +46,7 @@ unit.register("Packet testing", function() {
 		var message = new openpgp.packet.list();
 
 		var literal = new openpgp.packet.literal();
-		literal.set('Hello world', 'utf8');
+		literal.setText('Hello world');
 		
 		var enc = new openpgp.packet.symmetrically_encrypted();
 		message.push(enc);
@@ -76,7 +76,7 @@ unit.register("Packet testing", function() {
 			msg = new openpgp.packet.list();
 
 		msg.push(enc);
-		literal.set('Hello world!', 'utf8');
+		literal.setText('Hello world!');
 		enc.packets.push(literal);
 		enc.encrypt(algo, key);
 		
@@ -275,7 +275,7 @@ unit.register("Packet testing", function() {
 
 		var key = key_enc.sessionKey;
 
-		literal.set('Hello world!', 'utf8');
+		literal.setText('Hello world!');
 		enc.packets.push(literal);
 		enc.encrypt(algo, key);
 
@@ -432,7 +432,7 @@ unit.register("Packet testing", function() {
 			literal = new openpgp.packet.literal(),
 			signature = new openpgp.packet.signature();
 
-		literal.set('Hello world', 'utf8');
+		literal.setText('Hello world');
 
 		signature.hashAlgorithm = 'sha256';
 		signature.publicKeyAlgorithm = 'rsa_sign';

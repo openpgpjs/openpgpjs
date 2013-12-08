@@ -32,16 +32,27 @@ module.exports = function packet_literal() {
 
 
   /**
-   * Set the packet data to a javascript native string or a squence of 
-   * bytes. Conversion to the provided format takes place when the 
-   * packet is written.
-   * @param {String} str Any native javascript string
-   * @param {'utf8|'binary'|'text'} format The format the packet data will be written to,
-   *                                defaults to 'utf8'
+   * Set the packet data to a javascript native string, end of line 
+   * will be normalized to \r\n and by default text is converted to UTF8
+   * @param {String} text Any native javascript string
    */
-  this.set = function(str, format) {
-    this.format = format || this.format;
-    this.data = str;
+  this.setText = function(text) {
+    // normalize EOL to \r\n
+    text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
+    // encode UTF8
+    this.data = this.format == 'utf8' ? util.encode_utf8(text) : text;
+  }
+
+  /**
+   * Returns literal data packets as native JavaScript string
+   * with normalized end of line to \n
+   * @return {String} literal data as text
+   */
+  this.getText = function() {
+    // decode UTF8
+    var text = util.decode_utf8(this.data);
+    // normalize EOL to \n
+    return text.replace(/\r\n/g, '\n');
   }
 
   /**
@@ -51,7 +62,7 @@ module.exports = function packet_literal() {
    */
   this.setBytes = function(bytes, format) {
     this.format = format;
-    this.data = format == 'utf8' ? util.decode_utf8(bytes) : bytes;
+    this.data = bytes;
   }
 
 
@@ -60,7 +71,7 @@ module.exports = function packet_literal() {
    * @returns {String} A sequence of bytes
    */
   this.getBytes = function() {
-    return this.format == 'utf8' ? util.encode_utf8(this.data) : this.data;
+    return this.data;
   }
 
 
