@@ -1,5 +1,5 @@
-var openpgp = require('openpgp');
-    //keyring = require('../../src/keyring.js');
+var openpgp = require('openpgp'),
+    keyring = require('keyring');
 
 'use strict';
 
@@ -61,17 +61,49 @@ describe('Openpgp integration tests', function() {
         });
     });
 
-//    describe('Import key pair', function() {
-//        it('should work', function(done) {
-//            // clear any keypair already in the keychain
-//            keyring.init();
-//            // import private key
-//            keyring.importPacketlist(privkey);
-//            // import public key
-//            keyring.importPacketlist(pubkey);
-//            done();
-//        });
-//    });
+    describe('Keyring', function() {
+        describe('Import key pair', function() {
+            it('should work', function(done) {
+                // clear any keypair already in the keychain
+                keyring.init();
+                keyring.importKey(privkey);
+                keyring.importKey(pubkey);
+                done();
+            });
+        });
+        describe('Retrieve keys', function() {
+            it('getPublicKeyForAddress() - unknown address', function(done) {
+                var key = keyring.getPublicKeyForAddress('nobody@example.com');
+                expect(key).to.be.empty;
+                done();
+            });
+            it('getPublicKeyForAddress() - valid address', function(done) {
+                var key = keyring.getPublicKeyForAddress(user);
+                expect(key).to.exist;
+                done();
+            });
+            it('getPrivateKeyForAddress() - unknown address', function(done) {
+                var key = keyring.getPrivateKeyForAddress('nobody@example.com');
+                expect(key).to.be.empty;
+                done();
+            });
+            it('getPrivateKeyForAddress() - valid address', function(done) {
+                var key = keyring.getPrivateKeyForAddress(user);
+                expect(key).to.exist;
+                done();
+            });
+            it('getKeysForKeyId() - unknown id', function(done) {
+                var keys = keyring.getKeysForKeyId('000102030405060708');
+                expect(keys).to.be.empty;
+                done();
+            });
+            it('getKeysForKeyId() - valid id', function(done) {
+                var keys = keyring.getKeysForKeyId(keyId.toLowerCase());
+                expect(keys).to.exist.and.have.length(1);
+                done();
+            });
+        });
+    });
 
     describe('Encryption', function() {
         var message = 'asdfs\n\nThursday, Nov 21, 2013 7:38 PM asdf@example.com wrote:\n' +

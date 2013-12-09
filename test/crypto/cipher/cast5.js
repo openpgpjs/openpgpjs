@@ -1,7 +1,7 @@
 var unit = require('../../unit.js');
 
 unit.register("CAST-128 cipher test with test vectors from RFC2144", function() {
-	var openpgp = require('../../../'),
+	var openpgp = require('openpgp'),
 		util = openpgp.util;
 
 	var result = [];

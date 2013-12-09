@@ -1,7 +1,7 @@
 var unit = require('../../unit.js');
 
 unit.register("Blowfish cipher test with test vectors from http://www.schneier.com/code/vectors.txt", function() {
-  var openpgp = require('../../../'),
+  var openpgp = require('openpgp'),
     util = openpgp.util,
     BFencrypt = openpgp.crypto.cipher.blowfish;
 

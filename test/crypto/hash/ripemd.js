@@ -2,7 +2,7 @@ var unit = require('../../unit.js');
 
 unit.register("RIPE-MD 160 bits test with test vectors from http://homes.esat.kuleuven.be/~bosselae/ripemd160.html", function() {
 
-	var openpgp = require('../../../'),
+	var openpgp = require('openpgp'),
 		util = openpgp.util,
 		RMDstring = openpgp.crypto.hash.ripemd;
 

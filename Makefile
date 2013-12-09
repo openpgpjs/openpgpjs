@@ -31,11 +31,13 @@ lint:
 	@./scripts/lint.sh
 
 bundle:
-	@browserify -r ./src/:openpgp > ./resources/openpgp.js
-	@browserify -d -r ./src/:openpgp > ./resources/openpgp.debug.js
+	@browserify -d -r ./src/:openpgp > ./resources/openpgp.js
+	@browserify -r ./src/:openpgp > ./resources/openpgp_nodebug.js
+	@browserify -d -x openpgp -r ./src/keyring/:keyring > ./resources/keyring.js
+	@browserify -x openpgp -r ./src/keyring/:keyring > ./resources/keyring_nodebug.js
 
 bundle-test:
-	@browserify -d -r ./test/test-all.js:test-bundle.js > ./test/test-bundle.js
+	@browserify -d -r ./test/test-all.js:unittests > ./test/lib/test-bundle.js
 
 bundle-ci-test:
 	@browserify -d -x openpgp -r ./test/ci-tests-all.js:ci-tests > ./test/lib/ci-tests-bundle.js

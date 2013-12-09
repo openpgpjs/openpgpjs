@@ -2,7 +2,7 @@ var unit = require('../unit.js');
 
 unit.register("Packet testing", function() {
 
-	var openpgp = require('../../');
+	var openpgp = require('openpgp');
 
 	var armored_key =
 		'-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +

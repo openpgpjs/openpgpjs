@@ -4,30 +4,50 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
+      openpgp_nodebug: {
+        files: {
+          'resources/openpgp_nodebug.js': []
+        },
+        options: {
+          alias: './src/:openpgp'
+        }
+      },
       openpgp: {
         files: {
           'resources/openpgp.js': []
         },
         options: {
+          debug: true,
           alias: './src/:openpgp'
         }
       },
-      openpgp_debug: {
+      keyring_nodebug: {
         files: {
-          'resources/openpgp.debug.js': []
+          'resources/keyring_nodebug.js': []
+        },
+        options: {
+          alias: './src/keyring/:keyring',
+          external: [ 'openpgp' ]
+        }
+      },
+      keyring: {
+        files: {
+          'resources/keyring.js': []
         },
         options: {
           debug: true,
-          alias: './src/:openpgp'
+          alias: './src/keyring/:keyring',
+          external: [ 'openpgp' ]
         }
       },
       unittests: {
         files: {
-          'test/test-bundle.js': []
+          'test/lib/test-bundle.js': []
         },
         options: {
           debug: true,
-          alias: './test/test-all.js:test-bundle.js'
+          alias: './test/test-all.js:unittests',
+          external: [ 'openpgp', 'keyring' ]
         }
       },
       ci_tests: {
@@ -37,7 +57,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           alias: './test/ci-tests-all.js:ci-tests',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'keyring' ]
         }
       }
     },
@@ -49,12 +69,21 @@ module.exports = function(grunt) {
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
         }]
+      },
+      openpgpjs_nodebug: {
+        src: ['resources/openpgp_nodebug.js'],
+        dest: ['resources/openpgp_nodebug.js'],
+        replacements: [{
+          from: /OpenPGP.js VERSION/g,
+          to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
+        }]
       }
     },
     uglify: {
       openpgpjs: {
         files: {
-          "resources/openpgp.min.js" : [ "resources/openpgp.js" ]
+          "resources/openpgp.min.js" : [ "resources/openpgp_nodebug.js" ],
+          "resources/keyring.min.js" : [ "resources/keyring_nodebug.js" ]
         }
       },
       options: {
@@ -95,7 +124,7 @@ module.exports = function(grunt) {
       openpgp: {
         expand: true,
         cwd: 'resources/',
-        src: ['openpgp.debug.js', 'jquery.min.js'],
+        src: ['openpgp.js', 'keyring.js', 'jquery.min.js'],
         dest: 'test/lib/'
       }
     }

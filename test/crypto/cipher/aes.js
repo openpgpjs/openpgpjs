@@ -1,7 +1,7 @@
 var unit = require('../../unit.js');
 
 unit.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", function() {
-  var openpgp = require('../../../');
+  var openpgp = require('openpgp');
   var util = openpgp.util;
 
   var result = new Array();

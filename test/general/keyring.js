@@ -1,8 +1,8 @@
 var unit = require('../unit.js');
 
 unit.register("Keyring testing", function() {
-  var openpgp = require('../../');
-  var keyring = require('../../src/keyring.js');
+  var openpgp = require('openpgp');
+  var keyring = require('keyring');
   var result = [];
 
   // Exercises the ability of openpgp_keyring.getPublicKeysForKeyId to return subkeys

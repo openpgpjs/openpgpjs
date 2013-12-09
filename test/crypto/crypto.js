@@ -1,7 +1,7 @@
 var unit = require('../unit.js');
 
 unit.register("Functional testing of openpgp.crypto.* methods", function() {
-	var openpgp = require('../../');
+	var openpgp = require('openpgp');
   var util = openpgp.util;
   var result = [];
   var RSApubMPIstrs = [

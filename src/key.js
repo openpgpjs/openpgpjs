@@ -120,6 +120,19 @@ Key.prototype.getPrivateKeyPacket = function(keyIds) {
 };
 
 /**
+ * Returns userids
+ * @return {string} userid[]
+ */
+Key.prototype.getUserIds = function() {
+  var userids = [];
+  var useridPackets = this.packets.filterByTag(enums.packet.userid);
+  for (var i = 0; i < useridPackets.length; i++) {
+    userids.push(useridPackets[i].write());
+  }
+  return userids;
+};
+
+/**
  * Returns true if this is a public key
  * @return {Boolean}
  */
