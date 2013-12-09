@@ -1,5 +1,5 @@
 var openpgp = require('openpgp'),
-    keyring = require('../src/keyring.js');
+    keyring = require('keyring');
 
 'use strict';
 

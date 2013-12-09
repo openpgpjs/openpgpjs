@@ -21,6 +21,25 @@ module.exports = function(grunt) {
           alias: './src/:openpgp'
         }
       },
+      keyring: {
+        files: {
+          'resources/keyring.js': []
+        },
+        options: {
+          alias: './src/keyring/:keyring',
+          external: [ 'openpgp' ]
+        }
+      },
+      keyring_debug: {
+        files: {
+          'resources/keyring.debug.js': []
+        },
+        options: {
+          debug: true,
+          alias: './src/keyring/:keyring',
+          external: [ 'openpgp' ]
+        }
+      },
       unittests: {
         files: {
           'test/lib/test-bundle.js': []
@@ -28,7 +47,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           alias: './test/test-all.js:unittests',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'keyring' ]
         }
       },
       ci_tests: {
@@ -38,7 +57,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           alias: './test/ci-tests-all.js:ci-tests',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'keyring' ]
         }
       }
     },
@@ -55,7 +74,8 @@ module.exports = function(grunt) {
     uglify: {
       openpgpjs: {
         files: {
-          "resources/openpgp.min.js" : [ "resources/openpgp.js" ]
+          "resources/openpgp.min.js" : [ "resources/openpgp.js" ],
+          "resources/keyring.min.js" : [ "resources/keyring.js" ]
         }
       },
       options: {
@@ -96,7 +116,7 @@ module.exports = function(grunt) {
       openpgp: {
         expand: true,
         cwd: 'resources/',
-        src: ['openpgp.debug.js', 'jquery.min.js'],
+        src: ['openpgp.debug.js', 'keyring.debug.js', 'jquery.min.js'],
         dest: 'test/lib/'
       }
     }
