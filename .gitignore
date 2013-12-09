@@ -4,4 +4,5 @@ build/
 node_modules/
 npm*
 test/lib/
-test/test-bundle.js
+resources/keyring_nodebug.js
+resources/openpgp_nodebug.js

@@ -4,35 +4,35 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
-      openpgp: {
+      openpgp_nodebug: {
         files: {
-          'resources/openpgp.js': []
+          'resources/openpgp_nodebug.js': []
         },
         options: {
           alias: './src/:openpgp'
         }
       },
-      openpgp_debug: {
+      openpgp: {
         files: {
-          'resources/openpgp.debug.js': []
+          'resources/openpgp.js': []
         },
         options: {
           debug: true,
           alias: './src/:openpgp'
         }
       },
-      keyring: {
+      keyring_nodebug: {
         files: {
-          'resources/keyring.js': []
+          'resources/keyring_nodebug.js': []
         },
         options: {
           alias: './src/keyring/:keyring',
           external: [ 'openpgp' ]
         }
       },
-      keyring_debug: {
+      keyring: {
         files: {
-          'resources/keyring.debug.js': []
+          'resources/keyring.js': []
         },
         options: {
           debug: true,
@@ -69,13 +69,21 @@ module.exports = function(grunt) {
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
         }]
+      },
+      openpgpjs_nodebug: {
+        src: ['resources/openpgp_nodebug.js'],
+        dest: ['resources/openpgp_nodebug.js'],
+        replacements: [{
+          from: /OpenPGP.js VERSION/g,
+          to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
+        }]
       }
     },
     uglify: {
       openpgpjs: {
         files: {
-          "resources/openpgp.min.js" : [ "resources/openpgp.js" ],
-          "resources/keyring.min.js" : [ "resources/keyring.js" ]
+          "resources/openpgp.min.js" : [ "resources/openpgp_nodebug.js" ],
+          "resources/keyring.min.js" : [ "resources/keyring_nodebug.js" ]
         }
       },
       options: {
@@ -116,7 +124,7 @@ module.exports = function(grunt) {
       openpgp: {
         expand: true,
         cwd: 'resources/',
-        src: ['openpgp.debug.js', 'keyring.debug.js', 'jquery.min.js'],
+        src: ['openpgp.js', 'keyring.js', 'jquery.min.js'],
         dest: 'test/lib/'
       }
     }
