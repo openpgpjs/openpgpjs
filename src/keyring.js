@@ -56,7 +56,7 @@ var keyring = function() {
   }
   this.store = store;
 
-  function emailKeyCheck(key, email) {
+  function emailCheck(email, key) {
     email = email.toLowerCase();
     var keyEmails = key.getUserIds();
     for (var i; i < keyEmails.length; i++) {
@@ -69,18 +69,20 @@ var keyring = function() {
     return false;
   }
 
-  function idKeyCheck(key, id) {
-    var keyid = key.getKeyId();
-    if (keyid && keyid.write() == id) {
-      return true;
+  function idCheck(id, key) {
+    var keyids = key.getKeyIds();
+    for (var i = 0; i < keyids.length; i++) {
+      if (openpgp.util.hexstrdump(keyids[i].write()) == id) {
+        return true;
+      }
+      return false;
     }
-    return false;
   }
 
-  function checkForIdentityAndPacketMatch(identityFunction, identityInput, keyType) {
+  function checkForIdentityAndKeyTypeMatch(keys, identityFunction, identityInput, keyType) {
     var results = [];
-    for (var p = 0; p < this.keys.length; p++) {
-      var key = this.keys[p];
+    for (var p = 0; p < keys.length; p++) {
+      var key = keys[p];
       switch (keyType) {
         case openpgp.enums.packet.public_key:
           if (key.isPublic() && identityFunction(identityInput, key)) {
@@ -96,7 +98,7 @@ var keyring = function() {
     }
     return results;
   }
-  this.checkForIdentityAndPacketMatch = checkForIdentityAndPacketMatch;
+  this.checkForIdentityAndKeyTypeMatch = checkForIdentityAndKeyTypeMatch;
 
   /**
    * searches all public keys in the keyring matching the address or address part of the user ids
@@ -104,7 +106,7 @@ var keyring = function() {
    * @return {openpgp.key.Key[]} The public keys associated with provided email address.
    */
   function getPublicKeyForAddress(email) {
-    return checkForIdentityAndPacketMatch(emailPacketCheck, email, openpgp.enums.packet.public_key);
+    return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.public_key);
   }
   this.getPublicKeyForAddress = getPublicKeyForAddress;
 
@@ -114,7 +116,7 @@ var keyring = function() {
    * @return {openpgp.key.Key[]} private keys found
    */
   function getPrivateKeyForAddress(email) {
-    return checkForIdentityAndPacketMatch(emailPacketCheck, email, openpgp.enums.packet.secret_key);
+    return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.secret_key);
   }
   this.getPrivateKeyForAddress = getPrivateKeyForAddress;
 
@@ -124,7 +126,7 @@ var keyring = function() {
    * @return {openpgp.key.Key[]} public keys found
    */
   function getKeysForKeyId(keyId) {
-    return this.checkForIdentityAndPacketMatch(idPacketCheck, keyId);
+    return this.checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, openpgp.enums.packet.public_key);
   }
   this.getKeysForKeyId = getKeysForKeyId;
 
