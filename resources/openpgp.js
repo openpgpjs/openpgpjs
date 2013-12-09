@@ -1461,7 +1461,7 @@ var config = function() {
   this.integrity_protect = true;
   this.keyserver = "keyserver.linux.it"; // "pgp.mit.edu:11371"
 
-  this.versionstring = "OpenPGP.js VERSION";
+  this.versionstring = "OpenPGP.js v0.0.1.20131208";
   this.commentstring = "http://openpgpjs.org";
 
   /**
