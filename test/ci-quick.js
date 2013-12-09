@@ -77,14 +77,14 @@ describe('Openpgp integration tests', function() {
                 expect(key).to.be.empty;
                 done();
             });
-            it('getPrivateKeyForAddress() - unknown address', function(done) {
-                var key = keyring.getPrivateKeyForAddress('nobody@example.com');
-                expect(key).to.be.empty;
-                done();
-            });
             it('getPublicKeyForAddress() - valid address', function(done) {
                 var key = keyring.getPublicKeyForAddress(user);
                 expect(key).to.exist;
+                done();
+            });
+            it('getPrivateKeyForAddress() - unknown address', function(done) {
+                var key = keyring.getPrivateKeyForAddress('nobody@example.com');
+                expect(key).to.be.empty;
                 done();
             });
             it('getPrivateKeyForAddress() - valid address', function(done) {
