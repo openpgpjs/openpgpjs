@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>OpenPGPJS Continuous Integration Tests</title>
+    <link rel="stylesheet" href="lib/mocha.css" />
+
+  </head>
+  <body>
+    <div id="mocha"></div>
+
+    <!--<script src="lib/jquery.min.js"></script>-->
+    <script src="lib/openpgp.debug.js"></script>
+    <script src="lib/chai.js"></script>
+    <script src="lib/sinon.js"></script>
+    <script src="lib/mocha.js"></script>
+    <script>
+        mocha.setup('bdd');
+    </script>
+    <script src="lib/ci-tests-bundle.js"></script>
+    <script>
+        require('ci-tests');
+        if (window.mochaPhantomJS) {
+          mochaPhantomJS.run();
+        } else {
+          mocha.run();
+        }
+    </script>
+  </body>
+</html>

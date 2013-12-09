@@ -1,0 +1,1 @@
+require('./ci-quick.js');
