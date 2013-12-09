@@ -75,7 +75,7 @@ function decryptMessage(privateKey, message) {
  * @param  {key}     privateKey private key with decrypted secret key data
  * @param  {[key]}   publicKeys public keys to verify signatures
  * @param  {message} message    the message object with signed and encrypted data
- * @return {{'text': String, signatures: [{'keyid': keyid, 'status': Boolean}]}}
+ * @return {{'text': String, signatures: [{'keyid': keyid, 'valid': Boolean}]}}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
  */
@@ -106,7 +106,7 @@ function signClearMessage(privateKeys, text) {
  * Verifies signatures of cleartext signed message
  * @param  {[Key]}            publicKeys public keys to verify signatures
  * @param  {CleartextMessage} message    cleartext message object with signatures
- * @return {{'text': String, signatures: [{'keyid': keyid, 'status': Boolean}]}}
+ * @return {{'text': String, signatures: [{'keyid': keyid, 'valid': Boolean}]}}
  *                                       cleartext with status of verified signatures
  */
 function verifyClearSignedMessage(publicKeys, message) {

@@ -90,7 +90,7 @@ CleartextMessage.prototype.verify = function(publicKeys) {
       if (publicKeyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
-        verifiedSig.status = signatureList[i].verify(publicKeyPacket, literalDataPacket);
+        verifiedSig.valid = signatureList[i].verify(publicKeyPacket, literalDataPacket);
         result.push(verifiedSig);
         break;
       }

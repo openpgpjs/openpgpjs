@@ -288,7 +288,7 @@ var pub_key_arm3 =
     privKey.decryptKeyPacket(keyids, 'hello world');
 
     var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
-    var verified = decrypted.text == plaintext && decrypted.signatures[0].status;
+    var verified = decrypted.text == plaintext && decrypted.signatures[0].valid;
 
     return new unit.result("Verify signature of signed and encrypted message from GPG2 with openpgp.decryptAndVerifyMessage", verified);
   }, function() {
@@ -319,7 +319,7 @@ var pub_key_arm3 =
     privKey.decryptKeyPacket(keyids, 'hello world');
 
     var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
-    var verified = decrypted.text == plaintext && decrypted.signatures[0].status;
+    var verified = decrypted.text == plaintext && decrypted.signatures[0].valid;
 
     return new unit.result("Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decryptAndVerifyMessage", verified);
   }, function() {
@@ -355,7 +355,7 @@ var pub_key_arm3 =
 
     var verifiedSig = sMsg.verify([pubKey2, pubKey3]);
     
-    verified = verified && verifiedSig[0].status && verifiedSig[1].status;
+    verified = verified && verifiedSig[0].valid && verifiedSig[1].valid;
 
     return new unit.result("Verify signed message with two one pass signatures", verified);
   }, function() {
@@ -396,7 +396,7 @@ var pub_key_arm3 =
 
     verified = verified && cleartextSig.text == plaintext;
 
-    verified = verified && cleartextSig.signatures[0].status && cleartextSig.signatures[1].status;
+    verified = verified && cleartextSig.signatures[0].valid && cleartextSig.signatures[1].valid;
 
     return new unit.result("Verify cleartext signed message with two signatures with openpgp.verifyClearSignedMessage", verified);
   }, function() {
@@ -414,7 +414,7 @@ var pub_key_arm3 =
 
     var verified = cleartextSig.text == plaintext.replace(/\r/g,'');
 
-    verified = verified && cleartextSig.signatures[0].status;
+    verified = verified && cleartextSig.signatures[0].valid;
 
     return new unit.result("Sign text with openpgp.signClearMessage and verify with openpgp.verifyClearSignedMessage leads to same cleartext and valid signatures", verified);
   }, function() {
@@ -446,7 +446,7 @@ var pub_key_arm3 =
 
     var verified = cleartextSig.text == plaintext;
 
-    verified = verified && cleartextSig.signatures[0].status;
+    verified = verified && cleartextSig.signatures[0].valid;
 
     return new unit.result("Verify cleartext signed message with CP-1252 character encoding", verified);
   }];

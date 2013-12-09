@@ -59,8 +59,8 @@ var keyring = function() {
       if (openpgp.util.hexstrdump(keyids[i].write()) == id) {
         return true;
       }
-      return false;
     }
+    return false;
   }
 
   function checkForIdentityAndKeyTypeMatch(keys, identityFunction, identityInput, keyType) {

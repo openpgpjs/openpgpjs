@@ -141,7 +141,7 @@ describe('Openpgp integration tests', function() {
                 expect(result, 'decryptAndVerifyMessage() result').to.exist;
                 expect(result.text, 'decryptAndVerifyMessage() result.text').to.exist.and.equal(message);
                 expect(result.signatures, 'decryptAndVerifyMessage() result.signatures').to.exist.and.not.be.empty;
-                expect(result.signatures[0].status, 'decryptAndVerifyMessage() result.signatures[0].status').to.be.true;
+                expect(result.signatures[0].valid, 'decryptAndVerifyMessage() result.signatures[0].valid').to.be.true;
                 done();
             });
         });
@@ -185,7 +185,7 @@ describe('Openpgp integration tests', function() {
                 var result = cleartext.verify([verifykey])
                 expect(result, 'verify() result').to.exist.and.not.be.empty;
                 expect(result[0].keyid, 'verify() result[0].keyid').to.exist;
-                expect(result[0].status, 'verify() result[0].status').to.be.true;
+                expect(result[0].valid, 'verify() result[0].valid').to.be.true;
                 done();
             });
         });
@@ -228,7 +228,7 @@ describe('Openpgp integration tests', function() {
                 var result = cleartext.verify([verifykey])
                 expect(result, 'verify() result').to.exist.and.not.be.empty;
                 expect(result[0].keyid, 'verify() result[0].keyid').to.exist;
-                expect(result[0].status, 'verify() result[0].status').to.be.true;
+                expect(result[0].valid, 'verify() result[0].valid').to.be.true;
                 done();
             });
         });

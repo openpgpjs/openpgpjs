@@ -1,1 +1,2 @@
 resources/openpgp*.js binary
+resources/keyring*.js binary

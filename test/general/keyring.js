@@ -5,9 +5,8 @@ unit.register("Keyring testing", function() {
   var keyring = require('keyring');
   var result = [];
 
-  // Exercises the ability of openpgp_keyring.getPublicKeysForKeyId to return subkeys
   keyring.init();
-  keyring.importPacketlist([
+  keyring.importKey([
         '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',
         '',
@@ -48,14 +47,14 @@ unit.register("Keyring testing", function() {
         'AJ9zh4zsK4GIPuEu81YPNmHsju7DYg==',
         '=WaSx',
         '-----END PGP MESSAGE-----'
-        ].join("\n")).packets;
-  var packetlists = keyring.getPacketlistsForKeyId(msg2[0].signingKeyId.write());
-  var pubKey = packetlists[0];
-  msg2[2].verify(pubKey[3], msg2[1]);
-  result[2] = new unit.result("Testing keyring public subkey support",
-          packetlists !== null && 
-          packetlists.length == 1 && 
-          msg2[2].verified);
+        ].join("\n"));
+  var signingKeyIds = msg2.getSigningKeyIds();
+  var key = keyring.getKeysForKeyId(signingKeyIds[0].toHex());
+  var verified = msg2.verify(key);
+  result[2] = new unit.result("Testing keyring getKeysForKeyId method",
+          key !== null && 
+          key.length == 1 && 
+          verified[0].valid);
   return result;
 });
 
