@@ -54,48 +54,29 @@ module.exports = function packet_public_key() {
    * @return {Object} This object with attributes set by the parser
    */
   this.readPublicKey = this.read = function(bytes) {
+    var pos = 0;
     // A one-octet version number (3 or 4).
-    this.version = bytes.charCodeAt(0);
+    this.version = bytes.charCodeAt(pos++);
 
-    if (this.version == 4) {
+    if (this.version == 3 || this.version == 4) {
       // - A four-octet number denoting the time that the key was created.
-      this.created = util.readDate(bytes.substr(1, 4));
+      this.created = util.readDate(bytes.substr(pos, 4));
+      pos += 4;
 
-      // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(5));
-
-      var mpicount = crypto.getPublicMpiCount(this.algorithm);
-      this.mpi = [];
-
-      var bmpi = bytes.substr(6);
-      var p = 0;
-
-      for (var i = 0; i < mpicount && p < bmpi.length; i++) {
-
-        this.mpi[i] = new type_mpi();
-
-        p += this.mpi[i].read(bmpi.substr(p))
-
-        if (p > bmpi.length)
-          util.print_error("openpgp.packet.keymaterial.js\n" + 'error reading MPI @:' + p);
+      if (this.version == 3) {
+        // - A two-octet number denoting the time in days that this key is
+        //   valid.  If this number is zero, then it does not expire.
+        this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+        pos += 2;
       }
 
-      return p + 6;
-    } else if (this.version == 3) {
-      // - A four-octet number denoting the time that the key was created.
-      this.created = util.readDate(bytes.substr(1, 4));
-
-      // - A two-octet number denoting the time in days that this key is
-      //   valid.  If this number is zero, then it does not expire.
-      this.expirationTimeV3 = util.readNumber(bytes.substr(5, 2)); 
-
       // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(7));
+      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
 
       var mpicount = crypto.getPublicMpiCount(this.algorithm);
       this.mpi = [];
 
-      var bmpi = bytes.substr(8);
+      var bmpi = bytes.substr(pos);
       var p = 0;
 
       for (var i = 0; i < mpicount && p < bmpi.length; i++) {
