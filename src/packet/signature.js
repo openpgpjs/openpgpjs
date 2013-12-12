@@ -44,14 +44,14 @@ module.exports = function packet_signature() {
 
   this.created = new Date();
   this.signatureExpirationTime = null;
-  this.signatureNeverExpires = null;
+  this.signatureNeverExpires = true;
   this.exportable = null;
   this.trustLevel = null;
   this.trustAmount = null;
   this.regularExpression = null;
   this.revocable = null;
   this.keyExpirationTime = null;
-  this.keyNeverExpires = null;
+  this.keyNeverExpires = true;
   this.preferredSymmetricAlgorithms = null;
   this.revocationKeyClass = null;
   this.revocationKeyAlgorithm = null;
@@ -225,7 +225,7 @@ module.exports = function packet_signature() {
       result += write_sub_packet(sub.signature_creation_time, util.writeDate(this.created));
     }
     if (this.signatureExpirationTime !== null) {
-      result += write_sub_packet(sub.signature_expiration_time, util.writeDate(this.signatureExpirationTime));
+      result += write_sub_packet(sub.signature_expiration_time, util.writeNumber(this.signatureExpirationTime, 4));
     }
     if (this.exportable !== null) {
       result += write_sub_packet(sub.exportable_certification, String.fromCharCode(this.exportable ? 1 : 0));
@@ -241,7 +241,7 @@ module.exports = function packet_signature() {
       result += write_sub_packet(sub.revocable, String.fromCharCode(this.revocable ? 1 : 0));
     }
     if (this.keyExpirationTime !== null) {
-      result += write_sub_packet(sub.key_expiration_time, util.writeDate(this.keyExpirationTime));
+      result += write_sub_packet(sub.key_expiration_time, util.writeNumber(this.keyExpirationTime, 4));
     }
     if (this.preferredSymmetricAlgorithms !== null) {
       bytes = util.bin2str(this.preferredSymmetricAlgorithms);
@@ -361,11 +361,11 @@ module.exports = function packet_signature() {
         this.created = util.readDate(bytes.substr(mypos));
         break;
       case 3:
-        // Signature Expiration Time
-        var time = util.readDate(bytes.substr(mypos));
+        // Signature Expiration Time in seconds
+        var seconds = util.readNumber(bytes.substr(mypos));
 
-        this.signatureNeverExpires = time.getTime() == 0;
-        this.signatureExpirationTime = time;
+        this.signatureNeverExpires = seconds == 0;
+        this.signatureExpirationTime = seconds;
 
         break;
       case 4:
@@ -386,11 +386,11 @@ module.exports = function packet_signature() {
         this.revocable = bytes.charCodeAt(mypos++) == 1;
         break;
       case 9:
-        // Key Expiration Time
-        var time = util.readDate(bytes.substr(mypos));
+        // Key Expiration Time in seconds
+        var seconds = util.readNumber(bytes.substr(mypos));
 
-        this.keyExpirationTime = time;
-        this.keyNeverExpires = time.getTime() == 0;
+        this.keyExpirationTime = seconds;
+        this.keyNeverExpires = seconds == 0;
 
         break;
       case 11:
@@ -593,7 +593,7 @@ module.exports = function packet_signature() {
 
     var mpicount = 0;
     // Algorithm-Specific Fields for RSA signatures:
-    // 	    - multiprecision number (MPI) of RSA signature value m**d mod n.
+    //      - multiprecision number (MPI) of RSA signature value m**d mod n.
     if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4)
       mpicount = 1;
     //    Algorithm-Specific Fields for DSA signatures:
@@ -614,5 +614,16 @@ module.exports = function packet_signature() {
       bytes + this.signatureData + trailer);
 
     return this.verified;
+  }
+
+  /**
+   * Verifies signature expiration date
+   * @return {Boolean} true if expired
+   */
+  this.isExpired = function() {
+    if (!this.signatureNeverExpires) {
+      return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
+    }
+    return false;
   }
 }
