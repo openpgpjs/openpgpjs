@@ -33,7 +33,7 @@ var util = require('../util'),
  */
 module.exports = function packet_signature() {
 
-  this.version = null;
+  this.version = 4;
   this.signatureType = null;
   this.hashAlgorithm = null;
   this.publicKeyAlgorithm = null;
@@ -517,39 +517,42 @@ module.exports = function packet_signature() {
       case t.cert_casual:
       case t.cert_positive:
       case t.cert_revocation:
-        {
-          var packet, tag;
+        var packet, tag;
 
-          if (data.userid !== undefined) {
-            tag = 0xB4;
-            packet = data.userid;
-          } else if (data.userattribute !== undefined) {
-            tag = 0xD1;
-            packet = data.userattribute;
-          } else throw new Error('Either a userid or userattribute packet needs to be ' +
-              'supplied for certification.');
+        if (data.userid !== undefined) {
+          tag = 0xB4;
+          packet = data.userid;
+        } else if (data.userattribute !== undefined) {
+          tag = 0xD1;
+          packet = data.userattribute;
+        } else throw new Error('Either a userid or userattribute packet needs to be ' +
+            'supplied for certification.');
 
-          var bytes = packet.write();
+        var bytes = packet.write();
 
+        if (this.version == 4) {
           return this.toSign(t.key, data) +
-            String.fromCharCode(tag) +
-            util.writeNumber(bytes.length, 4) +
-            bytes;
+          String.fromCharCode(tag) +
+          util.writeNumber(bytes.length, 4) +
+          bytes; 
+        } else if (this.version == 3) {
+          return this.toSign(t.key, data) +
+          bytes;
         }
+        break;
+
       case t.subkey_binding:
       case t.key_binding:
-        {
-          return this.toSign(t.key, data) + this.toSign(t.key, {
-            key: data.bind
-          });
-        }
-      case t.key:
-        {
-          if (data.key == undefined)
-            throw new Error('Key packet is required for this sigtature.');
+        return this.toSign(t.key, data) + this.toSign(t.key, {
+          key: data.bind
+        });
 
-          return data.key.writeOld();
-        }
+      case t.key:
+        if (data.key == undefined)
+          throw new Error('Key packet is required for this sigtature.');
+
+        return data.key.writeOld();
+
       case t.key_revocation:
       case t.subkey_revocation:
         return this.toSign(t.key, data);
