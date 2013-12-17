@@ -294,19 +294,39 @@ Key.prototype.revoke = function() {
 };
 
 /**
- * Reads an OpenPGP armored text and returns a key object
+ * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @return {key} new key object
+ * @return {{keys: [Key], err: [Error]|null}} result object with key and error arrays
  */
 function readArmored(armoredText) {
-  var input = armor.decode(armoredText);
-  if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
-    throw new Error('Armored text not of type key');
+  var result = {};
+  result.keys = [];
+  try {
+    var input = armor.decode(armoredText);
+    if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
+      throw new Error('Armored text not of type key');
+    }
+    var packetlist = new packet.list();
+    packetlist.read(input.data);
+    var keyIndex = packetlist.indexOfTag(enums.packet.public_key, enums.packet.secret_key);
+    if (keyIndex.length == 0) {
+      throw new Error('No key packet found in armored text')
+    }
+    for (var i = 0; i < keyIndex.length; i++) {
+      var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+      try {
+        var newKey = new Key(oneKeyList);
+        result.keys.push(newKey);
+      } catch (e) {
+        result.err = result.err || [];
+        result.err.push(e); 
+      }
+    }
+  } catch (e) {
+    result.err = result.err || [];
+    result.err.push(e); 
   }
-  var packetlist = new packet.list();
-  packetlist.read(input.data);
-  var newKey = new Key(packetlist);
-  return newKey;
+  return result;
 }
 
 /**

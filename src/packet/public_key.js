@@ -85,8 +85,9 @@ module.exports = function packet_public_key() {
 
         p += this.mpi[i].read(bmpi.substr(p))
 
-        if (p > bmpi.length)
-          util.print_error("openpgp.packet.keymaterial.js\n" + 'error reading MPI @:' + p);
+        if (p > bmpi.length) {
+          throw new Error('Error reading MPI @:' + p);
+        }
       }
 
       return p + 6;

@@ -493,9 +493,7 @@ module.exports = function packet_signature() {
         this.embeddedSignature.read(bytes.substr(mypos));
         break;
       default:
-        util.print_error("openpgp.packet.signature.js\n" +
-          'unknown signature subpacket type ' + type + " @:" + mypos +
-          " subplen:" + subplen + " len:" + len);
+        throw new Error("Unknown signature subpacket type " + type + " @:" + mypos);
         break;
     }
   };

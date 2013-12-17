@@ -252,8 +252,8 @@ var pub_v3 =
 
 
   var tests = [function() {
-    var priv_key = openpgp.key.readArmored(priv_key_arm1).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm1).packets;
+    var priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0].packets;
+    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0].packets;
     var msg = openpgp.message.readArmored(msg_arm1).packets;
     //TODO need both?
     priv_key[0].decrypt("abcd");
@@ -295,8 +295,8 @@ var pub_v3 =
           'iY3UT9QkV9d0sMgyLkug',
           '=GQsY',
           '-----END PGP PRIVATE KEY BLOCK-----',
-        ].join("\n")).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm1).packets;
+        ].join("\n")).keys[0].packets;
+    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0].packets;
     var msg = openpgp.message.readArmored(msg_arm1).packets;
 
     priv_key_gnupg_ext[3].decrypt("abcd");
@@ -321,7 +321,7 @@ var pub_v3 =
         '-----END PGP MESSAGE-----'].join('\n');
 
     var sMsg = openpgp.message.readArmored(signedArmor).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm2).packets;
+    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0].packets;
     sMsg[0].packets[2].verify(pub_key[3], sMsg[0].packets[1]);
     return new unit.result("Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)", sMsg[0].packets[2].verified);
   }, function() {
@@ -339,7 +339,7 @@ var pub_v3 =
         '-----END PGP MESSAGE-----'].join('\n');
 
     var sMsg = openpgp.message.readArmored(signedArmor).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm2).packets;
+    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0].packets;
     sMsg[0].packets[2].verify(pub_key[3], sMsg[0].packets[1]);
     return new unit.result("Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)", sMsg[0].packets[2].verified);
   }, function() {
@@ -362,8 +362,8 @@ var pub_v3 =
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var esMsg = openpgp.message.readArmored(msg_armor);
-    var pubKey = openpgp.key.readArmored(pub_key_arm2);
-    var privKey = openpgp.key.readArmored(priv_key_arm2);
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
@@ -393,8 +393,8 @@ var pub_v3 =
 
     var plaintext = 'short message\nnext line\n한국어/조선말\n\n';
     var esMsg = openpgp.message.readArmored(msg_armor);
-    var pubKey = openpgp.key.readArmored(pub_key_arm2);
-    var privKey = openpgp.key.readArmored(priv_key_arm2);
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
@@ -425,8 +425,8 @@ var pub_v3 =
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var sMsg = openpgp.message.readArmored(msg_armor);
-    var pubKey2 = openpgp.key.readArmored(pub_key_arm2);
-    var pubKey3 = openpgp.key.readArmored(pub_key_arm3);
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var pubKey3 = openpgp.key.readArmored(pub_key_arm3).keys[0];
 
     var keyids = sMsg.getSigningKeyIds();
 
@@ -466,8 +466,8 @@ var pub_v3 =
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var csMsg = openpgp.cleartext.readArmored(msg_armor);
-    var pubKey2 = openpgp.key.readArmored(pub_key_arm2);
-    var pubKey3 = openpgp.key.readArmored(pub_key_arm3);
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var pubKey3 = openpgp.key.readArmored(pub_key_arm3).keys[0];
 
     var keyids = csMsg.getSigningKeyIds();
 
@@ -483,8 +483,8 @@ var pub_v3 =
   }, function() {
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
-    var pubKey = openpgp.key.readArmored(pub_key_arm2);
-    var privKey = openpgp.key.readArmored(priv_key_arm2);
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey.getSigningKeyPacket().decrypt('hello world');
 
     var clearSignedArmor = openpgp.signClearMessage([privKey], plaintext);
@@ -500,21 +500,21 @@ var pub_v3 =
     return new unit.result("Sign text with openpgp.signClearMessage and verify with openpgp.verifyClearSignedMessage leads to same cleartext and valid signatures", verified);
   }, function() {
 
-    var pubKey = openpgp.key.readArmored(pub_revoked);
+    var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
 
     var verified = pubKey.packets[1].verify(pubKey.packets[0], {key: pubKey.packets[0]});
 
     return new unit.result("Verify revocation signature", verified);
   }, function() {
 
-    var pubKey = openpgp.key.readArmored(pub_revoked);
+    var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
 
     var verified = !pubKey.packets[4].keyNeverExpires && pubKey.packets[4].keyExpirationTime == 5*365*24*60*60;
 
     return new unit.result("Verify key expiration date", verified);
   }, function() {
 
-    var pubKey = openpgp.key.readArmored(pub_v3);
+    var pubKey = openpgp.key.readArmored(pub_v3).keys[0];
 
     var verified = pubKey.packets[3].verify(pubKey.packets[0], {key: pubKey.packets[0], userid: pubKey.packets[2]});
 

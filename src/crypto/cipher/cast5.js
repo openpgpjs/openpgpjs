@@ -29,8 +29,7 @@ function openpgp_symenc_cast5() {
     if (key.length == this.KeySize) {
       this.keySchedule(key);
     } else {
-      util.print_error('cast5.js: CAST-128: keys must be 16 bytes');
-      return false;
+      throw new Error('CAST-128: keys must be 16 bytes');
     }
     return true;
   };

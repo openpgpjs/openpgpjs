@@ -246,29 +246,6 @@ var Util = function() {
     }
   };
 
-  /**
-   * Helper function to print an error message. 
-   * @param {String} str String of the error message
-   */
-  this.print_error = function(str) {
-    if (config.debug)
-      throw str;
-    console.log(str);
-  };
-
-  /**
-   * Helper function to print an info message. 
-   * @param {String} str String of the info message
-   */
-  this.print_info = function(str) {
-    if (config.debug)
-      console.log(str);
-  };
-
-  this.print_warning = function(str) {
-    console.log(str);
-  };
-
   this.getLeftNBits = function(string, bitcount) {
     var rest = bitcount % 8;
     if (rest == 0)

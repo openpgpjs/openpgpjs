@@ -86,7 +86,7 @@ function DSA() {
       s1.compareTo(q) > 0 ||
       BigInteger.ZERO.compareTo(s2) > 0 ||
       s2.compareTo(q) > 0) {
-      util.print_error("invalid DSA Signature");
+      util.print_debug("invalid DSA Signature");
       return null;
     }
     var w = s2.modInverse(q);

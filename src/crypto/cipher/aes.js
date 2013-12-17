@@ -383,8 +383,7 @@ function keyExpansion(key) {
     rounds = 14;
     kc = 8;
   } else {
-    util.print_error('aes.js: Invalid key-length for AES key:' + keylen);
-    return;
+    throw new Error('Invalid key-length for AES key:' + keylen);
   }
 
   for (i = 0; i < maxrk + 1; i++) keySched[i] = new Array(4);

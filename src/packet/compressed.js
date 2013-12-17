@@ -106,7 +106,7 @@ module.exports = function packet_compressed() {
           break;
 
         } else {
-          util.print_error("Compression algorithm ZLIB only supports " +
+          throw new Error("Compression algorithm ZLIB only supports " +
             "DEFLATE compression method.");
         }
         break;
@@ -140,23 +140,23 @@ module.exports = function packet_compressed() {
 
       case 'zip':
         // - ZIP [RFC1951]
-        util.print_error("Compression algorithm ZIP [RFC1951] is not implemented.");
+        throw new Error("Compression algorithm ZIP [RFC1951] is not implemented.");
         break;
 
       case 'zlib':
         // - ZLIB [RFC1950]
         // TODO: need to implement this
-        util.print_error("Compression algorithm ZLIB [RFC1950] is not implemented.");
+        throw new Error("Compression algorithm ZLIB [RFC1950] is not implemented.");
         break;
 
       case 'bzip2':
         //  - BZip2 [BZ2]
         // TODO: need to implement this
-        util.print_error("Compression algorithm BZip2 [BZ2] is not implemented.");
+        throw new Error("Compression algorithm BZip2 [BZ2] is not implemented.");
         break;
 
       default:
-        util.print_error("Compression algorithm unknown :" + this.type);
+        throw new Error("Compression algorithm unknown :" + this.type);
         break;
     }
   }

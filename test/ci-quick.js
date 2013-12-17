@@ -115,9 +115,9 @@ describe('Openpgp integration tests', function() {
 
         describe('Encrypt and Sign', function() {
             it('should work', function(done) {
-                var signkey = openpgp.key.readArmored(privkey);
+                var signkey = openpgp.key.readArmored(privkey).keys[0];
                 expect(signkey).to.exist;
-                var encryptkey = openpgp.key.readArmored(pubkey);
+                var encryptkey = openpgp.key.readArmored(pubkey).keys[0];
                 expect(encryptkey).to.exist;
                 expect(signkey.decrypt(passphrase)).to.be.true;
                 ciphertext = openpgp.signAndEncryptMessage([encryptkey], signkey, message);
@@ -128,9 +128,9 @@ describe('Openpgp integration tests', function() {
 
         describe('Decrypt and Verify', function() {
             it('should work', function(done) {
-                var decryptkey = openpgp.key.readArmored(privkey);
+                var decryptkey = openpgp.key.readArmored(privkey).keys[0];
                 expect(decryptkey, 'decryptkey').to.exist;
-                var verifykey = openpgp.key.readArmored(pubkey);
+                var verifykey = openpgp.key.readArmored(pubkey).keys[0];
                 expect(verifykey, 'verifykey').to.exist;
                 var pgpmsg = openpgp.message.readArmored(ciphertext);
                 expect(pgpmsg, 'pgpmsg').to.exist;
@@ -180,7 +180,7 @@ describe('Openpgp integration tests', function() {
             it('should work', function(done) {
                 var cleartext = openpgp.cleartext.readArmored(v3_clearsign_msg);
                 expect(cleartext).to.exist;
-                var verifykey = openpgp.key.readArmored(pubkey);
+                var verifykey = openpgp.key.readArmored(pubkey).keys[0];
                 expect(verifykey, 'verifykey').to.exist;
                 var result = cleartext.verify([verifykey])
                 expect(result, 'verify() result').to.exist.and.not.be.empty;
@@ -223,7 +223,7 @@ describe('Openpgp integration tests', function() {
             it('should work', function(done) {
                 var cleartext = openpgp.cleartext.readArmored(v4_clearsign_msg);
                 expect(cleartext).to.exist;
-                var verifykey = openpgp.key.readArmored(pubkey);
+                var verifykey = openpgp.key.readArmored(pubkey).keys[0];
                 expect(verifykey, 'verifykey').to.exist;
                 var result = cleartext.verify([verifykey])
                 expect(result, 'verify() result').to.exist.and.not.be.empty;

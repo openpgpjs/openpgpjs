@@ -119,7 +119,7 @@ var keyring = function() {
    * @param {String} armored message to read the keys/key from
    */
   function importKey(armored) {
-    this.keys.push(openpgp.key.readArmored(armored));
+    this.keys = this.keys.concat(openpgp.key.readArmored(armored).keys);
 
     return true;
   }
