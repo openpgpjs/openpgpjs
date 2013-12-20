@@ -41,6 +41,7 @@ module.exports = function packet_public_key() {
   /** Public key algorithm
    * @type {openpgp.publickey} */
   this.algorithm = 'rsa_sign';
+  // time in days (V3 only)
   this.expirationTimeV3 = 0;
 
 
@@ -139,7 +140,11 @@ module.exports = function packet_public_key() {
    */
   this.getKeyId = function() {
     var keyid = new type_keyid();
-    keyid.read(this.getFingerprint().substr(12, 8));
+    if (this.version == 4) {
+      keyid.read(this.getFingerprint().substr(12, 8));
+    } else if (this.version == 3) {
+      keyid.read(this.mpi[0].write().substr(-8));
+    }
     return keyid;
   }
 
@@ -148,8 +153,17 @@ module.exports = function packet_public_key() {
    * @return {String} A string containing the fingerprint
    */
   this.getFingerprint = function() {
-    var toHash = this.writeOld();
-    return crypto.hash.sha1(toHash, toHash.length);
+    var toHash = '';
+    if (this.version == 4) {
+      toHash = this.writeOld();
+      return crypto.hash.sha1(toHash);
+    } else if (this.version == 3) {
+      var mpicount = crypto.getPublicMpiCount(this.algorithm);
+      for (var i = 0; i < mpicount; i++) {
+        toHash += this.mpi[i].toBytes();
+      }
+      return crypto.hash.md5(toHash)
+    }
   }
 
 }

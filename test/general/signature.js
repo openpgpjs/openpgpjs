@@ -252,17 +252,14 @@ var pub_v3 =
 
 
   var tests = [function() {
-    var priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0].packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0].packets;
-    var msg = openpgp.message.readArmored(msg_arm1).packets;
-    //TODO need both?
-    priv_key[0].decrypt("abcd");
-    priv_key[3].decrypt("abcd");
-    msg[0].decrypt(priv_key[3]);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
-    msg[1].packets[2].verify(pub_key[0], msg[1].packets[1]);
+    var priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0];
+    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
+    var msg = openpgp.message.readArmored(msg_arm1);
+    priv_key.decrypt("abcd");
+    var decrypted = openpgp.decryptAndVerifyMessage(priv_key, [pub_key], msg);
+    var verified = decrypted && decrypted.signatures[0].valid;
     return new unit.result("Testing signature checking on CAST5-enciphered message",
-            msg[1].packets[2].verified === true);
+            verified);
 
   }, function() {
 
@@ -295,16 +292,15 @@ var pub_v3 =
           'iY3UT9QkV9d0sMgyLkug',
           '=GQsY',
           '-----END PGP PRIVATE KEY BLOCK-----',
-        ].join("\n")).keys[0].packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0].packets;
-    var msg = openpgp.message.readArmored(msg_arm1).packets;
+        ].join("\n")).keys[0];
+    var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
+    var msg = openpgp.message.readArmored(msg_arm1);
 
-    priv_key_gnupg_ext[3].decrypt("abcd");
-    msg[0].decrypt(priv_key_gnupg_ext[3]);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
-    msg[1].packets[2].verify(pub_key[0], msg[1].packets[1]);
+    priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
+    msg = msg.decrypt(priv_key_gnupg_ext);
+    var verified = msg.verify([pub_key]);
     return new unit.result("Testing GnuPG stripped-key extensions",
-            msg[1].packets[2].verified === true);
+            verified[0].valid);
 
   }, function() {
 
@@ -320,10 +316,10 @@ var pub_v3 =
         '=VH8F',
         '-----END PGP MESSAGE-----'].join('\n');
 
-    var sMsg = openpgp.message.readArmored(signedArmor).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0].packets;
-    sMsg[0].packets[2].verify(pub_key[3], sMsg[0].packets[1]);
-    return new unit.result("Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)", sMsg[0].packets[2].verified);
+    var sMsg = openpgp.message.readArmored(signedArmor);
+    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var verified = sMsg.verify([pub_key]);
+    return new unit.result("Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)", verified[0].valid);
   }, function() {
 
     var signedArmor = 
@@ -338,10 +334,10 @@ var pub_v3 =
         '=pa6B',
         '-----END PGP MESSAGE-----'].join('\n');
 
-    var sMsg = openpgp.message.readArmored(signedArmor).packets;
-    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0].packets;
-    sMsg[0].packets[2].verify(pub_key[3], sMsg[0].packets[1]);
-    return new unit.result("Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)", sMsg[0].packets[2].verified);
+    var sMsg = openpgp.message.readArmored(signedArmor);
+    var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var verified = sMsg.verify([pub_key]);
+    return new unit.result("Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)", verified[0].valid);
   }, function() {
 
     var msg_armor = 
@@ -502,21 +498,29 @@ var pub_v3 =
 
     var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
 
-    var verified = pubKey.packets[1].verify(pubKey.packets[0], {key: pubKey.packets[0]});
+    var verified = pubKey.revocationSignature.verify(pubKey.primaryKey, {key: pubKey.primaryKey});
 
-    return new unit.result("Verify revocation signature", verified);
+    return new unit.result("Verify primary key revocation signature", verified);
   }, function() {
 
     var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
 
-    var verified = !pubKey.packets[4].keyNeverExpires && pubKey.packets[4].keyExpirationTime == 5*365*24*60*60;
+    var verified = pubKey.subKeys[0].revocationSignature.verify(pubKey.primaryKey, {key: pubKey.subKeys[0].subKey});
+
+    return new unit.result("Verify subkey revocation signature", verified);
+  }, function() {
+
+    var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
+
+    var verified = !pubKey.users[0].selfCertifications[0].keyNeverExpires && 
+                    pubKey.users[0].selfCertifications[0].keyExpirationTime == 5*365*24*60*60;
 
     return new unit.result("Verify key expiration date", verified);
   }, function() {
 
     var pubKey = openpgp.key.readArmored(pub_v3).keys[0];
 
-    var verified = pubKey.packets[3].verify(pubKey.packets[0], {key: pubKey.packets[0], userid: pubKey.packets[2]});
+    var verified = pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userid: pubKey.users[0].userId});
 
     return new unit.result("Verify V3 certification signature", verified);
   }];

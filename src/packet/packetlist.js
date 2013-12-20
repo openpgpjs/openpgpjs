@@ -56,6 +56,8 @@ module.exports = function packetlist() {
    * writing to packetlist[i] directly will result in an error.
    */
   this.push = function(packet) {
+    if (!packet) return;
+
     packet.packets = packet.packets || new packetlist();
 
     this[this.length] = packet;
@@ -152,6 +154,17 @@ module.exports = function packetlist() {
       part.push(this[i]);
     }
     return part;
+  }
+
+  /**
+   * Concatenates packetlist or array of packets
+   */
+  this.concat = function(packetlist) {
+    if (packetlist) {
+      for (var i = 0; i < packetlist.length; i++) {
+        this.push(packetlist[i]);
+      }
+    }
   }
 
 }
