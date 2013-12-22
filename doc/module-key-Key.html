@@ -216,7 +216,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line186">line 186</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line279">line 279</a>
     </li></ul></dd>
     
     
@@ -355,7 +355,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line259">line 259</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line363">line 363</a>
     </li></ul></dd>
     
     
@@ -517,7 +517,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line274">line 274</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line382">line 382</a>
     </li></ul></dd>
     
     
@@ -608,7 +608,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line75">line 75</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line162">line 162</a>
     </li></ul></dd>
     
     
@@ -695,7 +695,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line228">line 228</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line339">line 339</a>
     </li></ul></dd>
     
     
@@ -798,7 +798,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line83">line 83</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line170">line 170</a>
     </li></ul></dd>
     
     
@@ -885,7 +885,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line43">line 43</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line140">line 140</a>
     </li></ul></dd>
     
     
@@ -937,7 +937,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
         
             
 <dt>
-    <h4 class="name" id="getPreferredSignatureHashAlgorithm"><span class="type-signature"></span>getPreferredSignatureHashAlgorithm<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
+    <h4 class="name" id="getPreferredHashAlgorithm"><span class="type-signature"></span>getPreferredHashAlgorithm<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
     
     
 </dt>
@@ -978,7 +978,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line218">line 218</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line311">line 311</a>
     </li></ul></dd>
     
     
@@ -1011,6 +1011,99 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
 	<dd>
 		
 <span class="param-type">String</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getPrimaryUser"><span class="type-signature"></span>getPrimaryUser<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Returns primary user and most significant (latest valid) self signature
+- if multiple users are marked as primary users returns the one with the latest self signature
+- if no primary user is found returns the user with the latest self signature
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line447">line 447</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The primary user and the self signature
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Object</span>
 
 
 	</dd>
@@ -1113,7 +1206,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line119">line 119</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line209">line 209</a>
     </li></ul></dd>
     
     
@@ -1254,7 +1347,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line109">line 109</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line196">line 196</a>
     </li></ul></dd>
     
     
@@ -1306,7 +1399,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
         
             
 <dt>
-    <h4 class="name" id="getSigningKeyPacket"><span class="type-signature"></span>getSigningKeyPacket<span class="signature">()</span><span class="type-signature"> &rarr; {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null}</span></h4>
+    <h4 class="name" id="getSigningKeyPacket"><span class="type-signature"></span>getSigningKeyPacket<span class="signature">()</span><span class="type-signature"> &rarr; {secret_subkey|packet_secret_key|null}</span></h4>
     
     
 </dt>
@@ -1347,7 +1440,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line195">line 195</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line288">line 288</a>
     </li></ul></dd>
     
     
@@ -1371,6 +1464,10 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     <h5>Returns:</h5>
     
             
+<div class="param-desc">
+    key packet or null if no signing key has been found
+</div>
+
 
 
 <dl>
@@ -1379,16 +1476,10 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
 	</dt>
 	<dd>
 		
-<span class="param-type">public_subkey</span>
-|
-
 <span class="param-type">secret_subkey</span>
 |
 
 <span class="param-type">packet_secret_key</span>
-|
-
-<span class="param-type">packet_public_key</span>
 |
 
 <span class="param-type">null</span>
@@ -1446,7 +1537,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line57">line 57</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line148">line 148</a>
     </li></ul></dd>
     
     
@@ -1533,7 +1624,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line128">line 128</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line221">line 221</a>
     </li></ul></dd>
     
     
@@ -1624,7 +1715,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line150">line 150</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line243">line 243</a>
     </li></ul></dd>
     
     
@@ -1711,7 +1802,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line141">line 141</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line235">line 235</a>
     </li></ul></dd>
     
     
@@ -1757,7 +1848,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
         
             
 <dt>
-    <h4 class="name" id="toPublic"><span class="type-signature"></span>toPublic<span class="signature">()</span><span class="type-signature"> &rarr; {Key}</span></h4>
+    <h4 class="name" id="packetlist2structure"><span class="type-signature"></span>packetlist2structure<span class="signature">(packetlist)</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -1765,7 +1856,124 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     
     <div class="description">
-        Returns key as public key
+        Transforms packetlist to structured key data
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>packetlist</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">packetlist</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">The packets that form a key</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line52">line 52</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toPacketlist"><span class="type-signature"></span>toPacketlist<span class="signature">()</span><span class="type-signature"> &rarr; {packetlist}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Transforms structured key data to packetlist
     </div>
     
 
@@ -1798,7 +2006,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="key.js.html">key.js</a>, <a href="key.js.html#line159">line 159</a>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line120">line 120</a>
     </li></ul></dd>
     
     
@@ -1823,7 +2031,98 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
     
             
 <div class="param-desc">
-    public key
+    The packets that form a key
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">packetlist</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="toPublic"><span class="type-signature"></span>toPublic<span class="signature">()</span><span class="type-signature"> &rarr; {Key}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Returns key as public key (shallow copy)
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line251">line 251</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    new public Key
 </div>
 
 
@@ -1835,6 +2134,98 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
 	<dd>
 		
 <span class="param-type">Key</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="verifyPrimaryKey"><span class="type-signature"></span>verifyPrimaryKey<span class="signature">()</span><span class="type-signature"> &rarr; {enums.keyStatus}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Verify primary key. Checks for revocation signatures, expiration time
+and valid self signature
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="key.js.html">key.js</a>, <a href="key.js.html#line405">line 405</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The status of the primary key
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">enums.keyStatus</span>
 
 
 	</dd>
@@ -1861,13 +2252,13 @@ Can contain additional subkeys, signatures, user ids, user attributes.</div>
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 12:37:01 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 12:58:54 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -83,8 +83,7 @@ CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];
   var signatureList = this.packets.filterByTag(enums.packet.signature);
   var literalDataPacket = new packet.literal();
-  // we assume that cleartext signature is generated based on UTF8 cleartext,
-  // fails for other encodings, see CP-1252 test case in test/signature.js
+  // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
   publicKeys.forEach(function(pubKey) {
     for (var i = 0; i < signatureList.length; i++) {

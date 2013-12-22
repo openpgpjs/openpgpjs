@@ -33,21 +33,112 @@ function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
   }
-  this.packets = packetlist || new packet.list();
+  // same data as in packetlist but in structured form
+  this.primaryKey = null;
+  this.revocationSignature = null;
+  this.directSignatures = null;
+  this.users = null;
+  this.subKeys = null;
+  this.packetlist2structure(packetlist);
+  if (!this.primaryKey || !this.users) {
+    throw new Error('Invalid key: need at least key and user ID packet');
+  }
 }
+
+/**
+ * Transforms packetlist to structured key data
+ * @param  {packetlist} packetlist The packets that form a key
+ */
+Key.prototype.packetlist2structure = function(packetlist) {
+  var user, primaryKeyId, subKey;
+  for (var i = 0; i < packetlist.length; i++) {
+    switch (packetlist[i].tag) {
+      case enums.packet.public_key:
+      case enums.packet.secret_key:
+        this.primaryKey = packetlist[i];
+        primaryKeyId = this.primaryKey.getKeyId();
+        break;
+      case enums.packet.userid:
+      case enums.packet.user_attribute:
+        user = new User(packetlist[i]);
+        if (!this.users) this.users = [];
+        this.users.push(user);
+        break;
+      case enums.packet.public_subkey:
+      case enums.packet.secret_subkey:
+        user = null;
+        if (!this.subKeys) this.subKeys = [];
+        subKey = new SubKey(packetlist[i]);
+        this.subKeys.push(subKey);
+        break;
+      case enums.packet.signature:
+        switch (packetlist[i].signatureType) {
+          case enums.signature.cert_generic:
+          case enums.signature.cert_persona:
+          case enums.signature.cert_casual:
+          case enums.signature.cert_positive:
+            if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
+              if (!user.selfCertifications) user.selfCertifications = [];
+              user.selfCertifications.push(packetlist[i]);
+            } else {
+              if (!user.otherCertifications) user.otherCertifications = [];
+              user.otherCertifications.push(packetlist[i]);
+            }
+            break;
+          case enums.signature.cert_revocation:
+            if (user) {
+              if (!user.revocationCertifications) user.revocationCertifications = [];
+              user.revocationCertifications.push(packetlist[i]);
+            } else {
+              if (!this.directSignatures) this.directSignatures = [];
+              this.directSignatures.push(packetlist[i]);
+            }
+            break;
+          case enums.signature.key:
+            if (!this.directSignatures) this.directSignatures = [];
+            this.directSignatures.push(packetlist[i]);
+            break;
+          case enums.signature.subkey_binding:
+            subKey.bindingSignature = packetlist[i];
+            break;
+          case enums.signature.key_revocation:
+            this.revocationSignature = packetlist[i];
+            break;
+          case enums.signature.subkey_revocation:
+            subKey.revocationSignature = packetlist[i];
+            break;
+        }
+        break;
+    }
+  }
+};
+
+/**
+ * Transforms structured key data to packetlist
+ * @return {packetlist} The packets that form a key
+ */
+Key.prototype.toPacketlist = function() {
+  var packetlist = new packet.list();
+  packetlist.push(this.primaryKey);
+  packetlist.push(this.revocationSignature);
+  packetlist.concat(this.directSignatures);
+  for (var i = 0; i < this.users.length; i++) {
+    packetlist.concat(this.users[i].toPacketlist());
+  }
+  if (this.subKeys) {
+    for (var i = 0; i < this.subKeys.length; i++) {
+      packetlist.concat(this.subKeys[i].toPacketlist());
+    } 
+  }
+  return packetlist;
+};
 
 /** 
  * Returns the primary key packet (secret or public)
  * @returns {(packet_secret_key|packet_public_key|null)} 
  */
 Key.prototype.getKeyPacket = function() {
-  for (var i = 0; i < this.packets.length; i++) {
-    if (this.packets[i].tag == enums.packet.public_key ||
-      this.packets[i].tag == enums.packet.secret_key) {
-      return this.packets[i];
-    }
-  }
-  return null;
+  return this.primaryKey;
 };
 
 /** 
@@ -55,17 +146,13 @@ Key.prototype.getKeyPacket = function() {
  * @returns {Array<(public_subkey|secret_subkey)>} 
  */
 Key.prototype.getSubkeyPackets = function() {
-
-  var subkeys = [];
-
-  for (var i = 0; i < this.packets.length; i++) {
-    if (this.packets[i].tag == enums.packet.public_subkey ||
-      this.packets[i].tag == enums.packet.secret_subkey) {
-      subkeys.push(this.packets[i]);
+  var subKeys = [];
+  if (this.subKeys) {
+    for (var i = 0; i < this.subKeys.length; i++) {
+      subKeys.push(this.subKeys[i].subKey);
     }
   }
-
-  return subkeys;
+  return subKeys;
 };
 
 /** 
@@ -107,8 +194,11 @@ function findKey(keys, keyIds) {
  * @return {(public_subkey|packet_public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
-  var keys = this.packets.filterByTag(enums.packet.public_key, enums.packet.public_subkey);
-  return findKey(keys, keyIds);
+  if (this.primaryKey.tag == enums.packet.public_key) {
+    return findKey(this.getAllKeyPackets(), keyIds);  
+  } else {
+    return null;
+  }  
 };
 
 /**
@@ -117,8 +207,11 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
  * @return {(secret_subkey|packet_secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
-  var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
-  return findKey(keys, keyIds);
+  if (this.primaryKey.tag == enums.packet.secret_key) {
+    return findKey(this.getAllKeyPackets(), keyIds);  
+  } else {
+    return null;
+  }
 };
 
 /**
@@ -127,9 +220,10 @@ Key.prototype.getPrivateKeyPacket = function(keyIds) {
  */
 Key.prototype.getUserIds = function() {
   var userids = [];
-  var useridPackets = this.packets.filterByTag(enums.packet.userid);
-  for (var i = 0; i < useridPackets.length; i++) {
-    userids.push(useridPackets[i].write());
+  for (var i = 0; i < this.users.length; i++) {
+    if (this.users[i].userId) {
+      userids.push(this.users[i].userId.write());
+    }
   }
   return userids;
 };
@@ -139,8 +233,7 @@ Key.prototype.getUserIds = function() {
  * @return {Boolean}
  */
 Key.prototype.isPublic = function() {
-  var publicKeyPackets = this.packets.filterByTag(enums.packet.public_key);
-  return publicKeyPackets.length ? true : false;
+  return this.primaryKey.tag == enums.packet.public_key;
 };
 
 /**
@@ -148,32 +241,32 @@ Key.prototype.isPublic = function() {
  * @return {Boolean}
  */
 Key.prototype.isPrivate = function() {
-  var privateKeyPackets = this.packets.filterByTag(enums.packet.private_key);
-  return privateKeyPackets.length ? true : false;
+  return this.primaryKey.tag == enums.packet.secret_key;
 };
 
 /**
- * Returns key as public key
- * @return {Key} public key
+ * Returns key as public key (shallow copy)
+ * @return {Key} new public Key
  */
 Key.prototype.toPublic = function() {
   var packetlist = new packet.list();
-  for (var i = 0; i < this.packets.length; i++) {
-    switch (this.packets[i].tag) {
+  var keyPackets = this.toPacketlist();
+  for (var i = 0; i < keyPackets.length; i++) {
+    switch (keyPackets[i].tag) {
       case enums.packet.secret_key:
-        var bytes = this.packets[i].writePublicKey();
+        var bytes = keyPackets[i].writePublicKey();
         var pubKeyPacket = new packet.public_key();
         pubKeyPacket.read(bytes);
         packetlist.push(pubKeyPacket);
         break;
       case enums.packet.secret_subkey:
-        var bytes = this.packets[i].writePublicKey();
+        var bytes = keyPackets[i].writePublicKey();
         var pubSubkeyPacket = new packet.public_subkey();
         pubSubkeyPacket.read(bytes);
         packetlist.push(pubSubkeyPacket);
         break;
       default:
-        packetlist.push(this.packets[i]);
+        packetlist.push(keyPackets[i]);
     }
   }
   return new Key(packetlist);
@@ -185,29 +278,29 @@ Key.prototype.toPublic = function() {
  */
 Key.prototype.armor = function() {
   var type = this.isPublic() ? enums.armor.public_key : enums.armor.private_key;
-  return armor.encode(type, this.packets.write());
+  return armor.encode(type, this.toPacketlist().write());
 };
 
 /**
  * Returns first key packet that is available for signing
- * @return {(public_subkey|secret_subkey|packet_secret_key|packet_public_key|null)}
+ * @return {(secret_subkey|packet_secret_key|null)} key packet or null if no signing key has been found
  */
 Key.prototype.getSigningKeyPacket = function() {
-
-  var signing = [ enums.publicKey.rsa_encrypt_sign, enums.publicKey.rsa_sign, enums.publicKey.dsa];
-
-  signing = signing.map(function(s) {
-    return enums.read(enums.publicKey, s);
-  });
-
-  var keys = this.getAllKeyPackets();
-
-  for (var i = 0; i < keys.length; i++) {
-    if (signing.indexOf(keys[i].algorithm) !== -1) {
-      return keys[i];
+  if (this.isPublic()) {
+    throw new Error('Need private key for signing');
+  }
+  var primaryUser = this.getPrimaryUser();
+  if (primaryUser && 
+      isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+    return this.primaryKey;
+  }
+  if (this.subKeys) {
+    for (var i = 0; i < this.subKeys.length; i++) {
+      if (this.subKeys[i].isValidSigningKey(this.primaryKey)) {
+        return this.subKeys[i].subKey;
+      }
     }
   }
-
   return null;
 };
 
@@ -215,10 +308,28 @@ Key.prototype.getSigningKeyPacket = function() {
  * Returns preferred signature hash algorithm of this key
  * @return {String}
  */
-Key.prototype.getPreferredSignatureHashAlgorithm = function() {
-  //TODO implement: https://tools.ietf.org/html/rfc4880#section-5.2.3.8
-  //separate private key preference from digest preferences
+Key.prototype.getPreferredHashAlgorithm = function() {
+  var primaryUser = this.getPrimaryUser();
+  if (primaryUser && primaryUser.selfCertificate.preferredHashAlgorithms) {
+    return primaryUser.selfCertificate.preferredHashAlgorithms[0];
+  }
   return config.prefer_hash_algorithm;
+};
+
+function isValidEncryptionKeyPacket(keyPacket, signature) {
+  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
+         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
+         ((signature.keyFlags & enums.keyFlags.encrypt_communication) !== 0 ||
+          (signature.keyFlags & enums.keyFlags.encrypt_storage) !== 0 ||
+          !signature.keyFlags);
+};
+
+function isValidSigningKeyPacket(keyPacket, signature) {
+  return (keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.dsa) ||
+          keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
+          keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
+         ((signature.keyFlags & enums.keyFlags.sign_data) !== 0 ||
+          !signature.keyFlags);
 };
 
 /**
@@ -228,25 +339,18 @@ Key.prototype.getPreferredSignatureHashAlgorithm = function() {
 Key.prototype.getEncryptionKeyPacket = function() {
   // V4: by convention subkeys are prefered for encryption service
   // V3: keys MUST NOT have subkeys
-  var isValidEncryptionKey = function(key) {
-    //TODO evaluate key flags: http://tools.ietf.org/html/rfc4880#section-5.2.3.21
-    return key.algorithm != enums.read(enums.publicKey, enums.publicKey.dsa) && key.algorithm != enums.read(enums.publicKey,
-      enums.publicKey.rsa_sign);
-    //TODO verify key
-    //&& keys.verifyKey()
-  };
-
-  var subkeys = this.getSubkeyPackets();
-
-  for (var j = 0; j < subkeys.length; j++) {
-    if (isValidEncryptionKey(subkeys[j])) {
-      return subkeys[j];
+  if (this.subKeys) {
+    for (var i = 0; i < this.subKeys.length; i++) {
+      if (this.subKeys[i].isValidEncryptionKey(this.primaryKey)) {
+        return this.subKeys[i].subKey;
+      }
     }
   }
-  // if no valid subkey for encryption, use primary key
-  var primaryKey = this.getKeyPacket();
-  if (isValidEncryptionKey(primaryKey)) {
-    return primaryKey;
+  // if no valid subkey for encryption, evaluate primary key
+  var primaryUser = this.getPrimaryUser();
+  if (primaryUser && 
+      isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+    return this.primaryKey;
   }
   return null;
 };
@@ -257,10 +361,14 @@ Key.prototype.getEncryptionKeyPacket = function() {
  * @return {Boolean} true if all key and subkey packets decrypted successfully
  */
 Key.prototype.decrypt = function(passphrase) {
-  var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
-  for (var i = 0; i < keys.length; i++) {
-    var success = keys[i].decrypt(passphrase);
-    if (!success) return false;
+  if (this.isPrivate()) {
+    var keys = this.getAllKeyPackets();
+    for (var i = 0; i < keys.length; i++) {
+      var success = keys[i].decrypt(passphrase);
+      if (!success) return false;
+    }
+  } else {
+    throw new Error("Nothing to decrypt in a public key");
   }
   return true;
 };
@@ -272,43 +380,320 @@ Key.prototype.decrypt = function(passphrase) {
  * @return {Boolean} true if all key packets decrypted successfully
  */
 Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
-  //TODO return value
-  var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
-  for (var i = 0; i < keys.length; i++) {
-    var keyId = keys[i].getKeyId(); 
-    for (var j = 0; j < keyIds.length; j++) {
-      if (keyId.equals(keyIds[j])) {
-        var success = keys[i].decrypt(passphrase);
-        if (!success) return false;
+  if (this.isPrivate()) {
+    var keys = this.getAllKeyPackets();
+    for (var i = 0; i < keys.length; i++) {
+      var keyId = keys[i].getKeyId(); 
+      for (var j = 0; j < keyIds.length; j++) {
+        if (keyId.equals(keyIds[j])) {
+          var success = keys[i].decrypt(passphrase);
+          if (!success) return false;
+        }
       }
     }
+  } else {
+    throw new Error("Nothing to decrypt in a public key");
   }
   return true;
 };
 
-// TODO
-Key.prototype.verify = function() {
-
+/**
+ * Verify primary key. Checks for revocation signatures, expiration time
+ * and valid self signature
+ * @return {enums.keyStatus} The status of the primary key
+ */
+Key.prototype.verifyPrimaryKey = function() {
+  // check revocation signature
+  if (this.revocationSignature && !this.revocationSignature.isExpired() && 
+     (this.revocationSignature.verified || 
+      this.revocationSignature.verify(this.primaryKey, {key: this.primaryKey}))) {
+    return enums.keyStatus.revoked;
+  }
+  // check V3 expiration time
+  if (this.primaryKey.version == 3 && this.primaryKey.expirationTimeV3 !== 0 &&
+    Date.now() > (this.primaryKey.created.getTime() + this.primaryKey.expirationTimeV3*24*3600*1000)) {
+    return enums.keyStatus.expired;
+  }
+  // check for at least one self signature. Self signature of user ID not mandatory
+  // See http://tools.ietf.org/html/rfc4880#section-11.1
+  var selfSigned = false;
+  for (var i = 0; i < this.users.length; i++) {
+    if (this.users[i].userId && this.users[i].selfCertifications) {
+      selfSigned = true;
+    }
+  }
+  if (!selfSigned) {
+    return enums.keyStatus.no_self_cert;
+  }
+  // check for valid self signature
+  var primaryUser = this.getPrimaryUser();
+  if (!primaryUser) {
+    return enums.keyStatus.invalid;
+  }
+  // check V4 expiration time
+  if (this.primaryKey.version == 4 && primaryUser.selfCertificate.keyNeverExpires === false &&
+    Date.now() > (primaryUser.selfCertificate.created.getTime() + primaryUser.selfCertificate.keyExpirationTime*1000)) {
+    return enums.keyStatus.expired;
+  }
+  return enums.keyStatus.valid;
 };
+
+/**
+ * Returns primary user and most significant (latest valid) self signature
+ * - if multiple users are marked as primary users returns the one with the latest self signature
+ * - if no primary user is found returns the user with the latest self signature
+ * @return {{user: Array<User>, selfCertificate: Array<packet_signature>}} The primary user and the self signature
+ */
+Key.prototype.getPrimaryUser = function() {
+  var user = null;
+  var userSelfCert;
+  for (var i = 0; i < this.users.length; i++) {
+    if (!this.users[i].userId) {
+      continue;
+    }
+    var selfCert = this.users[i].getValidSelfCertificate(this.primaryKey);
+    if (!selfCert) {
+      continue;
+    }
+    if (!user || 
+        !userSelfCert.isPrimaryUserID && selfCert.isPrimaryUserID ||
+         userSelfCert.created < selfCert.created) {
+      user = this.users[i];
+      userSelfCert = selfCert;
+    }
+  }
+  return user ? {user: user, selfCertificate: userSelfCert} : null;
+}
+
 // TODO
 Key.prototype.revoke = function() {
 
 };
 
 /**
- * Reads an OpenPGP armored text and returns a key object
+ * @class
+ * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
+ */
+function User(userPacket) {
+  if (!(this instanceof User)) {
+    return new User(userPacket);
+  }
+  this.userId = userPacket.tag == enums.packet.userid ? userPacket : null;
+  this.userAttribute = userPacket.tag == enums.packet.user_attribute ? userPacket : null
+  this.selfCertifications = null;
+  this.otherCertifications = null;
+  this.revocationCertifications = null;
+}
+
+/**
+ * Transforms structured user data to packetlist
+ * @return {packetlist}
+ */
+User.prototype.toPacketlist = function() {
+  var packetlist = new packet.list();
+  packetlist.push(this.userId || this.userAttribute);
+  packetlist.concat(this.revocationCertifications);
+  packetlist.concat(this.selfCertifications);
+  packetlist.concat(this.otherCertifications);
+  return packetlist;
+};
+
+/**
+ * Checks if a self signature of the user is revoked
+ * @param  {packet_signature}                    certificate
+ * @param  {packet_secret_key|packet_public_key} primaryKey  The primary key packet
+ * @return {Boolean}                                         True if the certificate is revoked
+ */
+User.prototype.isRevoked = function(certificate, primaryKey) {
+  if (this.revocationCertifications) {
+    var that = this;
+    return this.revocationCertifications.some(function(revCert) {
+             return revCert.issuerKeyId.equals(certificate.issuerKeyId) &&
+                    !revCert.isExpired() && 
+                    (revCert.verified || 
+                     revCert.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey}));
+          });
+  } else {
+    return false;
+  }
+};
+
+/**
+ * Returns the most significant (latest valid) self signature of the user
+ * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
+ * @return {packet_signature}                               The self signature
+ */
+User.prototype.getValidSelfCertificate = function(primaryKey) {
+  if (!this.selfCertifications) {
+    return null;
+  }
+  var validCert = [];
+  for (var i = 0; i < this.selfCertifications.length; i++) {
+    if (this.isRevoked(this.selfCertifications[i], primaryKey)) {
+      continue;
+    }
+    if (!this.selfCertifications[i].isExpired() &&
+       (this.selfCertifications[i].verified || 
+        this.selfCertifications[i].verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
+      validCert.push(this.selfCertifications[i]);
+    }
+  }
+  // most recent first
+  validCert = validCert.sort(function(a, b) {
+    a = a.created;
+    b = b.created;
+    return a>b ? -1 : a<b ? 1 : 0;
+  });
+  return validCert[0];
+};
+
+/**
+ * Verify User. Checks for existence of self signatures, revocation signatures
+ * and validity of self signature
+ * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
+ * @return {enums.keyStatus}                                status of user    
+ */
+User.prototype.verify = function(primaryKey) {
+  if (!this.selfCertifications) {
+    return enums.keyStatus.no_self_cert;
+  }
+  var status;
+  for (var i = 0; i < this.selfCertifications.length; i++) {
+    if (this.isRevoked(this.selfCertifications[i], primaryKey)) {
+      status = enums.keyStatus.revoked;
+      continue;
+    }
+    if (!(this.selfCertifications[i].verified || 
+        this.selfCertifications[i].verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
+      status = enums.keyStatus.invalid;
+      continue;
+    }
+    if (this.selfCertifications[i].isExpired()) {
+      status = enums.keyStatus.expired;
+      continue;
+    }
+    status = enums.keyStatus.valid;
+    break;
+  }
+  return status;
+};
+
+/**
+ * @class
+ * @classdesc Class that represents a subkey packet and the relevant signatures.
+ */
+function SubKey(subKeyPacket) {
+  if (!(this instanceof SubKey)) {
+    return new SubKey(subKeyPacket);
+  }
+  this.subKey = subKeyPacket;
+  this.bindingSignature = null;
+  this.revocationSignature = null;
+}
+
+/**
+ * Transforms structured subkey data to packetlist
+ * @return {packetlist}
+ */
+SubKey.prototype.toPacketlist = function() {
+  var packetlist = new packet.list();
+  packetlist.push(this.subKey);
+  packetlist.push(this.revocationSignature);
+  packetlist.push(this.bindingSignature);
+  return packetlist;
+};
+
+/**
+ * Returns true if the subkey can be used for encryption
+ * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @return {Boolean}
+ */
+SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
+  return this.verify(primaryKey) == enums.keyStatus.valid &&
+         isValidEncryptionKeyPacket(this.subKey, this.bindingSignature);
+};
+
+/**
+ * Returns true if the subkey can be used for signing of data
+ * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @return {Boolean}
+ */
+SubKey.prototype.isValidSigningKey = function(primaryKey) {
+  return this.verify(primaryKey) == enums.keyStatus.valid &&
+         isValidSigningKeyPacket(this.subKey, this.bindingSignature);
+};
+
+/**
+ * Verify subkey. Checks for revocation signatures, expiration time
+ * and valid binding signature
+ * @return {enums.keyStatus} The status of the subkey
+ */
+SubKey.prototype.verify = function(primaryKey) {
+  // check subkey revocation signature
+  if (this.revocationSignature && !this.revocationSignature.isExpired() && 
+     (this.revocationSignature.verified || 
+      this.revocationSignature.verify(primaryKey, {key: this.subKey}))) {
+    return enums.keyStatus.revoked;
+  }
+  // check V3 expiration time
+  if (this.subKey.version == 3 && this.subKey.expirationTimeV3 !== 0 &&
+      Date.now() > (this.subKey.created.getTime() + this.subKey.expirationTimeV3*24*3600*1000)) {
+    return enums.keyStatus.expired;
+  }
+  // check subkey binding signature
+  if (!this.bindingSignature) {
+    return enums.keyStatus.invalid;
+  }
+  if (this.bindingSignature.isExpired()) {
+    return enums.keyStatus.expired;
+  }
+  if (!(this.bindingSignature.verified ||
+        this.bindingSignature.verify(primaryKey, {key: primaryKey, bind: this.subKey}))) {
+    return enums.keyStatus.invalid;
+  }
+  // check V4 expiration time
+  if (this.subKey.version == 4 &&
+      this.bindingSignature.keyNeverExpires === false &&
+      Date.now() > (this.subKey.created.getTime() + this.bindingSignature.keyExpirationTime*1000)) {
+    return enums.keyStatus.expired;
+  }
+  return enums.keyStatus.valid;
+};
+
+/**
+ * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @return {Key} new key object
+ * @return {{keys: Array<Key>, err: (Array<Error>|null)}} result object with key and error arrays
  */
 function readArmored(armoredText) {
-  var input = armor.decode(armoredText);
-  if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
-    throw new Error('Armored text not of type key');
+  var result = {};
+  result.keys = [];
+  try {
+    var input = armor.decode(armoredText);
+    if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
+      throw new Error('Armored text not of type key');
+    }
+    var packetlist = new packet.list();
+    packetlist.read(input.data);
+    var keyIndex = packetlist.indexOfTag(enums.packet.public_key, enums.packet.secret_key);
+    if (keyIndex.length == 0) {
+      throw new Error('No key packet found in armored text')
+    }
+    for (var i = 0; i < keyIndex.length; i++) {
+      var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+      try {
+        var newKey = new Key(oneKeyList);
+        result.keys.push(newKey);
+      } catch (e) {
+        result.err = result.err || [];
+        result.err.push(e); 
+      }
+    }
+  } catch (e) {
+    result.err = result.err || [];
+    result.err.push(e); 
   }
-  var packetlist = new packet.list();
-  packetlist.read(input.data);
-  var newKey = new Key(packetlist);
-  return newKey;
+  return result;
 }
 
 /**

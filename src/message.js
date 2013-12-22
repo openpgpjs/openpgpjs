@@ -148,6 +148,8 @@ Message.prototype.encrypt = function(keys) {
       pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
       pkESKeyPacket.encrypt(encryptionKeyPacket);
       packetlist.push(pkESKeyPacket);
+    } else {
+      throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
     }
   });
   var symEncryptedPacket;
@@ -185,6 +187,9 @@ Message.prototype.sign = function(privateKeys) {
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid key packet for signing in key ' + privateKeys[i].primaryKey.getKeyId().toHex());
+    }
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     packetlist.push(onePassSig);

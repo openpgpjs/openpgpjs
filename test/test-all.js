@@ -14,6 +14,7 @@ require('./crypto/cipher/twofish.js');
 require('./crypto/crypto.js');
 
 require('./general/basic.js');
+require('./general/key.js');
 require('./general/keyring.js');
 require('./general/packet.js');
 require('./general/signature.js');

@@ -242,9 +242,8 @@ function split_checksum(text) {
  * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
- * @returns {(Boolean|Object)} Either false in case of an error
- * or an object with attribute "text" containing the message text
- * and an attribute "data" containing the bytes.
+ * @returns {Object} An object with attribute "text" containing the message text,
+ * an attribute "data" containing the bytes and "type" for the ASCII armor type
  */
 function dearmor(text) {
   var reSplit = /^-----[^-]+-----$\n/m;
@@ -252,6 +251,9 @@ function dearmor(text) {
   text = text.replace(/\r/g, '');
 
   var type = get_type(text);
+  if (!type) {
+    throw new Error('Unknow ASCII armor type');
+  } 
 
   var splittext = text.split(reSplit);
 
@@ -292,11 +294,10 @@ function dearmor(text) {
   }
 
   if (!verifyCheckSum(result.data, checksum)) {
-    util.print_error("Ascii armor integrity check on message failed: '"
+    throw new Error("Ascii armor integrity check on message failed: '"
       + checksum
       + "' should be '"
       + getCheckSum(result) + "'");
-    return false;
   } else {
     return result;
   }

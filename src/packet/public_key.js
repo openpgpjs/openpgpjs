@@ -33,6 +33,7 @@ var util = require('../util'),
  * major versions.  Consequently, this section is complex.
  */
 module.exports = function packet_public_key() {
+  this.version = 4;
   /** Key creation date.
    * @type {Date} */
   this.created = new Date();
@@ -42,6 +43,8 @@ module.exports = function packet_public_key() {
   /** Public key algorithm
    * @type {openpgp.publickey} */
   this.algorithm = 'rsa_sign';
+  // time in days (V3 only)
+  this.expirationTimeV3 = 0;
 
 
   /**
@@ -54,20 +57,29 @@ module.exports = function packet_public_key() {
    * @return {Object} This object with attributes set by the parser
    */
   this.readPublicKey = this.read = function(bytes) {
+    var pos = 0;
     // A one-octet version number (3 or 4).
-    var version = bytes.charCodeAt(0);
+    this.version = bytes.charCodeAt(pos++);
 
-    if (version == 4) {
+    if (this.version == 3 || this.version == 4) {
       // - A four-octet number denoting the time that the key was created.
-      this.created = util.readDate(bytes.substr(1, 4));
+      this.created = util.readDate(bytes.substr(pos, 4));
+      pos += 4;
+
+      if (this.version == 3) {
+        // - A two-octet number denoting the time in days that this key is
+        //   valid.  If this number is zero, then it does not expire.
+        this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+        pos += 2;
+      }
 
       // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(5));
+      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
 
       var mpicount = crypto.getPublicMpiCount(this.algorithm);
       this.mpi = [];
 
-      var bmpi = bytes.substr(6);
+      var bmpi = bytes.substr(pos);
       var p = 0;
 
       for (var i = 0; i < mpicount && p < bmpi.length; i++) {
@@ -76,8 +88,9 @@ module.exports = function packet_public_key() {
 
         p += this.mpi[i].read(bmpi.substr(p))
 
-        if (p > bmpi.length)
-          util.print_error("openpgp.packet.keymaterial.js\n" + 'error reading MPI @:' + p);
+        if (p > bmpi.length) {
+          throw new Error('Error reading MPI @:' + p);
+        }
       }
 
       return p + 6;
@@ -98,8 +111,11 @@ module.exports = function packet_public_key() {
    */
   this.writePublicKey = this.write = function() {
     // Version
-    var result = String.fromCharCode(4);
+    var result = String.fromCharCode(this.version);
     result += util.writeDate(this.created);
+    if (this.version == 3) {
+      result += util.writeNumber(this.expirationTimeV3, 2);
+    }
     result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
 
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
@@ -126,7 +142,11 @@ module.exports = function packet_public_key() {
    */
   this.getKeyId = function() {
     var keyid = new type_keyid();
-    keyid.read(this.getFingerprint().substr(12, 8));
+    if (this.version == 4) {
+      keyid.read(this.getFingerprint().substr(12, 8));
+    } else if (this.version == 3) {
+      keyid.read(this.mpi[0].write().substr(-8));
+    }
     return keyid;
   }
 
@@ -135,8 +155,17 @@ module.exports = function packet_public_key() {
    * @return {String} A string containing the fingerprint
    */
   this.getFingerprint = function() {
-    var toHash = this.writeOld();
-    return crypto.hash.sha1(toHash, toHash.length);
+    var toHash = '';
+    if (this.version == 4) {
+      toHash = this.writeOld();
+      return crypto.hash.sha1(toHash);
+    } else if (this.version == 3) {
+      var mpicount = crypto.getPublicMpiCount(this.algorithm);
+      for (var i = 0; i < mpicount; i++) {
+        toHash += this.mpi[i].toBytes();
+      }
+      return crypto.hash.md5(toHash)
+    }
   }
 
 }

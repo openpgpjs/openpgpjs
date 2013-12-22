@@ -121,9 +121,7 @@ module.exports = {
     // some sanity checks
     if (input == null || input.length <= position || input.substring(position).length < 2 || (input.charCodeAt(position) &
       0x80) == 0) {
-      util
-        .print_error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
-      return null;
+      throw new Error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
     }
     var mypos = position;
     var tag = -1;

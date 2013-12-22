@@ -11,7 +11,7 @@ unit.register("Key generation/encryption/decryption", function() {
         + 'userid: ' + userid + '\n'
         + 'message: ' + message;
 
-    var privKey = openpgp.key.readArmored(key.privateKeyArmored);
+    var privKey = openpgp.key.readArmored(key.privateKeyArmored).keys[0];
 
     var encrypted = openpgp.encryptMessage([privKey], message);
 
@@ -111,13 +111,13 @@ unit.register("Message encryption/decryption", function() {
 
   var plaintext = 'short message\nnext line\n한국어/조선말';
 
-  var key = openpgp.key.readArmored(pub_key);
+  var key = openpgp.key.readArmored(pub_key).keys[0];
 
   var encrypted = openpgp.encryptMessage([key], plaintext);
 
   var message = openpgp.message.readArmored(encrypted);
 
-  var privKey = openpgp.key.readArmored(priv_key);
+  var privKey = openpgp.key.readArmored(priv_key).keys[0];
 
   // get key IDs the message is encrypted for
   var keyids = message.getEncryptionKeyIds();

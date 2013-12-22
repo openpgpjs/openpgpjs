@@ -58,6 +58,8 @@ module.exports = function packetlist() {
    * writing to packetlist[i] directly will result in an error.
    */
   this.push = function(packet) {
+    if (!packet) return;
+
     packet.packets = packet.packets || new packetlist();
 
     this[this.length] = packet;
@@ -125,6 +127,46 @@ module.exports = function packetlist() {
       }
     }
     return null;
+  }
+
+  /**
+   * Returns array of found indices by tag
+   */
+  this.indexOfTag = function() {
+    var args = Array.prototype.slice.call(arguments);
+    var tagIndex = [];
+    var that = this;
+    for (var i = 0; i < this.length; i++) {
+      if (args.some(function(packetType) {return that[i].tag == packetType})) {
+        tagIndex.push(i);
+      }
+    }
+    return tagIndex;
+  }
+
+  /**
+   * Returns slice of packetlist
+   */
+  this.slice = function(begin, end) {
+    if (!end) {
+      end = this.length
+    }
+    var part = new packetlist();
+    for (var i = begin; i < end; i++) {
+      part.push(this[i]);
+    }
+    return part;
+  }
+
+  /**
+   * Concatenates packetlist or array of packets
+   */
+  this.concat = function(packetlist) {
+    if (packetlist) {
+      for (var i = 0; i < packetlist.length; i++) {
+        this.push(packetlist[i]);
+      }
+    }
   }
 
 }

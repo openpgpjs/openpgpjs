@@ -35,7 +35,7 @@ var util = require('../util'),
  */
 module.exports = function packet_signature() {
 
-  this.version = null;
+  this.version = 4;
   this.signatureType = null;
   this.hashAlgorithm = null;
   this.publicKeyAlgorithm = null;
@@ -46,7 +46,7 @@ module.exports = function packet_signature() {
 
   this.created = new Date();
   this.signatureExpirationTime = null;
-  this.signatureNeverExpires = null;
+  this.signatureNeverExpires = true;
   this.exportable = null;
   this.trustLevel = null;
   this.trustAmount = null;
@@ -227,7 +227,7 @@ module.exports = function packet_signature() {
       result += write_sub_packet(sub.signature_creation_time, util.writeDate(this.created));
     }
     if (this.signatureExpirationTime !== null) {
-      result += write_sub_packet(sub.signature_expiration_time, util.writeDate(this.signatureExpirationTime));
+      result += write_sub_packet(sub.signature_expiration_time, util.writeNumber(this.signatureExpirationTime, 4));
     }
     if (this.exportable !== null) {
       result += write_sub_packet(sub.exportable_certification, String.fromCharCode(this.exportable ? 1 : 0));
@@ -243,7 +243,7 @@ module.exports = function packet_signature() {
       result += write_sub_packet(sub.revocable, String.fromCharCode(this.revocable ? 1 : 0));
     }
     if (this.keyExpirationTime !== null) {
-      result += write_sub_packet(sub.key_expiration_time, util.writeDate(this.keyExpirationTime));
+      result += write_sub_packet(sub.key_expiration_time, util.writeNumber(this.keyExpirationTime, 4));
     }
     if (this.preferredSymmetricAlgorithms !== null) {
       bytes = util.bin2str(this.preferredSymmetricAlgorithms);
@@ -363,11 +363,11 @@ module.exports = function packet_signature() {
         this.created = util.readDate(bytes.substr(mypos));
         break;
       case 3:
-        // Signature Expiration Time
-        var time = util.readDate(bytes.substr(mypos));
+        // Signature Expiration Time in seconds
+        var seconds = util.readNumber(bytes.substr(mypos));
 
-        this.signatureNeverExpires = time.getTime() == 0;
-        this.signatureExpirationTime = time;
+        this.signatureNeverExpires = seconds == 0;
+        this.signatureExpirationTime = seconds;
 
         break;
       case 4:
@@ -388,11 +388,11 @@ module.exports = function packet_signature() {
         this.revocable = bytes.charCodeAt(mypos++) == 1;
         break;
       case 9:
-        // Key Expiration Time
-        var time = util.readDate(bytes.substr(mypos));
+        // Key Expiration Time in seconds
+        var seconds = util.readNumber(bytes.substr(mypos));
 
-        this.keyExpirationTime = time;
-        this.keyNeverExpires = time.getTime() == 0;
+        this.keyExpirationTime = seconds;
+        this.keyNeverExpires = seconds == 0;
 
         break;
       case 11:
@@ -495,9 +495,7 @@ module.exports = function packet_signature() {
         this.embeddedSignature.read(bytes.substr(mypos));
         break;
       default:
-        util.print_error("openpgp.packet.signature.js\n" +
-          'unknown signature subpacket type ' + type + " @:" + mypos +
-          " subplen:" + subplen + " len:" + len);
+        throw new Error("Unknown signature subpacket type " + type + " @:" + mypos);
         break;
     }
   };
@@ -519,39 +517,42 @@ module.exports = function packet_signature() {
       case t.cert_casual:
       case t.cert_positive:
       case t.cert_revocation:
-        {
-          var packet, tag;
+        var packet, tag;
 
-          if (data.userid !== undefined) {
-            tag = 0xB4;
-            packet = data.userid;
-          } else if (data.userattribute !== undefined) {
-            tag = 0xD1;
-            packet = data.userattribute;
-          } else throw new Error('Either a userid or userattribute packet needs to be ' +
-              'supplied for certification.');
+        if (data.userid !== undefined) {
+          tag = 0xB4;
+          packet = data.userid;
+        } else if (data.userattribute !== undefined) {
+          tag = 0xD1;
+          packet = data.userattribute;
+        } else throw new Error('Either a userid or userattribute packet needs to be ' +
+            'supplied for certification.');
 
-          var bytes = packet.write();
+        var bytes = packet.write();
 
+        if (this.version == 4) {
           return this.toSign(t.key, data) +
-            String.fromCharCode(tag) +
-            util.writeNumber(bytes.length, 4) +
-            bytes;
+          String.fromCharCode(tag) +
+          util.writeNumber(bytes.length, 4) +
+          bytes; 
+        } else if (this.version == 3) {
+          return this.toSign(t.key, data) +
+          bytes;
         }
+        break;
+
       case t.subkey_binding:
       case t.key_binding:
-        {
-          return this.toSign(t.key, data) + this.toSign(t.key, {
-            key: data.bind
-          });
-        }
-      case t.key:
-        {
-          if (data.key == undefined)
-            throw new Error('Key packet is required for this sigtature.');
+        return this.toSign(t.key, data) + this.toSign(t.key, {
+          key: data.bind
+        });
 
-          return data.key.writeOld();
-        }
+      case t.key:
+        if (data.key == undefined)
+          throw new Error('Key packet is required for this sigtature.');
+
+        return data.key.writeOld();
+
       case t.key_revocation:
       case t.subkey_revocation:
         return this.toSign(t.key, data);
@@ -595,7 +596,7 @@ module.exports = function packet_signature() {
 
     var mpicount = 0;
     // Algorithm-Specific Fields for RSA signatures:
-    // 	    - multiprecision number (MPI) of RSA signature value m**d mod n.
+    //      - multiprecision number (MPI) of RSA signature value m**d mod n.
     if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4)
       mpicount = 1;
     //    Algorithm-Specific Fields for DSA signatures:
@@ -616,5 +617,16 @@ module.exports = function packet_signature() {
       bytes + this.signatureData + trailer);
 
     return this.verified;
+  }
+
+  /**
+   * Verifies signature expiration date
+   * @return {Boolean} true if expired
+   */
+  this.isExpired = function() {
+    if (!this.signatureNeverExpires) {
+      return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
+    }
+    return false;
   }
 }
