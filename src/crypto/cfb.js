@@ -15,6 +15,8 @@
  * materials provided with the application or distribution.
  */
 
+/** @module crypto/cfb */
+
 var util = require('../util'),
   cipher = require('./cipher');
 

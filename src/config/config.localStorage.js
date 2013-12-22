@@ -1,4 +1,14 @@
-function config_localStorage() {
+/** @module config/config_localStorage */
+
+/**
+ *
+ * This object storing and retrieving configuration from HTML5 local storage.
+ *
+ * This object can be accessed after calling openpgp.init()
+ * @class
+ * @classdesc Implementation of the config handler for localstorage
+ */
+module.exports = function () {
 
   /**
    * Reads the config out of the HTML5 local storage
@@ -24,5 +34,3 @@ function config_localStorage() {
   this.read = read;
   this.write = write;
 }
-
-module.exports = config_localStorage;

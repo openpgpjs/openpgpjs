@@ -21,6 +21,8 @@
  *   - str_sha512
  */
 
+/** @module crypto/hash/sha */
+
 var jsSHA = (function() {
 
   /*

@@ -15,6 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/one_pass_signature */
+
+var enums = require('../enums.js'),
+  type_keyid = require('../type/keyid.js');
+
 /**
  * @class
  * @classdesc Implementation of the One-Pass Signature Packets (Tag 4)
@@ -27,10 +32,7 @@
  * can compute the entire signed message in one pass.
  */
 
-var enums = require('../enums.js'),
-  type_keyid = require('../type/keyid.js');
-
-module.exports = function packet_one_pass_signature() {
+module.exports = function one_pass_signature() {
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
   this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
@@ -41,7 +43,7 @@ module.exports = function packet_one_pass_signature() {
   /**
    * parsing function for a one-pass signature packet (tag 4).
    * @param {String} bytes payload of a tag 4 packet
-   * @return {packet_one_pass_signature} object representation
+   * @return {module:packet/one_pass_signature} object representation
    */
   this.read = function(bytes) {
     var mypos = 0;

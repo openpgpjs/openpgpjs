@@ -3,6 +3,8 @@
  * Originally written by nklein software (nklein.com)
  */
 
+/** @module crypto/cipher/blowfish */
+
 /* 
  * Javascript implementation based on Bruce Schneier's reference implementation.
  *

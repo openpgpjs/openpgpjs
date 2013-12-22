@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/userid */
+
 var util = require('../util');
 
 /**
@@ -27,8 +29,9 @@ var util = require('../util');
  * specifies the length of the User ID. 
  */
 module.exports = function packet_userid() {
-  /** @type {String} A string containing the user id. Usually in the form
-   * John Doe <john@example.com> 
+  /** A string containing the user id. Usually in the form
+   * John Doe <john@example.com>
+   * @type {String} 
    */
   this.userid = '';
 
@@ -39,7 +42,7 @@ module.exports = function packet_userid() {
    * @param {Integer} position position to start reading from the input string
    * @param {Integer} len length of the packet or the remaining length of input 
    * at position
-   * @return {openpgp_packet_encrypteddata} object representation
+   * @return {module:packet/encrypteddata} object representation
    */
   this.read = function(bytes) {
     this.userid = util.decode_utf8(bytes);

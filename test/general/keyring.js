@@ -2,7 +2,8 @@ var unit = require('../unit.js');
 
 unit.register("Keyring testing", function() {
   var openpgp = require('openpgp');
-  var keyring = require('keyring');
+  var keyringClass = new require('keyring');
+  var keyring = new keyringClass();
   var result = [];
 
   keyring.init();

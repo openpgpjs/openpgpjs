@@ -20,6 +20,8 @@
 // - MPI size: (a << 8) | b 
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
+/** @module type/mpi */
+
 var BigInteger = require('../crypto/public_key/jsbn.js'),
   util = require('../util');
 
@@ -44,7 +46,7 @@ module.exports = function mpi() {
    * string
    * @param {Integer} len Length of the packet or the remaining length of 
    * input at position
-   * @return {openpgp_type_mpi} Object representation
+   * @return {module:type/mpi} Object representation
    */
   this.read = function(bytes) {
     var bits = (bytes.charCodeAt(0) << 8) | bytes.charCodeAt(1);

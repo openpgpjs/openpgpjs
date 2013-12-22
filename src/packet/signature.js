@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/signature */
+
 var util = require('../util'),
   packet = require('./packet.js'),
   enums = require('../enums.js'),
@@ -81,7 +83,7 @@ module.exports = function packet_signature() {
    * @param {String} bytes payload of a tag 2 packet
    * @param {Integer} position position to start reading from the bytes string
    * @param {Integer} len length of the packet or the remaining length of bytes at position
-   * @return {openpgp_packet_encrypteddata} object representation
+   * @return {module:packet/encrypteddata} object representation
    */
   this.read = function(bytes) {
     var i = 0;
@@ -181,7 +183,7 @@ module.exports = function packet_signature() {
   /**
    * Signs provided data. This needs to be done prior to serialization.
    * @param {Object} data Contains packets to be signed.
-   * @param {openpgp_msg_privatekey} privatekey private key used to sign the message. 
+   * @param {module:key} privatekey private key used to sign the message. 
    */
   this.sign = function(key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),

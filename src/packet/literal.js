@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/literal */
+
 var util = require('../util'),
   enums = require('../enums.js');
 
@@ -58,7 +60,7 @@ module.exports = function packet_literal() {
   /**
    * Set the packet data to value represented by the provided string of bytes.
    * @param {String} bytes The string of bytes
-   * @param {'utf8|'binary'|'text'} format The format of the string of bytes
+   * @param {utf8|binary|text} format The format of the string of bytes
    */
   this.setBytes = function(bytes, format) {
     this.format = format;
@@ -84,7 +86,7 @@ module.exports = function packet_literal() {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {openpgp_packet_encrypteddata} object representation
+   * @return {module:packet/encrypteddata} object representation
    */
   this.read = function(bytes) {
     // - A one-octet field that describes how the data is formatted.

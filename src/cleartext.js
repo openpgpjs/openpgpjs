@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module cleartext */
+
 var config = require('./config');
 var packet = require('./packet');
 var enums = require('./enums.js');
@@ -40,7 +42,7 @@ function CleartextMessage(text, packetlist) {
 
 /**
  * Returns the key IDs of the keys that signed the cleartext message
- * @return {[keyId]} array of keyid objects
+ * @return {Array<keyid>} array of keyid objects
  */
 CleartextMessage.prototype.getSigningKeyIds = function() {
   var keyIds = [];
@@ -53,7 +55,7 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 
 /**
  * Sign the cleartext message
- * @param  {[key]} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<Key>} privateKeys private keys with decrypted secret key data for signing
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
   var packetlist = new packet.list();  
@@ -74,8 +76,8 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {[key]} publicKeys public keys to verify signatures
- * @return {[{'keyid': keyid, 'valid': Boolean}]} list of signer's keyid and validity of signature
+ * @param {Array<Key>} publicKeys public keys to verify signatures
+ * @return {Array<{keyid: keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
 CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];

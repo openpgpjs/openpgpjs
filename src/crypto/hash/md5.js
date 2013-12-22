@@ -12,6 +12,8 @@
  * warranty of any kind.
  */
 
+/** @module crypto/hash/md5 */
+
 var util = require('../../util/util.js');
 
 function MD5(entree) {

@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/compressed */
+
 var enums = require('../enums.js'),
   JXG = require('../compression/jxg.js'),
   base64 = require('../encoding/base64.js');
@@ -44,7 +46,7 @@ module.exports = function packet_compressed() {
    * @param {Integer} position Position to start reading from the input string
    * @parAM {iNTEGER} LEN lENGTH OF the packet or the remaining length of 
    * input at position
-   * @return {openpgp_packet_compressed} Object representation
+   * @return {module:packet/compressed} Object representation
    */
   this.read = function(bytes) {
     // One octet that gives the algorithm used to compress the packet.

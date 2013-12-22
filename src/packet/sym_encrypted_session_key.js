@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/sym_encrypted_session_key */
+
 var type_s2k = require('../type/s2k.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto');
@@ -50,7 +52,7 @@ module.exports = function packet_sym_encrypted_session_key() {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {openpgp_packet_encrypteddata} Object representation
+   * @return {module:packet_encrypteddata} Object representation
    */
   this.read = function(bytes) {
     // A one-octet version number. The only currently defined version is 4.
@@ -91,10 +93,6 @@ module.exports = function packet_sym_encrypted_session_key() {
    * Decrypts the session key (only for public key encrypted session key
    * packets (tag 1)
    * 
-   * @param {openpgp_msg_message} msg
-   *            The message object (with member encryptedData
-   * @param {openpgp_msg_privatekey} key
-   *            Private key with secMPIs unlocked
    * @return {String} The unencrypted session key
    */
   this.decrypt = function(passphrase) {

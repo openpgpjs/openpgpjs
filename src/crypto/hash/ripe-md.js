@@ -20,6 +20,8 @@
 /* Modified by Recurity Labs GmbH
  */
 
+/** @module crypto/hash/ripe-md */
+
 var RMDsize = 160;
 var X = new Array();
 

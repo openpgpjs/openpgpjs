@@ -11,6 +11,8 @@
  * materials provided with the application or distribution.
  */
 
+/** @module crypto/cipher/aes */
+
 var util = require('../../util');
 
 // The round constants used in subkey expansion

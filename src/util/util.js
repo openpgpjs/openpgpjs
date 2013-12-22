@@ -15,8 +15,17 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module util/util */
+
 var config = require('../config');
 
+/**
+ *
+ * This object contains utility functions
+ *
+ * @class
+ * @classdesc Implementation of the util object
+ */
 var Util = function() {
 
   this.readNumber = function(bytes) {
@@ -169,7 +178,7 @@ var Util = function() {
   /**
    * Convert a string to an array of integers(0.255)
    * @param {String} str String to convert
-   * @return {Integer[]} An array of (binary) integers
+   * @return {Array<Integer>} An array of (binary) integers
    */
   this.str2bin = function(str) {
     return str2bin(str, new Array(str.length));
@@ -178,7 +187,7 @@ var Util = function() {
 
   /**
    * Convert an array of integers(0.255) to a string 
-   * @param {Integer[]} bin An array of (binary) integers to convert
+   * @param {Array<Integer>} bin An array of (binary) integers to convert
    * @return {String} The string representation of the array
    */
   this.bin2str = bin2str;
@@ -328,4 +337,5 @@ var Util = function() {
 /**
  * an instance that should be used. 
  */
+
 module.exports = new Util();

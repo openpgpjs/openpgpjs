@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module crypto/pkcs1 */
+
 /**
  * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
  */

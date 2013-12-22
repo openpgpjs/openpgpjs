@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/sym_encrypted_integrity_protected */
+
 var util = require('../util'),
   crypto = require('../crypto');
 
@@ -33,10 +35,11 @@ var util = require('../util'),
 module.exports = function packet_sym_encrypted_integrity_protected() {
   /** The encrypted payload. */
   this.encrypted = null; // string
-  /** @type {Boolean}
+  /**
    * If after decrypting the packet this is set to true,
    * a modification has been detected and thus the contents
    * should be discarded.
+   * @type {Boolean}
    */
   this.modification = false;
   this.packets;

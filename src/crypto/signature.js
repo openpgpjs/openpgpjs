@@ -1,3 +1,5 @@
+/** @module crypto/signature */
+
 var publicKey = require('./public_key'),
   pkcs1 = require('./pkcs1.js'),
   hashModule = require('./hash');
@@ -7,8 +9,8 @@ module.exports = {
    * 
    * @param {Integer} algo public Key algorithm
    * @param {Integer} hash_algo Hash algorithm
-   * @param {openpgp_type_mpi[]} msg_MPIs Signature multiprecision integers
-   * @param {openpgp_type_mpi[]} publickey_MPIs Public key multiprecision integers 
+   * @param {Array<module:type/mpi>} msg_MPIs Signature multiprecision integers
+   * @param {Array<module:type/mpi>} publickey_MPIs Public key multiprecision integers 
    * @param {String} data Data on where the signature was computed on.
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
@@ -58,12 +60,12 @@ module.exports = {
    * Create a signature on data using the specified algorithm
    * @param {Integer} hash_algo hash Algorithm to use (See RFC4880 9.4)
    * @param {Integer} algo Asymmetric cipher algorithm to use (See RFC4880 9.1)
-   * @param {openpgp_type_mpi[]} publicMPIs Public key multiprecision integers 
+   * @param {Array<module:type/mpi>} publicMPIs Public key multiprecision integers 
    * of the private key 
-   * @param {openpgp_type_mpi[]} secretMPIs Private key multiprecision 
+   * @param {Array<module:type/mpi>} secretMPIs Private key multiprecision 
    * integers which is used to sign the data
    * @param {String} data Data to be signed
-   * @return {openpgp_type_mpi[]}
+   * @return {Array<module:type/mpi>}
    */
   sign: function(hash_algo, algo, keyIntegers, data) {
 

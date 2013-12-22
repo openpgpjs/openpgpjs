@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/public_key */
+
 var util = require('../util'),
   type_mpi = require('../type/mpi.js'),
   type_keyid = require('../type/keyid.js'),
@@ -35,7 +37,7 @@ module.exports = function packet_public_key() {
    * @type {Date} */
   this.created = new Date();
   /** A list of multiprecision integers
-   * @type {openpgp_type_mpi} */
+   * @type {module:type/mpi} */
   this.mpi = [];
   /** Public key algorithm
    * @type {openpgp.publickey} */

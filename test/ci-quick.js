@@ -1,5 +1,4 @@
-var openpgp = require('openpgp'),
-    keyring = require('keyring');
+var openpgp = require('openpgp');
 
 'use strict';
 
@@ -37,6 +36,8 @@ describe('Openpgp integration tests', function() {
             'IUNzVPLhrFIuKyBDTpLnC07Loce1\n' +
             '=ULta\n' +
             '-----END PGP PRIVATE KEY BLOCK-----';
+       var keyringClass = require('keyring');
+       var keyring = new keyringClass();
 
     describe('Generate key pair', function() {
         it('should work', function(done) {

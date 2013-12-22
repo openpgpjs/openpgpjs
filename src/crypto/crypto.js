@@ -17,6 +17,8 @@
 
 // The GPG4Browsers crypto interface
 
+/** @module crypto/crypto */
+
 var random = require('./random.js'),
   cipher = require('./cipher'),
   publicKey = require('./public_key'),
@@ -27,10 +29,10 @@ module.exports = {
    * Encrypts data using the specified public key multiprecision integers 
    * and the specified algorithm.
    * @param {Integer} algo Algorithm to be used (See RFC4880 9.1)
-   * @param {openpgp_type_mpi[]} publicMPIs Algorithm dependent multiprecision integers
-   * @param {openpgp_type_mpi} data Data to be encrypted as MPI
-   * @return {openpgp_type_mpi[]} if RSA an openpgp_type_mpi; 
-   * if elgamal encryption an array of two openpgp_type_mpi is returned; otherwise null
+   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
+   * @param {module:type/mpi} data Data to be encrypted as MPI
+   * @return {Array<module:type/mpi>} if RSA an module:type/mpi; 
+   * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
    */
   publicKeyEncrypt: function(algo, publicMPIs, data) {
     var result = (function() {
@@ -67,12 +69,12 @@ module.exports = {
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {Integer} algo Algorithm to be used (See RFC4880 9.1)
-   * @param {openpgp_type_mpi[]} publicMPIs Algorithm dependent multiprecision integers 
+   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers 
    * of the public key part of the private key
-   * @param {openpgp_type_mpi[]} secretMPIs Algorithm dependent multiprecision integers 
+   * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers 
    * of the private key used
-   * @param {openpgp_type_mpi} data Data to be encrypted as MPI
-   * @return {openpgp_type_mpi} returns a big integer containing the decrypted data; otherwise null
+   * @param {module:type/mpi} data Data to be encrypted as MPI
+   * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
   publicKeyDecrypt: function(algo, keyIntegers, dataIntegers) {

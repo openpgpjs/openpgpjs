@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/secret_key */
+
 var publicKey = require('./public_key.js'),
   enums = require('../enums.js'),
   util = require('../util'),
@@ -25,13 +27,14 @@ var publicKey = require('./public_key.js'),
 /**
  * @class
  * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
+ * @extends module:packet/public_key
  *   
  * RFC4480 5.5:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
  */
-function packet_secret_key() {
+module.exports = function () {
   publicKey.call(this);
   // encrypted secret-key data
   this.encrypted = null;
@@ -253,6 +256,4 @@ function packet_secret_key() {
 
 }
 
-packet_secret_key.prototype = new publicKey;
-
-module.exports = packet_secret_key;
+module.exports.prototype = new publicKey();

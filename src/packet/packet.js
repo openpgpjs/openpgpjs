@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/packet */
+
 var enums = require('../enums.js'),
   util = require('../util');
 
@@ -113,7 +115,7 @@ module.exports = {
    * @param {String} input Input stream as string
    * @param {integer} position Position to start parsing
    * @param {integer} len Length of the input from position on
-   * @return {Object} Returns a parsed openpgp_packet
+   * @return {Object} Returns a parsed module:packet/packet
    */
   read: function(input, position, len) {
     // some sanity checks

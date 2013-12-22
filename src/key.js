@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module key */
+
 var packet = require('./packet');
 var enums = require('./enums.js');
 var armor = require('./encoding/armor.js');
@@ -24,7 +26,7 @@ var config = require('./config');
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {packetlist} packetlist The packets that form this key
+ * @param  {packet.list} packetlist The packets that form this key
  */
 
 function Key(packetlist) {
@@ -36,7 +38,7 @@ function Key(packetlist) {
 
 /** 
  * Returns the primary key packet (secret or public)
- * @returns {packet_secret_key|packet_public_key|null} 
+ * @returns {(packet_secret_key|packet_public_key|null)} 
  */
 Key.prototype.getKeyPacket = function() {
   for (var i = 0; i < this.packets.length; i++) {
@@ -50,7 +52,7 @@ Key.prototype.getKeyPacket = function() {
 
 /** 
  * Returns all the private and public subkey packets
- * @returns {[public_subkey|secret_subkey]} 
+ * @returns {Array<(public_subkey|secret_subkey)>} 
  */
 Key.prototype.getSubkeyPackets = function() {
 
@@ -68,7 +70,7 @@ Key.prototype.getSubkeyPackets = function() {
 
 /** 
  * Returns all the private and public key and subkey packets
- * @returns {[public_subkey|secret_subkey|packet_secret_key|packet_public_key]} 
+ * @returns {Array<(public_subkey|secret_subkey|packet_secret_key|packet_public_key)>} 
  */
 Key.prototype.getAllKeyPackets = function() {
   return [this.getKeyPacket()].concat(this.getSubkeyPackets());
@@ -76,7 +78,7 @@ Key.prototype.getAllKeyPackets = function() {
 
 /** 
  * Returns key IDs of all key packets
- * @returns {[keyid]} 
+ * @returns {Array<keyid>} 
  */
 Key.prototype.getKeyIds = function() {
   var keyIds = [];
@@ -101,8 +103,8 @@ function findKey(keys, keyIds) {
 
 /**
  * Returns first public key packet for given array of key IDs
- * @param  {[keyid]} keyIds 
- * @return {public_subkey|packet_public_key|null}       
+ * @param  {Array<keyid>} keyIds 
+ * @return {(public_subkey|packet_public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
   var keys = this.packets.filterByTag(enums.packet.public_key, enums.packet.public_subkey);
@@ -111,8 +113,8 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
 
 /**
  * Returns first private key packet for given array of key IDs
- * @param  {[keyid]} keyIds
- * @return {secret_subkey|packet_secret_key|null}       
+ * @param  {Array<keyid>} keyIds
+ * @return {(secret_subkey|packet_secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
   var keys = this.packets.filterByTag(enums.packet.secret_key, enums.packet.secret_subkey);
@@ -121,7 +123,7 @@ Key.prototype.getPrivateKeyPacket = function(keyIds) {
 
 /**
  * Returns userids
- * @return {string} userid[]
+ * @return {Array<string>} array of userids
  */
 Key.prototype.getUserIds = function() {
   var userids = [];
@@ -152,7 +154,7 @@ Key.prototype.isPrivate = function() {
 
 /**
  * Returns key as public key
- * @return {key} public key
+ * @return {Key} public key
  */
 Key.prototype.toPublic = function() {
   var packetlist = new packet.list();
@@ -188,7 +190,7 @@ Key.prototype.armor = function() {
 
 /**
  * Returns first key packet that is available for signing
- * @return {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null}
+ * @return {(public_subkey|secret_subkey|packet_secret_key|packet_public_key|null)}
  */
 Key.prototype.getSigningKeyPacket = function() {
 
@@ -221,7 +223,7 @@ Key.prototype.getPreferredSignatureHashAlgorithm = function() {
 
 /**
  * Returns the first valid encryption key packet for this key
- * @returns {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null} key packet or null if no encryption key has been found
+ * @returns {(public_subkey|secret_subkey|packet_secret_key|packet_public_key|null)} key packet or null if no encryption key has been found
  */
 Key.prototype.getEncryptionKeyPacket = function() {
   // V4: by convention subkeys are prefered for encryption service
@@ -265,7 +267,7 @@ Key.prototype.decrypt = function(passphrase) {
 
 /**
  * Decrypts specific key packets by key ID
- * @param  {[keyid]} keyIds
+ * @param  {Array<keyid>} keyIds
  * @param  {String} passphrase 
  * @return {Boolean} true if all key packets decrypted successfully
  */
@@ -296,7 +298,7 @@ Key.prototype.revoke = function() {
 /**
  * Reads an OpenPGP armored text and returns a key object
  * @param {String} armoredText text to be parsed
- * @return {key} new key object
+ * @return {Key} new key object
  */
 function readArmored(armoredText) {
   var input = armor.decode(armoredText);
