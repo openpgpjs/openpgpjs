@@ -1,4 +1,6 @@
-var enums = {
+/** @module enums */
+
+module.exports = {
 
   /** A string to key specifier type
    * @enum {Integer}
@@ -10,8 +12,8 @@ var enums = {
     gnu: 101
   },
 
-  /** RFC4880, section 9.1 
-   * @enum {String}
+  /** RFC4880, section 9.1
+   * @enum {Integer}
    */
   publicKey: {
     rsa_encrypt_sign: 1,
@@ -21,8 +23,8 @@ var enums = {
     dsa: 17
   },
 
-  /** RFC4880, section 9.2 
-   * @enum {String}
+  /** RFC4880, section 9.2
+   * @enum {Integer}
    */
   symmetric: {
     plaintext: 0,
@@ -38,7 +40,7 @@ var enums = {
   },
 
   /** RFC4880, section 9.3
-   * @enum {String}
+   * @enum {Integer}
    */
   compression: {
     uncompressed: 0,
@@ -50,7 +52,7 @@ var enums = {
   },
 
   /** RFC4880, section 9.4
-   * @enum {String}
+   * @enum {Integer}
    */
   hash: {
     md5: 1,
@@ -63,9 +65,8 @@ var enums = {
   },
 
 
-  /**
-   * @enum {String}
-   * A list of packet types and numeric tags associated with them.
+  /** A list of packet types and numeric tags associated with them.
+   * @enum {Integer}
    */
   packet: {
     public_key_encrypted_session_key: 1,
@@ -88,23 +89,22 @@ var enums = {
   },
 
 
-  /**
-   * Data types in the literal packet
-   * @readonly
-   * @enum {String}
+  /** Data types in the literal packet
+   * @enum {Integer}
    */
   literal: {
-    /** Binary data */
+    /** Binary data 'b' */
     binary: 'b'.charCodeAt(),
-    /** Text data */
+    /** Text data 't' */
     text: 't'.charCodeAt(),
-    /** Utf8 data */
+    /** Utf8 data 'u' */
     utf8: 'u'.charCodeAt()
   },
 
 
   /** One pass signature packet type
-   * @enum {String} */
+   * @enum {Integer}
+   */
   signature: {
     /** 0x00: Signature of a binary document. */
     binary: 0,
@@ -157,18 +157,18 @@ var enums = {
      * primary key and subkey. */
     subkey_binding: 24,
     /** 0x19: Primary Key Binding Signature
-		* This signature is a statement by a signing subkey, indicating
-		* that it is owned by the primary key and subkey.  This signature
-		* is calculated the same way as a 0x18 signature: directly on the
-		* primary key and subkey, and not on any User ID or other packets.
-		
-		* When a signature is made over a key, the hash data starts with the
-		* octet 0x99, followed by a two-octet length of the key, and then body
-		* of the key packet.  (Note that this is an old-style packet header for
-		* a key packet with two-octet length.)  A subkey binding signature
-		* (type 0x18) or primary key binding signature (type 0x19) then hashes
-		* the subkey using the same format as the main key (also using 0x99 as
-		* the first octet). */
+     * This signature is a statement by a signing subkey, indicating
+     * that it is owned by the primary key and subkey.  This signature
+     * is calculated the same way as a 0x18 signature: directly on the
+     * primary key and subkey, and not on any User ID or other packets.
+
+     * When a signature is made over a key, the hash data starts with the
+     * octet 0x99, followed by a two-octet length of the key, and then body
+     * of the key packet.  (Note that this is an old-style packet header for
+     * a key packet with two-octet length.)  A subkey binding signature
+     * (type 0x18) or primary key binding signature (type 0x19) then hashes
+     * the subkey using the same format as the main key (also using 0x99 as
+     * the first octet). */
     key_binding: 25,
     /** 0x1F: Signature directly on a key
      * This signature is calculated directly on a key.  It binds the
@@ -209,6 +209,9 @@ var enums = {
     third_party: 80
   },
 
+  /** Signature subpacket type
+   * @enum {Integer}
+   */
   signatureSubpacket: {
     signature_creation_time: 2,
     signature_expiration_time: 3,
@@ -236,6 +239,9 @@ var enums = {
     embedded_signature: 32
   },
 
+  /** Key flags
+   * @enum {Integer}
+   */
   keyFlags: {
     // 0x01 - This key may be used to certify other keys.
     certify_keys: 1,
@@ -255,6 +261,9 @@ var enums = {
     shared_private_key: 128
   },
 
+  /** Key status
+   * @enum {Integer}
+   */
   keyStatus: {
     invalid:      0,
     expired:      1,
@@ -263,6 +272,9 @@ var enums = {
     no_self_cert: 4
   },
 
+  /** Armor type
+   * @enum {Integer}
+   */
   armor: {
     multipart_section: 0,
     multipart_last: 1,
@@ -272,7 +284,7 @@ var enums = {
     private_key: 5
   },
 
-  // Asserts validity and converts from string/integer to integer.
+  /** Asserts validity and converts from string/integer to integer. */
   write: function(type, e) {
     if (typeof e == 'number') {
       e = this.read(type, e);
@@ -282,7 +294,7 @@ var enums = {
       return type[e];
     } else throw new Error('Invalid enum value.');
   },
-  // Converts from an integer to string.
+  /** Converts from an integer to string. */
   read: function(type, e) {
     for (var i in type)
       if (type[i] == e) return i;
@@ -290,5 +302,3 @@ var enums = {
     throw new Error('Invalid enum value.');
   }
 }
-
-module.exports = enums;

@@ -42,7 +42,7 @@ module.exports = function packet_userid() {
    * @param {Integer} position position to start reading from the input string
    * @param {Integer} len length of the packet or the remaining length of input 
    * at position
-   * @return {module:packet/encrypteddata} object representation
+   * @return {module:packet/userid} object representation
    */
   this.read = function(bytes) {
     this.userid = util.decode_utf8(bytes);

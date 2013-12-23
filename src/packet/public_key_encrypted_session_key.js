@@ -59,7 +59,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
    * @param {Integer} position Position to start reading from the input string
    * @param {Integer} len Length of the packet or the remaining length of
    *            input at position
-   * @return {module:packet/encrypteddata} Object representation
+   * @return {module:packet/public_key_encrypted_session_key} Object representation
    */
   this.read = function(bytes) {
 
@@ -147,7 +147,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
    * Decrypts the session key (only for public key encrypted session key
    * packets (tag 1)
    * 
-   * @param {module:key} key
+   * @param {module:packet/secret_key} key
    *            Private key with secMPIs unlocked
    * @return {String} The unencrypted session key
    */

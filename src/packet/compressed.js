@@ -32,7 +32,7 @@ var enums = require('../enums.js'),
  * packet.
  */
 module.exports = function packet_compressed() {
-  /** @type {packetlist} */
+  /** @type {module:packet/packetlist} */
   this.packets;
   /** @type {compression} */
   this.algorithm = 'uncompressed';
@@ -44,7 +44,7 @@ module.exports = function packet_compressed() {
    * Parsing function for the packet.
    * @param {String} input Payload of a tag 8 packet
    * @param {Integer} position Position to start reading from the input string
-   * @parAM {iNTEGER} LEN lENGTH OF the packet or the remaining length of 
+   * @param {Integer} len length of the packet or the remaining length of 
    * input at position
    * @return {module:packet/compressed} Object representation
    */

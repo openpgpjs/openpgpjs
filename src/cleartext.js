@@ -27,7 +27,7 @@ var armor = require('./encoding/armor.js');
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See http://tools.ietf.org/html/rfc4880#section-7
  * @param  {String}     text       The cleartext of the signed message
- * @param  {packetlist} packetlist The packetlist with signature packets or undefined
+ * @param  {module:packet/packetlist} packetlist The packetlist with signature packets or undefined
  *                                 if message not yet signed
  */
 
@@ -42,7 +42,7 @@ function CleartextMessage(text, packetlist) {
 
 /**
  * Returns the key IDs of the keys that signed the cleartext message
- * @return {Array<keyid>} array of keyid objects
+ * @return {Array<module:type/keyid>} array of keyid objects
  */
 CleartextMessage.prototype.getSigningKeyIds = function() {
   var keyIds = [];
@@ -55,7 +55,7 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 
 /**
  * Sign the cleartext message
- * @param  {Array<Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
   var packetlist = new packet.list();  
@@ -76,8 +76,8 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<Key>} publicKeys public keys to verify signatures
- * @return {Array<{keyid: keyid, valid: Boolean}>} list of signer's keyid and validity of signature
+ * @param {Array<module:key~Key>} publicKeys public keys to verify signatures
+ * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
 CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];
@@ -126,7 +126,7 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @return {CleartextMessage} new cleartext message object
+ * @return {module:cleartext~CleartextMessage} new cleartext message object
  */
 function readArmored(armoredText) {
   var input = armor.decode(armoredText);

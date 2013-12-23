@@ -83,7 +83,7 @@ module.exports = function packet_signature() {
    * @param {String} bytes payload of a tag 2 packet
    * @param {Integer} position position to start reading from the bytes string
    * @param {Integer} len length of the packet or the remaining length of bytes at position
-   * @return {module:packet/encrypteddata} object representation
+   * @return {module:packet/signature} object representation
    */
   this.read = function(bytes) {
     var i = 0;
@@ -176,14 +176,14 @@ module.exports = function packet_signature() {
   this.write = function() {
     return this.signatureData +
       util.writeNumber(0, 2) + // Number of unsigned subpackets.
-    this.signedHashValue +
+      this.signedHashValue +
       this.signature;
   };
 
   /**
    * Signs provided data. This needs to be done prior to serialization.
+   * @param {module:packet/secret_key} key private key used to sign the message. 
    * @param {Object} data Contains packets to be signed.
-   * @param {module:key} privatekey private key used to sign the message. 
    */
   this.sign = function(key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),
@@ -582,7 +582,7 @@ module.exports = function packet_signature() {
   /**
    * verifys the signature packet. Note: not signature types are implemented
    * @param {String|Object} data data which on the signature applies
-   * @param {public_subkey|packet_public_key} key the public key to verify the signature
+   * @param {module:packet/public_subkey|module:packet/public_key} key the public key to verify the signature
    * @return {boolean} True if message is verified, else false.
    */
   this.verify = function(key, data) {

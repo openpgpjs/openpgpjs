@@ -110,8 +110,8 @@ module.exports = function packetlist() {
 
   /**
    * Traverses packet tree and returns first matching packet
-   * @param  {enums.packet} type The packet type
-   * @return {packet|null}      
+   * @param  {module:enums.packet} type The packet type
+   * @return {module:packet/packet|null}      
    */
   this.findPacket = function(type) {
     var packetlist = this.filterByTag(type);

@@ -55,7 +55,7 @@ var util = require('./util');
  * @class
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
- * @param  {packetlist} packetlist The packets that form this message
+ * @param  {module:packet/packetlist} packetlist The packets that form this message
  * See http://tools.ietf.org/html/rfc4880#section-11.3
  */
 
@@ -68,7 +68,7 @@ function Message(packetlist) {
 
 /**
  * Returns the key IDs of the keys to which the session key is encrypted
- * @return {Array&lt;keyid>} array of keyid objects
+ * @return {Array&lt;module:type/keyid>} array of keyid objects
  */
 Message.prototype.getEncryptionKeyIds = function() {
   var keyIds = [];
@@ -81,7 +81,7 @@ Message.prototype.getEncryptionKeyIds = function() {
 
 /**
  * Returns the key IDs of the keys that signed the message
- * @return {Array&lt;keyid>} array of keyid objects
+ * @return {Array&lt;module:type/keyid>} array of keyid objects
  */
 Message.prototype.getSigningKeyIds = function() {
   var keyIds = [];
@@ -103,8 +103,8 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message
- * @param {Key} privateKey private key with decrypted secret data           
- * @return {Array&lt;Message>} new message with decrypted content
+ * @param {module:key~Key} privateKey private key with decrypted secret data           
+ * @return {Array&lt;module:message~Message>} new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey) {
   var encryptionKeyIds = this.getEncryptionKeyIds();
@@ -157,8 +157,8 @@ Message.prototype.getText = function() {
 
 /**
  * Encrypt the message
- * @param  {Array&lt;Key>} keys array of keys, used to encrypt the message
- * @return {Array&lt;Message>} new message with encrypted content
+ * @param  {Array&lt;module:key~Key>} keys array of keys, used to encrypt the message
+ * @return {Array&lt;module:message~Message>} new message with encrypted content
  */
 Message.prototype.encrypt = function(keys) {
   var packetlist = new packet.list();
@@ -194,8 +194,8 @@ Message.prototype.encrypt = function(keys) {
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array&lt;Key>} privateKey private keys with decrypted secret key data for signing
- * @return {Message}      new message with signed content
+ * @param  {Array&lt;module:key~Key>} privateKey private keys with decrypted secret key data for signing
+ * @return {module:message~Message}      new message with signed content
  */
 Message.prototype.sign = function(privateKeys) {
 
@@ -239,8 +239,8 @@ Message.prototype.sign = function(privateKeys) {
 
 /**
  * Verify message signatures
- * @param {Array&lt;Key>} publicKeys public keys to verify signatures
- * @return {Array&lt;({keyid: keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @param {Array&lt;module:key~Key>} publicKeys public keys to verify signatures
+ * @return {Array&lt;({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Message.prototype.verify = function(publicKeys) {
   var result = [];
@@ -265,7 +265,7 @@ Message.prototype.verify = function(publicKeys) {
 
 /**
  * Unwrap compressed message
- * @return {Message} message Content of compressed message
+ * @return {module:message~Message} message Content of compressed message
  */
 Message.prototype.unwrapCompressed = function() {
   var compressed = this.packets.filterByTag(enums.packet.compressed);
@@ -287,7 +287,7 @@ Message.prototype.armor = function() {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
@@ -302,7 +302,7 @@ function readArmored(armoredText) {
 /**
  * creates new message object from text
  * @param {String} text
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function fromText(text) {
   var literalDataPacket = new packet.literal();
@@ -317,7 +317,7 @@ function fromText(text) {
 /**
  * creates new message object from binary data
  * @param {String} bytes
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function fromBinary(bytes) {
   var literalDataPacket = new packet.literal();
@@ -342,13 +342,13 @@ exports.fromBinary = fromBinary;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 12:58:54 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

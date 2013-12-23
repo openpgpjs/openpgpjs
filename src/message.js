@@ -28,7 +28,7 @@ var util = require('./util');
  * @class
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
- * @param  {packetlist} packetlist The packets that form this message
+ * @param  {module:packet/packetlist} packetlist The packets that form this message
  * See http://tools.ietf.org/html/rfc4880#section-11.3
  */
 
@@ -41,7 +41,7 @@ function Message(packetlist) {
 
 /**
  * Returns the key IDs of the keys to which the session key is encrypted
- * @return {Array<keyid>} array of keyid objects
+ * @return {Array<module:type/keyid>} array of keyid objects
  */
 Message.prototype.getEncryptionKeyIds = function() {
   var keyIds = [];
@@ -54,7 +54,7 @@ Message.prototype.getEncryptionKeyIds = function() {
 
 /**
  * Returns the key IDs of the keys that signed the message
- * @return {Array<keyid>} array of keyid objects
+ * @return {Array<module:type/keyid>} array of keyid objects
  */
 Message.prototype.getSigningKeyIds = function() {
   var keyIds = [];
@@ -76,8 +76,8 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message
- * @param {Key} privateKey private key with decrypted secret data           
- * @return {Array<Message>} new message with decrypted content
+ * @param {module:key~Key} privateKey private key with decrypted secret data           
+ * @return {Array<module:message~Message>} new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey) {
   var encryptionKeyIds = this.getEncryptionKeyIds();
@@ -130,8 +130,8 @@ Message.prototype.getText = function() {
 
 /**
  * Encrypt the message
- * @param  {Array<Key>} keys array of keys, used to encrypt the message
- * @return {Array<Message>} new message with encrypted content
+ * @param  {Array<module:key~Key>} keys array of keys, used to encrypt the message
+ * @return {Array<module:message~Message>} new message with encrypted content
  */
 Message.prototype.encrypt = function(keys) {
   var packetlist = new packet.list();
@@ -167,8 +167,8 @@ Message.prototype.encrypt = function(keys) {
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<Key>} privateKey private keys with decrypted secret key data for signing
- * @return {Message}      new message with signed content
+ * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
+ * @return {module:message~Message}      new message with signed content
  */
 Message.prototype.sign = function(privateKeys) {
 
@@ -212,8 +212,8 @@ Message.prototype.sign = function(privateKeys) {
 
 /**
  * Verify message signatures
- * @param {Array<Key>} publicKeys public keys to verify signatures
- * @return {Array<({keyid: keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @param {Array<module:key~Key>} publicKeys public keys to verify signatures
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Message.prototype.verify = function(publicKeys) {
   var result = [];
@@ -238,7 +238,7 @@ Message.prototype.verify = function(publicKeys) {
 
 /**
  * Unwrap compressed message
- * @return {Message} message Content of compressed message
+ * @return {module:message~Message} message Content of compressed message
  */
 Message.prototype.unwrapCompressed = function() {
   var compressed = this.packets.filterByTag(enums.packet.compressed);
@@ -260,7 +260,7 @@ Message.prototype.armor = function() {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
@@ -275,7 +275,7 @@ function readArmored(armoredText) {
 /**
  * creates new message object from text
  * @param {String} text
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function fromText(text) {
   var literalDataPacket = new packet.literal();
@@ -290,7 +290,7 @@ function fromText(text) {
 /**
  * creates new message object from binary data
  * @param {String} bytes
- * @return {Message} new message object
+ * @return {module:message~Message} new message object
  */
 function fromBinary(bytes) {
   var literalDataPacket = new packet.literal();

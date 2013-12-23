@@ -108,7 +108,7 @@ module.exports = {
   },
 
   /** Returns the number of integers comprising the private key of an algorithm
-   * @param {openpgp.publickey} algo The public key algorithm
+   * @param {String} algo The public key algorithm
    * @return {Integer} The number of integers.
    */
   getPrivateMpiCount: function(algo) {

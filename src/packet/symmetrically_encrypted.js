@@ -33,7 +33,7 @@ var crypto = require('../crypto');
 module.exports = function packet_symmetrically_encrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within. 
-   * @type {openpgp_packetlist} */
+   * @type {module:packet/packetlist} */
   this.packets;
 
   this.read = function(bytes) {

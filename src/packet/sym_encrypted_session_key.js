@@ -52,7 +52,7 @@ module.exports = function packet_sym_encrypted_session_key() {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {module:packet_encrypteddata} Object representation
+   * @return {module:packet/sym_encrypted_session_key} Object representation
    */
   this.read = function(bytes) {
     // A one-octet version number. The only currently defined version is 4.

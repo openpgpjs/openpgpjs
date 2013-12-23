@@ -43,7 +43,7 @@ module.exports = function packet_user_attribute() {
    * @param {String} input payload of a tag 17 packet
    * @param {Integer} position position to start reading from the input string
    * @param {Integer} len length of the packet or the remaining length of input at position
-   * @return {module:packet_encrypteddata} object representation
+   * @return {module:packet/user_attribute} object representation
    */
   this.read = function(bytes) {
     var i = 0;

@@ -86,7 +86,7 @@ module.exports = function packet_literal() {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {module:packet/encrypteddata} object representation
+   * @return {module:packet/literal} object representation
    */
   this.read = function(bytes) {
     // - A one-octet field that describes how the data is formatted.

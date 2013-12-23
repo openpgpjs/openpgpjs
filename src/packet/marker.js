@@ -38,7 +38,7 @@ module.exports = function () {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {module:packet/encrypteddata} Object representation
+   * @return {module:packet/marker} Object representation
    */
   this.read = function(bytes) {
     if (bytes.charCodeAt(0) == 0x50 && // P

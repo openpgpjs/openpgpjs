@@ -92,7 +92,7 @@ module.exports = function() {
   /**
    * searches all public keys in the keyring matching the address or address part of the user ids
    * @param {String} email email address to search for
-   * @return {Array<openpgp.key.Key>} The public keys associated with provided email address.
+   * @return {Array<module:key~Key>} The public keys associated with provided email address.
    */
   this.getPublicKeyForAddress = function (email) {
     return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.public_key);
@@ -101,7 +101,7 @@ module.exports = function() {
   /**
    * Searches the keyring for a private key containing the specified email address
    * @param {String} email email address to search for
-   * @return {Array<openpgp.key.Key>} private keys found
+   * @return {Array<module:key~Key>} private keys found
    */
   function getPrivateKeyForAddress(email) {
     return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.secret_key);
@@ -111,7 +111,7 @@ module.exports = function() {
   /**
    * Searches the keyring for public keys having the specified key id
    * @param {String} keyId provided as string of hex number (lowercase)
-   * @return {Array<openpgp.key.Key>} public keys found
+   * @return {Array<module:key~Key>} public keys found
    */
   function getKeysForKeyId(keyId) {
     return this.checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, openpgp.enums.packet.public_key);
@@ -142,7 +142,7 @@ module.exports = function() {
   /**
    * Removes a public key from the public key keyring at the specified index 
    * @param {Integer} index the index of the public key within the publicKeys array
-   * @return {openpgp.key.Key} The public key object which has been removed
+   * @return {module:key~Key} The public key object which has been removed
    */
   function removeKey(index) {
     var removed = this.keys.splice(index, 1);

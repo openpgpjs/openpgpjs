@@ -53,7 +53,7 @@ var config = require('./config');
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {packet.list} packetlist The packets that form this key
+ * @param  {module:packet/packetlist} packetlist The packets that form this key
  */
 
 function Key(packetlist) {
@@ -74,7 +74,7 @@ function Key(packetlist) {
 
 /**
  * Transforms packetlist to structured key data
- * @param  {packetlist} packetlist The packets that form a key
+ * @param  {module:packet/packetlist} packetlist The packets that form a key
  */
 Key.prototype.packetlist2structure = function(packetlist) {
   var user, primaryKeyId, subKey;
@@ -142,7 +142,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
 
 /**
  * Transforms structured key data to packetlist
- * @return {packetlist} The packets that form a key
+ * @return {module:packet/packetlist} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -162,7 +162,7 @@ Key.prototype.toPacketlist = function() {
 
 /** 
  * Returns the primary key packet (secret or public)
- * @returns {(packet_secret_key|packet_public_key|null)} 
+ * @returns {(module:packet/secret_key|module:packet/public_key|null)} 
  */
 Key.prototype.getKeyPacket = function() {
   return this.primaryKey;
@@ -170,7 +170,7 @@ Key.prototype.getKeyPacket = function() {
 
 /** 
  * Returns all the private and public subkey packets
- * @returns {Array&lt;(public_subkey|secret_subkey)>} 
+ * @returns {Array&lt;(module:packet/public_subkey|module:packet/secret_subkey)>} 
  */
 Key.prototype.getSubkeyPackets = function() {
   var subKeys = [];
@@ -184,7 +184,7 @@ Key.prototype.getSubkeyPackets = function() {
 
 /** 
  * Returns all the private and public key and subkey packets
- * @returns {Array&lt;(public_subkey|secret_subkey|packet_secret_key|packet_public_key)>} 
+ * @returns {Array&lt;(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key)>} 
  */
 Key.prototype.getAllKeyPackets = function() {
   return [this.getKeyPacket()].concat(this.getSubkeyPackets());
@@ -192,7 +192,7 @@ Key.prototype.getAllKeyPackets = function() {
 
 /** 
  * Returns key IDs of all key packets
- * @returns {Array&lt;keyid>} 
+ * @returns {Array&lt;module:type/keyid>} 
  */
 Key.prototype.getKeyIds = function() {
   var keyIds = [];
@@ -217,8 +217,8 @@ function findKey(keys, keyIds) {
 
 /**
  * Returns first public key packet for given array of key IDs
- * @param  {Array&lt;keyid>} keyIds 
- * @return {(public_subkey|packet_public_key|null)}
+ * @param  {Array&lt;module:type/keyid>} keyIds 
+ * @return {(module:packet/public_subkey|module:packet/public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
   if (this.primaryKey.tag == enums.packet.public_key) {
@@ -230,8 +230,8 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
 
 /**
  * Returns first private key packet for given array of key IDs
- * @param  {Array&lt;keyid>} keyIds
- * @return {(secret_subkey|packet_secret_key|null)}
+ * @param  {Array&lt;module:type/keyid>} keyIds
+ * @return {(module:packet/secret_subkey|module:packet/secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
   if (this.primaryKey.tag == enums.packet.secret_key) {
@@ -273,7 +273,7 @@ Key.prototype.isPrivate = function() {
 
 /**
  * Returns key as public key (shallow copy)
- * @return {Key} new public Key
+ * @return {module:key~Key} new public Key
  */
 Key.prototype.toPublic = function() {
   var packetlist = new packet.list();
@@ -310,7 +310,7 @@ Key.prototype.armor = function() {
 
 /**
  * Returns first key packet that is available for signing
- * @return {(secret_subkey|packet_secret_key|null)} key packet or null if no signing key has been found
+ * @return {(module:packet/secret_subkey|module:packet/secret_key|null)} key packet or null if no signing key has been found
  */
 Key.prototype.getSigningKeyPacket = function() {
   if (this.isPublic()) {
@@ -361,7 +361,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
 
 /**
  * Returns the first valid encryption key packet for this key
- * @returns {(public_subkey|secret_subkey|packet_secret_key|packet_public_key|null)} key packet or null if no encryption key has been found
+ * @returns {(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key|null)} key packet or null if no encryption key has been found
  */
 Key.prototype.getEncryptionKeyPacket = function() {
   // V4: by convention subkeys are prefered for encryption service
@@ -402,7 +402,7 @@ Key.prototype.decrypt = function(passphrase) {
 
 /**
  * Decrypts specific key packets by key ID
- * @param  {Array&lt;keyid>} keyIds
+ * @param  {Array&lt;module:type/keyid>} keyIds
  * @param  {String} passphrase 
  * @return {Boolean} true if all key packets decrypted successfully
  */
@@ -427,7 +427,7 @@ Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
 /**
  * Verify primary key. Checks for revocation signatures, expiration time
  * and valid self signature
- * @return {enums.keyStatus} The status of the primary key
+ * @return {module:enums.keyStatus} The status of the primary key
  */
 Key.prototype.verifyPrimaryKey = function() {
   // check revocation signature
@@ -469,7 +469,7 @@ Key.prototype.verifyPrimaryKey = function() {
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple users are marked as primary users returns the one with the latest self signature
  * - if no primary user is found returns the user with the latest self signature
- * @return {{user: Array&lt;User>, selfCertificate: Array&lt;packet_signature>}} The primary user and the self signature
+ * @return {{user: Array&lt;module:packet/User>, selfCertificate: Array&lt;module:packet/signature>}} The primary user and the self signature
  */
 Key.prototype.getPrimaryUser = function() {
   var user = null;
@@ -514,7 +514,7 @@ function User(userPacket) {
 
 /**
  * Transforms structured user data to packetlist
- * @return {packetlist}
+ * @return {module:packet/packetlist}
  */
 User.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -527,8 +527,8 @@ User.prototype.toPacketlist = function() {
 
 /**
  * Checks if a self signature of the user is revoked
- * @param  {packet_signature}                    certificate
- * @param  {packet_secret_key|packet_public_key} primaryKey  The primary key packet
+ * @param  {module:packet/signature}                    certificate
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey  The primary key packet
  * @return {Boolean}                                         True if the certificate is revoked
  */
 User.prototype.isRevoked = function(certificate, primaryKey) {
@@ -547,8 +547,8 @@ User.prototype.isRevoked = function(certificate, primaryKey) {
 
 /**
  * Returns the most significant (latest valid) self signature of the user
- * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
- * @return {packet_signature}                               The self signature
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @return {module:packet/signature}                               The self signature
  */
 User.prototype.getValidSelfCertificate = function(primaryKey) {
   if (!this.selfCertifications) {
@@ -577,8 +577,8 @@ User.prototype.getValidSelfCertificate = function(primaryKey) {
 /**
  * Verify User. Checks for existence of self signatures, revocation signatures
  * and validity of self signature
- * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
- * @return {enums.keyStatus}                                status of user    
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @return {module:enums.keyStatus} status of user    
  */
 User.prototype.verify = function(primaryKey) {
   if (!this.selfCertifications) {
@@ -620,7 +620,7 @@ function SubKey(subKeyPacket) {
 
 /**
  * Transforms structured subkey data to packetlist
- * @return {packetlist}
+ * @return {module:packet/packetlist}
  */
 SubKey.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -632,7 +632,7 @@ SubKey.prototype.toPacketlist = function() {
 
 /**
  * Returns true if the subkey can be used for encryption
- * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
 SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
@@ -642,7 +642,7 @@ SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
 
 /**
  * Returns true if the subkey can be used for signing of data
- * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
 SubKey.prototype.isValidSigningKey = function(primaryKey) {
@@ -653,7 +653,7 @@ SubKey.prototype.isValidSigningKey = function(primaryKey) {
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature
- * @return {enums.keyStatus} The status of the subkey
+ * @return {module:enums.keyStatus} The status of the subkey
  */
 SubKey.prototype.verify = function(primaryKey) {
   // check subkey revocation signature
@@ -690,7 +690,7 @@ SubKey.prototype.verify = function(primaryKey) {
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @return {{keys: Array&lt;Key>, err: (Array&lt;Error>|null)}} result object with key and error arrays
+ * @return {{keys: Array&lt;module:key~Key>, err: (Array&lt;Error>|null)}} result object with key and error arrays
  */
 function readArmored(armoredText) {
   var result = {};
@@ -731,7 +731,7 @@ function readArmored(armoredText) {
  * @param {Integer} numBits    number of bits for the key creation.
  * @param {String}  userId     assumes already in form of "User Name &lt;username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
- * @return {Key}
+ * @return {module:key~Key}
  */
 function generate(keyType, numBits, userId, passphrase) {
   var packetlist = new packet.list();
@@ -793,13 +793,13 @@ exports.generate = generate;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 12:58:54 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

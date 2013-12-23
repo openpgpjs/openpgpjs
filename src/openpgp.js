@@ -34,7 +34,7 @@ var key = require('./key.js');
 
 /**
  * Encrypts message text with keys
- * @param  {Array<Key>}  keys array of keys, used to encrypt the message
+ * @param  {Array<module:key~Key>}  keys array of keys, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  * @return {String}      encrypted ASCII armored message
  */
@@ -47,8 +47,8 @@ function encryptMessage(keys, text) {
 
 /**
  * Signs message text and encrypts it
- * @param  {Array<Key>}  publicKeys array of keys, used to encrypt the message
- * @param  {Key}    privateKey private key with decrypted secret key data for signing
+ * @param  {Array<module:key~Key>}  publicKeys array of keys, used to encrypt the message
+ * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
  * @return {String}            encrypted ASCII armored message
  */
@@ -62,8 +62,8 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
 
 /**
  * Decrypts message
- * @param  {Key}     privateKey private key with decrypted secret key data
- * @param  {Message} message    the message object with the encrypted data
+ * @param  {module:key~Key}     privateKey private key with decrypted secret key data
+ * @param  {module:message~Message} message    the message object with the encrypted data
  * @return {(String|null)}        decrypted message as as native JavaScript string
  *                              or null if no literal data found
  */
@@ -74,10 +74,10 @@ function decryptMessage(privateKey, message) {
 
 /**
  * Decrypts message and verifies signatures
- * @param  {Key}     privateKey private key with decrypted secret key data
- * @param  {Array<Key>}   publicKeys public keys to verify signatures
- * @param  {Message} message    the message object with signed and encrypted data
- * @return {{text: String, signatures: Array<{keyid: keyid, valid: Boolean}>}}
+ * @param  {module:key~Key}     privateKey private key with decrypted secret key data
+ * @param  {Array<module:key~Key>}   publicKeys public keys to verify signatures
+ * @param  {module:message~Message} message    the message object with signed and encrypted data
+ * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
  */
@@ -94,7 +94,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, message) {
 
 /**
  * Signs a cleartext message
- * @param  {Array<Key>}  privateKeys private key with decrypted secret key data to sign cleartext
+ * @param  {Array<module:key~Key>}  privateKeys private key with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
  * @return {String}             ASCII armored message
  */
@@ -106,9 +106,9 @@ function signClearMessage(privateKeys, text) {
 
 /**
  * Verifies signatures of cleartext signed message
- * @param  {Array<Key>}            publicKeys public keys to verify signatures
- * @param  {CleartextMessage} message    cleartext message object with signatures
- * @return {{text: String, signatures: Array<{keyid: keyid, valid: Boolean}>}}
+ * @param  {Array<module:key~Key>}            publicKeys public keys to verify signatures
+ * @param  {module:cleartext~CleartextMessage} message    cleartext message object with signatures
+ * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                                       cleartext with status of verified signatures
  */
 function verifyClearSignedMessage(publicKeys, message) {
@@ -129,7 +129,7 @@ function verifyClearSignedMessage(publicKeys, message) {
  * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
- * @return {Object} {key: Array<Key>, privateKeyArmored: Array<String>, publicKeyArmored: Array<String>}
+ * @return {Object} {key: Array<module:key~Key>, privateKeyArmored: Array<String>, publicKeyArmored: Array<String>}
  */
 function generateKeyPair(keyType, numBits, userId, passphrase) {
   var result = {};
