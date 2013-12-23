@@ -21,6 +21,8 @@
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
 
+/** @module crypto/cipher/des */
+
 
 
 

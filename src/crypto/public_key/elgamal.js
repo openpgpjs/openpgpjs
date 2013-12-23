@@ -17,6 +17,8 @@
 //
 // ElGamal implementation
 
+/** @module crypto/public_key/elgamal */
+
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   util = require('../../util');

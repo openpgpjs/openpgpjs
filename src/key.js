@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module key */
+
 var packet = require('./packet');
 var enums = require('./enums.js');
 var armor = require('./encoding/armor.js');
@@ -24,7 +26,7 @@ var config = require('./config');
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {packetlist} packetlist The packets that form this key
+ * @param  {module:packet/packetlist} packetlist The packets that form this key
  */
 
 function Key(packetlist) {
@@ -45,7 +47,7 @@ function Key(packetlist) {
 
 /**
  * Transforms packetlist to structured key data
- * @param  {packetlist} packetlist The packets that form a key
+ * @param  {module:packet/packetlist} packetlist The packets that form a key
  */
 Key.prototype.packetlist2structure = function(packetlist) {
   var user, primaryKeyId, subKey;
@@ -113,7 +115,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
 
 /**
  * Transforms structured key data to packetlist
- * @return {packetlist} The packets that form a key
+ * @return {module:packet/packetlist} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -133,7 +135,7 @@ Key.prototype.toPacketlist = function() {
 
 /** 
  * Returns the primary key packet (secret or public)
- * @returns {packet_secret_key|packet_public_key|null} 
+ * @returns {(module:packet/secret_key|module:packet/public_key|null)} 
  */
 Key.prototype.getKeyPacket = function() {
   return this.primaryKey;
@@ -141,7 +143,7 @@ Key.prototype.getKeyPacket = function() {
 
 /** 
  * Returns all the private and public subkey packets
- * @returns {[public_subkey|secret_subkey]} 
+ * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey)>} 
  */
 Key.prototype.getSubkeyPackets = function() {
   var subKeys = [];
@@ -155,7 +157,7 @@ Key.prototype.getSubkeyPackets = function() {
 
 /** 
  * Returns all the private and public key and subkey packets
- * @returns {[public_subkey|secret_subkey|packet_secret_key|packet_public_key]} 
+ * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key)>} 
  */
 Key.prototype.getAllKeyPackets = function() {
   return [this.getKeyPacket()].concat(this.getSubkeyPackets());
@@ -163,7 +165,7 @@ Key.prototype.getAllKeyPackets = function() {
 
 /** 
  * Returns key IDs of all key packets
- * @returns {[keyid]} 
+ * @returns {Array<module:type/keyid>} 
  */
 Key.prototype.getKeyIds = function() {
   var keyIds = [];
@@ -188,8 +190,8 @@ function findKey(keys, keyIds) {
 
 /**
  * Returns first public key packet for given array of key IDs
- * @param  {[keyid]} keyIds 
- * @return {public_subkey|packet_public_key|null}       
+ * @param  {Array<module:type/keyid>} keyIds 
+ * @return {(module:packet/public_subkey|module:packet/public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
   if (this.primaryKey.tag == enums.packet.public_key) {
@@ -201,8 +203,8 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
 
 /**
  * Returns first private key packet for given array of key IDs
- * @param  {[keyid]} keyIds
- * @return {secret_subkey|packet_secret_key|null}       
+ * @param  {Array<module:type/keyid>} keyIds
+ * @return {(module:packet/secret_subkey|module:packet/secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
   if (this.primaryKey.tag == enums.packet.secret_key) {
@@ -214,7 +216,7 @@ Key.prototype.getPrivateKeyPacket = function(keyIds) {
 
 /**
  * Returns userids
- * @return {string} userid[]
+ * @return {Array<string>} array of userids
  */
 Key.prototype.getUserIds = function() {
   var userids = [];
@@ -244,7 +246,7 @@ Key.prototype.isPrivate = function() {
 
 /**
  * Returns key as public key (shallow copy)
- * @return {key} new public Key
+ * @return {module:key~Key} new public Key
  */
 Key.prototype.toPublic = function() {
   var packetlist = new packet.list();
@@ -281,7 +283,7 @@ Key.prototype.armor = function() {
 
 /**
  * Returns first key packet that is available for signing
- * @return {secret_subkey|packet_secret_key|null} key packet or null if no signing key has been found
+ * @return {(module:packet/secret_subkey|module:packet/secret_key|null)} key packet or null if no signing key has been found
  */
 Key.prototype.getSigningKeyPacket = function() {
   if (this.isPublic()) {
@@ -332,7 +334,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
 
 /**
  * Returns the first valid encryption key packet for this key
- * @returns {public_subkey|secret_subkey|packet_secret_key|packet_public_key|null} key packet or null if no encryption key has been found
+ * @returns {(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key|null)} key packet or null if no encryption key has been found
  */
 Key.prototype.getEncryptionKeyPacket = function() {
   // V4: by convention subkeys are prefered for encryption service
@@ -373,7 +375,7 @@ Key.prototype.decrypt = function(passphrase) {
 
 /**
  * Decrypts specific key packets by key ID
- * @param  {[keyid]} keyIds
+ * @param  {Array<module:type/keyid>} keyIds
  * @param  {String} passphrase 
  * @return {Boolean} true if all key packets decrypted successfully
  */
@@ -398,7 +400,7 @@ Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
 /**
  * Verify primary key. Checks for revocation signatures, expiration time
  * and valid self signature
- * @return {enums.keyStatus} The status of the primary key
+ * @return {module:enums.keyStatus} The status of the primary key
  */
 Key.prototype.verifyPrimaryKey = function() {
   // check revocation signature
@@ -440,7 +442,7 @@ Key.prototype.verifyPrimaryKey = function() {
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple users are marked as primary users returns the one with the latest self signature
  * - if no primary user is found returns the user with the latest self signature
- * @return {{user: [User], selfCertificate: [packet_signature]}} The primary user and the self signature
+ * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}} The primary user and the self signature
  */
 Key.prototype.getPrimaryUser = function() {
   var user = null;
@@ -485,7 +487,7 @@ function User(userPacket) {
 
 /**
  * Transforms structured user data to packetlist
- * @return {packetlist}
+ * @return {module:packet/packetlist}
  */
 User.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -498,8 +500,8 @@ User.prototype.toPacketlist = function() {
 
 /**
  * Checks if a self signature of the user is revoked
- * @param  {packet_signature}                    certificate
- * @param  {packet_secret_key|packet_public_key} primaryKey  The primary key packet
+ * @param  {module:packet/signature}                    certificate
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey  The primary key packet
  * @return {Boolean}                                         True if the certificate is revoked
  */
 User.prototype.isRevoked = function(certificate, primaryKey) {
@@ -518,8 +520,8 @@ User.prototype.isRevoked = function(certificate, primaryKey) {
 
 /**
  * Returns the most significant (latest valid) self signature of the user
- * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
- * @return {packet_signature}                               The self signature
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @return {module:packet/signature}                               The self signature
  */
 User.prototype.getValidSelfCertificate = function(primaryKey) {
   if (!this.selfCertifications) {
@@ -548,8 +550,8 @@ User.prototype.getValidSelfCertificate = function(primaryKey) {
 /**
  * Verify User. Checks for existence of self signatures, revocation signatures
  * and validity of self signature
- * @param  {packet_secret_key|packet_public_key} primaryKey The primary key packet
- * @return {enums.keyStatus}                                status of user    
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @return {module:enums.keyStatus} status of user    
  */
 User.prototype.verify = function(primaryKey) {
   if (!this.selfCertifications) {
@@ -591,7 +593,7 @@ function SubKey(subKeyPacket) {
 
 /**
  * Transforms structured subkey data to packetlist
- * @return {packetlist}
+ * @return {module:packet/packetlist}
  */
 SubKey.prototype.toPacketlist = function() {
   var packetlist = new packet.list();
@@ -603,7 +605,7 @@ SubKey.prototype.toPacketlist = function() {
 
 /**
  * Returns true if the subkey can be used for encryption
- * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
 SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
@@ -613,7 +615,7 @@ SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
 
 /**
  * Returns true if the subkey can be used for signing of data
- * @param  {packet_secret_key|packet_public_key}  primaryKey The primary key packet
+ * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
 SubKey.prototype.isValidSigningKey = function(primaryKey) {
@@ -624,7 +626,7 @@ SubKey.prototype.isValidSigningKey = function(primaryKey) {
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature
- * @return {enums.keyStatus} The status of the subkey
+ * @return {module:enums.keyStatus} The status of the subkey
  */
 SubKey.prototype.verify = function(primaryKey) {
   // check subkey revocation signature
@@ -661,7 +663,7 @@ SubKey.prototype.verify = function(primaryKey) {
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @return {{keys: [Key], err: [Error]|null}} result object with key and error arrays
+ * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
  */
 function readArmored(armoredText) {
   var result = {};
@@ -702,7 +704,7 @@ function readArmored(armoredText) {
  * @param {Integer} numBits    number of bits for the key creation.
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
- * @return {Key}
+ * @return {module:key~Key}
  */
 function generate(keyType, numBits, userId, passphrase) {
   var packetlist = new packet.list();

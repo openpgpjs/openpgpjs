@@ -15,6 +15,8 @@
  * materials provided with the application or distribution.
  */
 
+/** @module crypto/cfb */
+
 var util = require('../util'),
   cipher = require('./cipher');
 
@@ -27,7 +29,7 @@ module.exports = {
 
   /**
    * Block cipher function
-   * @callback openpgp_cipher_block_fn
+   * @callback openpgp_block_cipher_fn
    * @param {openpgp_byte_array} block A block to perform operations on
    * @param {openpgp_byte_array} key to use in encryption/decryption
    * @return {openpgp_byte_array} Encrypted/decrypted block
@@ -40,7 +42,7 @@ module.exports = {
    * using the specified blockcipher to encrypt a message
    * @param {String} prefixrandom random bytes of block_size length provided 
    *  as a string to be used in prefixing the data
-   * @param {openpgp_cipher_block_fn} blockcipherfn the algorithm encrypt function to encrypt
+   * @param {openpgp_block_cipher_fn} blockcipherfn the algorithm encrypt function to encrypt
    *  data in one block_size encryption. 
    * @param {Integer} block_size the block size in bytes of the algorithm used
    * @param {String} plaintext data to be encrypted provided as a string
@@ -182,7 +184,7 @@ module.exports = {
   /**
    * This function decrypts a given plaintext using the specified
    * blockcipher to decrypt a message
-   * @param {openpgp_cipher_block_fn} blockcipherfn The algorithm _encrypt_ function to encrypt
+   * @param {openpgp_block_cipher_fn} blockcipherfn The algorithm _encrypt_ function to encrypt
    *  data in one block_size encryption.
    * @param {Integer} block_size the block size in bytes of the algorithm used
    * @param {String} plaintext ciphertext to be decrypted provided as a string

@@ -2,7 +2,7 @@
   "name": "openpgp",
   "version": "0.0.1",
   "engines": {
-      "node": ">=0.8"
+    "node": ">=0.8"
   },
   "main": "./src/index.js",
   "scripts": {
@@ -24,6 +24,7 @@
     "grunt-text-replace": "*",
     "grunt-jsbeautifier": "*",
     "grunt-contrib-jshint": "*",
-    "grunt-jsdoc": "*"
+    "grunt-jsdoc": "*",
+    "jsdoc": "~3.3.0-alpha2"
   }
 }

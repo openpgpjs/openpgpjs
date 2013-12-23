@@ -1,3 +1,5 @@
+/** @module packet/packetlist */
+
 var packetParser = require('./packet.js'),
   packets = require('./all_packets.js'),
   enums = require('../enums.js');
@@ -16,7 +18,7 @@ module.exports = function packetlist() {
 
   /**
    * Reads a stream of binary data and interprents it as a list of packets.
-   * @param {openpgp_bytearray} An array of bytes.
+   * @param {openpgp_byte_array} An array of bytes.
    */
   this.read = function(bytes) {
     var i = 0;
@@ -37,7 +39,7 @@ module.exports = function packetlist() {
   /**
    * Creates a binary representation of openpgp objects contained within the
    * class instance.
-   * @returns {openpgp_bytearray} An array of bytes containing valid openpgp packets.
+   * @returns {openpgp_byte_array} An array of bytes containing valid openpgp packets.
    */
   this.write = function() {
     var bytes = '';
@@ -108,8 +110,8 @@ module.exports = function packetlist() {
 
   /**
    * Traverses packet tree and returns first matching packet
-   * @param  {enums.packet} type The packet type
-   * @return {packet|null}      
+   * @param  {module:enums.packet} type The packet type
+   * @return {module:packet/packet|null}      
    */
   this.findPacket = function(type) {
     var packetlist = this.filterByTag(type);

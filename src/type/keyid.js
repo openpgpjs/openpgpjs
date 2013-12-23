@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module type/keyid */
+
 var util = require('../util');
 
 /**
@@ -25,7 +27,7 @@ var util = require('../util');
    section "Enhanced Key Formats" below describes how Key IDs are
    formed.
  */
-function keyid() {
+module.exports = function keyid() {
 
   this.bytes = '';
 
@@ -35,7 +37,7 @@ function keyid() {
    * @param {String} input Input to read the key id from 
    * @param {integer} position Position where to start reading the key 
    * id from input
-   * @return {openpgp_type_keyid} This object
+   * @return {module:type/keyid} This object
    */
   this.read = function(bytes) {
     this.bytes = bytes.substr(0, 8);
@@ -58,8 +60,6 @@ function keyid() {
   }
 }
 
-keyid.mapToHex = function(keyid) {
-  return keyid.toHex();
+module.exports.mapToHex = function(keyId) {
+  return keyId.toHex();
 }
-
-module.exports = keyid;

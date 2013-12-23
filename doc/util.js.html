@@ -42,293 +42,307 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module util/util */
+
+var config = require('../config');
+
+/**
+ *
+ * This object contains utility functions
+ *
+ * @class
+ * @classdesc Implementation of the util object
+ */
 var Util = function() {
 
-    this.emailRegEx = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
-	
-	this.hexdump = function(str) {
-	    var r=[];
-	    var e=str.length;
-	    var c=0;
-	    var h;
-	    var i = 0;
-	    while(c&lt;e){
-	        h=str.charCodeAt(c++).toString(16);
-	        while(h.length&lt;2) h="0"+h;
-	        r.push(" "+h);
-	        i++;
-	        if (i % 32 == 0)
-	        	r.push("\n           ");
-	    }
-	    return r.join('');
-	};
-	
-	/**
-	 * Create hexstring from a binary
-	 * @param {String} str String to convert
-	 * @return {String} String containing the hexadecimal values
-	 */
-	this.hexstrdump = function(str) {
-		if (str == null)
-			return "";
-	    var r=[];
-	    var e=str.length;
-	    var c=0;
-	    var h;
-	    while(c&lt;e){
-	        h=str[c++].charCodeAt().toString(16);
-	        while(h.length&lt;2) h="0"+h;
-	        r.push(""+h);
-	    }
-	    return r.join('');
-	};
-	
-	/**
-	 * Create binary string from a hex encoded string
-	 * @param {String} str Hex string to convert
-	 * @return {String} String containing the binary values
-	 */
-	this.hex2bin = function(hex) {
-	    var str = '';
-	    for (var i = 0; i &lt; hex.length; i += 2)
-	        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-	    return str;
-	};
-	
-	/**
-	 * Creating a hex string from an binary array of integers (0..255)
-	 * @param {String} str Array of bytes to convert
-	 * @return {String} Hexadecimal representation of the array
-	 */
-	this.hexidump = function(str) {
-	    var r=[];
-	    var e=str.length;
-	    var c=0;
-	    var h;
-	    while(c&lt;e){
-	        h=str[c++].toString(16);
-	        while(h.length&lt;2) h="0"+h;
-	        r.push(""+h);
-	    }
-	    return r.join('');
-	};
+  this.readNumber = function(bytes) {
+    var n = 0;
+
+    for (var i = 0; i &lt; bytes.length; i++) {
+      n &lt;&lt;= 8;
+      n += bytes.charCodeAt(i);
+    }
+
+    return n;
+  };
+
+  this.writeNumber = function(n, bytes) {
+    var b = '';
+    for (var i = 0; i &lt; bytes; i++) {
+      b += String.fromCharCode((n >> (8 * (bytes - i - 1))) &amp; 0xFF);
+    }
+
+    return b;
+  };
 
 
-	/**
-	 * Convert a native javascript string to a string of utf8 bytes
-	 * @param {String} str The string to convert
-	 * @return {String} A valid squence of utf8 bytes
-	 */
-	this.encode_utf8 = function(str) {
-		return unescape(encodeURIComponent(str));
-	};
 
-	/**
-	 * Convert a string of utf8 bytes to a native javascript string
-	 * @param {String} utf8 A valid squence of utf8 bytes
-	 * @return {String} A native javascript string
-	 */
-	this.decode_utf8 = function(utf8) {
-		return decodeURIComponent(escape(utf8));
-	};
+  this.readDate = function(bytes) {
+    var n = this.readNumber(bytes);
+    var d = new Date();
+    d.setTime(n * 1000);
+    return d;
+  };
 
-	var str2bin = function(str, result) {
-		for (var i = 0; i &lt; str.length; i++) {
-			result[i] = str.charCodeAt(i);
-		}
+  this.writeDate = function(time) {
+    var numeric = Math.round(time.getTime() / 1000);
 
-		return result;
-	};
-	
-	var bin2str = function(bin) {
-		var result = [];
+    return this.writeNumber(numeric, 4);
+  };
 
-		for (var i = 0; i &lt; bin.length; i++) {
-			result.push(String.fromCharCode(bin[i]));
-		}
+  this.emailRegEx = /^[+a-zA-Z0-9_.-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,6}$/;
 
-		return result.join('');
-	};
+  this.debug = false;
 
-	/**
-	 * Convert a string to an array of integers(0.255)
-	 * @param {String} str String to convert
-	 * @return {Integer[]} An array of (binary) integers
-	 */
-	this.str2bin = function(str) { 
-		return str2bin(str, new Array(str.length));
-	};
-	
-	
-	/**
-	 * Convert an array of integers(0.255) to a string 
-	 * @param {Integer[]} bin An array of (binary) integers to convert
-	 * @return {String} The string representation of the array
-	 */
-	this.bin2str = bin2str;
-	
-	/**
-	 * Convert a string to a Uint8Array
-	 * @param {String} str String to convert
-	 * @return {Uint8Array} The array of (binary) integers
-	 */
-	this.str2Uint8Array = function(str) { 
-		return str2bin(str, new Uint8Array(new ArrayBuffer(str.length))); 
-	};
-	
-	/**
-	 * Convert a Uint8Array to a string. This currently functions 
-	 * the same as bin2str. 
-	 * @param {Uint8Array} bin An array of (binary) integers to convert
-	 * @return {String} String representation of the array
-	 */
-	this.Uint8Array2str = bin2str;
-	
-	/**
-	 * Calculates a 16bit sum of a string by adding each character 
-	 * codes modulus 65535
-	 * @param {String} text String to create a sum of
-	 * @return {Integer} An integer containing the sum of all character 
-	 * codes % 65535
-	 */
-	this.calc_checksum = function(text) {
-		var checksum = {  s: 0, add: function (sadd) { this.s = (this.s + sadd) % 65536; }};
-		for (var i = 0; i &lt; text.length; i++) {
-			checksum.add(text.charCodeAt(i));
-		}
-		return checksum.s;
-	};
-	
-	/**
-	 * Helper function to print a debug message. Debug 
-	 * messages are only printed if
-	 * openpgp.config.debug is set to true. The calling
-	 * Javascript context MUST define
-	 * a "showMessages(text)" function. Line feeds ('\n')
-	 * are automatically converted to HTML line feeds '&lt;br/>'
-	 * @param {String} str String of the debug message
-	 * @return {String} An HTML tt entity containing a paragraph with a 
-	 * style attribute where the debug message is HTMLencoded in. 
-	 */
-	this.print_debug = function(str) {
-		if (openpgp.config.debug) {
-			str = openpgp_encoding_html_encode(str);
-			showMessages("&lt;tt>&lt;p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"&lt;br>")+"&lt;/p>&lt;/tt>");
-		}
-	};
-	
-	/**
-	 * Helper function to print a debug message. Debug 
-	 * messages are only printed if
-	 * openpgp.config.debug is set to true. The calling
-	 * Javascript context MUST define
-	 * a "showMessages(text)" function. Line feeds ('\n')
-	 * are automatically converted to HTML line feeds '&lt;br/>'
-	 * Different than print_debug because will call hexstrdump iff necessary.
-	 * @param {String} str String of the debug message
-	 * @return {String} An HTML tt entity containing a paragraph with a 
-	 * style attribute where the debug message is HTMLencoded in. 
-	 */
-	this.print_debug_hexstr_dump = function(str,strToHex) {
-		if (openpgp.config.debug) {
-			str = str + this.hexstrdump(strToHex);
-			str = openpgp_encoding_html_encode(str);
-			showMessages("&lt;tt>&lt;p style=\"background-color: #ffffff; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">"+str.replace(/\n/g,"&lt;br>")+"&lt;/p>&lt;/tt>");
-		}
-	};
-	
-	/**
-	 * Helper function to print an error message. 
-	 * The calling Javascript context MUST define
-	 * a "showMessages(text)" function. Line feeds ('\n')
-	 * are automatically converted to HTML line feeds '&lt;br/>'
-	 * @param {String} str String of the error message
-	 * @return {String} A HTML paragraph entity with a style attribute 
-	 * containing the HTML encoded error message
-	 */
-	this.print_error = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("&lt;p style=\"font-size: 80%; background-color: #FF8888; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">&lt;span style=\"color: #888;\">&lt;b>ERROR:&lt;/b>&lt;/span>	"+str.replace(/\n/g,"&lt;br>")+"&lt;/p>");
-	};
-	
-	/**
-	 * Helper function to print an info message. 
-	 * The calling Javascript context MUST define
-	 * a "showMessages(text)" function. Line feeds ('\n')
-	 * are automatically converted to HTML line feeds '&lt;br/>'.
-	 * @param {String} str String of the info message
-	 * @return {String} A HTML paragraph entity with a style attribute 
-	 * containing the HTML encoded info message
-	 */
-	this.print_info = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("&lt;p style=\"font-size: 80%; background-color: #88FF88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">&lt;span style=\"color: #888;\">&lt;b>INFO:&lt;/b>&lt;/span>	"+str.replace(/\n/g,"&lt;br>")+"&lt;/p>");
-	};
-	
-	this.print_warning = function(str) {
-		str = openpgp_encoding_html_encode(str);
-		showMessages("&lt;p style=\"font-size: 80%; background-color: #FFAA88; margin:0; width: 652px; word-break: break-word; padding: 5px; border-bottom: 1px solid black;\">&lt;span style=\"color: #888;\">&lt;b>WARNING:&lt;/b>&lt;/span>	"+str.replace(/\n/g,"&lt;br>")+"&lt;/p>");
-	};
-	
-	this.getLeftNBits = function (string, bitcount) {
-		var rest = bitcount % 8;
-		if (rest == 0)
-			return string.substring(0, bitcount / 8);
-		var bytes = (bitcount - rest) / 8 +1;
-		var result = string.substring(0, bytes);
-		return this.shiftRight(result, 8-rest); // +String.fromCharCode(string.charCodeAt(bytes -1) &lt;&lt; (8-rest) & 0xFF);
-	};
+  this.hexdump = function(str) {
+    var r = [];
+    var e = str.length;
+    var c = 0;
+    var h;
+    var i = 0;
+    while (c &lt; e) {
+      h = str.charCodeAt(c++).toString(16);
+      while (h.length &lt; 2) h = "0" + h;
+      r.push(" " + h);
+      i++;
+      if (i % 32 == 0)
+        r.push("\n           ");
+    }
+    return r.join('');
+  };
 
-	/**
-	 * Shifting a string to n bits right
-	 * @param {String} value The string to shift
-	 * @param {Integer} bitcount Amount of bits to shift (MUST be smaller 
-	 * than 9)
-	 * @return {String} Resulting string. 
-	 */
-	this.shiftRight = function(value, bitcount) {
-		var temp = util.str2bin(value);
-        if (bitcount % 8 != 0) {
-        	for (var i = temp.length-1; i >= 0; i--) {
-        		temp[i] >>= bitcount % 8;
-        		if (i > 0)
-        			temp[i] |= (temp[i - 1] &lt;&lt; (8 - (bitcount % 8))) & 0xFF;
-        	}
-        } else {
-        	return value;
-        }
-        return util.bin2str(temp);
-	};
-	
-	/**
-	 * Return the algorithm type as string
-	 * @return {String} String representing the message type
-	 */
-	this.get_hashAlgorithmString = function(algo) {
-		switch(algo) {
-		case 1:
-			return "MD5";
-		case 2:
-			return "SHA1";
-		case 3:
-			return "RIPEMD160";
-		case 8:
-			return "SHA256";
-		case 9:
-			return "SHA384";
-		case 10:
-			return "SHA512";
-		case 11:
-			return "SHA224";
-		}
-		return "unknown";
-	};
+  /**
+   * Create hexstring from a binary
+   * @param {String} str String to convert
+   * @return {String} String containing the hexadecimal values
+   */
+  this.hexstrdump = function(str) {
+    if (str == null)
+      return "";
+    var r = [];
+    var e = str.length;
+    var c = 0;
+    var h;
+    while (c &lt; e) {
+      h = str.charCodeAt(c++).toString(16);
+      while (h.length &lt; 2) h = "0" + h;
+      r.push("" + h);
+    }
+    return r.join('');
+  };
+
+  /**
+   * Create binary string from a hex encoded string
+   * @param {String} str Hex string to convert
+   * @return {String} String containing the binary values
+   */
+  this.hex2bin = function(hex) {
+    var str = '';
+    for (var i = 0; i &lt; hex.length; i += 2)
+      str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+  };
+
+  /**
+   * Creating a hex string from an binary array of integers (0..255)
+   * @param {String} str Array of bytes to convert
+   * @return {String} Hexadecimal representation of the array
+   */
+  this.hexidump = function(str) {
+    var r = [];
+    var e = str.length;
+    var c = 0;
+    var h;
+    while (c &lt; e) {
+      h = str[c++].toString(16);
+      while (h.length &lt; 2) h = "0" + h;
+      r.push("" + h);
+    }
+    return r.join('');
+  };
+
+
+  /**
+   * Convert a native javascript string to a string of utf8 bytes
+   * @param {String} str The string to convert
+   * @return {String} A valid squence of utf8 bytes
+   */
+  this.encode_utf8 = function(str) {
+    return unescape(encodeURIComponent(str));
+  };
+
+  /**
+   * Convert a string of utf8 bytes to a native javascript string
+   * @param {String} utf8 A valid squence of utf8 bytes
+   * @return {String} A native javascript string
+   */
+  this.decode_utf8 = function(utf8) {
+    try {
+      return decodeURIComponent(escape(utf8));
+    } catch (e) {
+      return utf8;
+    }
+  };
+
+  var str2bin = function(str, result) {
+    for (var i = 0; i &lt; str.length; i++) {
+      result[i] = str.charCodeAt(i);
+    }
+
+    return result;
+  };
+
+  var bin2str = function(bin) {
+    var result = [];
+
+    for (var i = 0; i &lt; bin.length; i++) {
+      result.push(String.fromCharCode(bin[i]));
+    }
+
+    return result.join('');
+  };
+
+  /**
+   * Convert a string to an array of integers(0.255)
+   * @param {String} str String to convert
+   * @return {Array&lt;Integer>} An array of (binary) integers
+   */
+  this.str2bin = function(str) {
+    return str2bin(str, new Array(str.length));
+  };
+
+
+  /**
+   * Convert an array of integers(0.255) to a string 
+   * @param {Array&lt;Integer>} bin An array of (binary) integers to convert
+   * @return {String} The string representation of the array
+   */
+  this.bin2str = bin2str;
+
+  /**
+   * Convert a string to a Uint8Array
+   * @param {String} str String to convert
+   * @return {Uint8Array} The array of (binary) integers
+   */
+  this.str2Uint8Array = function(str) {
+    return str2bin(str, new Uint8Array(new ArrayBuffer(str.length)));
+  };
+
+  /**
+   * Convert a Uint8Array to a string. This currently functions 
+   * the same as bin2str. 
+   * @param {Uint8Array} bin An array of (binary) integers to convert
+   * @return {String} String representation of the array
+   */
+  this.Uint8Array2str = bin2str;
+
+  /**
+   * Calculates a 16bit sum of a string by adding each character 
+   * codes modulus 65535
+   * @param {String} text String to create a sum of
+   * @return {Integer} An integer containing the sum of all character 
+   * codes % 65535
+   */
+  this.calc_checksum = function(text) {
+    var checksum = {
+      s: 0,
+      add: function(sadd) {
+        this.s = (this.s + sadd) % 65536;
+      }
+    };
+    for (var i = 0; i &lt; text.length; i++) {
+      checksum.add(text.charCodeAt(i));
+    }
+    return checksum.s;
+  };
+
+  /**
+   * Helper function to print a debug message. Debug 
+   * messages are only printed if
+   * openpgp.config.debug is set to true.
+   * @param {String} str String of the debug message
+   */
+  this.print_debug = function(str) {
+    if (config.debug) {
+      console.log(str);
+    }
+  };
+
+  /**
+   * Helper function to print a debug message. Debug 
+   * messages are only printed if
+   * openpgp.config.debug is set to true.
+   * Different than print_debug because will call hexstrdump iff necessary.
+   * @param {String} str String of the debug message
+   */
+  this.print_debug_hexstr_dump = function(str, strToHex) {
+    if (config.debug) {
+      str = str + this.hexstrdump(strToHex);
+      console.log(str);
+    }
+  };
+
+  this.getLeftNBits = function(string, bitcount) {
+    var rest = bitcount % 8;
+    if (rest == 0)
+      return string.substring(0, bitcount / 8);
+    var bytes = (bitcount - rest) / 8 + 1;
+    var result = string.substring(0, bytes);
+    return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) &lt;&lt; (8-rest) &amp; 0xFF);
+  };
+
+  /**
+   * Shifting a string to n bits right
+   * @param {String} value The string to shift
+   * @param {Integer} bitcount Amount of bits to shift (MUST be smaller 
+   * than 9)
+   * @return {String} Resulting string. 
+   */
+  this.shiftRight = function(value, bitcount) {
+    var temp = util.str2bin(value);
+    if (bitcount % 8 != 0) {
+      for (var i = temp.length - 1; i >= 0; i--) {
+        temp[i] >>= bitcount % 8;
+        if (i > 0)
+          temp[i] |= (temp[i - 1] &lt;&lt; (8 - (bitcount % 8))) &amp; 0xFF;
+      }
+    } else {
+      return value;
+    }
+    return util.bin2str(temp);
+  };
+
+  /**
+   * Return the algorithm type as string
+   * @return {String} String representing the message type
+   */
+  this.get_hashAlgorithmString = function(algo) {
+    switch (algo) {
+      case 1:
+        return "MD5";
+      case 2:
+        return "SHA1";
+      case 3:
+        return "RIPEMD160";
+      case 8:
+        return "SHA256";
+      case 9:
+        return "SHA384";
+      case 10:
+        return "SHA512";
+      case 11:
+        return "SHA224";
+    }
+    return "unknown";
+  };
+
 };
 
 /**
  * an instance that should be used. 
  */
-var util = new Util();
+
+module.exports = new Util();
 </code></pre>
         </article>
     </section>
@@ -339,15 +353,16 @@ var util = new Util();
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#decode_utf8">decode_utf8</a></li><li><a href="global.html#encode_utf8">encode_utf8</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Tue Apr 16 2013 10:42:39 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

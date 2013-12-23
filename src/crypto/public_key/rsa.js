@@ -17,6 +17,8 @@
 //
 // RSA implementation
 
+/** @module crypto/public_key/rsa */
+
 var BigInteger = require('./jsbn.js'),
   util = require('../../util'),
   random = require('../random.js');

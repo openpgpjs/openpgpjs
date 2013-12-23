@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module type/s2k */
+
 var enums = require('../enums.js'),
   util = require('../util'),
   crypto = require('../crypto');
@@ -31,11 +33,12 @@ var enums = require('../enums.js'),
 module.exports = function s2k() {
   /** @type {openpgp.hash} */
   this.algorithm = 'sha256';
-  /** @type {openpgp_type_s2k.type} */
+  /** @type {module:type/s2k} */
   this.type = 'iterated';
   this.c = 96;
-  /** @type {openpgp_bytearray} 
-   * Eight bytes of salt. */
+  /** Eight bytes of salt.
+   * @type {openpgp_byte_array} 
+   */
   this.salt = crypto.random.getRandomBytes(8);
 
 

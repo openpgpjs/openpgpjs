@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/public_key_encrypted_session_key */
+
 var type_keyid = require('../type/keyid.js'),
   util = require('../util'),
   type_mpi = require('../type/mpi.js'),
@@ -47,7 +49,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
   this.sessionKey = null;
   this.sessionKeyAlgorithm = 'aes256';
 
-  /** @type {openpgp_type_mpi[]} */
+  /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
 
   /**
@@ -57,7 +59,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
    * @param {Integer} position Position to start reading from the input string
    * @param {Integer} len Length of the packet or the remaining length of
    *            input at position
-   * @return {openpgp_packet_encrypteddata} Object representation
+   * @return {module:packet/public_key_encrypted_session_key} Object representation
    */
   this.read = function(bytes) {
 
@@ -95,7 +97,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
    * 
    * @param {String} publicKeyId
    *             The public key id corresponding to publicMPIs key as string
-   * @param {openpgp_type_mpi[]} publicMPIs
+   * @param {Array<module:type/mpi>} publicMPIs
    *            Multiprecision integer objects describing the public key
    * @param {Integer} pubalgo
    *            The corresponding public key algorithm // See RFC4880 9.1
@@ -145,9 +147,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
    * Decrypts the session key (only for public key encrypted session key
    * packets (tag 1)
    * 
-   * @param {openpgp_msg_message} msg
-   *            The message object (with member encryptedData
-   * @param {openpgp_msg_privatekey} key
+   * @param {module:packet/secret_key} key
    *            Private key with secMPIs unlocked
    * @return {String} The unencrypted session key
    */

@@ -17,6 +17,8 @@
 //
 // A Digital signature algorithm implementation
 
+/** @module crypto/public_key/dsa */
+
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   hashModule = require('../hash'),

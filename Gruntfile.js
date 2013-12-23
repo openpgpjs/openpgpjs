@@ -107,6 +107,7 @@ module.exports = function(grunt) {
     jsdoc : {
       dist : {
         src: ["src/**/*.js"],
+        jsdoc: "node_modules/jsdoc/jsdoc.js",
         options: {
           destination: "doc"
         }
@@ -119,12 +120,6 @@ module.exports = function(grunt) {
         flatten: true,
         cwd: 'node_modules/',
         src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'sinon/pkg/sinon.js'],
-        dest: 'test/lib/'
-      },
-      openpgp: {
-        expand: true,
-        cwd: 'resources/',
-        src: ['openpgp.js', 'keyring.js', 'jquery.min.js'],
         dest: 'test/lib/'
       }
     }

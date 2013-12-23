@@ -14,6 +14,8 @@
 
 // CAST5 constructor
 
+/** @module crypto/cipher/cast5 */
+
 
 
 function openpgp_symenc_cast5() {

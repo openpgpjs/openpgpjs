@@ -11,6 +11,8 @@
  * provided with the application or distribution.
  */
 
+/** @module encoding/base64 */
+
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 function s2r(t) {

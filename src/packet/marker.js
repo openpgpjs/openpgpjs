@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/marker */
+
 /**
  * @class
  * @classdesc Implementation of the strange "Marker packet" (Tag 10)
@@ -26,7 +28,7 @@
  * 
  * Such a packet MUST be ignored when received.
  */
-function packet_marker() {
+module.exports = function () {
   /**
    * Parsing function for a literal data packet (tag 10).
    * 
@@ -36,7 +38,7 @@ function packet_marker() {
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @return {openpgp_packet_encrypteddata} Object representation
+   * @return {module:packet/marker} Object representation
    */
   this.read = function(bytes) {
     if (bytes.charCodeAt(0) == 0x50 && // P
@@ -47,5 +49,3 @@ function packet_marker() {
     return false;
   }
 }
-
-module.exports = packet_marker;

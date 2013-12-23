@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module packet/symmetrically_encrypted */
+
 var crypto = require('../crypto');
 
 /**
@@ -31,7 +33,7 @@ var crypto = require('../crypto');
 module.exports = function packet_symmetrically_encrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within. 
-   * @type {openpgp_packetlist} */
+   * @type {module:packet/packetlist} */
   this.packets;
 
   this.read = function(bytes) {

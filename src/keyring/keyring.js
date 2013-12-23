@@ -15,13 +15,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** @module keyring/keyring */
+
 var openpgp = require('openpgp');
 
 /**
  * @class
  * @classdesc The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  */
-var keyring = function() {
+module.exports = function() {
   this.keys = [];
 
   /**
@@ -29,12 +31,15 @@ var keyring = function() {
    * keyring from HTML5 local storage and initializes this instance.
    * This method is called by openpgp.init().
    */
-  function init(storeHandler) {
-    this.storeHandler = storeHandler ? storeHandler : require('./localstore');
+  this.init = function (storeHandler) {
+    if (!storeHandler) {
+      var localstore = require('./localstore.js');
+      storeHandler = new localstore();
+    }
+    this.storeHandler = storeHandler;
     this.keys = [];
     this.storeHandler.init(this.keys);
   }
-  this.init = init;
 
   this.store = function () {
     this.storeHandler.store(this.keys);
@@ -87,17 +92,16 @@ var keyring = function() {
   /**
    * searches all public keys in the keyring matching the address or address part of the user ids
    * @param {String} email email address to search for
-   * @return {openpgp.key.Key[]} The public keys associated with provided email address.
+   * @return {Array<module:key~Key>} The public keys associated with provided email address.
    */
-  function getPublicKeyForAddress(email) {
+  this.getPublicKeyForAddress = function (email) {
     return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.public_key);
   }
-  this.getPublicKeyForAddress = getPublicKeyForAddress;
 
   /**
    * Searches the keyring for a private key containing the specified email address
    * @param {String} email email address to search for
-   * @return {openpgp.key.Key[]} private keys found
+   * @return {Array<module:key~Key>} private keys found
    */
   function getPrivateKeyForAddress(email) {
     return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.secret_key);
@@ -107,7 +111,7 @@ var keyring = function() {
   /**
    * Searches the keyring for public keys having the specified key id
    * @param {String} keyId provided as string of hex number (lowercase)
-   * @return {openpgp.key.Key[]} public keys found
+   * @return {Array<module:key~Key>} public keys found
    */
   function getKeysForKeyId(keyId) {
     return this.checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, openpgp.enums.packet.public_key);
@@ -138,7 +142,7 @@ var keyring = function() {
   /**
    * Removes a public key from the public key keyring at the specified index 
    * @param {Integer} index the index of the public key within the publicKeys array
-   * @return {openpgp.key.Key} The public key object which has been removed
+   * @return {module:key~Key} The public key object which has been removed
    */
   function removeKey(index) {
     var removed = this.keys.splice(index, 1);
@@ -158,5 +162,3 @@ var keyring = function() {
   this.exportPublicKey = exportPublicKey;
 
 };
-
-module.exports = new keyring();
