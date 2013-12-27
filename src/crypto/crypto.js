@@ -17,7 +17,13 @@
 
 // The GPG4Browsers crypto interface
 
-/** @module crypto/crypto */
+/**
+ * @requires crypto/cipher
+ * @requires crypto/public_key
+ * @requires crypto/random
+ * @requires type/mpi
+ * @module crypto/crypto
+ */
 
 var random = require('./random.js'),
   cipher = require('./cipher'),
@@ -213,6 +219,5 @@ module.exports = {
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);
-  },
-
+  }
 };

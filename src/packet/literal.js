@@ -15,19 +15,23 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/literal */
+/**
+ * Implementation of the Literal Data Packet (Tag 11)<br/>
+ * <br/>
+ * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
+ * is not to be further interpreted.
+ * @requires enums
+ * @requires util
+ * @module packet/literal
+ */
 
 var util = require('../util'),
   enums = require('../enums.js');
 
 /**
- * @class
- * @classdesc Implementation of the Literal Data Packet (Tag 11)
- * 
- * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
- * is not to be further interpreted.
+ * @constructor
  */
-module.exports = function packet_literal() {
+module.exports = function () {
   this.format = 'utf8'; // default format for literal data packets
   this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();

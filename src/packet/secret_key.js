@@ -15,7 +15,21 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/secret_key */
+/**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
+ * <br/>
+ * RFC4480 5.5:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.  Consequently, this section is complex.
+ * @requires crypto
+ * @requires enums
+ * @requires packet/public_key
+ * @requires type/mpi
+ * @requires type/s2k
+ * @requires util
+ * @module packet/secret_key
+ */
 
 var publicKey = require('./public_key.js'),
   enums = require('../enums.js'),
@@ -25,14 +39,8 @@ var publicKey = require('./public_key.js'),
   type_s2k = require('../type/s2k.js');
 
 /**
- * @class
- * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
+ * @constructor
  * @extends module:packet/public_key
- *   
- * RFC4480 5.5:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
  */
 module.exports = function () {
   publicKey.call(this);
@@ -185,9 +193,8 @@ module.exports = function () {
 
   /**
    * Decrypts the private key MPIs which are needed to use the key.
-   * openpgp_packet_keymaterial.hasUnencryptedSecretKeyData should be 
-   * false otherwise
-   * a call to this function is not needed
+   * @link module:packet/secret_key.isDecrypted should be
+   * false otherwise a call to this function is not needed
    * 
    * @param {String} str_passphrase The passphrase for this private key 
    * as string

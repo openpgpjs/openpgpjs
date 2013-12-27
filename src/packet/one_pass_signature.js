@@ -15,24 +15,27 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/one_pass_signature */
-
-var enums = require('../enums.js'),
-  type_keyid = require('../type/keyid.js');
-
 /**
- * @class
- * @classdesc Implementation of the One-Pass Signature Packets (Tag 4)
- * 
+ * Implementation of the One-Pass Signature Packets (Tag 4)<br/>
+ * <br/>
  * RFC4880 5.4:
  * The One-Pass Signature packet precedes the signed data and contains
  * enough information to allow the receiver to begin calculating any
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
- */
+ * @requires enums
+ * @requires type/keyid
+ * @module packet/one_pass_signature
+*/
 
-module.exports = function one_pass_signature() {
+var enums = require('../enums.js'),
+  type_keyid = require('../type/keyid.js');
+
+/**
+ * @constructor
+ */
+module.exports = function () {
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
   this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)

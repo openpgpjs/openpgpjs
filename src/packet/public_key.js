@@ -15,7 +15,20 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/public_key */
+/**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
+ * <br/>
+ * RFC4480 5.5:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.  Consequently, this section is complex.
+ * @requires crypto
+ * @requires enums
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires util
+ * @module packet/public_key
+ */
 
 var util = require('../util'),
   type_mpi = require('../type/mpi.js'),
@@ -24,15 +37,9 @@ var util = require('../util'),
   crypto = require('../crypto');
 
 /**
- * @class
- * @classdesc Implementation of the Key Material Packet (Tag 5,6,7,14)
- *   
- * RFC4480 5.5:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
+ * @constructor
  */
-module.exports = function packet_public_key() {
+module.exports = function () {
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
@@ -41,7 +48,7 @@ module.exports = function packet_public_key() {
    * @type {module:type/mpi} */
   this.mpi = [];
   /** Public key algorithm
-   * @type {openpgp.publickey} */
+   * @type {module:enums.publicKey} */
   this.algorithm = 'rsa_sign';
   // time in days (V3 only)
   this.expirationTimeV3 = 0;
@@ -52,11 +59,9 @@ module.exports = function packet_public_key() {
    * 5.5.2 Public-Key Packet Formats
    * called by read_tag&lt;num&gt;
    * @param {String} input Input string to read the packet from
-   * @param {Integer} position Start position for the parser
-   * @param {Integer} len Length of the packet or remaining length of input
    * @return {Object} This object with attributes set by the parser
    */
-  this.readPublicKey = this.read = function(bytes) {
+  this.read = function(bytes) {
     var pos = 0;
     // A one-octet version number (3 or 4).
     this.version = bytes.charCodeAt(pos++);
@@ -97,19 +102,22 @@ module.exports = function packet_public_key() {
     } else {
       throw new Error('Version ' + version + ' of the key packet is unsupported.');
     }
-  }
+  };
 
-  /*
+  /**
+   * Alias of read()
+   * @function module:packet/public_key#readPublicKey
+   * @see module:packet/public_key#read
+   */
+  this.readPublicKey = this.read;
+
+  /**
    * Same as write_private_key, but has less information because of 
    * public key.
-   * @param {Integer} keyType Follows the OpenPGP algorithm standard, 
-   * IE 1 corresponds to RSA.
-   * @param {RSA.keyObject} key
-   * @param timePacket
-   * @return {Object} {body: [string]OpenPGP packet body contents, 
+   * @return {Object} {body: [string]OpenPGP packet body contents,
    * header: [string] OpenPGP packet header, string: [string] header+body}
    */
-  this.writePublicKey = this.write = function() {
+  this.write = function() {
     // Version
     var result = String.fromCharCode(this.version);
     result += util.writeDate(this.created);
@@ -125,16 +133,25 @@ module.exports = function packet_public_key() {
     }
 
     return result;
-  }
+  };
 
-  // Write an old version packet - it's used by some of the internal routines.
+  /**
+   * Alias of write()
+   * @function module:packet/public_key#writePublicKey
+   * @see module:packet/public_key#write
+   */
+  this.writePublicKey = this.write;
+
+  /**
+   * Write an old version packet - it's used by some of the internal routines.
+   */
   this.writeOld = function() {
     var bytes = this.writePublicKey();
 
     return String.fromCharCode(0x99) +
       util.writeNumber(bytes.length, 2) +
       bytes;
-  }
+  };
 
   /**
    * Calculates the key id of the key 
@@ -148,7 +165,7 @@ module.exports = function packet_public_key() {
       keyid.read(this.mpi[0].write().substr(-8));
     }
     return keyid;
-  }
+  };
 
   /**
    * Calculates the fingerprint of the key
@@ -166,6 +183,5 @@ module.exports = function packet_public_key() {
       }
       return crypto.hash.md5(toHash)
     }
-  }
-
-}
+  };
+};

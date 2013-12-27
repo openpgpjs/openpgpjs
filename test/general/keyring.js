@@ -6,7 +6,6 @@ unit.register("Keyring testing", function() {
   var keyring = new keyringClass();
   var result = [];
 
-  keyring.init();
   keyring.importKey([
         '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',

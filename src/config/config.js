@@ -15,48 +15,33 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module config/config */
+/**
+ * This object contains configuration values.
+ * @requires enums
+ * @property {Integer} prefer_hash_algorithm
+ * @property {Integer} encryption_cipher
+ * @property {Integer} compression
+ * @property {Boolean} show_version
+ * @property {Boolean} show_comment
+ * @property {Boolean} integrity_protect
+ * @property {String} keyserver
+ * @property {Boolean} debug If enabled, debug messages will be printed
+ * @module config/config
+ */
 
 var enums = require('../enums.js');
 
-/**
- *
- * This object contains configuration values and implements
- * storing and retrieving configuration them from HTML5 local storage.
- *
- * This object can be accessed after calling openpgp.init()
- * using openpgp.config
- * Stored config parameters can be accessed using
- * openpgp.config.config
- * @class
- * @classdesc Implementation of the GPG4Browsers config object
- */
-var config = function() {
-  /**
-   * @property {Integer} prefer_hash_algorithm
-   * @property {Integer} encryption_cipher
-   * @property {Integer} compression
-   * @property {Boolean} show_version
-   * @property {Boolean} show_comment
-   * @property {Boolean} integrity_protect
-   * @property {String} keyserver
-   */
-  this.prefer_hash_algorithm = enums.hash.sha256;
-  this.encryption_cipher = enums.symmetric.aes256;
-  this.compression = enums.compression.zip;
-  this.show_version = true;
-  this.show_comment = true;
-  this.integrity_protect = true;
-  this.keyserver = "keyserver.linux.it"; // "pgp.mit.edu:11371"
+module.exports = {
+  prefer_hash_algorithm: enums.hash.sha256,
+  encryption_cipher: enums.symmetric.aes256,
+  compression: enums.compression.zip,
+  show_version: true,
+  show_comment: true,
+  integrity_protect: true,
+  keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
 
-  this.versionstring = "OpenPGP.js VERSION";
-  this.commentstring = "http://openpgpjs.org";
+  versionstring: "OpenPGP.js VERSION",
+  commentstring: "http://openpgpjs.org",
 
-  /**
-   * If enabled, debug messages will be printed
-   */
-  this.debug = false;
-
+  debug: false
 };
-
-module.exports = new config();

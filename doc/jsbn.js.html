@@ -59,7 +59,10 @@
  */
 
 
-/** @module crypto/public_key/jsbn */
+/**
+ * @requires util
+ * @module crypto/public_key/jsbn
+ */
 
 var util = require('../../util');
 
@@ -70,14 +73,14 @@ var dbits;
 
 // JavaScript engine analysis
 var canary = 0xdeadbeefcafe;
-var j_lm = ((canary &amp; 0xffffff) == 0xefcafe);
+var j_lm = ((canary & 0xffffff) == 0xefcafe);
 
 // (public) Constructor
 
 function BigInteger(a, b, c) {
   if (a != null)
     if ("number" == typeof a) this.fromNumber(a, b, c);
-    else if (b == null &amp;&amp; "string" != typeof a) this.fromString(a, 256);
+    else if (b == null && "string" != typeof a) this.fromString(a, 256);
   else this.fromString(a, b);
 }
 
@@ -100,7 +103,7 @@ function am1(i, x, w, j, c, n) {
   while (--n >= 0) {
     var v = x * this[i++] + w[j] + c;
     c = Math.floor(v / 0x4000000);
-    w[j++] = v &amp; 0x3ffffff;
+    w[j++] = v & 0x3ffffff;
   }
   return c;
 }
@@ -109,15 +112,15 @@ function am1(i, x, w, j, c, n) {
 // on values up to 2*hdvalue^2-hdvalue-1 (&lt; 2^31)
 
 function am2(i, x, w, j, c, n) {
-  var xl = x &amp; 0x7fff,
+  var xl = x & 0x7fff,
     xh = x >> 15;
   while (--n >= 0) {
-    var l = this[i] &amp; 0x7fff;
+    var l = this[i] & 0x7fff;
     var h = this[i++] >> 15;
     var m = xh * l + h * xl;
-    l = xl * l + ((m &amp; 0x7fff) &lt;&lt; 15) + w[j] + (c &amp; 0x3fffffff);
+    l = xl * l + ((m & 0x7fff) &lt;&lt; 15) + w[j] + (c & 0x3fffffff);
     c = (l >>> 30) + (m >>> 15) + xh * h + (c >>> 30);
-    w[j++] = l &amp; 0x3fffffff;
+    w[j++] = l & 0x3fffffff;
   }
   return c;
 }
@@ -125,24 +128,24 @@ function am2(i, x, w, j, c, n) {
 // browsers slow down when dealing with 32-bit numbers.
 
 function am3(i, x, w, j, c, n) {
-  var xl = x &amp; 0x3fff,
+  var xl = x & 0x3fff,
     xh = x >> 14;
   while (--n >= 0) {
-    var l = this[i] &amp; 0x3fff;
+    var l = this[i] & 0x3fff;
     var h = this[i++] >> 14;
     var m = xh * l + h * xl;
-    l = xl * l + ((m &amp; 0x3fff) &lt;&lt; 14) + w[j] + c;
+    l = xl * l + ((m & 0x3fff) &lt;&lt; 14) + w[j] + c;
     c = (l >> 28) + (m >> 14) + xh * h;
-    w[j++] = l &amp; 0xfffffff;
+    w[j++] = l & 0xfffffff;
   }
   return c;
 }
-/*if(j_lm &amp;&amp; (navigator != undefined &amp;&amp; 
+/*if(j_lm && (navigator != undefined && 
 	navigator.appName == "Microsoft Internet Explorer")) {
   BigInteger.prototype.am = am2;
   dbits = 30;
 }
-else if(j_lm &amp;&amp; (navigator != undefined &amp;&amp; navigator.appName != "Netscape")) {*/
+else if(j_lm && (navigator != undefined && navigator.appName != "Netscape")) {*/
 BigInteger.prototype.am = am1;
 dbits = 26;
 /*}
@@ -226,7 +229,7 @@ function bnpFromString(s, b) {
     mi = false,
     sh = 0;
   while (--i >= 0) {
-    var x = (k == 8) ? s[i] &amp; 0xff : intAt(s, i);
+    var x = (k == 8) ? s[i] & 0xff : intAt(s, i);
     if (x &lt; 0) {
       if (s.charAt(i) == "-") mi = true;
       continue;
@@ -235,14 +238,14 @@ function bnpFromString(s, b) {
     if (sh == 0)
       this[this.t++] = x;
     else if (sh + k > this.DB) {
-      this[this.t - 1] |= (x &amp; ((1 &lt;&lt; (this.DB - sh)) - 1)) &lt;&lt; sh;
+      this[this.t - 1] |= (x & ((1 &lt;&lt; (this.DB - sh)) - 1)) &lt;&lt; sh;
       this[this.t++] = (x >> (this.DB - sh));
     } else
       this[this.t - 1] |= x &lt;&lt; sh;
     sh += k;
     if (sh >= this.DB) sh -= this.DB;
   }
-  if (k == 8 &amp;&amp; (s[0] &amp; 0x80) != 0) {
+  if (k == 8 && (s[0] & 0x80) != 0) {
     this.s = -1;
     if (sh > 0) this[this.t - 1] |= ((1 &lt;&lt; (this.DB - sh)) - 1) &lt;&lt; sh;
   }
@@ -253,8 +256,8 @@ function bnpFromString(s, b) {
 // (protected) clamp off excess high words
 
 function bnpClamp() {
-  var c = this.s &amp; this.DM;
-  while (this.t > 0 &amp;&amp; this[this.t - 1] == c)--this.t;
+  var c = this.s & this.DM;
+  while (this.t > 0 && this[this.t - 1] == c)--this.t;
 }
 
 // (public) return string representation in given radix
@@ -274,16 +277,16 @@ function bnToString(b) {
     i = this.t;
   var p = this.DB - (i * this.DB) % k;
   if (i-- > 0) {
-    if (p &lt; this.DB &amp;&amp; (d = this[i] >> p) > 0) {
+    if (p &lt; this.DB && (d = this[i] >> p) > 0) {
       m = true;
       r = int2char(d);
     }
     while (i >= 0) {
       if (p &lt; k) {
-        d = (this[i] &amp; ((1 &lt;&lt; p) - 1)) &lt;&lt; (k - p);
+        d = (this[i] & ((1 &lt;&lt; p) - 1)) &lt;&lt; (k - p);
         d |= this[--i] >> (p += this.DB - k);
       } else {
-        d = (this[i] >> (p -= k)) &amp; km;
+        d = (this[i] >> (p -= k)) & km;
         if (p &lt;= 0) {
           p += this.DB;
           --i;
@@ -354,7 +357,7 @@ function nbits(x) {
 
 function bnBitLength() {
   if (this.t &lt;= 0) return 0;
-  return this.DB * (this.t - 1) + nbits(this[this.t - 1] ^ (this.s &amp; this.DM));
+  return this.DB * (this.t - 1) + nbits(this[this.t - 1] ^ (this.s & this.DM));
 }
 
 // (protected) r = this &lt;&lt; n*DB
@@ -382,11 +385,11 @@ function bnpLShiftTo(n, r) {
   var cbs = this.DB - bs;
   var bm = (1 &lt;&lt; cbs) - 1;
   var ds = Math.floor(n / this.DB),
-    c = (this.s &lt;&lt; bs) &amp; this.DM,
+    c = (this.s &lt;&lt; bs) & this.DM,
     i;
   for (i = this.t - 1; i >= 0; --i) {
     r[i + ds + 1] = (this[i] >> cbs) | c;
-    c = (this[i] &amp; bm) &lt;&lt; bs;
+    c = (this[i] & bm) &lt;&lt; bs;
   }
   for (i = ds - 1; i >= 0; --i) r[i] = 0;
   r[ds] = c;
@@ -409,10 +412,10 @@ function bnpRShiftTo(n, r) {
   var bm = (1 &lt;&lt; bs) - 1;
   r[0] = this[ds] >> bs;
   for (var i = ds + 1; i &lt; this.t; ++i) {
-    r[i - ds - 1] |= (this[i] &amp; bm) &lt;&lt; cbs;
+    r[i - ds - 1] |= (this[i] & bm) &lt;&lt; cbs;
     r[i - ds] = this[i] >> bs;
   }
-  if (bs > 0) r[this.t - ds - 1] |= (this.s &amp; bm) &lt;&lt; cbs;
+  if (bs > 0) r[this.t - ds - 1] |= (this.s & bm) &lt;&lt; cbs;
   r.t = this.t - ds;
   r.clamp();
 }
@@ -425,14 +428,14 @@ function bnpSubTo(a, r) {
     m = Math.min(a.t, this.t);
   while (i &lt; m) {
     c += this[i] - a[i];
-    r[i++] = c &amp; this.DM;
+    r[i++] = c & this.DM;
     c >>= this.DB;
   }
   if (a.t &lt; this.t) {
     c -= a.s;
     while (i &lt; this.t) {
       c += this[i];
-      r[i++] = c &amp; this.DM;
+      r[i++] = c & this.DM;
       c >>= this.DB;
     }
     c += this.s;
@@ -440,7 +443,7 @@ function bnpSubTo(a, r) {
     c += this.s;
     while (i &lt; a.t) {
       c -= a[i];
-      r[i++] = c &amp; this.DM;
+      r[i++] = c & this.DM;
       c >>= this.DB;
     }
     c -= a.s;
@@ -551,7 +554,7 @@ function bnpDivRemTo(m, q, r) {
 function bnMod(a) {
   var r = nbi();
   this.abs().divRemTo(a, null, r);
-  if (this.s &lt; 0 &amp;&amp; r.compareTo(BigInteger.ZERO) > 0) a.subTo(r, r);
+  if (this.s &lt; 0 && r.compareTo(BigInteger.ZERO) > 0) a.subTo(r, r);
   return r;
 }
 
@@ -604,11 +607,11 @@ Classic.prototype.sqrTo = cSqrTo;
 function bnpInvDigit() {
   if (this.t &lt; 1) return 0;
   var x = this[0];
-  if ((x &amp; 1) == 0) return 0;
-  var y = x &amp; 3; // y == 1/x mod 2^2
-  y = (y * (2 - (x &amp; 0xf) * y)) &amp; 0xf; // y == 1/x mod 2^4
-  y = (y * (2 - (x &amp; 0xff) * y)) &amp; 0xff; // y == 1/x mod 2^8
-  y = (y * (2 - (((x &amp; 0xffff) * y) &amp; 0xffff))) &amp; 0xffff; // y == 1/x mod 2^16
+  if ((x & 1) == 0) return 0;
+  var y = x & 3; // y == 1/x mod 2^2
+  y = (y * (2 - (x & 0xf) * y)) & 0xf; // y == 1/x mod 2^4
+  y = (y * (2 - (x & 0xff) * y)) & 0xff; // y == 1/x mod 2^8
+  y = (y * (2 - (((x & 0xffff) * y) & 0xffff))) & 0xffff; // y == 1/x mod 2^16
   // last step - calculate inverse mod DV directly;
   // assumes 16 &lt; DB &lt;= 32 and assumes ability to handle 48-bit ints
   y = (y * (2 - x * y % this.DV)) % this.DV; // y == 1/x mod 2^dbits
@@ -621,7 +624,7 @@ function bnpInvDigit() {
 function Montgomery(m) {
   this.m = m;
   this.mp = m.invDigit();
-  this.mpl = this.mp &amp; 0x7fff;
+  this.mpl = this.mp & 0x7fff;
   this.mph = this.mp >> 15;
   this.um = (1 &lt;&lt; (m.DB - 15)) - 1;
   this.mt2 = 2 * m.t;
@@ -633,7 +636,7 @@ function montConvert(x) {
   var r = nbi();
   x.abs().dlShiftTo(this.m.t, r);
   r.divRemTo(this.m, null, r);
-  if (x.s &lt; 0 &amp;&amp; r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r, r);
+  if (x.s &lt; 0 && r.compareTo(BigInteger.ZERO) > 0) this.m.subTo(r, r);
   return r;
 }
 
@@ -653,8 +656,8 @@ function montReduce(x) {
     x[x.t++] = 0;
   for (var i = 0; i &lt; this.m.t; ++i) {
     // faster way of calculating u0 = x[i]*mp mod DV
-    var j = x[i] &amp; 0x7fff;
-    var u0 = (j * this.mpl + (((j * this.mph + (x[i] >> 15) * this.mpl) &amp; this.um) &lt;&lt; 15)) &amp; x.DM;
+    var j = x[i] & 0x7fff;
+    var u0 = (j * this.mpl + (((j * this.mph + (x[i] >> 15) * this.mpl) & this.um) &lt;&lt; 15)) & x.DM;
     // use am to combine the multiply-shift-add into one call
     j = i + this.m.t;
     x[j] += this.m.am(0, u0, x, i, 0, this.m.t);
@@ -692,7 +695,7 @@ Montgomery.prototype.sqrTo = montSqrTo;
 // (protected) true iff this is even
 
 function bnpIsEven() {
-  return ((this.t > 0) ? (this[0] &amp; 1) : this.s) == 0;
+  return ((this.t > 0) ? (this[0] & 1) : this.s) == 0;
 }
 
 // (protected) this^e, e &lt; 2^32, doing sqr and mul with "r" (HAC 14.79)
@@ -706,7 +709,7 @@ function bnpExp(e, z) {
   g.copyTo(r);
   while (--i >= 0) {
     z.sqrTo(r, r2);
-    if ((e &amp; (1 &lt;&lt; i)) > 0) z.mulTo(r2, g, r);
+    if ((e & (1 &lt;&lt; i)) > 0) z.mulTo(r2, g, r);
     else {
       var t = r;
       r = r2;
@@ -830,7 +833,7 @@ function bnIntValue() {
   } else if (this.t == 1) return this[0];
   else if (this.t == 0) return 0;
   // assumes 16 &lt; DB &lt; 32
-  return ((this[1] &amp; ((1 &lt;&lt; (32 - this.DB)) - 1)) &lt;&lt; this.DB) | this[0];
+  return ((this[1] & ((1 &lt;&lt; (32 - this.DB)) - 1)) &lt;&lt; this.DB) | this[0];
 }
 
 // (public) return value as byte
@@ -855,7 +858,7 @@ function bnpChunkSize(r) {
 
 function bnSigNum() {
   if (this.s &lt; 0) return -1;
-  else if (this.t &lt;= 0 || (this.t == 1 &amp;&amp; this[0] &lt;= 0)) return 0;
+  else if (this.t &lt;= 0 || (this.t == 1 && this[0] &lt;= 0)) return 0;
   else return 1;
 }
 
@@ -891,7 +894,7 @@ function bnpFromRadix(s, b) {
   for (var i = 0; i &lt; s.length; ++i) {
     var x = intAt(s, i);
     if (x &lt; 0) {
-      if (s.charAt(i) == "-" &amp;&amp; this.signum() == 0) mi = true;
+      if (s.charAt(i) == "-" && this.signum() == 0) mi = true;
       continue;
     }
     w = b * w + x;
@@ -928,10 +931,10 @@ function bnpFromNumber(a, b, c) {
   } else {
     // new BigInteger(int,RNG)
     var x = new Array(),
-      t = a &amp; 7;
+      t = a & 7;
     x.length = (a >> 3) + 1;
     b.nextBytes(x);
-    if (t > 0) x[0] &amp;= ((1 &lt;&lt; t) - 1);
+    if (t > 0) x[0] &= ((1 &lt;&lt; t) - 1);
     else x[0] = 0;
     this.fromString(x, 256);
   }
@@ -946,21 +949,21 @@ function bnToByteArray() {
   var p = this.DB - (i * this.DB) % 8,
     d, k = 0;
   if (i-- > 0) {
-    if (p &lt; this.DB &amp;&amp; (d = this[i] >> p) != (this.s &amp; this.DM) >> p)
+    if (p &lt; this.DB && (d = this[i] >> p) != (this.s & this.DM) >> p)
       r[k++] = d | (this.s &lt;&lt; (this.DB - p));
     while (i >= 0) {
       if (p &lt; 8) {
-        d = (this[i] &amp; ((1 &lt;&lt; p) - 1)) &lt;&lt; (8 - p);
+        d = (this[i] & ((1 &lt;&lt; p) - 1)) &lt;&lt; (8 - p);
         d |= this[--i] >> (p += this.DB - 8);
       } else {
-        d = (this[i] >> (p -= 8)) &amp; 0xff;
+        d = (this[i] >> (p -= 8)) & 0xff;
         if (p &lt;= 0) {
           p += this.DB;
           --i;
         }
       }
-      //if((d&amp;0x80) != 0) d |= -256;
-      //if(k == 0 &amp;&amp; (this.s&amp;0x80) != (d&amp;0x80)) ++k;
+      //if((d&0x80) != 0) d |= -256;
+      //if(k == 0 && (this.s&0x80) != (d&0x80)) ++k;
       if (k > 0 || d != this.s) r[k++] = d;
     }
   }
@@ -985,11 +988,11 @@ function bnpBitwiseTo(a, op, r) {
   var i, f, m = Math.min(a.t, this.t);
   for (i = 0; i &lt; m; ++i) r[i] = op(this[i], a[i]);
   if (a.t &lt; this.t) {
-    f = a.s &amp; this.DM;
+    f = a.s & this.DM;
     for (i = m; i &lt; this.t; ++i) r[i] = op(this[i], f);
     r.t = this.t;
   } else {
-    f = this.s &amp; this.DM;
+    f = this.s & this.DM;
     for (i = m; i &lt; a.t; ++i) r[i] = op(f, a[i]);
     r.t = a.t;
   }
@@ -997,10 +1000,10 @@ function bnpBitwiseTo(a, op, r) {
   r.clamp();
 }
 
-// (public) this &amp; a
+// (public) this & a
 
 function op_and(x, y) {
-  return x &amp; y;
+  return x & y;
 }
 
 function bnAnd(a) {
@@ -1033,10 +1036,10 @@ function bnXor(a) {
   return r;
 }
 
-// (public) this &amp; ~a
+// (public) this & ~a
 
 function op_andnot(x, y) {
-  return x &amp; ~y;
+  return x & ~y;
 }
 
 function bnAndNot(a) {
@@ -1049,7 +1052,7 @@ function bnAndNot(a) {
 
 function bnNot() {
   var r = nbi();
-  for (var i = 0; i &lt; this.t; ++i) r[i] = this.DM &amp; ~this[i];
+  for (var i = 0; i &lt; this.t; ++i) r[i] = this.DM & ~this[i];
   r.t = this.t;
   r.s = ~this.s;
   return r;
@@ -1078,23 +1081,23 @@ function bnShiftRight(n) {
 function lbit(x) {
   if (x == 0) return -1;
   var r = 0;
-  if ((x &amp; 0xffff) == 0) {
+  if ((x & 0xffff) == 0) {
     x >>= 16;
     r += 16;
   }
-  if ((x &amp; 0xff) == 0) {
+  if ((x & 0xff) == 0) {
     x >>= 8;
     r += 8;
   }
-  if ((x &amp; 0xf) == 0) {
+  if ((x & 0xf) == 0) {
     x >>= 4;
     r += 4;
   }
-  if ((x &amp; 3) == 0) {
+  if ((x & 3) == 0) {
     x >>= 2;
     r += 2;
   }
-  if ((x &amp; 1) == 0)++r;
+  if ((x & 1) == 0)++r;
   return r;
 }
 
@@ -1112,7 +1115,7 @@ function bnGetLowestSetBit() {
 function cbit(x) {
   var r = 0;
   while (x != 0) {
-    x &amp;= x - 1;
+    x &= x - 1;
     ++r;
   }
   return r;
@@ -1122,7 +1125,7 @@ function cbit(x) {
 
 function bnBitCount() {
   var r = 0,
-    x = this.s &amp; this.DM;
+    x = this.s & this.DM;
   for (var i = 0; i &lt; this.t; ++i) r += cbit(this[i] ^ x);
   return r;
 }
@@ -1132,7 +1135,7 @@ function bnBitCount() {
 function bnTestBit(n) {
   var j = Math.floor(n / this.DB);
   if (j >= this.t) return (this.s != 0);
-  return ((this[j] &amp; (1 &lt;&lt; (n % this.DB))) != 0);
+  return ((this[j] & (1 &lt;&lt; (n % this.DB))) != 0);
 }
 
 // (protected) this op (1&lt;&lt;n)
@@ -1149,7 +1152,7 @@ function bnSetBit(n) {
   return this.changeBit(n, op_or);
 }
 
-// (public) this &amp; ~(1&lt;&lt;n)
+// (public) this & ~(1&lt;&lt;n)
 
 function bnClearBit(n) {
   return this.changeBit(n, op_andnot);
@@ -1169,14 +1172,14 @@ function bnpAddTo(a, r) {
     m = Math.min(a.t, this.t);
   while (i &lt; m) {
     c += this[i] + a[i];
-    r[i++] = c &amp; this.DM;
+    r[i++] = c & this.DM;
     c >>= this.DB;
   }
   if (a.t &lt; this.t) {
     c += a.s;
     while (i &lt; this.t) {
       c += this[i];
-      r[i++] = c &amp; this.DM;
+      r[i++] = c & this.DM;
       c >>= this.DB;
     }
     c += this.s;
@@ -1184,7 +1187,7 @@ function bnpAddTo(a, r) {
     c += this.s;
     while (i &lt; a.t) {
       c += a[i];
-      r[i++] = c &amp; this.DM;
+      r[i++] = c & this.DM;
       c >>= this.DB;
     }
     c += a.s;
@@ -1431,14 +1434,14 @@ function bnModPow(e, m) {
     t;
   i = nbits(e[j]) - 1;
   while (j >= 0) {
-    if (i >= k1) w = (e[j] >> (i - k1)) &amp; km;
+    if (i >= k1) w = (e[j] >> (i - k1)) & km;
     else {
-      w = (e[j] &amp; ((1 &lt;&lt; (i + 1)) - 1)) &lt;&lt; (k1 - i);
+      w = (e[j] & ((1 &lt;&lt; (i + 1)) - 1)) &lt;&lt; (k1 - i);
       if (j > 0) w |= e[j - 1] >> (this.DB + i - k1);
     }
 
     n = k;
-    while ((w &amp; 1) == 0) {
+    while ((w & 1) == 0) {
       w >>= 1;
       --n;
     }
@@ -1464,7 +1467,7 @@ function bnModPow(e, m) {
       z.mulTo(r2, g[w], r);
     }
 
-    while (j >= 0 &amp;&amp; (e[j] &amp; (1 &lt;&lt; i)) == 0) {
+    while (j >= 0 && (e[j] & (1 &lt;&lt; i)) == 0) {
       z.sqrTo(r, r2);
       t = r;
       r = r2;
@@ -1527,7 +1530,7 @@ function bnpModInt(n) {
 
 function bnModInverse(m) {
   var ac = m.isEven();
-  if ((this.isEven() &amp;&amp; ac) || m.signum() == 0) return BigInteger.ZERO;
+  if ((this.isEven() && ac) || m.signum() == 0) return BigInteger.ZERO;
   var u = m.clone(),
     v = this.clone();
   var a = nbv(1),
@@ -1590,7 +1593,7 @@ var lplim = (1 &lt;&lt; 26) / lowprimes[lowprimes.length - 1];
 
 function bnIsProbablePrime(t) {
   var i, x = this.abs();
-  if (x.t == 1 &amp;&amp; x[0] &lt;= lowprimes[lowprimes.length - 1]) {
+  if (x.t == 1 && x[0] &lt;= lowprimes[lowprimes.length - 1]) {
     for (i = 0; i &lt; lowprimes.length; ++i)
       if (x[0] == lowprimes[i]) return true;
     return false;
@@ -1600,7 +1603,7 @@ function bnIsProbablePrime(t) {
   while (i &lt; lowprimes.length) {
     var m = lowprimes[i],
       j = i + 1;
-    while (j &lt; lowprimes.length &amp;&amp; m &lt; lplim) m *= lowprimes[j++];
+    while (j &lt; lowprimes.length && m &lt; lplim) m *= lowprimes[j++];
     m = x.modInt(m);
     while (i &lt; j) if (m % lowprimes[i++] == 0) return false;
   }
@@ -1639,8 +1642,8 @@ function bnToMPI() {
   var ba = this.toByteArray();
   var size = (ba.length - 1) * 8 + nbits(ba[0]);
   var result = "";
-  result += String.fromCharCode((size &amp; 0xFF00) >> 8);
-  result += String.fromCharCode(size &amp; 0xFF);
+  result += String.fromCharCode((size & 0xFF00) >> 8);
+  result += String.fromCharCode(size & 0xFF);
   result += util.bin2str(ba);
   return result;
 }
@@ -1665,9 +1668,9 @@ function bnpMillerRabin(t) {
     bases.push(j);
     a.fromInt(j);
     var y = a.modPow(r, this);
-    if (y.compareTo(BigInteger.ONE) != 0 &amp;&amp; y.compareTo(n1) != 0) {
+    if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
       var j = 1;
-      while (j++ &lt; k &amp;&amp; y.compareTo(n1) != 0) {
+      while (j++ &lt; k && y.compareTo(n1) != 0) {
         y = y.modPowInt(2, this);
         if (y.compareTo(BigInteger.ONE) == 0) return false;
       }
@@ -1742,13 +1745,13 @@ BigInteger.prototype.square = bnSquare;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Dec 26 2013 22:42:51 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

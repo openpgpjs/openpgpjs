@@ -66,7 +66,7 @@ describe('Openpgp integration tests', function() {
         describe('Import key pair', function() {
             it('should work', function(done) {
                 // clear any keypair already in the keychain
-                keyring.init();
+                keyring.clear();
                 keyring.importKey(privkey);
                 keyring.importKey(pubkey);
                 done();

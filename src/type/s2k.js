@@ -15,39 +15,45 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module type/s2k */
+/**
+ * Implementation of the String-to-key specifier (RFC4880 3.7)<br/>
+ * <br/>
+ * String-to-key (S2K) specifiers are used to convert passphrase strings
+ * into symmetric-key encryption/decryption keys.  They are used in two
+ * places, currently: to encrypt the secret part of private keys in the
+ * private keyring, and to convert passphrases to encryption keys for
+ * symmetrically encrypted messages.
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ * @module type/s2k
+ */
 
 var enums = require('../enums.js'),
   util = require('../util'),
   crypto = require('../crypto');
 
 /**
- * @class
- * @classdesc Implementation of the String-to-key specifier (RFC4880 3.7)
- * String-to-key (S2K) specifiers are used to convert passphrase strings
-   into symmetric-key encryption/decryption keys.  They are used in two
-   places, currently: to encrypt the secret part of private keys in the
-   private keyring, and to convert passphrases to encryption keys for
-   symmetrically encrypted messages.
+ * @constructor
  */
 module.exports = function s2k() {
-  /** @type {openpgp.hash} */
+  /** @type {module:enums.hash} */
   this.algorithm = 'sha256';
-  /** @type {module:type/s2k} */
+  /** @type {module:enums.s2k} */
   this.type = 'iterated';
   this.c = 96;
-  /** Eight bytes of salt.
-   * @type {openpgp_byte_array} 
+  /** Eight bytes of salt in a binary string.
+   * @type {String}
    */
   this.salt = crypto.random.getRandomBytes(8);
 
 
-  // Exponen bias, defined in RFC4880
+  // Exponent bias, defined in RFC4880
   var expbias = 6;
 
   this.get_count = function() {
     return (16 + (this.c & 15)) << ((this.c >> 4) + expbias);
-  }
+  };
 
   /**
    * Parsing function for a string-to-key specifier (RFC 4880 3.7).
@@ -97,7 +103,7 @@ module.exports = function s2k() {
     }
 
     return i;
-  }
+  };
 
 
   /**
@@ -118,10 +124,10 @@ module.exports = function s2k() {
         bytes += this.salt;
         bytes += String.fromCharCode(this.c);
         break;
-    };
+    }
 
     return bytes;
-  }
+  };
 
   /**
    * Produces a key using the specified passphrase and the defined 
@@ -158,7 +164,7 @@ module.exports = function s2k() {
             isp = isp.substr(0, count);
 
           return crypto.hash.digest(algorithm, prefix + isp);
-      };
+      }
     }
 
     var result = '',
@@ -170,5 +176,5 @@ module.exports = function s2k() {
     }
 
     return result.substr(0, numBytes);
-  }
-}
+  };
+};

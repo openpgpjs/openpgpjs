@@ -1,12 +1,23 @@
+/**
+ * @requires crypto/hash/sha
+ * @module crypto/hash
+ */
 var sha = require('./sha.js');
 
 module.exports = {
+  /** @see module:crypto/hash/md5 */
   md5: require('./md5.js'),
+  /** @see module:crypto/hash/sha.sha1 */
   sha1: sha.sha1,
-  sha256: sha.sha256,
+  /** @see module:crypto/hash/sha.sha224 */
   sha224: sha.sha224,
+  /** @see module:crypto/hash/sha.sha256 */
+  sha256: sha.sha256,
+  /** @see module:crypto/hash/sha.sha384 */
   sha384: sha.sha384,
+  /** @see module:crypto/hash/sha.sha512 */
   sha512: sha.sha512,
+  /** @see module:crypto/hash/ripe-md */
   ripemd: require('./ripe-md.js'),
 
   /**
@@ -74,5 +85,4 @@ module.exports = {
         throw new Error('Invalid hash algorithm.');
     }
   }
-
 }

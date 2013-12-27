@@ -15,34 +15,36 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/symmetrically_encrypted */
-
-var crypto = require('../crypto');
-
 /**
- * @class
- * @classdesc Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
- * 
+ * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
+ * <br/>
  * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).
+ * @requires crypto
+ * @module packet/symmetrically_encrypted
  */
 
-module.exports = function packet_symmetrically_encrypted() {
+var crypto = require('../crypto');
+
+/**
+ * @constructor
+ */
+module.exports = function () {
   this.encrypted = null;
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
-  this.packets;
+  this.packets =  null;
 
   this.read = function(bytes) {
     this.encrypted = bytes;
-  }
+  };
 
   this.write = function() {
     return this.encrypted;
-  }
+  };
 
   /**
    * Symmetrically decrypt the packet data
@@ -52,19 +54,18 @@ module.exports = function packet_symmetrically_encrypted() {
    * @param {String} key
    *             Key as string with the corresponding length to the
    *            algorithm
-   * @return The decrypted data;
    */
   this.decrypt = function(sessionKeyAlgorithm, key) {
     var decrypted = crypto.cfb.decrypt(
       sessionKeyAlgorithm, key, this.encrypted, true);
 
     this.packets.read(decrypted);
-  }
+  };
 
   this.encrypt = function(algo, key) {
     var data = this.packets.write();
 
     this.encrypted = crypto.cfb.encrypt(
       crypto.getPrefixRandom(algo), algo, data, key, true);
-  }
+  };
 };

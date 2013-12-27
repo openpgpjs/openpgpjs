@@ -1,16 +1,21 @@
-/** @module packet/packetlist */
+/**
+ * This class represents a list of openpgp packets.
+ * Take care when iterating over it - the packets themselves
+ * are stored as numerical indices.
+ * @requires enums
+ * @requires packet
+ * @requires packet/packet
+ * @module packet/packetlist
+ */
 
 var packetParser = require('./packet.js'),
   packets = require('./all_packets.js'),
   enums = require('../enums.js');
 
 /**
- * @class
- * @classdesc This class represents a list of openpgp packets.
- * Take care when iterating over it - the packets themselves
- * are stored as numerical indices.
+ * @constructor
  */
-module.exports = function packetlist() {
+module.exports = packetlist = function () {
   /** The number of packets contained within the list.
    * @readonly
    * @type {Integer} */
@@ -18,7 +23,7 @@ module.exports = function packetlist() {
 
   /**
    * Reads a stream of binary data and interprents it as a list of packets.
-   * @param {openpgp_byte_array} An array of bytes.
+   * @param {String} A binary string of bytes.
    */
   this.read = function(bytes) {
     var i = 0;
@@ -39,7 +44,7 @@ module.exports = function packetlist() {
   /**
    * Creates a binary representation of openpgp objects contained within the
    * class instance.
-   * @returns {openpgp_byte_array} An array of bytes containing valid openpgp packets.
+   * @returns {String} A binary string of bytes containing valid openpgp packets.
    */
   this.write = function() {
     var bytes = '';

@@ -21,7 +21,9 @@
  *   - str_sha512
  */
 
-/** @module crypto/hash/sha */
+/**
+ * @module crypto/hash/sha
+ */
 
 var jsSHA = (function() {
 
@@ -1094,23 +1096,28 @@ var jsSHA = (function() {
 }());
 
 module.exports = {
+  /** SHA1 hash */
   sha1: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-1", "ASCII");
   },
+  /** SHA224 hash */
   sha224: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-224", "ASCII");
   },
+  /** SHA256 hash */
   sha256: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-256", "ASCII");
   },
+  /** SHA384 hash */
   sha384: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-384", "ASCII");
 
   },
+  /** SHA512 hash */
   sha512: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-512", "ASCII");

@@ -18,7 +18,9 @@
  *
  */
 
-/** @module crypto/cipher/twofish */
+/**
+ * @module crypto/cipher/twofish
+ */
 
 
 

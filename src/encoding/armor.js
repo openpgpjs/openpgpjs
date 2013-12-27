@@ -15,11 +15,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module encoding/armor */
+/**
+ * @requires encoding/base64
+ * @requires enums
+ * @requires config
+ * @module encoding/armor
+ */
 
-var base64 = require('./base64.js');
-var enums = require('../enums.js');
-var config = require('../config');
+var base64 = require('./base64.js'),
+  enums = require('../enums.js'),
+  config = require('../config');
 
 /**
  * Finds out which Ascii Armoring type is used. This is an internal function
@@ -32,7 +37,7 @@ var config = require('../config');
  *         5 = PRIVATE KEY BLOCK
  *         null = unknown
  */
-function get_type(text) {
+function getType(text) {
   var reHeader = /^-----([^-]+)-----$\n/m;
 
   var header = text.match(reHeader);
@@ -85,7 +90,7 @@ function get_type(text) {
  * @version 2011-12-16
  * @returns {String} The header information
  */
-function armor_addheader() {
+function addheader() {
   var result = "";
   if (config.show_version) {
     result += "Version: " + config.versionstring + '\r\n';
@@ -201,7 +206,7 @@ function createcrc24(input) {
  * or an object with attribute "headers" containing the headers and
  * and an attribute "body" containing the body.
  */
-function split_headers(text) {
+function splitHeaders(text) {
   var reEmptyLine = /^[\t ]*\n/m;
   var headers = "";
   var body = text;
@@ -223,7 +228,7 @@ function split_headers(text) {
  * or an object with attribute "body" containing the body
  * and an attribute "checksum" containing the checksum.
  */
-function split_checksum(text) {
+function splitChecksum(text) {
   var reChecksumStart = /^=/m;
   var body = text;
   var checksum = "";
@@ -244,13 +249,14 @@ function split_checksum(text) {
  * @param {String} text OpenPGP armored message
  * @returns {Object} An object with attribute "text" containing the message text,
  * an attribute "data" containing the bytes and "type" for the ASCII armor type
+ * @static
  */
 function dearmor(text) {
   var reSplit = /^-----[^-]+-----$\n/m;
 
   text = text.replace(/\r/g, '');
 
-  var type = get_type(text);
+  var type = getType(text);
   if (!type) {
     throw new Error('Unknow ASCII armor type');
   } 
@@ -269,8 +275,8 @@ function dearmor(text) {
   }
 
   if (type != 2) {
-    var msg = split_headers(splittext[indexBase]);
-    var msg_sum = split_checksum(msg.body);
+    var msg = splitHeaders(splittext[indexBase]);
+    var msg_sum = splitChecksum(msg.body);
 
     result = {
       data: base64.decode(msg_sum.body),
@@ -280,9 +286,9 @@ function dearmor(text) {
     checksum = msg_sum.checksum;
   } else {
     // Reverse dash-escaping for msg and remove trailing whitespace at end of line
-    var msg = split_headers(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
-    var sig = split_headers(splittext[indexBase + 1].replace(/^- /mg, ''));
-    var sig_sum = split_checksum(sig.body);
+    var msg = splitHeaders(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
+    var sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
+    var sig_sum = splitChecksum(sig.body);
 
     result = {
       text:  msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
@@ -311,20 +317,21 @@ function dearmor(text) {
  * @param {Integer} partindex
  * @param {Integer} parttotal
  * @returns {String} Armored text
+ * @static
  */
 function armor(messagetype, body, partindex, parttotal) {
   var result = "";
   switch (messagetype) {
     case enums.armor.multipart_section:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body);
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       break;
     case enums.armor.mutlipart_last:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body);
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "-----\r\n";
@@ -334,28 +341,28 @@ function armor(messagetype, body, partindex, parttotal) {
       result += "Hash: " + body.hash + "\r\n\r\n";
       result += body.text.replace(/\n-/g, "\n- -");
       result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body.data);
       result += "\r\n=" + getCheckSum(body.data) + "\r\n";
       result += "-----END PGP SIGNATURE-----\r\n";
       break;
     case enums.armor.message:
       result += "-----BEGIN PGP MESSAGE-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body);
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE-----\r\n";
       break;
     case enums.armor.public_key:
       result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body);
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
       break;
     case enums.armor.private_key:
       result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-      result += armor_addheader();
+      result += addheader();
       result += base64.encode(body);
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";

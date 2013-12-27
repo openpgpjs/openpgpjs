@@ -15,19 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/public_key_encrypted_session_key */
-
-var type_keyid = require('../type/keyid.js'),
-  util = require('../util'),
-  type_mpi = require('../type/mpi.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto');
-
-
 /**
- * @class
- * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
- * 
+ * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
+ * <br/>
  * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
@@ -39,8 +29,24 @@ var type_keyid = require('../type/keyid.js'),
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
+ * @requires crypto
+ * @requires enums
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires util
+ * @module packet/public_key_encrypted_session_key
  */
-module.exports = function packet_public_key_encrypted_session_key() {
+
+var type_keyid = require('../type/keyid.js'),
+  util = require('../util'),
+  type_mpi = require('../type/mpi.js'),
+  enums = require('../enums.js'),
+  crypto = require('../crypto');
+
+/**
+ * @constructor
+ */
+module.exports = function () {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
@@ -90,7 +96,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
       i += mpi.read(bytes.substr(i));
       this.encrypted.push(mpi);
     }
-  }
+  };
 
   /**
    * Create a string representation of a tag 1 packet
@@ -122,7 +128,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
     }
 
     return result;
-  }
+  };
 
   this.encrypt = function(key) {
     var data = String.fromCharCode(
@@ -141,7 +147,7 @@ module.exports = function packet_public_key_encrypted_session_key() {
       this.publicKeyAlgorithm,
       key.mpi,
       mpi);
-  }
+  };
 
   /**
    * Decrypts the session key (only for public key encrypted session key
@@ -172,5 +178,5 @@ module.exports = function packet_public_key_encrypted_session_key() {
       this.sessionKeyAlgorithm =
         enums.read(enums.symmetric, decoded.charCodeAt(0));
     }
-  }
+  };
 };

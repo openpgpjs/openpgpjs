@@ -11,7 +11,10 @@
  * materials provided with the application or distribution.
  */
 
-/** @module crypto/cipher/aes */
+/**
+ * @requires util
+ * @module crypto/cipher/aes
+ */
 
 var util = require('../../util');
 

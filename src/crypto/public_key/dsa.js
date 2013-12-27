@@ -17,12 +17,19 @@
 //
 // A Digital signature algorithm implementation
 
-/** @module crypto/public_key/dsa */
+/**
+ * @requires crypto/hash
+ * @requires crypto/public_key/jsbn
+ * @requires crypto/random
+ * @requires util
+ * @module crypto/public_key/dsa
+ */
 
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   hashModule = require('../hash'),
-  util = require('../../util');
+  util = require('../../util'),
+  config = require('../../config');
 
 function DSA() {
   // s1 = ((g**s) mod p) mod q
@@ -45,7 +52,7 @@ function DSA() {
   }
 
   function select_hash_algorithm(q) {
-    var usersetting = openpgp.config.config.prefer_hash_algorithm;
+    var usersetting = config.prefer_hash_algorithm;
     /*
      * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
      * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash

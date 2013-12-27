@@ -25,12 +25,15 @@
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>/** @module enums */
+            <pre class="prettyprint source"><code>/**
+ * @module enums
+ */
 
 module.exports = {
 
   /** A string to key specifier type
    * @enum {Integer}
+   * @readonly
    */
   s2k: {
     simple: 0,
@@ -41,6 +44,7 @@ module.exports = {
 
   /** RFC4880, section 9.1
    * @enum {Integer}
+   * @readonly
    */
   publicKey: {
     rsa_encrypt_sign: 1,
@@ -52,6 +56,7 @@ module.exports = {
 
   /** RFC4880, section 9.2
    * @enum {Integer}
+   * @readonly
    */
   symmetric: {
     plaintext: 0,
@@ -68,6 +73,7 @@ module.exports = {
 
   /** RFC4880, section 9.3
    * @enum {Integer}
+   * @readonly
    */
   compression: {
     uncompressed: 0,
@@ -80,6 +86,7 @@ module.exports = {
 
   /** RFC4880, section 9.4
    * @enum {Integer}
+   * @readonly
    */
   hash: {
     md5: 1,
@@ -91,9 +98,9 @@ module.exports = {
     sha224: 11
   },
 
-
   /** A list of packet types and numeric tags associated with them.
    * @enum {Integer}
+   * @readonly
    */
   packet: {
     public_key_encrypted_session_key: 1,
@@ -115,9 +122,9 @@ module.exports = {
     modification_detection_code: 19
   },
 
-
   /** Data types in the literal packet
    * @enum {Integer}
+   * @readonly
    */
   literal: {
     /** Binary data 'b' */
@@ -131,41 +138,42 @@ module.exports = {
 
   /** One pass signature packet type
    * @enum {Integer}
+   * @readonly
    */
   signature: {
     /** 0x00: Signature of a binary document. */
     binary: 0,
-    /** 0x01: Signature of a canonical text document.
+    /** 0x01: Signature of a canonical text document.&lt;br/>
      * Canonicalyzing the document by converting line endings. */
     text: 1,
-    /** 0x02: Standalone signature.
+    /** 0x02: Standalone signature.&lt;br/>
      * This signature is a signature of only its own subpacket contents.
      * It is calculated identically to a signature over a zero-lengh
      * binary document.  Note that it doesn't make sense to have a V3
      * standalone signature. */
     standalone: 2,
-    /** 0x10: Generic certification of a User ID and Public-Key packet.
+    /** 0x10: Generic certification of a User ID and Public-Key packet.&lt;br/>
      * The issuer of this certification does not make any particular
      * assertion as to how well the certifier has checked that the owner
      * of the key is in fact the person described by the User ID. */
     cert_generic: 16,
-    /** 0x11: Persona certification of a User ID and Public-Key packet.
+    /** 0x11: Persona certification of a User ID and Public-Key packet.&lt;br/>
      * The issuer of this certification has not done any verification of
      * the claim that the owner of this key is the User ID specified. */
     cert_persona: 17,
-    /** 0x12: Casual certification of a User ID and Public-Key packet.
+    /** 0x12: Casual certification of a User ID and Public-Key packet.&lt;br/>
      * The issuer of this certification has done some casual
      * verification of the claim of identity. */
     cert_casual: 18,
-    /** 0x13: Positive certification of a User ID and Public-Key packet.
+    /** 0x13: Positive certification of a User ID and Public-Key packet.&lt;br/>
      * The issuer of this certification has done substantial
-     * verification of the claim of identity.
-     * 
+     * verification of the claim of identity.&lt;br/>
+     * &lt;br/>
      * Most OpenPGP implementations make their "key signatures" as 0x10
      * certifications.  Some implementations can issue 0x11-0x13
      * certifications, but few differentiate between the types. */
     cert_positive: 19,
-    /** 0x30: Certification revocation signature
+    /** 0x30: Certification revocation signature&lt;br/>
      * This signature revokes an earlier User ID certification signature
      * (signature class 0x10 through 0x13) or direct-key signature
      * (0x1F).  It should be issued by the same key that issued the
@@ -174,7 +182,7 @@ module.exports = {
      * revokes, and should have a later creation date than that
      * certificate. */
     cert_revocation: 48,
-    /** 0x18: Subkey Binding Signature
+    /** 0x18: Subkey Binding Signature&lt;br/>
      * This signature is a statement by the top-level signing key that
      * indicates that it owns the subkey.  This signature is calculated
      * directly on the primary key and subkey, and not on any User ID or
@@ -183,12 +191,12 @@ module.exports = {
      * contains a 0x19 signature made by the signing subkey on the
      * primary key and subkey. */
     subkey_binding: 24,
-    /** 0x19: Primary Key Binding Signature
+    /** 0x19: Primary Key Binding Signature&lt;br/>
      * This signature is a statement by a signing subkey, indicating
      * that it is owned by the primary key and subkey.  This signature
      * is calculated the same way as a 0x18 signature: directly on the
-     * primary key and subkey, and not on any User ID or other packets.
-
+     * primary key and subkey, and not on any User ID or other packets.&lt;br/>
+     * &lt;br/>
      * When a signature is made over a key, the hash data starts with the
      * octet 0x99, followed by a two-octet length of the key, and then body
      * of the key packet.  (Note that this is an old-style packet header for
@@ -197,7 +205,7 @@ module.exports = {
      * the subkey using the same format as the main key (also using 0x99 as
      * the first octet). */
     key_binding: 25,
-    /** 0x1F: Signature directly on a key
+    /** 0x1F: Signature directly on a key&lt;br/>
      * This signature is calculated directly on a key.  It binds the
      * information in the Signature subpackets to the key, and is
      * appropriate to be used for subpackets that provide information
@@ -206,26 +214,27 @@ module.exports = {
      * about the key itself, rather than the binding between a key and a
      * name. */
     key: 31,
-    /** 0x20: Key revocation signature
+    /** 0x20: Key revocation signature&lt;br/>
      * The signature is calculated directly on the key being revoked.  A
      * revoked key is not to be used.  Only revocation signatures by the
      * key being revoked, or by an authorized revocation key, should be
      * considered valid revocation signatures.a */
     key_revocation: 32,
-    /** 0x28: Subkey revocation signature
+    /** 0x28: Subkey revocation signature&lt;br/>
      * The signature is calculated directly on the subkey being revoked.
      * A revoked subkey is not to be used.  Only revocation signatures
      * by the top-level signature key that is bound to this subkey, or
      * by an authorized revocation key, should be considered valid
-     * revocation signatures.
+     * revocation signatures.&lt;br/>
+     * &lt;br/>
      * Key revocation signatures (types 0x20 and 0x28)
      * hash only the key being revoked. */
     subkey_revocation: 40,
-    /** 0x40: Timestamp signature.
+    /** 0x40: Timestamp signature.&lt;br/>
      * This signature is only meaningful for the timestamp contained in
      * it. */
     timestamp: 64,
-    /**    0x50: Third-Party Confirmation signature.
+    /** 0x50: Third-Party Confirmation signature.&lt;br/>
      * This signature is a signature over some other OpenPGP Signature
      * packet(s).  It is analogous to a notary seal on the signed data.
      * A third-party signature SHOULD include Signature Target
@@ -238,6 +247,7 @@ module.exports = {
 
   /** Signature subpacket type
    * @enum {Integer}
+   * @readonly
    */
   signatureSubpacket: {
     signature_creation_time: 2,
@@ -268,28 +278,30 @@ module.exports = {
 
   /** Key flags
    * @enum {Integer}
+   * @readonly
    */
   keyFlags: {
-    // 0x01 - This key may be used to certify other keys.
+    /** 0x01 - This key may be used to certify other keys. */
     certify_keys: 1,
-    // 0x02 - This key may be used to sign data.
+    /** 0x02 - This key may be used to sign data. */
     sign_data: 2,
-    // 0x04 - This key may be used to encrypt communications.
+    /** 0x04 - This key may be used to encrypt communications. */
     encrypt_communication: 4,
-    // 0x08 - This key may be used to encrypt storage.
+    /** 0x08 - This key may be used to encrypt storage. */
     encrypt_storage: 8,
-    // 0x10 - The private component of this key may have been split
-    //        by a secret-sharing mechanism.
+    /** 0x10 - The private component of this key may have been split
+     *        by a secret-sharing mechanism. */
     split_private_key: 16,
-    // 0x20 - This key may be used for authentication.
+    /** 0x20 - This key may be used for authentication. */
     authentication: 32,
-    // 0x80 - The private component of this key may be in the
-    //        possession of more than one person.
+    /** 0x80 - The private component of this key may be in the
+     *        possession of more than one person. */
     shared_private_key: 128
   },
 
   /** Key status
    * @enum {Integer}
+   * @readonly
    */
   keyStatus: {
     invalid:      0,
@@ -301,6 +313,7 @@ module.exports = {
 
   /** Armor type
    * @enum {Integer}
+   * @readonly
    */
   armor: {
     multipart_section: 0,
@@ -339,13 +352,13 @@ module.exports = {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Dec 26 2013 22:42:51 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

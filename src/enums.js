@@ -1,9 +1,12 @@
-/** @module enums */
+/**
+ * @module enums
+ */
 
 module.exports = {
 
   /** A string to key specifier type
    * @enum {Integer}
+   * @readonly
    */
   s2k: {
     simple: 0,
@@ -14,6 +17,7 @@ module.exports = {
 
   /** RFC4880, section 9.1
    * @enum {Integer}
+   * @readonly
    */
   publicKey: {
     rsa_encrypt_sign: 1,
@@ -25,6 +29,7 @@ module.exports = {
 
   /** RFC4880, section 9.2
    * @enum {Integer}
+   * @readonly
    */
   symmetric: {
     plaintext: 0,
@@ -41,6 +46,7 @@ module.exports = {
 
   /** RFC4880, section 9.3
    * @enum {Integer}
+   * @readonly
    */
   compression: {
     uncompressed: 0,
@@ -53,6 +59,7 @@ module.exports = {
 
   /** RFC4880, section 9.4
    * @enum {Integer}
+   * @readonly
    */
   hash: {
     md5: 1,
@@ -64,9 +71,9 @@ module.exports = {
     sha224: 11
   },
 
-
   /** A list of packet types and numeric tags associated with them.
    * @enum {Integer}
+   * @readonly
    */
   packet: {
     public_key_encrypted_session_key: 1,
@@ -88,9 +95,9 @@ module.exports = {
     modification_detection_code: 19
   },
 
-
   /** Data types in the literal packet
    * @enum {Integer}
+   * @readonly
    */
   literal: {
     /** Binary data 'b' */
@@ -104,41 +111,42 @@ module.exports = {
 
   /** One pass signature packet type
    * @enum {Integer}
+   * @readonly
    */
   signature: {
     /** 0x00: Signature of a binary document. */
     binary: 0,
-    /** 0x01: Signature of a canonical text document.
+    /** 0x01: Signature of a canonical text document.<br/>
      * Canonicalyzing the document by converting line endings. */
     text: 1,
-    /** 0x02: Standalone signature.
+    /** 0x02: Standalone signature.<br/>
      * This signature is a signature of only its own subpacket contents.
      * It is calculated identically to a signature over a zero-lengh
      * binary document.  Note that it doesn't make sense to have a V3
      * standalone signature. */
     standalone: 2,
-    /** 0x10: Generic certification of a User ID and Public-Key packet.
+    /** 0x10: Generic certification of a User ID and Public-Key packet.<br/>
      * The issuer of this certification does not make any particular
      * assertion as to how well the certifier has checked that the owner
      * of the key is in fact the person described by the User ID. */
     cert_generic: 16,
-    /** 0x11: Persona certification of a User ID and Public-Key packet.
+    /** 0x11: Persona certification of a User ID and Public-Key packet.<br/>
      * The issuer of this certification has not done any verification of
      * the claim that the owner of this key is the User ID specified. */
     cert_persona: 17,
-    /** 0x12: Casual certification of a User ID and Public-Key packet.
+    /** 0x12: Casual certification of a User ID and Public-Key packet.<br/>
      * The issuer of this certification has done some casual
      * verification of the claim of identity. */
     cert_casual: 18,
-    /** 0x13: Positive certification of a User ID and Public-Key packet.
+    /** 0x13: Positive certification of a User ID and Public-Key packet.<br/>
      * The issuer of this certification has done substantial
-     * verification of the claim of identity.
-     * 
+     * verification of the claim of identity.<br/>
+     * <br/>
      * Most OpenPGP implementations make their "key signatures" as 0x10
      * certifications.  Some implementations can issue 0x11-0x13
      * certifications, but few differentiate between the types. */
     cert_positive: 19,
-    /** 0x30: Certification revocation signature
+    /** 0x30: Certification revocation signature<br/>
      * This signature revokes an earlier User ID certification signature
      * (signature class 0x10 through 0x13) or direct-key signature
      * (0x1F).  It should be issued by the same key that issued the
@@ -147,7 +155,7 @@ module.exports = {
      * revokes, and should have a later creation date than that
      * certificate. */
     cert_revocation: 48,
-    /** 0x18: Subkey Binding Signature
+    /** 0x18: Subkey Binding Signature<br/>
      * This signature is a statement by the top-level signing key that
      * indicates that it owns the subkey.  This signature is calculated
      * directly on the primary key and subkey, and not on any User ID or
@@ -156,12 +164,12 @@ module.exports = {
      * contains a 0x19 signature made by the signing subkey on the
      * primary key and subkey. */
     subkey_binding: 24,
-    /** 0x19: Primary Key Binding Signature
+    /** 0x19: Primary Key Binding Signature<br/>
      * This signature is a statement by a signing subkey, indicating
      * that it is owned by the primary key and subkey.  This signature
      * is calculated the same way as a 0x18 signature: directly on the
-     * primary key and subkey, and not on any User ID or other packets.
-
+     * primary key and subkey, and not on any User ID or other packets.<br/>
+     * <br/>
      * When a signature is made over a key, the hash data starts with the
      * octet 0x99, followed by a two-octet length of the key, and then body
      * of the key packet.  (Note that this is an old-style packet header for
@@ -170,7 +178,7 @@ module.exports = {
      * the subkey using the same format as the main key (also using 0x99 as
      * the first octet). */
     key_binding: 25,
-    /** 0x1F: Signature directly on a key
+    /** 0x1F: Signature directly on a key<br/>
      * This signature is calculated directly on a key.  It binds the
      * information in the Signature subpackets to the key, and is
      * appropriate to be used for subpackets that provide information
@@ -179,26 +187,27 @@ module.exports = {
      * about the key itself, rather than the binding between a key and a
      * name. */
     key: 31,
-    /** 0x20: Key revocation signature
+    /** 0x20: Key revocation signature<br/>
      * The signature is calculated directly on the key being revoked.  A
      * revoked key is not to be used.  Only revocation signatures by the
      * key being revoked, or by an authorized revocation key, should be
      * considered valid revocation signatures.a */
     key_revocation: 32,
-    /** 0x28: Subkey revocation signature
+    /** 0x28: Subkey revocation signature<br/>
      * The signature is calculated directly on the subkey being revoked.
      * A revoked subkey is not to be used.  Only revocation signatures
      * by the top-level signature key that is bound to this subkey, or
      * by an authorized revocation key, should be considered valid
-     * revocation signatures.
+     * revocation signatures.<br/>
+     * <br/>
      * Key revocation signatures (types 0x20 and 0x28)
      * hash only the key being revoked. */
     subkey_revocation: 40,
-    /** 0x40: Timestamp signature.
+    /** 0x40: Timestamp signature.<br/>
      * This signature is only meaningful for the timestamp contained in
      * it. */
     timestamp: 64,
-    /**    0x50: Third-Party Confirmation signature.
+    /** 0x50: Third-Party Confirmation signature.<br/>
      * This signature is a signature over some other OpenPGP Signature
      * packet(s).  It is analogous to a notary seal on the signed data.
      * A third-party signature SHOULD include Signature Target
@@ -211,6 +220,7 @@ module.exports = {
 
   /** Signature subpacket type
    * @enum {Integer}
+   * @readonly
    */
   signatureSubpacket: {
     signature_creation_time: 2,
@@ -241,28 +251,30 @@ module.exports = {
 
   /** Key flags
    * @enum {Integer}
+   * @readonly
    */
   keyFlags: {
-    // 0x01 - This key may be used to certify other keys.
+    /** 0x01 - This key may be used to certify other keys. */
     certify_keys: 1,
-    // 0x02 - This key may be used to sign data.
+    /** 0x02 - This key may be used to sign data. */
     sign_data: 2,
-    // 0x04 - This key may be used to encrypt communications.
+    /** 0x04 - This key may be used to encrypt communications. */
     encrypt_communication: 4,
-    // 0x08 - This key may be used to encrypt storage.
+    /** 0x08 - This key may be used to encrypt storage. */
     encrypt_storage: 8,
-    // 0x10 - The private component of this key may have been split
-    //        by a secret-sharing mechanism.
+    /** 0x10 - The private component of this key may have been split
+     *        by a secret-sharing mechanism. */
     split_private_key: 16,
-    // 0x20 - This key may be used for authentication.
+    /** 0x20 - This key may be used for authentication. */
     authentication: 32,
-    // 0x80 - The private component of this key may be in the
-    //        possession of more than one person.
+    /** 0x80 - The private component of this key may be in the
+     *        possession of more than one person. */
     shared_private_key: 128
   },
 
   /** Key status
    * @enum {Integer}
+   * @readonly
    */
   keyStatus: {
     invalid:      0,
@@ -274,6 +286,7 @@ module.exports = {
 
   /** Armor type
    * @enum {Integer}
+   * @readonly
    */
   armor: {
     multipart_section: 0,

@@ -15,38 +15,47 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/compressed */
+/**
+ * Implementation of the Compressed Data Packet (Tag 8)<br/>
+ * <br/>
+ * RFC4880 5.6: The Compressed Data packet contains compressed data.  Typically,
+ * this packet is found as the contents of an encrypted packet, or following
+ * a Signature or One-Pass Signature packet, and contains a literal data packet.
+ * @requires compression/jxg
+ * @requires encoding/base64
+ * @requires enums
+ * @module packet/compressed
+ */
 
 var enums = require('../enums.js'),
   JXG = require('../compression/jxg.js'),
   base64 = require('../encoding/base64.js');
 
 /**
- * @class
- * @classdesc Implementation of the Compressed Data Packet (Tag 8)
- * 
- * RFC4880 5.6:
- * The Compressed Data packet contains compressed data.  Typically, this
- * packet is found as the contents of an encrypted packet, or following
- * a Signature or One-Pass Signature packet, and contains a literal data
- * packet.
+ * @constructor
  */
-module.exports = function packet_compressed() {
-  /** @type {module:packet/packetlist} */
-  this.packets;
-  /** @type {compression} */
+module.exports = function () {
+  /**
+   * List of packets
+   * @type {module:packet/packetlist}
+   */
+  this.packets = null;
+  /**
+   * Compression algorithm
+   * @type {compression}
+   */
   this.algorithm = 'uncompressed';
 
+  /**
+   * Compressed packet data
+   * @type {String}
+   */
   this.compressed = null;
 
 
   /**
    * Parsing function for the packet.
-   * @param {String} input Payload of a tag 8 packet
-   * @param {Integer} position Position to start reading from the input string
-   * @param {Integer} len length of the packet or the remaining length of 
-   * input at position
-   * @return {module:packet/compressed} Object representation
+   * @param {String} bytes Payload of a tag 8 packet
    */
   this.read = function(bytes) {
     // One octet that gives the algorithm used to compress the packet.
@@ -60,6 +69,10 @@ module.exports = function packet_compressed() {
 
 
 
+  /**
+   * Return the compressed packet.
+   * @return {String} binary compressed packet
+   */
   this.write = function() {
     if (this.compressed == null)
       this.compress();
@@ -71,7 +84,6 @@ module.exports = function packet_compressed() {
   /**
    * Decompression method for decompressing the compressed data
    * read by read_packet
-   * @return {String} The decompressed data
    */
   this.decompress = function() {
     var decompressed;
@@ -128,9 +140,6 @@ module.exports = function packet_compressed() {
 
   /**
    * Compress the packet data (member decompressedData)
-   * @param {Integer} type Algorithm to be used // See RFC 4880 9.3
-   * @param {String} data Data to be compressed
-   * @return {String} The compressed data stored in attribute compressedData
    */
   this.compress = function() {
     switch (this.algorithm) {

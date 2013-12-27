@@ -17,7 +17,12 @@
 //
 // RSA implementation
 
-/** @module crypto/public_key/rsa */
+/**
+ * @requires crypto/public_key/jsbn
+ * @requires crypto/random
+ * @requires util
+ * @module crypto/public_key/rsa
+ */
 
 var BigInteger = require('./jsbn.js'),
   util = require('../../util'),

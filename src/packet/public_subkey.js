@@ -15,10 +15,17 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/public_subkey */
+/**
+ * @requires packet/public_key
+ * @module packet/public_subkey
+ */
 
-var public_key = require('./public_key.js');
+var publicKey = require('./public_key.js');
 
-module.exports = function public_subkey() {
-  public_key.call(this);
+/**
+ * @constructor
+ * @extends module:packet/public_key
+ */
+module.exports = function () {
+  publicKey.call(this);
 }

@@ -15,7 +15,21 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/signature */
+/**
+ * Implementation of the Signature Packet (Tag 2)<br/>
+ * <br/>
+ * RFC4480 5.2:
+ * A Signature packet describes a binding between some public key and
+ * some data.  The most common signatures are a signature of a file or a
+ * block of text, and a signature that is a certification of a User ID.
+ * @requires crypto
+ * @requires enums
+ * @requires packet/packet
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires util
+ * @module packet/signature
+ */
 
 var util = require('../util'),
   packet = require('./packet.js'),
@@ -25,15 +39,9 @@ var util = require('../util'),
   type_keyid = require('../type/keyid.js');
 
 /**
- * @class
- * @classdesc Implementation of the Signature Packet (Tag 2)
- * 
- * RFC4480 5.2:
- * A Signature packet describes a binding between some public key and
- * some data.  The most common signatures are a signature of a file or a
- * block of text, and a signature that is a certification of a User ID.
+ * @constructor
  */
-module.exports = function packet_signature() {
+module.exports = packetSignature = function () {
 
   this.version = 4;
   this.signatureType = null;
@@ -94,7 +102,7 @@ module.exports = function packet_signature() {
       case 3:
         // One-octet length of following hashed material. MUST be 5.
         if (bytes.charCodeAt(i++) != 5)
-          util.print_debug("openpgp.packet.signature.js\n" +
+          util.print_debug("packet/signature.js\n" +
             'invalid One-octet length of following hashed material.' +
             'MUST be 5. @:' + (i - 1));
 
@@ -491,7 +499,7 @@ module.exports = function packet_signature() {
         break;
       case 32:
         // Embedded Signature
-        this.embeddedSignature = new packet_signature();
+        this.embeddedSignature = new packetSignature();
         this.embeddedSignature.read(bytes.substr(mypos));
         break;
       default:

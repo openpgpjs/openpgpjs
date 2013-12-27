@@ -1,4 +1,8 @@
-/** @module crypto/signature */
+/**
+ * @requires crypto/hash
+ * @requires crypto/pkcs1
+ * @requires crypto/public_key
+ * @module crypto/signature */
 
 var publicKey = require('./public_key'),
   pkcs1 = require('./pkcs1.js'),
