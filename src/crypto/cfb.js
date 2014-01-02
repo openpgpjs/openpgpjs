@@ -52,8 +52,9 @@ module.exports = {
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
     util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
     var ciphertext = "";
+    var i;
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
-    for (var i = 0; i < block_size; i++) FR[i] = 0;
+    for (i = 0; i < block_size; i++) FR[i] = 0;
 
     // 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
     //     encryption of an all-zero value.
@@ -61,13 +62,13 @@ module.exports = {
     // 3.  FRE is xored with the first BS octets of random data prefixed to
     //     the plaintext to produce C[1] through C[BS], the first BS octets
     //     of ciphertext.
-    for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+    for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
 
     // 4.  FR is loaded with C[1] through C[BS].
-    for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+    for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
 
     // 5.  FR is encrypted to produce FRE, the encryption of the first BS
-    // 	   octets of ciphertext.
+    //     octets of ciphertext.
     FRE = cipherfn.encrypt(FR);
 
     // 6.  The left two octets of FRE get xored with the next two octets of
@@ -78,22 +79,22 @@ module.exports = {
 
     if (resync) {
       // 7.  (The resync step) FR is loaded with C3-C10.
-      for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i + 2);
+      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i + 2);
     } else {
-      for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
     }
     // 8.  FR is encrypted to produce FRE.
     FRE = cipherfn.encrypt(FR, key);
 
     if (resync) {
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //	   that we have finished encrypting the 10 octets of prefixed data.
-      // 	   This produces C11-C18, the next 8 octets of ciphertext.
-      for (var i = 0; i < block_size; i++)
+      //     that we have finished encrypting the 10 octets of prefixed data.
+      //     This produces C11-C18, the next 8 octets of ciphertext.
+      for (i = 0; i < block_size; i++)
         ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       for (n = block_size + 2; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n + i);
+        for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n + i);
 
         // 11. FR is encrypted to produce FRE.
         FRE = cipherfn.encrypt(FR);
@@ -101,20 +102,20 @@ module.exports = {
         // 12. FRE is xored with the next 8 octets of plaintext, to produce the
         // next 8 octets of ciphertext.  These are loaded into FR and the
         // process is repeated until the plaintext is used up.
-        for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) +
+        for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) +
             i));
       }
     } else {
       plaintext = "  " + plaintext;
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //	   that we have finished encrypting the 10 octets of prefixed data.
-      // 	   This produces C11-C18, the next 8 octets of ciphertext.
-      for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+      //     that we have finished encrypting the 10 octets of prefixed data.
+      //     This produces C11-C18, the next 8 octets of ciphertext.
+      for (i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       var tempCiphertext = ciphertext.substring(0, 2 * block_size).split('');
       var tempCiphertextString = ciphertext.substring(block_size);
       for (n = block_size; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (var i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
+        for (i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
         tempCiphertextString = '';
 
         // 11. FR is encrypted to produce FRE.
@@ -123,13 +124,12 @@ module.exports = {
         // 12. FRE is xored with the next 8 octets of plaintext, to produce the
         //     next 8 octets of ciphertext.  These are loaded into FR and the
         //     process is repeated until the plaintext is used up.
-        for (var i = 0; i < block_size; i++) {
+        for (i = 0; i < block_size; i++) {
           tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i)));
           tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
         }
       }
       ciphertext = tempCiphertext.join('');
-
     }
 
     ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
@@ -239,7 +239,7 @@ module.exports = {
       }
     }
 
-    var n = resync ? 0 : 2;
+    n = resync ? 0 : 2;
 
     text = text.join('');
 
@@ -281,14 +281,15 @@ module.exports = {
     var pos = 0;
     var plaintext = [];
     var offset = 0;
-    if (iv == null)
-      for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
+    var i;
+    if (iv === null)
+      for (i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
     else
       blockp = iv.substring(0, block_size);
     while (ciphertext.length > (block_size * pos)) {
       var decblock = cipherfn.encrypt(util.str2bin(blockp));
       blockp = ciphertext.substring((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
-      for (var i = 0; i < blockp.length; i++) {
+      for (i = 0; i < blockp.length; i++) {
         plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
       }
       pos++;
@@ -296,4 +297,4 @@ module.exports = {
 
     return plaintext.join('');
   }
-}
+};

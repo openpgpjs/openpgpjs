@@ -2,7 +2,7 @@ JXG = {
   exists: (function(undefined) {
     return function(v) {
       return !(v === undefined || v === null);
-    }
+    };
   })()
 };
 JXG.decompress = function(str) {
@@ -142,24 +142,24 @@ JXG.Util.Unzip = function(barray) {
       return bA[bytepos++];
     } else
       return -1;
-  };
+  }
 
   function byteAlign() {
     bb = 1;
-  };
+  }
 
   function readBit() {
     var carry;
     bits++;
     carry = (bb & 1);
     bb >>= 1;
-    if (bb == 0) {
+    if (bb === 0) {
       bb = readByte();
       carry = (bb & 1);
       bb = (bb >> 1) | 0x80;
     }
     return carry;
-  };
+  }
 
   function readBits(a) {
     var res = 0,
@@ -172,12 +172,12 @@ JXG.Util.Unzip = function(barray) {
       res = bitReverse[res] >> (8 - a);
     }
     return res;
-  };
+  }
 
   function flushBuffer() {
     //document.write('FLUSHBUFFER:'+buf32k);
     bIdx = 0;
-  };
+  }
 
   function addBuffer(a) {
     SIZE++;
@@ -189,14 +189,14 @@ JXG.Util.Unzip = function(barray) {
       //document.write('ADDBUFFER:'+buf32k);
       bIdx = 0;
     }
-  };
+  }
 
   function HufNode() {
     this.b0 = 0;
     this.b1 = 0;
     this.jump = null;
     this.jumppos = -1;
-  };
+  }
 
   var LITERALS = 288;
 
@@ -223,7 +223,7 @@ JXG.Util.Unzip = function(barray) {
         return fpos[len]++;
       fpos[len]++;
     }
-  };
+  }
 
   function Rec() {
     var curplace = Places[treepos];
@@ -269,7 +269,7 @@ JXG.Util.Unzip = function(barray) {
     }
     len--;
     return 0;
-  };
+  }
 
   function CreateTree(currentTree, numval, lengths, show) {
     var i;
@@ -314,7 +314,7 @@ JXG.Util.Unzip = function(barray) {
             }
         }*/
     return 0;
-  };
+  }
 
   function DecodeValue(currentTree) {
     var len, i,
@@ -353,10 +353,10 @@ JXG.Util.Unzip = function(barray) {
         X = currentTree[xtreepos];
       }
     }
-  };
+  }
 
   function DeflateLoop() {
-    var last, c, type, i, len;
+    var last, c, type, i, j, len, dist;
 
     do {
       /*if((last = readBit())){
@@ -389,7 +389,7 @@ JXG.Util.Unzip = function(barray) {
           break;
       }
 
-      if (type == 0) {
+      if (type === 0) {
         var blockLen, cSum;
 
         // Stored 
@@ -408,8 +408,6 @@ JXG.Util.Unzip = function(barray) {
           addBuffer(c);
         }
       } else if (type == 1) {
-        var j;
-
         /* Fixed Huffman tables -- fixed decode routine */
         while (1) {
           /*
@@ -454,8 +452,6 @@ JXG.Util.Unzip = function(barray) {
             /* EOF */
             break;
           } else {
-            var len, dist;
-
             j -= 256 + 1; /* bytes + EOF */
             len = readBits(cplext[j]) + cplens[j];
 
@@ -470,13 +466,13 @@ JXG.Util.Unzip = function(barray) {
 
             /*fprintf(errfp, "@%d (l%02x,d%04x)\n", SIZE, len, dist);*/
             for (j = 0; j < len; j++) {
-              var c = buf32k[(bIdx - dist) & 0x7fff];
+              c = buf32k[(bIdx - dist) & 0x7fff];
               addBuffer(c);
             }
           }
         } // while
       } else if (type == 2) {
-        var j, n, literalCodes, distCodes, lenCodes;
+        var n, literalCodes, distCodes, lenCodes;
         var ll = new Array(288 + 32); // "static" just to preserve stack
 
         // Dynamic Huffman tables 
@@ -511,8 +507,8 @@ JXG.Util.Unzip = function(barray) {
             document.write("<br>" + distanceTree[a].b0 + " " + distanceTree[a].b1 + " " + distanceTree[a].jump + " " +
               distanceTree[a].jumppos);
             /*if (distanceTree[a].jumppos!=-1)
-                    	document.write(" "+distanceTree[a].jump.b0+" "+distanceTree[a].jump.b1);
-                	*/
+                document.write(" "+distanceTree[a].jump.b0+" "+distanceTree[a].jump.b1);
+             */
           }
         }
         //document.write('<BR>tree created');
@@ -573,7 +569,7 @@ JXG.Util.Unzip = function(barray) {
         len = literalTree.length;
         for (i = 0; i < len; i++)
           distanceTree[i] = new HufNode();
-        var ll2 = new Array();
+        var ll2 = [];
         for (i = literalCodes; i < ll.length; i++) {
           ll2[i - literalCodes] = ll[i];
         }
@@ -586,9 +582,8 @@ JXG.Util.Unzip = function(barray) {
         outer: while (1) {
           j = DecodeValue(literalTree);
           if (j >= 256) { // In C64: if carry set
-            var len, dist;
             j -= 256;
-            if (j == 0) {
+            if (j === 0) {
               // EOF
               break;
             }
@@ -607,7 +602,7 @@ JXG.Util.Unzip = function(barray) {
               if (bIdx - dist < 0) {
                 break outer;
               }
-              var c = buf32k[(bIdx - dist) & 0x7fff];
+              c = buf32k[(bIdx - dist) & 0x7fff];
               addBuffer(c);
             }
           } else {
@@ -620,7 +615,7 @@ JXG.Util.Unzip = function(barray) {
 
     byteAlign();
     return 0;
-  };
+  }
 
   JXG.Util.Unzip.prototype.unzipFile = function(name) {
     var i;
@@ -631,7 +626,6 @@ JXG.Util.Unzip = function(barray) {
         return unzipped[i][0];
       }
     }
-
   };
 
   JXG.Util.Unzip.prototype.deflate = function() {
@@ -646,7 +640,7 @@ JXG.Util.Unzip = function(barray) {
     unzipped[files][1] = "DEFLATE";
     files++;
     return unzipped;
-  }
+  };
 
   JXG.Util.Unzip.prototype.unzip = function() {
     //convertToByteArray(input);
@@ -771,8 +765,9 @@ JXG.Util.Unzip = function(barray) {
           alert("filelen " + filelen);
         i = 0;
         nameBuf = [];
+        var c;
         while (filelen--) {
-          var c = readByte();
+          c = readByte();
           if (c == "/" | c == ":") {
             i = 0;
           } else if (i < NAMEMAX - 1)
@@ -794,7 +789,7 @@ JXG.Util.Unzip = function(barray) {
         CRC = 0xffffffff;
         SIZE = 0;
 
-        if (size == 0 && fileOut.charAt(fileout.length - 1) == "/") {
+        if (size === 0 && fileOut.charAt(fileout.length - 1) == "/") {
           //skipdir
           if (debug)
             alert("skipdir");
@@ -812,7 +807,7 @@ JXG.Util.Unzip = function(barray) {
         skipdir();
       }
     }
-  };
+  }
 
   function skipdir() {
     var crc,
@@ -925,7 +920,7 @@ JXG.Util.Unzip = function(barray) {
     if (modeZIP)
       nextFile();
 
-  };
+  }
 
 };
 
@@ -1069,7 +1064,7 @@ JXG.Util.Base64 = {
       lineno, i,
       destripped = [];
 
-    if (wrap == null)
+    if (wrap === null)
       wrap = 76;
 
     stripped.replace(/ /g, "");
@@ -1224,7 +1219,7 @@ JXG.Util.utf8Decode = function(utftext) {
       string.push(String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63)));
       i += 3;
     }
-  };
+  }
   return string.join('');
 };
 

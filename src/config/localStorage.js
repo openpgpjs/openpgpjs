@@ -20,12 +20,12 @@ module.exports = function () {
       this.write();
     } else
       this.config = cf;
-  }
+  };
 
   /**
    * Writes the config to HTML5 local storage
    */
   this.write = function () {
     window.localStorage.setItem("config", JSON.stringify(this.config));
-  }
-}
+  };
+};

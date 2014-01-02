@@ -171,7 +171,6 @@ module.exports = packetSignature = function () {
         break;
       default:
         throw new Error('Version ' + version + ' of the signature is unsupported.');
-        break;
     }
 
     // Two-octet field holding left 16 bits of signed hash value.
@@ -363,6 +362,7 @@ module.exports = packetSignature = function () {
 
     // The leftwost bit denotes a "critical" packet, but we ignore it.
     var type = bytes.charCodeAt(mypos++) & 0x7F;
+    var seconds;
 
     // subpacket type
     switch (type) {
@@ -372,9 +372,9 @@ module.exports = packetSignature = function () {
         break;
       case 3:
         // Signature Expiration Time in seconds
-        var seconds = util.readNumber(bytes.substr(mypos));
+        seconds = util.readNumber(bytes.substr(mypos));
 
-        this.signatureNeverExpires = seconds == 0;
+        this.signatureNeverExpires = seconds === 0;
         this.signatureExpirationTime = seconds;
 
         break;
@@ -397,10 +397,10 @@ module.exports = packetSignature = function () {
         break;
       case 9:
         // Key Expiration Time in seconds
-        var seconds = util.readNumber(bytes.substr(mypos));
+        seconds = util.readNumber(bytes.substr(mypos));
 
         this.keyExpirationTime = seconds;
-        this.keyNeverExpires = seconds == 0;
+        this.keyNeverExpires = seconds === 0;
 
         break;
       case 11:
@@ -435,9 +435,9 @@ module.exports = packetSignature = function () {
           // We extract key/value tuple from the byte stream.
           mypos += 4;
           var m = util.readNumber(bytes.substr(mypos, 2));
-          mypos += 2
+          mypos += 2;
           var n = util.readNumber(bytes.substr(mypos, 2));
-          mypos += 2
+          mypos += 2;
 
           var name = bytes.substr(mypos, m),
             value = bytes.substr(mypos + m, n);
@@ -464,7 +464,7 @@ module.exports = packetSignature = function () {
         break;
       case 25:
         // Primary User ID
-        this.isPrimaryUserID = bytes[mypos++] != 0;
+        this.isPrimaryUserID = bytes[mypos++] !== 0;
         break;
       case 26:
         // Policy URI
@@ -504,7 +504,6 @@ module.exports = packetSignature = function () {
         break;
       default:
         throw new Error("Unknown signature subpacket type " + type + " @:" + mypos);
-        break;
     }
   };
 
@@ -556,7 +555,7 @@ module.exports = packetSignature = function () {
         });
 
       case t.key:
-        if (data.key == undefined)
+        if (data.key === undefined)
           throw new Error('Key packet is required for this sigtature.');
 
         return data.key.writeOld();
@@ -568,11 +567,10 @@ module.exports = packetSignature = function () {
         return '';
       case t.third_party:
         throw new Error('Not implemented');
-        break;
       default:
-        throw new Error('Unknown signature type.')
+        throw new Error('Unknown signature type.');
     }
-  }
+  };
 
 
   this.calculateTrailer = function() {
@@ -583,8 +581,8 @@ module.exports = packetSignature = function () {
     trailer += String.fromCharCode(4); // Version
     trailer += String.fromCharCode(0xFF);
     trailer += util.writeNumber(this.signatureData.length, 4);
-    return trailer
-  }
+    return trailer;
+  };
 
 
   /**
@@ -625,7 +623,7 @@ module.exports = packetSignature = function () {
       bytes + this.signatureData + trailer);
 
     return this.verified;
-  }
+  };
 
   /**
    * Verifies signature expiration date
@@ -636,5 +634,6 @@ module.exports = packetSignature = function () {
       return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
     }
     return false;
-  }
-}
+  };
+};
+

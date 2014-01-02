@@ -81,7 +81,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
   //create the 16 or 48 subkeys we will need
   var m = 0,
     i, j, temp, temp2, right1, right2, left, right, looping;
-  var cbcleft, cbcleft2, cbcright, cbcright2
+  var cbcleft, cbcleft2, cbcright, cbcright2;
   var endloop, loopinc;
   var len = message.length;
   var chunk = 0;
@@ -378,7 +378,7 @@ function Des(key) {
       des(des_createKeys(this.key[0]),
       util.bin2str(block), true, 0, null, null),
       false, 0, null, null), true, 0, null, null));
-  }
+  };
 }
 
 Des.keySize = Des.prototype.keySize = 24;
@@ -393,12 +393,12 @@ function OriginalDes(key) {
   this.encrypt = function(block, padding) {
     var keys = des_createKeys(this.key);
     return util.str2bin(des(keys, util.bin2str(block), true, 0, null, padding));
-  }
+  };
 
   this.decrypt = function(block, padding) {
     var keys = des_createKeys(this.key);
     return util.str2bin(des(keys, util.bin2str(block), false, 0, null, padding));
-  }
+  };
 }
 
 module.exports = {
@@ -406,4 +406,4 @@ module.exports = {
   des: Des,
   /** @static */
   originalDes: OriginalDes
-}
+};

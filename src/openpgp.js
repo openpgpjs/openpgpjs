@@ -158,7 +158,7 @@ function generateKeyPair(keyType, numBits, userId, passphrase) {
 exports.encryptMessage = encryptMessage;
 exports.signAndEncryptMessage = signAndEncryptMessage;
 exports.decryptMessage = decryptMessage;
-exports.decryptAndVerifyMessage = decryptAndVerifyMessage
+exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;
 exports.generateKeyPair = generateKeyPair;

@@ -184,10 +184,10 @@ Message.prototype.sign = function(privateKeys) {
   if (!literalDataPacket) throw new Error('No literal data packet to sign.');
   
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  var signatureType = literalFormat == enums.literal.binary 
-                      ? enums.signature.binary : enums.signature.text; 
-  
-  for (var i = 0; i < privateKeys.length; i++) {
+  var signatureType = literalFormat == enums.literal.binary ?
+                      enums.signature.binary : enums.signature.text;
+  var i;
+  for (i = 0; i < privateKeys.length; i++) {
     var onePassSig = new packet.one_pass_signature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
@@ -203,7 +203,7 @@ Message.prototype.sign = function(privateKeys) {
 
   packetlist.push(literalDataPacket);
   
-  for (var i = privateKeys.length - 1; i >= 0; i--) {
+  for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new packet.signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;

@@ -39,7 +39,7 @@ module.exports = packetlist = function () {
 
       packet.read(parsed.packet);
     }
-  }
+  };
 
   /**
    * Creates a binary representation of openpgp objects contained within the
@@ -56,7 +56,7 @@ module.exports = packetlist = function () {
     }
 
     return bytes;
-  }
+  };
 
   /**
    * Adds a packet to the list. This is the only supported method of doing so;
@@ -69,7 +69,7 @@ module.exports = packetlist = function () {
 
     this[this.length] = packet;
     this.length++;
-  }
+  };
 
   /**
   * Creates a new packetList with all packets that pass the test implemented by the provided function.
@@ -85,7 +85,7 @@ module.exports = packetlist = function () {
     }
 
     return filtered;
-  }
+  };
 
   /**
   * Creates a new packetList with all packets from the given types
@@ -96,13 +96,13 @@ module.exports = packetlist = function () {
     var that = this;
 
     for (var i = 0; i < this.length; i++) {
-      if (args.some(function(packetType) {return that[i].tag == packetType})) {
+      if (args.some(function(packetType) {return that[i].tag == packetType;})) {
         filtered.push(this[i]);
       }
     }
 
     return filtered;
-  } 
+  };
 
   /**
   * Executes the provided callback once for each element
@@ -111,7 +111,7 @@ module.exports = packetlist = function () {
     for (var i = 0; i < this.length; i++) {
       callback(this[i]);
     }
-  }
+  };
 
   /**
    * Traverses packet tree and returns first matching packet
@@ -132,7 +132,7 @@ module.exports = packetlist = function () {
       }
     }
     return null;
-  }
+  };
 
   /**
    * Returns array of found indices by tag
@@ -142,26 +142,26 @@ module.exports = packetlist = function () {
     var tagIndex = [];
     var that = this;
     for (var i = 0; i < this.length; i++) {
-      if (args.some(function(packetType) {return that[i].tag == packetType})) {
+      if (args.some(function(packetType) {return that[i].tag == packetType;})) {
         tagIndex.push(i);
       }
     }
     return tagIndex;
-  }
+  };
 
   /**
    * Returns slice of packetlist
    */
   this.slice = function(begin, end) {
     if (!end) {
-      end = this.length
+      end = this.length;
     }
     var part = new packetlist();
     for (var i = begin; i < end; i++) {
       part.push(this[i]);
     }
     return part;
-  }
+  };
 
   /**
    * Concatenates packetlist or array of packets
@@ -172,6 +172,5 @@ module.exports = packetlist = function () {
         this.push(packetlist[i]);
       }
     }
-  }
-
-}
+  };
+};

@@ -74,7 +74,7 @@ module.exports = {
         return 32;
       case 9:
         // - SHA384 [FIPS180]
-        return 48
+        return 48;
       case 10:
         // - SHA512 [FIPS180]
         return 64;
@@ -85,4 +85,4 @@ module.exports = {
         throw new Error('Invalid hash algorithm.');
     }
   }
-}
+};

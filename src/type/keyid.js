@@ -63,4 +63,4 @@ module.exports = function () {
 
 module.exports.mapToHex = function(keyId) {
   return keyId.toHex();
-}
+};
