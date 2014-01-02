@@ -35,7 +35,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function sym_encrypted_integrity_protected() {
   /** The encrypted payload. */
   this.encrypted = null; // string
   /**
@@ -48,7 +48,7 @@ module.exports = function () {
   this.packets = null;
 
 
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     // - A one-octet version number. The only currently defined value is 1.
     var version = bytes.charCodeAt(0);
 
@@ -62,13 +62,13 @@ module.exports = function () {
     this.encrypted = bytes.substr(1);
   };
 
-  this.write = function() {
+  this.write = function () {
 
     return String.fromCharCode(1) // Version
     + this.encrypted;
   };
 
-  this.encrypt = function(sessionKeyAlgorithm, key) {
+  this.encrypt = function (sessionKeyAlgorithm, key) {
     var bytes = this.packets.write()
 
     var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
@@ -100,7 +100,7 @@ module.exports = function () {
    * @param {String} key The key of cipher blocksize length to be used
    * @return {String} The decrypted data of this packet
    */
-  this.decrypt = function(sessionKeyAlgorithm, key) {
+  this.decrypt = function (sessionKeyAlgorithm, key) {
     var decrypted = crypto.cfb.decrypt(
       sessionKeyAlgorithm, key, this.encrypted, false);
 

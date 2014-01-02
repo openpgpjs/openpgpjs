@@ -32,7 +32,7 @@ var crypto = require('../crypto');
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function symmetrically_encrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */

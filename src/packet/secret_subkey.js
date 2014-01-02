@@ -26,6 +26,6 @@ var secretKey = require('./secret_key.js');
  * @constructor
  * @extends module:packet/secret_key
  */
-module.exports = function () {
+module.exports = function secret_subkey() {
   secretKey.call(this);
 }

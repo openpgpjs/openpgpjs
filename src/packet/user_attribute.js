@@ -41,7 +41,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function user_attribute() {
   this.tag = 17;
   this.attributes = [];
 

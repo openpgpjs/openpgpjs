@@ -31,7 +31,7 @@
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function marker() {
   /**
    * Parsing function for a literal data packet (tag 10).
    * 
@@ -43,7 +43,7 @@ module.exports = function () {
    *            input at position
    * @return {module:packet/marker} Object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     if (bytes.charCodeAt(0) == 0x50 && // P
     bytes.charCodeAt(1) == 0x47 && // G
     bytes.charCodeAt(2) == 0x50) // P

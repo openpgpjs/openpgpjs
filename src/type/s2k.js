@@ -51,7 +51,7 @@ module.exports = function s2k() {
   // Exponent bias, defined in RFC4880
   var expbias = 6;
 
-  this.get_count = function() {
+  this.get_count = function () {
     return (16 + (this.c & 15)) << ((this.c >> 4) + expbias);
   };
 
@@ -60,7 +60,7 @@ module.exports = function s2k() {
    * @param {String} input Payload of string-to-key specifier
    * @return {Integer} Actual length of the object
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var i = 0;
     this.type = enums.read(enums.s2k, bytes.charCodeAt(i++));
     this.algorithm = enums.read(enums.hash, bytes.charCodeAt(i++));
@@ -110,7 +110,7 @@ module.exports = function s2k() {
    * writes an s2k hash based on the inputs.
    * @return {String} Produced key of hashAlgorithm hash length
    */
-  this.write = function() {
+  this.write = function () {
     var bytes = String.fromCharCode(enums.write(enums.s2k, this.type));
     bytes += String.fromCharCode(enums.write(enums.hash, this.algorithm));
 
@@ -136,7 +136,7 @@ module.exports = function s2k() {
    * @return {String} Produced key with a length corresponding to 
    * hashAlgorithm hash length
    */
-  this.produce_key = function(passphrase, numBytes) {
+  this.produce_key = function (passphrase, numBytes) {
     passphrase = util.encode_utf8(passphrase);
 
     function round(prefix, s2k) {

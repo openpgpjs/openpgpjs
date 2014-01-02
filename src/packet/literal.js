@@ -31,7 +31,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function literal() {
   this.format = 'utf8'; // default format for literal data packets
   this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();
@@ -42,7 +42,7 @@ module.exports = function () {
    * will be normalized to \r\n and by default text is converted to UTF8
    * @param {String} text Any native javascript string
    */
-  this.setText = function(text) {
+  this.setText = function (text) {
     // normalize EOL to \r\n
     text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
     // encode UTF8
@@ -54,7 +54,7 @@ module.exports = function () {
    * with normalized end of line to \n
    * @return {String} literal data as text
    */
-  this.getText = function() {
+  this.getText = function () {
     // decode UTF8
     var text = util.decode_utf8(this.data);
     // normalize EOL to \n
@@ -66,7 +66,7 @@ module.exports = function () {
    * @param {String} bytes The string of bytes
    * @param {utf8|binary|text} format The format of the string of bytes
    */
-  this.setBytes = function(bytes, format) {
+  this.setBytes = function (bytes, format) {
     this.format = format;
     this.data = bytes;
   }
@@ -76,7 +76,7 @@ module.exports = function () {
    * Get the byte sequence representing the literal packet data
    * @returns {String} A sequence of bytes
    */
-  this.getBytes = function() {
+  this.getBytes = function () {
     return this.data;
   }
 
@@ -92,7 +92,7 @@ module.exports = function () {
    *            input at position
    * @return {module:packet/literal} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     // - A one-octet field that describes how the data is formatted.
 
     var format = enums.read(enums.literal, bytes.charCodeAt(0));
@@ -113,7 +113,7 @@ module.exports = function () {
    * @param {String} data The data to be inserted as body
    * @return {String} string-representation of the packet
    */
-  this.write = function() {
+  this.write = function () {
     var filename = util.encode_utf8("msg.txt");
 
     var data = this.getBytes();

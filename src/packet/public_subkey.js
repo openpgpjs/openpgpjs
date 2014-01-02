@@ -26,6 +26,6 @@ var publicKey = require('./public_key.js');
  * @constructor
  * @extends module:packet/public_key
  */
-module.exports = function () {
+module.exports = function public_subkey() {
   publicKey.call(this);
 }

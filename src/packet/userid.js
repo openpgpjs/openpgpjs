@@ -32,7 +32,7 @@ var util = require('../util');
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function userid() {
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
    * @type {String} 

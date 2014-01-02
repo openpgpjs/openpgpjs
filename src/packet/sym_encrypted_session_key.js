@@ -42,7 +42,7 @@ var type_s2k = require('../type/s2k.js'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function sym_encrypted_session_key() {
   this.tag = 3;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';

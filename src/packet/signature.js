@@ -41,7 +41,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = packetSignature = function () {
+module.exports = function signature() {
 
   this.version = 4;
   this.signatureType = null;
@@ -93,7 +93,7 @@ module.exports = packetSignature = function () {
    * @param {Integer} len length of the packet or the remaining length of bytes at position
    * @return {module:packet/signature} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var i = 0;
 
     this.version = bytes.charCodeAt(i++);
@@ -181,7 +181,7 @@ module.exports = packetSignature = function () {
     this.signature = bytes.substr(i);
   };
 
-  this.write = function() {
+  this.write = function () {
     return this.signatureData +
       util.writeNumber(0, 2) + // Number of unsigned subpackets.
       this.signedHashValue +
@@ -193,7 +193,7 @@ module.exports = packetSignature = function () {
    * @param {module:packet/secret_key} key private key used to sign the message. 
    * @param {Object} data Contains packets to be signed.
    */
-  this.sign = function(key, data) {
+  this.sign = function (key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),
       publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
       hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -227,7 +227,7 @@ module.exports = packetSignature = function () {
    * Creates string of bytes with all subpacket data
    * @return {String} a string-representation of a all subpacket data
    */
-  this.write_all_sub_packets = function() {
+  this.write_all_sub_packets = function () {
     var sub = enums.signatureSubpacket;
     var result = '';
     var bytes = '';
@@ -350,7 +350,7 @@ module.exports = packetSignature = function () {
 
   // V4 signature sub packets
 
-  this.read_sub_packet = function(bytes) {
+  this.read_sub_packet = function (bytes) {
     var mypos = 0;
 
     function read_array(prop, bytes) {
@@ -499,7 +499,7 @@ module.exports = packetSignature = function () {
         break;
       case 32:
         // Embedded Signature
-        this.embeddedSignature = new packetSignature();
+        this.embeddedSignature = new signature();
         this.embeddedSignature.read(bytes.substr(mypos));
         break;
       default:
@@ -509,7 +509,7 @@ module.exports = packetSignature = function () {
   };
 
   // Produces data to produce signature on
-  this.toSign = function(type, data) {
+  this.toSign = function (type, data) {
     var t = enums.signature;
 
     switch (type) {
@@ -575,7 +575,7 @@ module.exports = packetSignature = function () {
   }
 
 
-  this.calculateTrailer = function() {
+  this.calculateTrailer = function () {
     // calculating the trailer
     var trailer = '';
     // V3 signatures don't have a trailer
@@ -593,7 +593,7 @@ module.exports = packetSignature = function () {
    * @param {module:packet/public_subkey|module:packet/public_key} key the public key to verify the signature
    * @return {boolean} True if message is verified, else false.
    */
-  this.verify = function(key, data) {
+  this.verify = function (key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),
       publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
       hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -631,7 +631,7 @@ module.exports = packetSignature = function () {
    * Verifies signature expiration date
    * @return {Boolean} true if expired
    */
-  this.isExpired = function() {
+  this.isExpired = function () {
     if (!this.signatureNeverExpires) {
       return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
     }
