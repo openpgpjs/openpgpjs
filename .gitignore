@@ -1,5 +1,8 @@
 resources/openpgpjs.pem
 build/
 .DS_Store
-node_modules
-test/integration/lib
+node_modules/
+npm*
+test/lib/
+resources/keyring_nodebug.js
+resources/openpgp_nodebug.js

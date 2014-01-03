@@ -1,0 +1,5 @@
+{
+	"name": "openpgp-crypto-public-key",
+	"version": "0.0.1",
+	"main": "./index.js"
+}

@@ -1,0 +1,187 @@
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
+ * <br/>
+ * RFC4480 5.5:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.  Consequently, this section is complex.
+ * @requires crypto
+ * @requires enums
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires util
+ * @module packet/public_key
+ */
+
+var util = require('../util'),
+  type_mpi = require('../type/mpi.js'),
+  type_keyid = require('../type/keyid.js'),
+  enums = require('../enums.js'),
+  crypto = require('../crypto');
+
+/**
+ * @constructor
+ */
+module.exports = function public_key() {
+  this.version = 4;
+  /** Key creation date.
+   * @type {Date} */
+  this.created = new Date();
+  /** A list of multiprecision integers
+   * @type {module:type/mpi} */
+  this.mpi = [];
+  /** Public key algorithm
+   * @type {module:enums.publicKey} */
+  this.algorithm = 'rsa_sign';
+  // time in days (V3 only)
+  this.expirationTimeV3 = 0;
+
+
+  /**
+   * Internal Parser for public keys as specified in RFC 4880 section 
+   * 5.5.2 Public-Key Packet Formats
+   * called by read_tag&lt;num&gt;
+   * @param {String} input Input string to read the packet from
+   * @return {Object} This object with attributes set by the parser
+   */
+  this.read = function (bytes) {
+    var pos = 0;
+    // A one-octet version number (3 or 4).
+    this.version = bytes.charCodeAt(pos++);
+
+    if (this.version == 3 || this.version == 4) {
+      // - A four-octet number denoting the time that the key was created.
+      this.created = util.readDate(bytes.substr(pos, 4));
+      pos += 4;
+
+      if (this.version == 3) {
+        // - A two-octet number denoting the time in days that this key is
+        //   valid.  If this number is zero, then it does not expire.
+        this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+        pos += 2;
+      }
+
+      // - A one-octet number denoting the public-key algorithm of this key.
+      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
+
+      var mpicount = crypto.getPublicMpiCount(this.algorithm);
+      this.mpi = [];
+
+      var bmpi = bytes.substr(pos);
+      var p = 0;
+
+      for (var i = 0; i < mpicount && p < bmpi.length; i++) {
+
+        this.mpi[i] = new type_mpi();
+
+        p += this.mpi[i].read(bmpi.substr(p))
+
+        if (p > bmpi.length) {
+          throw new Error('Error reading MPI @:' + p);
+        }
+      }
+
+      return p + 6;
+    } else {
+      throw new Error('Version ' + version + ' of the key packet is unsupported.');
+    }
+  };
+
+  /**
+   * Alias of read()
+   * @function module:packet/public_key#readPublicKey
+   * @see module:packet/public_key#read
+   */
+  this.readPublicKey = this.read;
+
+  /**
+   * Same as write_private_key, but has less information because of 
+   * public key.
+   * @return {Object} {body: [string]OpenPGP packet body contents,
+   * header: [string] OpenPGP packet header, string: [string] header+body}
+   */
+  this.write = function () {
+    // Version
+    var result = String.fromCharCode(this.version);
+    result += util.writeDate(this.created);
+    if (this.version == 3) {
+      result += util.writeNumber(this.expirationTimeV3, 2);
+    }
+    result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+
+    var mpicount = crypto.getPublicMpiCount(this.algorithm);
+
+    for (var i = 0; i < mpicount; i++) {
+      result += this.mpi[i].write();
+    }
+
+    return result;
+  };
+
+  /**
+   * Alias of write()
+   * @function module:packet/public_key#writePublicKey
+   * @see module:packet/public_key#write
+   */
+  this.writePublicKey = this.write;
+
+  /**
+   * Write an old version packet - it's used by some of the internal routines.
+   */
+  this.writeOld = function () {
+    var bytes = this.writePublicKey();
+
+    return String.fromCharCode(0x99) +
+      util.writeNumber(bytes.length, 2) +
+      bytes;
+  };
+
+  /**
+   * Calculates the key id of the key 
+   * @return {String} A 8 byte key id
+   */
+  this.getKeyId = function () {
+    var keyid = new type_keyid();
+    if (this.version == 4) {
+      keyid.read(this.getFingerprint().substr(12, 8));
+    } else if (this.version == 3) {
+      keyid.read(this.mpi[0].write().substr(-8));
+    }
+    return keyid;
+  };
+
+  /**
+   * Calculates the fingerprint of the key
+   * @return {String} A string containing the fingerprint
+   */
+  this.getFingerprint = function () {
+    var toHash = '';
+    if (this.version == 4) {
+      toHash = this.writeOld();
+      return crypto.hash.sha1(toHash);
+    } else if (this.version == 3) {
+      var mpicount = crypto.getPublicMpiCount(this.algorithm);
+      for (var i = 0; i < mpicount; i++) {
+        toHash += this.mpi[i].toBytes();
+      }
+      return crypto.hash.md5(toHash)
+    }
+  };
+};

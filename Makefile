@@ -30,9 +30,17 @@ lint:
 	@echo See http://code.google.com/closure/utilities/
 	@./scripts/lint.sh
 
-minify:
-	@echo See http://code.google.com/closure/compiler/
-	@./scripts/minimize.sh
+bundle:
+	@browserify -d -r ./src/:openpgp > ./resources/openpgp.js
+	@browserify -r ./src/:openpgp > ./resources/openpgp_nodebug.js
+	@browserify -d -x openpgp -r ./src/keyring/:keyring > ./resources/keyring.js
+	@browserify -x openpgp -r ./src/keyring/:keyring > ./resources/keyring_nodebug.js
+
+bundle-test:
+	@browserify -d -x openpgp -x keyring -r ./test/test-all.js:unittests > ./test/lib/test-bundle.js
+
+bundle-ci-test:
+	@browserify -d -x openpgp -x keyring -r ./test/ci-tests-all.js:ci-tests > ./test/lib/ci-tests-bundle.js
 
 test:
 	@echo to be implemented

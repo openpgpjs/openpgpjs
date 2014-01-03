@@ -1,82 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<script type="text/javascript" src="../resources/jquery.min.js"></script>
-<script type="text/javascript" src="../src/ciphers/hash/sha.js"></script>
-<script type="text/javascript" src="../src/ciphers/hash/md5.js"></script>
-<script type="text/javascript" src="../src/ciphers/hash/ripe-md.js"></script>
-
-<!-- crypto libs -->	
-<script type="text/javascript" src="../src/ciphers/symmetric/aes.js"></script>
-<script type="text/javascript" src="../src/ciphers/symmetric/cast5.js"></script>
-<script type="text/javascript" src="../src/ciphers/symmetric/dessrc.js"></script>
-<script type="text/javascript" src="../src/ciphers/symmetric/twofish.js"></script>
-<script type="text/javascript" src="../src/ciphers/symmetric/blowfish.js"></script>
-
-<script type="text/javascript" src="../src/ciphers/asymmetric/jsbn.js"></script>
-<script type="text/javascript" src="../src/ciphers/asymmetric/jsbn2.js"></script>
-<script type="text/javascript" src="../src/ciphers/asymmetric/dsa.js"></script>
-<script type="text/javascript" src="../src/ciphers/asymmetric/elgamal.js"></script>
-<script type="text/javascript" src="../src/ciphers/asymmetric/rsa.js"></script>
-
-<script type="text/javascript" src="../src/ciphers/openpgp.crypto.sym.js"></script>
-<script type="text/javascript" src="../src/ciphers/openpgp.crypto.js"></script>
-<script type="text/javascript" src="../src/ciphers/openpgp.cfb.js"></script>
-
-<!-- compression -->
-
-<!-- encoding -->
-<script type="text/javascript" src="../src/encoding/base64.js"></script>
-<script type="text/javascript" src="../src/encoding/openpgp.encoding.asciiarmor.js"></script>
-<script type="text/javascript" src="../src/encoding/openpgp.encoding.js"></script>
-
-<!-- openpgp types -->
-<script type="text/javascript" src="../src/type/openpgp.type.keyid.js"></script>
-<script type="text/javascript" src="../src/type/openpgp.type.mpi.js"></script>
-<script type="text/javascript" src="../src/type/openpgp.type.s2k.js"></script>
-
-<!-- openpgp packets -->
-<script type="text/javascript" src="../src/packet/openpgp.packet.compressed.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.encrypteddata.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.encryptedintegrityprotecteddata.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.encryptedsessionkey.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.keymaterial.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.literaldata.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.marker.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.modificationdetectioncode.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.onepasssignature.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.signature.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.userattribute.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.userid.js"></script>
-<script type="text/javascript" src="../src/packet/openpgp.packet.js"></script>
-
-<!--  openpgp impl. -->
-<script type="text/javascript" src="../src/openpgp.js"></script>
-<script type="text/javascript" src="../src/config/openpgp.config.js"></script>
-<script type="text/javascript" src="../src/openpgp.keyring.js"></script>
-<script type="text/javascript" src="../src/openpgp.msg.message.js"></script>
-<script type="text/javascript" src="../src/openpgp.msg.privatekey.js"></script>
-<script type="text/javascript" src="../src/openpgp.msg.publickey.js"></script>
-<script type="text/javascript" src="../src/util/util.js"></script>
+<meta charset="utf-8">
 
 <!-- unit test -->
-<script type="text/javascript" src="unittest.js"></script>
-<script type="text/javascript" src="example-test.js"></script>
-
-<script type="text/javascript" src="ciphers/hash/md5.js"></script>
-<script type="text/javascript" src="ciphers/hash/sha.js"></script>
-<script type="text/javascript" src="ciphers/hash/ripe-md.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/aes.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/cast5.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/des.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/blowfish.js"></script>
-<script type="text/javascript" src="ciphers/symmetric/twofish.js"></script>
-
-<script type="text/javascript" src="ciphers/openpgp.crypto.js"></script>
-<script type="text/javascript" src="ciphers/openpgp.sigcheck.js"></script>
-
-<script type="text/javascript" src="general/openpgp.basic.js"></script>
 <title>OpenPGP.js testpage</title>
 
 <style>
@@ -128,28 +55,41 @@
 
 
 </style>
+<script src="../resources/openpgp.js"></script>
+<script src="../resources/keyring.js"></script>
+<script src="lib/test-bundle.js"></script>
 <script type="text/javascript">
-openpgp.init();
-// message function required by util.print_message, util.print_debug, util.print_warning
 
-function showMessages(str) {
-	$('#debug').append(str);
-}
+var test = require('unittests');
 
 function unit_tests() {
-	$('#unittests').append("<tr><th>Unit</th><th>Description</th><th>Result</th></tr>");
-	var result = unittests.runAll();
-	var html = "";
-	for (var i = 0; i < result.length; i++) {
-		html += "<tr class=\"unittestrow\"><td rowspan=\""+result[i].tests.length+"\" class=\"unittesttitle\">"+result[i].title+"</td>";
-		if (result[i].tests.length > 0) {
-			html += "<td>"+result[i].tests[0].description+"</td><td "+(result[i].tests[0].result ? "class=\"successful\">ok</td>" : "class=\"failed\">FAILED</td>" )+"</tr>";
+	var table = document.getElementById('unittests');
+
+	var single_test = function() {
+		var result = test.run();
+
+		var html = '<tr class="unittestrow"><td rowspan="' +
+			result.tests.length + '" class="unittesttitle">' + result.title + '</td>';
+
+
+		for (var i in result.tests) {
+			html += (i != 0 ?
+					'<tr>' : '')
+				+ '<td>' + result.tests[i].description
+				+ '</td><td ' + (result.tests[i].result ? 
+					'class="successful">PASSED</td>' : 
+					'class="failed">FAILED</td>') 
+				+ '</tr>';
 		}
-		for (var j = 1; j < result[i].tests.length; j++) {
-			html +="<tr><td>"+result[i].tests[j].description+"</td><td "+(result[i].tests[j].result ? "class=\"successful\">ok</td>" : "class=\"failed\">FAILED</td>")+"</tr>";
+
+		table.innerHTML += html;
+
+		if(test.tests.length > 0) {
+			setTimeout(single_test, 100);
 		}
 	}
-	$('#unittests').append(html);
+
+	single_test();
 }
 
 </script>
@@ -160,7 +100,6 @@ function unit_tests() {
 	<a href="encryption.html">Encryption / Decryption</a> | 
 	<a href="coverage.html">Coverage</a>
 
-<p><input id="enabledebug" type="checkbox" onclick="($('#enabledebug').is(':checked') ? openpgp.config.debug = true : openpgp.config.debug = false)"> Print Debug Messages </p>  
 <h1>Unit tests</h1>
 
 <table id="unittests">
@@ -169,7 +108,10 @@ function unit_tests() {
 		<col>
 		<col style="width: 5%;">
 	</colgroup>
-</table><br>
+	<tr><th>Test</th><th>Description</th><th>Result</th></tr>
+</table>
+
+<br>
 <button type="submit" onmousedown="unit_tests();">Run unit tests</button>
 
 <!-- src/util/util.js print_debug() writes to  -->

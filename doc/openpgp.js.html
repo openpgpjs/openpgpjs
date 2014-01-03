@@ -43,449 +43,152 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @fileoverview The openpgp base class should provide all of the functionality 
+ * @fileoverview The openpgp base module should provide all of the functionality 
  * to consume the openpgp.js library. All additional classes are documented 
  * for extending and developing on top of the base library.
  */
 
 /**
- * GPG4Browsers Core interface. A single instance is hold
- * from the beginning. To use this library call "openpgp.init()"
- * @alias openpgp
- * @class
- * @classdesc Main Openpgp.js class. Use this to initiate and make all calls to this library.
+ * @requires cleartext
+ * @requires config
+ * @requires encoding/armor
+ * @requires enums
+ * @requires message
+ * @requires packet
+ * @module openpgp
  */
-function _openpgp () {
-	this.tostring = "";
-	
-	/**
-	 * initializes the library:
-	 * - reading the keyring from local storage
-	 * - reading the config from local storage
-	 */
-	function init() {
-		this.config = new openpgp_config();
-		this.config.read();
-		this.keyring = new openpgp_keyring();
-		this.keyring.init();
-	}
-	
-	/**
-	 * reads several publicKey objects from a ascii armored
-	 * representation an returns openpgp_msg_publickey packets
-	 * @param {String} armoredText OpenPGP armored text containing
-	 * the public key(s)
-	 * @return {openpgp_msg_publickey[]} on error the function
-	 * returns null
-	 */
-	function read_publicKey(armoredText) {
-		var mypos = 0;
-		var publicKeys = new Array();
-		var publicKeyCount = 0;
-		var input = openpgp_encoding_deArmor(armoredText.replace(/\r/g,'')).openpgp;
-		var l = input.length;
-		while (mypos != input.length) {
-			var first_packet = openpgp_packet.read_packet(input, mypos, l);
-			// public key parser
-			if (input[mypos].charCodeAt() == 0x99 || first_packet.tagType == 6) {
-				publicKeys[publicKeyCount] = new openpgp_msg_publickey();				
-				publicKeys[publicKeyCount].header = input.substring(mypos,mypos+3);
-				if (input[mypos].charCodeAt() == 0x99) {
-					// parse the length and read a tag6 packet
-					mypos++;
-					var l = (input[mypos++].charCodeAt() &lt;&lt; 8)
-							| input[mypos++].charCodeAt();
-					publicKeys[publicKeyCount].publicKeyPacket = new openpgp_packet_keymaterial();
-					publicKeys[publicKeyCount].publicKeyPacket.header = publicKeys[publicKeyCount].header;
-					publicKeys[publicKeyCount].publicKeyPacket.read_tag6(input, mypos, l);
-					mypos += publicKeys[publicKeyCount].publicKeyPacket.packetLength;
-					mypos += publicKeys[publicKeyCount].read_nodes(publicKeys[publicKeyCount].publicKeyPacket, input, mypos, (input.length - mypos));
-				} else {
-					publicKeys[publicKeyCount] = new openpgp_msg_publickey();
-					publicKeys[publicKeyCount].publicKeyPacket = first_packet;
-					mypos += first_packet.headerLength+first_packet.packetLength;
-					mypos += publicKeys[publicKeyCount].read_nodes(first_packet, input, mypos, input.length -mypos);
-				}
-			} else {
-				util.print_error("no public key found!");
-				return null;
-			}
-			publicKeys[publicKeyCount].data = input.substring(0,mypos);
-			publicKeyCount++;
-		}
-		return publicKeys;
-	}
-	
-	/**
-	 * reads several privateKey objects from a ascii armored
-	 * representation an returns openpgp_msg_privatekey objects
-	 * @param {String} armoredText OpenPGP armored text containing
-	 * the private key(s)
-	 * @return {openpgp_msg_privatekey[]} on error the function
-	 * returns null
-	 */
-	function read_privateKey(armoredText) {
-		var privateKeys = new Array();
-		var privateKeyCount = 0;
-		var mypos = 0;
-		var input = openpgp_encoding_deArmor(armoredText.replace(/\r/g,'')).openpgp;
-		var l = input.length;
-		while (mypos != input.length) {
-			var first_packet = openpgp_packet.read_packet(input, mypos, l);
-			if (first_packet.tagType == 5) {
-				privateKeys[privateKeys.length] = new openpgp_msg_privatekey();
-				mypos += first_packet.headerLength+first_packet.packetLength;
-				mypos += privateKeys[privateKeyCount].read_nodes(first_packet, input, mypos, l);
-			// other blocks	            
-			} else {
-				util.print_error('no block packet found!');
-				return null;
-			}
-			privateKeys[privateKeyCount].data = input.substring(0,mypos);
-			privateKeyCount++;
-		}
-		return privateKeys;		
-	}
 
-	/**
-	 * reads message packets out of an OpenPGP armored text and
-	 * returns an array of message objects
-	 * @param {String} armoredText text to be parsed
-	 * @return {openpgp_msg_message[]} on error the function
-	 * returns null
-	 */
-	function read_message(armoredText) {
-		var dearmored;
-		try{
-    		dearmored = openpgp_encoding_deArmor(armoredText.replace(/\r/g,''));
-		}
-		catch(e){
-    		util.print_error('no message found!');
-    		return null;
-		}
-		return read_messages_dearmored(dearmored);
-		}
-		
-	/**
-	 * reads message packets out of an OpenPGP armored text and
-	 * returns an array of message objects. Can be called externally or internally.
-	 * External call will parse a de-armored messaged and return messages found.
-	 * Internal will be called to read packets wrapped in other packets (i.e. compressed)
-	 * @param {String} input dearmored text of OpenPGP packets, to be parsed
-	 * @return {openpgp_msg_message[]} on error the function
-	 * returns null
-	 */
-	function read_messages_dearmored(input){
-		var messageString = input.openpgp;
-		var signatureText = input.text; //text to verify signatures against. Modified by Tag11.
-		var messages = new Array();
-		var messageCount = 0;
-		var mypos = 0;
-		var l = messageString.length;
-		while (mypos &lt; messageString.length) {
-			var first_packet = openpgp_packet.read_packet(messageString, mypos, l);
-			if (!first_packet) {
-				break;
-			}
-			// public key parser (definition from the standard:)
-			// OpenPGP Message      :- Encrypted Message | Signed Message |
-			//                         Compressed Message | Literal Message.
-			// Compressed Message   :- Compressed Data Packet.
-			// 
-			// Literal Message      :- Literal Data Packet.
-			// 
-			// ESK                  :- Public-Key Encrypted Session Key Packet |
-			//                         Symmetric-Key Encrypted Session Key Packet.
-			// 
-			// ESK Sequence         :- ESK | ESK Sequence, ESK.
-			// 
-			// Encrypted Data       :- Symmetrically Encrypted Data Packet |
-			//                         Symmetrically Encrypted Integrity Protected Data Packet
-			// 
-			// Encrypted Message    :- Encrypted Data | ESK Sequence, Encrypted Data.
-			// 
-			// One-Pass Signed Message :- One-Pass Signature Packet,
-			//                         OpenPGP Message, Corresponding Signature Packet.
+var armor = require('./encoding/armor.js'),
+  packet = require('./packet'),
+  enums = require('./enums.js'),
+  config = require('./config'),
+  message = require('./message.js'),
+  cleartext = require('./cleartext.js'),
+  key = require('./key.js');
 
-			// Signed Message       :- Signature Packet, OpenPGP Message |
-			//                         One-Pass Signed Message.
-			if (first_packet.tagType ==  1 ||
-			    (first_packet.tagType == 2 && first_packet.signatureType &lt; 16) ||
-			     first_packet.tagType ==  3 ||
-			     first_packet.tagType ==  4 ||
-				 first_packet.tagType ==  8 ||
-				 first_packet.tagType ==  9 ||
-				 first_packet.tagType == 10 ||
-				 first_packet.tagType == 11 ||
-				 first_packet.tagType == 18 ||
-				 first_packet.tagType == 19) {
-				messages[messages.length] = new openpgp_msg_message();
-				messages[messageCount].messagePacket = first_packet;
-				messages[messageCount].type = input.type;
-				// Encrypted Message
-				if (first_packet.tagType == 9 ||
-				    first_packet.tagType == 1 ||
-				    first_packet.tagType == 3 ||
-				    first_packet.tagType == 18) {
-					if (first_packet.tagType == 9) {
-						util.print_error("unexpected openpgp packet");
-						break;
-					} else if (first_packet.tagType == 1) {
-						util.print_debug("session key found:\n "+first_packet.toString());
-						var issessionkey = true;
-						messages[messageCount].sessionKeys = new Array();
-						var sessionKeyCount = 0;
-						while (issessionkey) {
-							messages[messageCount].sessionKeys[sessionKeyCount] = first_packet;
-							mypos += first_packet.packetLength + first_packet.headerLength;
-							l -= (first_packet.packetLength + first_packet.headerLength);
-							first_packet = openpgp_packet.read_packet(messageString, mypos, l);
-							
-							if (first_packet.tagType != 1 && first_packet.tagType != 3)
-								issessionkey = false;
-							sessionKeyCount++;
-						}
-						if (first_packet.tagType == 18 || first_packet.tagType == 9) {
-							util.print_debug("encrypted data found:\n "+first_packet.toString());
-							messages[messageCount].encryptedData = first_packet;
-							mypos += first_packet.packetLength+first_packet.headerLength;
-							l -= (first_packet.packetLength+first_packet.headerLength);
-							messageCount++;
-							
-						} else {
-							util.print_debug("something is wrong: "+first_packet.tagType);
-						}
-						
-					} else if (first_packet.tagType == 18) {
-						util.print_debug("symmetric encrypted data");
-						break;
-					}
-				} else 
-					if (first_packet.tagType == 2 && first_packet.signatureType &lt; 3) {
-					// Signed Message
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-						messages[messageCount].text = signatureText;
-						messages[messageCount].signature = first_packet;
-				        messageCount++;
-				} else 
-					// Signed Message
-					if (first_packet.tagType == 4) {
-						//TODO: Implement check
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				} else 
-					if (first_packet.tagType == 8) {
-					// Compressed Message
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				        var decompressedText = first_packet.decompress();
-				        messages = messages.concat(openpgp.read_messages_dearmored({text: decompressedText, openpgp: decompressedText}));
-				} else
-					// Marker Packet (Obsolete Literal Packet) (Tag 10)
-					// "Such a packet MUST be ignored when received." see http://tools.ietf.org/html/rfc4880#section-5.8
-					if (first_packet.tagType == 10) {
-						// reset messages
-						messages.length = 0;
-						// continue with next packet
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				} else 
-					if (first_packet.tagType == 11) {
-					// Literal Message -- work is already done in read_packet
-					mypos += first_packet.packetLength + first_packet.headerLength;
-					l -= (first_packet.packetLength + first_packet.headerLength);
-					signatureText = first_packet.data;
-					messages[messageCount].data = first_packet.data;
-					messageCount++;
-				} else 
-					if (first_packet.tagType == 19) {
-					// Modification Detect Code
-						mypos += first_packet.packetLength + first_packet.headerLength;
-						l -= (first_packet.packetLength + first_packet.headerLength);
-				}
-			} else {
-				util.print_error('no message found!');
-				return null;
-			}
-		}
-		
-		return messages;
-	}
-	
-	/**
-	 * creates a binary string representation of an encrypted and signed message.
-	 * The message will be encrypted with the public keys specified and signed
-	 * with the specified private key.
-	 * @param {Object} privatekey {obj: [openpgp_msg_privatekey]} Private key 
-	 * to be used to sign the message
-	 * @param {Object[]} publickeys An arraf of {obj: [openpgp_msg_publickey]}
-	 * - public keys to be used to encrypt the message 
-	 * @param {String} messagetext message text to encrypt and sign
-	 * @return {String} a binary string representation of the message which 
-	 * can be OpenPGP armored
-	 */
-	function write_signed_and_encrypted_message(privatekey, publickeys, messagetext) {
-		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
-		for (var i = 0; i &lt; publickeys.length; i++) {
-			var onepasssignature = new openpgp_packet_onepasssignature();
-			var onepasssigstr = "";
-			if (i == 0)
-				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
-			else
-				onepasssigstr = onepasssignature.write_packet(1, openpgp.config.config.prefer_hash_algorithm,  privatekey, false);
-			util.print_debug_hexstr_dump("onepasssigstr: |"+onepasssigstr+"|\n",onepasssigstr);
-			var datasignature = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"), privatekey);
-			util.print_debug_hexstr_dump("datasignature: |"+datasignature.openpgp+"|\n",datasignature.openpgp);
-			if (i == 0) {
-				result = onepasssigstr+literal+datasignature.openpgp;
-			} else {
-				result = onepasssigstr+result+datasignature.openpgp;
-			}
-		}
-		
-		util.print_debug_hexstr_dump("signed packet: |"+result+"|\n",result);
-		// signatures done.. now encryption
-		var sessionkey = openpgp_crypto_generateSessionKey(openpgp.config.config.encryption_cipher); 
-		var result2 = "";
-		
-		// creating session keys for each recipient
-		for (var i = 0; i &lt; publickeys.length; i++) {
-			var pkey = publickeys[i].getEncryptionKey();
-			if (pkey == null) {
-				util.print_error("no encryption key found! Key is for signing only.");
-				return null;
-			}
-			result2 += new openpgp_packet_encryptedsessionkey().
-					write_pub_key_packet(
-						pkey.getKeyId(),
-						pkey.MPIs,
-						pkey.publicKeyAlgorithm,
-						openpgp.config.config.encryption_cipher,
-						sessionkey);
-		}
-		if (openpgp.config.config.integrity_protect) {
-			result2 += new openpgp_packet_encryptedintegrityprotecteddata().write_packet(openpgp.config.config.encryption_cipher, sessionkey, result);
-		} else {
-			result2 += new openpgp_packet_encrypteddata().write_packet(openpgp.config.config.encryption_cipher, sessionkey, result);
-		}
-		return openpgp_encoding_armor(3,result2,null,null);
-	}
-	/**
-	 * creates a binary string representation of an encrypted message.
-	 * The message will be encrypted with the public keys specified 
-	 * @param {Object[]} publickeys An array of {obj: [openpgp_msg_publickey]}
-	 * -public keys to be used to encrypt the message 
-	 * @param {String} messagetext message text to encrypt
-	 * @return {String} a binary string representation of the message
-	 * which can be OpenPGP armored
-	 */
-	function write_encrypted_message(publickeys, messagetext) {
-		var result = "";
-		var literal = new openpgp_packet_literaldata().write_packet(messagetext.replace(/\r\n/g,"\n").replace(/\n/g,"\r\n"));
-		util.print_debug_hexstr_dump("literal_packet: |"+literal+"|\n",literal);
-		result = literal;
-		
-		// signatures done.. now encryption
-		var sessionkey = openpgp_crypto_generateSessionKey(openpgp.config.config.encryption_cipher); 
-		var result2 = "";
-		
-		// creating session keys for each recipient
-		for (var i = 0; i &lt; publickeys.length; i++) {
-			var pkey = publickeys[i].getEncryptionKey();
-			if (pkey == null) {
-				util.print_error("no encryption key found! Key is for signing only.");
-				return null;
-			}
-			result2 += new openpgp_packet_encryptedsessionkey().
-					write_pub_key_packet(
-						pkey.getKeyId(),
-						pkey.MPIs,
-						pkey.publicKeyAlgorithm,
-						openpgp.config.config.encryption_cipher,
-						sessionkey);
-		}
-		if (openpgp.config.config.integrity_protect) {
-			result2 += new openpgp_packet_encryptedintegrityprotecteddata().write_packet(openpgp.config.config.encryption_cipher, sessionkey, result);
-		} else {
-			result2 += new openpgp_packet_encrypteddata().write_packet(openpgp.config.config.encryption_cipher, sessionkey, result);
-		}
-		return openpgp_encoding_armor(3,result2,null,null);
-	}
-	
-	/**
-	 * creates a binary string representation a signed message.
-	 * The message will be signed with the specified private key.
-	 * @param {Object} privatekey {obj: [openpgp_msg_privatekey]}
-	 * - the private key to be used to sign the message 
-	 * @param {String} messagetext message text to sign
-	 * @return {Object} {Object: text [String]}, openpgp: {String} a binary
-	 *  string representation of the message which can be OpenPGP
-	 *   armored(openpgp) and a text representation of the message (text). 
-	 * This can be directly used to OpenPGP armor the message
-	 */
-	function write_signed_message(privatekey, messagetext) {
-		var sig = new openpgp_packet_signature().write_message_signature(1, messagetext.replace(/\r\n/g,"\n").replace(/\n/,"\r\n"), privatekey);
-		var result = {text: messagetext.replace(/\r\n/g,"\n").replace(/\n/,"\r\n"), openpgp: sig.openpgp, hash: sig.hash};
-		return openpgp_encoding_armor(2,result, null, null)
-	}
-	
-	/**
-	 * generates a new key pair for openpgp. Beta stage. Currently only 
-	 * supports RSA keys, and no subkeys.
-	 * @param {Integer} keyType to indicate what type of key to make. 
-	 * RSA is 1. Follows algorithms outlined in OpenPGP.
-	 * @param {Integer} numBits number of bits for the key creation. (should 
-	 * be 1024+, generally)
-	 * @param {String} userId assumes already in form of "User Name 
-	 * &lt;username@email.com>"
-	 * @param {String} passphrase The passphrase used to encrypt the resulting private key
-	 * @return {Object} {privateKey: [openpgp_msg_privatekey], 
-	 * privateKeyArmored: [string], publicKeyArmored: [string]}
-	 */
-	function generate_key_pair(keyType, numBits, userId, passphrase){
-		var userIdPacket = new openpgp_packet_userid();
-		var userIdString = userIdPacket.write_packet(userId);
-		
-		var keyPair = openpgp_crypto_generateKeyPair(keyType,numBits, passphrase, openpgp.config.config.prefer_hash_algorithm, 3);
-		var privKeyString = keyPair.privateKey;
-		var privKeyPacket = new openpgp_packet_keymaterial().read_priv_key(privKeyString.string,3,privKeyString.string.length);
-		if(!privKeyPacket.decryptSecretMPIs(passphrase))
-		    util.print_error('Issue creating key. Unable to read resulting private key');
-		var privKey = new openpgp_msg_privatekey();
-		privKey.privateKeyPacket = privKeyPacket;
-		privKey.getPreferredSignatureHashAlgorithm = function(){return openpgp.config.config.prefer_hash_algorithm};//need to override this to solve catch 22 to generate signature. 8 is value for SHA256
-		
-		var publicKeyString = privKey.privateKeyPacket.publicKey.data;
-		var hashData = String.fromCharCode(0x99)+ String.fromCharCode(((publicKeyString.length) >> 8) & 0xFF) 
-			+ String.fromCharCode((publicKeyString.length) & 0xFF) +publicKeyString+String.fromCharCode(0xB4) +
-			String.fromCharCode((userId.length) >> 24) +String.fromCharCode(((userId.length) >> 16) & 0xFF) 
-			+ String.fromCharCode(((userId.length) >> 8) & 0xFF) + String.fromCharCode((userId.length) & 0xFF) + userId
-		var signature = new openpgp_packet_signature();
-		signature = signature.write_message_signature(16,hashData, privKey);
-		var publicArmored = openpgp_encoding_armor(4, keyPair.publicKey.string + userIdString + signature.openpgp );
 
-		var privArmored = openpgp_encoding_armor(5,privKeyString.string+userIdString+signature.openpgp);
-		
-		return {privateKey : privKey, privateKeyArmored: privArmored, publicKeyArmored: publicArmored}
-	}
-	
-	this.generate_key_pair = generate_key_pair;
-	this.write_signed_message = write_signed_message; 
-	this.write_signed_and_encrypted_message = write_signed_and_encrypted_message;
-	this.write_encrypted_message = write_encrypted_message;
-	this.read_message = read_message;
-	this.read_messages_dearmored = read_messages_dearmored;
-	this.read_publicKey = read_publicKey;
-	this.read_privateKey = read_privateKey;
-	this.init = init;
+/**
+ * Encrypts message text with keys
+ * @param  {Array&lt;module:key~Key>}  keys array of keys, used to encrypt the message
+ * @param  {String} text message as native JavaScript string
+ * @return {String}      encrypted ASCII armored message
+ * @static
+ */
+function encryptMessage(keys, text) {
+  var msg = message.fromText(text);
+  msg = msg.encrypt(keys);
+  var armored = armor.encode(enums.armor.message, msg.packets.write());
+  return armored;
 }
 
-var openpgp = new _openpgp();
+/**
+ * Signs message text and encrypts it
+ * @param  {Array&lt;module:key~Key>}  publicKeys array of keys, used to encrypt the message
+ * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
+ * @param  {String} text       message as native JavaScript string
+ * @return {String}            encrypted ASCII armored message
+ * @static
+ */
+function signAndEncryptMessage(publicKeys, privateKey, text) {
+  var msg = message.fromText(text);
+  msg = msg.sign([privateKey]);
+  msg = msg.encrypt(publicKeys);
+  var armored = armor.encode(enums.armor.message, msg.packets.write());
+  return armored;
+}
 
+/**
+ * Decrypts message
+ * @param  {module:key~Key}     privateKey private key with decrypted secret key data
+ * @param  {module:message~Message} message    the message object with the encrypted data
+ * @return {(String|null)}        decrypted message as as native JavaScript string
+ *                              or null if no literal data found
+ * @static
+ */
+function decryptMessage(privateKey, message) {
+  message = message.decrypt(privateKey);
+  return message.getText();
+}
 
+/**
+ * Decrypts message and verifies signatures
+ * @param  {module:key~Key}     privateKey private key with decrypted secret key data
+ * @param  {Array&lt;module:key~Key>}   publicKeys public keys to verify signatures
+ * @param  {module:message~Message} message    the message object with signed and encrypted data
+ * @return {{text: String, signatures: Array&lt;{keyid: module:type/keyid, valid: Boolean}>}}
+ *                              decrypted message as as native JavaScript string
+ *                              with verified signatures or null if no literal data found
+ * @static
+ */
+function decryptAndVerifyMessage(privateKey, publicKeys, message) {
+  var result = {};
+  message = message.decrypt(privateKey);
+  result.text = message.getText();
+  if (result.text) {
+    result.signatures = message.verify(publicKeys);
+    return result;
+  }
+  return null;
+}
+
+/**
+ * Signs a cleartext message
+ * @param  {Array&lt;module:key~Key>}  privateKeys private key with decrypted secret key data to sign cleartext
+ * @param  {String} text        cleartext
+ * @return {String}             ASCII armored message
+ * @static
+ */
+function signClearMessage(privateKeys, text) {
+  var cleartextMessage = new cleartext.CleartextMessage(text);
+  cleartextMessage.sign(privateKeys);
+  return cleartextMessage.armor();
+}
+
+/**
+ * Verifies signatures of cleartext signed message
+ * @param  {Array&lt;module:key~Key>}            publicKeys public keys to verify signatures
+ * @param  {module:cleartext~CleartextMessage} message    cleartext message object with signatures
+ * @return {{text: String, signatures: Array&lt;{keyid: module:type/keyid, valid: Boolean}>}}
+ *                                       cleartext with status of verified signatures
+ * @static
+ */
+function verifyClearSignedMessage(publicKeys, message) {
+  var result = {};
+  if (!(message instanceof cleartext.CleartextMessage)) {
+    throw new Error('Parameter [message] needs to be of type CleartextMessage.');
+  }
+  result.text = message.getText();
+  result.signatures = message.verify(publicKeys);
+  return result;
+}
+
+/**
+ * Generates a new OpenPGP key pair. Currently only supports RSA keys.
+ * Primary and subkey will be of same type.
+ * @param {Integer} keyType    to indicate what type of key to make. 
+ *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
+ * @param {String}  userId     assumes already in form of "User Name &lt;username@email.com>"
+ * @param {String}  passphrase The passphrase used to encrypt the resulting private key
+ * @return {Object} {key: Array&lt;module:key~Key>, privateKeyArmored: Array&lt;String>, publicKeyArmored: Array&lt;String>}
+ * @static
+ */
+function generateKeyPair(keyType, numBits, userId, passphrase) {
+  var result = {};
+  var newKey = key.generate(keyType, numBits, userId, passphrase);
+  result.key = newKey;
+  result.privateKeyArmored = newKey.armor();
+  result.publicKeyArmored = newKey.toPublic().armor();
+  return result;
+}
+
+exports.encryptMessage = encryptMessage;
+exports.signAndEncryptMessage = signAndEncryptMessage;
+exports.decryptMessage = decryptMessage;
+exports.decryptAndVerifyMessage = decryptAndVerifyMessage
+exports.signClearMessage = signClearMessage;
+exports.verifyClearSignedMessage = verifyClearSignedMessage;
+exports.generateKeyPair = generateKeyPair;
 </code></pre>
         </article>
     </section>
@@ -496,15 +199,16 @@ var openpgp = new _openpgp();
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="_openpgp_packet.html">_openpgp_packet</a></li><li><a href="JXG.Util.html">Util</a></li><li><a href="openpgp.html">openpgp</a></li><li><a href="openpgp_config.html">openpgp_config</a></li><li><a href="openpgp_keyring.html">openpgp_keyring</a></li><li><a href="openpgp_msg_message.html">openpgp_msg_message</a></li><li><a href="openpgp_msg_privatekey.html">openpgp_msg_privatekey</a></li><li><a href="openpgp_msg_publickey.html">openpgp_msg_publickey</a></li><li><a href="openpgp_packet_compressed.html">openpgp_packet_compressed</a></li><li><a href="openpgp_packet_encrypteddata.html">openpgp_packet_encrypteddata</a></li><li><a href="openpgp_packet_encryptedintegrityprotecteddata.html">openpgp_packet_encryptedintegrityprotecteddata</a></li><li><a href="openpgp_packet_encryptedsessionkey.html">openpgp_packet_encryptedsessionkey</a></li><li><a href="openpgp_packet_keymaterial.html">openpgp_packet_keymaterial</a></li><li><a href="openpgp_packet_literaldata.html">openpgp_packet_literaldata</a></li><li><a href="openpgp_packet_marker.html">openpgp_packet_marker</a></li><li><a href="openpgp_packet_modificationdetectioncode.html">openpgp_packet_modificationdetectioncode</a></li><li><a href="openpgp_packet_onepasssignature.html">openpgp_packet_onepasssignature</a></li><li><a href="openpgp_packet_signature.html">openpgp_packet_signature</a></li><li><a href="openpgp_packet_userattribute.html">openpgp_packet_userattribute</a></li><li><a href="openpgp_packet_userid.html">openpgp_packet_userid</a></li><li><a href="openpgp_type_keyid.html">openpgp_type_keyid</a></li><li><a href="openpgp_type_mpi.html">openpgp_type_mpi</a></li><li><a href="openpgp_type_s2k.html">openpgp_type_s2k</a></li></ul><h3>Global</h3><ul><li><a href="global.html#bin2str">bin2str</a></li><li><a href="global.html#calc_checksum">calc_checksum</a></li><li><a href="global.html#crc_table">crc_table</a></li><li><a href="global.html#decode_utf8">decode_utf8</a></li><li><a href="global.html#encode_utf8">encode_utf8</a></li><li><a href="global.html#get_hashAlgorithmString">get_hashAlgorithmString</a></li><li><a href="global.html#getCheckSum">getCheckSum</a></li><li><a href="global.html#getPGPMessageType">getPGPMessageType</a></li><li><a href="global.html#hash_headers">hash_headers</a></li><li><a href="global.html#hex2bin">hex2bin</a></li><li><a href="global.html#hexidump">hexidump</a></li><li><a href="global.html#hexstrdump">hexstrdump</a></li><li><a href="global.html#MD5">MD5</a></li><li><a href="global.html#openpgp_cfb_decrypt">openpgp_cfb_decrypt</a></li><li><a href="global.html#openpgp_cfb_encrypt">openpgp_cfb_encrypt</a></li><li><a href="global.html#openpgp_cfb_mdc">openpgp_cfb_mdc</a></li><li><a href="global.html#openpgp_crypto_asymetricDecrypt">openpgp_crypto_asymetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_asymetricEncrypt">openpgp_crypto_asymetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_generateKeyPair">openpgp_crypto_generateKeyPair</a></li><li><a href="global.html#openpgp_crypto_generateSessionKey">openpgp_crypto_generateSessionKey</a></li><li><a href="global.html#openpgp_crypto_getHashByteLength">openpgp_crypto_getHashByteLength</a></li><li><a href="global.html#openpgp_crypto_getPrefixRandom">openpgp_crypto_getPrefixRandom</a></li><li><a href="global.html#openpgp_crypto_getPseudoRandom">openpgp_crypto_getPseudoRandom</a></li><li><a href="global.html#openpgp_crypto_getRandomBigInteger">openpgp_crypto_getRandomBigInteger</a></li><li><a href="global.html#openpgp_crypto_getRandomBytes">openpgp_crypto_getRandomBytes</a></li><li><a href="global.html#openpgp_crypto_getSecureRandom">openpgp_crypto_getSecureRandom</a></li><li><a href="global.html#openpgp_crypto_hashData">openpgp_crypto_hashData</a></li><li><a href="global.html#openpgp_crypto_MDCSystemBytes">openpgp_crypto_MDCSystemBytes</a></li><li><a href="global.html#openpgp_crypto_signData">openpgp_crypto_signData</a></li><li><a href="global.html#openpgp_crypto_symmetricDecrypt">openpgp_crypto_symmetricDecrypt</a></li><li><a href="global.html#openpgp_crypto_symmetricEncrypt">openpgp_crypto_symmetricEncrypt</a></li><li><a href="global.html#openpgp_crypto_verifySignature">openpgp_crypto_verifySignature</a></li><li><a href="global.html#openpgp_encoding_armor">openpgp_encoding_armor</a></li><li><a href="global.html#openpgp_encoding_armor_addheader">openpgp_encoding_armor_addheader</a></li><li><a href="global.html#openpgp_encoding_base64_decode">openpgp_encoding_base64_decode</a></li><li><a href="global.html#openpgp_encoding_base64_encode">openpgp_encoding_base64_encode</a></li><li><a href="global.html#openpgp_encoding_deArmor">openpgp_encoding_deArmor</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_decode">openpgp_encoding_eme_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_eme_pkcs1_encode">openpgp_encoding_eme_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_decode">openpgp_encoding_emsa_pkcs1_decode</a></li><li><a href="global.html#openpgp_encoding_emsa_pkcs1_encode">openpgp_encoding_emsa_pkcs1_encode</a></li><li><a href="global.html#openpgp_encoding_html_encode">openpgp_encoding_html_encode</a></li><li><a href="global.html#print_debug">print_debug</a></li><li><a href="global.html#print_debug_hexstr_dump">print_debug_hexstr_dump</a></li><li><a href="global.html#print_error">print_error</a></li><li><a href="global.html#print_info">print_info</a></li><li><a href="global.html#shiftRight">shiftRight</a></li><li><a href="global.html#str2bin">str2bin</a></li><li><a href="global.html#str2Uint8Array">str2Uint8Array</a></li><li><a href="global.html#Uint8Array2str">Uint8Array2str</a></li><li><a href="global.html#util">util</a></li><li><a href="global.html#verifyCheckSum">verifyCheckSum</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Tue Apr 16 2013 10:42:39 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

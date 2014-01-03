@@ -1,25 +1,29 @@
 {
-    "name": "openpgpjs",
-    "version": "0.1.0-dev",
-    "engines": {
-        "node": ">=0.8"
-    },
-    "scripts": {
-        "pretest": "make minify",
-        "test": "grunt test",
-        "start": "grunt dev"
-    },
-    "dependencies": {},
-    "devDependencies": {
-        "grunt": "0.4.1",
-        "mocha": "1.13.0",
-        "phantomjs": "1.9.1-9",
-        "requirejs": "2.1.8",
-        "chai": "1.7.2",
-        "sinon": "1.7.3",
-        "phantomjs": "1.9.1-9",
-        "grunt-contrib-connect": "0.5.0",
-        "grunt-contrib-copy": "0.4.1",
-        "grunt-mocha": "0.4.1"
-    }
+  "name": "openpgp",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=0.8"
+  },
+  "main": "./src/index.js",
+  "scripts": {
+    "pretest": "grunt browserify",
+    "test": "grunt test",
+    "start": "grunt dev"
+  },
+  "devDependencies": {
+    "browserify": "~2.35",
+    "grunt": "~0.4.2",
+    "mocha": "~1.15.1",
+    "mocha-phantomjs": "~3.1.6",
+    "phantomjs": "~1.9.2-5",
+    "chai": "~1.8.1",
+    "sinon": "~1.7.3",
+    "grunt-contrib-copy": "~0.4.1",
+    "grunt-browserify": "~1.2.11",
+    "grunt-contrib-uglify": "*",
+    "grunt-text-replace": "*",
+    "grunt-jsbeautifier": "*",
+    "grunt-contrib-jshint": "*",
+    "grunt-jsdoc": "*"
+  }
 }
