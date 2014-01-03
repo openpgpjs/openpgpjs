@@ -70,7 +70,7 @@ module.exports = {
       while (h.length < 2) h = "0" + h;
       r.push(" " + h);
       i++;
-      if (i % 32 == 0)
+      if (i % 32 === 0)
         r.push("\n           ");
     }
     return r.join('');
@@ -82,7 +82,7 @@ module.exports = {
    * @return {String} String containing the hexadecimal values
    */
   hexstrdump: function (str) {
-    if (str == null)
+    if (str === null)
       return "";
     var r = [];
     var e = str.length;
@@ -250,7 +250,7 @@ module.exports = {
 
   getLeftNBits: function (string, bitcount) {
     var rest = bitcount % 8;
-    if (rest == 0)
+    if (rest === 0)
       return string.substring(0, bitcount / 8);
     var bytes = (bitcount - rest) / 8 + 1;
     var result = string.substring(0, bytes);
@@ -266,7 +266,7 @@ module.exports = {
    */
   shiftRight: function (value, bitcount) {
     var temp = util.str2bin(value);
-    if (bitcount % 8 != 0) {
+    if (bitcount % 8 !== 0) {
       for (var i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
         if (i > 0)

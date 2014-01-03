@@ -55,4 +55,4 @@ module.exports = function userid() {
   this.write = function () {
     return util.encode_utf8(this.userid);
   };
-}
+};

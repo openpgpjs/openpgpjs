@@ -128,11 +128,12 @@ Key.prototype.toPacketlist = function() {
   packetlist.push(this.primaryKey);
   packetlist.push(this.revocationSignature);
   packetlist.concat(this.directSignatures);
-  for (var i = 0; i < this.users.length; i++) {
+  var i;
+  for (i = 0; i < this.users.length; i++) {
     packetlist.concat(this.users[i].toPacketlist());
   }
   if (this.subKeys) {
-    for (var i = 0; i < this.subKeys.length; i++) {
+    for (i = 0; i < this.subKeys.length; i++) {
       packetlist.concat(this.subKeys[i].toPacketlist());
     } 
   }
@@ -257,16 +258,17 @@ Key.prototype.isPrivate = function() {
 Key.prototype.toPublic = function() {
   var packetlist = new packet.list();
   var keyPackets = this.toPacketlist();
+  var bytes;
   for (var i = 0; i < keyPackets.length; i++) {
     switch (keyPackets[i].tag) {
       case enums.packet.secret_key:
-        var bytes = keyPackets[i].writePublicKey();
+        bytes = keyPackets[i].writePublicKey();
         var pubKeyPacket = new packet.public_key();
         pubKeyPacket.read(bytes);
         packetlist.push(pubKeyPacket);
         break;
       case enums.packet.secret_subkey:
-        var bytes = keyPackets[i].writePublicKey();
+        bytes = keyPackets[i].writePublicKey();
         var pubSubkeyPacket = new packet.public_subkey();
         pubSubkeyPacket.read(bytes);
         packetlist.push(pubSubkeyPacket);
@@ -328,7 +330,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
          ((signature.keyFlags & enums.keyFlags.encrypt_communication) !== 0 ||
           (signature.keyFlags & enums.keyFlags.encrypt_storage) !== 0 ||
           !signature.keyFlags);
-};
+}
 
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.dsa) ||
@@ -336,7 +338,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
           keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
          ((signature.keyFlags & enums.keyFlags.sign_data) !== 0 ||
           !signature.keyFlags);
-};
+}
 
 /**
  * Returns the first valid encryption key packet for this key
@@ -469,7 +471,7 @@ Key.prototype.getPrimaryUser = function() {
     }
   }
   return user ? {user: user, selfCertificate: userSelfCert} : null;
-}
+};
 
 // TODO
 Key.prototype.revoke = function() {
@@ -485,7 +487,7 @@ function User(userPacket) {
     return new User(userPacket);
   }
   this.userId = userPacket.tag == enums.packet.userid ? userPacket : null;
-  this.userAttribute = userPacket.tag == enums.packet.user_attribute ? userPacket : null
+  this.userAttribute = userPacket.tag == enums.packet.user_attribute ? userPacket : null;
   this.selfCertifications = null;
   this.otherCertifications = null;
   this.revocationCertifications = null;
@@ -683,8 +685,8 @@ function readArmored(armoredText) {
     var packetlist = new packet.list();
     packetlist.read(input.data);
     var keyIndex = packetlist.indexOfTag(enums.packet.public_key, enums.packet.secret_key);
-    if (keyIndex.length == 0) {
-      throw new Error('No key packet found in armored text')
+    if (keyIndex.length === 0) {
+      throw new Error('No key packet found in armored text');
     }
     for (var i = 0; i < keyIndex.length; i++) {
       var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);

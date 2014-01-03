@@ -74,7 +74,7 @@ module.exports = function one_pass_signature() {
     //   signature to be applied to the same message data.
     this.flags = bytes.charCodeAt(mypos++);
     return this;
-  }
+  };
 
   /**
    * creates a string representation of a one-pass signature packet
@@ -91,5 +91,5 @@ module.exports = function one_pass_signature() {
     result += String.fromCharCode(this.flags);
 
     return result;
-  }
+  };
 };

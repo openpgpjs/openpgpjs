@@ -28,4 +28,4 @@ var secretKey = require('./secret_key.js');
  */
 module.exports = function secret_subkey() {
   secretKey.call(this);
-}
+};

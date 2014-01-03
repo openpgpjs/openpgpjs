@@ -25,7 +25,7 @@
  */
 
 var RMDsize = 160;
-var X = new Array();
+var X = [];
 
 function ROL(x, n) {
   return new Number((x << n) | (x >>> (32 - n)));
@@ -98,7 +98,7 @@ function mixOneRound(a, b, c, d, e, x, s, roundNumber) {
   d &= 0xffffffff;
   e &= 0xffffffff;
 
-  var retBlock = new Array();
+  var retBlock = [];
   retBlock[0] = a;
   retBlock[1] = b;
   retBlock[2] = c;
@@ -145,19 +145,21 @@ var indexes = [
 ];
 
 function compress(MDbuf, X) {
-  blockA = new Array();
-  blockB = new Array();
+  blockA = [];
+  blockB = [];
 
   var retBlock;
 
-  for (var i = 0; i < 5; i++) {
+  var i, j;
+
+  for (i = 0; i < 5; i++) {
     blockA[i] = new Number(MDbuf[i]);
     blockB[i] = new Number(MDbuf[i]);
   }
 
   var step = 0;
-  for (var j = 0; j < 5; j++) {
-    for (var i = 0; i < 16; i++) {
+  for (j = 0; j < 5; j++) {
+    for (i = 0; i < 16; i++) {
       retBlock = mixOneRound(
         blockA[(step + 0) % 5],
         blockA[(step + 1) % 5],
@@ -179,8 +181,8 @@ function compress(MDbuf, X) {
   }
 
   step = 0;
-  for (var j = 5; j < 10; j++) {
-    for (var i = 0; i < 16; i++) {
+  for (j = 5; j < 10; j++) {
+    for (i = 0; i < 16; i++) {
       retBlock = mixOneRound(
         blockB[(step + 0) % 5],
         blockB[(step + 1) % 5],
@@ -228,7 +230,7 @@ function MDfinish(MDbuf, strptr, lswlen, mswlen) {
 
   if ((lswlen & 63) > 55) {
     compress(MDbuf, X);
-    var X = new Array(16);
+    X = new Array(16);
     zeroX(X);
   }
 
@@ -259,9 +261,9 @@ function RMD(message) {
   var X = new Array(16);
   zeroX(X);
 
-  var j = 0;
-  for (var nbytes = length; nbytes > 63; nbytes -= 64) {
-    for (var i = 0; i < 16; i++) {
+  var i, j = 0;
+  for (nbytes = length; nbytes > 63; nbytes -= 64) {
+    for (i = 0; i < 16; i++) {
       X[i] = BYTES_TO_DWORD(message.substr(j, 4));
       j += 4;
     }
@@ -270,7 +272,7 @@ function RMD(message) {
 
   MDfinish(MDbuf, message.substr(j), length, 0);
 
-  for (var i = 0; i < RMDsize / 8; i += 4) {
+  for (i = 0; i < RMDsize / 8; i += 4) {
     hashcode[i] = MDbuf[i >>> 2] & 255;
     hashcode[i + 1] = (MDbuf[i >>> 2] >>> 8) & 255;
     hashcode[i + 2] = (MDbuf[i >>> 2] >>> 16) & 255;

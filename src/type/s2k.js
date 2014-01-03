@@ -99,7 +99,6 @@ module.exports = function s2k() {
 
       default:
         throw new Error("Unknown s2k type.");
-        break;
     }
 
     return i;

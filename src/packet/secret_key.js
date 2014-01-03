@@ -261,6 +261,6 @@ module.exports = function secret_key() {
     this.isDecrypted = true;
   };
 
-}
+};
 
 module.exports.prototype = new publicKey();

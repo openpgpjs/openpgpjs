@@ -373,7 +373,7 @@ function TF(key) {
 
   this.encrypt = function(block) {
     return this.tf.encrypt([].concat(block), 0);
-  }
+  };
 }
 
 

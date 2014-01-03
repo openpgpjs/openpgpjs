@@ -39,7 +39,7 @@ module.exports = function () {
       }
     }
     return keys;
-  }
+  };
 
   /**
    * Saves the current state of the keyring to HTML5 local storage.
@@ -52,5 +52,5 @@ module.exports = function () {
       armoredKeys.push(keys[i].armor());
     }
     window.localStorage.setItem("armoredKeys", JSON.stringify(armoredKeys));
-  }
+  };
 };

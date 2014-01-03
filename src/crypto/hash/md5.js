@@ -27,7 +27,7 @@ module.exports = function (entree) {
   var hex = md5(entree);
   var bin = util.hex2bin(hex);
   return bin;
-}
+};
 
 function md5cycle(x, k) {
   var a = x[0],

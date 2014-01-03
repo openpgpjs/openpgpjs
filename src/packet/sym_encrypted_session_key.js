@@ -75,13 +75,13 @@ module.exports = function sym_encrypted_session_key() {
 
     if (done < bytes.length) {
       this.encrypted = bytes.substr(done);
-      this.sessionKeyEncryptionAlgorithm = algo
+      this.sessionKeyEncryptionAlgorithm = algo;
     } else
       this.sessionKeyAlgorithm = algo;
   };
 
   this.write = function() {
-    var algo = this.encrypted == null ?
+    var algo = this.encrypted === null ?
       this.sessionKeyAlgorithm :
       this.sessionKeyEncryptionAlgorithm;
 
@@ -89,7 +89,7 @@ module.exports = function sym_encrypted_session_key() {
       String.fromCharCode(enums.write(enums.symmetric, algo)) +
       this.s2k.write();
 
-    if (this.encrypted != null)
+    if (this.encrypted !== null)
       bytes += this.encrypted;
     return bytes;
   };
@@ -101,7 +101,7 @@ module.exports = function sym_encrypted_session_key() {
    * @return {String} The unencrypted session key
    */
   this.decrypt = function(passphrase) {
-    var algo = this.sessionKeyEncryptionAlgorithm != null ?
+    var algo = this.sessionKeyEncryptionAlgorithm !== null ?
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
@@ -109,7 +109,7 @@ module.exports = function sym_encrypted_session_key() {
     var length = crypto.cipher[algo].keySize;
     var key = this.s2k.produce_key(passphrase, length);
 
-    if (this.encrypted == null) {
+    if (this.encrypted === null) {
       this.sessionKey = key;
 
     } else {
