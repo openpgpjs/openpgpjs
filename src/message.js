@@ -15,14 +15,20 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module message */
+/**
+ * @requires config
+ * @requires crypto
+ * @requires encoding/armor
+ * @requires enums
+ * @requires packet
+ * @module message
+ */
 
-var packet = require('./packet');
-var enums = require('./enums.js');
-var armor = require('./encoding/armor.js');
-var config = require('./config');
-var crypto = require('./crypto');
-var util = require('./util');
+var packet = require('./packet'),
+  enums = require('./enums.js'),
+  armor = require('./encoding/armor.js'),
+  config = require('./config'),
+  crypto = require('./crypto');
 
 /**
  * @class
@@ -178,10 +184,10 @@ Message.prototype.sign = function(privateKeys) {
   if (!literalDataPacket) throw new Error('No literal data packet to sign.');
   
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  var signatureType = literalFormat == enums.literal.binary 
-                      ? enums.signature.binary : enums.signature.text; 
-  
-  for (var i = 0; i < privateKeys.length; i++) {
+  var signatureType = literalFormat == enums.literal.binary ?
+                      enums.signature.binary : enums.signature.text;
+  var i;
+  for (i = 0; i < privateKeys.length; i++) {
     var onePassSig = new packet.one_pass_signature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
@@ -197,7 +203,7 @@ Message.prototype.sign = function(privateKeys) {
 
   packetlist.push(literalDataPacket);
   
-  for (var i = privateKeys.length - 1; i >= 0; i--) {
+  for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new packet.signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
@@ -261,6 +267,7 @@ Message.prototype.armor = function() {
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
  * @return {module:message~Message} new message object
+ * @static
  */
 function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
@@ -276,6 +283,7 @@ function readArmored(armoredText) {
  * creates new message object from text
  * @param {String} text
  * @return {module:message~Message} new message object
+ * @static
  */
 function fromText(text) {
   var literalDataPacket = new packet.literal();
@@ -291,6 +299,7 @@ function fromText(text) {
  * creates new message object from binary data
  * @param {String} bytes
  * @return {module:message~Message} new message object
+ * @static
  */
 function fromBinary(bytes) {
   var literalDataPacket = new packet.literal();

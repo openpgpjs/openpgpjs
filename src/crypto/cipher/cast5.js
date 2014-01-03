@@ -252,19 +252,22 @@ function openpgp_symenc_cast5() {
     var t = new Array(8);
     var k = new Array(32);
 
-    for (var i = 0; i < 4; i++) {
-      var j = i * 4;
+    var i, j;
+
+    for (i = 0; i < 4; i++) {
+      j = i * 4;
       t[i] = inn[j] << 24 | inn[j + 1] << 16 | inn[j + 2] << 8 | inn[j + 3];
     }
 
     var x = [6, 7, 4, 5];
     var ki = 0;
+    var w;
 
     for (var half = 0; half < 2; half++) {
       for (var round = 0; round < 4; round++) {
-        for (var j = 0; j < 4; j++) {
+        for (j = 0; j < 4; j++) {
           var a = scheduleA[round][j];
-          var w = t[a[1]];
+          w = t[a[1]];
 
           w ^= sBox[4][(t[a[2] >>> 2] >>> (24 - 8 * (a[2] & 3))) & 0xff];
           w ^= sBox[5][(t[a[3] >>> 2] >>> (24 - 8 * (a[3] & 3))) & 0xff];
@@ -274,9 +277,9 @@ function openpgp_symenc_cast5() {
           t[a[0]] = w;
         }
 
-        for (var j = 0; j < 4; j++) {
+        for (j = 0; j < 4; j++) {
           var b = scheduleB[round][j];
-          var w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] & 3))) & 0xff];
+          w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] & 3))) & 0xff];
 
           w ^= sBox[5][(t[b[1] >>> 2] >>> (24 - 8 * (b[1] & 3))) & 0xff];
           w ^= sBox[6][(t[b[2] >>> 2] >>> (24 - 8 * (b[2] & 3))) & 0xff];
@@ -288,7 +291,7 @@ function openpgp_symenc_cast5() {
       }
     }
 
-    for (var i = 0; i < 16; i++) {
+    for (i = 0; i < 16; i++) {
       this.masking[i] = k[i];
       this.rotate[i] = k[16 + i] & 0x1f;
     }
@@ -587,8 +590,7 @@ function openpgp_symenc_cast5() {
     0xe97625a5, 0x0614d1b7, 0x0e25244b, 0x0c768347, 0x589e8d82, 0x0d2059d1, 0xa466bb1e, 0xf8da0a82,
     0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e);
 
-};
-
+}
 var util = require('../../util');
 
 function cast5(key) {
@@ -597,7 +599,7 @@ function cast5(key) {
 
   this.encrypt = function(block) {
     return this.cast5.encrypt(block);
-  }
+  };
 }
 
 module.exports = cast5;

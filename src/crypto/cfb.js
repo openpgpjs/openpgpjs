@@ -15,7 +15,11 @@
  * materials provided with the application or distribution.
  */
 
-/** @module crypto/cfb */
+/**
+ * @requires crypto/cipher
+ * @requires util
+ * @module crypto/cfb
+ */
 
 var util = require('../util'),
   cipher = require('./cipher');
@@ -23,32 +27,16 @@ var util = require('../util'),
 module.exports = {
 
   /**
-   * An array of bytes, that is integers with values from 0 to 255
-   * @typedef {(Array|Uint8Array)} openpgp_byte_array
-   */
-
-  /**
-   * Block cipher function
-   * @callback openpgp_block_cipher_fn
-   * @param {openpgp_byte_array} block A block to perform operations on
-   * @param {openpgp_byte_array} key to use in encryption/decryption
-   * @return {openpgp_byte_array} Encrypted/decrypted block
-   */
-
-
-  // --------------------------------------
-  /**
    * This function encrypts a given with the specified prefixrandom 
    * using the specified blockcipher to encrypt a message
    * @param {String} prefixrandom random bytes of block_size length provided 
    *  as a string to be used in prefixing the data
-   * @param {openpgp_block_cipher_fn} blockcipherfn the algorithm encrypt function to encrypt
-   *  data in one block_size encryption. 
-   * @param {Integer} block_size the block size in bytes of the algorithm used
+   * @param {String} cipherfn the algorithm cipher class to encrypt
+   *  data in one block_size encryption, @see module:crypto/cipher.
    * @param {String} plaintext data to be encrypted provided as a string
-   * @param {openpgp_byte_array} key key to be used to encrypt the data. This will be passed to the 
-   *  blockcipherfn
-   * @param {Boolean} resync a boolean value specifying if a resync of the 
+   * @param {String} key binary string representation of key to be used to encrypt the plaintext.
+   * This will be passed to the cipherfn
+   * @param {Boolean} resync a boolean value specifying if a resync of the
    *  IV should be used or not. The encrypteddatapacket uses the 
    *  "old" style with a resync. Encryption within an 
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
@@ -64,8 +52,9 @@ module.exports = {
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
     util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
     var ciphertext = "";
+    var i;
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
-    for (var i = 0; i < block_size; i++) FR[i] = 0;
+    for (i = 0; i < block_size; i++) FR[i] = 0;
 
     // 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
     //     encryption of an all-zero value.
@@ -73,13 +62,13 @@ module.exports = {
     // 3.  FRE is xored with the first BS octets of random data prefixed to
     //     the plaintext to produce C[1] through C[BS], the first BS octets
     //     of ciphertext.
-    for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+    for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
 
     // 4.  FR is loaded with C[1] through C[BS].
-    for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+    for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
 
     // 5.  FR is encrypted to produce FRE, the encryption of the first BS
-    // 	   octets of ciphertext.
+    //     octets of ciphertext.
     FRE = cipherfn.encrypt(FR);
 
     // 6.  The left two octets of FRE get xored with the next two octets of
@@ -90,22 +79,22 @@ module.exports = {
 
     if (resync) {
       // 7.  (The resync step) FR is loaded with C3-C10.
-      for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i + 2);
+      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i + 2);
     } else {
-      for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
     }
     // 8.  FR is encrypted to produce FRE.
     FRE = cipherfn.encrypt(FR, key);
 
     if (resync) {
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //	   that we have finished encrypting the 10 octets of prefixed data.
-      // 	   This produces C11-C18, the next 8 octets of ciphertext.
-      for (var i = 0; i < block_size; i++)
+      //     that we have finished encrypting the 10 octets of prefixed data.
+      //     This produces C11-C18, the next 8 octets of ciphertext.
+      for (i = 0; i < block_size; i++)
         ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       for (n = block_size + 2; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (var i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n + i);
+        for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n + i);
 
         // 11. FR is encrypted to produce FRE.
         FRE = cipherfn.encrypt(FR);
@@ -113,20 +102,20 @@ module.exports = {
         // 12. FRE is xored with the next 8 octets of plaintext, to produce the
         // next 8 octets of ciphertext.  These are loaded into FR and the
         // process is repeated until the plaintext is used up.
-        for (var i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) +
+        for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) +
             i));
       }
     } else {
       plaintext = "  " + plaintext;
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //	   that we have finished encrypting the 10 octets of prefixed data.
-      // 	   This produces C11-C18, the next 8 octets of ciphertext.
-      for (var i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+      //     that we have finished encrypting the 10 octets of prefixed data.
+      //     This produces C11-C18, the next 8 octets of ciphertext.
+      for (i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       var tempCiphertext = ciphertext.substring(0, 2 * block_size).split('');
       var tempCiphertextString = ciphertext.substring(block_size);
       for (n = block_size; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (var i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
+        for (i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
         tempCiphertextString = '';
 
         // 11. FR is encrypted to produce FRE.
@@ -135,13 +124,12 @@ module.exports = {
         // 12. FRE is xored with the next 8 octets of plaintext, to produce the
         //     next 8 octets of ciphertext.  These are loaded into FR and the
         //     process is repeated until the plaintext is used up.
-        for (var i = 0; i < block_size; i++) {
+        for (i = 0; i < block_size; i++) {
           tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i)));
           tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
         }
       }
       ciphertext = tempCiphertext.join('');
-
     }
 
     ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
@@ -151,9 +139,10 @@ module.exports = {
 
   /**
    * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-   * @param {openpgp_block_cipher_fn} cipherfn.encrypt Cipher function to use
-   * @param {Integer} block_size Blocksize of the algorithm
-   * @param {openpgp_byte_array} key The key for encryption
+   * @param {String} cipherfn.encrypt Cipher function to use,
+   *  @see module:crypto/cipher.
+   * @param {String} key binary string representation of key to be used to check the mdc
+   * This will be passed to the cipherfn
    * @param {String} ciphertext The encrypted data
    * @return {String} plaintext Data of D(ciphertext) with blocksize length +2
    */
@@ -184,13 +173,12 @@ module.exports = {
   /**
    * This function decrypts a given plaintext using the specified
    * blockcipher to decrypt a message
-   * @param {openpgp_block_cipher_fn} blockcipherfn The algorithm _encrypt_ function to encrypt
-   *  data in one block_size encryption.
-   * @param {Integer} block_size the block size in bytes of the algorithm used
-   * @param {String} plaintext ciphertext to be decrypted provided as a string
-   * @param {openpgp_byte_array} key key to be used to decrypt the ciphertext. This will be passed to the 
-   *  blockcipherfn
-   * @param {Boolean} resync a boolean value specifying if a resync of the 
+   * @param {String} cipherfn the algorithm cipher class to decrypt
+   *  data in one block_size encryption, @see module:crypto/cipher.
+   * @param {String} key binary string representation of key to be used to decrypt the ciphertext.
+   * This will be passed to the cipherfn
+   * @param {String} ciphertext to be decrypted provided as a string
+   * @param {Boolean} resync a boolean value specifying if a resync of the
    *  IV should be used or not. The encrypteddatapacket uses the 
    *  "old" style with a resync. Decryption within an 
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
@@ -251,7 +239,7 @@ module.exports = {
       }
     }
 
-    var n = resync ? 0 : 2;
+    n = resync ? 0 : 2;
 
     text = text.join('');
 
@@ -293,14 +281,15 @@ module.exports = {
     var pos = 0;
     var plaintext = [];
     var offset = 0;
-    if (iv == null)
-      for (var i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
+    var i;
+    if (iv === null)
+      for (i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
     else
       blockp = iv.substring(0, block_size);
     while (ciphertext.length > (block_size * pos)) {
       var decblock = cipherfn.encrypt(util.str2bin(blockp));
       blockp = ciphertext.substring((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
-      for (var i = 0; i < blockp.length; i++) {
+      for (i = 0; i < blockp.length; i++) {
         plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
       }
       pos++;
@@ -308,4 +297,4 @@ module.exports = {
 
     return plaintext.join('');
   }
-}
+};

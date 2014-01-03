@@ -106,10 +106,11 @@ module.exports = function(grunt) {
     },
     jsdoc : {
       dist : {
-        src: ["src/**/*.js"],
-        jsdoc: "node_modules/jsdoc/jsdoc.js",
+        src: ["README.md", "src"],
         options: {
-          destination: "doc"
+          destination: "doc",
+          recurse: true,
+          template: "jsdoc.template"
         }
       }
     },

@@ -15,16 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/sym_encrypted_session_key */
-
-var type_s2k = require('../type/s2k.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto');
-
 /**
- * @class
- * @classdesc Public-Key Encrypted Session Key Packets (Tag 1)
- * 
+ * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
+ * <br/>
  * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
@@ -36,8 +29,20 @@ var type_s2k = require('../type/s2k.js'),
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
+ * @requires crypto
+ * @requires enums
+ * @requires type/s2k
+ * @module packet/sym_encrypted_session_key
  */
-module.exports = function packet_sym_encrypted_session_key() {
+
+var type_s2k = require('../type/s2k.js'),
+  enums = require('../enums.js'),
+  crypto = require('../crypto');
+
+/**
+ * @constructor
+ */
+module.exports = function sym_encrypted_session_key() {
   this.tag = 3;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
@@ -70,13 +75,13 @@ module.exports = function packet_sym_encrypted_session_key() {
 
     if (done < bytes.length) {
       this.encrypted = bytes.substr(done);
-      this.sessionKeyEncryptionAlgorithm = algo
+      this.sessionKeyEncryptionAlgorithm = algo;
     } else
       this.sessionKeyAlgorithm = algo;
-  }
+  };
 
   this.write = function() {
-    var algo = this.encrypted == null ?
+    var algo = this.encrypted === null ?
       this.sessionKeyAlgorithm :
       this.sessionKeyEncryptionAlgorithm;
 
@@ -84,10 +89,10 @@ module.exports = function packet_sym_encrypted_session_key() {
       String.fromCharCode(enums.write(enums.symmetric, algo)) +
       this.s2k.write();
 
-    if (this.encrypted != null)
+    if (this.encrypted !== null)
       bytes += this.encrypted;
     return bytes;
-  }
+  };
 
   /**
    * Decrypts the session key (only for public key encrypted session key
@@ -96,7 +101,7 @@ module.exports = function packet_sym_encrypted_session_key() {
    * @return {String} The unencrypted session key
    */
   this.decrypt = function(passphrase) {
-    var algo = this.sessionKeyEncryptionAlgorithm != null ?
+    var algo = this.sessionKeyEncryptionAlgorithm !== null ?
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
@@ -104,7 +109,7 @@ module.exports = function packet_sym_encrypted_session_key() {
     var length = crypto.cipher[algo].keySize;
     var key = this.s2k.produce_key(passphrase, length);
 
-    if (this.encrypted == null) {
+    if (this.encrypted === null) {
       this.sessionKey = key;
 
     } else {
@@ -116,7 +121,7 @@ module.exports = function packet_sym_encrypted_session_key() {
 
       this.sessionKey = decrypted.substr(1);
     }
-  }
+  };
 
   this.encrypt = function(passphrase) {
     var length = crypto.getKeyLength(this.sessionKeyEncryptionAlgorithm);
@@ -131,5 +136,5 @@ module.exports = function packet_sym_encrypted_session_key() {
     this.encrypted = crypto.cfb.encrypt(
       crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm),
       this.sessionKeyEncryptionAlgorithm, key, private_key, true);
-  }
+  };
 };

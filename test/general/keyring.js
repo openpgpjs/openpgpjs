@@ -7,7 +7,6 @@ var expect = chai.expect;
 describe("Keyring", function() {
   var keyring = new (new require('keyring'))();
 
-  keyring.init();
   keyring.importKey([
         '-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v1.4.11 (GNU/Linux)',

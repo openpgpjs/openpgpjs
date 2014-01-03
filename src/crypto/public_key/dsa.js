@@ -17,12 +17,19 @@
 //
 // A Digital signature algorithm implementation
 
-/** @module crypto/public_key/dsa */
+/**
+ * @requires crypto/hash
+ * @requires crypto/public_key/jsbn
+ * @requires crypto/random
+ * @requires util
+ * @module crypto/public_key/dsa
+ */
 
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   hashModule = require('../hash'),
-  util = require('../../util');
+  util = require('../../util'),
+  config = require('../../config');
 
 function DSA() {
   // s1 = ((g**s) mod p) mod q
@@ -38,14 +45,14 @@ function DSA() {
     var k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
     var s1 = (g.modPow(k, p)).mod(q);
     var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
-    var result = new Array();
+    var result = [];
     result[0] = s1.toMPI();
     result[1] = s2.toMPI();
     return result;
   }
 
   function select_hash_algorithm(q) {
-    var usersetting = openpgp.config.config.prefer_hash_algorithm;
+    var usersetting = config.prefer_hash_algorithm;
     /*
      * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
      * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
@@ -101,61 +108,61 @@ function DSA() {
 	 * unused code. This can be used as a start to write a key generator
 	 * function.
 	
-	function generateKey(bitcount) {
-	    var qi = new BigInteger(bitcount, primeCenterie);
-	    var pi = generateP(q, 512);
-	    var gi = generateG(p, q, bitcount);
-	    var xi;
-	    do {
-	        xi = new BigInteger(q.bitCount(), rand);
-	    } while (x.compareTo(BigInteger.ZERO) != 1 && x.compareTo(q) != -1);
-	    var yi = g.modPow(x, p);
-	    return {x: xi, q: qi, p: pi, g: gi, y: yi};
-	}
+  function generateKey(bitcount) {
+    var qi = new BigInteger(bitcount, primeCenterie);
+    var pi = generateP(q, 512);
+    var gi = generateG(p, q, bitcount);
+    var xi;
+    do {
+      xi = new BigInteger(q.bitCount(), rand);
+    } while (x.compareTo(BigInteger.ZERO) != 1 && x.compareTo(q) != -1);
+    var yi = g.modPow(x, p);
+    return {x: xi, q: qi, p: pi, g: gi, y: yi};
+  }
 
-	function generateP(q, bitlength, randomfn) {
-	    if (bitlength % 64 != 0) {
-	    	return false;
-	    }
-	    var pTemp;
-	    var pTemp2;
-	    do {
-	        pTemp = randomfn(bitcount, true);
-	        pTemp2 = pTemp.subtract(BigInteger.ONE);
-	        pTemp = pTemp.subtract(pTemp2.remainder(q));
-	    } while (!pTemp.isProbablePrime(primeCenterie) || pTemp.bitLength() != l);
-	    return pTemp;
-	}
+  function generateP(q, bitlength, randomfn) {
+    if (bitlength % 64 != 0) {
+      return false;
+    }
+    var pTemp;
+    var pTemp2;
+    do {
+      pTemp = randomfn(bitcount, true);
+      pTemp2 = pTemp.subtract(BigInteger.ONE);
+      pTemp = pTemp.subtract(pTemp2.remainder(q));
+    } while (!pTemp.isProbablePrime(primeCenterie) || pTemp.bitLength() != l);
+    return pTemp;
+  }
 	
-	function generateG(p, q, bitlength, randomfn) {
-	    var aux = p.subtract(BigInteger.ONE);
-	    var pow = aux.divide(q);
-	    var gTemp;
-	    do {
-	        gTemp = randomfn(bitlength);
-	    } while (gTemp.compareTo(aux) != -1 && gTemp.compareTo(BigInteger.ONE) != 1);
-	    return gTemp.modPow(pow, p);
-	}
+  function generateG(p, q, bitlength, randomfn) {
+    var aux = p.subtract(BigInteger.ONE);
+    var pow = aux.divide(q);
+    var gTemp;
+    do {
+      gTemp = randomfn(bitlength);
+    } while (gTemp.compareTo(aux) != -1 && gTemp.compareTo(BigInteger.ONE) != 1);
+    return gTemp.modPow(pow, p);
+  }
 
-	function generateK(q, bitlength, randomfn) {
-	    var tempK;
-	    do {
-	        tempK = randomfn(bitlength, false);
-	    } while (tempK.compareTo(q) != -1 && tempK.compareTo(BigInteger.ZERO) != 1);
-	    return tempK;
-	}
+  function generateK(q, bitlength, randomfn) {
+    var tempK;
+    do {
+      tempK = randomfn(bitlength, false);
+    } while (tempK.compareTo(q) != -1 && tempK.compareTo(BigInteger.ZERO) != 1);
+    return tempK;
+  }
 
-	function generateR(q,p) {
-	    k = generateK(q);
-	    var r = g.modPow(k, p).mod(q);
-	    return r;
-	}
+  function generateR(q,p) {
+    k = generateK(q);
+    var r = g.modPow(k, p).mod(q);
+    return r;
+  }
 
-	function generateS(hashfn,k,r,m,q,x) {
-        var hash = hashfn(m);
-        s = (k.modInverse(q).multiply(hash.add(x.multiply(r)))).mod(q);
-	    return s;
-	} */
+  function generateS(hashfn,k,r,m,q,x) {
+    var hash = hashfn(m);
+    s = (k.modInverse(q).multiply(hash.add(x.multiply(r)))).mod(q);
+    return s;
+  } */
   this.sign = sign;
   this.verify = verify;
   // this.generate = generateKey;

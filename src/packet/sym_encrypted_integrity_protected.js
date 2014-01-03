@@ -15,24 +15,27 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/sym_encrypted_integrity_protected */
-
-var util = require('../util'),
-  crypto = require('../crypto');
-
 /**
- * @class
- * @classdesc Implementation of the Sym. Encrypted Integrity Protected Data 
- * Packet (Tag 18)
- * 
+ * Implementation of the Sym. Encrypted Integrity Protected Data
+ * Packet (Tag 18)<br/>
+ * <br/>
  * RFC4880 5.13: The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature
  * created for OpenPGP that addresses the problem of detecting a modification to
  * encrypted data. It is used in combination with a Modification Detection Code
  * packet.
+ * @requires crypto
+ * @requires util
+ * @module packet/sym_encrypted_integrity_protected
  */
 
-module.exports = function packet_sym_encrypted_integrity_protected() {
+var util = require('../util'),
+  crypto = require('../crypto');
+
+/**
+ * @constructor
+ */
+module.exports = function sym_encrypted_integrity_protected() {
   /** The encrypted payload. */
   this.encrypted = null; // string
   /**
@@ -42,12 +45,11 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
    * @type {Boolean}
    */
   this.modification = false;
-  this.packets;
+  this.packets = null;
 
 
-  this.read = function(bytes) {
-    // - A one-octet version number. The only currently defined value is
-    // 1.
+  this.read = function (bytes) {
+    // - A one-octet version number. The only currently defined value is 1.
     var version = bytes.charCodeAt(0);
 
     if (version != 1) {
@@ -58,20 +60,20 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
     //   operating in Cipher Feedback mode with shift amount equal to the
     //   block size of the cipher (CFB-n where n is the block size).
     this.encrypted = bytes.substr(1);
-  }
+  };
 
-  this.write = function() {
+  this.write = function () {
 
-    return String.fromCharCode(1) // Version
-    + this.encrypted;
-  }
+    // 1 = Version
+    return String.fromCharCode(1) + this.encrypted;
+  };
 
-  this.encrypt = function(sessionKeyAlgorithm, key) {
-    var bytes = this.packets.write()
+  this.encrypt = function (sessionKeyAlgorithm, key) {
+    var bytes = this.packets.write();
 
     var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
     var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length -
-      1)
+      1);
 
     var tohash = bytes;
 
@@ -87,7 +89,7 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
     this.encrypted = crypto.cfb.encrypt(prefixrandom,
       sessionKeyAlgorithm, tohash, key, false).substring(0,
       prefix.length + tohash.length);
-  }
+  };
 
   /**
    * Decrypts the encrypted data contained in this object read_packet must
@@ -98,7 +100,7 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
    * @param {String} key The key of cipher blocksize length to be used
    * @return {String} The decrypted data of this packet
    */
-  this.decrypt = function(sessionKeyAlgorithm, key) {
+  this.decrypt = function (sessionKeyAlgorithm, key) {
     var decrypted = crypto.cfb.decrypt(
       sessionKeyAlgorithm, key, this.encrypted, false);
 
@@ -115,5 +117,5 @@ module.exports = function packet_sym_encrypted_integrity_protected() {
       throw new Error('Modification detected.');
     } else
       this.packets.read(decrypted.substr(0, decrypted.length - 22));
-  }
+  };
 };

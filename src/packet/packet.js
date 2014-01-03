@@ -15,7 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/packet */
+/**
+ * @requires enums
+ * @requires util
+ * @module packet/packet
+ */
 
 var enums = require('../enums.js'),
   util = require('../util');
@@ -119,8 +123,8 @@ module.exports = {
    */
   read: function(input, position, len) {
     // some sanity checks
-    if (input == null || input.length <= position || input.substring(position).length < 2 || (input.charCodeAt(position) &
-      0x80) == 0) {
+    if (input === null || input.length <= position || input.substring(position).length < 2 || (input.charCodeAt(position) &
+      0x80) === 0) {
       throw new Error("Error during parsing. This message / key is probably not containing a valid OpenPGP format.");
     }
     var mypos = position;
@@ -129,7 +133,7 @@ module.exports = {
     var packet_length;
 
     format = 0; // 0 = old format; 1 = new format
-    if ((input.charCodeAt(mypos) & 0x40) != 0) {
+    if ((input.charCodeAt(mypos) & 0x40) !== 0) {
       format = 1;
     }
 
@@ -203,27 +207,28 @@ module.exports = {
         // EEEK, we're reading the full data here...
         var mypos2 = mypos + packet_length;
         bodydata = input.substring(mypos, mypos + packet_length);
+        var tmplen;
         while (true) {
           if (input.charCodeAt(mypos2) < 192) {
-            var tmplen = input.charCodeAt(mypos2++);
+            tmplen = input.charCodeAt(mypos2++);
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
             break;
           } else if (input.charCodeAt(mypos2) >= 192 && input.charCodeAt(mypos2) < 224) {
-            var tmplen = ((input.charCodeAt(mypos2++) - 192) << 8) + (input.charCodeAt(mypos2++)) + 192;
+            tmplen = ((input.charCodeAt(mypos2++) - 192) << 8) + (input.charCodeAt(mypos2++)) + 192;
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
             break;
           } else if (input.charCodeAt(mypos2) > 223 && input.charCodeAt(mypos2) < 255) {
-            var tmplen = 1 << (input.charCodeAt(mypos2++) & 0x1F);
+            tmplen = 1 << (input.charCodeAt(mypos2++) & 0x1F);
             packet_length += tmplen;
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             mypos2 += tmplen;
           } else {
             mypos2++;
-            var tmplen = (input.charCodeAt(mypos2++) << 24) | (input.charCodeAt(mypos2++) << 16) | (input[mypos2++]
+            tmplen = (input.charCodeAt(mypos2++) << 24) | (input.charCodeAt(mypos2++) << 16) | (input[mypos2++]
               .charCodeAt() << 8) | input.charCodeAt(mypos2++);
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             packet_length += tmplen;
@@ -246,7 +251,7 @@ module.exports = {
       real_packet_length = packet_length;
     }
 
-    if (bodydata == null) {
+    if (bodydata === null) {
       bodydata = input.substring(mypos, mypos + real_packet_length);
     }
 
@@ -256,4 +261,4 @@ module.exports = {
       offset: mypos + real_packet_length
     };
   }
-}
+};

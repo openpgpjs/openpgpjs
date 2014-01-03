@@ -12,15 +12,22 @@
  * warranty of any kind.
  */
 
-/** @module crypto/hash/md5 */
+/**
+ * @requires util
+ * @module crypto/hash/md5
+ */
 
-var util = require('../../util/util.js');
+var util = require('../../util');
 
-function MD5(entree) {
+/**
+ * MD5 hash
+ * @param {String} entree string to hash
+ */
+module.exports = function (entree) {
   var hex = md5(entree);
   var bin = util.hex2bin(hex);
   return bin;
-}
+};
 
 function md5cycle(x, k) {
   var a = x[0],
@@ -208,5 +215,3 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
     return (msw << 16) | (lsw & 0xFFFF);
   }
 }
-
-module.exports = MD5

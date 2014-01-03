@@ -17,7 +17,13 @@
 
 // The GPG4Browsers crypto interface
 
-/** @module crypto/crypto */
+/**
+ * @requires crypto/cipher
+ * @requires crypto/public_key
+ * @requires crypto/random
+ * @requires type/mpi
+ * @module crypto/crypto
+ */
 
 var random = require('./random.js'),
   cipher = require('./cipher'),
@@ -36,13 +42,14 @@ module.exports = {
    */
   publicKeyEncrypt: function(algo, publicMPIs, data) {
     var result = (function() {
+      var m;
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign':
           var rsa = new publicKey.rsa();
           var n = publicMPIs[0].toBigInteger();
           var e = publicMPIs[1].toBigInteger();
-          var m = data.toBigInteger();
+          m = data.toBigInteger();
           return [rsa.encrypt(m, e, n)];
 
         case 'elgamal':
@@ -50,7 +57,7 @@ module.exports = {
           var p = publicMPIs[0].toBigInteger();
           var g = publicMPIs[1].toBigInteger();
           var y = publicMPIs[2].toBigInteger();
-          var m = data.toBigInteger();
+          m = data.toBigInteger();
           return elgamal.encrypt(m, g, p, y);
 
         default:
@@ -78,6 +85,8 @@ module.exports = {
    */
 
   publicKeyDecrypt: function(algo, keyIntegers, dataIntegers) {
+    var p;
+
     var bn = (function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
@@ -85,7 +94,7 @@ module.exports = {
           var rsa = new publicKey.rsa();
           // 0 and 1 are the public key.
           var d = keyIntegers[2].toBigInteger();
-          var p = keyIntegers[3].toBigInteger();
+          p = keyIntegers[3].toBigInteger();
           var q = keyIntegers[4].toBigInteger();
           var u = keyIntegers[5].toBigInteger();
           var m = dataIntegers[0].toBigInteger();
@@ -95,7 +104,7 @@ module.exports = {
           var x = keyIntegers[3].toBigInteger();
           var c1 = dataIntegers[0].toBigInteger();
           var c2 = dataIntegers[1].toBigInteger();
-          var p = keyIntegers[0].toBigInteger();
+          p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
         default:
           return null;
@@ -213,6 +222,5 @@ module.exports = {
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);
-  },
-
+  }
 };

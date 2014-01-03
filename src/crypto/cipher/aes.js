@@ -11,7 +11,10 @@
  * materials provided with the application or distribution.
  */
 
-/** @module crypto/cipher/aes */
+/**
+ * @requires util
+ * @module crypto/cipher/aes
+ */
 
 var util = require('../../util');
 
@@ -490,8 +493,8 @@ function makeClass(length) {
 
     this.encrypt = function(block) {
       return AESencrypt(block, this.key);
-    }
-  }
+    };
+  };
 
   c.blockSize = c.prototype.blockSize = 16;
   c.keySize = c.prototype.keySize = length / 8;
@@ -499,7 +502,7 @@ function makeClass(length) {
   return c;
 }
 
-module.exports = {}
+module.exports = {};
 
 var types = [128, 192, 256];
 

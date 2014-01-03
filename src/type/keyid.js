@@ -15,17 +15,21 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module type/keyid */
+/**
+ * Implementation of type key id (RFC4880 3.3)<br/>
+ * <br/>
+ * A Key ID is an eight-octet scalar that identifies a key.
+ * Implementations SHOULD NOT assume that Key IDs are unique.  The
+ * section "Enhanced Key Formats" below describes how Key IDs are
+ * formed.
+ * @requires util
+ * @module type/keyid
+ */
 
 var util = require('../util');
 
 /**
- * @class
- * @classdesc Implementation of type key id (RFC4880 3.3)
- *  A Key ID is an eight-octet scalar that identifies a key.
-   Implementations SHOULD NOT assume that Key IDs are unique.  The
-   section "Enhanced Key Formats" below describes how Key IDs are
-   formed.
+ * @constructor
  */
 module.exports = function keyid() {
 
@@ -35,31 +39,28 @@ module.exports = function keyid() {
   /**
    * Parsing method for a key id
    * @param {String} input Input to read the key id from 
-   * @param {integer} position Position where to start reading the key 
-   * id from input
-   * @return {module:type/keyid} This object
    */
   this.read = function(bytes) {
     this.bytes = bytes.substr(0, 8);
-  }
+  };
 
   this.write = function() {
     return this.bytes;
-  }
+  };
 
   this.toHex = function() {
     return util.hexstrdump(this.bytes);
-  }
+  };
 
   this.equals = function(keyid) {
     return this.bytes == keyid.bytes;
-  }
+  };
 
   this.isNull = function() {
     return this.bytes === '';
-  }
-}
+  };
+};
 
 module.exports.mapToHex = function(keyId) {
   return keyId.toHex();
-}
+};

@@ -32,7 +32,10 @@
  */
 
 
-/** @module crypto/public_key/jsbn */
+/**
+ * @requires util
+ * @module crypto/public_key/jsbn
+ */
 
 var util = require('../../util');
 

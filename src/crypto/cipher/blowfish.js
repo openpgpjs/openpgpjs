@@ -3,7 +3,9 @@
  * Originally written by nklein software (nklein.com)
  */
 
-/** @module crypto/cipher/blowfish */
+/**
+ *  @module crypto/cipher/blowfish
+ */
 
 /* 
  * Javascript implementation based on Bruce Schneier's reference implementation.
@@ -12,7 +14,7 @@
  * The constructor doesn't do much of anything.  It's just here
  * so we can start defining properties and methods and such.
  */
-function Blowfish() {};
+function Blowfish() {}
 
 /*
  * Declare the block size so that protocols know what size
@@ -405,7 +407,7 @@ function BF(key) {
 
   this.encrypt = function(block) {
     return this.bf.encrypt_block(block);
-  }
+  };
 }
 
 

@@ -21,7 +21,9 @@
  *   - str_sha512
  */
 
-/** @module crypto/hash/sha */
+/**
+ * @module crypto/hash/sha
+ */
 
 var jsSHA = (function() {
 
@@ -97,7 +99,7 @@ var jsSHA = (function() {
      *
      * @private
      * @param {Array} binarray Array of integers to be converted to hexidecimal
-     *	 representation
+     *  representation
      * @return Hexidecimal representation of the parameter in String form
      */
     binb2hex = function(binarray) {
@@ -120,7 +122,7 @@ var jsSHA = (function() {
      *
      * @private
      * @param {Array} binarray Array of integers to be converted to base-64
-     *	 representation
+     *  representation
      * @return Base-64 encoded representation of the parameter in String form
      */
     binb2b64 = function(binarray) {
@@ -560,7 +562,7 @@ var jsSHA = (function() {
      *
      * @private
      * @param {Array} message The binary array representation of the string to
-     *	 hash
+     *    hash
      * @param {Number} messageLen The number of bits in the message
      * @return The array of integers representing the SHA-1 hash of message
      */
@@ -913,7 +915,7 @@ var jsSHA = (function() {
      * using the specified parameters
      *
      * @param {String} variant The desired SHA variant (SHA-1, SHA-224,
-     *	 SHA-256, SHA-384, or SHA-512)
+     *    SHA-256, SHA-384, or SHA-512)
      * @param {String} format The desired output formatting (B64 or HEX)
      * @return The string representation of the hash in the format specified
      */
@@ -973,9 +975,9 @@ var jsSHA = (function() {
      * @param {String} key The key used to calculate the HMAC
      * @param {String} inputFormat The format of key, ASCII or HEX
      * @param {String} variant The desired SHA variant (SHA-1, SHA-224,
-     *	 SHA-256, SHA-384, or SHA-512)
+     *    SHA-256, SHA-384, or SHA-512)
      * @param {String} outputFormat The desired output formatting
-     *	 (B64 or HEX)
+     *    (B64 or HEX)
      * @return The string representation of the hash in the format specified
      */
     getHMAC: function(key, inputFormat, variant, outputFormat) {
@@ -1094,25 +1096,30 @@ var jsSHA = (function() {
 }());
 
 module.exports = {
+  /** SHA1 hash */
   sha1: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-1", "ASCII");
   },
+  /** SHA224 hash */
   sha224: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-224", "ASCII");
   },
+  /** SHA256 hash */
   sha256: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-256", "ASCII");
   },
+  /** SHA384 hash */
   sha384: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-384", "ASCII");
 
   },
+  /** SHA512 hash */
   sha512: function(str) {
     var shaObj = new jsSHA(str, "ASCII");
     return shaObj.getHash("SHA-512", "ASCII");
   }
-}
+};

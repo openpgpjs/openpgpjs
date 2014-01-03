@@ -15,17 +15,25 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module crypto/pkcs1 */
+/**
+ * PKCS1 encoding
+ * @requires crypto/crypto
+ * @requires crypto/hash
+ * @requires crypto/public_key/jsbn
+ * @requires crypto/random
+ * @requires util
+ * @module crypto/pkcs1
+ */
 
 /**
  * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
  */
-hash_headers = new Array();
+hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04,
     0x10
 ];
-hash_headers[3] = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x24, 0x03, 0x02, 0x01, 0x05, 0x00, 0x04, 0x14];
 hash_headers[2] = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14];
+hash_headers[3] = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x24, 0x03, 0x02, 0x01, 0x05, 0x00, 0x04, 0x14];
 hash_headers[8] = [0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00,
     0x04, 0x20
 ];
@@ -38,7 +46,6 @@ hash_headers[10] = [0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
 hash_headers[11] = [0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05,
     0x00, 0x04, 0x1C
 ];
-
 
 var crypto = require('./crypto.js'),
   random = require('./random.js'),
@@ -76,13 +83,13 @@ module.exports = {
     decode: function(message, len) {
       if (message.length < len)
         message = String.fromCharCode(0) + message;
-      if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
+      if (message.length < 12 || message.charCodeAt(0) !== 0 || message.charCodeAt(1) != 2)
         return -1;
       var i = 2;
-      while (message.charCodeAt(i) != 0 && message.length > i)
+      while (message.charCodeAt(i) !== 0 && message.length > i)
         i++;
       return message.substring(i + 1, message.length);
-    },
+    }
   },
 
   emsa: {
@@ -98,14 +105,15 @@ module.exports = {
       var data2 = "";
       data2 += String.fromCharCode(0x00);
       data2 += String.fromCharCode(0x01);
-      for (var i = 0; i < (keylength - hash_headers[algo].length - 3 -
+      var i;
+      for (i = 0; i < (keylength - hash_headers[algo].length - 3 -
         hash.getHashByteLength(algo)); i++)
 
         data2 += String.fromCharCode(0xff);
 
       data2 += String.fromCharCode(0x00);
 
-      for (var i = 0; i < hash_headers[algo].length; i++)
+      for (i = 0; i < hash_headers[algo].length; i++)
         data2 += String.fromCharCode(hash_headers[algo][i]);
 
       data2 += hash.digest(algo, data);
@@ -119,12 +127,12 @@ module.exports = {
      */
     decode: function(algo, data) {
       var i = 0;
-      if (data.charCodeAt(0) == 0) i++;
+      if (data.charCodeAt(0) === 0) i++;
       else if (data.charCodeAt(0) != 1) return -1;
       else i++;
 
       while (data.charCodeAt(i) == 0xFF) i++;
-      if (data.charCodeAt(i++) != 0) return -1;
+      if (data.charCodeAt(i++) !== 0) return -1;
       var j = 0;
       for (j = 0; j < hash_headers[algo].length && j + i < data.length; j++) {
         if (data.charCodeAt(j + i) != hash_headers[algo][j]) return -1;
@@ -134,4 +142,4 @@ module.exports = {
       return data.substring(i);
     }
   }
-}
+};

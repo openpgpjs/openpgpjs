@@ -11,10 +11,18 @@
  * provided with the application or distribution.
  */
 
-/** @module encoding/base64 */
+/**
+ * @module encoding/base64
+ */
 
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
+/**
+ * Convert binary string to radix-64
+ * @param {String} t binary string to convert
+ * @returns {string} radix-64 version of input string
+ * @static
+ */
 function s2r(t) {
   var a, c, n;
   var r = '',
@@ -24,7 +32,7 @@ function s2r(t) {
 
   for (n = 0; n < tl; n++) {
     c = t.charCodeAt(n);
-    if (s == 0) {
+    if (s === 0) {
       r += b64s.charAt((c >> 2) & 63);
       a = (c & 3) << 4;
     } else if (s == 1) {
@@ -33,12 +41,12 @@ function s2r(t) {
     } else if (s == 2) {
       r += b64s.charAt(a | ((c >> 6) & 3));
       l += 1;
-      if ((l % 60) == 0)
+      if ((l % 60) === 0)
         r += "\n";
       r += b64s.charAt(c & 63);
     }
     l += 1;
-    if ((l % 60) == 0)
+    if ((l % 60) === 0)
       r += "\n";
 
     s += 1;
@@ -48,13 +56,13 @@ function s2r(t) {
   if (s > 0) {
     r += b64s.charAt(a);
     l += 1;
-    if ((l % 60) == 0)
+    if ((l % 60) === 0)
       r += "\n";
     r += '=';
     l += 1;
   }
   if (s == 1) {
-    if ((l % 60) == 0)
+    if ((l % 60) === 0)
       r += "\n";
     r += '=';
   }
@@ -62,6 +70,12 @@ function s2r(t) {
   return r;
 }
 
+/**
+ * Convert radix-64 to binary string
+ * @param {String} t radix-64 string to convert
+ * @returns {string} binary version of input string
+ * @static
+ */
 function r2s(t) {
   var c, n;
   var r = '',
@@ -84,4 +98,4 @@ function r2s(t) {
 module.exports = {
   encode: s2r,
   decode: r2s
-}
+};

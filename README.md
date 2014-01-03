@@ -1,10 +1,16 @@
-[![Build Status](https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,devel)](http://travis-ci.org/openpgpjs/openpgpjs)
+OpenPGP.js [![Build Status](https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,v0.1.x)](http://travis-ci.org/openpgpjs/openpgpjs)
+==========
 
-# What is OpenPGP.js?
 [OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
 
 # How do I use it?
-As a developer, the best place to start is in the `resources/` directory. Within this you will find a basic example implementation and the "binary" files for this library. It is likely that you will want to use `resources/openpgp.min.js` on your site, this is a minified version of our library.
+To build the library, checkout the HEAD of the master branch or download a stable (old) tagged version from [releases](https://github.com/openpgpjs/openpgpjs/releases).
+
+Then build the library:
+
+    npm install && grunt
+
+Then take the use the minified file from `resources/openpgp.min.js` and use it in your project.
 
 # I need some help
 ## Mailing List
@@ -14,7 +20,8 @@ You can [sign up](http://list.openpgpjs.org/) for our mailing list and ask for h
 A jsdoc build of our code comments is available at [doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](doc/openpgp.html).
 
 # How do I get involved?
-You want to help, great! Go ahead and fork our repo, make your changes and make a pull request. Please be sure that you run `make minify` from the root directory to concatenate and minify the library into the `resources/` directory.
+You want to help, great! Go ahead and fork our repo, make your changes
+and make a pull request.
 
 It is extra awesome if you write tests for the code you change. Our test coverage is relatively weak, so if you can add cases that is great.
 

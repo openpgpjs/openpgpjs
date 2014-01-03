@@ -15,12 +15,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module cleartext */
+/**
+ * @requires config
+ * @requires encoding/armor
+ * @requires enums
+ * @requires packet
+ * @module cleartext
+ */
 
-var config = require('./config');
-var packet = require('./packet');
-var enums = require('./enums.js');
-var armor = require('./encoding/armor.js');
+var config = require('./config'),
+  packet = require('./packet'),
+  enums = require('./enums.js'),
+  armor = require('./encoding/armor.js');
 
 /**
  * @class
@@ -118,7 +124,7 @@ CleartextMessage.prototype.armor = function() {
     hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
     text: this.text,
     data: this.packets.write()
-  }
+  };
   return armor.encode(enums.armor.signed, body);
 };
 
@@ -127,6 +133,7 @@ CleartextMessage.prototype.armor = function() {
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
  * @return {module:cleartext~CleartextMessage} new cleartext message object
+ * @static
  */
 function readArmored(armoredText) {
   var input = armor.decode(armoredText);
