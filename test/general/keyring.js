@@ -4,7 +4,7 @@ var openpgp = require('openpgp');
 
 var expect = chai.expect;
 
-describe("Keyring testing", function() {
+describe("Keyring", function() {
   var keyring = new (new require('keyring'))();
 
   keyring.init();

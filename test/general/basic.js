@@ -4,7 +4,7 @@ var openpgp = require('openpgp');
 
 var expect = chai.expect;
 
-describe('Basic tests', function() {
+describe('Basic', function() {
 
   describe("Key generation/encryption/decryption", function() {
     var testHelper = function(passphrase, userid, message) {

@@ -1,4 +1,4 @@
-describe('General tests', function () {
+describe('General', function () {
   require('./basic.js');
   require('./key.js');
   require('./keyring.js');

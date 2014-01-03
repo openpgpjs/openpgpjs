@@ -4,7 +4,7 @@ var openpgp = require('openpgp');
 
 var expect = chai.expect;
 
-describe("Signature testing", function() {
+describe("Signature", function() {
   var priv_key_arm1 =
     [ '-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v1.4.11 (GNU/Linux)',

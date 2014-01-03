@@ -4,7 +4,7 @@ var openpgp = require('openpgp');
 
 var expect = chai.expect;
 
-describe('Key tests', function() {
+describe('Key', function() {
   var twoKeys =
        ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',

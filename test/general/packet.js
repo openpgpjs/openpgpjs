@@ -4,7 +4,7 @@ var openpgp = require('openpgp');
 
 var expect = chai.expect;
 
-describe("Packet testing", function() {
+describe("Packet", function() {
 	var armored_key =
 		'-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
 		'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
