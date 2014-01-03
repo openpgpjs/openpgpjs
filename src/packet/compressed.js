@@ -65,7 +65,7 @@ module.exports = function compressed() {
     this.compressed = bytes.substr(1);
 
     this.decompress();
-  }
+  };
 
 
 
@@ -74,11 +74,11 @@ module.exports = function compressed() {
    * @return {String} binary compressed packet
    */
   this.write = function() {
-    if (this.compressed == null)
+    if (this.compressed === null)
       this.compress();
 
     return String.fromCharCode(enums.write(enums.compression, this.algorithm)) + this.compressed;
-  }
+  };
 
 
   /**
@@ -86,7 +86,7 @@ module.exports = function compressed() {
    * read by read_packet
    */
   this.decompress = function() {
-    var decompressed;
+    var decompressed, compdata, radix;
 
     switch (this.algorithm) {
       case 'uncompressed':
@@ -94,9 +94,9 @@ module.exports = function compressed() {
         break;
 
       case 'zip':
-        var compData = this.compressed;
+        compData = this.compressed;
 
-        var radix = base64.encode(compData).replace(/\n/g, "");
+        radix = base64.encode(compData).replace(/\n/g, "");
         // no header in this case, directly call deflate
         var jxg_obj = new JXG.Util.Unzip(JXG.Util.Base64.decodeAsArray(radix));
 
@@ -113,8 +113,8 @@ module.exports = function compressed() {
 
         if (compressionMethod == 8) { //CM 8 is for DEFLATE, RFC 1951
           // remove 4 bytes ADLER32 checksum from the end
-          var compData = this.compressed.substring(0, this.compressed.length - 4);
-          var radix = base64.encode(compData).replace(/\n/g, "");
+          compData = this.compressed.substring(0, this.compressed.length - 4);
+          radix = base64.encode(compData).replace(/\n/g, "");
           //TODO check ADLER32 checksum
           decompressed = JXG.decompress(radix);
           break;
@@ -128,15 +128,13 @@ module.exports = function compressed() {
       case 'bzip2':
         // TODO: need to implement this
         throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
-        break;
 
       default:
         throw new Error("Compression algorithm unknown :" + this.alogrithm);
-        break;
     }
 
     this.packets.read(decompressed);
-  }
+  };
 
   /**
    * Compress the packet data (member decompressedData)
@@ -152,23 +150,19 @@ module.exports = function compressed() {
       case 'zip':
         // - ZIP [RFC1951]
         throw new Error("Compression algorithm ZIP [RFC1951] is not implemented.");
-        break;
 
       case 'zlib':
         // - ZLIB [RFC1950]
         // TODO: need to implement this
         throw new Error("Compression algorithm ZLIB [RFC1950] is not implemented.");
-        break;
 
       case 'bzip2':
         //  - BZip2 [BZ2]
         // TODO: need to implement this
         throw new Error("Compression algorithm BZip2 [BZ2] is not implemented.");
-        break;
 
       default:
         throw new Error("Compression algorithm unknown :" + this.type);
-        break;
     }
-  }
+  };
 };

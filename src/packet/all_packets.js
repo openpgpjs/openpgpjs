@@ -39,11 +39,11 @@ module.exports = {
   signature: require('./signature.js'),
   /** @see module:packet/trust */
   trust: require('./trust.js')
-}
+};
 
 for (var i in enums.packet) {
   var packetClass = module.exports[i];
 
-  if (packetClass != undefined)
+  if (packetClass !== undefined)
     packetClass.prototype.tag = enums.packet[i];
 }

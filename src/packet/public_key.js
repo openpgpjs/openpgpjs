@@ -91,7 +91,7 @@ module.exports = function public_key() {
 
         this.mpi[i] = new type_mpi();
 
-        p += this.mpi[i].read(bmpi.substr(p))
+        p += this.mpi[i].read(bmpi.substr(p));
 
         if (p > bmpi.length) {
           throw new Error('Error reading MPI @:' + p);
@@ -181,7 +181,7 @@ module.exports = function public_key() {
       for (var i = 0; i < mpicount; i++) {
         toHash += this.mpi[i].toBytes();
       }
-      return crypto.hash.md5(toHash)
+      return crypto.hash.md5(toHash);
     }
   };
 };

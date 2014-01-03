@@ -124,7 +124,7 @@ module.exports = function public_key_encrypted_session_key() {
       enums.write(enums.publicKey, this.publicKeyAlgorithm));
 
     for (var i = 0; i < this.encrypted.length; i++) {
-      result += this.encrypted[i].write()
+      result += this.encrypted[i].write();
     }
 
     return result;
@@ -169,7 +169,7 @@ module.exports = function public_key_encrypted_session_key() {
       result,
       key.mpi[0].byteLength());
 
-    var key = decoded.substring(1, decoded.length - 2);
+    key = decoded.substring(1, decoded.length - 2);
 
     if (checksum != util.calc_checksum(key)) {
       throw new Error('Checksum mismatch');

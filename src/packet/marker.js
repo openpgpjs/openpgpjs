@@ -50,5 +50,5 @@ module.exports = function marker() {
       return true;
     // marker packet does not contain "PGP"
     return false;
-  }
-}
+  };
+};

@@ -11,4 +11,4 @@ module.exports = {
   elgamal: require('./elgamal.js'),
   /** @see module:crypto/public_key/dsa */
   dsa: require('./dsa.js')
-}
+};

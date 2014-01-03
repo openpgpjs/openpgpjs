@@ -124,7 +124,7 @@ CleartextMessage.prototype.armor = function() {
     hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
     text: this.text,
     data: this.packets.write()
-  }
+  };
   return armor.encode(enums.armor.signed, body);
 };
 

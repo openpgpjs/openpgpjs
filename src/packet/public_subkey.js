@@ -28,4 +28,4 @@ var publicKey = require('./public_key.js');
  */
 module.exports = function public_subkey() {
   publicKey.call(this);
-}
+};

@@ -47,7 +47,7 @@ module.exports = function literal() {
     text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
     // encode UTF8
     this.data = this.format == 'utf8' ? util.encode_utf8(text) : text;
-  }
+  };
 
   /**
    * Returns literal data packets as native JavaScript string
@@ -59,7 +59,7 @@ module.exports = function literal() {
     var text = util.decode_utf8(this.data);
     // normalize EOL to \n
     return text.replace(/\r\n/g, '\n');
-  }
+  };
 
   /**
    * Set the packet data to value represented by the provided string of bytes.
@@ -69,7 +69,7 @@ module.exports = function literal() {
   this.setBytes = function (bytes, format) {
     this.format = format;
     this.data = bytes;
-  }
+  };
 
 
   /**
@@ -78,7 +78,7 @@ module.exports = function literal() {
    */
   this.getBytes = function () {
     return this.data;
-  }
+  };
 
 
   /**
@@ -105,7 +105,7 @@ module.exports = function literal() {
     var data = bytes.substring(6 + filename_len);
 
     this.setBytes(data, format);
-  }
+  };
 
   /**
    * Creates a string representation of the packet
@@ -125,5 +125,5 @@ module.exports = function literal() {
     result += util.writeDate(this.date);
     result += data;
     return result;
-  }
-}
+  };
+};

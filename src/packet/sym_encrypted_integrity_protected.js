@@ -64,16 +64,16 @@ module.exports = function sym_encrypted_integrity_protected() {
 
   this.write = function () {
 
-    return String.fromCharCode(1) // Version
-    + this.encrypted;
+    // 1 = Version
+    return String.fromCharCode(1) + this.encrypted;
   };
 
   this.encrypt = function (sessionKeyAlgorithm, key) {
-    var bytes = this.packets.write()
+    var bytes = this.packets.write();
 
     var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
     var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length -
-      1)
+      1);
 
     var tohash = bytes;
 

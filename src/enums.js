@@ -314,4 +314,4 @@ module.exports = {
 
     throw new Error('Invalid enum value.');
   }
-}
+};

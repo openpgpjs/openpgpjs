@@ -57,11 +57,11 @@ module.exports = function mpi() {
     //    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
     //
     //    The length field of an MPI describes the length starting from its
-    //	  most significant non-zero bit.  Thus, the MPI [00 02 01] is not
+    //    most significant non-zero bit.  Thus, the MPI [00 02 01] is not
     //    formed correctly.  It should be [00 01 01].
 
     // TODO: Verification of this size method! This size calculation as
-    // 		 specified above is not applicable in JavaScript
+    //      specified above is not applicable in JavaScript
     var bytelen = Math.ceil(bits / 8);
 
     var raw = bytes.substr(2, bytelen);
@@ -97,4 +97,4 @@ module.exports = function mpi() {
   this.fromBigInteger = function (bn) {
     this.data = bn.clone();
   };
-}
+};

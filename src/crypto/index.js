@@ -17,8 +17,7 @@ module.exports = {
   random: require('./random.js'),
   /** @see module:crypto/pkcs1 */
   pkcs1: require('./pkcs1.js')
-
-}
+};
 
 var crypto = require('./crypto.js');
 

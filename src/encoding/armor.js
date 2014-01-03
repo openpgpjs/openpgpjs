@@ -213,7 +213,7 @@ function splitHeaders(text) {
 
   var matchResult = reEmptyLine.exec(text);
 
-  if (matchResult != null) {
+  if (matchResult !== null) {
     headers = text.slice(0, matchResult.index);
     body = text.slice(matchResult.index + matchResult[0].length);
   }
@@ -235,7 +235,7 @@ function splitChecksum(text) {
 
   var matchResult = reChecksumStart.exec(text);
 
-  if (matchResult != null) {
+  if (matchResult !== null) {
     body = text.slice(0, matchResult.index);
     checksum = text.slice(matchResult.index + 1);
   }
@@ -268,14 +268,14 @@ function dearmor(text) {
   // so we know the index of the data we are interested in.
   var indexBase = 1;
 
-  var result, checksum;
+  var result, checksum, msg;
 
   if (text.search(reSplit) != splittext[0].length) {
     indexBase = 0;
   }
 
   if (type != 2) {
-    var msg = splitHeaders(splittext[indexBase]);
+    msg = splitHeaders(splittext[indexBase]);
     var msg_sum = splitChecksum(msg.body);
 
     result = {
@@ -286,7 +286,7 @@ function dearmor(text) {
     checksum = msg_sum.checksum;
   } else {
     // Reverse dash-escaping for msg and remove trailing whitespace at end of line
-    var msg = splitHeaders(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
+    msg = splitHeaders(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
     var sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
     var sig_sum = splitChecksum(sig.body);
 
@@ -300,10 +300,10 @@ function dearmor(text) {
   }
 
   if (!verifyCheckSum(result.data, checksum)) {
-    throw new Error("Ascii armor integrity check on message failed: '"
-      + checksum
-      + "' should be '"
-      + getCheckSum(result) + "'");
+    throw new Error("Ascii armor integrity check on message failed: '" +
+      checksum +
+      "' should be '" +
+      getCheckSum(result) + "'");
   } else {
     return result;
   }

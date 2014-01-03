@@ -28,7 +28,7 @@
 /**
  * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
  */
-hash_headers = new Array();
+hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04,
     0x10
 ];
@@ -83,10 +83,10 @@ module.exports = {
     decode: function(message, len) {
       if (message.length < len)
         message = String.fromCharCode(0) + message;
-      if (message.length < 12 || message.charCodeAt(0) != 0 || message.charCodeAt(1) != 2)
+      if (message.length < 12 || message.charCodeAt(0) !== 0 || message.charCodeAt(1) != 2)
         return -1;
       var i = 2;
-      while (message.charCodeAt(i) != 0 && message.length > i)
+      while (message.charCodeAt(i) !== 0 && message.length > i)
         i++;
       return message.substring(i + 1, message.length);
     }
@@ -105,14 +105,15 @@ module.exports = {
       var data2 = "";
       data2 += String.fromCharCode(0x00);
       data2 += String.fromCharCode(0x01);
-      for (var i = 0; i < (keylength - hash_headers[algo].length - 3 -
+      var i;
+      for (i = 0; i < (keylength - hash_headers[algo].length - 3 -
         hash.getHashByteLength(algo)); i++)
 
         data2 += String.fromCharCode(0xff);
 
       data2 += String.fromCharCode(0x00);
 
-      for (var i = 0; i < hash_headers[algo].length; i++)
+      for (i = 0; i < hash_headers[algo].length; i++)
         data2 += String.fromCharCode(hash_headers[algo][i]);
 
       data2 += hash.digest(algo, data);
@@ -126,12 +127,12 @@ module.exports = {
      */
     decode: function(algo, data) {
       var i = 0;
-      if (data.charCodeAt(0) == 0) i++;
+      if (data.charCodeAt(0) === 0) i++;
       else if (data.charCodeAt(0) != 1) return -1;
       else i++;
 
       while (data.charCodeAt(i) == 0xFF) i++;
-      if (data.charCodeAt(i++) != 0) return -1;
+      if (data.charCodeAt(i++) !== 0) return -1;
       var j = 0;
       for (j = 0; j < hash_headers[algo].length && j + i < data.length; j++) {
         if (data.charCodeAt(j + i) != hash_headers[algo][j]) return -1;
@@ -141,4 +142,4 @@ module.exports = {
       return data.substring(i);
     }
   }
-}
+};
