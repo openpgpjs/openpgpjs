@@ -31,7 +31,7 @@ var util = require('../util');
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function keyid() {
 
   this.bytes = '';
 

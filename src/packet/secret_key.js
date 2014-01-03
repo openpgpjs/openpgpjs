@@ -42,7 +42,7 @@ var publicKey = require('./public_key.js'),
  * @constructor
  * @extends module:packet/public_key
  */
-module.exports = function () {
+module.exports = function secret_key() {
   publicKey.call(this);
   // encrypted secret-key data
   this.encrypted = null;
@@ -114,7 +114,7 @@ module.exports = function () {
    * Internal parser for private keys as specified in RFC 4880 section 5.5.3
    * @param {String} bytes Input string to read the packet from
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     // - A Public-Key or Public-Subkey packet, as described above.
     var len = this.readPublicKey(bytes);
 
@@ -146,7 +146,7 @@ module.exports = function () {
   /** Creates an OpenPGP key packet for the given key.
     * @return {String} A string of bytes containing the secret key OpenPGP packet
     */
-  this.write = function() {
+  this.write = function () {
     var bytes = this.writePublicKey();
 
     if (!this.encrypted) {
@@ -167,7 +167,7 @@ module.exports = function () {
    * to key specifier
    * @param {String} passphrase
    */
-  this.encrypt = function(passphrase) {
+  this.encrypt = function (passphrase) {
 
     var s2k = new type_s2k(),
       symmetric = 'aes256',
@@ -201,7 +201,7 @@ module.exports = function () {
    * @return {Boolean} True if the passphrase was correct or MPI already
    *                   decrypted; false if not
    */
-  this.decrypt = function(passphrase) {
+  this.decrypt = function (passphrase) {
     if (this.isDecrypted)
       return true;
 
@@ -256,7 +256,7 @@ module.exports = function () {
     return true;
   };
 
-  this.generate = function(bits) {
+  this.generate = function (bits) {
     this.mpi = crypto.generateMpi(this.algorithm, bits);
     this.isDecrypted = true;
   };

@@ -34,7 +34,7 @@ var enums = require('../enums.js'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function compressed() {
   /**
    * List of packets
    * @type {module:packet/packetlist}

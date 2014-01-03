@@ -46,7 +46,7 @@ var type_keyid = require('../type/keyid.js'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function public_key_encrypted_session_key() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
@@ -67,7 +67,7 @@ module.exports = function () {
    *            input at position
    * @return {module:packet/public_key_encrypted_session_key} Object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
 
     this.version = bytes.charCodeAt(0);
     this.publicKeyId.read(bytes.substr(1));
@@ -116,7 +116,7 @@ module.exports = function () {
    *            A string of randombytes representing the session key
    * @return {String} The string representation
    */
-  this.write = function() {
+  this.write = function () {
 
     var result = String.fromCharCode(this.version);
     result += this.publicKeyId.write();
@@ -130,7 +130,7 @@ module.exports = function () {
     return result;
   };
 
-  this.encrypt = function(key) {
+  this.encrypt = function (key) {
     var data = String.fromCharCode(
       enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
@@ -157,7 +157,7 @@ module.exports = function () {
    *            Private key with secMPIs unlocked
    * @return {String} The unencrypted session key
    */
-  this.decrypt = function(key) {
+  this.decrypt = function (key) {
     var result = crypto.publicKeyDecrypt(
       this.publicKeyAlgorithm,
       key.mpi,

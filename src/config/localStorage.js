@@ -6,7 +6,7 @@
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function localStorage() {
 
   /**
    * Reads the config out of the HTML5 local storage

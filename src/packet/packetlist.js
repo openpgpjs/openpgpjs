@@ -15,7 +15,7 @@ var packetParser = require('./packet.js'),
 /**
  * @constructor
  */
-module.exports = packetlist = function () {
+module.exports = function packetlist() {
   /** The number of packets contained within the list.
    * @readonly
    * @type {Integer} */
@@ -25,7 +25,7 @@ module.exports = packetlist = function () {
    * Reads a stream of binary data and interprents it as a list of packets.
    * @param {String} A binary string of bytes.
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var i = 0;
 
     while (i < bytes.length) {
@@ -46,7 +46,7 @@ module.exports = packetlist = function () {
    * class instance.
    * @returns {String} A binary string of bytes containing valid openpgp packets.
    */
-  this.write = function() {
+  this.write = function () {
     var bytes = '';
 
     for (var i = 0; i < this.length; i++) {
@@ -62,7 +62,7 @@ module.exports = packetlist = function () {
    * Adds a packet to the list. This is the only supported method of doing so;
    * writing to packetlist[i] directly will result in an error.
    */
-  this.push = function(packet) {
+  this.push = function (packet) {
     if (!packet) return;
 
     packet.packets = packet.packets || new packetlist();
@@ -74,7 +74,7 @@ module.exports = packetlist = function () {
   /**
   * Creates a new packetList with all packets that pass the test implemented by the provided function.
   */
-  this.filter = function(callback) {
+  this.filter = function (callback) {
 
     var filtered = new packetlist();
 
@@ -90,7 +90,7 @@ module.exports = packetlist = function () {
   /**
   * Creates a new packetList with all packets from the given types
   */
-  this.filterByTag = function() {
+  this.filterByTag = function () {
     var args = Array.prototype.slice.call(arguments);
     var filtered = new packetlist();
     var that = this;
@@ -107,7 +107,7 @@ module.exports = packetlist = function () {
   /**
   * Executes the provided callback once for each element
   */
-  this.forEach = function(callback) {
+  this.forEach = function (callback) {
     for (var i = 0; i < this.length; i++) {
       callback(this[i]);
     }
@@ -118,7 +118,7 @@ module.exports = packetlist = function () {
    * @param  {module:enums.packet} type The packet type
    * @return {module:packet/packet|null}      
    */
-  this.findPacket = function(type) {
+  this.findPacket = function (type) {
     var packetlist = this.filterByTag(type);
     if (packetlist.length) {
       return packetlist[0];
@@ -137,7 +137,7 @@ module.exports = packetlist = function () {
   /**
    * Returns array of found indices by tag
    */
-  this.indexOfTag = function() {
+  this.indexOfTag = function () {
     var args = Array.prototype.slice.call(arguments);
     var tagIndex = [];
     var that = this;
@@ -152,7 +152,7 @@ module.exports = packetlist = function () {
   /**
    * Returns slice of packetlist
    */
-  this.slice = function(begin, end) {
+  this.slice = function (begin, end) {
     if (!end) {
       end = this.length;
     }
@@ -166,7 +166,7 @@ module.exports = packetlist = function () {
   /**
    * Concatenates packetlist or array of packets
    */
-  this.concat = function(packetlist) {
+  this.concat = function (packetlist) {
     if (packetlist) {
       for (var i = 0; i < packetlist.length; i++) {
         this.push(packetlist[i]);

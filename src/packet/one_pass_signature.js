@@ -35,7 +35,7 @@ var enums = require('../enums.js'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function one_pass_signature() {
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
   this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See RFC4880 9.4)
@@ -48,7 +48,7 @@ module.exports = function () {
    * @param {String} bytes payload of a tag 4 packet
    * @return {module:packet/one_pass_signature} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var mypos = 0;
     // A one-octet version number.  The current version is 3.
     this.version = bytes.charCodeAt(mypos++);
@@ -80,7 +80,7 @@ module.exports = function () {
    * creates a string representation of a one-pass signature packet
    * @return {String} a string representation of a one-pass signature packet
    */
-  this.write = function() {
+  this.write = function () {
     var result = "";
 
     result += String.fromCharCode(3);

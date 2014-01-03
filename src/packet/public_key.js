@@ -39,7 +39,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function public_key() {
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
@@ -61,7 +61,7 @@ module.exports = function () {
    * @param {String} input Input string to read the packet from
    * @return {Object} This object with attributes set by the parser
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var pos = 0;
     // A one-octet version number (3 or 4).
     this.version = bytes.charCodeAt(pos++);
@@ -117,7 +117,7 @@ module.exports = function () {
    * @return {Object} {body: [string]OpenPGP packet body contents,
    * header: [string] OpenPGP packet header, string: [string] header+body}
    */
-  this.write = function() {
+  this.write = function () {
     // Version
     var result = String.fromCharCode(this.version);
     result += util.writeDate(this.created);
@@ -145,7 +145,7 @@ module.exports = function () {
   /**
    * Write an old version packet - it's used by some of the internal routines.
    */
-  this.writeOld = function() {
+  this.writeOld = function () {
     var bytes = this.writePublicKey();
 
     return String.fromCharCode(0x99) +
@@ -157,7 +157,7 @@ module.exports = function () {
    * Calculates the key id of the key 
    * @return {String} A 8 byte key id
    */
-  this.getKeyId = function() {
+  this.getKeyId = function () {
     var keyid = new type_keyid();
     if (this.version == 4) {
       keyid.read(this.getFingerprint().substr(12, 8));
@@ -171,7 +171,7 @@ module.exports = function () {
    * Calculates the fingerprint of the key
    * @return {String} A string containing the fingerprint
    */
-  this.getFingerprint = function() {
+  this.getFingerprint = function () {
     var toHash = '';
     if (this.version == 4) {
       toHash = this.writeOld();

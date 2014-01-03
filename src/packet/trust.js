@@ -5,6 +5,6 @@
 /**
  * @constructor
  */
-module.exports = function () {
+module.exports = function trust() {
 
 };
