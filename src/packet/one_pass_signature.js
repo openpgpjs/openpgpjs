@@ -15,23 +15,26 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/one_pass_signature */
-
-var enums = require('../enums.js'),
-  type_keyid = require('../type/keyid.js');
-
 /**
- * @class
- * @classdesc Implementation of the One-Pass Signature Packets (Tag 4)
- * 
+ * Implementation of the One-Pass Signature Packets (Tag 4)<br/>
+ * <br/>
  * RFC4880 5.4:
  * The One-Pass Signature packet precedes the signed data and contains
  * enough information to allow the receiver to begin calculating any
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
- */
+ * @requires enums
+ * @requires type/keyid
+ * @module packet/one_pass_signature
+*/
 
+var enums = require('../enums.js'),
+  type_keyid = require('../type/keyid.js');
+
+/**
+ * @constructor
+ */
 module.exports = function one_pass_signature() {
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in RFC4880 Section 5.2.1.
@@ -45,7 +48,7 @@ module.exports = function one_pass_signature() {
    * @param {String} bytes payload of a tag 4 packet
    * @return {module:packet/one_pass_signature} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var mypos = 0;
     // A one-octet version number.  The current version is 3.
     this.version = bytes.charCodeAt(mypos++);
@@ -77,7 +80,7 @@ module.exports = function one_pass_signature() {
    * creates a string representation of a one-pass signature packet
    * @return {String} a string representation of a one-pass signature packet
    */
-  this.write = function() {
+  this.write = function () {
     var result = "";
 
     result += String.fromCharCode(3);

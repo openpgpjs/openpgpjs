@@ -15,36 +15,36 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module keyring/localstore */
+/**
+ * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
+ * @requires openpgp
+ * @module keyring/localstore
+ */
 
 var openpgp = require('openpgp');
 
-/**
- * @class
- * @classdesc The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
- */
 module.exports = function () {
   /**
-   * Initialization routine for the keyring. This method reads the 
-   * keyring from HTML5 local storage and initializes this instance.
-   * This method is called by openpgp.init().
+   * Load the keyring from HTML5 local storage and initializes this instance.
+   * @return {Array<module:key~Key>} array of keys retrieved from localstore
    */
-  this.init = function (keys) {
+  this.load = function () {
     var armoredKeys = JSON.parse(window.localStorage.getItem("armoredKeys"));
-    if (armoredKeys !== null && armoredKeys.length === 0) {
+    var keys = [];
+    if (armoredKeys !== null && armoredKeys.length !== 0) {
       var key;
       for (var i = 0; i < armoredKeys.length; i++) {
         key = openpgp.key.readArmored(armoredKeys[i]);
         keys.push(key);
       }
-    } else {
-      this.keys = [];
     }
+    return keys;
   }
 
   /**
    * Saves the current state of the keyring to HTML5 local storage.
    * The privateKeys array and publicKeys array gets Stringified using JSON
+   * @param {Array<module:key~Key>} keys array of keys to save in localstore
    */
   this.store = function (keys) {
     var armoredKeys = [];

@@ -134,14 +134,14 @@ function openpgp_symenc_cast5() {
       r = l ^ f1(r, this.masking[15], this.rotate[15]);
       l = t;
 
-      dst[i] = (r >>> 24) &amp; 255;
-      dst[i + 1] = (r >>> 16) &amp; 255;
-      dst[i + 2] = (r >>> 8) &amp; 255;
-      dst[i + 3] = r &amp; 255;
-      dst[i + 4] = (l >>> 24) &amp; 255;
-      dst[i + 5] = (l >>> 16) &amp; 255;
-      dst[i + 6] = (l >>> 8) &amp; 255;
-      dst[i + 7] = l &amp; 255;
+      dst[i] = (r >>> 24) & 255;
+      dst[i + 1] = (r >>> 16) & 255;
+      dst[i + 2] = (r >>> 8) & 255;
+      dst[i + 3] = r & 255;
+      dst[i + 4] = (l >>> 24) & 255;
+      dst[i + 5] = (l >>> 16) & 255;
+      dst[i + 6] = (l >>> 8) & 255;
+      dst[i + 7] = l & 255;
     }
 
     return dst;
@@ -207,14 +207,14 @@ function openpgp_symenc_cast5() {
       r = l ^ f1(r, this.masking[0], this.rotate[0]);
       l = t;
 
-      dst[i] = (r >>> 24) &amp; 255;
-      dst[i + 1] = (r >>> 16) &amp; 255;
-      dst[i + 2] = (r >>> 8) &amp; 255;
-      dst[i + 3] = r &amp; 255;
-      dst[i + 4] = (l >>> 24) &amp; 255;
-      dst[i + 5] = (l >> 16) &amp; 255;
-      dst[i + 6] = (l >> 8) &amp; 255;
-      dst[i + 7] = l &amp; 255;
+      dst[i] = (r >>> 24) & 255;
+      dst[i + 1] = (r >>> 16) & 255;
+      dst[i + 2] = (r >>> 8) & 255;
+      dst[i + 3] = r & 255;
+      dst[i + 4] = (l >>> 24) & 255;
+      dst[i + 5] = (l >> 16) & 255;
+      dst[i + 6] = (l >> 8) & 255;
+      dst[i + 7] = l & 255;
     }
 
     return dst;
@@ -293,22 +293,22 @@ function openpgp_symenc_cast5() {
           var a = scheduleA[round][j];
           var w = t[a[1]];
 
-          w ^= sBox[4][(t[a[2] >>> 2] >>> (24 - 8 * (a[2] &amp; 3))) &amp; 0xff];
-          w ^= sBox[5][(t[a[3] >>> 2] >>> (24 - 8 * (a[3] &amp; 3))) &amp; 0xff];
-          w ^= sBox[6][(t[a[4] >>> 2] >>> (24 - 8 * (a[4] &amp; 3))) &amp; 0xff];
-          w ^= sBox[7][(t[a[5] >>> 2] >>> (24 - 8 * (a[5] &amp; 3))) &amp; 0xff];
-          w ^= sBox[x[j]][(t[a[6] >>> 2] >>> (24 - 8 * (a[6] &amp; 3))) &amp; 0xff];
+          w ^= sBox[4][(t[a[2] >>> 2] >>> (24 - 8 * (a[2] & 3))) & 0xff];
+          w ^= sBox[5][(t[a[3] >>> 2] >>> (24 - 8 * (a[3] & 3))) & 0xff];
+          w ^= sBox[6][(t[a[4] >>> 2] >>> (24 - 8 * (a[4] & 3))) & 0xff];
+          w ^= sBox[7][(t[a[5] >>> 2] >>> (24 - 8 * (a[5] & 3))) & 0xff];
+          w ^= sBox[x[j]][(t[a[6] >>> 2] >>> (24 - 8 * (a[6] & 3))) & 0xff];
           t[a[0]] = w;
         }
 
         for (var j = 0; j &lt; 4; j++) {
           var b = scheduleB[round][j];
-          var w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] &amp; 3))) &amp; 0xff];
+          var w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] & 3))) & 0xff];
 
-          w ^= sBox[5][(t[b[1] >>> 2] >>> (24 - 8 * (b[1] &amp; 3))) &amp; 0xff];
-          w ^= sBox[6][(t[b[2] >>> 2] >>> (24 - 8 * (b[2] &amp; 3))) &amp; 0xff];
-          w ^= sBox[7][(t[b[3] >>> 2] >>> (24 - 8 * (b[3] &amp; 3))) &amp; 0xff];
-          w ^= sBox[4 + j][(t[b[4] >>> 2] >>> (24 - 8 * (b[4] &amp; 3))) &amp; 0xff];
+          w ^= sBox[5][(t[b[1] >>> 2] >>> (24 - 8 * (b[1] & 3))) & 0xff];
+          w ^= sBox[6][(t[b[2] >>> 2] >>> (24 - 8 * (b[2] & 3))) & 0xff];
+          w ^= sBox[7][(t[b[3] >>> 2] >>> (24 - 8 * (b[3] & 3))) & 0xff];
+          w ^= sBox[4 + j][(t[b[4] >>> 2] >>> (24 - 8 * (b[4] & 3))) & 0xff];
           k[ki] = w;
           ki++;
         }
@@ -317,7 +317,7 @@ function openpgp_symenc_cast5() {
 
     for (var i = 0; i &lt; 16; i++) {
       this.masking[i] = k[i];
-      this.rotate[i] = k[16 + i] &amp; 0x1f;
+      this.rotate[i] = k[16 + i] & 0x1f;
     }
   };
 
@@ -326,19 +326,19 @@ function openpgp_symenc_cast5() {
   function f1(d, m, r) {
     var t = m + d;
     var I = (t &lt;&lt; r) | (t >>> (32 - r));
-    return ((sBox[0][I >>> 24] ^ sBox[1][(I >>> 16) &amp; 255]) - sBox[2][(I >>> 8) &amp; 255]) + sBox[3][I &amp; 255];
+    return ((sBox[0][I >>> 24] ^ sBox[1][(I >>> 16) & 255]) - sBox[2][(I >>> 8) & 255]) + sBox[3][I & 255];
   }
 
   function f2(d, m, r) {
     var t = m ^ d;
     var I = (t &lt;&lt; r) | (t >>> (32 - r));
-    return ((sBox[0][I >>> 24] - sBox[1][(I >>> 16) &amp; 255]) + sBox[2][(I >>> 8) &amp; 255]) ^ sBox[3][I &amp; 255];
+    return ((sBox[0][I >>> 24] - sBox[1][(I >>> 16) & 255]) + sBox[2][(I >>> 8) & 255]) ^ sBox[3][I & 255];
   }
 
   function f3(d, m, r) {
     var t = m - d;
     var I = (t &lt;&lt; r) | (t >>> (32 - r));
-    return ((sBox[0][I >>> 24] + sBox[1][(I >>> 16) &amp; 255]) ^ sBox[2][(I >>> 8) &amp; 255]) - sBox[3][I &amp; 255];
+    return ((sBox[0][I >>> 24] + sBox[1][(I >>> 16) & 255]) ^ sBox[2][(I >>> 8) & 255]) - sBox[3][I & 255];
   }
 
   var sBox = new Array(8);
@@ -640,13 +640,13 @@ module.exports.keySize = cast5.prototype.keySize = 16;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-cleartext.html">cleartext</a></li><li><a href="config.html">config/config</a></li><li><a href="config_localStorage.html">config/config_localStorage</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="config-config.html">config</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li><li><a href="util-Util.html">Util</a></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha2</a> on Sun Dec 22 2013 23:43:09 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

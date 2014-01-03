@@ -11,10 +11,18 @@
  * provided with the application or distribution.
  */
 
-/** @module encoding/base64 */
+/**
+ * @module encoding/base64
+ */
 
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
+/**
+ * Convert binary string to radix-64
+ * @param {String} t binary string to convert
+ * @returns {string} radix-64 version of input string
+ * @static
+ */
 function s2r(t) {
   var a, c, n;
   var r = '',
@@ -62,6 +70,12 @@ function s2r(t) {
   return r;
 }
 
+/**
+ * Convert radix-64 to binary string
+ * @param {String} t radix-64 string to convert
+ * @returns {string} binary version of input string
+ * @static
+ */
 function r2s(t) {
   var c, n;
   var r = '',

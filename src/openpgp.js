@@ -21,15 +21,23 @@
  * for extending and developing on top of the base library.
  */
 
-/** @module openpgp */
+/**
+ * @requires cleartext
+ * @requires config
+ * @requires encoding/armor
+ * @requires enums
+ * @requires message
+ * @requires packet
+ * @module openpgp
+ */
 
-var armor = require('./encoding/armor.js');
-var packet = require('./packet');
-var enums = require('./enums.js');
-var config = require('./config');
-var message = require('./message.js');
-var cleartext = require('./cleartext.js');
-var key = require('./key.js');
+var armor = require('./encoding/armor.js'),
+  packet = require('./packet'),
+  enums = require('./enums.js'),
+  config = require('./config'),
+  message = require('./message.js'),
+  cleartext = require('./cleartext.js'),
+  key = require('./key.js');
 
 
 /**
@@ -37,6 +45,7 @@ var key = require('./key.js');
  * @param  {Array<module:key~Key>}  keys array of keys, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  * @return {String}      encrypted ASCII armored message
+ * @static
  */
 function encryptMessage(keys, text) {
   var msg = message.fromText(text);
@@ -51,6 +60,7 @@ function encryptMessage(keys, text) {
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
  * @return {String}            encrypted ASCII armored message
+ * @static
  */
 function signAndEncryptMessage(publicKeys, privateKey, text) {
   var msg = message.fromText(text);
@@ -66,6 +76,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * @param  {module:message~Message} message    the message object with the encrypted data
  * @return {(String|null)}        decrypted message as as native JavaScript string
  *                              or null if no literal data found
+ * @static
  */
 function decryptMessage(privateKey, message) {
   message = message.decrypt(privateKey);
@@ -80,6 +91,7 @@ function decryptMessage(privateKey, message) {
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
+ * @static
  */
 function decryptAndVerifyMessage(privateKey, publicKeys, message) {
   var result = {};
@@ -97,6 +109,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, message) {
  * @param  {Array<module:key~Key>}  privateKeys private key with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
  * @return {String}             ASCII armored message
+ * @static
  */
 function signClearMessage(privateKeys, text) {
   var cleartextMessage = new cleartext.CleartextMessage(text);
@@ -110,6 +123,7 @@ function signClearMessage(privateKeys, text) {
  * @param  {module:cleartext~CleartextMessage} message    cleartext message object with signatures
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                                       cleartext with status of verified signatures
+ * @static
  */
 function verifyClearSignedMessage(publicKeys, message) {
   var result = {};
@@ -130,6 +144,7 @@ function verifyClearSignedMessage(publicKeys, message) {
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
  * @return {Object} {key: Array<module:key~Key>, privateKeyArmored: Array<String>, publicKeyArmored: Array<String>}
+ * @static
  */
 function generateKeyPair(keyType, numBits, userId, passphrase) {
   var result = {};

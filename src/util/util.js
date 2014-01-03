@@ -15,20 +15,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module util/util */
+/**
+ * This object contains utility functions
+ * @requires config
+ * @module util/util
+ */
 
 var config = require('../config');
 
-/**
- *
- * This object contains utility functions
- *
- * @class
- * @classdesc Implementation of the util object
- */
-var Util = function() {
-
-  this.readNumber = function(bytes) {
+module.exports = {
+  readNumber: function (bytes) {
     var n = 0;
 
     for (var i = 0; i < bytes.length; i++) {
@@ -37,37 +33,33 @@ var Util = function() {
     }
 
     return n;
-  };
+  },
 
-  this.writeNumber = function(n, bytes) {
+  writeNumber: function (n, bytes) {
     var b = '';
     for (var i = 0; i < bytes; i++) {
       b += String.fromCharCode((n >> (8 * (bytes - i - 1))) & 0xFF);
     }
 
     return b;
-  };
+  },
 
-
-
-  this.readDate = function(bytes) {
+  readDate: function (bytes) {
     var n = this.readNumber(bytes);
     var d = new Date();
     d.setTime(n * 1000);
     return d;
-  };
+  },
 
-  this.writeDate = function(time) {
+  writeDate: function (time) {
     var numeric = Math.round(time.getTime() / 1000);
 
     return this.writeNumber(numeric, 4);
-  };
+  },
 
-  this.emailRegEx = /^[+a-zA-Z0-9_.-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,6}$/;
+  emailRegEx: /^[+a-zA-Z0-9_.-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,6}$/,
 
-  this.debug = false;
-
-  this.hexdump = function(str) {
+  hexdump: function (str) {
     var r = [];
     var e = str.length;
     var c = 0;
@@ -82,14 +74,14 @@ var Util = function() {
         r.push("\n           ");
     }
     return r.join('');
-  };
+  },
 
   /**
    * Create hexstring from a binary
    * @param {String} str String to convert
    * @return {String} String containing the hexadecimal values
    */
-  this.hexstrdump = function(str) {
+  hexstrdump: function (str) {
     if (str == null)
       return "";
     var r = [];
@@ -102,26 +94,26 @@ var Util = function() {
       r.push("" + h);
     }
     return r.join('');
-  };
+  },
 
   /**
    * Create binary string from a hex encoded string
    * @param {String} str Hex string to convert
    * @return {String} String containing the binary values
    */
-  this.hex2bin = function(hex) {
+  hex2bin: function (hex) {
     var str = '';
     for (var i = 0; i < hex.length; i += 2)
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
     return str;
-  };
+  },
 
   /**
    * Creating a hex string from an binary array of integers (0..255)
    * @param {String} str Array of bytes to convert
    * @return {String} Hexadecimal representation of the array
    */
-  this.hexidump = function(str) {
+  hexidump: function (str) {
     var r = [];
     var e = str.length;
     var c = 0;
@@ -132,7 +124,7 @@ var Util = function() {
       r.push("" + h);
     }
     return r.join('');
-  };
+  },
 
 
   /**
@@ -140,32 +132,29 @@ var Util = function() {
    * @param {String} str The string to convert
    * @return {String} A valid squence of utf8 bytes
    */
-  this.encode_utf8 = function(str) {
+  encode_utf8: function (str) {
     return unescape(encodeURIComponent(str));
-  };
+  },
 
   /**
    * Convert a string of utf8 bytes to a native javascript string
    * @param {String} utf8 A valid squence of utf8 bytes
    * @return {String} A native javascript string
    */
-  this.decode_utf8 = function(utf8) {
+  decode_utf8: function (utf8) {
     try {
       return decodeURIComponent(escape(utf8));
     } catch (e) {
       return utf8;
     }
-  };
+  },
 
-  var str2bin = function(str, result) {
-    for (var i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-
-    return result;
-  };
-
-  var bin2str = function(bin) {
+  /**
+   * Convert an array of integers(0.255) to a string
+   * @param {Array<Integer>} bin An array of (binary) integers to convert
+   * @return {String} The string representation of the array
+   */
+  bin2str: function (bin) {
     var result = [];
 
     for (var i = 0; i < bin.length; i++) {
@@ -173,53 +162,57 @@ var Util = function() {
     }
 
     return result.join('');
-  };
+  },
+
+  _str2bin: function (str, result) {
+    for (var i = 0; i < str.length; i++) {
+      result[i] = str.charCodeAt(i);
+    }
+
+    return result;
+  },
 
   /**
    * Convert a string to an array of integers(0.255)
    * @param {String} str String to convert
    * @return {Array<Integer>} An array of (binary) integers
    */
-  this.str2bin = function(str) {
-    return str2bin(str, new Array(str.length));
-  };
+  str2bin: function (str) {
+    return this._str2bin(str, new Array(str.length));
+  },
 
-
-  /**
-   * Convert an array of integers(0.255) to a string 
-   * @param {Array<Integer>} bin An array of (binary) integers to convert
-   * @return {String} The string representation of the array
-   */
-  this.bin2str = bin2str;
 
   /**
    * Convert a string to a Uint8Array
    * @param {String} str String to convert
    * @return {Uint8Array} The array of (binary) integers
    */
-  this.str2Uint8Array = function(str) {
-    return str2bin(str, new Uint8Array(new ArrayBuffer(str.length)));
-  };
+  str2Uint8Array: function (str) {
+    return this._str2bin(str, new Uint8Array(new ArrayBuffer(str.length)));
+  },
 
   /**
    * Convert a Uint8Array to a string. This currently functions 
-   * the same as bin2str. 
+   * the same as bin2str.
+   * @function module:util/util.Uint8Array2str
    * @param {Uint8Array} bin An array of (binary) integers to convert
    * @return {String} String representation of the array
    */
-  this.Uint8Array2str = bin2str;
+  Uint8Array2str: function (bin) {
+    return this.bin2str(bin);
+  },
 
   /**
-   * Calculates a 16bit sum of a string by adding each character 
+   * Calculates a 16bit sum of a string by adding each character
    * codes modulus 65535
    * @param {String} text String to create a sum of
-   * @return {Integer} An integer containing the sum of all character 
+   * @return {Integer} An integer containing the sum of all character
    * codes % 65535
    */
-  this.calc_checksum = function(text) {
+  calc_checksum: function (text) {
     var checksum = {
       s: 0,
-      add: function(sadd) {
+      add: function (sadd) {
         this.s = (this.s + sadd) % 65536;
       }
     };
@@ -227,42 +220,42 @@ var Util = function() {
       checksum.add(text.charCodeAt(i));
     }
     return checksum.s;
-  };
+  },
 
   /**
    * Helper function to print a debug message. Debug 
    * messages are only printed if
-   * openpgp.config.debug is set to true.
+   * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
-  this.print_debug = function(str) {
+  print_debug: function (str) {
     if (config.debug) {
       console.log(str);
     }
-  };
+  },
 
   /**
    * Helper function to print a debug message. Debug 
    * messages are only printed if
-   * openpgp.config.debug is set to true.
+   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call hexstrdump iff necessary.
    * @param {String} str String of the debug message
    */
-  this.print_debug_hexstr_dump = function(str, strToHex) {
+  print_debug_hexstr_dump: function (str, strToHex) {
     if (config.debug) {
       str = str + this.hexstrdump(strToHex);
       console.log(str);
     }
-  };
+  },
 
-  this.getLeftNBits = function(string, bitcount) {
+  getLeftNBits: function (string, bitcount) {
     var rest = bitcount % 8;
     if (rest == 0)
       return string.substring(0, bitcount / 8);
     var bytes = (bitcount - rest) / 8 + 1;
     var result = string.substring(0, bytes);
     return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
-  };
+  },
 
   /**
    * Shifting a string to n bits right
@@ -271,7 +264,7 @@ var Util = function() {
    * than 9)
    * @return {String} Resulting string. 
    */
-  this.shiftRight = function(value, bitcount) {
+  shiftRight: function (value, bitcount) {
     var temp = util.str2bin(value);
     if (bitcount % 8 != 0) {
       for (var i = temp.length - 1; i >= 0; i--) {
@@ -283,13 +276,13 @@ var Util = function() {
       return value;
     }
     return util.bin2str(temp);
-  };
+  },
 
   /**
    * Return the algorithm type as string
    * @return {String} String representing the message type
    */
-  this.get_hashAlgorithmString = function(algo) {
+  get_hashAlgorithmString: function (algo) {
     switch (algo) {
       case 1:
         return "MD5";
@@ -307,12 +300,5 @@ var Util = function() {
         return "SHA224";
     }
     return "unknown";
-  };
-
+  }
 };
-
-/**
- * an instance that should be used. 
- */
-
-module.exports = new Util();

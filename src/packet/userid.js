@@ -15,20 +15,24 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/userid */
-
-var util = require('../util');
-
 /**
- * @class
- * @classdesc Implementation of the User ID Packet (Tag 13)
+ * Implementation of the User ID Packet (Tag 13)<br/>
+ * <br/>
  * A User ID packet consists of UTF-8 text that is intended to represent
  * the name and email address of the key holder.  By convention, it
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
  * restrictions on its content.  The packet length in the header
- * specifies the length of the User ID. 
+ * specifies the length of the User ID.
+ * @requires util
+ * @module packet/userid
  */
-module.exports = function packet_userid() {
+
+var util = require('../util');
+
+/**
+ * @constructor
+ */
+module.exports = function userid() {
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
    * @type {String} 
@@ -39,21 +43,16 @@ module.exports = function packet_userid() {
   /**
    * Parsing function for a user id packet (tag 13).
    * @param {String} input payload of a tag 13 packet
-   * @param {Integer} position position to start reading from the input string
-   * @param {Integer} len length of the packet or the remaining length of input 
-   * at position
-   * @return {module:packet/userid} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     this.userid = util.decode_utf8(bytes);
-  }
+  };
 
   /**
    * Creates a string representation of the user id packet
-   * @param {String} user_id the user id as string ("John Doe <john.doe@mail.us")
    * @return {String} string representation
    */
-  this.write = function() {
+  this.write = function () {
     return util.encode_utf8(this.userid);
-  }
+  };
 }

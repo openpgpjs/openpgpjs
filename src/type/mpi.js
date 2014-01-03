@@ -20,20 +20,25 @@
 // - MPI size: (a << 8) | b 
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
-/** @module type/mpi */
-
-var BigInteger = require('../crypto/public_key/jsbn.js'),
-  util = require('../util');
-
 /**
- * @class
- * @classdescImplementation of type MPI (RFC4880 3.2)
+ * Implementation of type MPI (RFC4880 3.2)<br/>
+ * <br/>
  * Multiprecision integers (also called MPIs) are unsigned integers used
  * to hold large integers such as the ones used in cryptographic
  * calculations.
  * An MPI consists of two pieces: a two-octet scalar that is the length
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
+ * @requires crypto/public_key/jsbn
+ * @requires util
+ * @module type/mpi
+ */
+
+var BigInteger = require('../crypto/public_key/jsbn.js'),
+  util = require('../util');
+
+/**
+ * @constructor
  */
 module.exports = function mpi() {
   /** An implementation dependent integer */
@@ -42,13 +47,9 @@ module.exports = function mpi() {
   /**
    * Parsing function for a mpi (RFC 4880 3.2).
    * @param {String} input Payload of mpi data
-   * @param {Integer} position Position to start reading from the input 
-   * string
-   * @param {Integer} len Length of the packet or the remaining length of 
-   * input at position
-   * @return {module:type/mpi} Object representation
+   * @return {Integer} Length of data read
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var bits = (bytes.charCodeAt(0) << 8) | bytes.charCodeAt(1);
 
     // Additional rules:
@@ -67,33 +68,33 @@ module.exports = function mpi() {
     this.fromBytes(raw);
 
     return 2 + bytelen;
-  }
+  };
 
-  this.fromBytes = function(bytes) {
+  this.fromBytes = function (bytes) {
     this.data = new BigInteger(util.hexstrdump(bytes), 16);
-  }
+  };
 
-  this.toBytes = function() {
+  this.toBytes = function () {
     return this.write().substr(2);
-  }
+  };
 
-  this.byteLength = function() {
+  this.byteLength = function () {
     return this.toBytes().length;
-  }
+  };
 
   /**
    * Converts the mpi object to a string as specified in RFC4880 3.2
    * @return {String} mpi Byte representation
    */
-  this.write = function() {
+  this.write = function () {
     return this.data.toMPI();
-  }
+  };
 
-  this.toBigInteger = function() {
+  this.toBigInteger = function () {
     return this.data.clone();
-  }
+  };
 
-  this.fromBigInteger = function(bn) {
+  this.fromBigInteger = function (bn) {
     this.data = bn.clone();
-  }
+  };
 }

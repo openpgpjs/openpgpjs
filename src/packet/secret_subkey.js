@@ -15,10 +15,17 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/secret_subkey */
+/**
+ * @requires packet/secret_key
+ * @module packet/secret_subkey
+ */
 
-var secret_key = require('./secret_key.js');
+var secretKey = require('./secret_key.js');
 
+/**
+ * @constructor
+ * @extends module:packet/secret_key
+ */
 module.exports = function secret_subkey() {
-  secret_key.call(this);
+  secretKey.call(this);
 }

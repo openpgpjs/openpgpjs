@@ -15,7 +15,21 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/signature */
+/**
+ * Implementation of the Signature Packet (Tag 2)<br/>
+ * <br/>
+ * RFC4480 5.2:
+ * A Signature packet describes a binding between some public key and
+ * some data.  The most common signatures are a signature of a file or a
+ * block of text, and a signature that is a certification of a User ID.
+ * @requires crypto
+ * @requires enums
+ * @requires packet/packet
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires util
+ * @module packet/signature
+ */
 
 var util = require('../util'),
   packet = require('./packet.js'),
@@ -25,15 +39,9 @@ var util = require('../util'),
   type_keyid = require('../type/keyid.js');
 
 /**
- * @class
- * @classdesc Implementation of the Signature Packet (Tag 2)
- * 
- * RFC4480 5.2:
- * A Signature packet describes a binding between some public key and
- * some data.  The most common signatures are a signature of a file or a
- * block of text, and a signature that is a certification of a User ID.
+ * @constructor
  */
-module.exports = function packet_signature() {
+module.exports = function signature() {
 
   this.version = 4;
   this.signatureType = null;
@@ -85,7 +93,7 @@ module.exports = function packet_signature() {
    * @param {Integer} len length of the packet or the remaining length of bytes at position
    * @return {module:packet/signature} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     var i = 0;
 
     this.version = bytes.charCodeAt(i++);
@@ -94,7 +102,7 @@ module.exports = function packet_signature() {
       case 3:
         // One-octet length of following hashed material. MUST be 5.
         if (bytes.charCodeAt(i++) != 5)
-          util.print_debug("openpgp.packet.signature.js\n" +
+          util.print_debug("packet/signature.js\n" +
             'invalid One-octet length of following hashed material.' +
             'MUST be 5. @:' + (i - 1));
 
@@ -173,7 +181,7 @@ module.exports = function packet_signature() {
     this.signature = bytes.substr(i);
   };
 
-  this.write = function() {
+  this.write = function () {
     return this.signatureData +
       util.writeNumber(0, 2) + // Number of unsigned subpackets.
       this.signedHashValue +
@@ -185,7 +193,7 @@ module.exports = function packet_signature() {
    * @param {module:packet/secret_key} key private key used to sign the message. 
    * @param {Object} data Contains packets to be signed.
    */
-  this.sign = function(key, data) {
+  this.sign = function (key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),
       publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
       hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -219,7 +227,7 @@ module.exports = function packet_signature() {
    * Creates string of bytes with all subpacket data
    * @return {String} a string-representation of a all subpacket data
    */
-  this.write_all_sub_packets = function() {
+  this.write_all_sub_packets = function () {
     var sub = enums.signatureSubpacket;
     var result = '';
     var bytes = '';
@@ -342,7 +350,7 @@ module.exports = function packet_signature() {
 
   // V4 signature sub packets
 
-  this.read_sub_packet = function(bytes) {
+  this.read_sub_packet = function (bytes) {
     var mypos = 0;
 
     function read_array(prop, bytes) {
@@ -491,7 +499,7 @@ module.exports = function packet_signature() {
         break;
       case 32:
         // Embedded Signature
-        this.embeddedSignature = new packet_signature();
+        this.embeddedSignature = new signature();
         this.embeddedSignature.read(bytes.substr(mypos));
         break;
       default:
@@ -501,7 +509,7 @@ module.exports = function packet_signature() {
   };
 
   // Produces data to produce signature on
-  this.toSign = function(type, data) {
+  this.toSign = function (type, data) {
     var t = enums.signature;
 
     switch (type) {
@@ -567,7 +575,7 @@ module.exports = function packet_signature() {
   }
 
 
-  this.calculateTrailer = function() {
+  this.calculateTrailer = function () {
     // calculating the trailer
     var trailer = '';
     // V3 signatures don't have a trailer
@@ -585,7 +593,7 @@ module.exports = function packet_signature() {
    * @param {module:packet/public_subkey|module:packet/public_key} key the public key to verify the signature
    * @return {boolean} True if message is verified, else false.
    */
-  this.verify = function(key, data) {
+  this.verify = function (key, data) {
     var signatureType = enums.write(enums.signature, this.signatureType),
       publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
       hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -623,7 +631,7 @@ module.exports = function packet_signature() {
    * Verifies signature expiration date
    * @return {Boolean} true if expired
    */
-  this.isExpired = function() {
+  this.isExpired = function () {
     if (!this.signatureNeverExpires) {
       return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
     }

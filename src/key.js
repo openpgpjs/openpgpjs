@@ -15,12 +15,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module key */
+/**
+ * @requires config
+ * @requires encoding/armor
+ * @requires enums
+ * @requires packet
+ * @module key
+ */
 
-var packet = require('./packet');
-var enums = require('./enums.js');
-var armor = require('./encoding/armor.js');
-var config = require('./config');
+var packet = require('./packet'),
+  enums = require('./enums.js'),
+  armor = require('./encoding/armor.js'),
+  config = require('./config');
 
 /**
  * @class
@@ -664,6 +670,7 @@ SubKey.prototype.verify = function(primaryKey) {
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
  * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
+ * @static
  */
 function readArmored(armoredText) {
   var result = {};
@@ -705,6 +712,7 @@ function readArmored(armoredText) {
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
  * @return {module:key~Key}
+ * @static
  */
 function generate(keyType, numBits, userId, passphrase) {
   var packetlist = new packet.list();

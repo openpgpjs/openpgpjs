@@ -15,19 +15,23 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/** @module packet/literal */
+/**
+ * Implementation of the Literal Data Packet (Tag 11)<br/>
+ * <br/>
+ * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
+ * is not to be further interpreted.
+ * @requires enums
+ * @requires util
+ * @module packet/literal
+ */
 
 var util = require('../util'),
   enums = require('../enums.js');
 
 /**
- * @class
- * @classdesc Implementation of the Literal Data Packet (Tag 11)
- * 
- * RFC4880 5.9: A Literal Data packet contains the body of a message; data that
- * is not to be further interpreted.
+ * @constructor
  */
-module.exports = function packet_literal() {
+module.exports = function literal() {
   this.format = 'utf8'; // default format for literal data packets
   this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();
@@ -38,7 +42,7 @@ module.exports = function packet_literal() {
    * will be normalized to \r\n and by default text is converted to UTF8
    * @param {String} text Any native javascript string
    */
-  this.setText = function(text) {
+  this.setText = function (text) {
     // normalize EOL to \r\n
     text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
     // encode UTF8
@@ -50,7 +54,7 @@ module.exports = function packet_literal() {
    * with normalized end of line to \n
    * @return {String} literal data as text
    */
-  this.getText = function() {
+  this.getText = function () {
     // decode UTF8
     var text = util.decode_utf8(this.data);
     // normalize EOL to \n
@@ -62,7 +66,7 @@ module.exports = function packet_literal() {
    * @param {String} bytes The string of bytes
    * @param {utf8|binary|text} format The format of the string of bytes
    */
-  this.setBytes = function(bytes, format) {
+  this.setBytes = function (bytes, format) {
     this.format = format;
     this.data = bytes;
   }
@@ -72,7 +76,7 @@ module.exports = function packet_literal() {
    * Get the byte sequence representing the literal packet data
    * @returns {String} A sequence of bytes
    */
-  this.getBytes = function() {
+  this.getBytes = function () {
     return this.data;
   }
 
@@ -88,7 +92,7 @@ module.exports = function packet_literal() {
    *            input at position
    * @return {module:packet/literal} object representation
    */
-  this.read = function(bytes) {
+  this.read = function (bytes) {
     // - A one-octet field that describes how the data is formatted.
 
     var format = enums.read(enums.literal, bytes.charCodeAt(0));
@@ -109,7 +113,7 @@ module.exports = function packet_literal() {
    * @param {String} data The data to be inserted as body
    * @return {String} string-representation of the packet
    */
-  this.write = function() {
+  this.write = function () {
     var filename = util.encode_utf8("msg.txt");
 
     var data = this.getBytes();

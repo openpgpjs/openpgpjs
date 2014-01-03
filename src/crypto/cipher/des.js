@@ -21,9 +21,9 @@
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
 
-/** @module crypto/cipher/des */
-
-
+/**
+ * @module crypto/cipher/des
+ */
 
 
 function des(keys, message, encrypt, mode, iv, padding) {
@@ -402,6 +402,8 @@ function OriginalDes(key) {
 }
 
 module.exports = {
+  /** @static */
   des: Des,
+  /** @static */
   originalDes: OriginalDes
 }

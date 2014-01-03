@@ -17,7 +17,10 @@
 
 // The GPG4Browsers crypto interface
 
-/** @module crypto/random */
+/**
+ * @requires type/mpi
+ * @module crypto/random
+ */
 
 var type_mpi = require('../type/mpi.js');
 
