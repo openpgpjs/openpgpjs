@@ -1,8 +1,10 @@
-var unit = require('../unit.js');
+var openpgp = require('openpgp');
 
-unit.register("Key testing", function() {
-  var openpgp = require('openpgp');
+'use strict';
 
+var expect = chai.expect;
+
+describe('Key tests', function() {
   var twoKeys =
        ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -218,49 +220,77 @@ unit.register("Key testing", function() {
     '=e8xo',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
+  it('Parsing armored text with two keys', function(done) {
+    var pubKeys = openpgp.key.readArmored(twoKeys);
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.not.exist;
+    expect(pubKeys.keys).to.have.length(2);
+    expect(pubKeys.keys[0].getKeyPacket().getKeyId().toHex()).to.equal('4a63613a4d6e4094');
+    expect(pubKeys.keys[1].getKeyPacket().getKeyId().toHex()).to.equal('dbf223e870534df4');
+    done();
+  });
 
+  it('Testing key ID and fingerprint for V3 and V4 keys', function(done) {
+    var pubKeysV4 = openpgp.key.readArmored(twoKeys);
+    expect(pubKeysV4).to.exist;
+    expect(pubKeysV4.err).to.not.exist;
+    expect(pubKeysV4.keys).to.have.length(2);
 
-  var tests = [function() {
-    var pubKey = openpgp.key.readArmored(twoKeys);
-    var verified = !pubKey.err && pubKey.keys.length == 2 &&
-                   pubKey.keys[0].getKeyPacket().getKeyId().toHex() == '4a63613a4d6e4094' &&
-                   pubKey.keys[1].getKeyPacket().getKeyId().toHex() == 'dbf223e870534df4';
-    return new unit.result("Parsing armored text with two keys", verified);
+    var pubKeyV4 = pubKeysV4.keys[0];
+    expect(pubKeyV4).to.exist;
 
-  },function() {
-    var pubKeyV4 = openpgp.key.readArmored(twoKeys).keys[0];
-    var pubKeyV3 = openpgp.key.readArmored(pub_v3).keys[0];
-    var verified = pubKeyV4.getKeyPacket().getKeyId().toHex() == '4a63613a4d6e4094' &&
-                   openpgp.util.hexstrdump(pubKeyV4.getKeyPacket().getFingerprint()) == 'f470e50dcb1ad5f1e64e08644a63613a4d6e4094' &&
-                   pubKeyV3.getKeyPacket().getKeyId().toHex() == 'e5b7a014a237ba9d' &&
-                   openpgp.util.hexstrdump(pubKeyV3.getKeyPacket().getFingerprint()) == 'a44fcee620436a443bc4913640ab3e49';
+    var pubKeysV3 = openpgp.key.readArmored(pub_v3)
 
-    return new unit.result("Testing key ID and fingerprint for V3 and V4 keys", verified);
+    expect(pubKeysV3).to.exist;
+    expect(pubKeysV3.err).to.not.exist;
+    expect(pubKeysV3.keys).to.have.length(1);
 
-  },function() {
-    var pubKey = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var pubKeyV3 = pubKeysV3.keys[0];
+    expect(pubKeyV3).to.exist;
+
+    expect(pubKeyV4.getKeyPacket().getKeyId().toHex()).to.equal('4a63613a4d6e4094');
+    expect(openpgp.util.hexstrdump(pubKeyV4.getKeyPacket().getFingerprint())).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
+    expect(pubKeyV3.getKeyPacket().getKeyId().toHex()).to.equal('e5b7a014a237ba9d');
+    expect(openpgp.util.hexstrdump(pubKeyV3.getKeyPacket().getFingerprint())).to.equal('a44fcee620436a443bc4913640ab3e49');
+    done();
+  });
+
+  it('Testing key method getSubkeyPackets', function(done) {
+    var pubKeys = openpgp.key.readArmored(pub_sig_test)
+
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.not.exist;
+    expect(pubKeys.keys).to.have.length(1);
+
+    var pubKey = pubKeys.keys[0];
+    expect(pubKey).to.exist;
+
     var packetlist = new openpgp.packet.list();
+
     packetlist.read(openpgp.armor.decode(pub_sig_test).data);
+
     var subkeys = pubKey.getSubkeyPackets();
-    var verified = subkeys.length == 2 &&
-                   subkeys[0].getKeyId().equals(packetlist[8].getKeyId()) &&
-                   subkeys[1].getKeyId().equals(packetlist[11].getKeyId());
-    return new unit.result("Testing key method getSubkeyPackets", verified);
+    expect(subkeys).to.exist;
+    expect(subkeys).to.have.length(2);
+    expect(subkeys[0].getKeyId().equals(packetlist[8].getKeyId())).to.be.true;
+    expect(subkeys[1].getKeyId().equals(packetlist[11].getKeyId())).to.be.true;
+    done();
+  });
 
-  },function() {
-    var pubKey = openpgp.key.readArmored(pub_sig_test).keys[0];
+  it('Verify status of revoked subkey', function(done) {
+    var pubKeys = openpgp.key.readArmored(pub_sig_test);
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.not.exist;
+    expect(pubKeys.keys).to.have.length(1);
+
+    var pubKey = pubKeys.keys[0];
+    expect(pubKey).to.exist;
+    expect(pubKey.subKeys).to.exist;
+    expect(pubKey.subKeys).to.have.length(2);
+
     var status = pubKey.subKeys[0].verify(pubKey.primaryKey);
-    return new unit.result("Verify status of revoked subkey", status == openpgp.enums.keyStatus.revoked);
-
-  }];
-
-  var results = [];
-
-  for(var i in tests) {
-    results.push(tests[i]());
-  }  
-  
-  return results;
-
+    expect(status).to.equal(openpgp.enums.keyStatus.revoked);
+    done();
+  });
 });
 

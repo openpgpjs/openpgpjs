@@ -1,10 +1,11 @@
-var unit = require('../unit.js');
+var openpgp = require('openpgp');
 
-unit.register("Keyring testing", function() {
-  var openpgp = require('openpgp');
-  var keyringClass = new require('keyring');
-  var keyring = new keyringClass();
-  var result = [];
+'use strict';
+
+var expect = chai.expect;
+
+describe("Keyring testing", function() {
+  var keyring = new (new require('keyring'))();
 
   keyring.init();
   keyring.importKey([
@@ -49,14 +50,19 @@ unit.register("Keyring testing", function() {
         '=WaSx',
         '-----END PGP MESSAGE-----'
         ].join("\n"));
-  var signingKeyIds = msg2.getSigningKeyIds();
-  var key = keyring.getKeysForKeyId(signingKeyIds[0].toHex());
-  var verified = msg2.verify(key);
-  result[2] = new unit.result("Testing keyring getKeysForKeyId method",
-          key !== null && 
-          key.length == 1 && 
-          verified[0].valid);
-  return result;
+
+  it('Testing keyring getKeysForKeyId method', function (done) {
+    var signingKeyIds = msg2.getSigningKeyIds();
+    var key = keyring.getKeysForKeyId(signingKeyIds[0].toHex());
+    expect(key).to.exist;
+    expect(key).to.have.length(1);
+
+    var verified = msg2.verify(key);
+    expect(verified).to.exist;
+    expect(verified).to.have.length(1);
+    expect(verified[0].valid).to.be.true;
+    done();
+  });
 });
 
  
