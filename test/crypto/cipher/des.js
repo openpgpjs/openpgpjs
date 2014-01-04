@@ -4,7 +4,7 @@ var openpgp = require('openpgp'),
   util = openpgp.util,
   expect = chai.expect;
 
-describe("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
+describe('TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf', function() {
   var key = util.bin2str([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
   var testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],
                      [[0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0xDD,0x7F,0x12,0x1C,0xA5,0x01,0x56,0x19]],
@@ -122,13 +122,13 @@ describe("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.go
         var encrypted = des.encrypt(thisVectorSet[i][0], padding);
         var decrypted = des.decrypt(encrypted, padding);
 
-        expect(util.bin2str(encrypted), 'Testing vector with block [' + util.hexidump(thisVectorSet[i][0]) +
+        expect(util.bin2str(encrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
           '] and key [' + util.hexstrdump(key) +
           '] and padding [' + padding +
           '] should be ' + util.hexidump(thisVectorSet[i][1]) +
           ' - Actually [' + util.hexidump(encrypted) +
           ']').to.equal(util.bin2str(thisVectorSet[i][1]));
-        expect(util.bin2str(decrypted), 'Testing vector with block [' + util.hexidump(thisVectorSet[i][0]) +
+        expect(util.bin2str(decrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
           '] and key [' + util.hexstrdump(key) +
           '] and padding [' + padding +
           '] should be ' + util.hexidump(thisVectorSet[i][0]) +

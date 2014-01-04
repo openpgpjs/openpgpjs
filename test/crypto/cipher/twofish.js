@@ -4,7 +4,7 @@ var openpgp = require('openpgp'),
   util = openpgp.util,
   expect = chai.expect;
 
-it("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.txt", function(done) {
+it('Twofish with test vectors from http://www.schneier.com/code/ecb_ival.txt', function(done) {
   function TFencrypt(block, key) {
     var tf = new openpgp.crypto.cipher.twofish(key);
 
@@ -56,7 +56,7 @@ it("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.tx
       testvectors[i] = TFencrypt(testvectors[i-1],util.bin2str(testvectors[i-2].concat(testvectors[i-3])));
       continue;
     }
-    expect(res, 'Testing vector with block ' + util.hexidump(blk) +
+    expect(res, 'vector with block ' + util.hexidump(blk) +
                 ' with key ' + util.hexstrdump(key) +
                 ' should be ' + util.hexidump(ct) +
                 ' but is ' + util.hexidump(TFencrypt(blk,key))).to.equal(exp);

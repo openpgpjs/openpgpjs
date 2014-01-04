@@ -16,7 +16,7 @@ it('CAST-128 cipher test with test vectors from RFC2144', function (done) {
 
 	for (var i = 0; i < testvectors.length; i++) {
     var res = test_cast(testvectors[i][1],testvectors[i][0],testvectors[i][2]);
-		expect(res, 'Testing vector with block ' + util.hexidump(testvectors[i][0]) +
+		expect(res, 'vector with block ' + util.hexidump(testvectors[i][0]) +
                 ' and key ' + util.hexidump(testvectors[i][1]) +
                 ' should be ' + util.hexidump(testvectors[i][2])).to.be.true;
 	}
