@@ -147,10 +147,11 @@ module.exports = function(grunt) {
   // Alias the `mocha_phantomjs` task to run `mocha-phantomjs`
   grunt.registerTask('mocha_phantomjs', 'mocha-phantomjs', function () {
     var done = this.async();
-    require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/ci-tests.html', function (err, stdout) {
-      grunt.log.write(stdout);
+    var mocha = require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/ci-tests.html', function (err) {
       done(err);
     });
+    mocha.stdout.pipe(process.stdout);
+    mocha.stderr.pipe(process.stderr);
   });
 
   // Test/Dev tasks
