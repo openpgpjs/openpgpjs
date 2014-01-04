@@ -544,7 +544,7 @@ describe("Signature", function() {
     done();
   });
 
-  it('Verify subkey revocation signature', function(done) {
+  it.skip('Verify subkey revocation signature', function(done) {
     var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
 
     var verified = pubKey.subKeys[0].revocationSignature.verify(pubKey.primaryKey, {key: pubKey.subKeys[0].subKey});

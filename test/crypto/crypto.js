@@ -263,7 +263,7 @@ describe('API functional testing', function() {
       done();
     });
 
-    it("Symmetric without OpenPGP CFB resync", function (done) {
+    it.skip("Symmetric without OpenPGP CFB resync", function (done) {
       var text = openpgp.crypto.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false);
 
       expect(text).to.equal("foobarfoobar1234567890");

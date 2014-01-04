@@ -1,10 +1,10 @@
-var unit = require('../../unit.js');
+'use strict';
 
-unit.register("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
-  var openpgp = require('openpgp'),
-    util = openpgp.util;
+var openpgp = require('openpgp'),
+  util = openpgp.util,
+  expect = chai.expect;
 
-  var result = [];
+describe("TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf", function() {
   var key = util.bin2str([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
   var testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],
                      [[0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0xDD,0x7F,0x12,0x1C,0xA5,0x01,0x56,0x19]],
@@ -71,38 +71,21 @@ unit.register("TripleDES (EDE) cipher test with test vectors from http://csrc.ni
                      [[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02],[0x06,0xE7,0xEA,0x22,0xCE,0x92,0x70,0x8F]],
                      [[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01],[0x16,0x6B,0x40,0xB4,0x4A,0xBA,0x4B,0xD6]]];
 
-  var res = true;
-  var j = 0;
-  for (var i = 0; i < testvectors.length; i++) {
-    var des = new openpgp.crypto.cipher.des(key);
+  it('3DES EDE test vectors', function (done) {
+    for (var i = 0; i < testvectors.length; i++) {
+      var des = new openpgp.crypto.cipher.des(key);
 
-    var encr = util.bin2str(des.encrypt(testvectors[i][0], key));
-    var res2 = encr == util.bin2str(testvectors[i][1]);
+      var encr = util.bin2str(des.encrypt(testvectors[i][0], key));
 
-    res &= res2;
-
-    if (!res2) {
-    result[j] = new unit.result("Testing vector with block " +
-        util.hexidump(testvectors[i][0]) +
-        " and key " + util.hexstrdump(key) +
-        " should be " + util.hexidump(testvectors[i][1]) + " != " +
-        util.hexidump(encr),
-      false);
-    j++;
+      expect(encr, 'vector with block ' + util.hexidump(testvectors[i][0]) +
+                   ' and key ' + util.hexstrdump(key) +
+                   ' should be ' + util.hexidump(testvectors[i][1]) +
+                   ' != ' + util.hexidump(encr)).to.be.equal(util.bin2str(testvectors[i][1]));
     }
-  }
-  if (res) {
-    result[j] = new unit.result("All 3DES EDE test vectors completed", true);
-  }
-  return result;
-});
+    done();
+  });
 
-
-unit.register("DES encrypt/decrypt padding tests", function () {
-    var openpgp = require('openpgp'),
-      util = openpgp.util;
-
-    var result = [];
+  it('DES encrypt/decrypt padding tests', function (done) {
     var key = util.bin2str([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]);
     var testvectors = new Array();
     testvectors[0] = [[[0x01], [0x24, 0xC7, 0x4A, 0x9A, 0x79, 0x75, 0x4B, 0xC7]],
@@ -132,34 +115,27 @@ unit.register("DES encrypt/decrypt padding tests", function () {
 
     var des = new openpgp.crypto.cipher.originalDes(key);
 
-    var res = true;
-    var j = 0;
-
     for (var padding = 0; padding < 3; padding++) {
-        var thisVectorSet = testvectors[padding];
+      var thisVectorSet = testvectors[padding];
 
-        for (var i = 0; i < thisVectorSet.length; i++) {
-            var encrypted = des.encrypt(thisVectorSet[i][0], padding);
-            var decrypted = des.decrypt(encrypted, padding);
+      for (var i = 0; i < thisVectorSet.length; i++) {
+        var encrypted = des.encrypt(thisVectorSet[i][0], padding);
+        var decrypted = des.decrypt(encrypted, padding);
 
-            var res2 = (util.bin2str(encrypted) == util.bin2str(thisVectorSet[i][1]));
-            var res3 = (util.bin2str(decrypted) == util.bin2str(thisVectorSet[i][0]));
-            res &= res2;
-            res &= res3;
-            if (!res2 || !res3) {
-                result[j] = new unit.result(
-                    "Testing vector with block [" +
-                        util.hexidump(thisVectorSet[i][0]) +
-                        "] and key [" + util.hexstrdump(key) +
-                        "] and padding [" + padding +
-                        "] should be " + util.hexidump(thisVectorSet[i][1]) + " - Actually [ENC:" + util.hexidump(encrypted) + ", DEC:" + util.hexidump(decrypted) + "]",
-                    false);
-                j++;
-            }
-        }
+        expect(util.bin2str(encrypted), 'Testing vector with block [' + util.hexidump(thisVectorSet[i][0]) +
+          '] and key [' + util.hexstrdump(key) +
+          '] and padding [' + padding +
+          '] should be ' + util.hexidump(thisVectorSet[i][1]) +
+          ' - Actually [' + util.hexidump(encrypted) +
+          ']').to.equal(util.bin2str(thisVectorSet[i][1]));
+        expect(util.bin2str(decrypted), 'Testing vector with block [' + util.hexidump(thisVectorSet[i][0]) +
+          '] and key [' + util.hexstrdump(key) +
+          '] and padding [' + padding +
+          '] should be ' + util.hexidump(thisVectorSet[i][0]) +
+          ' - Actually [' + util.hexidump(decrypted) +
+          ']').to.equal(util.bin2str(thisVectorSet[i][0]));
+      }
     }
-    if (res) {
-        result[j] = new unit.result("All DES test vectors completed", true);
-    }
-    return result;
+    done();
+  });
 });

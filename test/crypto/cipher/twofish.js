@@ -1,17 +1,16 @@
-var unit = require('../../unit.js');
+'use strict';
 
-unit.register("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.txt", function() {
-  var openpgp = require('openpgp'),
-    util = openpgp.util;
+var openpgp = require('openpgp'),
+  util = openpgp.util,
+  expect = chai.expect;
 
+it("Twofish test with test vectors from http://www.schneier.com/code/ecb_ival.txt", function(done) {
   function TFencrypt(block, key) {
     var tf = new openpgp.crypto.cipher.twofish(key);
 
     return tf.encrypt(block);
   }
 
-
-  var result = [];
   var start = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
   var start_short = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
   var testvectors = [[0x57,0xFF,0x73,0x9D,0x4D,0xC9,0x2C,0x1B,0xD7,0xFC,0x01,0x70,0x0C,0xC8,0x21,0x6F],
@@ -26,43 +25,41 @@ unit.register("Twofish test with test vectors from http://www.schneier.com/code/
             [0x43,0xD5,0xCE,0xC3,0x27,0xB2,0x4A,0xB9,0x0A,0xD3,0x4A,0x79,0xD0,0x46,0x91,0x51]];
   testvectors[47] =  [0x43,0x10,0x58,0xF4,0xDB,0xC7,0xF7,0x34,0xDA,0x4F,0x02,0xF0,0x4C,0xC4,0xF4,0x59];
   testvectors[48] =  [0x37,0xFE,0x26,0xFF,0x1C,0xF6,0x61,0x75,0xF5,0xDD,0xF4,0xC3,0x3B,0x97,0xA2,0x05];
-  var res = true;
-  var j = 0;
+
   for (var i = 0; i < 49; i++) {
-    var res2 = false;
-    var blk, key, ct;
+    var res, exp, blk, key, ct;
     if (i === 0) {
       blk = start_short;
       key = util.bin2str(start);
       ct = testvectors[0];
-      res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+      res = util.bin2str(TFencrypt(blk,key));
+      exp = util.bin2str(ct);
     } else if (i === 1) {
       blk = testvectors[0];
       key = util.bin2str(start);
       ct = testvectors[1];
-      res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+      res = util.bin2str(TFencrypt(blk,key));
+      exp = util.bin2str(ct);
     } else if (i === 2) {
       blk = testvectors[i-1];
       key = util.bin2str(testvectors[i-2].concat(start_short));
       ct = testvectors[i];
-      res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+      res = util.bin2str(TFencrypt(blk,key));
+      exp = util.bin2str(ct);
     } else if (i < 10 || i > 46) {
       blk = testvectors[i-1];
       key = util.bin2str(testvectors[i-2].concat(testvectors[i-3]));
       ct = testvectors[i];
-      res2 = (util.bin2str(TFencrypt(blk,key)) == util.bin2str(ct));
+      res = util.bin2str(TFencrypt(blk,key));
+      exp = util.bin2str(ct);
     } else {
       testvectors[i] = TFencrypt(testvectors[i-1],util.bin2str(testvectors[i-2].concat(testvectors[i-3])));
-      res2 = true;
+      continue;
     }
-    res &= res2;
-    if (!res2) {
-      result[j] = new unit.result("Testing vector with block "+util.hexidump(blk)+" with key "+ util.hexstrdump(key) +" should be "+util.hexidump(ct)+" but is "+util.hexidump(TFencrypt(blk,key)), false);
-      j++;
-    }
+    expect(res, 'Testing vector with block ' + util.hexidump(blk) +
+                ' with key ' + util.hexstrdump(key) +
+                ' should be ' + util.hexidump(ct) +
+                ' but is ' + util.hexidump(TFencrypt(blk,key))).to.equal(exp);
   }
-  if (res) {
-    result[j] = new unit.result("49 test vectors completed", true);
-  }
-  return result;
+  done();
 });

@@ -1,12 +1,10 @@
-var openpgp = require('openpgp');
-
 'use strict';
 
-var expect = chai.expect;
+var openpgp = require('openpgp'),
+  util = openpgp.util,
+  expect = chai.expect;
 
 describe("AES Rijndael cipher test with test vectors from ecb_tbl.txt", function() {
-  var util = openpgp.util;
-
   function test_aes(input, key, output) {
     var aes = new openpgp.crypto.cipher.aes128(util.bin2str(key));
 

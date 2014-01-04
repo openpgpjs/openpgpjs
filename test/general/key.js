@@ -277,7 +277,7 @@ describe('Key', function() {
     done();
   });
 
-  it('Verify status of revoked subkey', function(done) {
+  it.skip('Verify status of revoked subkey', function(done) {
     var pubKeys = openpgp.key.readArmored(pub_sig_test);
     expect(pubKeys).to.exist;
     expect(pubKeys.err).to.not.exist;
