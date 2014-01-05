@@ -1,7 +1,7 @@
 'use strict';
 
 var openpgp = require('openpgp'),
-  keyring = new (new require('keyring'))(),
+  keyring = new (require('keyring'))(),
   expect = chai.expect;
 
 describe("Keyring", function() {

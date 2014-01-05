@@ -30,6 +30,8 @@
  * @module packet/public_key
  */
 
+module.exports = PublicKey;
+
 var util = require('../util'),
   type_mpi = require('../type/mpi.js'),
   type_keyid = require('../type/keyid.js'),
@@ -39,7 +41,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function public_key() {
+function PublicKey() {
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
@@ -52,136 +54,135 @@ module.exports = function public_key() {
   this.algorithm = 'rsa_sign';
   // time in days (V3 only)
   this.expirationTimeV3 = 0;
+}
 
+/**
+ * Internal Parser for public keys as specified in RFC 4880 section
+ * 5.5.2 Public-Key Packet Formats
+ * called by read_tag&lt;num&gt;
+ * @param {String} input Input string to read the packet from
+ * @return {Object} This object with attributes set by the parser
+ */
+PublicKey.prototype.read = function (bytes) {
+  var pos = 0;
+  // A one-octet version number (3 or 4).
+  this.version = bytes.charCodeAt(pos++);
 
-  /**
-   * Internal Parser for public keys as specified in RFC 4880 section 
-   * 5.5.2 Public-Key Packet Formats
-   * called by read_tag&lt;num&gt;
-   * @param {String} input Input string to read the packet from
-   * @return {Object} This object with attributes set by the parser
-   */
-  this.read = function (bytes) {
-    var pos = 0;
-    // A one-octet version number (3 or 4).
-    this.version = bytes.charCodeAt(pos++);
+  if (this.version == 3 || this.version == 4) {
+    // - A four-octet number denoting the time that the key was created.
+    this.created = util.readDate(bytes.substr(pos, 4));
+    pos += 4;
 
-    if (this.version == 3 || this.version == 4) {
-      // - A four-octet number denoting the time that the key was created.
-      this.created = util.readDate(bytes.substr(pos, 4));
-      pos += 4;
-
-      if (this.version == 3) {
-        // - A two-octet number denoting the time in days that this key is
-        //   valid.  If this number is zero, then it does not expire.
-        this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
-        pos += 2;
-      }
-
-      // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
-
-      var mpicount = crypto.getPublicMpiCount(this.algorithm);
-      this.mpi = [];
-
-      var bmpi = bytes.substr(pos);
-      var p = 0;
-
-      for (var i = 0; i < mpicount && p < bmpi.length; i++) {
-
-        this.mpi[i] = new type_mpi();
-
-        p += this.mpi[i].read(bmpi.substr(p));
-
-        if (p > bmpi.length) {
-          throw new Error('Error reading MPI @:' + p);
-        }
-      }
-
-      return p + 6;
-    } else {
-      throw new Error('Version ' + version + ' of the key packet is unsupported.');
-    }
-  };
-
-  /**
-   * Alias of read()
-   * @function module:packet/public_key#readPublicKey
-   * @see module:packet/public_key#read
-   */
-  this.readPublicKey = this.read;
-
-  /**
-   * Same as write_private_key, but has less information because of 
-   * public key.
-   * @return {Object} {body: [string]OpenPGP packet body contents,
-   * header: [string] OpenPGP packet header, string: [string] header+body}
-   */
-  this.write = function () {
-    // Version
-    var result = String.fromCharCode(this.version);
-    result += util.writeDate(this.created);
     if (this.version == 3) {
-      result += util.writeNumber(this.expirationTimeV3, 2);
+      // - A two-octet number denoting the time in days that this key is
+      //   valid.  If this number is zero, then it does not expire.
+      this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+      pos += 2;
     }
-    result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+
+    // - A one-octet number denoting the public-key algorithm of this key.
+    this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
 
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
+    this.mpi = [];
 
-    for (var i = 0; i < mpicount; i++) {
-      result += this.mpi[i].write();
-    }
+    var bmpi = bytes.substr(pos);
+    var p = 0;
 
-    return result;
-  };
+    for (var i = 0; i < mpicount && p < bmpi.length; i++) {
 
-  /**
-   * Alias of write()
-   * @function module:packet/public_key#writePublicKey
-   * @see module:packet/public_key#write
-   */
-  this.writePublicKey = this.write;
+      this.mpi[i] = new type_mpi();
 
-  /**
-   * Write an old version packet - it's used by some of the internal routines.
-   */
-  this.writeOld = function () {
-    var bytes = this.writePublicKey();
+      p += this.mpi[i].read(bmpi.substr(p));
 
-    return String.fromCharCode(0x99) +
-      util.writeNumber(bytes.length, 2) +
-      bytes;
-  };
-
-  /**
-   * Calculates the key id of the key 
-   * @return {String} A 8 byte key id
-   */
-  this.getKeyId = function () {
-    var keyid = new type_keyid();
-    if (this.version == 4) {
-      keyid.read(this.getFingerprint().substr(12, 8));
-    } else if (this.version == 3) {
-      keyid.read(this.mpi[0].write().substr(-8));
-    }
-    return keyid;
-  };
-
-  /**
-   * Calculates the fingerprint of the key
-   * @return {String} A string containing the fingerprint
-   */
-  this.getFingerprint = function () {
-    var toHash = '';
-    if (this.version == 4) {
-      toHash = this.writeOld();
-      return crypto.hash.sha1(toHash);
-    } else if (this.version == 3) {
-      var mpicount = crypto.getPublicMpiCount(this.algorithm);
-      for (var i = 0; i < mpicount; i++) {
-        toHash += this.mpi[i].toBytes();
+      if (p > bmpi.length) {
+        throw new Error('Error reading MPI @:' + p);
       }
-      return crypto.hash.md5(toHash);
     }
-  };
+
+    return p + 6;
+  } else {
+    throw new Error('Version ' + version + ' of the key packet is unsupported.');
+  }
+};
+
+/**
+ * Alias of read()
+ * @function module:packet/public_key#readPublicKey
+ * @see module:packet/public_key#read
+ */
+PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
+
+/**
+ * Same as write_private_key, but has less information because of
+ * public key.
+ * @return {Object} {body: [string]OpenPGP packet body contents,
+ * header: [string] OpenPGP packet header, string: [string] header+body}
+ */
+PublicKey.prototype.write = function () {
+  // Version
+  var result = String.fromCharCode(this.version);
+  result += util.writeDate(this.created);
+  if (this.version == 3) {
+    result += util.writeNumber(this.expirationTimeV3, 2);
+  }
+  result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+
+  var mpicount = crypto.getPublicMpiCount(this.algorithm);
+
+  for (var i = 0; i < mpicount; i++) {
+    result += this.mpi[i].write();
+  }
+
+  return result;
+};
+
+/**
+ * Alias of write()
+ * @function module:packet/public_key#writePublicKey
+ * @see module:packet/public_key#write
+ */
+PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
+
+/**
+ * Write an old version packet - it's used by some of the internal routines.
+ */
+PublicKey.prototype.writeOld = function () {
+  var bytes = this.writePublicKey();
+
+  return String.fromCharCode(0x99) +
+    util.writeNumber(bytes.length, 2) +
+    bytes;
+};
+
+/**
+ * Calculates the key id of the key
+ * @return {String} A 8 byte key id
+ */
+PublicKey.prototype.getKeyId = function () {
+  var keyid = new type_keyid();
+  if (this.version == 4) {
+    keyid.read(this.getFingerprint().substr(12, 8));
+  } else if (this.version == 3) {
+    keyid.read(this.mpi[0].write().substr(-8));
+  }
+  return keyid;
+};
+
+/**
+ * Calculates the fingerprint of the key
+ * @return {String} A string containing the fingerprint
+ */
+PublicKey.prototype.getFingerprint = function () {
+  var toHash = '';
+  if (this.version == 4) {
+    toHash = this.writeOld();
+    return crypto.hash.sha1(toHash);
+  } else if (this.version == 3) {
+    var mpicount = crypto.getPublicMpiCount(this.algorithm);
+    for (var i = 0; i < mpicount; i++) {
+      toHash += this.mpi[i].toBytes();
+    }
+    return crypto.hash.md5(toHash);
+  }
 };

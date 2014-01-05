@@ -24,7 +24,6 @@
 var enums = require('../enums.js'),
   util = require('../util');
 
-
 module.exports = {
   readSimpleLength: function(bytes) {
     var len = 0,

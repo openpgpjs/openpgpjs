@@ -27,32 +27,33 @@
  * @module packet/userid
  */
 
+module.exports = Userid;
+
 var util = require('../util');
 
 /**
  * @constructor
  */
-module.exports = function userid() {
+function Userid() {
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
    * @type {String} 
    */
   this.userid = '';
+}
 
+/**
+ * Parsing function for a user id packet (tag 13).
+ * @param {String} input payload of a tag 13 packet
+ */
+Userid.prototype.read = function (bytes) {
+  this.userid = util.decode_utf8(bytes);
+};
 
-  /**
-   * Parsing function for a user id packet (tag 13).
-   * @param {String} input payload of a tag 13 packet
-   */
-  this.read = function (bytes) {
-    this.userid = util.decode_utf8(bytes);
-  };
-
-  /**
-   * Creates a string representation of the user id packet
-   * @return {String} string representation
-   */
-  this.write = function () {
-    return util.encode_utf8(this.userid);
-  };
+/**
+ * Creates a string representation of the user id packet
+ * @return {String} string representation
+ */
+Userid.prototype.write = function () {
+  return util.encode_utf8(this.userid);
 };

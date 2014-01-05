@@ -27,45 +27,47 @@
  * @module packet/symmetrically_encrypted
  */
 
+module.exports = SymmetricallyEncrypted;
+
 var crypto = require('../crypto');
 
 /**
  * @constructor
  */
-module.exports = function symmetrically_encrypted() {
+function SymmetricallyEncrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
   this.packets =  null;
+}
 
-  this.read = function(bytes) {
-    this.encrypted = bytes;
-  };
+SymmetricallyEncrypted.prototype.read = function (bytes) {
+  this.encrypted = bytes;
+};
 
-  this.write = function() {
-    return this.encrypted;
-  };
+SymmetricallyEncrypted.prototype.write = function () {
+  return this.encrypted;
+};
 
-  /**
-   * Symmetrically decrypt the packet data
-   * 
-   * @param {Integer} sessionKeyAlgorithm
-   *             Symmetric key algorithm to use // See RFC4880 9.2
-   * @param {String} key
-   *             Key as string with the corresponding length to the
-   *            algorithm
-   */
-  this.decrypt = function(sessionKeyAlgorithm, key) {
-    var decrypted = crypto.cfb.decrypt(
-      sessionKeyAlgorithm, key, this.encrypted, true);
+/**
+ * Symmetrically decrypt the packet data
+ *
+ * @param {Integer} sessionKeyAlgorithm
+ *             Symmetric key algorithm to use // See RFC4880 9.2
+ * @param {String} key
+ *             Key as string with the corresponding length to the
+ *            algorithm
+ */
+SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
+  var decrypted = crypto.cfb.decrypt(
+    sessionKeyAlgorithm, key, this.encrypted, true);
 
-    this.packets.read(decrypted);
-  };
+  this.packets.read(decrypted);
+};
 
-  this.encrypt = function(algo, key) {
-    var data = this.packets.write();
+SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
+  var data = this.packets.write();
 
-    this.encrypted = crypto.cfb.encrypt(
-      crypto.getPrefixRandom(algo), algo, data, key, true);
-  };
+  this.encrypted = crypto.cfb.encrypt(
+    crypto.getPrefixRandom(algo), algo, data, key, true);
 };

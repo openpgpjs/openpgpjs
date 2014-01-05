@@ -76,23 +76,23 @@ module.exports = {
    * @readonly
    */
   packet: {
-    public_key_encrypted_session_key: 1,
+    publicKeyEncryptedSessionKey: 1,
     signature: 2,
-    sym_encrypted_session_key: 3,
-    one_pass_signature: 4,
-    secret_key: 5,
-    public_key: 6,
-    secret_subkey: 7,
+    symEncryptedSessionKey: 3,
+    onePassSignature: 4,
+    secretKey: 5,
+    publicKey: 6,
+    secretSubkey: 7,
     compressed: 8,
-    symmetrically_encrypted: 9,
+    symmetricallyEncrypted: 9,
     marker: 10,
     literal: 11,
     trust: 12,
     userid: 13,
-    public_subkey: 14,
-    user_attribute: 17,
-    sym_encrypted_integrity_protected: 18,
-    modification_detection_code: 19
+    publicSubkey: 14,
+    userAttribute: 17,
+    symEncryptedIntegrityProtected: 18,
+    modificationDetectionCode: 19
   },
 
   /** Data types in the literal packet

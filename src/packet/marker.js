@@ -28,27 +28,30 @@
  * @module packet/marker
  */
 
+module.exports = Marker;
+
 /**
  * @constructor
  */
-module.exports = function marker() {
-  /**
-   * Parsing function for a literal data packet (tag 10).
-   * 
-   * @param {String} input Payload of a tag 10 packet
-   * @param {Integer} position
-   *            Position to start reading from the input string
-   * @param {Integer} len
-   *            Length of the packet or the remaining length of
-   *            input at position
-   * @return {module:packet/marker} Object representation
-   */
-  this.read = function (bytes) {
-    if (bytes.charCodeAt(0) == 0x50 && // P
-    bytes.charCodeAt(1) == 0x47 && // G
-    bytes.charCodeAt(2) == 0x50) // P
-      return true;
-    // marker packet does not contain "PGP"
-    return false;
-  };
+function Marker() {
+}
+
+/**
+ * Parsing function for a literal data packet (tag 10).
+ *
+ * @param {String} input Payload of a tag 10 packet
+ * @param {Integer} position
+ *            Position to start reading from the input string
+ * @param {Integer} len
+ *            Length of the packet or the remaining length of
+ *            input at position
+ * @return {module:packet/marker} Object representation
+ */
+Marker.prototype.read = function (bytes) {
+  if (bytes.charCodeAt(0) == 0x50 && // P
+      bytes.charCodeAt(1) == 0x47 && // G
+      bytes.charCodeAt(2) == 0x50) // P
+    return true;
+  // marker packet does not contain "PGP"
+  return false;
 };
