@@ -41,45 +41,37 @@
 
 
     <section>
-        <article><p>[<img alt="Build Status" src="https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,devel)](http://travis-ci.org/openpgpjs/openpgpjs"/></p>
-
-<h1>What is OpenPGP.js?</h1>
-
+        <article><h1>OpenPGP.js <a href="http://travis-ci.org/openpgpjs/openpgpjs"><img src="https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,v0.1.x" alt="Build Status"></a></h1>
 <p><a href="http://openpgpjs.org/">OpenPGP.js</a> is a Javascript implementation of the OpenPGP protocol. This is defined in <a href="http://tools.ietf.org/html/rfc4880">RFC 4880</a>.</p>
-
 <h1>How do I use it?</h1>
-
-<p>As a developer, the best place to start is in the <code>resources/</code> directory. Within this you will find a basic example implementation and the &quot;binary&quot; files for this library. It is likely that you will want to use <code>resources/openpgp.min.js</code> on your site, this is a minified version of our library.</p>
-
+<p>You can download a prebuilt minified version of the library under <a href="https://github.com/openpgpjs/openpgpjs/releases">releases</a>.</p>
+<p>You can also build a current version yourself:</p>
+<pre><code>npm install &amp;&amp; grunt</code></pre>
+<p>Then take the resulting file from <code>resources/openpgp.min.js</code> to use in your project.</p>
 <h1>I need some help</h1>
-
 <h2>Mailing List</h2>
-
-<p>You can <a href="http://list.openpgpjs.org/">sign up</a> for our mailing list and ask for help there.  We&#39;ve recently worked on getting our <a href="http://www.mail-archive.com/list@openpgpjs.org/">archive up and running</a>.</p>
-
+<p>You can <a href="http://list.openpgpjs.org/">sign up</a> for our mailing list and ask for help there.  We've recently worked on getting our <a href="http://www.mail-archive.com/list@openpgpjs.org/">archive up and running</a>.</p>
 <h2>Documentation</h2>
-
 <p>A jsdoc build of our code comments is available at <a href="doc/index.html">doc/index.html</a>. Public calls should generally be made through the OpenPGP object <a href="doc/openpgp.html">doc/openpgp.html</a>.</p>
-
 <h1>How do I get involved?</h1>
-
-<p>You want to help, great! Go ahead and fork our repo, make your changes and make a pull request. Please be sure that you run <code>make minify</code> from the root directory to concatenate and minify the library into the <code>resources/</code> directory.</p>
-
+<p>You want to help, great! Go ahead and fork our repo, make your changes
+and make a pull request.</p>
 <p>It is extra awesome if you write tests for the code you change. Our test coverage is relatively weak, so if you can add cases that is great.</p>
-
 <h1>What License do you use?</h1>
-
 <p>GNU Lesser General Public License (2.1). Please take a look at the <a href="LICENSE">LICENSE</a> file for more information.</p>
-
 <h1>What are the requirements to use it?</h1>
-
 <p>OpenPGP.js currently only fully supports Chrome. Firefox support should be coming soon with the advent of Firefox 23 with native javascript support for <code>window.crypto.getRandomValues</code>. If you can help us support more browsers and situations, please chip in!</p>
-
 <h1>Resources</h1>
-
-<p>Below is a collection of resources, many of these were projects that were in someway a precursor to the current OpenPGP.js project. If you&#39;d like to add your link here, please do so in a pull request or email to the list.</p>
-
-<ul><li><a href="http://www.hanewin.net/encrypt/">http://www.hanewin.net/encrypt/</a></li><li><a href="https://github.com/seancolyer/gmail-crypt">https://github.com/seancolyer/gmail-crypt</a></li><li><a href="https://github.com/mete0r/openpgp-js">https://github.com/mete0r/openpgp-js</a></li><li><a href="http://fitblip.github.com/JSPGP-Stuffs/">http://fitblip.github.com/JSPGP-Stuffs/</a></li><li><a href="http://qooxdoo.org/contrib/project/crypto">http://qooxdoo.org/contrib/project/crypto</a></li><li><a href="https://github.com/GPGTools/Mobile/wiki/Introduction">https://github.com/GPGTools/Mobile/wiki/Introduction</a></li><li><a href="http://gpg4browsers.recurity.com/">http://gpg4browsers.recurity.com/</a></li></ul></article>
+<p>Below is a collection of resources, many of these were projects that were in someway a precursor to the current OpenPGP.js project. If you'd like to add your link here, please do so in a pull request or email to the list.</p>
+<ul>
+<li><a href="http://www.hanewin.net/encrypt/"><a href="http://www.hanewin.net/encrypt/">http://www.hanewin.net/encrypt/</a></a></li>
+<li><a href="https://github.com/seancolyer/gmail-crypt"><a href="https://github.com/seancolyer/gmail-crypt">https://github.com/seancolyer/gmail-crypt</a></a></li>
+<li><a href="https://github.com/mete0r/openpgp-js"><a href="https://github.com/mete0r/openpgp-js">https://github.com/mete0r/openpgp-js</a></a></li>
+<li><a href="http://fitblip.github.com/JSPGP-Stuffs/"><a href="http://fitblip.github.com/JSPGP-Stuffs/">http://fitblip.github.com/JSPGP-Stuffs/</a></a></li>
+<li><a href="http://qooxdoo.org/contrib/project/crypto"><a href="http://qooxdoo.org/contrib/project/crypto">http://qooxdoo.org/contrib/project/crypto</a></a></li>
+<li><a href="https://github.com/GPGTools/Mobile/wiki/Introduction"><a href="https://github.com/GPGTools/Mobile/wiki/Introduction">https://github.com/GPGTools/Mobile/wiki/Introduction</a></a></li>
+<li><a href="http://gpg4browsers.recurity.com/"><a href="http://gpg4browsers.recurity.com/">http://gpg4browsers.recurity.com/</a></a></li>
+</ul></article>
     </section>
 
 
@@ -181,7 +173,7 @@ for extending and developing on top of the base library.</div>
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Mon Jan 06 2014 16:27:49 GMT+0100 (MEZ)
 </footer>
 
 <script> prettyPrint(); </script>
