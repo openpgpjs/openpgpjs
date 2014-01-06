@@ -15,7 +15,7 @@ module.exports = {
     gnu: 101
   },
 
-  /** RFC4880, section 9.1
+  /** {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -27,7 +27,7 @@ module.exports = {
     dsa: 17
   },
 
-  /** RFC4880, section 9.2
+  /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
    * @enum {Integer}
    * @readonly
    */
@@ -44,7 +44,7 @@ module.exports = {
     twofish: 10
   },
 
-  /** RFC4880, section 9.3
+  /** {@link http://tools.ietf.org/html/rfc4880#section-9.3|RFC4880, section 9.3}
    * @enum {Integer}
    * @readonly
    */
@@ -57,7 +57,7 @@ module.exports = {
     bzip2: 3
   },
 
-  /** RFC4880, section 9.4
+  /** {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC4880, section 9.4}
    * @enum {Integer}
    * @readonly
    */

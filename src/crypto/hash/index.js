@@ -22,7 +22,7 @@ module.exports = {
 
   /**
    * Create a hash on the specified data using the specified algorithm
-   * @param {Integer} algo Hash algorithm type (see RFC4880 9.4)
+   * @param {module:enums.hash} algo Hash algorithm type (see {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {String} data Data to be hashed
    * @return {String} hash value
    */
@@ -56,7 +56,7 @@ module.exports = {
 
   /**
    * Returns the hash size in bytes of the specified hash algorithm type
-   * @param {Integer} algo Hash algorithm type (See RFC4880 9.4)
+   * @param {module:enums.hash} algo Hash algorithm type (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @return {Integer} Size in bytes of the resulting hash
    */
   getHashByteLength: function(algo) {

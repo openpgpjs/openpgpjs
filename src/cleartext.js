@@ -31,7 +31,7 @@ var config = require('./config'),
 /**
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
- * See http://tools.ietf.org/html/rfc4880#section-7
+ * See {@link http://tools.ietf.org/html/rfc4880#section-7}
  * @param  {String}     text       The cleartext of the signed message
  * @param  {module:packet/packetlist} packetlist The packetlist with signature packets or undefined
  *                                 if message not yet signed

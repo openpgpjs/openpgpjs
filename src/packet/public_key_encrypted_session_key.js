@@ -18,7 +18,7 @@
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -108,13 +108,13 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
  *             The public key id corresponding to publicMPIs key as string
  * @param {Array<module:type/mpi>} publicMPIs
  *            Multiprecision integer objects describing the public key
- * @param {Integer} pubalgo
- *            The corresponding public key algorithm // See RFC4880 9.1
- * @param {Integer} symmalgo
+ * @param {module:enums.publicKey} pubalgo
+ *            The corresponding public key algorithm // See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1}
+ * @param {module:enums.symmetric} symmalgo
  *            The symmetric cipher algorithm used to encrypt the data
  *            within an encrypteddatapacket or encryptedintegrity-
  *            protecteddatapacket
- *            following this packet //See RFC4880 9.2
+ *            following this packet //See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
  * @param {String} sessionkey
  *            A string of randombytes representing the session key
  * @return {String} The string representation

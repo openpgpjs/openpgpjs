@@ -18,7 +18,7 @@
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The

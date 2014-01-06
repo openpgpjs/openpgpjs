@@ -35,7 +35,7 @@ var packet = require('./packet'),
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
  * @param  {module:packet/packetlist} packetlist The packets that form this message
- * See http://tools.ietf.org/html/rfc4880#section-11.3
+ * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
 function Message(packetlist) {

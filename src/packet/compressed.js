@@ -18,7 +18,7 @@
 /**
  * Implementation of the Compressed Data Packet (Tag 8)<br/>
  * <br/>
- * RFC4880 5.6: The Compressed Data packet contains compressed data.  Typically,
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}: The Compressed Data packet contains compressed data.  Typically,
  * this packet is found as the contents of an encrypted packet, or following
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  * @requires compression/jxg

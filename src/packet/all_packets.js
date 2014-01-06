@@ -39,17 +39,27 @@ module.exports = {
   Signature: require('./signature.js'),
   /** @see module:packet/trust */
   Trust: require('./trust.js'),
-
+  /**
+   * Allocate a new packet
+   * @param {String} tag property name from {@link module:enums.packet}
+   * @returns {Object} new packet object with type based on tag
+   */
   newPacketFromTag: function (tag) {
-    return new this[packetClassFromTag(tag)]();
+    return new this[packetClassFromTagName(tag)]();
   }
 };
 
-function packetClassFromTag(tag) {
+/**
+ * Convert tag name to class name
+ * @param {String} tag property name from {@link module:enums.packet}
+ * @returns {String}
+ */
+function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
+
 for (var i in enums.packet) {
-  var packetClass = module.exports[packetClassFromTag(i)];
+  var packetClass = module.exports[packetClassFromTagName(i)];
 
   if (packetClass !== undefined)
     packetClass.prototype.tag = enums.packet[i];

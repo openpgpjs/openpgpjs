@@ -423,7 +423,7 @@ Key.prototype.verifyPrimaryKey = function() {
     return enums.keyStatus.expired;
   }
   // check for at least one self signature. Self signature of user ID not mandatory
-  // See http://tools.ietf.org/html/rfc4880#section-11.1
+  // See {@link http://tools.ietf.org/html/rfc4880#section-11.1}
   var selfSigned = false;
   for (var i = 0; i < this.users.length; i++) {
     if (this.users[i].userId && this.users[i].selfCertifications) {
@@ -708,8 +708,8 @@ function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {Integer} keyType    to indicate what type of key to make. 
- *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} numBits    number of bits for the key creation.
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key

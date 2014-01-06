@@ -26,7 +26,7 @@
  */
 
 /**
- * ASN1 object identifiers for hashes (See RFC4880 5.2.2)
+ * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
  */
 hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04,
@@ -56,7 +56,7 @@ var crypto = require('./crypto.js'),
 module.exports = {
   eme: {
     /**
-     * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)
+     * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
      * @param {String} message message to be padded
      * @param {Integer} length Length to the resulting message
      * @return {String} EME-PKCS1 padded message
@@ -76,9 +76,9 @@ module.exports = {
     },
 
     /**
-     * decodes a EME-PKCS1-v1_5 padding (See RFC4880 13.1.2)
+     * decodes a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
      * @param {String} message EME-PKCS1 padded message
-     * @return {String} decoded message 
+     * @return {String} decoded message
      */
     decode: function(message, len) {
       if (message.length < len)
@@ -95,7 +95,7 @@ module.exports = {
   emsa: {
 
     /**
-     * create a EMSA-PKCS1-v1_5 padding (See RFC4880 13.1.3)
+     * create a EMSA-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
      * @param {Integer} algo Hash algorithm type used
      * @param {String} data Data to be hashed
      * @param {Integer} keylength Key size of the public mpi in bytes
@@ -121,7 +121,7 @@ module.exports = {
     },
 
     /**
-     * extract the hash out of an EMSA-PKCS1-v1.5 padding (See RFC4880 13.1.3) 
+     * extract the hash out of an EMSA-PKCS1-v1.5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
      * @param {String} data Hash in pkcs1 encoding
      * @returns {String} The hash as string
      */

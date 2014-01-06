@@ -21,7 +21,7 @@
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- * Implementation of type MPI (RFC4880 3.2)<br/>
+ * Implementation of type MPI ({@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})<br/>
  * <br/>
  * Multiprecision integers (also called MPIs) are unsigned integers used
  * to hold large integers such as the ones used in cryptographic
@@ -48,7 +48,7 @@ function Mpi() {
 }
 
 /**
- * Parsing function for a mpi (RFC 4880 3.2).
+ * Parsing function for a mpi ({@link http://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
  * @param {String} input Payload of mpi data
  * @return {Integer} Length of data read
  */
@@ -86,7 +86,7 @@ Mpi.prototype.byteLength = function () {
 };
 
 /**
- * Converts the mpi object to a string as specified in RFC4880 3.2
+ * Converts the mpi object to a string as specified in {@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
  * @return {String} mpi Byte representation
  */
 Mpi.prototype.write = function () {

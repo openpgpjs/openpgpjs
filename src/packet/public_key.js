@@ -18,7 +18,7 @@
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
  * <br/>
- * RFC4480 5.5:
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -57,8 +57,7 @@ function PublicKey() {
 }
 
 /**
- * Internal Parser for public keys as specified in RFC 4880 section
- * 5.5.2 Public-Key Packet Formats
+ * Internal Parser for public keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
  * called by read_tag&lt;num&gt;
  * @param {String} input Input string to read the packet from
  * @return {Object} This object with attributes set by the parser
@@ -108,8 +107,7 @@ PublicKey.prototype.read = function (bytes) {
 
 /**
  * Alias of read()
- * @function module:packet/public_key#readPublicKey
- * @see module:packet/public_key#read
+ * @see module:packet/public_key~PublicKey#read
  */
 PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
 
@@ -139,8 +137,7 @@ PublicKey.prototype.write = function () {
 
 /**
  * Alias of write()
- * @function module:packet/public_key#writePublicKey
- * @see module:packet/public_key#write
+ * @see module:packet/public_key~PublicKey#write
  */
 PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 
