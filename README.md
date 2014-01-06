@@ -4,13 +4,13 @@ OpenPGP.js [![Build Status](https://secure.travis-ci.org/openpgpjs/openpgpjs.png
 [OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
 
 # How do I use it?
-To build the library, checkout the HEAD of the master branch or download a stable (old) tagged version from [releases](https://github.com/openpgpjs/openpgpjs/releases).
+You can download a prebuilt minified version of the library under [releases](https://github.com/openpgpjs/openpgpjs/releases).
 
-Then build the library:
+You can also build a current version yourself:
 
     npm install && grunt
 
-Then take the use the minified file from `resources/openpgp.min.js` and use it in your project.
+Then take the resulting file from `resources/openpgp.min.js` to use in your project.
 
 # I need some help
 ## Mailing List

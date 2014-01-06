@@ -6,9 +6,8 @@
   },
   "main": "./src/index.js",
   "scripts": {
-    "pretest": "grunt browserify",
-    "test": "grunt test",
-    "start": "grunt dev"
+    "pretest": "grunt",
+    "test": "grunt test"
   },
   "devDependencies": {
     "browserify": "~2.35",
