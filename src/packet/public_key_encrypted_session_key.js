@@ -18,7 +18,7 @@
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -37,6 +37,8 @@
  * @module packet/public_key_encrypted_session_key
  */
 
+module.exports = PublicKeyEncryptedSessionKey;
+
 var type_keyid = require('../type/keyid.js'),
   util = require('../util'),
   type_mpi = require('../type/mpi.js'),
@@ -46,7 +48,7 @@ var type_keyid = require('../type/keyid.js'),
 /**
  * @constructor
  */
-module.exports = function public_key_encrypted_session_key() {
+function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
@@ -57,126 +59,126 @@ module.exports = function public_key_encrypted_session_key() {
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
+}
 
-  /**
-   * Parsing function for a publickey encrypted session key packet (tag 1).
-   * 
-   * @param {String} input Payload of a tag 1 packet
-   * @param {Integer} position Position to start reading from the input string
-   * @param {Integer} len Length of the packet or the remaining length of
-   *            input at position
-   * @return {module:packet/public_key_encrypted_session_key} Object representation
-   */
-  this.read = function (bytes) {
+/**
+ * Parsing function for a publickey encrypted session key packet (tag 1).
+ *
+ * @param {String} input Payload of a tag 1 packet
+ * @param {Integer} position Position to start reading from the input string
+ * @param {Integer} len Length of the packet or the remaining length of
+ *            input at position
+ * @return {module:packet/public_key_encrypted_session_key} Object representation
+ */
+PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 
-    this.version = bytes.charCodeAt(0);
-    this.publicKeyId.read(bytes.substr(1));
-    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(9));
+  this.version = bytes.charCodeAt(0);
+  this.publicKeyId.read(bytes.substr(1));
+  this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes.charCodeAt(9));
 
-    var i = 10;
+  var i = 10;
 
-    var integerCount = (function(algo) {
-      switch (algo) {
-        case 'rsa_encrypt':
-        case 'rsa_encrypt_sign':
-          return 1;
+  var integerCount = (function(algo) {
+    switch (algo) {
+      case 'rsa_encrypt':
+      case 'rsa_encrypt_sign':
+        return 1;
 
-        case 'elgamal':
-          return 2;
+      case 'elgamal':
+        return 2;
 
-        default:
-          throw new Error("Invalid algorithm.");
-      }
-    })(this.publicKeyAlgorithm);
-
-    this.encrypted = [];
-
-    for (var j = 0; j < integerCount; j++) {
-      var mpi = new type_mpi();
-      i += mpi.read(bytes.substr(i));
-      this.encrypted.push(mpi);
+      default:
+        throw new Error("Invalid algorithm.");
     }
-  };
+  })(this.publicKeyAlgorithm);
 
-  /**
-   * Create a string representation of a tag 1 packet
-   * 
-   * @param {String} publicKeyId
-   *             The public key id corresponding to publicMPIs key as string
-   * @param {Array<module:type/mpi>} publicMPIs
-   *            Multiprecision integer objects describing the public key
-   * @param {Integer} pubalgo
-   *            The corresponding public key algorithm // See RFC4880 9.1
-   * @param {Integer} symmalgo
-   *            The symmetric cipher algorithm used to encrypt the data 
-   *            within an encrypteddatapacket or encryptedintegrity-
-   *            protecteddatapacket 
-   *            following this packet //See RFC4880 9.2
-   * @param {String} sessionkey
-   *            A string of randombytes representing the session key
-   * @return {String} The string representation
-   */
-  this.write = function () {
+  this.encrypted = [];
 
-    var result = String.fromCharCode(this.version);
-    result += this.publicKeyId.write();
-    result += String.fromCharCode(
-      enums.write(enums.publicKey, this.publicKeyAlgorithm));
-
-    for (var i = 0; i < this.encrypted.length; i++) {
-      result += this.encrypted[i].write();
-    }
-
-    return result;
-  };
-
-  this.encrypt = function (key) {
-    var data = String.fromCharCode(
-      enums.write(enums.symmetric, this.sessionKeyAlgorithm));
-
-    data += this.sessionKey;
-    var checksum = util.calc_checksum(this.sessionKey);
-    data += util.writeNumber(checksum, 2);
-
+  for (var j = 0; j < integerCount; j++) {
     var mpi = new type_mpi();
-    mpi.fromBytes(crypto.pkcs1.eme.encode(
-      data,
-      key.mpi[0].byteLength()));
+    i += mpi.read(bytes.substr(i));
+    this.encrypted.push(mpi);
+  }
+};
 
-    this.encrypted = crypto.publicKeyEncrypt(
-      this.publicKeyAlgorithm,
-      key.mpi,
-      mpi);
-  };
+/**
+ * Create a string representation of a tag 1 packet
+ *
+ * @param {String} publicKeyId
+ *             The public key id corresponding to publicMPIs key as string
+ * @param {Array<module:type/mpi>} publicMPIs
+ *            Multiprecision integer objects describing the public key
+ * @param {module:enums.publicKey} pubalgo
+ *            The corresponding public key algorithm // See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1}
+ * @param {module:enums.symmetric} symmalgo
+ *            The symmetric cipher algorithm used to encrypt the data
+ *            within an encrypteddatapacket or encryptedintegrity-
+ *            protecteddatapacket
+ *            following this packet //See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * @param {String} sessionkey
+ *            A string of randombytes representing the session key
+ * @return {String} The string representation
+ */
+PublicKeyEncryptedSessionKey.prototype.write = function () {
 
-  /**
-   * Decrypts the session key (only for public key encrypted session key
-   * packets (tag 1)
-   * 
-   * @param {module:packet/secret_key} key
-   *            Private key with secMPIs unlocked
-   * @return {String} The unencrypted session key
-   */
-  this.decrypt = function (key) {
-    var result = crypto.publicKeyDecrypt(
-      this.publicKeyAlgorithm,
-      key.mpi,
-      this.encrypted).toBytes();
+  var result = String.fromCharCode(this.version);
+  result += this.publicKeyId.write();
+  result += String.fromCharCode(
+    enums.write(enums.publicKey, this.publicKeyAlgorithm));
 
-    var checksum = util.readNumber(result.substr(result.length - 2));
+  for (var i = 0; i < this.encrypted.length; i++) {
+    result += this.encrypted[i].write();
+  }
 
-    var decoded = crypto.pkcs1.eme.decode(
-      result,
-      key.mpi[0].byteLength());
+  return result;
+};
 
-    key = decoded.substring(1, decoded.length - 2);
+PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
+  var data = String.fromCharCode(
+    enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-    if (checksum != util.calc_checksum(key)) {
-      throw new Error('Checksum mismatch');
-    } else {
-      this.sessionKey = key;
-      this.sessionKeyAlgorithm =
-        enums.read(enums.symmetric, decoded.charCodeAt(0));
-    }
-  };
+  data += this.sessionKey;
+  var checksum = util.calc_checksum(this.sessionKey);
+  data += util.writeNumber(checksum, 2);
+
+  var mpi = new type_mpi();
+  mpi.fromBytes(crypto.pkcs1.eme.encode(
+    data,
+    key.mpi[0].byteLength()));
+
+  this.encrypted = crypto.publicKeyEncrypt(
+    this.publicKeyAlgorithm,
+    key.mpi,
+    mpi);
+};
+
+/**
+ * Decrypts the session key (only for public key encrypted session key
+ * packets (tag 1)
+ *
+ * @param {module:packet/secret_key} key
+ *            Private key with secMPIs unlocked
+ * @return {String} The unencrypted session key
+ */
+PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
+  var result = crypto.publicKeyDecrypt(
+    this.publicKeyAlgorithm,
+    key.mpi,
+    this.encrypted).toBytes();
+
+  var checksum = util.readNumber(result.substr(result.length - 2));
+
+  var decoded = crypto.pkcs1.eme.decode(
+    result,
+    key.mpi[0].byteLength());
+
+  key = decoded.substring(1, decoded.length - 2);
+
+  if (checksum != util.calc_checksum(key)) {
+    throw new Error('Checksum mismatch');
+  } else {
+    this.sessionKey = key;
+    this.sessionKeyAlgorithm =
+      enums.read(enums.symmetric, decoded.charCodeAt(0));
+  }
 };

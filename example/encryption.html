@@ -135,13 +135,13 @@ function run(encrypt) {
 		var sesskey = null;
 		// Find the private (sub)key for the session key of the message
 		for (var i = 0; i< msg[0].sessionKeys.length; i++) {
-			if (priv_key[0].privateKeyPacket.publicKey.getKeyId() == msg[0].sessionKeys[i].keyId.bytes) {
+			if (priv_key[0].privateKeyPacket.PublicKey.getKeyId() == msg[0].sessionKeys[i].keyId.bytes) {
 				keymat = { key: priv_key[0], keymaterial: priv_key[0].privateKeyPacket};
 				sesskey = msg[0].sessionKeys[i];
 				break;
 			}
 			for (var j = 0; j < priv_key[0].subKeys.length; j++) {
-				if (priv_key[0].subKeys[j].publicKey.getKeyId() == msg[0].sessionKeys[i].keyId.bytes) {
+				if (priv_key[0].subKeys[j].PublicKey.getKeyId() == msg[0].sessionKeys[i].keyId.bytes) {
 					keymat = { key: priv_key[0], keymaterial: priv_key[0].subKeys[j]};
 					sesskey = msg[0].sessionKeys[i];
 					break;

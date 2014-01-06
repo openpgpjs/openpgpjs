@@ -138,8 +138,8 @@ function verifyClearSignedMessage(publicKeys, message) {
 /**
  * Generates a new OpenPGP key pair. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {Integer} keyType    to indicate what type of key to make. 
- *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key

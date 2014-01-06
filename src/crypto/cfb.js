@@ -32,7 +32,7 @@ module.exports = {
    * @param {String} prefixrandom random bytes of block_size length provided 
    *  as a string to be used in prefixing the data
    * @param {String} cipherfn the algorithm cipher class to encrypt
-   *  data in one block_size encryption, @see module:crypto/cipher.
+   *  data in one block_size encryption, {@link module:crypto/cipher}.
    * @param {String} plaintext data to be encrypted provided as a string
    * @param {String} key binary string representation of key to be used to encrypt the plaintext.
    * This will be passed to the cipherfn
@@ -174,7 +174,7 @@ module.exports = {
    * This function decrypts a given plaintext using the specified
    * blockcipher to decrypt a message
    * @param {String} cipherfn the algorithm cipher class to decrypt
-   *  data in one block_size encryption, @see module:crypto/cipher.
+   *  data in one block_size encryption, {@link module:crypto/cipher}.
    * @param {String} key binary string representation of key to be used to decrypt the ciphertext.
    * This will be passed to the cipherfn
    * @param {String} ciphertext to be decrypted provided as a string

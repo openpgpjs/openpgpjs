@@ -265,7 +265,7 @@ describe('Key', function() {
     var pubKey = pubKeys.keys[0];
     expect(pubKey).to.exist;
 
-    var packetlist = new openpgp.packet.list();
+    var packetlist = new openpgp.packet.List();
 
     packetlist.read(openpgp.armor.decode(pub_sig_test).data);
 

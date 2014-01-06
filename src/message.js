@@ -35,14 +35,14 @@ var packet = require('./packet'),
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
  * @param  {module:packet/packetlist} packetlist The packets that form this message
- * See http://tools.ietf.org/html/rfc4880#section-11.3
+ * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
 function Message(packetlist) {
   if (!(this instanceof Message)) {
     return new Message(packetlist);
   }
-  this.packets = packetlist || new packet.list();
+  this.packets = packetlist || new packet.List();
 }
 
 /**
@@ -51,7 +51,7 @@ function Message(packetlist) {
  */
 Message.prototype.getEncryptionKeyIds = function() {
   var keyIds = [];
-  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
+  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   pkESKeyPacketlist.forEach(function(packet) {
     keyIds.push(packet.publicKeyId);
   });
@@ -66,7 +66,7 @@ Message.prototype.getSigningKeyIds = function() {
   var keyIds = [];
   var msg = this.unwrapCompressed();
   // search for one pass signatures
-  var onePassSigList = msg.packets.filterByTag(enums.packet.one_pass_signature);
+  var onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
   onePassSigList.forEach(function(packet) {
     keyIds.push(packet.signingKeyId);
   });
@@ -93,7 +93,7 @@ Message.prototype.decrypt = function(privateKey) {
   }
   var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds);
   if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
+  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   var pkESKeyPacket;
   for (var i = 0; i < pkESKeyPacketlist.length; i++) {
     if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
@@ -103,7 +103,7 @@ Message.prototype.decrypt = function(privateKey) {
     }
   }
   if (pkESKeyPacket) {
-    var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetrically_encrypted, enums.packet.sym_encrypted_integrity_protected);
+    var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
     if (symEncryptedPacketlist.length !== 0) {
       var symEncryptedPacket = symEncryptedPacketlist[0];
       symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
@@ -140,13 +140,13 @@ Message.prototype.getText = function() {
  * @return {Array<module:message~Message>} new message with encrypted content
  */
 Message.prototype.encrypt = function(keys) {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   //TODO get preferred algo from signature
   var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
   keys.forEach(function(key) {
     var encryptionKeyPacket = key.getEncryptionKeyPacket();
     if (encryptionKeyPacket) {
-      var pkESKeyPacket = new packet.public_key_encrypted_session_key();
+      var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
       pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
@@ -160,9 +160,9 @@ Message.prototype.encrypt = function(keys) {
   });
   var symEncryptedPacket;
   if (config.integrity_protect) {
-    symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
+    symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
-    symEncryptedPacket = new packet.symmetrically_encrypted();
+    symEncryptedPacket = new packet.SymmetricallyEncrypted();
   }
   symEncryptedPacket.packets = this.packets;
   //TODO get preferred algo from signature
@@ -178,7 +178,7 @@ Message.prototype.encrypt = function(keys) {
  */
 Message.prototype.sign = function(privateKeys) {
 
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
 
   var literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) throw new Error('No literal data packet to sign.');
@@ -188,7 +188,7 @@ Message.prototype.sign = function(privateKeys) {
                       enums.signature.binary : enums.signature.text;
   var i;
   for (i = 0; i < privateKeys.length; i++) {
-    var onePassSig = new packet.one_pass_signature();
+    var onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
@@ -204,7 +204,7 @@ Message.prototype.sign = function(privateKeys) {
   packetlist.push(literalDataPacket);
   
   for (i = privateKeys.length - 1; i >= 0; i--) {
-    var signaturePacket = new packet.signature();
+    var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
@@ -273,7 +273,7 @@ function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   var input = armor.decode(armoredText).data;
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.read(input);
   var newMessage = new Message(packetlist);
   return newMessage;
@@ -286,10 +286,10 @@ function readArmored(armoredText) {
  * @static
  */
 function fromText(text) {
-  var literalDataPacket = new packet.literal();
+  var literalDataPacket = new packet.Literal();
   // text will be converted to UTF8
   literalDataPacket.setText(text);
-  var literalDataPacketlist = new packet.list();
+  var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
   return newMessage;
@@ -302,9 +302,9 @@ function fromText(text) {
  * @static
  */
 function fromBinary(bytes) {
-  var literalDataPacket = new packet.literal();
+  var literalDataPacket = new packet.Literal();
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
-  var literalDataPacketlist = new packet.list();
+  var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
   return newMessage;

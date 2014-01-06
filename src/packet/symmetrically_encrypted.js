@@ -18,7 +18,7 @@
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
  * <br/>
- * RFC4880 5.7: The Symmetrically Encrypted Data packet contains data encrypted
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
@@ -27,45 +27,47 @@
  * @module packet/symmetrically_encrypted
  */
 
+module.exports = SymmetricallyEncrypted;
+
 var crypto = require('../crypto');
 
 /**
  * @constructor
  */
-module.exports = function symmetrically_encrypted() {
+function SymmetricallyEncrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
   this.packets =  null;
+}
 
-  this.read = function(bytes) {
-    this.encrypted = bytes;
-  };
+SymmetricallyEncrypted.prototype.read = function (bytes) {
+  this.encrypted = bytes;
+};
 
-  this.write = function() {
-    return this.encrypted;
-  };
+SymmetricallyEncrypted.prototype.write = function () {
+  return this.encrypted;
+};
 
-  /**
-   * Symmetrically decrypt the packet data
-   * 
-   * @param {Integer} sessionKeyAlgorithm
-   *             Symmetric key algorithm to use // See RFC4880 9.2
-   * @param {String} key
-   *             Key as string with the corresponding length to the
-   *            algorithm
-   */
-  this.decrypt = function(sessionKeyAlgorithm, key) {
-    var decrypted = crypto.cfb.decrypt(
-      sessionKeyAlgorithm, key, this.encrypted, true);
+/**
+ * Symmetrically decrypt the packet data
+ *
+ * @param {module:enums.symmetric} sessionKeyAlgorithm
+ *             Symmetric key algorithm to use // See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * @param {String} key
+ *             Key as string with the corresponding length to the
+ *            algorithm
+ */
+SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
+  var decrypted = crypto.cfb.decrypt(
+    sessionKeyAlgorithm, key, this.encrypted, true);
 
-    this.packets.read(decrypted);
-  };
+  this.packets.read(decrypted);
+};
 
-  this.encrypt = function(algo, key) {
-    var data = this.packets.write();
+SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
+  var data = this.packets.write();
 
-    this.encrypted = crypto.cfb.encrypt(
-      crypto.getPrefixRandom(algo), algo, data, key, true);
-  };
+  this.encrypted = crypto.cfb.encrypt(
+    crypto.getPrefixRandom(algo), algo, data, key, true);
 };

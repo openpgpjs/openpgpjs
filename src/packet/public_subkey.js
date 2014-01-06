@@ -20,12 +20,17 @@
  * @module packet/public_subkey
  */
 
+module.exports = PublicSubkey;
+
 var publicKey = require('./public_key.js');
 
 /**
  * @constructor
  * @extends module:packet/public_key
  */
-module.exports = function public_subkey() {
+function PublicSubkey() {
   publicKey.call(this);
 };
+
+PublicSubkey.prototype = new publicKey();
+PublicSubkey.prototype.constructor = PublicSubkey;

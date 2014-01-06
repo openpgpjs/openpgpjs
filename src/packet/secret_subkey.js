@@ -20,12 +20,17 @@
  * @module packet/secret_subkey
  */
 
+module.exports = SecretSubkey;
+
 var secretKey = require('./secret_key.js');
 
 /**
  * @constructor
  * @extends module:packet/secret_key
  */
-module.exports = function secret_subkey() {
+function SecretSubkey() {
   secretKey.call(this);
-};
+}
+
+SecretSubkey.prototype = new secretKey();
+SecretSubkey.prototype.constructor = SecretSubkey;
