@@ -86,19 +86,19 @@ Key.prototype.packetlist2structure = function(packetlist) {
   var user, primaryKeyId, subKey;
   for (var i = 0; i &lt; packetlist.length; i++) {
     switch (packetlist[i].tag) {
-      case enums.packet.public_key:
-      case enums.packet.secret_key:
+      case enums.packet.publicKey:
+      case enums.packet.secretKey:
         this.primaryKey = packetlist[i];
         primaryKeyId = this.primaryKey.getKeyId();
         break;
       case enums.packet.userid:
-      case enums.packet.user_attribute:
+      case enums.packet.userAttribute:
         user = new User(packetlist[i]);
         if (!this.users) this.users = [];
         this.users.push(user);
         break;
-      case enums.packet.public_subkey:
-      case enums.packet.secret_subkey:
+      case enums.packet.publicSubkey:
+      case enums.packet.secretSubkey:
         user = null;
         if (!this.subKeys) this.subKeys = [];
         subKey = new SubKey(packetlist[i]);
@@ -151,15 +151,16 @@ Key.prototype.packetlist2structure = function(packetlist) {
  * @return {module:packet/packetlist} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.primaryKey);
   packetlist.push(this.revocationSignature);
   packetlist.concat(this.directSignatures);
-  for (var i = 0; i &lt; this.users.length; i++) {
+  var i;
+  for (i = 0; i &lt; this.users.length; i++) {
     packetlist.concat(this.users[i].toPacketlist());
   }
   if (this.subKeys) {
-    for (var i = 0; i &lt; this.subKeys.length; i++) {
+    for (i = 0; i &lt; this.subKeys.length; i++) {
       packetlist.concat(this.subKeys[i].toPacketlist());
     } 
   }
@@ -227,7 +228,7 @@ function findKey(keys, keyIds) {
  * @return {(module:packet/public_subkey|module:packet/public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.public_key) {
+  if (this.primaryKey.tag == enums.packet.publicKey) {
     return findKey(this.getAllKeyPackets(), keyIds);  
   } else {
     return null;
@@ -240,7 +241,7 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
  * @return {(module:packet/secret_subkey|module:packet/secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.secret_key) {
+  if (this.primaryKey.tag == enums.packet.secretKey) {
     return findKey(this.getAllKeyPackets(), keyIds);  
   } else {
     return null;
@@ -266,7 +267,7 @@ Key.prototype.getUserIds = function() {
  * @return {Boolean}
  */
 Key.prototype.isPublic = function() {
-  return this.primaryKey.tag == enums.packet.public_key;
+  return this.primaryKey.tag == enums.packet.publicKey;
 };
 
 /**
@@ -274,7 +275,7 @@ Key.prototype.isPublic = function() {
  * @return {Boolean}
  */
 Key.prototype.isPrivate = function() {
-  return this.primaryKey.tag == enums.packet.secret_key;
+  return this.primaryKey.tag == enums.packet.secretKey;
 };
 
 /**
@@ -282,19 +283,20 @@ Key.prototype.isPrivate = function() {
  * @return {module:key~Key} new public Key
  */
 Key.prototype.toPublic = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   var keyPackets = this.toPacketlist();
+  var bytes;
   for (var i = 0; i &lt; keyPackets.length; i++) {
     switch (keyPackets[i].tag) {
-      case enums.packet.secret_key:
-        var bytes = keyPackets[i].writePublicKey();
-        var pubKeyPacket = new packet.public_key();
+      case enums.packet.secretKey:
+        bytes = keyPackets[i].writePublicKey();
+        var pubKeyPacket = new packet.PublicKey();
         pubKeyPacket.read(bytes);
         packetlist.push(pubKeyPacket);
         break;
-      case enums.packet.secret_subkey:
-        var bytes = keyPackets[i].writePublicKey();
-        var pubSubkeyPacket = new packet.public_subkey();
+      case enums.packet.secretSubkey:
+        bytes = keyPackets[i].writePublicKey();
+        var pubSubkeyPacket = new packet.PublicSubkey();
         pubSubkeyPacket.read(bytes);
         packetlist.push(pubSubkeyPacket);
         break;
@@ -355,7 +357,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
          ((signature.keyFlags & enums.keyFlags.encrypt_communication) !== 0 ||
           (signature.keyFlags & enums.keyFlags.encrypt_storage) !== 0 ||
           !signature.keyFlags);
-};
+}
 
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.dsa) ||
@@ -363,7 +365,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
           keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
          ((signature.keyFlags & enums.keyFlags.sign_data) !== 0 ||
           !signature.keyFlags);
-};
+}
 
 /**
  * Returns the first valid encryption key packet for this key
@@ -448,7 +450,7 @@ Key.prototype.verifyPrimaryKey = function() {
     return enums.keyStatus.expired;
   }
   // check for at least one self signature. Self signature of user ID not mandatory
-  // See http://tools.ietf.org/html/rfc4880#section-11.1
+  // See {@link http://tools.ietf.org/html/rfc4880#section-11.1}
   var selfSigned = false;
   for (var i = 0; i &lt; this.users.length; i++) {
     if (this.users[i].userId && this.users[i].selfCertifications) {
@@ -496,7 +498,7 @@ Key.prototype.getPrimaryUser = function() {
     }
   }
   return user ? {user: user, selfCertificate: userSelfCert} : null;
-}
+};
 
 // TODO
 Key.prototype.revoke = function() {
@@ -512,7 +514,7 @@ function User(userPacket) {
     return new User(userPacket);
   }
   this.userId = userPacket.tag == enums.packet.userid ? userPacket : null;
-  this.userAttribute = userPacket.tag == enums.packet.user_attribute ? userPacket : null
+  this.userAttribute = userPacket.tag == enums.packet.userAttribute ? userPacket : null;
   this.selfCertifications = null;
   this.otherCertifications = null;
   this.revocationCertifications = null;
@@ -523,7 +525,7 @@ function User(userPacket) {
  * @return {module:packet/packetlist}
  */
 User.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.userId || this.userAttribute);
   packetlist.concat(this.revocationCertifications);
   packetlist.concat(this.selfCertifications);
@@ -629,7 +631,7 @@ function SubKey(subKeyPacket) {
  * @return {module:packet/packetlist}
  */
 SubKey.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.subKey);
   packetlist.push(this.revocationSignature);
   packetlist.push(this.bindingSignature);
@@ -707,11 +709,11 @@ function readArmored(armoredText) {
     if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
       throw new Error('Armored text not of type key');
     }
-    var packetlist = new packet.list();
+    var packetlist = new packet.List();
     packetlist.read(input.data);
-    var keyIndex = packetlist.indexOfTag(enums.packet.public_key, enums.packet.secret_key);
-    if (keyIndex.length == 0) {
-      throw new Error('No key packet found in armored text')
+    var keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+    if (keyIndex.length === 0) {
+      throw new Error('No key packet found in armored text');
     }
     for (var i = 0; i &lt; keyIndex.length; i++) {
       var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
@@ -733,8 +735,8 @@ function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {Integer} keyType    to indicate what type of key to make. 
- *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} numBits    number of bits for the key creation.
  * @param {String}  userId     assumes already in form of "User Name &lt;username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
@@ -742,20 +744,20 @@ function readArmored(armoredText) {
  * @static
  */
 function generate(keyType, numBits, userId, passphrase) {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
 
-  var secretKeyPacket = new packet.secret_key();
+  var secretKeyPacket = new packet.SecretKey();
   secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
   secretKeyPacket.generate(numBits);
   secretKeyPacket.encrypt(passphrase);
 
-  var userIdPacket = new packet.userid();
+  var userIdPacket = new packet.Userid();
   userIdPacket.read(userId);
 
   var dataToSign = {};
   dataToSign.userid = userIdPacket;
   dataToSign.key = secretKeyPacket;
-  var signaturePacket = new packet.signature();
+  var signaturePacket = new packet.Signature();
   signaturePacket.signatureType = enums.signature.cert_generic;
   signaturePacket.publicKeyAlgorithm = keyType;
   //TODO we should load preferred hash from config, or as input to this function
@@ -763,7 +765,7 @@ function generate(keyType, numBits, userId, passphrase) {
   signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
   signaturePacket.sign(secretKeyPacket, dataToSign);
 
-  var secretSubkeyPacket = new packet.secret_subkey();
+  var secretSubkeyPacket = new packet.SecretSubkey();
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
   secretSubkeyPacket.generate(numBits);
   secretSubkeyPacket.encrypt(passphrase);
@@ -771,7 +773,7 @@ function generate(keyType, numBits, userId, passphrase) {
   dataToSign = {};
   dataToSign.key = secretKeyPacket;
   dataToSign.bind = secretSubkeyPacket;
-  var subkeySignaturePacket = new packet.signature();
+  var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = keyType;
   //TODO we should load preferred hash from config, or as input to this function
@@ -801,13 +803,13 @@ exports.generate = generate;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">JXG.Util</a></li><li><a href="module-cleartext-CleartextMessage.html">cleartext~CleartextMessage</a></li><li><a href="localStorage-LocalStorage.html">config/localStorage~LocalStorage</a></li><li><a href="keyring-Keyring.html">keyring/keyring~Keyring</a></li><li><a href="module-key-Key.html">key~Key</a></li><li><a href="module-key-SubKey.html">key~SubKey</a></li><li><a href="module-key-User.html">key~User</a></li><li><a href="module-message-Message.html">message~Message</a></li><li><a href="compressed-Compressed.html">packet/compressed~Compressed</a></li><li><a href="literal-Literal.html">packet/literal~Literal</a></li><li><a href="marker-Marker.html">packet/marker~Marker</a></li><li><a href="one_pass_signature-OnePassSignature.html">packet/one_pass_signature~OnePassSignature</a></li><li><a href="packetlist-Packetlist.html">packet/packetlist~Packetlist</a></li><li><a href="public_key_encrypted_session_key-PublicKeyEncryptedSessionKey.html">packet/public_key_encrypted_session_key~PublicKeyEncryptedSessionKey</a></li><li><a href="public_key-PublicKey.html">packet/public_key~PublicKey</a></li><li><a href="public_subkey-PublicSubkey.html">packet/public_subkey~PublicSubkey</a></li><li><a href="secret_key-SecretKey.html">packet/secret_key~SecretKey</a></li><li><a href="secret_subkey-SecretSubkey.html">packet/secret_subkey~SecretSubkey</a></li><li><a href="signature-Signature.html">packet/signature~Signature</a></li><li><a href="sym_encrypted_integrity_protected-SymEncryptedIntegrityProtected.html">packet/sym_encrypted_integrity_protected~SymEncryptedIntegrityProtected</a></li><li><a href="sym_encrypted_session_key-SymEncryptedSessionKey.html">packet/sym_encrypted_session_key~SymEncryptedSessionKey</a></li><li><a href="symmetrically_encrypted-SymmetricallyEncrypted.html">packet/symmetrically_encrypted~SymmetricallyEncrypted</a></li><li><a href="trust-Trust.html">packet/trust~Trust</a></li><li><a href="user_attribute-UserAttribute.html">packet/user_attribute~UserAttribute</a></li><li><a href="userid-Userid.html">packet/userid~Userid</a></li><li><a href="keyid-Keyid.html">type/keyid~Keyid</a></li><li><a href="mpi-Mpi.html">type/mpi~Mpi</a></li><li><a href="s2k-S2k.html">type/s2k~S2k</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Sun Jan 05 2014 23:07:43 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -29,7 +29,7 @@
   exists: (function(undefined) {
     return function(v) {
       return !(v === undefined || v === null);
-    }
+    };
   })()
 };
 JXG.decompress = function(str) {
@@ -169,24 +169,24 @@ JXG.Util.Unzip = function(barray) {
       return bA[bytepos++];
     } else
       return -1;
-  };
+  }
 
   function byteAlign() {
     bb = 1;
-  };
+  }
 
   function readBit() {
     var carry;
     bits++;
     carry = (bb & 1);
     bb >>= 1;
-    if (bb == 0) {
+    if (bb === 0) {
       bb = readByte();
       carry = (bb & 1);
       bb = (bb >> 1) | 0x80;
     }
     return carry;
-  };
+  }
 
   function readBits(a) {
     var res = 0,
@@ -199,12 +199,12 @@ JXG.Util.Unzip = function(barray) {
       res = bitReverse[res] >> (8 - a);
     }
     return res;
-  };
+  }
 
   function flushBuffer() {
     //document.write('FLUSHBUFFER:'+buf32k);
     bIdx = 0;
-  };
+  }
 
   function addBuffer(a) {
     SIZE++;
@@ -216,14 +216,14 @@ JXG.Util.Unzip = function(barray) {
       //document.write('ADDBUFFER:'+buf32k);
       bIdx = 0;
     }
-  };
+  }
 
   function HufNode() {
     this.b0 = 0;
     this.b1 = 0;
     this.jump = null;
     this.jumppos = -1;
-  };
+  }
 
   var LITERALS = 288;
 
@@ -250,7 +250,7 @@ JXG.Util.Unzip = function(barray) {
         return fpos[len]++;
       fpos[len]++;
     }
-  };
+  }
 
   function Rec() {
     var curplace = Places[treepos];
@@ -296,7 +296,7 @@ JXG.Util.Unzip = function(barray) {
     }
     len--;
     return 0;
-  };
+  }
 
   function CreateTree(currentTree, numval, lengths, show) {
     var i;
@@ -341,7 +341,7 @@ JXG.Util.Unzip = function(barray) {
             }
         }*/
     return 0;
-  };
+  }
 
   function DecodeValue(currentTree) {
     var len, i,
@@ -380,10 +380,10 @@ JXG.Util.Unzip = function(barray) {
         X = currentTree[xtreepos];
       }
     }
-  };
+  }
 
   function DeflateLoop() {
-    var last, c, type, i, len;
+    var last, c, type, i, j, len, dist;
 
     do {
       /*if((last = readBit())){
@@ -416,7 +416,7 @@ JXG.Util.Unzip = function(barray) {
           break;
       }
 
-      if (type == 0) {
+      if (type === 0) {
         var blockLen, cSum;
 
         // Stored 
@@ -435,8 +435,6 @@ JXG.Util.Unzip = function(barray) {
           addBuffer(c);
         }
       } else if (type == 1) {
-        var j;
-
         /* Fixed Huffman tables -- fixed decode routine */
         while (1) {
           /*
@@ -481,8 +479,6 @@ JXG.Util.Unzip = function(barray) {
             /* EOF */
             break;
           } else {
-            var len, dist;
-
             j -= 256 + 1; /* bytes + EOF */
             len = readBits(cplext[j]) + cplens[j];
 
@@ -497,13 +493,13 @@ JXG.Util.Unzip = function(barray) {
 
             /*fprintf(errfp, "@%d (l%02x,d%04x)\n", SIZE, len, dist);*/
             for (j = 0; j &lt; len; j++) {
-              var c = buf32k[(bIdx - dist) & 0x7fff];
+              c = buf32k[(bIdx - dist) & 0x7fff];
               addBuffer(c);
             }
           }
         } // while
       } else if (type == 2) {
-        var j, n, literalCodes, distCodes, lenCodes;
+        var n, literalCodes, distCodes, lenCodes;
         var ll = new Array(288 + 32); // "static" just to preserve stack
 
         // Dynamic Huffman tables 
@@ -538,8 +534,8 @@ JXG.Util.Unzip = function(barray) {
             document.write("&lt;br>" + distanceTree[a].b0 + " " + distanceTree[a].b1 + " " + distanceTree[a].jump + " " +
               distanceTree[a].jumppos);
             /*if (distanceTree[a].jumppos!=-1)
-                    	document.write(" "+distanceTree[a].jump.b0+" "+distanceTree[a].jump.b1);
-                	*/
+                document.write(" "+distanceTree[a].jump.b0+" "+distanceTree[a].jump.b1);
+             */
           }
         }
         //document.write('&lt;BR>tree created');
@@ -600,7 +596,7 @@ JXG.Util.Unzip = function(barray) {
         len = literalTree.length;
         for (i = 0; i &lt; len; i++)
           distanceTree[i] = new HufNode();
-        var ll2 = new Array();
+        var ll2 = [];
         for (i = literalCodes; i &lt; ll.length; i++) {
           ll2[i - literalCodes] = ll[i];
         }
@@ -613,9 +609,8 @@ JXG.Util.Unzip = function(barray) {
         outer: while (1) {
           j = DecodeValue(literalTree);
           if (j >= 256) { // In C64: if carry set
-            var len, dist;
             j -= 256;
-            if (j == 0) {
+            if (j === 0) {
               // EOF
               break;
             }
@@ -634,7 +629,7 @@ JXG.Util.Unzip = function(barray) {
               if (bIdx - dist &lt; 0) {
                 break outer;
               }
-              var c = buf32k[(bIdx - dist) & 0x7fff];
+              c = buf32k[(bIdx - dist) & 0x7fff];
               addBuffer(c);
             }
           } else {
@@ -647,7 +642,7 @@ JXG.Util.Unzip = function(barray) {
 
     byteAlign();
     return 0;
-  };
+  }
 
   JXG.Util.Unzip.prototype.unzipFile = function(name) {
     var i;
@@ -658,7 +653,6 @@ JXG.Util.Unzip = function(barray) {
         return unzipped[i][0];
       }
     }
-
   };
 
   JXG.Util.Unzip.prototype.deflate = function() {
@@ -673,7 +667,7 @@ JXG.Util.Unzip = function(barray) {
     unzipped[files][1] = "DEFLATE";
     files++;
     return unzipped;
-  }
+  };
 
   JXG.Util.Unzip.prototype.unzip = function() {
     //convertToByteArray(input);
@@ -798,8 +792,9 @@ JXG.Util.Unzip = function(barray) {
           alert("filelen " + filelen);
         i = 0;
         nameBuf = [];
+        var c;
         while (filelen--) {
-          var c = readByte();
+          c = readByte();
           if (c == "/" | c == ":") {
             i = 0;
           } else if (i &lt; NAMEMAX - 1)
@@ -821,7 +816,7 @@ JXG.Util.Unzip = function(barray) {
         CRC = 0xffffffff;
         SIZE = 0;
 
-        if (size == 0 && fileOut.charAt(fileout.length - 1) == "/") {
+        if (size === 0 && fileOut.charAt(fileout.length - 1) == "/") {
           //skipdir
           if (debug)
             alert("skipdir");
@@ -839,7 +834,7 @@ JXG.Util.Unzip = function(barray) {
         skipdir();
       }
     }
-  };
+  }
 
   function skipdir() {
     var crc,
@@ -952,7 +947,7 @@ JXG.Util.Unzip = function(barray) {
     if (modeZIP)
       nextFile();
 
-  };
+  }
 
 };
 
@@ -1096,7 +1091,7 @@ JXG.Util.Base64 = {
       lineno, i,
       destripped = [];
 
-    if (wrap == null)
+    if (wrap === null)
       wrap = 76;
 
     stripped.replace(/ /g, "");
@@ -1251,7 +1246,7 @@ JXG.Util.utf8Decode = function(utftext) {
       string.push(String.fromCharCode(((c & 15) &lt;&lt; 12) | ((c2 & 63) &lt;&lt; 6) | (c3 & 63)));
       i += 3;
     }
-  };
+  }
   return string.join('');
 };
 
@@ -1302,13 +1297,13 @@ module.exports = JXG;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">JXG.Util</a></li><li><a href="module-cleartext-CleartextMessage.html">cleartext~CleartextMessage</a></li><li><a href="localStorage-LocalStorage.html">config/localStorage~LocalStorage</a></li><li><a href="keyring-Keyring.html">keyring/keyring~Keyring</a></li><li><a href="module-key-Key.html">key~Key</a></li><li><a href="module-key-SubKey.html">key~SubKey</a></li><li><a href="module-key-User.html">key~User</a></li><li><a href="module-message-Message.html">message~Message</a></li><li><a href="compressed-Compressed.html">packet/compressed~Compressed</a></li><li><a href="literal-Literal.html">packet/literal~Literal</a></li><li><a href="marker-Marker.html">packet/marker~Marker</a></li><li><a href="one_pass_signature-OnePassSignature.html">packet/one_pass_signature~OnePassSignature</a></li><li><a href="packetlist-Packetlist.html">packet/packetlist~Packetlist</a></li><li><a href="public_key_encrypted_session_key-PublicKeyEncryptedSessionKey.html">packet/public_key_encrypted_session_key~PublicKeyEncryptedSessionKey</a></li><li><a href="public_key-PublicKey.html">packet/public_key~PublicKey</a></li><li><a href="public_subkey-PublicSubkey.html">packet/public_subkey~PublicSubkey</a></li><li><a href="secret_key-SecretKey.html">packet/secret_key~SecretKey</a></li><li><a href="secret_subkey-SecretSubkey.html">packet/secret_subkey~SecretSubkey</a></li><li><a href="signature-Signature.html">packet/signature~Signature</a></li><li><a href="sym_encrypted_integrity_protected-SymEncryptedIntegrityProtected.html">packet/sym_encrypted_integrity_protected~SymEncryptedIntegrityProtected</a></li><li><a href="sym_encrypted_session_key-SymEncryptedSessionKey.html">packet/sym_encrypted_session_key~SymEncryptedSessionKey</a></li><li><a href="symmetrically_encrypted-SymmetricallyEncrypted.html">packet/symmetrically_encrypted~SymmetricallyEncrypted</a></li><li><a href="trust-Trust.html">packet/trust~Trust</a></li><li><a href="user_attribute-UserAttribute.html">packet/user_attribute~UserAttribute</a></li><li><a href="userid-Userid.html">packet/userid~Userid</a></li><li><a href="keyid-Keyid.html">type/keyid~Keyid</a></li><li><a href="mpi-Mpi.html">type/mpi~Mpi</a></li><li><a href="s2k-S2k.html">type/s2k~S2k</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Sun Jan 05 2014 23:07:43 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

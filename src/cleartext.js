@@ -31,7 +31,7 @@ var config = require('./config'),
 /**
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
- * See http://tools.ietf.org/html/rfc4880#section-7
+ * See {@link http://tools.ietf.org/html/rfc4880#section-7}
  * @param  {String}     text       The cleartext of the signed message
  * @param  {module:packet/packetlist} packetlist The packetlist with signature packets or undefined
  *                                 if message not yet signed
@@ -43,7 +43,7 @@ function CleartextMessage(text, packetlist) {
   }
   // normalize EOL to canonical form <CR><LF>
   this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
-  this.packets = packetlist || new packet.list();
+  this.packets = packetlist || new packet.List();
 }
 
 /**
@@ -64,11 +64,11 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
-  var packetlist = new packet.list();  
-  var literalDataPacket = new packet.literal();
+  var packetlist = new packet.List();
+  var literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
   for (var i = 0; i < privateKeys.length; i++) {
-    var signaturePacket = new packet.signature();
+    var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
@@ -88,7 +88,7 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 CleartextMessage.prototype.verify = function(publicKeys) {
   var result = [];
   var signatureList = this.packets.filterByTag(enums.packet.signature);
-  var literalDataPacket = new packet.literal();
+  var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
   publicKeys.forEach(function(pubKey) {
@@ -140,7 +140,7 @@ function readArmored(armoredText) {
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.read(input.data);
   var newMessage = new CleartextMessage(input.text, packetlist);
   return newMessage;

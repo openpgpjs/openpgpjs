@@ -45,7 +45,7 @@
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)&lt;br/>
  * &lt;br/>
- * RFC4480 5.5:
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -57,6 +57,8 @@
  * @module packet/public_key
  */
 
+module.exports = PublicKey;
+
 var util = require('../util'),
   type_mpi = require('../type/mpi.js'),
   type_keyid = require('../type/keyid.js'),
@@ -66,7 +68,7 @@ var util = require('../util'),
 /**
  * @constructor
  */
-module.exports = function public_key() {
+function PublicKey() {
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
@@ -79,138 +81,134 @@ module.exports = function public_key() {
   this.algorithm = 'rsa_sign';
   // time in days (V3 only)
   this.expirationTimeV3 = 0;
+}
 
+/**
+ * Internal Parser for public keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
+ * called by read_tag&lt;num&gt;
+ * @param {String} input Input string to read the packet from
+ * @return {Object} This object with attributes set by the parser
+ */
+PublicKey.prototype.read = function (bytes) {
+  var pos = 0;
+  // A one-octet version number (3 or 4).
+  this.version = bytes.charCodeAt(pos++);
 
-  /**
-   * Internal Parser for public keys as specified in RFC 4880 section 
-   * 5.5.2 Public-Key Packet Formats
-   * called by read_tag&lt;num&gt;
-   * @param {String} input Input string to read the packet from
-   * @return {Object} This object with attributes set by the parser
-   */
-  this.read = function (bytes) {
-    var pos = 0;
-    // A one-octet version number (3 or 4).
-    this.version = bytes.charCodeAt(pos++);
+  if (this.version == 3 || this.version == 4) {
+    // - A four-octet number denoting the time that the key was created.
+    this.created = util.readDate(bytes.substr(pos, 4));
+    pos += 4;
 
-    if (this.version == 3 || this.version == 4) {
-      // - A four-octet number denoting the time that the key was created.
-      this.created = util.readDate(bytes.substr(pos, 4));
-      pos += 4;
-
-      if (this.version == 3) {
-        // - A two-octet number denoting the time in days that this key is
-        //   valid.  If this number is zero, then it does not expire.
-        this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
-        pos += 2;
-      }
-
-      // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
-
-      var mpicount = crypto.getPublicMpiCount(this.algorithm);
-      this.mpi = [];
-
-      var bmpi = bytes.substr(pos);
-      var p = 0;
-
-      for (var i = 0; i &lt; mpicount && p &lt; bmpi.length; i++) {
-
-        this.mpi[i] = new type_mpi();
-
-        p += this.mpi[i].read(bmpi.substr(p))
-
-        if (p > bmpi.length) {
-          throw new Error('Error reading MPI @:' + p);
-        }
-      }
-
-      return p + 6;
-    } else {
-      throw new Error('Version ' + version + ' of the key packet is unsupported.');
-    }
-  };
-
-  /**
-   * Alias of read()
-   * @function module:packet/public_key#readPublicKey
-   * @see module:packet/public_key#read
-   */
-  this.readPublicKey = this.read;
-
-  /**
-   * Same as write_private_key, but has less information because of 
-   * public key.
-   * @return {Object} {body: [string]OpenPGP packet body contents,
-   * header: [string] OpenPGP packet header, string: [string] header+body}
-   */
-  this.write = function () {
-    // Version
-    var result = String.fromCharCode(this.version);
-    result += util.writeDate(this.created);
     if (this.version == 3) {
-      result += util.writeNumber(this.expirationTimeV3, 2);
+      // - A two-octet number denoting the time in days that this key is
+      //   valid.  If this number is zero, then it does not expire.
+      this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+      pos += 2;
     }
-    result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+
+    // - A one-octet number denoting the public-key algorithm of this key.
+    this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
 
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
+    this.mpi = [];
 
-    for (var i = 0; i &lt; mpicount; i++) {
-      result += this.mpi[i].write();
-    }
+    var bmpi = bytes.substr(pos);
+    var p = 0;
 
-    return result;
-  };
+    for (var i = 0; i &lt; mpicount && p &lt; bmpi.length; i++) {
 
-  /**
-   * Alias of write()
-   * @function module:packet/public_key#writePublicKey
-   * @see module:packet/public_key#write
-   */
-  this.writePublicKey = this.write;
+      this.mpi[i] = new type_mpi();
 
-  /**
-   * Write an old version packet - it's used by some of the internal routines.
-   */
-  this.writeOld = function () {
-    var bytes = this.writePublicKey();
+      p += this.mpi[i].read(bmpi.substr(p));
 
-    return String.fromCharCode(0x99) +
-      util.writeNumber(bytes.length, 2) +
-      bytes;
-  };
-
-  /**
-   * Calculates the key id of the key 
-   * @return {String} A 8 byte key id
-   */
-  this.getKeyId = function () {
-    var keyid = new type_keyid();
-    if (this.version == 4) {
-      keyid.read(this.getFingerprint().substr(12, 8));
-    } else if (this.version == 3) {
-      keyid.read(this.mpi[0].write().substr(-8));
-    }
-    return keyid;
-  };
-
-  /**
-   * Calculates the fingerprint of the key
-   * @return {String} A string containing the fingerprint
-   */
-  this.getFingerprint = function () {
-    var toHash = '';
-    if (this.version == 4) {
-      toHash = this.writeOld();
-      return crypto.hash.sha1(toHash);
-    } else if (this.version == 3) {
-      var mpicount = crypto.getPublicMpiCount(this.algorithm);
-      for (var i = 0; i &lt; mpicount; i++) {
-        toHash += this.mpi[i].toBytes();
+      if (p > bmpi.length) {
+        throw new Error('Error reading MPI @:' + p);
       }
-      return crypto.hash.md5(toHash)
     }
-  };
+
+    return p + 6;
+  } else {
+    throw new Error('Version ' + version + ' of the key packet is unsupported.');
+  }
+};
+
+/**
+ * Alias of read()
+ * @see module:packet/public_key~PublicKey#read
+ */
+PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
+
+/**
+ * Same as write_private_key, but has less information because of
+ * public key.
+ * @return {Object} {body: [string]OpenPGP packet body contents,
+ * header: [string] OpenPGP packet header, string: [string] header+body}
+ */
+PublicKey.prototype.write = function () {
+  // Version
+  var result = String.fromCharCode(this.version);
+  result += util.writeDate(this.created);
+  if (this.version == 3) {
+    result += util.writeNumber(this.expirationTimeV3, 2);
+  }
+  result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+
+  var mpicount = crypto.getPublicMpiCount(this.algorithm);
+
+  for (var i = 0; i &lt; mpicount; i++) {
+    result += this.mpi[i].write();
+  }
+
+  return result;
+};
+
+/**
+ * Alias of write()
+ * @see module:packet/public_key~PublicKey#write
+ */
+PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
+
+/**
+ * Write an old version packet - it's used by some of the internal routines.
+ */
+PublicKey.prototype.writeOld = function () {
+  var bytes = this.writePublicKey();
+
+  return String.fromCharCode(0x99) +
+    util.writeNumber(bytes.length, 2) +
+    bytes;
+};
+
+/**
+ * Calculates the key id of the key
+ * @return {String} A 8 byte key id
+ */
+PublicKey.prototype.getKeyId = function () {
+  var keyid = new type_keyid();
+  if (this.version == 4) {
+    keyid.read(this.getFingerprint().substr(12, 8));
+  } else if (this.version == 3) {
+    keyid.read(this.mpi[0].write().substr(-8));
+  }
+  return keyid;
+};
+
+/**
+ * Calculates the fingerprint of the key
+ * @return {String} A string containing the fingerprint
+ */
+PublicKey.prototype.getFingerprint = function () {
+  var toHash = '';
+  if (this.version == 4) {
+    toHash = this.writeOld();
+    return crypto.hash.sha1(toHash);
+  } else if (this.version == 3) {
+    var mpicount = crypto.getPublicMpiCount(this.algorithm);
+    for (var i = 0; i &lt; mpicount; i++) {
+      toHash += this.mpi[i].toBytes();
+    }
+    return crypto.hash.md5(toHash);
+  }
 };
 </code></pre>
         </article>
@@ -222,13 +220,13 @@ module.exports = function public_key() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">JXG.Util</a></li><li><a href="module-cleartext-CleartextMessage.html">cleartext~CleartextMessage</a></li><li><a href="localStorage-LocalStorage.html">config/localStorage~LocalStorage</a></li><li><a href="keyring-Keyring.html">keyring/keyring~Keyring</a></li><li><a href="module-key-Key.html">key~Key</a></li><li><a href="module-key-SubKey.html">key~SubKey</a></li><li><a href="module-key-User.html">key~User</a></li><li><a href="module-message-Message.html">message~Message</a></li><li><a href="compressed-Compressed.html">packet/compressed~Compressed</a></li><li><a href="literal-Literal.html">packet/literal~Literal</a></li><li><a href="marker-Marker.html">packet/marker~Marker</a></li><li><a href="one_pass_signature-OnePassSignature.html">packet/one_pass_signature~OnePassSignature</a></li><li><a href="packetlist-Packetlist.html">packet/packetlist~Packetlist</a></li><li><a href="public_key_encrypted_session_key-PublicKeyEncryptedSessionKey.html">packet/public_key_encrypted_session_key~PublicKeyEncryptedSessionKey</a></li><li><a href="public_key-PublicKey.html">packet/public_key~PublicKey</a></li><li><a href="public_subkey-PublicSubkey.html">packet/public_subkey~PublicSubkey</a></li><li><a href="secret_key-SecretKey.html">packet/secret_key~SecretKey</a></li><li><a href="secret_subkey-SecretSubkey.html">packet/secret_subkey~SecretSubkey</a></li><li><a href="signature-Signature.html">packet/signature~Signature</a></li><li><a href="sym_encrypted_integrity_protected-SymEncryptedIntegrityProtected.html">packet/sym_encrypted_integrity_protected~SymEncryptedIntegrityProtected</a></li><li><a href="sym_encrypted_session_key-SymEncryptedSessionKey.html">packet/sym_encrypted_session_key~SymEncryptedSessionKey</a></li><li><a href="symmetrically_encrypted-SymmetricallyEncrypted.html">packet/symmetrically_encrypted~SymmetricallyEncrypted</a></li><li><a href="trust-Trust.html">packet/trust~Trust</a></li><li><a href="user_attribute-UserAttribute.html">packet/user_attribute~UserAttribute</a></li><li><a href="userid-Userid.html">packet/userid~Userid</a></li><li><a href="keyid-Keyid.html">type/keyid~Keyid</a></li><li><a href="mpi-Mpi.html">type/mpi~Mpi</a></li><li><a href="s2k-S2k.html">type/s2k~S2k</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Sun Jan 05 2014 23:07:43 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

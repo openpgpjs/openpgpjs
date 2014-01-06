@@ -38,25 +38,26 @@
 var util = require('../util'),
   packet = require('./packet.js');
 
+module.exports = UserAttribute;
+
 /**
  * @constructor
  */
-module.exports = function user_attribute() {
-  this.tag = 17;
+function UserAttribute() {
   this.attributes = [];
+}
 
-  /**
-   * parsing function for a user attribute packet (tag 17).
-   * @param {String} input payload of a tag 17 packet
-   */
-  this.read = function(bytes) {
-    var i = 0;
-    while (i < bytes.length) {
-      var len = packet.readSimpleLength(bytes.substr(i));
-      i += len.offset;
+/**
+ * parsing function for a user attribute packet (tag 17).
+ * @param {String} input payload of a tag 17 packet
+ */
+UserAttribute.prototype.read = function(bytes) {
+  var i = 0;
+  while (i < bytes.length) {
+    var len = packet.readSimpleLength(bytes.substr(i));
+    i += len.offset;
 
-      this.attributes.push(bytes.substr(i, len.len));
-      i += len.len;
-    }
-  };
+    this.attributes.push(bytes.substr(i, len.len));
+    i += len.len;
+  }
 };

@@ -8,41 +8,58 @@ var enums = require('../enums.js');
 
 module.exports = {
   /** @see module:packet/compressed */
-  compressed: require('./compressed.js'),
+  Compressed: require('./compressed.js'),
   /** @see module:packet/sym_encrypted_integrity_protected */
-  sym_encrypted_integrity_protected: require('./sym_encrypted_integrity_protected.js'),
+  SymEncryptedIntegrityProtected: require('./sym_encrypted_integrity_protected.js'),
   /** @see module:packet/public_key_encrypted_session_key */
-  public_key_encrypted_session_key: require('./public_key_encrypted_session_key.js'),
+  PublicKeyEncryptedSessionKey: require('./public_key_encrypted_session_key.js'),
   /** @see module:packet/sym_encrypted_session_key */
-  sym_encrypted_session_key: require('./sym_encrypted_session_key.js'),
+  SymEncryptedSessionKey: require('./sym_encrypted_session_key.js'),
   /** @see module:packet/literal */
-  literal: require('./literal.js'),
+  Literal: require('./literal.js'),
   /** @see module:packet/public_key */
-  public_key: require('./public_key.js'),
+  PublicKey: require('./public_key.js'),
   /** @see module:packet/symmetrically_encrypted */
-  symmetrically_encrypted: require('./symmetrically_encrypted.js'),
+  SymmetricallyEncrypted: require('./symmetrically_encrypted.js'),
   /** @see module:packet/marker */
-  marker: require('./marker.js'),
+  Marker: require('./marker.js'),
   /** @see module:packet/public_subkey */
-  public_subkey: require('./public_subkey.js'),
+  PublicSubkey: require('./public_subkey.js'),
   /** @see module:packet/user_attribute */
-  user_attribute: require('./user_attribute.js'),
+  UserAttribute: require('./user_attribute.js'),
   /** @see module:packet/one_pass_signature */
-  one_pass_signature: require('./one_pass_signature.js'),
+  OnePassSignature: require('./one_pass_signature.js'),
   /** @see module:packet/secret_key */
-  secret_key: require('./secret_key.js'),
+  SecretKey: require('./secret_key.js'),
   /** @see module:packet/userid */
-  userid: require('./userid.js'),
+  Userid: require('./userid.js'),
   /** @see module:packet/secret_subkey */
-  secret_subkey: require('./secret_subkey.js'),
+  SecretSubkey: require('./secret_subkey.js'),
   /** @see module:packet/signature */
-  signature: require('./signature.js'),
+  Signature: require('./signature.js'),
   /** @see module:packet/trust */
-  trust: require('./trust.js')
+  Trust: require('./trust.js'),
+  /**
+   * Allocate a new packet
+   * @param {String} tag property name from {@link module:enums.packet}
+   * @returns {Object} new packet object with type based on tag
+   */
+  newPacketFromTag: function (tag) {
+    return new this[packetClassFromTagName(tag)]();
+  }
 };
 
+/**
+ * Convert tag name to class name
+ * @param {String} tag property name from {@link module:enums.packet}
+ * @returns {String}
+ */
+function packetClassFromTagName(tag) {
+  return tag.substr(0, 1).toUpperCase() + tag.substr(1);
+}
+
 for (var i in enums.packet) {
-  var packetClass = module.exports[i];
+  var packetClass = module.exports[packetClassFromTagName(i)];
 
   if (packetClass !== undefined)
     packetClass.prototype.tag = enums.packet[i];

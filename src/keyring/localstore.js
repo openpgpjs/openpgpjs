@@ -20,37 +20,39 @@
  * @requires openpgp
  * @module keyring/localstore
  */
+module.exports = LocalStore;
 
 var openpgp = require('openpgp');
 
-module.exports = function () {
-  /**
-   * Load the keyring from HTML5 local storage and initializes this instance.
-   * @return {Array<module:key~Key>} array of keys retrieved from localstore
-   */
-  this.load = function () {
-    var armoredKeys = JSON.parse(window.localStorage.getItem("armoredKeys"));
-    var keys = [];
-    if (armoredKeys !== null && armoredKeys.length !== 0) {
-      var key;
-      for (var i = 0; i < armoredKeys.length; i++) {
-        key = openpgp.key.readArmored(armoredKeys[i]);
-        keys.push(key);
-      }
-    }
-    return keys;
-  };
+function LocalStore() {
+}
 
-  /**
-   * Saves the current state of the keyring to HTML5 local storage.
-   * The privateKeys array and publicKeys array gets Stringified using JSON
-   * @param {Array<module:key~Key>} keys array of keys to save in localstore
-   */
-  this.store = function (keys) {
-    var armoredKeys = [];
-    for (var i = 0; i < keys.length; i++) {
-      armoredKeys.push(keys[i].armor());
+/**
+ * Load the keyring from HTML5 local storage and initializes this instance.
+ * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ */
+LocalStore.prototype.load = function () {
+  var armoredKeys = JSON.parse(window.localStorage.getItem("armoredKeys"));
+  var keys = [];
+  if (armoredKeys !== null && armoredKeys.length !== 0) {
+    var key;
+    for (var i = 0; i < armoredKeys.length; i++) {
+      key = openpgp.key.readArmored(armoredKeys[i]);
+      keys.push(key);
     }
-    window.localStorage.setItem("armoredKeys", JSON.stringify(armoredKeys));
-  };
+  }
+  return keys;
+};
+
+/**
+ * Saves the current state of the keyring to HTML5 local storage.
+ * The privateKeys array and publicKeys array gets Stringified using JSON
+ * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ */
+LocalStore.prototype.store = function (keys) {
+  var armoredKeys = [];
+  for (var i = 0; i < keys.length; i++) {
+    armoredKeys.push(keys[i].armor());
+  }
+  window.localStorage.setItem("armoredKeys", JSON.stringify(armoredKeys));
 };

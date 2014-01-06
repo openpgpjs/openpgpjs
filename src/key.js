@@ -59,19 +59,19 @@ Key.prototype.packetlist2structure = function(packetlist) {
   var user, primaryKeyId, subKey;
   for (var i = 0; i < packetlist.length; i++) {
     switch (packetlist[i].tag) {
-      case enums.packet.public_key:
-      case enums.packet.secret_key:
+      case enums.packet.publicKey:
+      case enums.packet.secretKey:
         this.primaryKey = packetlist[i];
         primaryKeyId = this.primaryKey.getKeyId();
         break;
       case enums.packet.userid:
-      case enums.packet.user_attribute:
+      case enums.packet.userAttribute:
         user = new User(packetlist[i]);
         if (!this.users) this.users = [];
         this.users.push(user);
         break;
-      case enums.packet.public_subkey:
-      case enums.packet.secret_subkey:
+      case enums.packet.publicSubkey:
+      case enums.packet.secretSubkey:
         user = null;
         if (!this.subKeys) this.subKeys = [];
         subKey = new SubKey(packetlist[i]);
@@ -124,7 +124,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
  * @return {module:packet/packetlist} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.primaryKey);
   packetlist.push(this.revocationSignature);
   packetlist.concat(this.directSignatures);
@@ -201,7 +201,7 @@ function findKey(keys, keyIds) {
  * @return {(module:packet/public_subkey|module:packet/public_key|null)}
  */
 Key.prototype.getPublicKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.public_key) {
+  if (this.primaryKey.tag == enums.packet.publicKey) {
     return findKey(this.getAllKeyPackets(), keyIds);  
   } else {
     return null;
@@ -214,7 +214,7 @@ Key.prototype.getPublicKeyPacket = function(keyIds) {
  * @return {(module:packet/secret_subkey|module:packet/secret_key|null)}
  */
 Key.prototype.getPrivateKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.secret_key) {
+  if (this.primaryKey.tag == enums.packet.secretKey) {
     return findKey(this.getAllKeyPackets(), keyIds);  
   } else {
     return null;
@@ -240,7 +240,7 @@ Key.prototype.getUserIds = function() {
  * @return {Boolean}
  */
 Key.prototype.isPublic = function() {
-  return this.primaryKey.tag == enums.packet.public_key;
+  return this.primaryKey.tag == enums.packet.publicKey;
 };
 
 /**
@@ -248,7 +248,7 @@ Key.prototype.isPublic = function() {
  * @return {Boolean}
  */
 Key.prototype.isPrivate = function() {
-  return this.primaryKey.tag == enums.packet.secret_key;
+  return this.primaryKey.tag == enums.packet.secretKey;
 };
 
 /**
@@ -256,20 +256,20 @@ Key.prototype.isPrivate = function() {
  * @return {module:key~Key} new public Key
  */
 Key.prototype.toPublic = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   var keyPackets = this.toPacketlist();
   var bytes;
   for (var i = 0; i < keyPackets.length; i++) {
     switch (keyPackets[i].tag) {
-      case enums.packet.secret_key:
+      case enums.packet.secretKey:
         bytes = keyPackets[i].writePublicKey();
-        var pubKeyPacket = new packet.public_key();
+        var pubKeyPacket = new packet.PublicKey();
         pubKeyPacket.read(bytes);
         packetlist.push(pubKeyPacket);
         break;
-      case enums.packet.secret_subkey:
+      case enums.packet.secretSubkey:
         bytes = keyPackets[i].writePublicKey();
-        var pubSubkeyPacket = new packet.public_subkey();
+        var pubSubkeyPacket = new packet.PublicSubkey();
         pubSubkeyPacket.read(bytes);
         packetlist.push(pubSubkeyPacket);
         break;
@@ -423,7 +423,7 @@ Key.prototype.verifyPrimaryKey = function() {
     return enums.keyStatus.expired;
   }
   // check for at least one self signature. Self signature of user ID not mandatory
-  // See http://tools.ietf.org/html/rfc4880#section-11.1
+  // See {@link http://tools.ietf.org/html/rfc4880#section-11.1}
   var selfSigned = false;
   for (var i = 0; i < this.users.length; i++) {
     if (this.users[i].userId && this.users[i].selfCertifications) {
@@ -487,7 +487,7 @@ function User(userPacket) {
     return new User(userPacket);
   }
   this.userId = userPacket.tag == enums.packet.userid ? userPacket : null;
-  this.userAttribute = userPacket.tag == enums.packet.user_attribute ? userPacket : null;
+  this.userAttribute = userPacket.tag == enums.packet.userAttribute ? userPacket : null;
   this.selfCertifications = null;
   this.otherCertifications = null;
   this.revocationCertifications = null;
@@ -498,7 +498,7 @@ function User(userPacket) {
  * @return {module:packet/packetlist}
  */
 User.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.userId || this.userAttribute);
   packetlist.concat(this.revocationCertifications);
   packetlist.concat(this.selfCertifications);
@@ -604,7 +604,7 @@ function SubKey(subKeyPacket) {
  * @return {module:packet/packetlist}
  */
 SubKey.prototype.toPacketlist = function() {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.push(this.subKey);
   packetlist.push(this.revocationSignature);
   packetlist.push(this.bindingSignature);
@@ -682,9 +682,9 @@ function readArmored(armoredText) {
     if (!(input.type == enums.armor.public_key || input.type == enums.armor.private_key)) {
       throw new Error('Armored text not of type key');
     }
-    var packetlist = new packet.list();
+    var packetlist = new packet.List();
     packetlist.read(input.data);
-    var keyIndex = packetlist.indexOfTag(enums.packet.public_key, enums.packet.secret_key);
+    var keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
       throw new Error('No key packet found in armored text');
     }
@@ -708,8 +708,8 @@ function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {Integer} keyType    to indicate what type of key to make. 
- *                             RSA is 1. See http://tools.ietf.org/html/rfc4880#section-9.1
+ * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} numBits    number of bits for the key creation.
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
@@ -717,20 +717,20 @@ function readArmored(armoredText) {
  * @static
  */
 function generate(keyType, numBits, userId, passphrase) {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
 
-  var secretKeyPacket = new packet.secret_key();
+  var secretKeyPacket = new packet.SecretKey();
   secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
   secretKeyPacket.generate(numBits);
   secretKeyPacket.encrypt(passphrase);
 
-  var userIdPacket = new packet.userid();
+  var userIdPacket = new packet.Userid();
   userIdPacket.read(userId);
 
   var dataToSign = {};
   dataToSign.userid = userIdPacket;
   dataToSign.key = secretKeyPacket;
-  var signaturePacket = new packet.signature();
+  var signaturePacket = new packet.Signature();
   signaturePacket.signatureType = enums.signature.cert_generic;
   signaturePacket.publicKeyAlgorithm = keyType;
   //TODO we should load preferred hash from config, or as input to this function
@@ -738,7 +738,7 @@ function generate(keyType, numBits, userId, passphrase) {
   signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
   signaturePacket.sign(secretKeyPacket, dataToSign);
 
-  var secretSubkeyPacket = new packet.secret_subkey();
+  var secretSubkeyPacket = new packet.SecretSubkey();
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
   secretSubkeyPacket.generate(numBits);
   secretSubkeyPacket.encrypt(passphrase);
@@ -746,7 +746,7 @@ function generate(keyType, numBits, userId, passphrase) {
   dataToSign = {};
   dataToSign.key = secretKeyPacket;
   dataToSign.bind = secretSubkeyPacket;
-  var subkeySignaturePacket = new packet.signature();
+  var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = keyType;
   //TODO we should load preferred hash from config, or as input to this function

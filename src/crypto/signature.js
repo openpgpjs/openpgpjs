@@ -11,8 +11,8 @@ var publicKey = require('./public_key'),
 module.exports = {
   /**
    * 
-   * @param {Integer} algo public Key algorithm
-   * @param {Integer} hash_algo Hash algorithm
+   * @param {module:enums.publicKey} algo public Key algorithm
+   * @param {module:enums.hash} hash_algo Hash algorithm
    * @param {Array<module:type/mpi>} msg_MPIs Signature multiprecision integers
    * @param {Array<module:type/mpi>} publickey_MPIs Public key multiprecision integers 
    * @param {String} data Data on where the signature was computed on.
@@ -62,8 +62,8 @@ module.exports = {
 
   /**
    * Create a signature on data using the specified algorithm
-   * @param {Integer} hash_algo hash Algorithm to use (See RFC4880 9.4)
-   * @param {Integer} algo Asymmetric cipher algorithm to use (See RFC4880 9.1)
+   * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+   * @param {module:enums.publicKey} algo Asymmetric cipher algorithm to use (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Public key multiprecision integers 
    * of the private key 
    * @param {Array<module:type/mpi>} secretMPIs Private key multiprecision 

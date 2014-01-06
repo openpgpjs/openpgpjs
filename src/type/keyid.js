@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id (RFC4880 3.3)<br/>
+ * Implementation of type key id ({@link http://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3})<br/>
  * <br/>
  * A Key ID is an eight-octet scalar that identifies a key.
  * Implementations SHOULD NOT assume that Key IDs are unique.  The
@@ -26,41 +26,42 @@
  * @module type/keyid
  */
 
+module.exports = Keyid;
+
 var util = require('../util');
 
 /**
  * @constructor
  */
-module.exports = function keyid() {
+function Keyid() {
 
   this.bytes = '';
+}
 
-
-  /**
-   * Parsing method for a key id
-   * @param {String} input Input to read the key id from 
-   */
-  this.read = function(bytes) {
-    this.bytes = bytes.substr(0, 8);
-  };
-
-  this.write = function() {
-    return this.bytes;
-  };
-
-  this.toHex = function() {
-    return util.hexstrdump(this.bytes);
-  };
-
-  this.equals = function(keyid) {
-    return this.bytes == keyid.bytes;
-  };
-
-  this.isNull = function() {
-    return this.bytes === '';
-  };
+/**
+ * Parsing method for a key id
+ * @param {String} input Input to read the key id from
+ */
+Keyid.prototype.read = function(bytes) {
+  this.bytes = bytes.substr(0, 8);
 };
 
-module.exports.mapToHex = function(keyId) {
+Keyid.prototype.write = function() {
+  return this.bytes;
+};
+
+Keyid.prototype.toHex = function() {
+  return util.hexstrdump(this.bytes);
+};
+
+Keyid.prototype.equals = function(keyid) {
+  return this.bytes == keyid.bytes;
+};
+
+Keyid.prototype.isNull = function() {
+  return this.bytes === '';
+};
+
+module.exports.mapToHex = function (keyId) {
   return keyId.toHex();
 };

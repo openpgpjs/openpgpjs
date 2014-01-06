@@ -18,7 +18,7 @@
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * RFC4880 5.1: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -39,102 +39,104 @@ var type_s2k = require('../type/s2k.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto');
 
+module.exports = SymEncryptedSessionKey;
+
 /**
  * @constructor
  */
-module.exports = function sym_encrypted_session_key() {
+function SymEncryptedSessionKey() {
   this.tag = 3;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
   this.encrypted = null;
   this.s2k = new type_s2k();
+}
 
-  /**
-   * Parsing function for a symmetric encrypted session key packet (tag 3).
-   * 
-   * @param {String} input Payload of a tag 1 packet
-   * @param {Integer} position Position to start reading from the input string
-   * @param {Integer} len
-   *            Length of the packet or the remaining length of
-   *            input at position
-   * @return {module:packet/sym_encrypted_session_key} Object representation
-   */
-  this.read = function(bytes) {
-    // A one-octet version number. The only currently defined version is 4.
-    this.version = bytes.charCodeAt(0);
+/**
+ * Parsing function for a symmetric encrypted session key packet (tag 3).
+ *
+ * @param {String} input Payload of a tag 1 packet
+ * @param {Integer} position Position to start reading from the input string
+ * @param {Integer} len
+ *            Length of the packet or the remaining length of
+ *            input at position
+ * @return {module:packet/sym_encrypted_session_key} Object representation
+ */
+SymEncryptedSessionKey.prototype.read = function(bytes) {
+  // A one-octet version number. The only currently defined version is 4.
+  this.version = bytes.charCodeAt(0);
 
-    // A one-octet number describing the symmetric algorithm used.
-    var algo = enums.read(enums.symmetric, bytes.charCodeAt(1));
+  // A one-octet number describing the symmetric algorithm used.
+  var algo = enums.read(enums.symmetric, bytes.charCodeAt(1));
 
-    // A string-to-key (S2K) specifier, length as defined above.
-    var s2klength = this.s2k.read(bytes.substr(2));
+  // A string-to-key (S2K) specifier, length as defined above.
+  var s2klength = this.s2k.read(bytes.substr(2));
 
-    // Optionally, the encrypted session key itself, which is decrypted
-    // with the string-to-key object.
-    var done = s2klength + 2;
+  // Optionally, the encrypted session key itself, which is decrypted
+  // with the string-to-key object.
+  var done = s2klength + 2;
 
-    if (done < bytes.length) {
-      this.encrypted = bytes.substr(done);
-      this.sessionKeyEncryptionAlgorithm = algo;
-    } else
-      this.sessionKeyAlgorithm = algo;
-  };
+  if (done < bytes.length) {
+    this.encrypted = bytes.substr(done);
+    this.sessionKeyEncryptionAlgorithm = algo;
+  } else
+    this.sessionKeyAlgorithm = algo;
+};
 
-  this.write = function() {
-    var algo = this.encrypted === null ?
-      this.sessionKeyAlgorithm :
-      this.sessionKeyEncryptionAlgorithm;
+SymEncryptedSessionKey.prototype.write = function() {
+  var algo = this.encrypted === null ?
+    this.sessionKeyAlgorithm :
+    this.sessionKeyEncryptionAlgorithm;
 
-    var bytes = String.fromCharCode(this.version) +
-      String.fromCharCode(enums.write(enums.symmetric, algo)) +
-      this.s2k.write();
+  var bytes = String.fromCharCode(this.version) +
+    String.fromCharCode(enums.write(enums.symmetric, algo)) +
+    this.s2k.write();
 
-    if (this.encrypted !== null)
-      bytes += this.encrypted;
-    return bytes;
-  };
+  if (this.encrypted !== null)
+    bytes += this.encrypted;
+  return bytes;
+};
 
-  /**
-   * Decrypts the session key (only for public key encrypted session key
-   * packets (tag 1)
-   * 
-   * @return {String} The unencrypted session key
-   */
-  this.decrypt = function(passphrase) {
-    var algo = this.sessionKeyEncryptionAlgorithm !== null ?
-      this.sessionKeyEncryptionAlgorithm :
-      this.sessionKeyAlgorithm;
+/**
+ * Decrypts the session key (only for public key encrypted session key
+ * packets (tag 1)
+ *
+ * @return {String} The unencrypted session key
+ */
+SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
+  var algo = this.sessionKeyEncryptionAlgorithm !== null ?
+    this.sessionKeyEncryptionAlgorithm :
+    this.sessionKeyAlgorithm;
 
 
-    var length = crypto.cipher[algo].keySize;
-    var key = this.s2k.produce_key(passphrase, length);
+  var length = crypto.cipher[algo].keySize;
+  var key = this.s2k.produce_key(passphrase, length);
 
-    if (this.encrypted === null) {
-      this.sessionKey = key;
+  if (this.encrypted === null) {
+    this.sessionKey = key;
 
-    } else {
-      var decrypted = crypto.cfb.decrypt(
-        this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
+  } else {
+    var decrypted = crypto.cfb.decrypt(
+      this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
 
-      this.sessionKeyAlgorithm = enums.read(enums.symmetric,
-        decrypted[0].keyCodeAt());
+    this.sessionKeyAlgorithm = enums.read(enums.symmetric,
+      decrypted[0].keyCodeAt());
 
-      this.sessionKey = decrypted.substr(1);
-    }
-  };
+    this.sessionKey = decrypted.substr(1);
+  }
+};
 
-  this.encrypt = function(passphrase) {
-    var length = crypto.getKeyLength(this.sessionKeyEncryptionAlgorithm);
-    var key = this.s2k.produce_key(passphrase, length);
+SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
+  var length = crypto.getKeyLength(this.sessionKeyEncryptionAlgorithm);
+  var key = this.s2k.produce_key(passphrase, length);
 
-    var private_key = String.fromCharCode(
-      enums.write(enums.symmetric, this.sessionKeyAlgorithm)) +
+  var private_key = String.fromCharCode(
+    enums.write(enums.symmetric, this.sessionKeyAlgorithm)) +
 
-    crypto.getRandomBytes(
-      crypto.getKeyLength(this.sessionKeyAlgorithm));
+  crypto.getRandomBytes(
+    crypto.getKeyLength(this.sessionKeyAlgorithm));
 
-    this.encrypted = crypto.cfb.encrypt(
-      crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm),
-      this.sessionKeyEncryptionAlgorithm, key, private_key, true);
-  };
+  this.encrypted = crypto.cfb.encrypt(
+    crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm),
+    this.sessionKeyEncryptionAlgorithm, key, private_key, true);
 };

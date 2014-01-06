@@ -2,9 +2,10 @@
  * @module packet/trust
  */
 
+module.exports = Trust;
+
 /**
  * @constructor
  */
-module.exports = function trust() {
-
+function Trust() {
 };

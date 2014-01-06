@@ -62,14 +62,14 @@ var packet = require('./packet'),
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
  * @param  {module:packet/packetlist} packetlist The packets that form this message
- * See http://tools.ietf.org/html/rfc4880#section-11.3
+ * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
 function Message(packetlist) {
   if (!(this instanceof Message)) {
     return new Message(packetlist);
   }
-  this.packets = packetlist || new packet.list();
+  this.packets = packetlist || new packet.List();
 }
 
 /**
@@ -78,7 +78,7 @@ function Message(packetlist) {
  */
 Message.prototype.getEncryptionKeyIds = function() {
   var keyIds = [];
-  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
+  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   pkESKeyPacketlist.forEach(function(packet) {
     keyIds.push(packet.publicKeyId);
   });
@@ -93,7 +93,7 @@ Message.prototype.getSigningKeyIds = function() {
   var keyIds = [];
   var msg = this.unwrapCompressed();
   // search for one pass signatures
-  var onePassSigList = msg.packets.filterByTag(enums.packet.one_pass_signature);
+  var onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
   onePassSigList.forEach(function(packet) {
     keyIds.push(packet.signingKeyId);
   });
@@ -120,7 +120,7 @@ Message.prototype.decrypt = function(privateKey) {
   }
   var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds);
   if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.public_key_encrypted_session_key);
+  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   var pkESKeyPacket;
   for (var i = 0; i &lt; pkESKeyPacketlist.length; i++) {
     if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
@@ -130,7 +130,7 @@ Message.prototype.decrypt = function(privateKey) {
     }
   }
   if (pkESKeyPacket) {
-    var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetrically_encrypted, enums.packet.sym_encrypted_integrity_protected);
+    var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
     if (symEncryptedPacketlist.length !== 0) {
       var symEncryptedPacket = symEncryptedPacketlist[0];
       symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
@@ -167,13 +167,13 @@ Message.prototype.getText = function() {
  * @return {Array&lt;module:message~Message>} new message with encrypted content
  */
 Message.prototype.encrypt = function(keys) {
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   //TODO get preferred algo from signature
   var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
   keys.forEach(function(key) {
     var encryptionKeyPacket = key.getEncryptionKeyPacket();
     if (encryptionKeyPacket) {
-      var pkESKeyPacket = new packet.public_key_encrypted_session_key();
+      var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
       pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
@@ -187,9 +187,9 @@ Message.prototype.encrypt = function(keys) {
   });
   var symEncryptedPacket;
   if (config.integrity_protect) {
-    symEncryptedPacket = new packet.sym_encrypted_integrity_protected();
+    symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
-    symEncryptedPacket = new packet.symmetrically_encrypted();
+    symEncryptedPacket = new packet.SymmetricallyEncrypted();
   }
   symEncryptedPacket.packets = this.packets;
   //TODO get preferred algo from signature
@@ -205,17 +205,17 @@ Message.prototype.encrypt = function(keys) {
  */
 Message.prototype.sign = function(privateKeys) {
 
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
 
   var literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) throw new Error('No literal data packet to sign.');
   
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  var signatureType = literalFormat == enums.literal.binary 
-                      ? enums.signature.binary : enums.signature.text; 
-  
-  for (var i = 0; i &lt; privateKeys.length; i++) {
-    var onePassSig = new packet.one_pass_signature();
+  var signatureType = literalFormat == enums.literal.binary ?
+                      enums.signature.binary : enums.signature.text;
+  var i;
+  for (i = 0; i &lt; privateKeys.length; i++) {
+    var onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
@@ -230,8 +230,8 @@ Message.prototype.sign = function(privateKeys) {
 
   packetlist.push(literalDataPacket);
   
-  for (var i = privateKeys.length - 1; i >= 0; i--) {
-    var signaturePacket = new packet.signature();
+  for (i = privateKeys.length - 1; i >= 0; i--) {
+    var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
@@ -300,7 +300,7 @@ function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   var input = armor.decode(armoredText).data;
-  var packetlist = new packet.list();
+  var packetlist = new packet.List();
   packetlist.read(input);
   var newMessage = new Message(packetlist);
   return newMessage;
@@ -313,10 +313,10 @@ function readArmored(armoredText) {
  * @static
  */
 function fromText(text) {
-  var literalDataPacket = new packet.literal();
+  var literalDataPacket = new packet.Literal();
   // text will be converted to UTF8
   literalDataPacket.setText(text);
-  var literalDataPacketlist = new packet.list();
+  var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
   return newMessage;
@@ -329,9 +329,9 @@ function fromText(text) {
  * @static
  */
 function fromBinary(bytes) {
-  var literalDataPacket = new packet.literal();
+  var literalDataPacket = new packet.Literal();
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
-  var literalDataPacketlist = new packet.list();
+  var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
   return newMessage;
@@ -351,13 +351,13 @@ exports.fromBinary = fromBinary;
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">Util</a></li><li><a href="module-cleartext-CleartextMessage.html">CleartextMessage</a></li><li><a href="module-key-Key.html">Key</a></li><li><a href="module-key-SubKey.html">SubKey</a></li><li><a href="module-key-User.html">User</a></li><li><a href="module-message-Message.html">Message</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-armor.html">armor</a></li><li><a href="module-cleartext.html">cleartext</a></li><li><a href="module-config.html">config</a></li><li><a href="config.html">config/config</a></li><li><a href="localStorage.html">config/localStorage</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="cfb.html">crypto/cfb</a></li><li><a href="cipher.html">crypto/cipher</a></li><li><a href="aes.html">crypto/cipher/aes</a></li><li><a href="blowfish.html">crypto/cipher/blowfish</a></li><li><a href="cast5.html">crypto/cipher/cast5</a></li><li><a href="des.html">crypto/cipher/des</a></li><li><a href="twofish.html">crypto/cipher/twofish</a></li><li><a href="crypto.html">crypto/crypto</a></li><li><a href="hash.html">crypto/hash</a></li><li><a href="md5.html">crypto/hash/md5</a></li><li><a href="ripe-md.html">crypto/hash/ripe-md</a></li><li><a href="sha.html">crypto/hash/sha</a></li><li><a href="pkcs1.html">crypto/pkcs1</a></li><li><a href="public_key.html">crypto/public_key</a></li><li><a href="dsa.html">crypto/public_key/dsa</a></li><li><a href="elgamal.html">crypto/public_key/elgamal</a></li><li><a href="jsbn.html">crypto/public_key/jsbn</a></li><li><a href="rsa.html">crypto/public_key/rsa</a></li><li><a href="random.html">crypto/random</a></li><li><a href="signature.html">crypto/signature</a></li><li><a href="armor.html">encoding/armor</a></li><li><a href="base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key.html">key</a></li><li><a href="module-keyid.html">keyid</a></li><li><a href="keyring.html">keyring/keyring</a></li><li><a href="localstore.html">keyring/localstore</a></li><li><a href="module-message.html">message</a></li><li><a href="module-mpi.html">mpi</a></li><li><a href="module-openpgp.html">openpgp</a></li><li><a href="module-packet.html">packet</a></li><li><a href="compressed.html">packet/compressed</a></li><li><a href="literal.html">packet/literal</a></li><li><a href="marker.html">packet/marker</a></li><li><a href="one_pass_signature.html">packet/one_pass_signature</a></li><li><a href="packet.html">packet/packet</a></li><li><a href="packetlist.html">packet/packetlist</a></li><li><a href="public_key_.html">packet/public_key</a></li><li><a href="public_key_encrypted_session_key.html">packet/public_key_encrypted_session_key</a></li><li><a href="public_subkey.html">packet/public_subkey</a></li><li><a href="secret_key.html">packet/secret_key</a></li><li><a href="secret_subkey.html">packet/secret_subkey</a></li><li><a href="signature_.html">packet/signature</a></li><li><a href="sym_encrypted_integrity_protected.html">packet/sym_encrypted_integrity_protected</a></li><li><a href="sym_encrypted_session_key.html">packet/sym_encrypted_session_key</a></li><li><a href="symmetrically_encrypted.html">packet/symmetrically_encrypted</a></li><li><a href="trust.html">packet/trust</a></li><li><a href="user_attribute.html">packet/user_attribute</a></li><li><a href="userid.html">packet/userid</a></li><li><a href="module-s2k.html">s2k</a></li><li><a href="keyid.html">type/keyid</a></li><li><a href="mpi.html">type/mpi</a></li><li><a href="s2k.html">type/s2k</a></li><li><a href="module-util.html">util</a></li><li><a href="util.html">util/util</a></li></ul><h3>Classes</h3><ul><li><a href="JXG.Util.html">JXG.Util</a></li><li><a href="module-cleartext-CleartextMessage.html">cleartext~CleartextMessage</a></li><li><a href="localStorage-LocalStorage.html">config/localStorage~LocalStorage</a></li><li><a href="keyring-Keyring.html">keyring/keyring~Keyring</a></li><li><a href="module-key-Key.html">key~Key</a></li><li><a href="module-key-SubKey.html">key~SubKey</a></li><li><a href="module-key-User.html">key~User</a></li><li><a href="module-message-Message.html">message~Message</a></li><li><a href="compressed-Compressed.html">packet/compressed~Compressed</a></li><li><a href="literal-Literal.html">packet/literal~Literal</a></li><li><a href="marker-Marker.html">packet/marker~Marker</a></li><li><a href="one_pass_signature-OnePassSignature.html">packet/one_pass_signature~OnePassSignature</a></li><li><a href="packetlist-Packetlist.html">packet/packetlist~Packetlist</a></li><li><a href="public_key_encrypted_session_key-PublicKeyEncryptedSessionKey.html">packet/public_key_encrypted_session_key~PublicKeyEncryptedSessionKey</a></li><li><a href="public_key-PublicKey.html">packet/public_key~PublicKey</a></li><li><a href="public_subkey-PublicSubkey.html">packet/public_subkey~PublicSubkey</a></li><li><a href="secret_key-SecretKey.html">packet/secret_key~SecretKey</a></li><li><a href="secret_subkey-SecretSubkey.html">packet/secret_subkey~SecretSubkey</a></li><li><a href="signature-Signature.html">packet/signature~Signature</a></li><li><a href="sym_encrypted_integrity_protected-SymEncryptedIntegrityProtected.html">packet/sym_encrypted_integrity_protected~SymEncryptedIntegrityProtected</a></li><li><a href="sym_encrypted_session_key-SymEncryptedSessionKey.html">packet/sym_encrypted_session_key~SymEncryptedSessionKey</a></li><li><a href="symmetrically_encrypted-SymmetricallyEncrypted.html">packet/symmetrically_encrypted~SymmetricallyEncrypted</a></li><li><a href="trust-Trust.html">packet/trust~Trust</a></li><li><a href="user_attribute-UserAttribute.html">packet/user_attribute~UserAttribute</a></li><li><a href="userid-Userid.html">packet/userid~Userid</a></li><li><a href="keyid-Keyid.html">type/keyid~Keyid</a></li><li><a href="mpi-Mpi.html">type/mpi~Mpi</a></li><li><a href="s2k-S2k.html">type/s2k~S2k</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Thu Jan 02 2014 13:02:39 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Sun Jan 05 2014 23:07:43 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
