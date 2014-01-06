@@ -42,21 +42,11 @@ module.exports = function(grunt) {
       },
       unittests: {
         files: {
-          'test/lib/test-bundle.js': []
+          'test/lib/unittests-bundle.js': []
         },
         options: {
           debug: true,
-          alias: './test/test-all.js:unittests',
-          external: [ 'openpgp', 'keyring' ]
-        }
-      },
-      ci_tests: {
-        files: {
-          'test/lib/ci-tests-bundle.js': []
-        },
-        options: {
-          debug: true,
-          alias: './test/ci-tests-all.js:ci-tests',
+          alias: './test/unittests.js:unittests',
           external: [ 'openpgp', 'keyring' ]
         }
       }
@@ -120,7 +110,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
-        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'sinon/pkg/sinon.js'],
+        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js'],
         dest: 'test/lib/'
       }
     }
@@ -147,10 +137,11 @@ module.exports = function(grunt) {
   // Alias the `mocha_phantomjs` task to run `mocha-phantomjs`
   grunt.registerTask('mocha_phantomjs', 'mocha-phantomjs', function () {
     var done = this.async();
-    require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/ci-tests.html', function (err, stdout) {
-      grunt.log.write(stdout);
+    var mocha = require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/unittests.html', function (err) {
       done(err);
     });
+    mocha.stdout.pipe(process.stdout);
+    mocha.stderr.pipe(process.stderr);
   });
 
   // Test/Dev tasks

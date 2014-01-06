@@ -17,7 +17,6 @@
     "mocha-phantomjs": "~3.1.6",
     "phantomjs": "~1.9.2-5",
     "chai": "~1.8.1",
-    "sinon": "~1.7.3",
     "grunt-contrib-copy": "~0.4.1",
     "grunt-browserify": "~1.2.11",
     "grunt-contrib-uglify": "*",

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>OpenPGPJS Continuous Integration Tests</title>
+    <title>OpenPGPJS Unit Tests</title>
     <link rel="stylesheet" href="lib/mocha.css" />
 
   </head>
@@ -13,14 +13,13 @@
     <script src="../resources/openpgp.js"></script>
     <script src="../resources/keyring.js"></script>
     <script src="lib/chai.js"></script>
-    <script src="lib/sinon.js"></script>
     <script src="lib/mocha.js"></script>
     <script>
         mocha.setup('bdd');
     </script>
-    <script src="lib/ci-tests-bundle.js"></script>
+    <script src="lib/unittests-bundle.js"></script>
     <script>
-        require('ci-tests');
+        require('unittests');
         if (window.mochaPhantomJS) {
           mochaPhantomJS.run();
         } else {

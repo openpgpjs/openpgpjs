@@ -1,11 +1,10 @@
-var unit = require('../../unit.js');
+'use strict';
 
-unit.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", function() {
-  var openpgp = require('openpgp');
-  var util = openpgp.util;
+var openpgp = require('openpgp'),
+  util = openpgp.util,
+  expect = chai.expect;
 
-  var result = new Array();
-
+describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function() {
   function test_aes(input, key, output) {
     var aes = new openpgp.crypto.cipher.aes128(util.bin2str(key));
 
@@ -62,60 +61,33 @@ unit.register("AES Rijndael cipher test with test vectors from ecb_tbl.txt", fun
               [[0x08,0x09,0x0A,0x0B,0x0D,0x0E,0x0F,0x10,0x12,0x13,0x14,0x15,0x17,0x18,0x19,0x1A,0x1C,0x1D,0x1E,0x1F,0x21,0x22,0x23,0x24,0x26,0x27,0x28,0x29,0x2B,0x2C,0x2D,0x2E],[0x06,0x9A,0x00,0x7F,0xC7,0x6A,0x45,0x9F,0x98,0xBA,0xF9,0x17,0xFE,0xDF,0x95,0x21],[0x08,0x0E,0x95,0x17,0xEB,0x16,0x77,0x71,0x9A,0xCF,0x72,0x80,0x86,0x04,0x0A,0xE3]],
               [[0x30,0x31,0x32,0x33,0x35,0x36,0x37,0x38,0x3A,0x3B,0x3C,0x3D,0x3F,0x40,0x41,0x42,0x44,0x45,0x46,0x47,0x49,0x4A,0x4B,0x4C,0x4E,0x4F,0x50,0x51,0x53,0x54,0x55,0x56],[0x72,0x61,0x65,0xC1,0x72,0x3F,0xBC,0xF6,0xC0,0x26,0xD7,0xD0,0x0B,0x09,0x10,0x27],[0x7C,0x17,0x00,0x21,0x1A,0x39,0x91,0xFC,0x0E,0xCD,0xED,0x0A,0xB3,0xE5,0x76,0xB0]]];
 
-  var res = true;
-  var j = 0;
-  for (var i = 0; i < testvectors128.length; i++) {
-    var res2 = test_aes(testvectors128[i][1],testvectors128[i][0],testvectors128[i][2]);
-    res &= res2;
-    if (!res2) {
-      result[j] = new unit.result("Testing 128 bit key vector with block "+
-        util.hexidump(testvectors128[i][1])+
-        " and key "+util.hexidump(testvectors128[i][0])+
-        " should be "+util.hexidump(testvectors128[i][2]),
-        false);
-      j++;
+  it('128 bit key', function (done) {
+    for (var i = 0; i < testvectors128.length; i++) {
+      var res = test_aes(testvectors128[i][1],testvectors128[i][0],testvectors128[i][2]);
+      expect(res, 'block ' + util.hexidump(testvectors128[i][1]) +
+                  ' and key '+util.hexidump(testvectors128[i][0]) +
+                  ' should be '+util.hexidump(testvectors128[i][2])).to.be.true;
     }
-  }
-  if (res) {
-    result[j] = new unit.result("128 bit key test vectors completed.",true)
-    j++;
-  }
-  
-  res = true;
-  for (var i = 0; i < testvectors192.length; i++) {
-    var res2 = test_aes(testvectors192[i][1],testvectors192[i][0],testvectors192[i][2]);
-    res &= res2;
-    if (!res2) {
-      result[j] = new unit.result("Testing 192 bit key vector with block "+
-        util.hexidump(testvectors192[i][1])+
-        " and key "+util.hexidump(testvectors192[i][0])+
-        " should be "+util.hexidump(testvectors192[i][2]),
-        false);
-      j++;
-    }
-  }
-  if (res) {
-    result[j] = new unit.result("192 bit key test vectors completed.",true)
-    j++;
-  }
+    done();
+  });
 
-  res = true;
-  for (var i = 0; i < testvectors256.length; i++) {
-    var res2 = test_aes(testvectors256[i][1],testvectors256[i][0],testvectors256[i][2]);
-    res &= res2;
-    if (!res2) {
-      result[j] = new unit.result("Testing 256 bit key vector with block "+
-        util.hexidump(testvectors256[i][1])+
-        " and key "+util.hexidump(testvectors256[i][0])+
-        " should be "+util.hexidump(testvectors256[i][2]),
-        false);
-      j++;
+  it('192 bit key', function (done) {
+    for (var i = 0; i < testvectors192.length; i++) {
+      var res = test_aes(testvectors192[i][1],testvectors192[i][0],testvectors192[i][2]);
+      expect(res, 'block ' + util.hexidump(testvectors192[i][1]) +
+                  ' and key ' + util.hexidump(testvectors192[i][0])+
+                  ' should be ' + util.hexidump(testvectors192[i][2])).to.be.true;
     }
-  }
-  if (res) {
-    result[j] = new unit.result("256 bit key test vectors completed.", true)
-    j++;
-  }
+    done();
+  });
 
-  return result;
+  it('256 bit key', function (done) {
+    for (var i = 0; i < testvectors256.length; i++) {
+      var res = test_aes(testvectors256[i][1],testvectors256[i][0],testvectors256[i][2]);
+      expect(res, 'block ' + util.hexidump(testvectors256[i][1]) +
+                  ' and key ' + util.hexidump(testvectors256[i][0]) +
+                  ' should be ' + util.hexidump(testvectors256[i][2]));
+    }
+    done();
+  });
 });
