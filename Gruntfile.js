@@ -9,7 +9,8 @@ module.exports = function(grunt) {
           'resources/openpgp_nodebug.js': []
         },
         options: {
-          alias: './src/:openpgp'
+          alias: './src/:openpgp',
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       openpgp: {
@@ -18,7 +19,8 @@ module.exports = function(grunt) {
         },
         options: {
           debug: true,
-          alias: './src/:openpgp'
+          alias: './src/:openpgp',
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       keyring_nodebug: {
@@ -27,7 +29,7 @@ module.exports = function(grunt) {
         },
         options: {
           alias: './src/keyring/:keyring',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'node-localstorage' ]
         }
       },
       keyring: {
@@ -37,7 +39,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           alias: './src/keyring/:keyring',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'node-localstorage' ]
         }
       },
       unittests: {
@@ -47,7 +49,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           alias: './test/unittests.js:unittests',
-          external: [ 'openpgp', 'keyring' ]
+          external: [ 'openpgp', 'keyring', 'node-localstorage' ]
         }
       }
     },
@@ -80,6 +82,8 @@ module.exports = function(grunt) {
         banner: '/*! OpenPGPjs.org  this is LGPL licensed code, see LICENSE/our website for more information.- v<%= pkg.version %> - ' +
           '<%= grunt.template.today("yyyy-mm-dd") %> */'
       }
+    },
+    prepare_install: {
     },
     jsbeautifier : {
       files : ["src/**/*.js"],
@@ -120,6 +124,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-text-replace');
+  grunt.loadNpmTasks('grunt-prepare-install');
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-jsdoc');

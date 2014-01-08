@@ -4,7 +4,11 @@
   "engines": {
     "node": ">=0.8"
   },
-  "main": "./src/index.js",
+  "directories": {
+    "lib": "src"
+  },
+  "main": "src/index.js",
+  "files": [ "src" ],
   "scripts": {
     "pretest": "grunt",
     "test": "grunt test"

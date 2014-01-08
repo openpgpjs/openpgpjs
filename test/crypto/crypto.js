@@ -1,8 +1,8 @@
-var openpgp = require('openpgp');
-
 'use strict';
 
-var expect = chai.expect;
+var openpgp = require('openpgp'),
+	chai = require('chai'),
+	expect = chai.expect;
 
 describe('API functional testing', function() {
   var util = openpgp.util;

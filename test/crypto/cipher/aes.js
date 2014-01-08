@@ -2,6 +2,7 @@
 
 var openpgp = require('openpgp'),
   util = openpgp.util,
+  chai = require('chai'),
   expect = chai.expect;
 
 describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function() {

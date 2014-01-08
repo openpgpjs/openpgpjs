@@ -1,8 +1,8 @@
-var openpgp = require('openpgp');
-
 'use strict';
 
-var expect = chai.expect;
+var openpgp = require('openpgp'),
+	chai = require('chai'),
+	expect = chai.expect;
 
 describe("Signature", function() {
   var priv_key_arm1 =

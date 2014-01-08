@@ -32,7 +32,16 @@ function LocalStore() {
  * @return {Array<module:key~Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.load = function () {
-  var armoredKeys = JSON.parse(window.localStorage.getItem("armoredKeys"));
+  var storage = null;
+  try {
+    storage = window.localStorage;
+  } catch (e) {
+  }
+
+  if (storage === null) {
+    storage = new (require('node-localstorage').LocalStorage)('./keyring.store');
+  }
+  var armoredKeys = JSON.parse(storage.getItem("armoredKeys"));
   var keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;

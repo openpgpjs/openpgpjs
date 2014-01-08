@@ -2,6 +2,7 @@
 
 var openpgp = require('openpgp'),
   keyring = new (require('keyring'))(),
+  chai = require('chai'),
   expect = chai.expect;
 
 describe("Keyring", function() {

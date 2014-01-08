@@ -3,6 +3,7 @@
 var openpgp = require('openpgp'),
   util = openpgp.util,
   hash = openpgp.crypto.hash,
+  chai = require('chai'),
   expect = chai.expect;
 
 it('SHA* with test vectors from NIST FIPS 180-2', function(done) {

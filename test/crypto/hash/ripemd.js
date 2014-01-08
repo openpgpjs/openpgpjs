@@ -3,6 +3,7 @@
 var openpgp = require('openpgp'),
   util = openpgp.util,
   RMDstring = openpgp.crypto.hash.ripemd,
+  chai = require('chai'),
   expect = chai.expect;
 
 it("RIPE-MD 160 bits with test vectors from http://homes.esat.kuleuven.be/~bosselae/ripemd160.html", function(done) {
