@@ -28,7 +28,7 @@ module.exports = function(grunt) {
           'dist/openpgp-sa_nodebug.js': [ './src/index.js' ]
         },
         options: {
-          standalone: 'openpgpsa',
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
@@ -38,7 +38,7 @@ module.exports = function(grunt) {
         },
         options: {
           debug: true,
-          standalone: 'openpgpsa',
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
