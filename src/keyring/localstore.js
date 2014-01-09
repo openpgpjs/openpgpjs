@@ -22,7 +22,7 @@
  */
 module.exports = LocalStore;
 
-var openpgp = require('openpgp');
+var openpgp = require('../');
 
 function LocalStore() {
   if (typeof window != 'undefined' && window.localStorage) {
