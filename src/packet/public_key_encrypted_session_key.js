@@ -40,7 +40,7 @@
 module.exports = PublicKeyEncryptedSessionKey;
 
 var type_keyid = require('../type/keyid.js'),
-  util = require('../util'),
+  util = require('../util.js'),
   type_mpi = require('../type/mpi.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto');

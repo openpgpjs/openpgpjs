@@ -33,7 +33,7 @@
 
 module.exports = Signature;
 
-var util = require('../util'),
+var util = require('../util.js'),
   packet = require('./packet.js'),
   enums = require('../enums.js'),
   crypto = require('../crypto'),

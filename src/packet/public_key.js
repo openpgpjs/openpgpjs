@@ -32,7 +32,7 @@
 
 module.exports = PublicKey;
 
-var util = require('../util'),
+var util = require('../util.js'),
   type_mpi = require('../type/mpi.js'),
   type_keyid = require('../type/keyid.js'),
   enums = require('../enums.js'),

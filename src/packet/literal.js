@@ -27,7 +27,7 @@
 
 module.exports = Literal;
 
-var util = require('../util'),
+var util = require('../util.js'),
   enums = require('../enums.js');
 
 /**

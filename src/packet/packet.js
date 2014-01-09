@@ -22,7 +22,7 @@
  */
 
 var enums = require('../enums.js'),
-  util = require('../util');
+  util = require('../util.js');
 
 module.exports = {
   readSimpleLength: function(bytes) {

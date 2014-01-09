@@ -29,7 +29,7 @@
 
 module.exports = Userid;
 
-var util = require('../util');
+var util = require('../util.js');
 
 /**
  * @constructor

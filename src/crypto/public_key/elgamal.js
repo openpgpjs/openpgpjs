@@ -26,7 +26,7 @@
 
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
-  util = require('../../util');
+  util = require('../../util.js');
 
 function Elgamal() {
 

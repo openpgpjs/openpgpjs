@@ -28,7 +28,7 @@
 
 module.exports = Keyid;
 
-var util = require('../util');
+var util = require('../util.js');
 
 /**
  * @constructor

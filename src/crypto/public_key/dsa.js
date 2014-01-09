@@ -28,7 +28,7 @@
 var BigInteger = require('./jsbn.js'),
   random = require('../random.js'),
   hashModule = require('../hash'),
-  util = require('../../util'),
+  util = require('../../util.js'),
   config = require('../../config');
 
 function DSA() {

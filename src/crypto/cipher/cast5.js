@@ -591,7 +591,7 @@ function openpgp_symenc_cast5() {
     0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e);
 
 }
-var util = require('../../util');
+var util = require('../../util.js');
 
 function cast5(key) {
   this.cast5 = new openpgp_symenc_cast5();

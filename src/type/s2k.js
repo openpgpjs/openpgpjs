@@ -32,7 +32,7 @@
 module.exports = S2K;
 
 var enums = require('../enums.js'),
-  util = require('../util'),
+  util = require('../util.js'),
   crypto = require('../crypto');
 
 /**

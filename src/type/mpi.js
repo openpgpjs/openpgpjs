@@ -37,7 +37,7 @@
 module.exports = MPI;
 
 var BigInteger = require('../crypto/public_key/jsbn.js'),
-  util = require('../util');
+  util = require('../util.js');
 
 /**
  * @constructor

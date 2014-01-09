@@ -4,7 +4,14 @@
   "engines": {
     "node": ">=0.8"
   },
-  "main": "./src/index.js",
+  "main": "src/index.js",
+  "directories": {
+    "lib": "src"
+  },
+  "files": [
+    "src",
+    "test"
+  ],
   "scripts": {
     "pretest": "grunt",
     "test": "grunt test"
@@ -22,6 +29,14 @@
     "grunt-text-replace": "*",
     "grunt-jsbeautifier": "*",
     "grunt-contrib-jshint": "*",
-    "grunt-jsdoc": "*"
+    "grunt-jsdoc": "*",
+    "grunt-mocha-test": "~0.8.1"
+  },
+  "dependencies": {
+    "node-localstorage": "~0.3.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/openpgpjs/openpgpjs"
   }
 }
