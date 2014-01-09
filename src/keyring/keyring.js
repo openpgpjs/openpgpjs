@@ -21,7 +21,7 @@
  * @module keyring/keyring
  */
 
-var openpgp = require('openpgp');
+var openpgp = require('../');
 
 /**
  * Callback to check if a key matches the input
