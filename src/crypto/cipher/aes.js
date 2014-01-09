@@ -16,7 +16,7 @@
  * @module crypto/cipher/aes
  */
 
-var util = require('../../util');
+var util = require('../../util.js');
 
 // The round constants used in subkey expansion
 var Rcon = [

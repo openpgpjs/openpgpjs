@@ -43,5 +43,7 @@ module.exports = {
   versionstring: "OpenPGP.js VERSION",
   commentstring: "http://openpgpjs.org",
 
+  node_store: './openpgp.store',
+
   debug: false
 };

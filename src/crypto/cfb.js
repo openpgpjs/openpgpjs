@@ -21,7 +21,7 @@
  * @module crypto/cfb
  */
 
-var util = require('../util'),
+var util = require('../util.js'),
   cipher = require('./cipher');
 
 module.exports = {

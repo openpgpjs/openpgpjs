@@ -37,7 +37,7 @@
  * @module crypto/public_key/jsbn
  */
 
-var util = require('../../util');
+var util = require('../../util.js');
 
 // Basic JavaScript BN library - subset useful for RSA encryption.
 

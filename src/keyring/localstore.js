@@ -39,7 +39,7 @@ LocalStore.prototype.load = function () {
   }
 
   if (storage === null) {
-    storage = new (require('node-localstorage').LocalStorage)('./keyring.store');
+    storage = new (require('node-localstorage').LocalStorage)(openpgp.config.node_store);
   }
   var armoredKeys = JSON.parse(storage.getItem("armoredKeys"));
   var keys = [];

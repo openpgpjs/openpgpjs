@@ -1,7 +1,7 @@
 'use strict';
 
 var openpgp = require('openpgp'),
-  keyring = new (require('keyring'))(),
+  keyring = new openpgp.Keyring(),
   chai = require('chai'),
   expect = chai.expect;
 

@@ -17,7 +17,7 @@
  * @module crypto/hash/md5
  */
 
-var util = require('../../util');
+var util = require('../../util.js');
 
 /**
  * MD5 hash

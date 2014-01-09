@@ -361,7 +361,7 @@ function des_removePadding(message, padding) {
 }
 
 
-var util = require('../../util');
+var util = require('../../util.js');
 
 // added by Recurity Labs
 

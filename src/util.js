@@ -18,10 +18,10 @@
 /**
  * This object contains utility functions
  * @requires config
- * @module util/util
+ * @module util
  */
 
-var config = require('../config');
+var config = require('./config');
 
 module.exports = {
   readNumber: function (bytes) {
@@ -194,7 +194,7 @@ module.exports = {
   /**
    * Convert a Uint8Array to a string. This currently functions 
    * the same as bin2str.
-   * @function module:util/util.Uint8Array2str
+   * @function module:util.Uint8Array2str
    * @param {Uint8Array} bin An array of (binary) integers to convert
    * @return {String} String representation of the array
    */

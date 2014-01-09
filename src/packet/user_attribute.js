@@ -35,7 +35,7 @@
  * @module packet/user_attribute
  */
 
-var util = require('../util'),
+var util = require('../util.js'),
   packet = require('./packet.js');
 
 module.exports = UserAttribute;

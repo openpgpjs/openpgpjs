@@ -122,7 +122,7 @@ describe("Packet", function() {
 		var mpi = [mpi.n, mpi.ee, mpi.d, mpi.p, mpi.q, mpi.u];
 
 		mpi = mpi.map(function(k) {
-				var mpi = new openpgp.mpi();
+				var mpi = new openpgp.MPI();
 				mpi.fromBigInteger(k);
 				return mpi;
 		});
@@ -386,7 +386,7 @@ describe("Packet", function() {
 		var mpi = [mpi.n, mpi.ee, mpi.d, mpi.p, mpi.q, mpi.u];
 
 		mpi = mpi.map(function(k) {
-				var mpi = new openpgp.mpi();
+				var mpi = new openpgp.MPI();
 				mpi.fromBigInteger(k);
 				return mpi;
 		});
@@ -414,7 +414,7 @@ describe("Packet", function() {
 		var mpi = [mpi.n, mpi.ee, mpi.d, mpi.p, mpi.q, mpi.u];
 
 		mpi = mpi.map(function(k) {
-				var mpi = new openpgp.mpi();
+				var mpi = new openpgp.MPI();
 				mpi.fromBigInteger(k);
 				return mpi;
 		});

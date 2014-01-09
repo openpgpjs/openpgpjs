@@ -49,7 +49,7 @@ hash_headers[11] = [0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
 
 var crypto = require('./crypto.js'),
   random = require('./random.js'),
-  util = require('../util'),
+  util = require('../util.js'),
   BigInteger = require('./public_key/jsbn.js'),
   hash = require('./hash');
 

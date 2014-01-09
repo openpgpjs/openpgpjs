@@ -35,7 +35,7 @@ module.exports = SecretKey;
 
 var publicKey = require('./public_key.js'),
   enums = require('../enums.js'),
-  util = require('../util'),
+  util = require('../util.js'),
   crypto = require('../crypto'),
   type_mpi = require('../type/mpi.js'),
   type_s2k = require('../type/s2k.js');

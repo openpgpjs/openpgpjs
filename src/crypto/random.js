@@ -27,7 +27,7 @@ var nodeCrypto = null;
 
 if (typeof window === undefined) {}
 try {
-  crypto = require('crypto');
+  nodeCrypto = require('crypto');
 } catch (e) {
 }
 
@@ -66,7 +66,7 @@ module.exports = {
     this.getRandomValues(buf);
     var bits = ((to - from)).toString(2).length;
     while ((buf[0] & (Math.pow(2, bits) - 1)) > (to - from))
-      window.crypto.getRandomValues(buf);
+      this.getRandomValues(buf);
     return from + (Math.abs(buf[0] & (Math.pow(2, bits) - 1)));
   },
 
@@ -84,7 +84,7 @@ module.exports = {
     try {
       window.crypto.getRandomValues(buf);
     } catch (e) {
-      var bytes = crypto.randomBytes(4);
+      var bytes = nodeCrypto.randomBytes(4);
       buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
     }
   },

@@ -25,7 +25,7 @@
  */
 
 var BigInteger = require('./jsbn.js'),
-  util = require('../../util'),
+  util = require('../../util.js'),
   random = require('../random.js');
 
 function SecureRandom() {
