@@ -10,7 +10,7 @@ You can also build a current version yourself:
 
     npm install && grunt
 
-Then take the resulting file from `resources/openpgp.min.js` to use in your project.
+Then take `dist/openpgp.min.js` to use in your project.
 
 # I need some help
 ## Mailing List
