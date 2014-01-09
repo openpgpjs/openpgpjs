@@ -1,7 +1,8 @@
 'use strict';
 
-var openpgp = require('openpgp'),
-  chai = require('chai'),
+var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+
+var chai = require('chai'),
   expect = chai.expect;
 
 describe("Packet", function() {
