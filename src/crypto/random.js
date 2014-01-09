@@ -25,10 +25,8 @@
 var type_mpi = require('../type/mpi.js');
 var nodeCrypto = null;
 
-if (typeof window === undefined) {}
-try {
+if (typeof window === 'undefined') {
   nodeCrypto = require('crypto');
-} catch (e) {
 }
 
 module.exports = {
@@ -81,9 +79,9 @@ module.exports = {
    * @param {Uint32Array} buf
    */
   getRandomValues: function(buf) {
-    try {
+    if (nodeCrypto == null) {
       window.crypto.getRandomValues(buf);
-    } catch (e) {
+    } else {
       var bytes = nodeCrypto.randomBytes(4);
       buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
     }
