@@ -79,7 +79,7 @@ module.exports = {
    * @param {Uint32Array} buf
    */
   getRandomValues: function(buf) {
-    if (nodeCrypto == null) {
+    if (nodeCrypto === null) {
       window.crypto.getRandomValues(buf);
     } else {
       var bytes = nodeCrypto.randomBytes(4);
