@@ -2,7 +2,7 @@
   "name": "openpgpjs",
   "description":  "A Javascript implementation of the OpenPGP protocol.",
   "version": "0.2.0",
-  "homepage": "http://openpgpjs.org",
+  "homepage": "http://openpgpjs.org/",
   "engines": {
     "node": ">=0.8"
   },
