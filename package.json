@@ -10,7 +10,7 @@
   },
   "files": [
     "dist/openpgp-min.js",
-    "test/unittests.html", "test/unittests.js", "test/general", "test/crypto"
+    "test/unittests.js", "test/general", "test/crypto"
   ],
   "scripts": {
     "pretest": "grunt",
