@@ -21,7 +21,8 @@ You can download a prebuilt minified version of the library under [releases](htt
 Then take `dist/openpgp.min.js` to use in your project.
 
 #Usage
-It's best the check the documentation for detailed API information. There are also alot of useful examples under 'test/'.
+It's best the check the documentation for detailed API information. There are also alot of useful examples under 'test/'. You can run the tests by calling:
+    npm install && npm test
 
 ## Documentation
 A jsdoc build of our code comments is available at [doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](doc/openpgp.html).

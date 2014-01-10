@@ -153,5 +153,5 @@ module.exports = function(grunt) {
   });
 
     // Test/Dev tasks
-  grunt.registerTask('test', ['copy', 'mocha_phantomjs', 'mochaTest']);
+  grunt.registerTask('test', ['copy', 'mochaTest', 'mocha_phantomjs']);
 };
