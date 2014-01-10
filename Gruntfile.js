@@ -40,7 +40,7 @@ module.exports = function(grunt) {
         dest: ['dist/openpgp.js'],
         replacements: [{
           from: /OpenPGP.js VERSION/g,
-          to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
+          to: 'OpenPGP.js v<%= pkg.version %>'
         }]
       },
       openpgp_nodebug: {
@@ -48,7 +48,7 @@ module.exports = function(grunt) {
         dest: ['dist/openpgp_nodebug.js'],
         replacements: [{
           from: /OpenPGP.js VERSION/g,
-          to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
+          to: 'OpenPGP.js v<%= pkg.version %>'
         }]
       }
     },
