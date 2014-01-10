@@ -6,7 +6,7 @@ OpenPGP.js
 [![Build Status](https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,v0.1.x)](http://travis-ci.org/openpgpjs/openpgpjs)
 
 # Installation
-## Node
+## Node.js
     npm install openpgpjs
 
 ## Browser
