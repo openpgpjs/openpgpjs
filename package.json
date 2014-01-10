@@ -1,9 +1,12 @@
 {
-  "name": "openpgp",
-  "version": "0.2.0-dev",
+  "name": "openpgpjs",
+  "description":  "A Javascript implementation of the OpenPGP protocol.",
+  "version": "0.2.0",
+  "homepage": "http://openpgpjs.org/",
   "engines": {
     "node": ">=0.8"
   },
+  "keywords": ["crypto", "pgp", "gpg", "openpgp"],
   "main": "src/index.js",
   "directories": {
     "lib": "src"
@@ -37,6 +40,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/openpgpjs/openpgpjs"
+    "url": "https://github.com/openpgpjs/openpgpjs"
   }
 }
