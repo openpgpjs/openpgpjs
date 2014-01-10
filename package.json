@@ -6,7 +6,7 @@
   },
   "main": "src/index.js",
   "directories": {
-    "lib": "dist"
+    "lib": "src"
   },
   "files": [
     "src/",
