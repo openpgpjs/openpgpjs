@@ -9,11 +9,11 @@ OpenPGP.js
 
 For server side use, install via npm:
 
-    npm install openpgpjs
+    npm install openpgp
 
 Example:
 
-    var openpgp = require('openpgpjs);
+    var openpgp = require('openpgp');
     var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
     var publicKey = openpgp.key.readArmored(key);
     var pgpMessage = openpgp.encryptMessage(publicKey.keys, 'Hello, World!');
