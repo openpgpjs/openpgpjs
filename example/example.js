@@ -3,7 +3,7 @@ function encrypt() {
 
     // read public key
     var pub_key = openpgp.key.readArmored($('#pubkey').text());
-    // sign and encrypt message
+    // encrypt message
     var pgp_message = openpgp.encryptMessage(pub_key.keys, $('#message').val());
 
     $('#message').val(pgp_message);
