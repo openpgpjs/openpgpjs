@@ -40,6 +40,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/openpgpjs/openpgpjs"
+    "url": "https://github.com/openpgpjs/openpgpjs"
   }
 }
