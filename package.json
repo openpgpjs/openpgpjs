@@ -5,10 +5,8 @@
   "engines": {
     "node": ">=0.8"
   },
-  "author": {
-    "name": "The OpenPGP.js Project",
-    "url": "http://openpgpjs.org/"
-  },
+  "homepage": "http://openpgpjs.org/",
+  "keywords": ["crypto", "pgp", "gpg", "openpgp"],
   "main": "src/index.js",
   "directories": {
     "lib": "src"
