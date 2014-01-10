@@ -22,9 +22,14 @@
  */
 module.exports = LocalStore;
 
-var openpgp = require('openpgp');
+var openpgp = require('../');
 
 function LocalStore() {
+  if (typeof window != 'undefined' && window.localStorage) {
+    this.storage = window.localStorage;
+  } else {
+    this.storage = new (require('node-localstorage').LocalStorage)(openpgp.config.node_store);
+  }
 }
 
 /**
@@ -32,16 +37,7 @@ function LocalStore() {
  * @return {Array<module:key~Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.load = function () {
-  var storage = null;
-  try {
-    storage = window.localStorage;
-  } catch (e) {
-  }
-
-  if (storage === null) {
-    storage = new (require('node-localstorage').LocalStorage)(openpgp.config.node_store);
-  }
-  var armoredKeys = JSON.parse(storage.getItem("armoredKeys"));
+  var armoredKeys = JSON.parse(this.storage.getItem('armoredKeys'));
   var keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
@@ -63,5 +59,5 @@ LocalStore.prototype.store = function (keys) {
   for (var i = 0; i < keys.length; i++) {
     armoredKeys.push(keys[i].armor());
   }
-  window.localStorage.setItem("armoredKeys", JSON.stringify(armoredKeys));
+  this.storage.setItem('armoredKeys', JSON.stringify(armoredKeys));
 };

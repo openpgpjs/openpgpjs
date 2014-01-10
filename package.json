@@ -9,8 +9,8 @@
     "lib": "src"
   },
   "files": [
-    "src",
-    "test"
+    "src/",
+    "test/unittests.js", "test/general", "test/crypto"
   ],
   "scripts": {
     "pretest": "grunt",

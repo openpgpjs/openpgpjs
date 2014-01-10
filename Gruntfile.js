@@ -6,20 +6,20 @@ module.exports = function(grunt) {
     browserify: {
       openpgp_nodebug: {
         files: {
-          'dist/openpgp_nodebug.js': []
+          'dist/openpgp_nodebug.js': [ './src/index.js' ]
         },
         options: {
-          alias: [ './src/:openpgp' ],
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
       openpgp: {
         files: {
-          'dist/openpgp.js': []
+          'dist/openpgp.js': [ './src/index.js' ]
         },
         options: {
           debug: true,
-          alias: [ './src/:openpgp' ],
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
@@ -35,7 +35,7 @@ module.exports = function(grunt) {
       }
     },
     replace: {
-      openpgpjs: {
+      openpgp: {
         src: ['dist/openpgp.js'],
         dest: ['dist/openpgp.js'],
         replacements: [{
@@ -43,7 +43,7 @@ module.exports = function(grunt) {
           to: 'OpenPGP.js v<%= pkg.version %>.<%= grunt.template.today("yyyymmdd") %>'
         }]
       },
-      openpgpjs_nodebug: {
+      openpgp_nodebug: {
         src: ['dist/openpgp_nodebug.js'],
         dest: ['dist/openpgp_nodebug.js'],
         replacements: [{
@@ -53,7 +53,7 @@ module.exports = function(grunt) {
       }
     },
     uglify: {
-      openpgpjs: {
+      openpgp: {
         files: {
           'dist/openpgp.min.js' : [ 'dist/openpgp_nodebug.js' ]
         }
