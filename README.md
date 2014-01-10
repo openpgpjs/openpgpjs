@@ -5,13 +5,13 @@ OpenPGP.js
 
 [![Build Status](https://secure.travis-ci.org/openpgpjs/openpgpjs.png?branch=master,v0.1.x)](http://travis-ci.org/openpgpjs/openpgpjs)
 
-### Usage node.js
+### Node support
 
 For server side use, install via npm:
 
     npm install openpgpjs
 
-Then simply:
+Example:
 
     var openpgp = require('openpgpjs);
     var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
