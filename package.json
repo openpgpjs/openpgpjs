@@ -1,8 +1,12 @@
 {
-  "name": "openpgp",
+  "name": "openpgpjs",
   "version": "0.2.0",
   "engines": {
     "node": ">=0.8"
+  },
+  "author": {
+    "name": "The OpenPGP.js Project",
+    "url": "http://openpgpjs.org/"
   },
   "main": "src/index.js",
   "directories": {
