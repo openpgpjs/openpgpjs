@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=0.8"
   },
-  "keywords": ["crypto", "pgp", "gpg", "openpgp"],
+  "keywords": ["crypto", "pgp", "gpg", "openpgp", "openpgp.js"],
   "main": "src/index.js",
   "directories": {
     "lib": "src"
