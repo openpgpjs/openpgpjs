@@ -32,11 +32,11 @@ Then take `dist/openpgp.min.js` to use in your project.
 
 ### Run tests
 
-   npm install && npm test
+    npm install && npm test
 
 ### Documentation
 
-A jsdoc build of our code comments is available at [http://openpgpjs.org/openpgpjs/doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [http://openpgpjs.org/openpgpjs/doc/module-openpgp.html](doc/openpgp.html).
+A jsdoc build of our code comments is available at [doc/index.html](http://openpgpjs.org/openpgpjs/doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](http://openpgpjs.org/openpgpjs/doc/module-openpgp.html).
 
 ### Mailing List
 
