@@ -1,6 +1,6 @@
 {
   "name": "openpgpjs",
-  "description":  "A Javascript implementation of the OpenPGP protocol.",
+  "description":  "A Javascript implementation of the OpenPGP/GPG/PGP protocol.",
   "version": "0.2.0",
   "engines": {
     "node": ">=0.8"
