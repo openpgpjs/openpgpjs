@@ -55,7 +55,7 @@ module.exports = function(grunt) {
     uglify: {
       openpgp: {
         files: {
-          'dist/openpgp-min.js' : [ 'dist/openpgp_nodebug.js' ]
+          'dist/openpgp.min.js' : [ 'dist/openpgp_nodebug.js' ]
         }
       },
       options: {

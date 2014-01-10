@@ -4,12 +4,12 @@
   "engines": {
     "node": ">=0.8"
   },
-  "main": "dist/openpgp-min.js",
+  "main": "src/index.js",
   "directories": {
     "lib": "dist"
   },
   "files": [
-    "dist/openpgp-min.js",
+    "src/",
     "test/unittests.js", "test/general", "test/crypto"
   ],
   "scripts": {
