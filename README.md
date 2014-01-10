@@ -20,7 +20,7 @@ Example:
 
 ### Browser support
 
-Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). The library can be loaded via  AMD/require.js or accessed globally at `window.openpgp`.
+Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). The library can be loaded via  AMD/require.js or accessed globally via `window.openpgp`.
 
 OpenPGP.js currently only fully supports browsers that implement `window.crypto.getRandomValues`. If you can help us support more browsers and runtimes, please chip in!
 
@@ -36,7 +36,7 @@ Then take `dist/openpgp.min.js` to use in your project.
 
 ### Documentation
 
-A jsdoc build of our code comments is available at [doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](doc/openpgp.html).
+A jsdoc build of our code comments is available at [http://openpgpjs.org/openpgpjs/doc/index.html](doc/index.html). Public calls should generally be made through the OpenPGP object [http://openpgpjs.org/openpgpjs/doc/module-openpgp.html](doc/openpgp.html).
 
 ### Mailing List
 
