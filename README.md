@@ -20,7 +20,7 @@ Example:
 
 ### Browser support
 
-Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). The library supports AMD/require.js or access via 'window.openpgp'.
+Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). The library can be loaded via  AMD/require.js or accessed globally at `window.openpgp`.
 
 OpenPGP.js currently only fully supports browsers that implement `window.crypto.getRandomValues`. If you can help us support more browsers and runtimes, please chip in!
 
