@@ -26,9 +26,7 @@ OpenPGP.js currently only fully supports browsers that implement `window.crypto.
 
 ### Security recommendations
 
-It should be noted that browser based application, following a [**host-based security**](https://www.schneier.com/blog/archives/2012/08/cryptocat.html) model, provide users with less security than installable apps with auditable static versions. This can be achieved by deploying your HTML5 app as a [Firefox](https://developer.mozilla.org/en-US/Marketplace/Publishing/Packaged_apps) or [Chrome](http://developer.chrome.com/apps/about_apps.html) packaged app. These runtimes typically also enforce a strict [Content Security Policy (CSP)](http://www.html5rocks.com/en/tutorials/security/content-security-policy/) to protect your users against [XSS](http://en.wikipedia.org/wiki/Cross-site_scripting). 
-
-This [blogpost](http://tonyarcieri.com/whats-wrong-with-webcrypto) explains the trust model of the web quite well.
+It should be noted that browser based applications, following a [**host-based security**](https://www.schneier.com/blog/archives/2012/08/cryptocat.html) model, provide users with less security than installable apps with auditable static versions. This can be achieved by deploying your HTML5 app as a [Firefox](https://developer.mozilla.org/en-US/Marketplace/Publishing/Packaged_apps) or [Chrome](http://developer.chrome.com/apps/about_apps.html) packaged app. These runtimes typically also enforce a strict [Content Security Policy (CSP)](http://www.html5rocks.com/en/tutorials/security/content-security-policy/) to protect your users against [XSS](http://en.wikipedia.org/wiki/Cross-site_scripting). This [blogpost](http://tonyarcieri.com/whats-wrong-with-webcrypto) explains the trust model of the web quite well.
 
 It is also recommended to set a strong passphrase that protects user's private key on disk.
 
