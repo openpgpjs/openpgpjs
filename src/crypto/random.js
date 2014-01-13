@@ -24,6 +24,8 @@
 
 var type_mpi = require('../type/mpi.js');
 var nodeCrypto = null;
+var randomBuffer = null;
+var randomBufferIndex = 0;
 
 if (typeof window === 'undefined') {
   nodeCrypto = require('crypto');
@@ -79,11 +81,20 @@ module.exports = {
    * @param {Uint32Array} buf
    */
   getRandomValues: function(buf) {
-    if (nodeCrypto === null) {
+    if (typeof window !== 'undefined' && window.crypto) {
       window.crypto.getRandomValues(buf);
-    } else {
+    } else if (nodeCrypto) {
       var bytes = nodeCrypto.randomBytes(4);
       buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+    } else if (randomBuffer) {
+      if (randomBufferIndex < buf.length) {
+        throw new Error('Random number buffer depleted.')
+      }
+      for (var i = 0; i < buf.length; i++) {
+        buf[i] = randomBuffer[--randomBufferIndex];
+      }
+    } else {
+      throw new Error('No secure random number generator available.');
     }
   },
 
@@ -122,6 +133,15 @@ module.exports = {
       r = this.getRandomBigInteger(range.bitLength());
     }
     return min.add(r);
+  },
+
+  /**
+   * Set array of random numbers to buffer
+   * @param {Uint32Array} buf
+   */
+  seedRandom: function(buf) {
+    randomBuffer = buf;
+    randomBufferIndex = buf.length;
   }
 
 };

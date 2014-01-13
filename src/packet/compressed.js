@@ -38,6 +38,11 @@ var enums = require('../enums.js'),
  */
 function Compressed() {
   /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
+  this.tag = enums.packet.compressed;
+  /**
    * List of packets
    * @type {module:packet/packetlist}
    */

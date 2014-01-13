@@ -17,12 +17,14 @@
 
 /**
  * @requires packet/secret_key
+ * @requires enums
  * @module packet/secret_subkey
  */
 
 module.exports = SecretSubkey;
 
-var secretKey = require('./secret_key.js');
+var secretKey = require('./secret_key.js'),
+  enums = require('../enums.js');
 
 /**
  * @constructor
@@ -30,6 +32,7 @@ var secretKey = require('./secret_key.js');
  */
 function SecretSubkey() {
   secretKey.call(this);
+  this.tag = enums.packet.secretSubkey;
 }
 
 SecretSubkey.prototype = new secretKey();

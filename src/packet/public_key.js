@@ -42,6 +42,7 @@ var util = require('../util.js'),
  * @constructor
  */
 function PublicKey() {
+  this.tag = enums.packet.publicKey;
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
@@ -181,5 +182,14 @@ PublicKey.prototype.getFingerprint = function () {
       toHash += this.mpi[i].toBytes();
     }
     return crypto.hash.md5(toHash);
+  }
+};
+
+/**
+ * Fix custom types after cloning
+ */
+PublicKey.prototype.postCloneTypeFix = function() {
+  for (var i = 0; i < this.mpi.length; i++) {
+    this.mpi[i] = type_mpi.fromClone(this.mpi[i]);
   }
 };

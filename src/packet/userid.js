@@ -24,17 +24,20 @@
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID.
  * @requires util
+ * @requires enums
  * @module packet/userid
  */
 
 module.exports = Userid;
 
-var util = require('../util.js');
+var util = require('../util.js'),
+  enums = require('../enums.js');
 
 /**
  * @constructor
  */
 function Userid() {
+  this.tag = enums.packet.userid;
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
    * @type {String} 

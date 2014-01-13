@@ -178,3 +178,12 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
   return result.substr(0, numBytes);
 };
+
+module.exports.fromClone = function (clone) {
+  var s2k = new S2K();
+  this.algorithm = clone.algorithm;
+  this.type = clone.type;
+  this.c = clone.c;
+  this.salt = clone.salt;
+  return s2k;
+};

@@ -24,17 +24,20 @@
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).
  * @requires crypto
+ * @requires enums
  * @module packet/symmetrically_encrypted
  */
 
 module.exports = SymmetricallyEncrypted;
 
-var crypto = require('../crypto');
+var crypto = require('../crypto'),
+  enums = require('../enums.js');
 
 /**
  * @constructor
  */
 function SymmetricallyEncrypted() {
+  this.tag = enums.packet.symmetricallyEncrypted;
   this.encrypted = null;
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */

@@ -32,11 +32,13 @@
  * User Attribute packet as a User ID packet with opaque contents, but
  * an implementation may use any method desired.
  * module packet/user_attribute
+ * @requires enums
  * @module packet/user_attribute
  */
 
 var util = require('../util.js'),
-  packet = require('./packet.js');
+  packet = require('./packet.js'),
+  enums = require('../enums.js');
 
 module.exports = UserAttribute;
 
@@ -44,6 +46,7 @@ module.exports = UserAttribute;
  * @constructor
  */
 function UserAttribute() {
+  this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }
 

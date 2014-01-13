@@ -46,6 +46,25 @@ module.exports = {
    */
   newPacketFromTag: function (tag) {
     return new this[packetClassFromTagName(tag)]();
+  },
+  /**
+   * Allocate a new packet from structured packet clone
+   * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+   * @param {Object} packetClone packet clone
+   * @returns {Object} new packet object with data from packet clone
+   */
+  fromStructuredClone: function(packetClone) {
+    var tagName = enums.read(enums.packet, packetClone.tag)
+    var packet = this.newPacketFromTag(tagName);
+    for (var attr in packetClone) {
+        if (packetClone.hasOwnProperty(attr)) {
+          packet[attr] = packetClone[attr];
+        }
+      }
+    if (packet.postCloneTypeFix) {
+      packet.postCloneTypeFix();
+    }
+    return packet;
   }
 };
 
@@ -56,11 +75,4 @@ module.exports = {
  */
 function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
-}
-
-for (var i in enums.packet) {
-  var packetClass = module.exports[packetClassFromTagName(i)];
-
-  if (packetClass !== undefined)
-    packetClass.prototype.tag = enums.packet[i];
 }

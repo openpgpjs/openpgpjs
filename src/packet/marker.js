@@ -25,15 +25,19 @@
  * the Marker packet.<br/>
  * <br/>
  * Such a packet MUST be ignored when received.
+ * @requires enums
  * @module packet/marker
  */
 
 module.exports = Marker;
 
+var enums = require('../enums.js');
+
 /**
  * @constructor
  */
 function Marker() {
+  this.tag = enums.packet.marker;
 }
 
 /**

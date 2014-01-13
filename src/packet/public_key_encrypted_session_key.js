@@ -49,6 +49,7 @@ var type_keyid = require('../type/keyid.js'),
  * @constructor
  */
 function PublicKeyEncryptedSessionKey() {
+  this.tag = enums.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
@@ -180,5 +181,15 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
     this.sessionKey = key;
     this.sessionKeyAlgorithm =
       enums.read(enums.symmetric, decoded.charCodeAt(0));
+  }
+};
+
+/**
+ * Fix custom types after cloning
+ */
+PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
+  this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
+  for (var i = 0; i < this.encrypted.length; i++) {
+    this.encrypted[i] = type_mpi.fromClone(this.encrypted[i]);
   }
 };
