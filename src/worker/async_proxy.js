@@ -28,9 +28,10 @@ function AsyncProxy(path) {
 }
 
 AsyncProxy.prototype.onMessage = function(event) {
-  switch (event.data.event) {
+  var msg = event.data; 
+  switch (msg.event) {
     case 'method-return':
-      this.tasks.shift()(event.data.err, event.data.data);
+      this.tasks.shift()(msg.err ? new Error(msg.err) : null, msg.data);
       break;
     default:
       throw new Error('Unknown Worker Event.');

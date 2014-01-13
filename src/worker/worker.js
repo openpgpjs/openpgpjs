@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-var window = {}; // to make UMD bundles work
+window = {}; // to make UMD bundles work
 
 importScripts('openpgp.js');
 
@@ -33,7 +33,7 @@ onmessage = function (event) {
         msg.keys = msg.keys.map(packetlistCloneToKey);
         data = window.openpgp.encryptMessage(msg.keys, msg.text);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -43,7 +43,7 @@ onmessage = function (event) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
         data = window.openpgp.signAndEncryptMessage(msg.publicKeys, msg.privateKey, msg.text);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -53,7 +53,7 @@ onmessage = function (event) {
         msg.message = packetlistCloneToMessage(msg.message.packets);
         data = window.openpgp.decryptMessage(msg.privateKey, msg.message);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -64,7 +64,7 @@ onmessage = function (event) {
         msg.message = packetlistCloneToMessage(msg.message.packets);
         data = window.openpgp.decryptAndVerifyMessage(msg.privateKey, msg.publicKeys, msg.message);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -73,7 +73,7 @@ onmessage = function (event) {
         msg.privateKeys = msg.privateKeys.map(packetlistCloneToKey);
         data = window.openpgp.signClearMessage(msg.privateKeys, msg.text);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -84,7 +84,7 @@ onmessage = function (event) {
         msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist); 
         data = window.openpgp.verifyClearSignedMessage(msg.publicKeys, msg.message);
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
@@ -93,7 +93,7 @@ onmessage = function (event) {
         data = window.openpgp.generateKeyPair(msg.keyType, msg.numBits, msg.userId, msg.passphrase);
         data.key = data.key.toPacketlist();
       } catch (e) {
-        err = e;
+        err = e.message;
       }
       postMessage({event: 'method-return', data: data, err: err});
       break;
