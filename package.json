@@ -1,19 +1,26 @@
 {
   "name": "openpgp",
-  "description":  "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
+  "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
   "version": "0.2.1",
   "homepage": "http://openpgpjs.org/",
   "engines": {
     "node": ">=0.8"
   },
-  "keywords": ["crypto", "pgp", "gpg", "openpgp"],
+  "keywords": [
+    "crypto",
+    "pgp",
+    "gpg",
+    "openpgp"
+  ],
   "main": "src/index.js",
   "directories": {
     "lib": "src"
   },
   "files": [
     "src/",
-    "test/unittests.js", "test/general", "test/crypto"
+    "test/unittests.js",
+    "test/general",
+    "test/crypto"
   ],
   "scripts": {
     "pretest": "grunt",
@@ -33,7 +40,8 @@
     "grunt-jsbeautifier": "*",
     "grunt-contrib-jshint": "*",
     "grunt-jsdoc": "*",
-    "grunt-mocha-test": "~0.8.1"
+    "grunt-mocha-test": "~0.8.1",
+    "grunt-contrib-clean": "~0.5.0"
   },
   "dependencies": {
     "node-localstorage": "~0.3.4"
