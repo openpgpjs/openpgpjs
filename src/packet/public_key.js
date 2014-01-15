@@ -186,6 +186,14 @@ PublicKey.prototype.getFingerprint = function () {
 };
 
 /**
+ * Returns bit size of key
+ * @return {int} Number of bits
+ */
+PublicKey.prototype.getBitSize = function () {
+  return this.mpi[0].byteLength() * 8;
+};
+
+/**
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {

@@ -19,14 +19,21 @@ window = {}; // to make UMD bundles work
 
 importScripts('openpgp.js');
 
+var MIN_SIZE_RANDOM_BUFFER = 8192;
+var MAX_SIZE_RANDOM_BUFFER = 16384;
+
+window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
 onmessage = function (event) {
   var data = null, 
-      err = null, 
+      err = null,
       msg = event.data;
+  if (msg.seed) {
+    window.openpgp.crypto.random.randomBuffer.set(msg.seed);
+  }
   switch (msg.event) {
     case 'seed-random':
-      window.openpgp.crypto.random.seedRandom(msg.buf);
+      window.openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
     case 'encrypt-message':
       try {
@@ -35,7 +42,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'sign-and-encrypt-message':
       try {
@@ -45,7 +52,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'decrypt-message':
       try {
@@ -55,7 +62,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'decrypt-and-verify-message':
       try {
@@ -66,7 +73,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'sign-clear-message':
       try {
@@ -75,7 +82,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'verify-clear-signed-message':
       try {
@@ -86,7 +93,7 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     case 'generate-key-pair':
       try {
@@ -95,12 +102,19 @@ onmessage = function (event) {
       } catch (e) {
         err = e.message;
       }
-      postMessage({event: 'method-return', data: data, err: err});
+      response({event: 'method-return', data: data, err: err});
       break;
     default:
       throw new Error('Unknown Worker Event.');
   }
 };
+
+function response(event) {
+  if (window.openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
+    postMessage({event: 'request-seed'});
+  }
+  postMessage(event);
+}
 
 function packetlistCloneToKey(packetlistClone) {
   var packetlist = window.openpgp.packet.List.fromStructuredClone(packetlistClone);

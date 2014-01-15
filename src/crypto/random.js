@@ -24,8 +24,6 @@
 
 var type_mpi = require('../type/mpi.js');
 var nodeCrypto = null;
-var randomBuffer = null;
-var randomBufferIndex = 0;
 
 if (typeof window === 'undefined') {
   nodeCrypto = require('crypto');
@@ -86,13 +84,8 @@ module.exports = {
     } else if (nodeCrypto) {
       var bytes = nodeCrypto.randomBytes(4);
       buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-    } else if (randomBuffer) {
-      if (randomBufferIndex < buf.length) {
-        throw new Error('Random number buffer depleted.')
-      }
-      for (var i = 0; i < buf.length; i++) {
-        buf[i] = randomBuffer[--randomBufferIndex];
-      }
+    } else if (this.randomBuffer.buffer) {
+      this.randomBuffer.get(buf);
     } else {
       throw new Error('No secure random number generator available.');
     }
@@ -135,13 +128,55 @@ module.exports = {
     return min.add(r);
   },
 
-  /**
-   * Set array of random numbers to buffer
-   * @param {Uint32Array} buf
-   */
-  seedRandom: function(buf) {
-    randomBuffer = buf;
-    randomBufferIndex = buf.length;
-  }
+  randomBuffer: new RandomBuffer()
 
+};
+
+/**
+ * Buffer for secure random numbers
+ */
+function RandomBuffer() {
+  this.buffer = null;
+  this.size = null;
+}
+
+/**
+ * Initialize buffer
+ * @param  {Integer} size size of buffer
+ */
+RandomBuffer.prototype.init = function(size) {
+  this.buffer = new Uint32Array(size);
+  this.size = 0;
+};
+
+/**
+ * Concat array of secure random numbers to buffer
+ * @param {Uint32Array} buf
+ */
+RandomBuffer.prototype.set = function(buf) {
+  if (!this.buffer) {
+    throw new Error('RandomBuffer is not initialized');
+  }
+  var freeSpace = this.buffer.length - this.size;
+  if (buf.length > freeSpace) {
+    buf = buf.subarray(0, freeSpace);
+  }
+  this.buffer.set(buf, this.size);
+  this.size += buf.length;
+};
+
+/**
+ * Take numbers out of buffer and copy to array
+ * @param {Uint32Array} buf the destination array
+ */
+RandomBuffer.prototype.get = function(buf) {
+  if (!this.buffer) {
+    throw new Error('RandomBuffer is not initialized');
+  }
+  if (this.size < buf.length) {
+    throw new Error('Random number buffer depleted.')
+  }
+  for (var i = 0; i < buf.length; i++) {
+    buf[i] = this.buffer[--this.size];
+  }
 };
