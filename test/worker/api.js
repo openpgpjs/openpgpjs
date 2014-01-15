@@ -9,9 +9,9 @@ describe('High level API', function() {
 
   var proxy;
 
-  this.timeout(50000);
+  this.timeout(0);
 
-  var pub_key =
+  var pub_key_rsa =
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
       'Type: RSA/RSA',
@@ -37,10 +37,10 @@ describe('High level API', function() {
       '=h/aX',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  var priv_key =
+  var priv_key_rsa =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
-      'Type: RSA/RSA',
+      'Type: RSA/RSA 1024',
       'Pwd: hello world',
       '',
       'lQH+BFJhL04BBADclrUEDDsm0PSZbQ6pml9FpzTyXiyCyDN+rMOsy9J300Oc10kt',
@@ -79,57 +79,302 @@ describe('High level API', function() {
       '=lw5e',
       '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
+  var pub_key_de =
+      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      'Version: GnuPG v2.0.22 (GNU/Linux)',
+      '',
+      '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',
+      'og2umGfGng==',
+      '=v3+L',
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+
+var priv_key_de =
+      ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
+      'Version: GnuPG v2.0.22 (GNU/Linux)',
+      '',
+      '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',
+      'DHTORVqAOdoOcu5Qh7AQg1GdSmfFAsx2',
+      '=kyeP',
+      '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+
+
   var plaintext = 'short message\nnext line\n한국어/조선말';
 
-  var pubKey, privKey;
+  var pubKeyRSA, privKeyRSA, pubKeyDE, privKeyDE;
 
-  it('Test initialization', function (done) {
-    pubKey = openpgp.key.readArmored(pub_key).keys[0];
-    expect(pubKey).to.exist;
+  function initKeys() {
+    pubKeyRSA = openpgp.key.readArmored(pub_key_rsa).keys[0];
+    expect(pubKeyRSA).to.exist;
+    privKeyRSA = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    expect(privKeyRSA).to.exist;
+    pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+    expect(pubKeyDE).to.exist;
+    privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+    expect(privKeyDE).to.exist;
+  }
 
-    privKey = openpgp.key.readArmored(priv_key).keys[0];
-    expect(privKey).to.exist;
- 
-    done();
-  });
-
-  it('Initialize AsyncProxy', function (done) {
+  before(function() {
     proxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
     expect(proxy).to.exist;
-    done();
+    initKeys();
   });
 
-  it('Generate key', function (done) {
-    proxy.generateKeyPair(3, 1024, 'Test McTestington <test@example.com>', 'hello world', function(err, data) {
-      expect(err).to.not.exist;
-      expect(data).to.exist;
-      expect(data.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
-      expect(data.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
-      expect(data.key).to.be.an.instanceof(openpgp.key.Key);
-      done();
+  describe('Encryption', function() {
+
+    it('RSA: encryptMessage async', function (done) {
+      proxy.encryptMessage([pubKeyRSA], plaintext, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
+        var msg = openpgp.message.readArmored(data);
+        expect(msg).to.be.an.instanceof(openpgp.message.Message);
+        done();
+      });
     });
+
+    it('RSA: encryptMessage sync', function () {
+      var msg = openpgp.encryptMessage([pubKeyRSA], plaintext);
+      expect(msg).to.exist;
+      expect(msg).to.match(/^-----BEGIN PGP MESSAGE/);
+      msg = openpgp.message.readArmored(msg);
+      expect(msg).to.be.an.instanceof(openpgp.message.Message);
+    });
+
+    it('ELG: encryptMessage async', function (done) {
+      proxy.encryptMessage([pubKeyDE], plaintext, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
+        var msg = openpgp.message.readArmored(data);
+        expect(msg).to.be.an.instanceof(openpgp.message.Message);
+        done();
+      });
+    });
+
+    it('ELG: encryptMessage sync', function () {
+      var msg = openpgp.encryptMessage([pubKeyDE], plaintext);
+      expect(msg).to.exist;
+      expect(msg).to.match(/^-----BEGIN PGP MESSAGE/);
+      msg = openpgp.message.readArmored(msg);
+      expect(msg).to.be.an.instanceof(openpgp.message.Message);
+    });
+
   });
 
-  it('Encrypt and decrypt text', function (done) {
-    proxy.encryptMessage([pubKey], plaintext, function(err, data) {
-      expect(err).to.not.exist;
-      expect(data).to.exist;
-      expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
-      var msg = openpgp.message.readArmored(data);
-      expect(msg).to.be.an.instanceof(openpgp.message.Message);
-      proxy.decryptMessage(privKey, msg, function(err, data) {
+  describe('Decryption', function() {
+
+    var msgRSA, msgDE;
+
+    before(function() {
+      privKeyRSA.decrypt('hello world');
+      privKeyDE.decrypt('hello world');
+      msgRSA = openpgp.message.fromText(plaintext).encrypt([pubKeyRSA]);
+      msgDE = openpgp.message.fromText(plaintext).encrypt([pubKeyDE]);
+    });
+
+    it('RSA: decryptMessage async', function (done) {
+      proxy.decryptMessage(privKeyRSA, msgRSA, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('RSA: decryptMessage sync', function () {
+      var text = openpgp.decryptMessage(privKeyRSA, msgRSA);
+      expect(text).to.exist;
+      expect(text).to.equal(plaintext);
+    });
+
+    it('ELG: decryptMessage async', function (done) {
+      proxy.decryptMessage(privKeyDE, msgDE, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('ELG: decryptMessage sync', function () {
+      var text = openpgp.decryptMessage(privKeyDE, msgDE);
+      expect(text).to.exist;
+      expect(text).to.equal(plaintext);
+    });
+
+  });
+
+  describe('Decrypt and Verify', function() {
+
+    var msgRSA, msgDE;
+
+    before(function() {
+      privKeyRSA.decrypt('hello world');
+      privKeyDE.decrypt('hello world');
+      msgRSA = openpgp.message.fromText(plaintext).sign([privKeyRSA]).encrypt([pubKeyRSA]);
+      msgDE = openpgp.message.fromText(plaintext).sign([privKeyDE]).encrypt([pubKeyDE]);
+    });
+
+    it('RSA: decryptAndVerifyMessage async', function (done) {
+      proxy.decryptAndVerifyMessage(privKeyRSA, [pubKeyRSA], msgRSA, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data.text).to.equal(plaintext);
+        expect(data.signatures).to.have.length(1);
+        expect(data.signatures[0].valid).to.be.true;
+        expect(data.signatures[0].keyid.equals(privKeyRSA.getSigningKeyPacket().getKeyId())).to.be.true;
+        done();
+      });
+    });
+
+    it('ELG: decryptAndVerifyMessage async', function (done) {
+      proxy.decryptAndVerifyMessage(privKeyDE, [pubKeyDE], msgDE, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data.text).to.equal(plaintext);
+        expect(data.signatures).to.have.length(1);
+        expect(data.signatures[0].valid).to.be.true;
+        expect(data.signatures[0].keyid.equals(privKeyDE.getSigningKeyPacket().getKeyId())).to.be.true;
+        done();
+      });
+    });
+
+  });
+
+  describe('Signing', function() {
+
+    before(function() {
+      privKeyRSA.decrypt('hello world');
+      privKeyDE.decrypt('hello world');
+    });
+
+    it('RSA: signClearMessage async', function (done) {
+      proxy.signClearMessage([privKeyRSA], plaintext, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
+        var msg = openpgp.message.readArmored(data);
+        expect(msg).to.be.an.instanceof(openpgp.message.Message);
+        done();
+      });
+    });
+
+    it('DSA: signClearMessage async', function (done) {
+      proxy.signClearMessage([privKeyDE], plaintext, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
+        var msg = openpgp.message.readArmored(data);
+        expect(msg).to.be.an.instanceof(openpgp.message.Message);
+        done();
+      });
+    });
+
+  });
+
+  describe('Error handling', function() {
+
+    before(initKeys);
+
+    it('Signing with not decrypted key gives error', function (done) {
+      proxy.signClearMessage([privKeyRSA], plaintext, function(err, data) {
         expect(data).to.not.exist;
         expect(err).to.exist;
         expect(err.message).to.equal('Private key is not decrypted.');
-        privKey.decrypt('hello world');
-        proxy.decryptMessage(privKey, msg, function(err, data) {
-          expect(err).to.not.exist;
-          expect(data).to.exist;
-          expect(data).to.equal(plaintext);
-          done();
-        });    
+        done();
       });
     });
+
+  });
+
+  describe('Key generation', function() {
+
+    it('Generate 1024-bit RSA/RSA key async', function (done) {
+      proxy.generateKeyPair(3, 1024, 'Test McTestington <test@example.com>', 'hello world', function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
+        expect(data.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
+        expect(data.key).to.be.an.instanceof(openpgp.key.Key);
+        done();
+      });
+    });
+
+    it('Generate 1024-bit RSA/RSA key sync', function () {
+      var key = openpgp.generateKeyPair(3, 1024, 'Test McTestington <test@example.com>', 'hello world');
+      expect(key).to.exist;
+      expect(key.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
+      expect(key.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
+      expect(key.key).to.be.an.instanceof(openpgp.key.Key);
+    });
+
   });
 
 });
