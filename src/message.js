@@ -168,6 +168,8 @@ Message.prototype.encrypt = function(keys) {
   //TODO get preferred algo from signature
   symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
   packetlist.push(symEncryptedPacket);
+  // remove packets after encryption
+  symEncryptedPacket.packets = new packet.List();
   return new Message(packetlist);
 };
 
