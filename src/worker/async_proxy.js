@@ -30,11 +30,11 @@ var crypto = require('../crypto'),
   type_keyid = require('../type/keyid.js'),
   enums = require('../enums.js');
 
-var INITIAL_SEED = 4096, // bytes seeded to worker
-    SEED_REQUEST = 4096, // bytes seeded after worker request
-    RSA_FACTOR = 2,
-    DSA_FACTOR = 2,
-    ELG_FACTOR = 2;
+var INITIAL_SEED = 4096, // random bytes seeded to worker
+    SEED_REQUEST = 4096, // random bytes seeded after worker request
+    RSA_FACTOR = 2, // estimated rounds required to find BigInt for p + rounds required to find BigInt for q
+    DSA_FACTOR = 2  // estimated rounds required in random.getRandomBigIntegerInRange(2, q-1)
+    ELG_FACTOR = 2; // estimated rounds required in random.getRandomBigIntegerInRange(2, p-2)
 
 /**
  * Initializes a new proxy and loads the web worker
@@ -106,9 +106,10 @@ AsyncProxy.prototype.entropyEstimation = function(op, publicKeys, privateKeys, o
   var requ = 0; // required entropy in bytes
   switch (op) {
     case 'enc':
+      if (!publicKeys) throw new Error('publicKeys required for operation enc');
       requ += 32; // max. size of session key
       requ += 16; // max. size CFB prefix random
-      publicKeys && publicKeys.forEach(function(key) {
+      publicKeys.forEach(function(key) {
         var subKeyPackets = key.getSubkeyPackets();
         for (var i = 0; i < subKeyPackets.length; i++) {
           if (enums.write(enums.publicKey, subKeyPackets[i].algorithm) == enums.publicKey.elgamal) {
@@ -120,13 +121,15 @@ AsyncProxy.prototype.entropyEstimation = function(op, publicKeys, privateKeys, o
       });
       break;
     case 'sig':
-      privateKeys && privateKeys.forEach(function(key) {
+      if (!privateKeys) throw new Error('privateKeys required for operation sig');
+      privateKeys.forEach(function(key) {
         if (enums.write(enums.publicKey, key.primaryKey.algorithm) == enums.publicKey.dsa) {
-          requ += 32 * DSA_FACTOR; // 32 bytes for DSA keys
+          requ += 32 * DSA_FACTOR; // 32 bytes for DSA N value
         }
       });
       break;
     case 'gen':
+      if (!options.numBits) throw new Error('options.numBits required for operation gen');
       requ += 8; // salt for S2K;
       requ += 16; // CFB initialization vector
       requ += (Math.ceil(options.numBits / 8) + 1) * RSA_FACTOR;
@@ -166,7 +169,7 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
  * @param  {Function} callback receives encrypted ASCII armored message
  */
 AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text, callback) {
-  var estimation = this.entropyEstimation('enc', publikKeys) +
+  var estimation = this.entropyEstimation('enc', publicKeys) +
                    this.entropyEstimation('sig', null, [privateKey]);
   publicKeys = publicKeys.map(function(key) {
     return key.toPacketlist();
