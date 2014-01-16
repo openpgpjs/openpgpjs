@@ -411,6 +411,63 @@ describe('High level API', function() {
 
   });
 
+  describe('Decrypt secret key', function() {
+
+    var msg;
+
+    beforeEach(function() {
+      initKeys();
+      msg = openpgp.message.fromText(plaintext).encrypt([pubKeyRSA]);
+    });
+
+    it('Decrypt key', function (done) {
+      expect(privKeyRSA.primaryKey.isDecrypted).to.be.false;
+      expect(privKeyRSA.subKeys[0].subKey.isDecrypted).to.be.false;
+      proxy.decryptKey(privKeyRSA, 'hello world', function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.be.an.instanceof(openpgp.key.Key);
+        expect(data.primaryKey.isDecrypted).to.be.true;
+        expect(data.subKeys[0].subKey.isDecrypted).to.be.true;
+        var text = openpgp.decryptMessage(data, msg);
+        expect(text).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Decrypt key packet', function (done) {
+      expect(privKeyRSA.primaryKey.isDecrypted).to.be.false;
+      expect(privKeyRSA.subKeys[0].subKey.isDecrypted).to.be.false;
+      var keyid = privKeyRSA.subKeys[0].subKey.getKeyId();
+      proxy.decryptKeyPacket(privKeyRSA, [keyid], 'hello world', function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.be.an.instanceof(openpgp.key.Key);
+        expect(data.primaryKey.isDecrypted).to.be.false;
+        expect(data.subKeys[0].subKey.isDecrypted).to.be.true;
+        var text = openpgp.decryptMessage(data, msg);
+        expect(text).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Error on wrong password decryptKey', function (done) {
+      proxy.decryptKey(privKeyRSA, 'what?', function(err, data) {
+        expect(err).to.eql(new Error('Wrong password'));
+        done();
+      });
+    });
+
+    it('Error on wrong password decryptKeyPacket', function (done) {
+      var keyid = privKeyRSA.subKeys[0].subKey.getKeyId();
+      proxy.decryptKeyPacket(privKeyRSA, [keyid], 'what?', function(err, data) {
+        expect(err).to.eql(new Error('Wrong password'));
+        done();
+      });
+    });
+
+  });
+
 });
 
 describe('Random Buffer', function() {

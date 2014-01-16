@@ -306,4 +306,50 @@ AsyncProxy.prototype.generateKeyPair = function(keyType, numBits, userId, passph
   });
 };
 
+/**
+ * Decrypts secret part of all secret key packets of key.
+ * @param  {module:key~Key}     privateKey private key with encrypted secret key data
+ * @param  {String} password    password to unlock the key
+ * @param  {Function} callback   receives decrypted key
+ */
+AsyncProxy.prototype.decryptKey = function(privateKey, password, callback) {
+  privateKey = privateKey.toPacketlist();
+  this.worker.postMessage({
+    event: 'decrypt-key',
+    privateKey: privateKey,
+    password: password
+  });
+  this.tasks.push(function(err, data) {
+    if (data) {
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
+    }
+    callback(err, data);
+  });
+};
+
+/**
+ * Decrypts secret part of key packets matching array of keyids.
+ * @param  {module:key~Key}     privateKey private key with encrypted secret key data
+ * @param  {Array<module:type/keyid>} keyIds
+ * @param  {String} password    password to unlock the key
+ * @param  {Function} callback   receives decrypted key
+ */
+AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password, callback) {
+  privateKey = privateKey.toPacketlist();
+  this.worker.postMessage({
+    event: 'decrypt-key-packet',
+    privateKey: privateKey,
+    keyIds: keyIds,
+    password: password
+  });
+  this.tasks.push(function(err, data) {
+    if (data) {
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
+    }
+    callback(err, data);
+  });
+};
+
 module.exports = AsyncProxy;

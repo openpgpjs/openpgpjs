@@ -27,7 +27,8 @@ window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 onmessage = function (event) {
   var data = null, 
       err = null,
-      msg = event.data;
+      msg = event.data,
+      correct = false;
   if (msg.seed) {
     window.openpgp.crypto.random.randomBuffer.set(msg.seed);
   }
@@ -99,6 +100,35 @@ onmessage = function (event) {
       try {
         data = window.openpgp.generateKeyPair(msg.keyType, msg.numBits, msg.userId, msg.passphrase);
         data.key = data.key.toPacketlist();
+      } catch (e) {
+        err = e.message;
+      }
+      response({event: 'method-return', data: data, err: err});
+      break;
+    case 'decrypt-key':
+      try {
+        msg.privateKey = packetlistCloneToKey(msg.privateKey);
+        correct = msg.privateKey.decrypt(msg.password);
+        if (correct) {
+          data = msg.privateKey.toPacketlist();
+        } else {
+          err = 'Wrong password';
+        }
+      } catch (e) {
+        err = e.message;
+      }
+      response({event: 'method-return', data: data, err: err});
+      break;
+    case 'decrypt-key-packet':
+      try {
+        msg.privateKey = packetlistCloneToKey(msg.privateKey);
+        msg.keyIds = msg.keyIds.map(window.openpgp.Keyid.fromClone);
+        correct = msg.privateKey.decryptKeyPacket(msg.keyIds, msg.password);
+        if (correct) {
+          data = msg.privateKey.toPacketlist();
+        } else {
+          err = 'Wrong password';
+        }
       } catch (e) {
         err = e.message;
       }
