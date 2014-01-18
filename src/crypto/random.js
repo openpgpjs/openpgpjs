@@ -60,30 +60,37 @@ module.exports = {
    * @return {Integer} A secure random number
    */
   getSecureRandom: function(from, to) {
-    var buf = new Uint32Array(1);
-    this.getRandomValues(buf);
+    var randUint = this.getSecureRandomUint();
     var bits = ((to - from)).toString(2).length;
-    while ((buf[0] & (Math.pow(2, bits) - 1)) > (to - from))
-      this.getRandomValues(buf);
-    return from + (Math.abs(buf[0] & (Math.pow(2, bits) - 1)));
+    while ((randUint & (Math.pow(2, bits) - 1)) > (to - from)) {
+      randUint = this.getSecureRandomUint();
+    }
+    return from + (Math.abs(randUint & (Math.pow(2, bits) - 1)));
   },
 
   getSecureRandomOctet: function() {
-    var buf = new Uint32Array(1);
+    var buf = new Uint8Array(1);
     this.getRandomValues(buf);
-    return buf[0] & 0xFF;
+    return buf[0];
+  },
+
+  getSecureRandomUint: function() {
+    var buf = new Uint8Array(4);
+    var dv = new DataView(buf.buffer);
+    this.getRandomValues(buf);
+    return dv.getUint32(0);
   },
 
   /**
    * Helper routine which calls platform specific crypto random generator
-   * @param {Uint32Array} buf
+   * @param {Uint8Array} buf
    */
   getRandomValues: function(buf) {
     if (typeof window !== 'undefined' && window.crypto) {
       window.crypto.getRandomValues(buf);
     } else if (nodeCrypto) {
-      var bytes = nodeCrypto.randomBytes(4);
-      buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+      var bytes = nodeCrypto.randomBytes(buf.length);
+      buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
       this.randomBuffer.get(buf);
     } else {

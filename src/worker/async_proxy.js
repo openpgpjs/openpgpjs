@@ -76,13 +76,13 @@ AsyncProxy.prototype.seedRandom = function(size) {
 };
 
 /**
- * Get Uint32Array with random numbers
+ * Get Uint8Array with random numbers
  * @param  {Integer} size Length of buffer
- * @return {Uint32Array}
+ * @return {Uint8Array}
  */
 AsyncProxy.prototype.getRandomBuffer = function(size) {
   if (!size) return null;
-  var buf = new Uint32Array(size);
+  var buf = new Uint8Array(size);
   crypto.random.getRandomValues(buf);
   return buf;
 };
