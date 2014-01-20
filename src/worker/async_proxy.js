@@ -30,11 +30,8 @@ var crypto = require('../crypto'),
   type_keyid = require('../type/keyid.js'),
   enums = require('../enums.js');
 
-var INITIAL_SEED = 4096, // random bytes seeded to worker
-    SEED_REQUEST = 4096, // random bytes seeded after worker request
-    RSA_FACTOR = 2, // estimated rounds required to find BigInt for p + rounds required to find BigInt for q
-    DSA_FACTOR = 2  // estimated rounds required in random.getRandomBigIntegerInRange(2, q-1)
-    ELG_FACTOR = 2; // estimated rounds required in random.getRandomBigIntegerInRange(2, p-2)
+var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
+    RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
 
 /**
  * Initializes a new proxy and loads the web worker
@@ -44,7 +41,7 @@ var INITIAL_SEED = 4096, // random bytes seeded to worker
 function AsyncProxy(path) {
   this.worker = new Worker(path || 'openpgp.worker.js');
   this.worker.onmessage = this.onMessage.bind(this);
-  this.seedRandom(INITIAL_SEED);
+  this.seedRandom(INITIAL_RANDOM_SEED);
   // FIFO
   this.tasks = [];
 }
@@ -59,7 +56,7 @@ AsyncProxy.prototype.onMessage = function(event) {
       this.tasks.shift()(msg.err ? new Error(msg.err) : null, msg.data);
       break;
     case 'request-seed':
-      this.seedRandom(SEED_REQUEST);
+      this.seedRandom(RANDOM_SEED_REQUEST);
       break;
     default:
       throw new Error('Unknown Worker Event.');
@@ -95,68 +92,19 @@ AsyncProxy.prototype.terminate = function() {
 };
 
 /**
- * Estimation on how much random bytes are required to process the operation
- * @param  {String} op          'enc', 'sig' or 'gen'
- * @param  {Array<module:key~Key>} publicKeys
- * @param  {Array<module:key~Key>} privateKeys
- * @param  {Object} options
- * @return {Integer}             number of bytes required
- */
-AsyncProxy.prototype.entropyEstimation = function(op, publicKeys, privateKeys, options) {
-  var requ = 0; // required entropy in bytes
-  switch (op) {
-    case 'enc':
-      if (!publicKeys) throw new Error('publicKeys required for operation enc');
-      requ += 32; // max. size of session key
-      requ += 16; // max. size CFB prefix random
-      publicKeys.forEach(function(key) {
-        var subKeyPackets = key.getSubkeyPackets();
-        for (var i = 0; i < subKeyPackets.length; i++) {
-          if (enums.write(enums.publicKey, subKeyPackets[i].algorithm) == enums.publicKey.elgamal) {
-            var keyByteSize = subKeyPackets[i].mpi[0].byteLength();
-            requ += keyByteSize * ELG_FACTOR; // key byte size for ElGamal keys
-            break;
-          }
-        }
-      });
-      break;
-    case 'sig':
-      if (!privateKeys) throw new Error('privateKeys required for operation sig');
-      privateKeys.forEach(function(key) {
-        if (enums.write(enums.publicKey, key.primaryKey.algorithm) == enums.publicKey.dsa) {
-          requ += 32 * DSA_FACTOR; // 32 bytes for DSA N value
-        }
-      });
-      break;
-    case 'gen':
-      if (!options.numBits) throw new Error('options.numBits required for operation gen');
-      requ += 8; // salt for S2K;
-      requ += 16; // CFB initialization vector
-      requ += (Math.ceil(options.numBits / 8) + 1) * RSA_FACTOR;
-      requ = requ * 2; // * number of key packets
-      break;
-    default:
-      throw new Error('Unknown operation.');
-  }
-  return requ;
-};
-
-/**
  * Encrypts message text with keys
  * @param  {Array<module:key~Key>}  keys array of keys, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  * @param  {Function} callback receives encrypted ASCII armored message
  */
 AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
-  var estimation = this.entropyEstimation('enc', keys);
   keys = keys.map(function(key) {
     return key.toPacketlist();
   });
   this.worker.postMessage({
     event: 'encrypt-message', 
     keys: keys,
-    text: text,
-    seed: this.getRandomBuffer(estimation)
+    text: text
   });
   this.tasks.push(callback);
 };
@@ -169,8 +117,6 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
  * @param  {Function} callback receives encrypted ASCII armored message
  */
 AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text, callback) {
-  var estimation = this.entropyEstimation('enc', publicKeys) +
-                   this.entropyEstimation('sig', null, [privateKey]);
   publicKeys = publicKeys.map(function(key) {
     return key.toPacketlist();
   });
@@ -179,8 +125,7 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
     event: 'sign-and-encrypt-message', 
     publicKeys: publicKeys,
     privateKey: privateKey,
-    text: text,
-    seed: this.getRandomBuffer(estimation)
+    text: text
   });
   this.tasks.push(callback);
 };
@@ -239,15 +184,13 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
  * @param  {Function} callback       receives ASCII armored message
  */
 AsyncProxy.prototype.signClearMessage = function(privateKeys, text, callback) {
-  var estimation = this.entropyEstimation('sig', null, privateKeys);
   privateKeys = privateKeys.map(function(key) {
     return key.toPacketlist();
   });
   this.worker.postMessage({
     event: 'sign-clear-message', 
     privateKeys: privateKeys,
-    text: text,
-    seed: this.getRandomBuffer(estimation)
+    text: text
   });
   this.tasks.push(callback);
 };
@@ -294,8 +237,7 @@ AsyncProxy.prototype.generateKeyPair = function(keyType, numBits, userId, passph
     keyType: keyType, 
     numBits: numBits, 
     userId: userId, 
-    passphrase: passphrase,
-    seed: this.getRandomBuffer(this.entropyEstimation('gen', null, null, {numBits: numBits}))
+    passphrase: passphrase
   });
   this.tasks.push(function(err, data) {
     if (data) {

@@ -386,6 +386,19 @@ describe('High level API', function() {
       });
     });
 
+    it('Depleted random buffer in worker gives error', function (done) {
+      var wProxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
+      wProxy.worker = new Worker('../dist/openpgp.worker.js');
+      wProxy.worker.onmessage = wProxy.onMessage.bind(wProxy);
+      wProxy.seedRandom(10);
+      wProxy.encryptMessage([pubKeyRSA], plaintext, function(err, data) {
+        expect(data).to.not.exist;
+        expect(err).to.exist;
+        expect(err).to.eql(new Error('Random number buffer depleted.'));
+        done();
+      });
+    });
+
   });
 
   describe('Key generation', function() {
@@ -536,59 +549,6 @@ describe('Random Buffer', function() {
     expect(buf).to.to.have.property('1', 2);
     expect(randomBuffer.size).to.equal(1);
     expect(function() { randomBuffer.get(buf) }).to.throw('Random number buffer depleted.');
-  });
-
-});
- 
-describe('Entropy Estimation', function() {
-
-  var proxy;
-
-  before(function() {
-    proxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
-    expect(proxy).to.exist;
-    initKeys();
-  });
-
-  it('RSA encrypt', function () {
-    var oneRSA = proxy.entropyEstimation('enc', [pubKeyRSA]);
-    // 32 byte session key + 16 byte CFB prefix
-    expect(oneRSA).to.equal(48);
-    var twoRSA = proxy.entropyEstimation('enc', [pubKeyRSA, pubKeyRSA]);
-    // only number of symmetrically encrypted packets relevant (we expect 1)
-    expect(twoRSA).to.equal(oneRSA);
-  });
-
-  it('RSA sign', function () {
-    var oneRSA = proxy.entropyEstimation('sig', null, [privKeyRSA]);
-    // no entropy required for RSA signing
-    expect(oneRSA).to.equal(0);
-  });
-
-  it('RSA generate', function () {
-    var oneRSA = proxy.entropyEstimation('gen', null, null, {numBits: 2048});
-    // 8   salt for S2K
-    // 16  CFB initialization vector
-    // 256 byte size of key
-    // 1   ?
-    // 2   at least one round required for p and one for and q required
-    // 2   number of key packets
-    expect(oneRSA).to.equal((8 + 16 + (256 + 1) * 2) * 2);
-  });
-
-  it('ELG encrypt', function () {
-    var oneELG = proxy.entropyEstimation('enc', [pubKeyDE]);
-    // 32 byte session key + 16 byte CFB prefix
-    // 2  estimated rounds required in random.getRandomBigIntegerInRange(2, p-2)
-    expect(oneELG).to.equal(48 + (pubKeyDE.subKeys[0].subKey.getBitSize() / 8) * 2);
-
-  });
-
-  it('DSA sign', function () {
-    var oneDSA = proxy.entropyEstimation('sig', null, [privKeyDE]);
-    // 32 bytes for DSA N value
-    // 2  estimated rounds required in random.getRandomBigIntegerInRange(2, q-1)
-    expect(oneDSA).to.equal(32 * 2);
   });
 
 });

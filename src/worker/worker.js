@@ -19,8 +19,8 @@ window = {}; // to make UMD bundles work
 
 importScripts('openpgp.js');
 
-var MIN_SIZE_RANDOM_BUFFER = 8192;
-var MAX_SIZE_RANDOM_BUFFER = 16384;
+var MIN_SIZE_RANDOM_BUFFER = 40000;
+var MAX_SIZE_RANDOM_BUFFER = 60000;
 
 window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
@@ -29,9 +29,6 @@ onmessage = function (event) {
       err = null,
       msg = event.data,
       correct = false;
-  if (msg.seed) {
-    window.openpgp.crypto.random.randomBuffer.set(msg.seed);
-  }
   switch (msg.event) {
     case 'seed-random':
       window.openpgp.crypto.random.randomBuffer.set(msg.buf);
