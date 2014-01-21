@@ -175,3 +175,22 @@ Packetlist.prototype.concat = function (packetlist) {
     }
   }
 };
+
+/**
+ * Allocate a new packetlist from structured packetlist clone
+ * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * @param {Object} packetClone packetlist clone
+ * @returns {Object} new packetlist object with data from packetlist clone
+ */
+module.exports.fromStructuredClone = function(packetlistClone) {
+  var packetlist = new Packetlist();
+  for (var i = 0; i < packetlistClone.length; i++) {
+    packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
+    if (packetlist[i].packets.length !== 0) {
+      packetlist[i].packets = this.fromStructuredClone(packetlist[i].packets);
+    } else {
+      packetlist[i].packets = new Packetlist();
+    }
+  }
+  return packetlist;
+};

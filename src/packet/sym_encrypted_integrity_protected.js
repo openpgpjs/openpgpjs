@@ -27,18 +27,21 @@
  * packet.
  * @requires crypto
  * @requires util
+ * @requires enums
  * @module packet/sym_encrypted_integrity_protected
  */
 
 module.exports = SymEncryptedIntegrityProtected;
 
 var util = require('../util.js'),
-  crypto = require('../crypto');
+  crypto = require('../crypto'),
+  enums = require('../enums.js');
 
 /**
  * @constructor
  */
 function SymEncryptedIntegrityProtected() {
+  this.tag = enums.packet.symEncryptedIntegrityProtected;
   /** The encrypted payload. */
   this.encrypted = null; // string
   /**

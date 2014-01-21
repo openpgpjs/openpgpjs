@@ -65,3 +65,8 @@ module.exports.crypto = require('./crypto');
  * @name module:openpgp.Keyring
  */
 module.exports.Keyring = require('./keyring');
+/**
+ * @see module:worker/async_proxy
+ * @name module:openpgp.AsyncProxy
+ */
+module.exports.AsyncProxy = require('./worker/async_proxy.js');

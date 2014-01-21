@@ -37,6 +37,7 @@ var enums = require('../enums.js'),
  * @constructor
  */
 function OnePassSignature() {
+  this.tag = enums.packet.onePassSignature; // The packet type
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in {@link http://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
   this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4})
@@ -93,4 +94,11 @@ OnePassSignature.prototype.write = function () {
   result += String.fromCharCode(this.flags);
 
   return result;
+};
+
+/**
+ * Fix custom types after cloning
+ */
+OnePassSignature.prototype.postCloneTypeFix = function() {
+  this.signingKeyId = type_keyid.fromClone(this.signingKeyId);
 };

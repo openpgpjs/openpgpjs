@@ -34,6 +34,7 @@ var util = require('../util.js'),
  * @constructor
  */
 function Literal() {
+  this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
   this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();

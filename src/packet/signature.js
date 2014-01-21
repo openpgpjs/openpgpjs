@@ -44,7 +44,7 @@ var util = require('../util.js'),
  * @constructor
  */
 function Signature() {
-
+  this.tag = enums.packet.signature;
   this.version = 4;
   this.signatureType = null;
   this.hashAlgorithm = null;
@@ -52,7 +52,6 @@ function Signature() {
 
   this.signatureData = null;
   this.signedHashValue = null;
-  this.mpi = null;
 
   this.created = new Date();
   this.signatureExpirationTime = null;
@@ -637,4 +636,11 @@ Signature.prototype.isExpired = function () {
     return Date.now() > (this.created.getTime() + this.signatureExpirationTime*1000);
   }
   return false;
+};
+
+/**
+ * Fix custom types after cloning
+ */
+Signature.prototype.postCloneTypeFix = function() {
+  this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };

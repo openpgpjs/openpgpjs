@@ -45,7 +45,7 @@ module.exports = SymEncryptedSessionKey;
  * @constructor
  */
 function SymEncryptedSessionKey() {
-  this.tag = 3;
+  this.tag = enums.packet.symEncryptedSessionKey;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
   this.encrypted = null;
@@ -139,4 +139,11 @@ SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
   this.encrypted = crypto.cfb.encrypt(
     crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm),
     this.sessionKeyEncryptionAlgorithm, key, private_key, true);
+};
+
+/**
+ * Fix custom types after cloning
+ */
+SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
+  this.s2k = type_s2k.fromClone(this.s2k);
 };

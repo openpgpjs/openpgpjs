@@ -100,3 +100,12 @@ MPI.prototype.toBigInteger = function () {
 MPI.prototype.fromBigInteger = function (bn) {
   this.data = bn.clone();
 };
+
+module.exports.fromClone = function (clone) {
+  clone.data.copyTo = BigInteger.prototype.copyTo;
+  var bn = new BigInteger();
+  clone.data.copyTo(bn);
+  var mpi = new MPI();
+  mpi.data = bn;
+  return mpi;
+};

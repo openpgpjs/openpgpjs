@@ -60,30 +60,41 @@ module.exports = {
    * @return {Integer} A secure random number
    */
   getSecureRandom: function(from, to) {
-    var buf = new Uint32Array(1);
-    this.getRandomValues(buf);
+    var randUint = this.getSecureRandomUint();
     var bits = ((to - from)).toString(2).length;
-    while ((buf[0] & (Math.pow(2, bits) - 1)) > (to - from))
-      this.getRandomValues(buf);
-    return from + (Math.abs(buf[0] & (Math.pow(2, bits) - 1)));
+    while ((randUint & (Math.pow(2, bits) - 1)) > (to - from)) {
+      randUint = this.getSecureRandomUint();
+    }
+    return from + (Math.abs(randUint & (Math.pow(2, bits) - 1)));
   },
 
   getSecureRandomOctet: function() {
-    var buf = new Uint32Array(1);
+    var buf = new Uint8Array(1);
     this.getRandomValues(buf);
-    return buf[0] & 0xFF;
+    return buf[0];
+  },
+
+  getSecureRandomUint: function() {
+    var buf = new Uint8Array(4);
+    var dv = new DataView(buf.buffer);
+    this.getRandomValues(buf);
+    return dv.getUint32(0);
   },
 
   /**
    * Helper routine which calls platform specific crypto random generator
-   * @param {Uint32Array} buf
+   * @param {Uint8Array} buf
    */
   getRandomValues: function(buf) {
-    if (nodeCrypto === null) {
+    if (typeof window !== 'undefined' && window.crypto) {
       window.crypto.getRandomValues(buf);
+    } else if (nodeCrypto) {
+      var bytes = nodeCrypto.randomBytes(buf.length);
+      buf.set(bytes);
+    } else if (this.randomBuffer.buffer) {
+      this.randomBuffer.get(buf);
     } else {
-      var bytes = nodeCrypto.randomBytes(4);
-      buf[0] = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+      throw new Error('No secure random number generator available.');
     }
   },
 
@@ -122,6 +133,57 @@ module.exports = {
       r = this.getRandomBigInteger(range.bitLength());
     }
     return min.add(r);
-  }
+  },
 
+  randomBuffer: new RandomBuffer()
+
+};
+
+/**
+ * Buffer for secure random numbers
+ */
+function RandomBuffer() {
+  this.buffer = null;
+  this.size = null;
+}
+
+/**
+ * Initialize buffer
+ * @param  {Integer} size size of buffer
+ */
+RandomBuffer.prototype.init = function(size) {
+  this.buffer = new Uint32Array(size);
+  this.size = 0;
+};
+
+/**
+ * Concat array of secure random numbers to buffer
+ * @param {Uint32Array} buf
+ */
+RandomBuffer.prototype.set = function(buf) {
+  if (!this.buffer) {
+    throw new Error('RandomBuffer is not initialized');
+  }
+  var freeSpace = this.buffer.length - this.size;
+  if (buf.length > freeSpace) {
+    buf = buf.subarray(0, freeSpace);
+  }
+  this.buffer.set(buf, this.size);
+  this.size += buf.length;
+};
+
+/**
+ * Take numbers out of buffer and copy to array
+ * @param {Uint32Array} buf the destination array
+ */
+RandomBuffer.prototype.get = function(buf) {
+  if (!this.buffer) {
+    throw new Error('RandomBuffer is not initialized');
+  }
+  if (this.size < buf.length) {
+    throw new Error('Random number buffer depleted.')
+  }
+  for (var i = 0; i < buf.length; i++) {
+    buf[i] = this.buffer[--this.size];
+  }
 };

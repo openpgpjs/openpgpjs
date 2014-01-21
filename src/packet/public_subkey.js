@@ -17,12 +17,14 @@
 
 /**
  * @requires packet/public_key
+ * @requires enums
  * @module packet/public_subkey
  */
 
 module.exports = PublicSubkey;
 
-var publicKey = require('./public_key.js');
+var publicKey = require('./public_key.js'),
+  enums = require('../enums.js');
 
 /**
  * @constructor
@@ -30,7 +32,8 @@ var publicKey = require('./public_key.js');
  */
 function PublicSubkey() {
   publicKey.call(this);
-};
+  this.tag = enums.packet.publicSubkey;
+}
 
 PublicSubkey.prototype = new publicKey();
 PublicSubkey.prototype.constructor = PublicSubkey;

@@ -65,3 +65,9 @@ Keyid.prototype.isNull = function() {
 module.exports.mapToHex = function (keyId) {
   return keyId.toHex();
 };
+
+module.exports.fromClone = function (clone) {
+  var keyid = new Keyid();
+  keyid.bytes = clone.bytes;
+  return keyid;
+};

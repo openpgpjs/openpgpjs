@@ -23,6 +23,11 @@ module.exports = function(grunt) {
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
+      worker: {
+        files: {
+          'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
+        }
+      },
       unittests: {
         files: {
           'test/lib/unittests-bundle.js': []

@@ -46,6 +46,7 @@ var publicKey = require('./public_key.js'),
  */
 function SecretKey() {
   publicKey.call(this);
+  this.tag = enums.packet.secretKey;
   // encrypted secret-key data
   this.encrypted = null;
   // indicator if secret-key data is available in decrypted form
