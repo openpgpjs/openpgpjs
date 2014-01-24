@@ -30,15 +30,11 @@ It should be noted that js crypto apps deployed via regular web hosting (a.k.a. 
 
 It is also recommended to set a strong passphrase that protects the user's private key on disk.
 
-## Development
+### Development
 
-You can create your own build in `dist/openpgp.min.js` to use in your project.
+To create your own build of the library, just run the following command after cloning the git repo. This will download all dependencies, run the tests and create a minifed bundle under `dist/openpgp.min.js` to use in your project:
 
-    npm install && grunt
-
-### Run tests
-
-    npm test
+    npm install && npm test
 
 ### Documentation
 
