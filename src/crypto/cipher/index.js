@@ -11,6 +11,7 @@ var desModule = require('./des.js');
 module.exports = {
   /** @see module:crypto/cipher/des.des */
   des: desModule.des,
+  tripledes: desModule.des,
   /** @see module:crypto/cipher/des.originalDes */
   originalDes: desModule.originalDes,
   /** @see module:crypto/cipher/cast5 */
