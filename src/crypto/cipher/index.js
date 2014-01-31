@@ -9,10 +9,10 @@
 var desModule = require('./des.js');
 
 module.exports = {
-  /** @see module:crypto/cipher/des.des */
-  des: desModule.des,
   /** @see module:crypto/cipher/des.originalDes */
-  originalDes: desModule.originalDes,
+  des: desModule.originalDes,
+  /** @see module:crypto/cipher/des.des */
+  tripledes: desModule.des,
   /** @see module:crypto/cipher/cast5 */
   cast5: require('./cast5.js'),
   /** @see module:crypto/cipher/twofish */
