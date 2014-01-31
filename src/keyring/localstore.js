@@ -42,7 +42,7 @@ LocalStore.prototype.load = function () {
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
     for (var i = 0; i < armoredKeys.length; i++) {
-      key = openpgp.key.readArmored(armoredKeys[i]);
+      key = openpgp.key.readArmored(armoredKeys[i]).keys[0];
       keys.push(key);
     }
   }
