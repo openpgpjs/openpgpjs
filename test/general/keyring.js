@@ -77,6 +77,15 @@ describe("Keyring", function() {
     expect(keys).to.exist.and.have.length(1);
     done();
   });
+  it('store keys in localstorage', function(done){
+    keyring.store();
+    done();
+  });
+  it('after loading from localstorage: getKeysForKeyId() - valid id', function(done) {
+    var keyring = new openpgp.Keyring(),
+      keys = keyring.getKeysForKeyId(keyId.toLowerCase());
+    expect(keys).to.exist.and.have.length(1);
+    done();
+  });
 });
 
- 
