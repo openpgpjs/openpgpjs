@@ -551,6 +551,7 @@ Signature.prototype.toSign = function (type, data) {
       break;
 
     case t.subkey_binding:
+    case t.subkey_revocation:
     case t.key_binding:
       return this.toSign(t.key, data) + this.toSign(t.key, {
         key: data.bind
@@ -563,7 +564,6 @@ Signature.prototype.toSign = function (type, data) {
       return data.key.writeOld();
 
     case t.key_revocation:
-    case t.subkey_revocation:
       return this.toSign(t.key, data);
     case t.timestamp:
       return '';
