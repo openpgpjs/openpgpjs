@@ -327,17 +327,17 @@ Key.prototype.getPreferredHashAlgorithm = function() {
 function isValidEncryptionKeyPacket(keyPacket, signature) {
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
-         ((signature.keyFlags & enums.keyFlags.encrypt_communication) !== 0 ||
-          (signature.keyFlags & enums.keyFlags.encrypt_storage) !== 0 ||
-          !signature.keyFlags);
+         (!signature.keyFlags ||
+          (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
+          (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0);
 }
 
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.dsa) ||
           keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
           keyPacket.algorithm == enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
-         ((signature.keyFlags & enums.keyFlags.sign_data) !== 0 ||
-          !signature.keyFlags);
+         (!signature.keyFlags ||
+          (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
 
 /**
