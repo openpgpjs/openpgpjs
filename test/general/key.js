@@ -293,5 +293,20 @@ describe('Key', function() {
     expect(status).to.equal(openpgp.enums.keyStatus.revoked);
     done();
   });
+
+  it('Evaluate key flags to find valid encryption key packet', function() {
+    var pubKeys = openpgp.key.readArmored(pub_sig_test);
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.not.exist;
+    expect(pubKeys.keys).to.have.length(1);
+
+    var pubKey = pubKeys.keys[0];
+    // remove subkeys
+    pubKey.subKeys = null;
+    // primary key has only key flags for signing
+    var keyPacket = pubKey.getEncryptionKeyPacket();
+    expect(keyPacket).to.not.exist;
+  });
+
 });
 
