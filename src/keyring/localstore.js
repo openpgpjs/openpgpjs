@@ -36,7 +36,7 @@ function LocalStore(item) {
   }
 }
 
-LocalStore.item = 'armoredKeys';
+LocalStore.prototype.item = 'armoredKeys';
 
 /**
  * Load the keyring from HTML5 local storage and initializes this instance.
