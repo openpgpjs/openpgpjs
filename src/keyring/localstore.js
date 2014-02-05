@@ -36,6 +36,9 @@ function LocalStore(item) {
   }
 }
 
+/*
+ * Declare the localstore itemname
+ */
 LocalStore.prototype.item = 'armoredKeys';
 
 /**
