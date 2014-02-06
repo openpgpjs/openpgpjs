@@ -640,7 +640,7 @@ SubKey.prototype.verify = function(primaryKey) {
   // check subkey revocation signature
   if (this.revocationSignature && !this.revocationSignature.isExpired() && 
      (this.revocationSignature.verified || 
-      this.revocationSignature.verify(primaryKey, {key: this.subKey}))) {
+      this.revocationSignature.verify(primaryKey, {key:primaryKey, bind: this.subKey}))) {
     return enums.keyStatus.revoked;
   }
   // check V3 expiration time
