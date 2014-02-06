@@ -7,7 +7,7 @@ var keyring = new openpgp.Keyring(),
   expect = chai.expect;
 
 describe("Keyring", function() {
-  var user = 'test@t-online.de',
+  var user = 'whiteout.test@t-online.de',
     passphrase = 'asdf',
     keySize = 512,
     keyId = 'F6F60E9B42CDFF4C',
@@ -54,7 +54,7 @@ describe("Keyring", function() {
   });
   it('getPublicKeyForAddress() - valid address', function(done) {
     var key = keyring.getPublicKeyForAddress(user);
-    expect(key).to.exist;
+    expect(key).to.exist.and.have.length(1);
     done();
   });
   it('getPrivateKeyForAddress() - unknown address', function(done) {
@@ -64,7 +64,7 @@ describe("Keyring", function() {
   });
   it('getPrivateKeyForAddress() - valid address', function(done) {
     var key = keyring.getPrivateKeyForAddress(user);
-    expect(key).to.exist;
+    expect(key).to.exist.and.have.length(1);
     done();
   });
   it('getKeysForKeyId() - unknown id', function(done) {
