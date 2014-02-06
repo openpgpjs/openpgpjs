@@ -293,5 +293,20 @@ describe('Key', function() {
     expect(status).to.equal(openpgp.enums.keyStatus.revoked);
     done();
   });
+
+  it('Method getExpirationTime V4 Key', function() {
+    var pubKey = openpgp.key.readArmored(twoKeys).keys[1];
+    expect(pubKey).to.exist;
+    expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    expect(pubKey.getExpirationTime().toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
+  });
+
+  it('Method getExpirationTime V4 SubKey', function() {
+    var pubKey = openpgp.key.readArmored(twoKeys).keys[1];
+    expect(pubKey).to.exist;
+    expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    expect(pubKey.subKeys[0].getExpirationTime().toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
+  });
+
 });
 

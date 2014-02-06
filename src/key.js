@@ -470,7 +470,7 @@ function getExpirationTime(keyPacket, selfCertificate) {
     return new Date(keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000);
   }
   // check V4 expiration time
-  if (this.primaryKey.version == 4 && selfCertificate.keyNeverExpires === false) {
+  if (keyPacket.version == 4 && selfCertificate.keyNeverExpires === false) {
     return new Date(keyPacket.created.getTime() + selfCertificate.keyExpirationTime*1000);
   }
   return null;
