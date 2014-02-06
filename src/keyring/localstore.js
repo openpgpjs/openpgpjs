@@ -19,25 +19,34 @@
  * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  * @requires openpgp
  * @module keyring/localstore
+ * @param {String} item itemname in localstore
  */
 module.exports = LocalStore;
 
 var openpgp = require('../');
 
-function LocalStore() {
+function LocalStore(item) {
   if (typeof window != 'undefined' && window.localStorage) {
     this.storage = window.localStorage;
   } else {
     this.storage = new (require('node-localstorage').LocalStorage)(openpgp.config.node_store);
   }
+  if(typeof item == 'string') {
+    this.item = item;
+  }
 }
+
+/*
+ * Declare the localstore itemname
+ */
+LocalStore.prototype.item = 'armoredKeys';
 
 /**
  * Load the keyring from HTML5 local storage and initializes this instance.
  * @return {Array<module:key~Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.load = function () {
-  var armoredKeys = JSON.parse(this.storage.getItem('armoredKeys'));
+  var armoredKeys = JSON.parse(this.storage.getItem(this.item));
   var keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
@@ -59,5 +68,5 @@ LocalStore.prototype.store = function (keys) {
   for (var i = 0; i < keys.length; i++) {
     armoredKeys.push(keys[i].armor());
   }
-  this.storage.setItem('armoredKeys', JSON.stringify(armoredKeys));
+  this.storage.setItem(this.item, JSON.stringify(armoredKeys));
 };
