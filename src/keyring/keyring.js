@@ -67,7 +67,7 @@ Keyring.prototype.clear = function() {
 function emailCheck(email, key) {
   email = email.toLowerCase();
   var keyEmails = key.getUserIds();
-  for (var i; i < keyEmails.length; i++) {
+  for (var i = 0; i < keyEmails.length; i++) {
     //we need to get just the email from the userid key
     keyEmail = keyEmails[i].split('<')[1].split('>')[0].trim().toLowerCase();
     if (keyEmail == email) {
