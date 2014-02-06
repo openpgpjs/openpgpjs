@@ -17,11 +17,15 @@
 
 /**
  * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
- * @requires openpgp
+ * @requires enums
+ * @requires key
+ * @requires util
  * @module keyring/keyring
  */
 
-var openpgp = require('../');
+var enums = require('../enums.js'),
+  keyModule = require('../key.js'),
+  util = require('../util.js');
 
 /**
  * Callback to check if a key matches the input
@@ -87,7 +91,7 @@ function emailCheck(email, key) {
 function idCheck(id, key) {
   var keyids = key.getKeyIds();
   for (var i = 0; i < keyids.length; i++) {
-    if (openpgp.util.hexstrdump(keyids[i].write()) == id) {
+    if (util.hexstrdump(keyids[i].write()) == id) {
       return true;
     }
   }
@@ -107,12 +111,12 @@ function checkForIdentityAndKeyTypeMatch(keys, identityFunction, identityInput, 
   for (var p = 0; p < keys.length; p++) {
     var key = keys[p];
     switch (keyType) {
-      case openpgp.enums.packet.publicKey:
+      case enums.packet.publicKey:
         if (key.isPublic() && identityFunction(identityInput, key)) {
           results.push(key);
         }
         break;
-      case openpgp.enums.packet.private_key:
+      case enums.packet.secretKey:
         if (key.isPrivate() && identityFunction(identityInput, key)) {
           results.push(key);
         }
@@ -128,7 +132,7 @@ function checkForIdentityAndKeyTypeMatch(keys, identityFunction, identityInput, 
  * @return {Array<module:key~Key>} The public keys associated with provided email address.
  */
 Keyring.prototype.getPublicKeyForAddress = function (email) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.publicKey);
+  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, enums.packet.publicKey);
 };
 
 /**
@@ -137,7 +141,7 @@ Keyring.prototype.getPublicKeyForAddress = function (email) {
  * @return {Array<module:key~Key>} private keys found
  */
 Keyring.prototype.getPrivateKeyForAddress = function (email) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, openpgp.enums.packet.secretKey);
+  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, enums.packet.secretKey);
 };
 
 /**
@@ -146,7 +150,7 @@ Keyring.prototype.getPrivateKeyForAddress = function (email) {
  * @return {Array<module:key~Key>} public keys found
  */
 Keyring.prototype.getKeysForKeyId = function (keyId) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, openpgp.enums.packet.publicKey);
+  return checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, enums.packet.publicKey);
 };
 
 /**
@@ -154,7 +158,7 @@ Keyring.prototype.getKeysForKeyId = function (keyId) {
  * @param {String} armored message to read the keys/key from
  */
 Keyring.prototype.importKey = function (armored) {
-  this.keys = this.keys.concat(openpgp.key.readArmored(armored).keys);
+  this.keys = this.keys.concat(keyModule.readArmored(armored).keys);
 
   return true;
 };
