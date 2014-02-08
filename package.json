@@ -33,6 +33,7 @@
     "mocha-phantomjs": "~3.1.6",
     "phantomjs": "~1.9.2-5",
     "chai": "~1.8.1",
+    "github2": "git://github.com/open-sw/node-github2.git",
     "grunt-contrib-copy": "~0.4.1",
     "grunt-browserify": "~1.2.11",
     "grunt-contrib-uglify": "*",
