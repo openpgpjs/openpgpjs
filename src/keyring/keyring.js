@@ -145,12 +145,47 @@ Keyring.prototype.getPrivateKeyForAddress = function (email) {
 };
 
 /**
- * Searches the keyring for public keys having the specified key id
+ * Searches the keyring for a key having the specified key id
  * @param {String} keyId provided as string of hex number (lowercase)
- * @return {Array<module:key~Key>} public keys found
+ * @param  {Boolean} deep if true search also in subkeys
+ * @return {module:key~Key|null} key found or null
  */
-Keyring.prototype.getKeysForKeyId = function (keyId) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, enums.packet.publicKey);
+Keyring.prototype.getKeyForId = function (keyId, deep) {
+  for (var i = 0; i < this.keys.length; i++) {
+    if (this.keys[i].primaryKey.getKeyId().toHex() === keyId) {
+      return this.keys[i];
+    }
+    if (deep) {
+      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
+        if (this.keys[i].subKeys[j].getKeyId().toHex() === keyId) {
+          return this.keys[i];
+        }
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Searches the keyring for a key having the specified long key id (fingerprint)
+ * @param  {String} longKeyId fingerprint in lowercase hex
+ * @param  {Boolean} deep if true search also in subkeys
+ * @return {module:key~Key|null}           key found or null
+ */
+Keyring.prototype.getKeyForLongId = function(longKeyId, deep) {
+  for (var i = 0; i < this.keys.length; i++) {
+    if (this.keys[i].primaryKey.getFingerprint() === longKeyId) {
+      return this.keys[i];
+    }
+    if (deep) {
+      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
+        if (this.keys[i].subKeys[j].getFingerprint() === longKeyId) {
+          return this.keys[i];
+        }
+      }
+    }
+  }
+  return null;
 };
 
 /**
