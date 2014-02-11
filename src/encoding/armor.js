@@ -329,7 +329,7 @@ function armor(messagetype, body, partindex, parttotal) {
       result += "\r\n=" + getCheckSum(body) + "\r\n";
       result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
       break;
-    case enums.armor.mutlipart_last:
+    case enums.armor.multipart_last:
       result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
       result += addheader();
       result += base64.encode(body);
