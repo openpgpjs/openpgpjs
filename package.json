@@ -1,7 +1,7 @@
 {
   "name": "openpgp",
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
-  "version": "0.3.2",
+  "version": "0.4.0-dev",
   "homepage": "http://openpgpjs.org/",
   "engines": {
     "node": ">=0.8"
@@ -33,6 +33,7 @@
     "mocha-phantomjs": "~3.1.6",
     "phantomjs": "~1.9.2-5",
     "chai": "~1.8.1",
+    "grunt-contrib-connect": "~0.6.0",
     "grunt-contrib-copy": "~0.4.1",
     "grunt-browserify": "~1.2.11",
     "grunt-contrib-uglify": "*",

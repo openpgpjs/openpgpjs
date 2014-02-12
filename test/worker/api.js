@@ -177,20 +177,17 @@ var priv_key_de =
 
 describe('High level API', function() {
 
-  var proxy;
-
   this.timeout(0);
 
   before(function() {
-    proxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
-    expect(proxy).to.exist;
+    openpgp.initWorker('../dist/openpgp.worker.js');
     initKeys();
   });
 
   describe('Encryption', function() {
 
     it('RSA: encryptMessage async', function (done) {
-      proxy.encryptMessage([pubKeyRSA], plaintext, function(err, data) {
+      openpgp.encryptMessage([pubKeyRSA], plaintext, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -209,7 +206,7 @@ describe('High level API', function() {
     });
 
     it('ELG: encryptMessage async', function (done) {
-      proxy.encryptMessage([pubKeyDE], plaintext, function(err, data) {
+      openpgp.encryptMessage([pubKeyDE], plaintext, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -241,7 +238,7 @@ describe('High level API', function() {
     });
 
     it('RSA: decryptMessage async', function (done) {
-      proxy.decryptMessage(privKeyRSA, msgRSA, function(err, data) {
+      openpgp.decryptMessage(privKeyRSA, msgRSA, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.equal(plaintext);
@@ -256,7 +253,7 @@ describe('High level API', function() {
     });
 
     it('ELG: decryptMessage async', function (done) {
-      proxy.decryptMessage(privKeyDE, msgDE, function(err, data) {
+      openpgp.decryptMessage(privKeyDE, msgDE, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.equal(plaintext);
@@ -291,7 +288,7 @@ describe('High level API', function() {
     });
 
     it('RSA: decryptAndVerifyMessage async', function (done) {
-      proxy.decryptAndVerifyMessage(privKeyRSA, [pubKeyRSA], msgRSA, function(err, data) {
+      openpgp.decryptAndVerifyMessage(privKeyRSA, [pubKeyRSA], msgRSA, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         verifySignature(data, privKeyRSA);
@@ -300,7 +297,7 @@ describe('High level API', function() {
     });
 
     it('ELG: decryptAndVerifyMessage async', function (done) {
-      proxy.decryptAndVerifyMessage(privKeyDE, [pubKeyDE], msgDE, function(err, data) {
+      openpgp.decryptAndVerifyMessage(privKeyDE, [pubKeyDE], msgDE, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         verifySignature(data, privKeyDE);
@@ -317,7 +314,7 @@ describe('High level API', function() {
     });
 
     it('RSA: signAndEncryptMessage async', function (done) {
-      proxy.signAndEncryptMessage([pubKeyRSA], privKeyRSA, plaintext, function(err, data) {
+      openpgp.signAndEncryptMessage([pubKeyRSA], privKeyRSA, plaintext, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -339,7 +336,7 @@ describe('High level API', function() {
     });
 
     it('RSA: signClearMessage async', function (done) {
-      proxy.signClearMessage([privKeyRSA], plaintext, function(err, data) {
+      openpgp.signClearMessage([privKeyRSA], plaintext, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
@@ -350,7 +347,7 @@ describe('High level API', function() {
     });
 
     it('DSA: signClearMessage async', function (done) {
-      proxy.signClearMessage([privKeyDE], plaintext, function(err, data) {
+      openpgp.signClearMessage([privKeyDE], plaintext, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
@@ -363,7 +360,7 @@ describe('High level API', function() {
     it('RSA: verifyClearSignedMessage async', function (done) {
       var signed = openpgp.signClearMessage([privKeyRSA], plaintext);
       signed = openpgp.cleartext.readArmored(signed);
-      proxy.verifyClearSignedMessage([pubKeyRSA], signed, function(err, data) {
+      openpgp.verifyClearSignedMessage([pubKeyRSA], signed, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         verifySignature(data, privKeyRSA);
@@ -378,7 +375,7 @@ describe('High level API', function() {
     before(initKeys);
 
     it('Signing with not decrypted key gives error', function (done) {
-      proxy.signClearMessage([privKeyRSA], plaintext, function(err, data) {
+      openpgp.signClearMessage([privKeyRSA], plaintext, function(err, data) {
         expect(data).to.not.exist;
         expect(err).to.exist;
         expect(err.message).to.equal('Private key is not decrypted.');
@@ -404,7 +401,7 @@ describe('High level API', function() {
   describe('Key generation', function() {
 
     it('Generate 1024-bit RSA/RSA key async', function (done) {
-      proxy.generateKeyPair(3, 1024, 'Test McTestington <test@example.com>', 'hello world', function(err, data) {
+      openpgp.generateKeyPair(3, 1024, 'Test McTestington <test@example.com>', 'hello world', function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
@@ -426,9 +423,10 @@ describe('High level API', function() {
 
   describe('Decrypt secret key', function() {
 
-    var msg;
+    var msg, proxy;
 
     beforeEach(function() {
+      proxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
       initKeys();
       msg = openpgp.message.fromText(plaintext).encrypt([pubKeyRSA]);
     });
