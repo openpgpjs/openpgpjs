@@ -231,7 +231,7 @@ function generateKeyPair(keyType, numBits, userId, passphrase, callback) {
  * Are we in a browser and do we support worker?
  */
 function useWorker(callback) {
-  if (typeof callback === 'undefined') {
+  if (typeof window === 'undefined' || !window.Worker || typeof callback !== 'function') {
     return false;
   }
 
