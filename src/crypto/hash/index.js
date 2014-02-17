@@ -2,7 +2,8 @@
  * @requires crypto/hash/sha
  * @module crypto/hash
  */
-var sha = require('./sha.js');
+var sha = require('./sha.js'),
+  forge_sha256 = require('./forge_sha256.js');
 
 module.exports = {
   /** @see module:crypto/hash/md5 */
@@ -39,7 +40,9 @@ module.exports = {
         return this.ripemd(data);
       case 8:
         // - SHA256 [FIPS180]
-        return this.sha256(data);
+        var sha256 = forge_sha256.create();
+        sha256.update(data);
+        return sha256.digest().getBytes();
       case 9:
         // - SHA384 [FIPS180]
         return this.sha384(data);
