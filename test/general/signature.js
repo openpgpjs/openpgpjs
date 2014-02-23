@@ -571,4 +571,12 @@ describe("Signature", function() {
     expect(verified).to.be.true;
     done();
   });
+
+  it('Write unhashed subpackets', function() {
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    expect(pubKey.users[0].selfCertifications).to.exist;
+    pubKey = openpgp.key.readArmored(pubKey.armor()).keys[0]
+    expect(pubKey.users[0].selfCertifications).to.exist;
+  });
+
 });
