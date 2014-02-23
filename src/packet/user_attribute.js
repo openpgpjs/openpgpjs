@@ -64,3 +64,17 @@ UserAttribute.prototype.read = function(bytes) {
     i += len.len;
   }
 };
+
+/**
+ * Compare for equality
+ * @param  {module:user_attribute~UserAttribute} usrAttr
+ * @return {Boolean}         true if equal
+ */
+UserAttribute.prototype.equals = function(usrAttr) {
+  if (!usrAttr || !(usrAttr instanceof UserAttribute)) {
+    return false;
+  }
+  return this.attributes.every(function(attr, index) {
+    return attr === usrAttr.attributes[index];
+  });
+};
