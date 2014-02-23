@@ -218,4 +218,7 @@ PublicKey.prototype.postCloneTypeFix = function() {
   for (var i = 0; i < this.mpi.length; i++) {
     this.mpi[i] = type_mpi.fromClone(this.mpi[i]);
   }
+  if (this.keyid) {
+    this.keyid = type_keyid.fromClone(this.keyid);
+  }
 };
