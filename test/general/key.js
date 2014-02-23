@@ -221,6 +221,48 @@ describe('Key', function() {
     '=e8xo',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
+  var priv_key_rsa =
+    ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    'Version: GnuPG v2.0.19 (GNU/Linux)',
+    'Type: RSA/RSA 1024',
+    'Pwd: hello world',
+    '',
+    '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',
+    '=lw5e',
+    '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+
   it('Parsing armored text with two keys', function(done) {
     var pubKeys = openpgp.key.readArmored(twoKeys);
     expect(pubKeys).to.exist;
@@ -250,9 +292,9 @@ describe('Key', function() {
     expect(pubKeyV3).to.exist;
 
     expect(pubKeyV4.getKeyPacket().getKeyId().toHex()).to.equal('4a63613a4d6e4094');
-    expect(openpgp.util.hexstrdump(pubKeyV4.getKeyPacket().getFingerprint())).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
+    expect(pubKeyV4.getKeyPacket().getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
     expect(pubKeyV3.getKeyPacket().getKeyId().toHex()).to.equal('e5b7a014a237ba9d');
-    expect(openpgp.util.hexstrdump(pubKeyV3.getKeyPacket().getFingerprint())).to.equal('a44fcee620436a443bc4913640ab3e49');
+    expect(pubKeyV3.getKeyPacket().getFingerprint()).to.equal('a44fcee620436a443bc4913640ab3e49');
     done();
   });
 
@@ -320,6 +362,96 @@ describe('Key', function() {
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
     expect(pubKey.subKeys[0].getExpirationTime().toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
+  });
+
+  it('update() - throw error if fingerprints not equal', function() {
+    var keys = openpgp.key.readArmored(twoKeys).keys;
+    expect(keys[0].update.bind(keys[0], keys[1])).to.throw('Key update method: fingerprints of keys not equal');
+  });
+
+  it('update() - merge revocation signature', function() {
+    var source = openpgp.key.readArmored(pub_revoked).keys[0];
+    var dest = openpgp.key.readArmored(pub_revoked).keys[0];
+    expect(source.revocationSignature).to.exist;
+    dest.revocationSignature = null;
+    dest.update(source);
+    expect(dest.revocationSignature).to.exist.and.be.an.instanceof(openpgp.packet.Signature);
+  });
+
+  it('update() - merge user', function() {
+    var source = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var dest = openpgp.key.readArmored(pub_sig_test).keys[0];
+    expect(source.users[1]).to.exist;
+    dest.users.pop();
+    dest.update(source);
+    expect(dest.users[1]).to.exist;
+    expect(dest.users[1].userId).to.equal(source.users[1].userId);
+  });
+
+  it('update() - merge user - other and revocation certification', function() {
+    var source = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var dest = openpgp.key.readArmored(pub_sig_test).keys[0];
+    expect(source.users[1].otherCertifications).to.exist;
+    expect(source.users[1].revocationCertifications).to.exist;
+    dest.users[1].otherCertifications = null;
+    dest.users[1].revocationCertifications.pop();
+    dest.update(source);
+    expect(dest.users[1].otherCertifications).to.exist.and.to.have.length(1);
+    expect(dest.users[1].otherCertifications[0].signature).to.equal(source.users[1].otherCertifications[0].signature);
+    expect(dest.users[1].revocationCertifications).to.exist.and.to.have.length(2);
+    expect(dest.users[1].revocationCertifications[1].signature).to.equal(source.users[1].revocationCertifications[1].signature);
+  });
+
+  it('update() - merge subkey', function() {
+    var source = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var dest = openpgp.key.readArmored(pub_sig_test).keys[0];
+    expect(source.subKeys[1]).to.exist;
+    dest.subKeys.pop();
+    dest.update(source);
+    expect(dest.subKeys[1]).to.exist;
+    expect(dest.subKeys[1].subKey.getKeyId().toHex()).to.equal(source.subKeys[1].subKey.getKeyId().toHex());
+  });
+
+  it('update() - merge subkey - revocation signature', function() {
+    var source = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var dest = openpgp.key.readArmored(pub_sig_test).keys[0];
+    expect(source.subKeys[0].revocationSignature).to.exist;
+    dest.subKeys[0].revocationSignature = null;
+    dest.update(source);
+    expect(dest.subKeys[0].revocationSignature).to.exist;
+    expect(dest.subKeys[0].revocationSignature.signature).to.equal(dest.subKeys[0].revocationSignature.signature);
+  });
+
+  it('update() - merge private key into public key', function() {
+    var source = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    var dest = openpgp.key.readArmored(twoKeys).keys[0];
+    expect(dest.isPublic()).to.be.true;
+    dest.update(source);
+    expect(dest.isPrivate()).to.be.true;
+    expect(source.verifyPrimaryKey()).to.equal(dest.verifyPrimaryKey());
+    expect(source.users[0].verify(source.primaryKey)).to.equal(dest.users[0].verify(dest.primaryKey));
+    expect(source.subKeys[0].verify(source.primaryKey)).to.equal(dest.subKeys[0].verify(dest.primaryKey));
+  });
+
+  it('update() - merge private key into public key - no subkeys', function() {
+    var source = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    var dest = openpgp.key.readArmored(twoKeys).keys[0];
+    source.subKeys = null;
+    dest.subKeys = null;
+    expect(dest.isPublic()).to.be.true;
+    dest.update(source);
+    expect(dest.isPrivate()).to.be.true;
+    expect(source.verifyPrimaryKey()).to.equal(dest.verifyPrimaryKey());
+    expect(source.users[0].verify(source.primaryKey)).to.equal(dest.users[0].verify(dest.primaryKey));
+  });
+
+  it('update() - merge private key into public key - mismatch throws error', function() {
+    var source = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    var dest = openpgp.key.readArmored(twoKeys).keys[0];
+    source.subKeys = null;
+    expect(dest.subKeys).to.exist;
+    expect(dest.isPublic()).to.be.true;
+    expect(dest.update.bind(dest, source)).to.throw('Cannot update public key with private key if subkey mismatch');
   });
 
 });
