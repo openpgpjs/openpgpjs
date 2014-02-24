@@ -52,7 +52,7 @@ module.exports = {
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
     util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
     var ciphertext = "";
-    var i;
+    var i, n;
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
     for (i = 0; i < block_size; i++) FR[i] = 0;
 
@@ -110,12 +110,18 @@ module.exports = {
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
       //     that we have finished encrypting the 10 octets of prefixed data.
       //     This produces C11-C18, the next 8 octets of ciphertext.
-      for (i = 2; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+      for (i = 2; i < block_size; i++) {
+        ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+      }
+
       var tempCiphertext = ciphertext.substring(0, 2 * block_size).split('');
       var tempCiphertextString = ciphertext.substring(block_size);
+      var tempCiphertextBlock;
       for (n = block_size; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (i = 0; i < block_size; i++) FR[i] = tempCiphertextString.charCodeAt(i);
+        for (i = 0; i < block_size; i++) {
+          FR[i] = tempCiphertextString.charCodeAt(i);
+        }
         tempCiphertextString = '';
 
         // 11. FR is encrypted to produce FRE.
@@ -125,8 +131,9 @@ module.exports = {
         //     next 8 octets of ciphertext.  These are loaded into FR and the
         //     process is repeated until the plaintext is used up.
         for (i = 0; i < block_size; i++) {
-          tempCiphertext.push(String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i)));
-          tempCiphertextString += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
+          tempCiphertextBlock = String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
+          tempCiphertext[tempCiphertext.length] = tempCiphertextBlock;
+          tempCiphertextString += tempCiphertextBlock;
         }
       }
       ciphertext = tempCiphertext.join('');
