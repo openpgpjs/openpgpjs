@@ -88,7 +88,7 @@ describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function
       var res = test_aes(testvectors256[i][1],testvectors256[i][0],testvectors256[i][2]);
       expect(res, 'block ' + util.hexidump(testvectors256[i][1]) +
                   ' and key ' + util.hexidump(testvectors256[i][0]) +
-                  ' should be ' + util.hexidump(testvectors256[i][2]));
+                  ' should be ' + util.hexidump(testvectors256[i][2])).to.be.true;
     }
     done();
   });
