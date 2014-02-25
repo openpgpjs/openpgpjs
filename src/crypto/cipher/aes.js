@@ -16,6 +16,8 @@
  * @module crypto/cipher/aes
  */
 
+'use strict';
+
 var util = require('../../util.js');
 
 // The round constants used in subkey expansion
