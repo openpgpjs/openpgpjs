@@ -96,7 +96,7 @@ module.exports = {
       }
     }
     // 8.  FR is encrypted to produce FRE.
-    FRE = cipherfn.encrypt(FR, key);
+    FRE = cipherfn.encrypt(FR);
 
     if (resync) {
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
@@ -224,13 +224,13 @@ module.exports = {
       iblock[i] = 0;
     }
 
-    iblock = cipherfn.encrypt(iblock, key);
+    iblock = cipherfn.encrypt(iblock);
     for (i = 0; i < block_size; i++) {
       ablock[i] = ciphertext.charCodeAt(i);
       iblock[i] ^= ablock[i];
     }
 
-    ablock = cipherfn.encrypt(ablock, key);
+    ablock = cipherfn.encrypt(ablock);
 
     // test check octets
     if (iblock[block_size - 2] != (ablock[0] ^ ciphertext.charCodeAt(block_size)) || iblock[block_size - 1] != (ablock[
