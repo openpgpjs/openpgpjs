@@ -61,22 +61,50 @@ describe('Basic', function() {
       done();
     });
     it('Performance test', function (done) {
+      // init test data
       function randomString(length, chars) {
         var result = '';
         for (var i = length; i > 0; --i) result += chars[Math.round(Math.random() * (chars.length - 1))];
         return result;
       }
-      var rString = randomString(1024*1024, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      var message = randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+
+      var userid = 'Test McTestington <test@example.com>';
+      var passphrase = 'password';
+
+      var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, userid, passphrase);
+
+      var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
+
+      var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
+      var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
+
+      var privKey = privKeys.keys[0];
+      var pubKey = publicKeys.keys[0];
+
+      var success = privKey.decrypt(passphrase);
 
       if (console.profile) {
         console.profile("encrypt/sign/verify/decrypt");
       }
 
-      testHelper('password', 'Test McTestington <test@example.com>', rString);
+      var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
 
       if (console.profileEnd) {
         console.profileEnd();
       }
+
+      var msg = openpgp.message.readArmored(encrypted);
+
+      var keyids = msg.getEncryptionKeyIds();
+
+      expect(keyids).to.exist;
+
+      var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
+
+      expect(decrypted).to.exist;
+      expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.text).to.equal(message);
 
       done();
     });
