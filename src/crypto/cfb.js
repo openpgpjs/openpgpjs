@@ -48,8 +48,8 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var FR = new Array(block_size);
-    var FRE = new Array(block_size);
+    var FR = new Uint8Array(block_size);
+    var FRE = new Uint8Array(block_size);
 
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
     util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
@@ -173,8 +173,8 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var iblock = new Array(block_size);
-    var ablock = new Array(block_size);
+    var iblock = new Uint8Array(block_size);
+    var ablock = new Uint8Array(block_size);
     var i;
 
 
@@ -214,8 +214,8 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var iblock = new Array(block_size);
-    var ablock = new Array(block_size);
+    var iblock = new Uint8Array(block_size);
+    var ablock = new Uint8Array(block_size);
     var i, n = '';
     var text = '';
 

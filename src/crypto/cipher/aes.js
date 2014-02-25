@@ -21,14 +21,14 @@
 var util = require('../../util.js');
 
 // The round constants used in subkey expansion
-var Rcon = [
+var Rcon = new Uint8Array([
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8,
     0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4,
     0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91
-];
+]);
 
 // Precomputed lookup table for the SBox
-var S = [
+var S = new Uint8Array([
     99, 124, 119, 123, 242, 107, 111, 197, 48, 1, 103, 43, 254, 215, 171,
     118, 202, 130, 201, 125, 250, 89, 71, 240, 173, 212, 162, 175, 156, 164,
     114, 192, 183, 253, 147, 38, 54, 63, 247, 204, 52, 165, 229, 241, 113,
@@ -47,9 +47,9 @@ var S = [
     248, 152, 17, 105, 217, 142, 148, 155, 30, 135, 233, 206, 85, 40, 223,
     140, 161, 137, 13, 191, 230, 66, 104, 65, 153, 45, 15, 176, 84, 187,
     22
-];
+]);
 
-var T1 = [
+var T1 = new Uint32Array([
     0xa56363c6, 0x847c7cf8, 0x997777ee, 0x8d7b7bf6,
     0x0df2f2ff, 0xbd6b6bd6, 0xb16f6fde, 0x54c5c591,
     0x50303060, 0x03010102, 0xa96767ce, 0x7d2b2b56,
@@ -114,9 +114,9 @@ var T1 = [
     0xdabfbf65, 0x31e6e6d7, 0xc6424284, 0xb86868d0,
     0xc3414182, 0xb0999929, 0x772d2d5a, 0x110f0f1e,
     0xcbb0b07b, 0xfc5454a8, 0xd6bbbb6d, 0x3a16162c
-];
+]);
 
-var T2 = [
+var T2 = new Uint32Array([
     0x6363c6a5, 0x7c7cf884, 0x7777ee99, 0x7b7bf68d,
     0xf2f2ff0d, 0x6b6bd6bd, 0x6f6fdeb1, 0xc5c59154,
     0x30306050, 0x01010203, 0x6767cea9, 0x2b2b567d,
@@ -181,9 +181,9 @@ var T2 = [
     0xbfbf65da, 0xe6e6d731, 0x424284c6, 0x6868d0b8,
     0x414182c3, 0x999929b0, 0x2d2d5a77, 0x0f0f1e11,
     0xb0b07bcb, 0x5454a8fc, 0xbbbb6dd6, 0x16162c3a
-];
+]);
 
-var T3 = [
+var T3 = new Uint32Array([
     0x63c6a563, 0x7cf8847c, 0x77ee9977, 0x7bf68d7b,
     0xf2ff0df2, 0x6bd6bd6b, 0x6fdeb16f, 0xc59154c5,
     0x30605030, 0x01020301, 0x67cea967, 0x2b567d2b,
@@ -248,9 +248,9 @@ var T3 = [
     0xbf65dabf, 0xe6d731e6, 0x4284c642, 0x68d0b868,
     0x4182c341, 0x9929b099, 0x2d5a772d, 0x0f1e110f,
     0xb07bcbb0, 0x54a8fc54, 0xbb6dd6bb, 0x162c3a16
-];
+]);
 
-var T4 = [
+var T4 = new Uint32Array([
     0xc6a56363, 0xf8847c7c, 0xee997777, 0xf68d7b7b,
     0xff0df2f2, 0xd6bd6b6b, 0xdeb16f6f, 0x9154c5c5,
     0x60503030, 0x02030101, 0xcea96767, 0x567d2b2b,
@@ -315,7 +315,7 @@ var T4 = [
     0x65dabfbf, 0xd731e6e6, 0x84c64242, 0xd0b86868,
     0x82c34141, 0x29b09999, 0x5a772d2d, 0x1e110f0f,
     0x7bcbb0b0, 0xa8fc5454, 0x6dd6bbbb, 0x2c3a1616
-];
+]);
 
 function B0(x) {
   return (x & 255);
@@ -334,8 +334,7 @@ function B3(x) {
 }
 
 function F1(x0, x1, x2, x3) {
-  return B1(T1[x0 & 255]) | (B1(T1[(x1 >> 8) & 255]) << 8) | (B1(T1[(x2 >> 16) & 255]) << 16) | (B1(T1[x3 >>> 24]) <<
-    24);
+  return B1(T1[x0 & 255]) | (B1(T1[(x1 >> 8) & 255]) << 8) | (B1(T1[(x2 >> 16) & 255]) << 16) | (B1(T1[x3 >>> 24]) << 24);
 }
 
 function packBytes(octets) {
@@ -345,8 +344,9 @@ function packBytes(octets) {
 
   if (!octets || len % 4) return;
 
-  for (i = 0, j = 0; j < len; j += 4)
+  for (i = 0, j = 0; j < len; j += 4) {
     b[i++] = octets[j] | (octets[j + 1] << 8) | (octets[j + 2] << 16) | (octets[j + 3] << 24);
+  }
 
   return b;
 }
@@ -393,20 +393,22 @@ function keyExpansion(key) {
     throw new Error('Invalid key-length for AES key:' + keylen);
   }
 
-  for (i = 0; i < maxrk + 1; i++) keySched[i] = new Array(4);
+  for (i = 0; i < maxrk + 1; i++) {
+    keySched[i] = new Uint32Array(4);
+  }
 
-  for (i = 0, j = 0; j < keylen; j++, i += 4)
-    k[j] = key.charCodeAt(i) | (key.charCodeAt(i + 1) << 8) | (key.charCodeAt(i + 2) << 16) | (key.charCodeAt(i + 3) <<
-      24);
+  for (i = 0, j = 0; j < keylen; j++, i += 4) {
+    k[j] = key.charCodeAt(i) | (key.charCodeAt(i + 1) << 8) | (key.charCodeAt(i + 2) << 16) | (key.charCodeAt(i + 3) << 24);
+  }
 
-  for (j = kc - 1; j >= 0; j--) tk[j] = k[j];
+  for (j = kc - 1; j >= 0; j--) {
+    tk[j] = k[j];
+  }
 
   r = 0;
   t = 0;
-  for (j = 0;
-  (j < kc) && (r < rounds + 1);) {
-    for (;
-    (j < kc) && (t < 4); j++, t++) {
+  for (j = 0; (j < kc) && (r < rounds + 1);) {
+    for (; (j < kc) && (t < 4); j++, t++) {
       keySched[r][t] = tk[j];
     }
     if (t == 4) {
@@ -422,20 +424,24 @@ function keyExpansion(key) {
     tk[0] ^= Rcon[rconpointer++];
 
     if (kc != 8) {
-      for (j = 1; j < kc; j++) tk[j] ^= tk[j - 1];
+      for (j = 1; j < kc; j++) {
+        tk[j] ^= tk[j - 1];
+      }
     } else {
-      for (j = 1; j < kc / 2; j++) tk[j] ^= tk[j - 1];
+      for (j = 1; j < kc / 2; j++) {
+        tk[j] ^= tk[j - 1];
+      }
 
       temp = tk[kc / 2 - 1];
       tk[kc / 2] ^= S[B0(temp)] | (S[B1(temp)] << 8) | (S[B2(temp)] << 16) | (S[B3(temp)] << 24);
 
-      for (j = kc / 2 + 1; j < kc; j++) tk[j] ^= tk[j - 1];
+      for (j = kc / 2 + 1; j < kc; j++) {
+        tk[j] ^= tk[j - 1];
+      }
     }
 
-    for (j = 0;
-    (j < kc) && (r < rounds + 1);) {
-      for (;
-      (j < kc) && (t < 4); j++, t++) {
+    for (j = 0; (j < kc) && (r < rounds + 1);) {
+      for (; (j < kc) && (t < 4); j++, t++) {
         keySched[r][t] = tk[j];
       }
       if (t == 4) {
