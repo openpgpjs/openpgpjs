@@ -88,13 +88,18 @@ describe('Basic', function() {
         console.profile("encrypt/sign/verify/decrypt");
       }
 
-      var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
+      // sign and encrypt
+      var msg, encrypted;
+      msg = openpgp.message.fromBinary(message);
+      msg = msg.sign([privKey]);
+      msg = msg.encrypt([pubKey]);
+      encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
 
       if (console.profileEnd) {
         console.profileEnd();
       }
 
-      var msg = openpgp.message.readArmored(encrypted);
+      msg = openpgp.message.readArmored(encrypted);
 
       var keyids = msg.getEncryptionKeyIds();
 
