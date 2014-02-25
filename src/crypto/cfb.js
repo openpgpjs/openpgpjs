@@ -130,7 +130,7 @@ module.exports = {
         ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       }
 
-      var tempCiphertext = ciphertext.substring(0, 2 * block_size).split('');
+      var tempCiphertext = ciphertext.substring(0, 2 * block_size);
       var tempCiphertextString = ciphertext.substring(block_size);
       var tempCiphertextBlock;
       for (n = block_size; n < plaintext.length; n += block_size) {
@@ -148,11 +148,11 @@ module.exports = {
         //     process is repeated until the plaintext is used up.
         for (i = 0; i < block_size; i++) {
           tempCiphertextBlock = String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
-          tempCiphertext[tempCiphertext.length] = tempCiphertextBlock;
+          tempCiphertext += tempCiphertextBlock;
           tempCiphertextString += tempCiphertextBlock;
         }
       }
-      ciphertext = tempCiphertext.join('');
+      ciphertext = tempCiphertext;
     }
 
     ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
