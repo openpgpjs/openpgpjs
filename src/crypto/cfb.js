@@ -21,6 +21,8 @@
  * @module crypto/cfb
  */
 
+'use strict';
+
 var util = require('../util.js'),
   cipher = require('./cipher');
 
@@ -46,15 +48,17 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var FR = new Array(block_size);
-    var FRE = new Array(block_size);
+    var FR = new Uint8Array(block_size);
+    var FRE = new Uint8Array(block_size);
 
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
     util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
-    var ciphertext = "";
+    var ciphertext = '';
     var i, n;
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
-    for (i = 0; i < block_size; i++) FR[i] = 0;
+    for (i = 0; i < block_size; i++) {
+      FR[i] = 0;
+    }
 
     // 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
     //     encryption of an all-zero value.
@@ -62,10 +66,14 @@ module.exports = {
     // 3.  FRE is xored with the first BS octets of random data prefixed to
     //     the plaintext to produce C[1] through C[BS], the first BS octets
     //     of ciphertext.
-    for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+    for (i = 0; i < block_size; i++) {
+      ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+    }
 
     // 4.  FR is loaded with C[1] through C[BS].
-    for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+    for (i = 0; i < block_size; i++) {
+      FR[i] = ciphertext.charCodeAt(i);
+    }
 
     // 5.  FR is encrypted to produce FRE, the encryption of the first BS
     //     octets of ciphertext.
@@ -79,22 +87,29 @@ module.exports = {
 
     if (resync) {
       // 7.  (The resync step) FR is loaded with C3-C10.
-      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i + 2);
+      for (i = 0; i < block_size; i++) {
+        FR[i] = ciphertext.charCodeAt(i + 2);
+      }
     } else {
-      for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(i);
+      for (i = 0; i < block_size; i++) {
+        FR[i] = ciphertext.charCodeAt(i);
+      }
     }
     // 8.  FR is encrypted to produce FRE.
-    FRE = cipherfn.encrypt(FR, key);
+    FRE = cipherfn.encrypt(FR);
 
     if (resync) {
       // 9.  FRE is xored with the first 8 octets of the given plaintext, now
       //     that we have finished encrypting the 10 octets of prefixed data.
       //     This produces C11-C18, the next 8 octets of ciphertext.
-      for (i = 0; i < block_size; i++)
+      for (i = 0; i < block_size; i++) {
         ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+      }
       for (n = block_size + 2; n < plaintext.length; n += block_size) {
         // 10. FR is loaded with C11-C18
-        for (i = 0; i < block_size; i++) FR[i] = ciphertext.charCodeAt(n + i);
+        for (i = 0; i < block_size; i++) {
+          FR[i] = ciphertext.charCodeAt(n + i);
+        }
 
         // 11. FR is encrypted to produce FRE.
         FRE = cipherfn.encrypt(FR);
@@ -102,8 +117,9 @@ module.exports = {
         // 12. FRE is xored with the next 8 octets of plaintext, to produce the
         // next 8 octets of ciphertext.  These are loaded into FR and the
         // process is repeated until the plaintext is used up.
-        for (i = 0; i < block_size; i++) ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) +
-            i));
+        for (i = 0; i < block_size; i++) {
+          ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) + i));
+        }
       }
     } else {
       plaintext = "  " + plaintext;
@@ -114,7 +130,7 @@ module.exports = {
         ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
       }
 
-      var tempCiphertext = ciphertext.substring(0, 2 * block_size).split('');
+      var tempCiphertext = ciphertext.substring(0, 2 * block_size);
       var tempCiphertextString = ciphertext.substring(block_size);
       var tempCiphertextBlock;
       for (n = block_size; n < plaintext.length; n += block_size) {
@@ -132,11 +148,11 @@ module.exports = {
         //     process is repeated until the plaintext is used up.
         for (i = 0; i < block_size; i++) {
           tempCiphertextBlock = String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
-          tempCiphertext[tempCiphertext.length] = tempCiphertextBlock;
+          tempCiphertext += tempCiphertextBlock;
           tempCiphertextString += tempCiphertextBlock;
         }
       }
-      ciphertext = tempCiphertext.join('');
+      ciphertext = tempCiphertext;
     }
 
     ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
@@ -157,13 +173,15 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var iblock = new Array(block_size);
-    var ablock = new Array(block_size);
+    var iblock = new Uint8Array(block_size);
+    var ablock = new Uint8Array(block_size);
     var i;
 
 
     // initialisation vector
-    for (i = 0; i < block_size; i++) iblock[i] = 0;
+    for (i = 0; i < block_size; i++) {
+      iblock[i] = 0;
+    }
 
     iblock = cipherfn.encrypt(iblock);
     for (i = 0; i < block_size; i++) {
@@ -196,21 +214,23 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var iblock = new Array(block_size);
-    var ablock = new Array(block_size);
+    var iblock = new Uint8Array(block_size);
+    var ablock = new Uint8Array(block_size);
     var i, n = '';
-    var text = [];
+    var text = '';
 
     // initialisation vector
-    for (i = 0; i < block_size; i++) iblock[i] = 0;
+    for (i = 0; i < block_size; i++) {
+      iblock[i] = 0;
+    }
 
-    iblock = cipherfn.encrypt(iblock, key);
+    iblock = cipherfn.encrypt(iblock);
     for (i = 0; i < block_size; i++) {
       ablock[i] = ciphertext.charCodeAt(i);
       iblock[i] ^= ablock[i];
     }
 
-    ablock = cipherfn.encrypt(ablock, key);
+    ablock = cipherfn.encrypt(ablock);
 
     // test check octets
     if (iblock[block_size - 2] != (ablock[0] ^ ciphertext.charCodeAt(block_size)) || iblock[block_size - 1] != (ablock[
@@ -226,32 +246,33 @@ module.exports = {
 		 */
 
     if (resync) {
-      for (i = 0; i < block_size; i++) iblock[i] = ciphertext.charCodeAt(i + 2);
+      for (i = 0; i < block_size; i++) {
+        iblock[i] = ciphertext.charCodeAt(i + 2);
+      }
       for (n = block_size + 2; n < ciphertext.length; n += block_size) {
         ablock = cipherfn.encrypt(iblock);
 
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
+          text += String.fromCharCode(ablock[i] ^ iblock[i]);
         }
       }
     } else {
-      for (i = 0; i < block_size; i++) iblock[i] = ciphertext.charCodeAt(i);
+      for (i = 0; i < block_size; i++) {
+        iblock[i] = ciphertext.charCodeAt(i);
+      }
       for (n = block_size; n < ciphertext.length; n += block_size) {
         ablock = cipherfn.encrypt(iblock);
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
+          text += String.fromCharCode(ablock[i] ^ iblock[i]);
         }
       }
     }
 
     n = resync ? 0 : 2;
 
-    text = text.join('');
-
     text = text.substring(n, ciphertext.length - block_size - 2 + n);
-
 
     return text;
   },
@@ -261,47 +282,50 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var blocki = "";
-    var blockc = "";
+    var blocki = '';
+    var blockc = '';
     var pos = 0;
-    var cyphertext = [];
-    var tempBlock = [];
+    var cyphertext = '';
+    var tempBlock = '';
     blockc = iv.substring(0, block_size);
     while (plaintext.length > block_size * pos) {
       var encblock = cipherfn.encrypt(util.str2bin(blockc));
       blocki = plaintext.substring((pos * block_size), (pos * block_size) + block_size);
-      for (var i = 0; i < blocki.length; i++)
-        tempBlock.push(String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]));
-      blockc = tempBlock.join('');
-      tempBlock = [];
-      cyphertext.push(blockc);
+      for (var i = 0; i < blocki.length; i++) {
+        tempBlock += String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]);
+      }
+      blockc = tempBlock;
+      tempBlock = '';
+      cyphertext += blockc;
       pos++;
     }
-    return cyphertext.join('');
+    return cyphertext;
   },
 
   normalDecrypt: function(cipherfn, key, ciphertext, iv) {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var blockp = "";
+    var blockp = '';
     var pos = 0;
-    var plaintext = [];
+    var plaintext = '';
     var offset = 0;
     var i;
     if (iv === null)
-      for (i = 0; i < block_size; i++) blockp += String.fromCharCode(0);
+      for (i = 0; i < block_size; i++) {
+        blockp += String.fromCharCode(0);
+      }
     else
       blockp = iv.substring(0, block_size);
     while (ciphertext.length > (block_size * pos)) {
       var decblock = cipherfn.encrypt(util.str2bin(blockp));
       blockp = ciphertext.substring((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
       for (i = 0; i < blockp.length; i++) {
-        plaintext.push(String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]));
+        plaintext += String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]);
       }
       pos++;
     }
 
-    return plaintext.join('');
+    return plaintext;
   }
 };
