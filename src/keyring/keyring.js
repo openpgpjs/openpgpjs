@@ -59,7 +59,8 @@ Keyring.prototype.clear = function() {
 
 /**
  * Searches the keyring for keys having the specified key id
- * @param {String} keyId provided as string of hex number (lowercase)
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
  * @return {Array<module:key~Key>|null} keys found or null
  */
@@ -72,38 +73,14 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
 
 /**
  * Removes keys having the specified key id from the keyring
- * @param {String} keyId provided as string of hex number (lowercase)
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @return {Array<module:key~Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
   var result = [];
   result = result.concat(this.publicKeys.removeForId(keyId) || []);
   result = result.concat(this.privateKeys.removeForId(keyId) || []);
-  return result.length ? result : null;
-};
-
-/**
- * Searches the keyring for keys having the specified long key id (fingerprint)
- * @param {String} longKeyId fingerprint in lowercase hex
- * @param  {Boolean} deep if true search also in subkeys
- * @return {Array<module:key~Key>|null} keys found or null
- */
-Keyring.prototype.getKeysForLongId = function (longKeyId, deep) {
-  var result = [];
-  result = result.concat(this.publicKeys.getForLongId(longKeyId, deep) || []);
-  result = result.concat(this.privateKeys.getForLongId(longKeyId, deep) || []);
-  return result.length ? result : null;
-};
-
-/**
- * Removes keys having the specified long key id (fingerprint) from the keyring
- * @param {String} longKeyId fingerprint in lowercase hex
- * @return {Array<module:key~Key>|null} keys found or null
- */
-Keyring.prototype.removeKeysForLongId = function (longKeyId) {
-  var result = [];
-  result = result.concat(this.publicKeys.removeForLongId(longKeyId) || []);
-  result = result.concat(this.privateKeys.removeForLongId(longKeyId) || []);
   return result.length ? result : null;
 };
 
@@ -140,6 +117,7 @@ KeyArray.prototype.getForAddress = function(email) {
 
 /**
  * Checks a key to see if it matches the specified email address
+ * @private
  * @param {String} email email address to search for
  * @param {module:key~Key} key The key to be checked.
  * @return {Boolean} True if the email address is defined in the specified key
@@ -158,41 +136,36 @@ function emailCheck(email, key) {
 }
 
 /**
+ * Checks a key to see if it matches the specified keyid
+ * @private
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
+ * @return {Boolean} True if keypacket has the specified keyid
+ */
+function keyIdCheck(keyId, keypacket) {
+  if (keyId.length === 16) {
+    return keyId === keypacket.getKeyId().toHex();
+  } else {
+    return keyId === keypacket.getFingerprint();
+  }
+}
+
+/**
  * Searches the KeyArray for a key having the specified key id
- * @param {String} keyId provided as string of hex number (lowercase)
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
  * @return {module:key~Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (var i = 0; i < this.keys.length; i++) {
-    if (this.keys[i].primaryKey.getKeyId().toHex() === keyId) {
+    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
       return this.keys[i];
     }
     if (deep && this.keys[i].subKeys) {
       for (var j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (this.keys[i].subKeys[j].subKey.getKeyId().toHex() === keyId) {
-          return this.keys[i];
-        }
-      }
-    }
-  }
-  return null;
-};
-
-/**
- * Searches the keyring for a key having the specified long key id (fingerprint)
- * @param  {String} longKeyId fingerprint in lowercase hex
- * @param  {Boolean} deep if true search also in subkeys
- * @return {module:key~Key|null}           key found or null
- */
-KeyArray.prototype.getForLongId = function(longKeyId, deep) {
-  for (var i = 0; i < this.keys.length; i++) {
-    if (this.keys[i].primaryKey.getFingerprint() === longKeyId) {
-      return this.keys[i];
-    }
-    if (deep && this.keys[i].subKeys) {
-      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (this.keys[i].subKeys[j].subKey.getFingerprint() === longKeyId) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
           return this.keys[i];
         }
       }
@@ -233,26 +206,13 @@ KeyArray.prototype.push = function (key) {
 
 /**
  * Removes a key with the specified keyid from the keyring
- * @param {String} keyId provided as string of hex number (lowercase)
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @return {module:key~Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (var i = 0; i < this.keys.length; i++) {
-    if (this.keys[i].primaryKey.getKeyId().toHex() === keyId) {
-      return this.keys.splice(i, 1)[0];
-    }
-  }
-  return null;
-};
-
-/**
- * Removes a key with the specified long key id (fingerprint) from the keyring
- * @param  {String} longKeyId fingerprint in lowercase hex
- * @return {module:key~Key|null} The key object which has been removed or null
- */
-KeyArray.prototype.removeForLongId = function (longKeyId) {
-  for (var i = 0; i < this.keys.length; i++) {
-    if (this.keys[i].primaryKey.getFingerprint() === longKeyId) {
+    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
       return this.keys.splice(i, 1)[0];
     }
   }

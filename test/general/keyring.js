@@ -94,7 +94,7 @@ describe("Keyring", function() {
   });
 
   it('getKeysForId() - unknown id', function() {
-    var keys = keyring.getKeysForId('000102030405060708');
+    var keys = keyring.getKeysForId('01234567890123456');
     expect(keys).to.be.null;
   });
 
@@ -106,7 +106,7 @@ describe("Keyring", function() {
   });
 
   it('publicKeys.getForId() - unknown id', function() {
-    var key = keyring.publicKeys.getForId('000102030405060708');
+    var key = keyring.publicKeys.getForId('01234567890123456');
     expect(key).to.be.null;
   });
 
@@ -117,7 +117,7 @@ describe("Keyring", function() {
   });
 
   it('privateKeys.getForId() - unknown id', function() {
-    var key = keyring.privateKeys.getForId('000102030405060708');
+    var key = keyring.privateKeys.getForId('01234567890123456');
     expect(key).to.be.null;
   });
 
@@ -138,35 +138,35 @@ describe("Keyring", function() {
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
-  it('getKeysForLongId() - unknown long id', function() {
-    var keys = keyring.getKeysForLongId('000102030405060708');
+  it('getKeysForId() - unknown fingerprint', function() {
+    var keys = keyring.getKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(keys).to.be.null;
   });
 
-  it('getKeysForLongId() - valid long id', function() {
-    var keys = keyring.getKeysForLongId(keyFingerP2);
+  it('getKeysForId() - valid fingerprint', function() {
+    var keys = keyring.getKeysForId(keyFingerP2);
     expect(keys).to.exist.and.have.length(1);
     expect(keys[0].primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
-  it('publicKeys.getForLongId() - unknown long id', function() {
-    var key = keyring.publicKeys.getForLongId('000102030405060708');
+  it('publicKeys.getForId() - unknown fingerprint', function() {
+    var key = keyring.publicKeys.getForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(key).to.be.null;
   });
 
-  it('publicKeys.getForLongId() - valid long id', function() {
-    var key = keyring.publicKeys.getForLongId(keyFingerP2);
+  it('publicKeys.getForId() - valid fingerprint', function() {
+    var key = keyring.publicKeys.getForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
-  it('publicKeys.getForLongId() - subkey long id', function() {
-    var key = keyring.publicKeys.getForLongId(subkeyFingerP2);
+  it('publicKeys.getForId() - subkey fingerprint', function() {
+    var key = keyring.publicKeys.getForId(subkeyFingerP2);
     expect(key).to.be.null;
   });
 
-  it('publicKeys.getForLongId() - deep, including subkeys - subkey long id', function() {
-    var key = keyring.publicKeys.getForLongId(subkeyFingerP2, true);
+  it('publicKeys.getForId() - deep, including subkeys - subkey fingerprint', function() {
+    var key = keyring.publicKeys.getForId(subkeyFingerP2, true);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
@@ -203,7 +203,7 @@ describe("Keyring", function() {
   });
 
   it('publicKeys.removeForId() - unknown id', function() {
-    var key = keyring.publicKeys.removeForId('000102030405060708');
+    var key = keyring.publicKeys.removeForId('01234567890123456');
     expect(key).to.be.null;
   });
 
@@ -214,14 +214,14 @@ describe("Keyring", function() {
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
 
-  it('publicKeys.removeForLongId() - unknown id', function() {
-    var key = keyring.publicKeys.removeForLongId('000102030405060708');
+  it('publicKeys.removeForId() - unknown fingerprint', function() {
+    var key = keyring.publicKeys.removeForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(key).to.be.null;
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
 
-  it('publicKeys.removeForLongId() - valid id', function() {
-    var key = keyring.publicKeys.removeForLongId(keyFingerP2);
+  it('publicKeys.removeForId() - valid fingerprint', function() {
+    var key = keyring.publicKeys.removeForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
     expect(keyring.publicKeys.keys).to.be.empty;
@@ -244,7 +244,7 @@ describe("Keyring", function() {
     keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
-    var keys = keyring.removeKeysForId('000102030405060708');
+    var keys = keyring.removeKeysForId('01234567890123456');
     expect(keys).to.be.null;
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
@@ -257,20 +257,20 @@ describe("Keyring", function() {
     expect(keyring.privateKeys.keys).to.have.length(0);
   });
 
-  it('removeKeysForLongId() - unknown id', function() {
+  it('removeKeysForId() - unknown fingerprint', function() {
     keyring.publicKeys.importKey(pubkey);
     keyring.publicKeys.importKey(pubkey2);
     keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
-    var keys = keyring.removeKeysForLongId('000102030405060708');
+    var keys = keyring.removeKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(keys).to.be.null;
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
   });
 
-  it('removeKeysForLongId() - valid id', function() {
-    var keys = keyring.removeKeysForLongId(keyFingerP);
+  it('removeKeysForId() - valid fingerprint', function() {
+    var keys = keyring.removeKeysForId(keyFingerP);
     expect(keys).to.have.length(2);
     expect(keyring.publicKeys.keys).to.have.length(1);
     expect(keyring.privateKeys.keys).to.have.length(0);
