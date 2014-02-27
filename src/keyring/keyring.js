@@ -27,14 +27,6 @@ var enums = require('../enums.js'),
   keyModule = require('../key.js'),
   util = require('../util.js');
 
-/**
- * Callback to check if a key matches the input
- * @callback module:keyring/keyring.checkCallback
- * @param {String} input input to search for
- * @param {module:key~Key} key The key to be checked.
- * @return {Boolean} True if the input matches the specified key
- */
-
 module.exports = Keyring;
 
   /**
@@ -45,25 +37,87 @@ module.exports = Keyring;
  */
 function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new (require('./localstore.js'))();
-  this.keys = this.storeHandler.load();
-};
+  this.publicKeys = new KeyArray(this.storeHandler.loadPublic());
+  this.privateKeys = new KeyArray(this.storeHandler.loadPrivate());
+}
 
 /**
  * Calls the storeHandler to save the keys
  */
 Keyring.prototype.store = function () {
-  this.storeHandler.store(this.keys);
+  this.storeHandler.storePublic(this.publicKeys.keys);
+  this.storeHandler.storePrivate(this.privateKeys.keys);
 };
 
 /**
  * Clear the keyring - erase all the keys
  */
 Keyring.prototype.clear = function() {
-  this.keys = [];
+  this.publicKeys.keys = [];
+  this.privateKeys.keys = [];
+};
+
+/**
+ * Searches the keyring for keys having the specified key id
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @param  {Boolean} deep if true search also in subkeys
+ * @return {Array<module:key~Key>|null} keys found or null
+ */
+Keyring.prototype.getKeysForId = function (keyId, deep) {
+  var result = [];
+  result = result.concat(this.publicKeys.getForId(keyId, deep) || []);
+  result = result.concat(this.privateKeys.getForId(keyId, deep) || []);
+  return result.length ? result : null;
+};
+
+/**
+ * Removes keys having the specified key id from the keyring
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @return {Array<module:key~Key>|null} keys found or null
+ */
+Keyring.prototype.removeKeysForId = function (keyId) {
+  var result = [];
+  result = result.concat(this.publicKeys.removeForId(keyId) || []);
+  result = result.concat(this.privateKeys.removeForId(keyId) || []);
+  return result.length ? result : null;
+};
+
+/**
+ * Get all public and private keys
+ * @return {Array<module:key~Key>} all keys
+ */
+Keyring.prototype.getAllKeys = function () {
+  return this.publicKeys.keys.concat(this.privateKeys.keys);
+};
+
+/**
+ * Array of keys
+ * @param {Array<module:key~Key>} keys The keys to store in this array
+ */
+function KeyArray(keys) {
+  this.keys = keys;
+}
+
+/**
+ * Searches all keys in the KeyArray matching the address or address part of the user ids
+ * @param {String} email email address to search for
+ * @return {Array<module:key~Key>} The public keys associated with provided email address.
+ */
+KeyArray.prototype.getForAddress = function(email) {
+  var results = [];
+  for (var i = 0; i < this.keys.length; i++) {
+    if (emailCheck(email, this.keys[i])) {
+      results.push(this.keys[i]);
+    }
+  }
+  return results;
 };
 
 /**
  * Checks a key to see if it matches the specified email address
+ * @private
  * @param {String} email email address to search for
  * @param {module:key~Key} key The key to be checked.
  * @return {Boolean} True if the email address is defined in the specified key
@@ -83,111 +137,84 @@ function emailCheck(email, key) {
 
 /**
  * Checks a key to see if it matches the specified keyid
- * @param {String} id hex string keyid to search for
- * @param {module:key~Key} key the key to be checked.
- * @return {Boolean} true if the email address is defined in the specified key
- * @inner
+ * @private
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
+ * @return {Boolean} True if keypacket has the specified keyid
  */
-function idCheck(id, key) {
-  var keyids = key.getKeyIds();
-  for (var i = 0; i < keyids.length; i++) {
-    if (util.hexstrdump(keyids[i].write()) == id) {
-      return true;
-    }
+function keyIdCheck(keyId, keypacket) {
+  if (keyId.length === 16) {
+    return keyId === keypacket.getKeyId().toHex();
+  } else {
+    return keyId === keypacket.getFingerprint();
   }
-  return false;
 }
 
 /**
- * searches all public keys in the keyring matching the address or address part of the user ids
- * @param {Array<module:key~Key>} keys array of keys to search
- * @param {module:keyring/keyring.checkCallback} identityFunction callback function which checks for a match
- * @param {String} identityInput input to check against
- * @param {module:enums.packet} keyType packet types of keys to check
- * @return {Array<module:key~Key>} array of keys which match
+ * Searches the KeyArray for a key having the specified key id
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @param  {Boolean} deep if true search also in subkeys
+ * @return {module:key~Key|null} key found or null
  */
-function checkForIdentityAndKeyTypeMatch(keys, identityFunction, identityInput, keyType) {
-  var results = [];
-  for (var p = 0; p < keys.length; p++) {
-    var key = keys[p];
-    switch (keyType) {
-      case enums.packet.publicKey:
-        if (key.isPublic() && identityFunction(identityInput, key)) {
-          results.push(key);
+KeyArray.prototype.getForId = function (keyId, deep) {
+  for (var i = 0; i < this.keys.length; i++) {
+    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+      return this.keys[i];
+    }
+    if (deep && this.keys[i].subKeys) {
+      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
+          return this.keys[i];
         }
-        break;
-      case enums.packet.secretKey:
-        if (key.isPrivate() && identityFunction(identityInput, key)) {
-          results.push(key);
-        }
-        break;
+      }
     }
   }
-  return results;
-}
-
-/**
- * searches all public keys in the keyring matching the address or address part of the user ids
- * @param {String} email email address to search for
- * @return {Array<module:key~Key>} The public keys associated with provided email address.
- */
-Keyring.prototype.getPublicKeyForAddress = function (email) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, enums.packet.publicKey);
-};
-
-/**
- * Searches the keyring for a private key containing the specified email address
- * @param {String} email email address to search for
- * @return {Array<module:key~Key>} private keys found
- */
-Keyring.prototype.getPrivateKeyForAddress = function (email) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, emailCheck, email, enums.packet.secretKey);
-};
-
-/**
- * Searches the keyring for public keys having the specified key id
- * @param {String} keyId provided as string of hex number (lowercase)
- * @return {Array<module:key~Key>} public keys found
- */
-Keyring.prototype.getKeysForKeyId = function (keyId) {
-  return checkForIdentityAndKeyTypeMatch(this.keys, idCheck, keyId, enums.packet.publicKey);
+  return null;
 };
 
 /**
  * Imports a key from an ascii armored message
  * @param {String} armored message to read the keys/key from
+ * @return {Array<Error>|null} array of error objects or null
  */
-Keyring.prototype.importKey = function (armored) {
-  this.keys = this.keys.concat(keyModule.readArmored(armored).keys);
-
-  return true;
+KeyArray.prototype.importKey = function (armored) {
+  var imported = keyModule.readArmored(armored);
+  var that = this;
+  imported.keys.forEach(function(key) {
+    // check if key already in key array
+    var keyidHex = key.primaryKey.getKeyId().toHex();
+    var keyFound = that.getForId(keyidHex);
+    if (keyFound) {
+      keyFound.update(key);
+    } else {
+      that.push(key);
+    }
+  });
+  return imported.err ? imported.err : null;
 };
 
 /**
- * returns the armored message representation of the key at key ring index
- * @param {Integer} index the index of the key within the array
- * @return {String} armored message representing the key object
+ * Add key to KeyArray
+ * @param {module:key~Key} key The key that will be added to the keyring
+ * @return {Number} The new length of the KeyArray
  */
-Keyring.prototype.exportKey = function (index) {
-  return this.keys[index].armor();
+KeyArray.prototype.push = function (key) {
+  return this.keys.push(key);
 };
 
 /**
- * Removes a public key from the public key keyring at the specified index
- * @param {Integer} index the index of the public key within the publicKeys array
- * @return {module:key~Key} The public key object which has been removed
+ * Removes a key with the specified keyid from the keyring
+ * @param {String} keyId provided as string of lowercase hex number
+ * withouth 0x prefix (can be 16-character key ID or fingerprint)
+ * @return {module:key~Key|null} The key object which has been removed or null
  */
-Keyring.prototype.removeKey = function (index) {
-  var removed = this.keys.splice(index, 1);
-
-  return removed;
-};
-
-/**
- * returns the armored message representation of the public key portion of the key at key ring index
- * @param {Integer} index the index of the key within the array
- * @return {String} armored message representing the public key object
- */
-Keyring.prototype.exportPublicKey = function (index) {
-  return this.keys[index].toPublic().armor();
+KeyArray.prototype.removeForId = function (keyId) {
+  for (var i = 0; i < this.keys.length; i++) {
+    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+      return this.keys.splice(i, 1)[0];
+    }
+  }
+  return null;
 };

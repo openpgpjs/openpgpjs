@@ -51,6 +51,7 @@ function Signature() {
   this.publicKeyAlgorithm = null;
 
   this.signatureData = null;
+  this.unhashedSubpackets = null;
   this.signedHashValue = null;
 
   this.created = new Date();
@@ -166,9 +167,11 @@ Signature.prototype.read = function (bytes) {
       // hash algorithm, the hashed subpacket length, and the hashed
       // subpacket body.
       this.signatureData = bytes.substr(0, i);
+      var sigDataLength = i;
 
       // unhashed subpackets
       i += subpackets.call(this, bytes.substr(i), false);
+      this.unhashedSubpackets = bytes.substr(sigDataLength, i - sigDataLength);
 
       break;
     default:
@@ -184,7 +187,8 @@ Signature.prototype.read = function (bytes) {
 
 Signature.prototype.write = function () {
   return this.signatureData +
-    util.writeNumber(0, 2) + // Number of unsigned subpackets.
+    // unhashed subpackets or two octets for zero
+    (this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2)) +
     this.signedHashValue +
     this.signature;
 };
@@ -559,7 +563,7 @@ Signature.prototype.toSign = function (type, data) {
 
     case t.key:
       if (data.key === undefined)
-        throw new Error('Key packet is required for this sigtature.');
+        throw new Error('Key packet is required for this signature.');
 
       return data.key.writeOld();
 

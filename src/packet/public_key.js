@@ -55,6 +55,16 @@ function PublicKey() {
   this.algorithm = 'rsa_sign';
   // time in days (V3 only)
   this.expirationTimeV3 = 0;
+  /**
+   * Fingerprint in lowercase hex
+   * @type {String}
+   */
+  this.fingerprint = null;
+  /**
+   * Keyid
+   * @type {module:type/keyid}
+   */
+  this.keyid = null;
 }
 
 /**
@@ -158,31 +168,39 @@ PublicKey.prototype.writeOld = function () {
  * @return {String} A 8 byte key id
  */
 PublicKey.prototype.getKeyId = function () {
-  var keyid = new type_keyid();
-  if (this.version == 4) {
-    keyid.read(this.getFingerprint().substr(12, 8));
-  } else if (this.version == 3) {
-    keyid.read(this.mpi[0].write().substr(-8));
+  if (this.keyid) {
+    return this.keyid;
   }
-  return keyid;
+  this.keyid = new type_keyid();
+  if (this.version == 4) {
+    this.keyid.read(util.hex2bin(this.getFingerprint()).substr(12, 8));
+  } else if (this.version == 3) {
+    this.keyid.read(this.mpi[0].write().substr(-8));
+  }
+  return this.keyid;
 };
 
 /**
  * Calculates the fingerprint of the key
- * @return {String} A string containing the fingerprint
+ * @return {String} A string containing the fingerprint in lowercase hex
  */
 PublicKey.prototype.getFingerprint = function () {
+  if (this.fingerprint) {
+    return this.fingerprint;
+  }
   var toHash = '';
   if (this.version == 4) {
     toHash = this.writeOld();
-    return crypto.hash.sha1(toHash);
+    this.fingerprint = crypto.hash.sha1(toHash);
   } else if (this.version == 3) {
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     for (var i = 0; i < mpicount; i++) {
       toHash += this.mpi[i].toBytes();
     }
-    return crypto.hash.md5(toHash);
+    this.fingerprint = crypto.hash.md5(toHash);
   }
+  this.fingerprint = util.hexstrdump(this.fingerprint);
+  return this.fingerprint;
 };
 
 /**
@@ -199,5 +217,8 @@ PublicKey.prototype.getBitSize = function () {
 PublicKey.prototype.postCloneTypeFix = function() {
   for (var i = 0; i < this.mpi.length; i++) {
     this.mpi[i] = type_mpi.fromClone(this.mpi[i]);
+  }
+  if (this.keyid) {
+    this.keyid = type_keyid.fromClone(this.keyid);
   }
 };

@@ -474,13 +474,13 @@ function getExpirationTime(keyPacket, selfCertificate) {
     return new Date(keyPacket.created.getTime() + selfCertificate.keyExpirationTime*1000);
   }
   return null;
-};
+}
 
 /**
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple users are marked as primary users returns the one with the latest self signature
  * - if no primary user is found returns the user with the latest self signature
- * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}} The primary user and the self signature
+ * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}|null} The primary user and the self signature
  */
 Key.prototype.getPrimaryUser = function() {
   var user = null;
@@ -493,15 +493,111 @@ Key.prototype.getPrimaryUser = function() {
     if (!selfCert) {
       continue;
     }
-    if (!user || 
-        !userSelfCert.isPrimaryUserID && selfCert.isPrimaryUserID ||
-         userSelfCert.created < selfCert.created) {
+    if (!user ||
+        (!userSelfCert.isPrimaryUserID || selfCert.isPrimaryUserID) &&
+        userSelfCert.created > selfCert.created) {
       user = this.users[i];
       userSelfCert = selfCert;
     }
   }
   return user ? {user: user, selfCertificate: userSelfCert} : null;
 };
+
+/**
+ * Update key with new components from specified key with same key ID:
+ * users, subkeys, certificates are merged into the destination key,
+ * duplicates are ignored.
+ * If the specified key is a private key and the destination key is public,
+ * the destination key is tranformed to a private key.
+ * @param  {module:key~Key} key source key to merge
+ */
+Key.prototype.update = function(key) {
+  var that = this;
+  if (key.verifyPrimaryKey() === enums.keyStatus.invalid) {
+    return;
+  }
+  if (this.primaryKey.getFingerprint() !== key.primaryKey.getFingerprint()) {
+    throw new Error('Key update method: fingerprints of keys not equal');
+  }
+  if (this.isPublic() && key.isPrivate()) {
+    // check for equal subkey packets
+    var equal = ((this.subKeys && this.subKeys.length) === (key.subKeys && key.subKeys.length)) &&
+                (!this.subKeys || this.subKeys.every(function(destSubKey) {
+                  return key.subKeys.some(function(srcSubKey) {
+                    return destSubKey.subKey.getFingerprint() === srcSubKey.subKey.getFingerprint();
+                  });
+                }));
+    if (!equal) {
+      throw new Error('Cannot update public key with private key if subkey mismatch');
+    }
+    this.primaryKey = key.primaryKey;
+  }
+  // revocation signature
+  if (!this.revocationSignature && key.revocationSignature && !key.revocationSignature.isExpired() &&
+     (key.revocationSignature.verified ||
+      key.revocationSignature.verify(key.primaryKey, {key: key.primaryKey}))) {
+    this.revocationSignature = key.revocationSignature;
+  }
+  // direct signatures
+  mergeSignatures(key, this, 'directSignatures');
+  // users
+  key.users.forEach(function(srcUser) {
+    var found = false;
+    for (var i = 0; i < that.users.length; i++) {
+      if (srcUser.userId && (srcUser.userId.userid === that.users[i].userId.userid) ||
+          srcUser.userAttribute && (srcUser.userAttribute.equals(that.users[i].userAttribute))) {
+        that.users[i].update(srcUser, that.primaryKey);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      that.users.push(srcUser);
+    }
+  });
+  // subkeys
+  if (key.subKeys) {
+    key.subKeys.forEach(function(srcSubKey) {
+      var found = false;
+      for (var i = 0; i < that.subKeys.length; i++) {
+        if (srcSubKey.subKey.getFingerprint() === that.subKeys[i].subKey.getFingerprint()) {
+          that.subKeys[i].update(srcSubKey, that.primaryKey);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        that.subKeys.push(srcSubKey);
+      }
+    });
+  }
+};
+
+/**
+ * Merges signatures from source[attr] to dest[attr]
+ * @private
+ * @param  {Object} source
+ * @param  {Object} dest
+ * @param  {String} attr
+ * @param  {Function} checkFn optional, signature only merged if true
+ */
+function mergeSignatures(source, dest, attr, checkFn) {
+  source = source[attr];
+  if (source) {
+    if (!dest[attr]) {
+      dest[attr] = source;
+    } else {
+      source.forEach(function(sourceSig) {
+        if (!sourceSig.isExpired() && (!checkFn || checkFn(sourceSig)) &&
+            !dest[attr].some(function(destSig) {
+              return destSig.signature === sourceSig.signature;
+            })) {
+          dest[attr].push(sourceSig);
+        }
+      });
+    }
+  }
+}
 
 // TODO
 Key.prototype.revoke = function() {
@@ -617,6 +713,24 @@ User.prototype.verify = function(primaryKey) {
 };
 
 /**
+ * Update user with new components from specified user
+ * @param  {module:key~User} user source user to merge
+ * @param  {module:packet/signature} primaryKey primary key used for validation
+ */
+User.prototype.update = function(user, primaryKey) {
+  var that = this;
+  // self signatures
+  mergeSignatures(user, this, 'selfCertifications', function(srcSelfSig) {
+    return srcSelfSig.verified ||
+           srcSelfSig.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey});
+  });
+  // other signatures
+  mergeSignatures(user, this, 'otherCertifications');
+  // revocation signatures
+  mergeSignatures(user, this, 'revocationCertifications');
+};
+
+/**
  * @class
  * @classdesc Class that represents a subkey packet and the relevant signatures.
  */
@@ -704,6 +818,30 @@ SubKey.prototype.verify = function(primaryKey) {
  */
 SubKey.prototype.getExpirationTime = function() {
   return getExpirationTime(this.subKey, this.bindingSignature);
+};
+
+/**
+ * Update subkey with new components from specified subkey
+ * @param  {module:key~SubKey} subKey source subkey to merge
+ * @param  {module:packet/signature} primaryKey primary key used for validation
+ */
+SubKey.prototype.update = function(subKey, primaryKey) {
+  if (this.verify(primaryKey) === enums.keyStatus.invalid) {
+    return;
+  }
+  if (this.subKey.getFingerprint() !== subKey.subKey.getFingerprint()) {
+    throw new Error('SubKey update method: fingerprints of subkeys not equal');
+  }
+  if (this.subKey.tag === enums.packet.publicSubkey &&
+      subKey.subKey.tag === enums.packet.secretSubkey) {
+    this.subKey = subKey.subKey;
+  }
+  // revocation signature
+  if (!this.revocationSignature && subKey.revocationSignature && !subKey.revocationSignature.isExpired() &&
+     (subKey.revocationSignature.verified ||
+      subKey.revocationSignature.verify(primaryKey, {key: primaryKey, bind: this.subKey}))) {
+    this.revocationSignature = subKey.revocationSignature;
+  }
 };
 
 /**

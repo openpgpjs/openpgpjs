@@ -17,56 +17,83 @@
 
 /**
  * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
- * @requires openpgp
+ * @requires config
  * @module keyring/localstore
- * @param {String} item itemname in localstore
+ * @param {String} prefix prefix for itemnames in localstore
  */
 module.exports = LocalStore;
 
-var openpgp = require('../');
+var config = require('../config'),
+  keyModule = require('../key.js');
 
-function LocalStore(item) {
+function LocalStore(prefix) {
+  prefix = prefix || 'openpgp-';
+  this.publicKeysItem = prefix + this.publicKeysItem;
+  this.privateKeysItem = prefix + this.privateKeysItem;
   if (typeof window != 'undefined' && window.localStorage) {
     this.storage = window.localStorage;
   } else {
-    this.storage = new (require('node-localstorage').LocalStorage)(openpgp.config.node_store);
-  }
-  if(typeof item == 'string') {
-    this.item = item;
+    this.storage = new (require('node-localstorage').LocalStorage)(config.node_store);
   }
 }
 
 /*
- * Declare the localstore itemname
+ * Declare the localstore itemnames
  */
-LocalStore.prototype.item = 'armoredKeys';
+LocalStore.prototype.publicKeysItem = 'public-keys';
+LocalStore.prototype.privateKeysItem = 'private-keys';
 
 /**
- * Load the keyring from HTML5 local storage and initializes this instance.
+ * Load the public keys from HTML5 local storage.
  * @return {Array<module:key~Key>} array of keys retrieved from localstore
  */
-LocalStore.prototype.load = function () {
-  var armoredKeys = JSON.parse(this.storage.getItem(this.item));
+LocalStore.prototype.loadPublic = function () {
+  return loadKeys(this.storage, this.publicKeysItem);
+};
+
+/**
+ * Load the private keys from HTML5 local storage.
+ * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ */
+LocalStore.prototype.loadPrivate = function () {
+  return loadKeys(this.storage, this.privateKeysItem);
+};
+
+function loadKeys(storage, itemname) {
+  var armoredKeys = JSON.parse(storage.getItem(itemname));
   var keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
     for (var i = 0; i < armoredKeys.length; i++) {
-      key = openpgp.key.readArmored(armoredKeys[i]).keys[0];
+      key = keyModule.readArmored(armoredKeys[i]).keys[0];
       keys.push(key);
     }
   }
   return keys;
+}
+
+/**
+ * Saves the current state of the public keys to HTML5 local storage.
+ * The key array gets stringified using JSON
+ * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ */
+LocalStore.prototype.storePublic = function (keys) {
+  storeKeys(this.storage, this.publicKeysItem, keys);
 };
 
 /**
- * Saves the current state of the keyring to HTML5 local storage.
- * The privateKeys array and publicKeys array gets Stringified using JSON
+ * Saves the current state of the private keys to HTML5 local storage.
+ * The key array gets stringified using JSON
  * @param {Array<module:key~Key>} keys array of keys to save in localstore
  */
-LocalStore.prototype.store = function (keys) {
+LocalStore.prototype.storePrivate = function (keys) {
+  storeKeys(this.storage, this.privateKeysItem, keys);
+};
+
+function storeKeys(storage, itemname, keys) {
   var armoredKeys = [];
   for (var i = 0; i < keys.length; i++) {
     armoredKeys.push(keys[i].armor());
   }
-  this.storage.setItem(this.item, JSON.stringify(armoredKeys));
-};
+  storage.setItem(itemname, JSON.stringify(armoredKeys));
+}
