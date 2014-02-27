@@ -38,6 +38,7 @@ function Literal() {
   this.format = 'utf8'; // default format for literal data packets
   this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();
+  this.filename = 'msg.txt';
 }
 
 /**
@@ -85,6 +86,24 @@ Literal.prototype.getBytes = function () {
 
 
 /**
+ * Sets the filename of the literal packet data
+ * @param {String} filename Any native javascript string
+ */
+Literal.prototype.setFilename = function (filename) {
+  this.filename = filename;
+};
+
+
+/**
+ * Get the filename of the literal packet data
+ * @returns {String} filename 
+ */
+Literal.prototype.getFilename = function() {
+  return this.filename;
+};
+
+
+/**
  * Parsing function for a literal data packet (tag 11).
  *
  * @param {String} input Payload of a tag 11 packet
@@ -117,7 +136,7 @@ Literal.prototype.read = function (bytes) {
  * @return {String} string-representation of the packet
  */
 Literal.prototype.write = function () {
-  var filename = util.encode_utf8("msg.txt");
+  var filename = util.encode_utf8(this.filename);
 
   var data = this.getBytes();
 
