@@ -41,6 +41,9 @@ var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
 function AsyncProxy(path) {
   this.worker = new Worker(path || 'openpgp.worker.js');
   this.worker.onmessage = this.onMessage.bind(this);
+  this.worker.onerror = function(e) {
+    throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+  };
   this.seedRandom(INITIAL_RANDOM_SEED);
   // FIFO
   this.tasks = [];
