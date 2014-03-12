@@ -44,16 +44,6 @@ module.exports = {
   },
 
   /**
-   * Return a pseudo-random number in the specified range
-   * @param {Integer} from Min of the random number
-   * @param {Integer} to Max of the random number (max 32bit)
-   * @return {Integer} A pseudo random number
-   */
-  getPseudoRandom: function(from, to) {
-    return Math.round(Math.random() * (to - from)) + from;
-  },
-
-  /**
    * Return a secure random number in the specified range
    * @param {Integer} from Min of the random number
    * @param {Integer} to Max of the random number (max 32bit)

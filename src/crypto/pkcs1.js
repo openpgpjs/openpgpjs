@@ -28,7 +28,7 @@
 /**
  * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
  */
-hash_headers = [];
+var hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04,
     0x10
 ];
@@ -53,6 +53,25 @@ var crypto = require('./crypto.js'),
   BigInteger = require('./public_key/jsbn.js'),
   hash = require('./hash');
 
+/**
+ * Create padding with secure random data
+ * @private
+ * @param  {Integer} length Length of the padding in bytes
+ * @return {String}        Padding as string
+ */
+function getPkcs1Padding(length) {
+  var result = '';
+  var randomByte;
+  while (result.length < length) {
+    randomByte = random.getSecureRandomOctet();
+    if (randomByte !== 0) {
+      result += String.fromCharCode(randomByte);
+    }
+  }
+  return result;
+}
+
+
 module.exports = {
   eme: {
     /**
@@ -67,9 +86,7 @@ module.exports = {
       var result = "";
       result += String.fromCharCode(0);
       result += String.fromCharCode(2);
-      for (var i = 0; i < length - message.length - 3; i++) {
-        result += String.fromCharCode(random.getPseudoRandom(1, 255));
-      }
+      result += getPkcs1Padding(length - message.length - 3);
       result += String.fromCharCode(0);
       result += message;
       return result;
