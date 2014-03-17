@@ -94,8 +94,8 @@ module.exports = {
    * @return {BigInteger} Resulting big integer
    */
   getRandomBigInteger: function(bits) {
-    if (bits < 0) {
-      return null;
+    if (bits < 1) {
+      throw new Error('Illegal parameter value: bits < 1');
     }
     var numBytes = Math.floor((bits + 7) / 8);
 
@@ -114,7 +114,7 @@ module.exports = {
 
   getRandomBigIntegerInRange: function(min, max) {
     if (max.compareTo(min) <= 0) {
-      return;
+      throw new Error('Illegal parameter value: max <= min');
     }
 
     var range = max.subtract(min);

@@ -93,12 +93,15 @@ module.exports = {
         case 'rsa_encrypt':
           var rsa = new publicKey.rsa();
           // 0 and 1 are the public key.
+          var n = keyIntegers[0].toBigInteger();
+          var e = keyIntegers[1].toBigInteger();
+          // 2 to 5 are the private key.
           var d = keyIntegers[2].toBigInteger();
           p = keyIntegers[3].toBigInteger();
           var q = keyIntegers[4].toBigInteger();
           var u = keyIntegers[5].toBigInteger();
           var m = dataIntegers[0].toBigInteger();
-          return rsa.decrypt(m, d, p, q, u);
+          return rsa.decrypt(m, n, e, d, p, q, u);
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
           var x = keyIntegers[3].toBigInteger();

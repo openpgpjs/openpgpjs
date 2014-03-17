@@ -35,14 +35,15 @@ module.exports = {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
+  integrity_protect: true,
+  rsa_blinding: true,
+
   show_version: true,
   show_comment: true,
-  integrity_protect: true,
-  keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
-
   versionstring: "OpenPGP.js VERSION",
   commentstring: "http://openpgpjs.org",
 
+  keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
   node_store: './openpgp.store',
 
   debug: false

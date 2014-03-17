@@ -107,7 +107,10 @@ Message.prototype.decrypt = function(privateKey) {
     if (symEncryptedPacketlist.length !== 0) {
       var symEncryptedPacket = symEncryptedPacketlist[0];
       symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
-      return new Message(symEncryptedPacket.packets);
+      var resultMsg = new Message(symEncryptedPacket.packets);
+      // remove packets after decryption
+      symEncryptedPacket.packets = new packet.List();
+      return resultMsg;
     }
   }
 };

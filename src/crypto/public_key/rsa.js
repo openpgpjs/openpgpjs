@@ -26,7 +26,8 @@
 
 var BigInteger = require('./jsbn.js'),
   util = require('../../util.js'),
-  random = require('../random.js');
+  random = require('../random.js'),
+  config = require('../../config');
 
 function SecureRandom() {
   function nextBytes(byteArray) {
@@ -37,11 +38,33 @@ function SecureRandom() {
   this.nextBytes = nextBytes;
 }
 
+var blinder = BigInteger.ZERO;
+var unblinder = BigInteger.ZERO;
+var TWO = BigInteger.ONE.add(BigInteger.ONE);
+
+function blind(m, n, e) {
+  if (unblinder.bitLength() === n.bitLength()) {
+    unblinder = unblinder.square().mod(n);
+  } else {
+    unblinder = random.getRandomBigIntegerInRange(TWO, n);
+  }
+  blinder = unblinder.modInverse(n).modPow(e, n);
+  return m.multiply(blinder).mod(n);
+}
+
+function unblind(t, n) {
+  return t.multiply(unblinder).mod(n);
+}
+
 function RSA() {
   /**
    * This function uses jsbn Big Num library to decrypt RSA
    * @param m
    *            message
+   * @param n
+   *            RSA public modulus n as BigInteger
+   * @param e
+   *            RSA public exponent as BigInteger
    * @param d
    *            RSA d as BigInteger
    * @param p
@@ -52,7 +75,10 @@ function RSA() {
    *            RSA u as BigInteger
    * @return {BigInteger} The decrypted value of the message
    */
-  function decrypt(m, d, p, q, u) {
+  function decrypt(m, n, e, d, p, q, u) {
+    if (config.rsa_blinding) {
+      m = blind(m, n, e);
+    }
     var xp = m.mod(p).modPow(d.mod(p.subtract(BigInteger.ONE)), p);
     var xq = m.mod(q).modPow(d.mod(q.subtract(BigInteger.ONE)), q);
     util.print_debug("rsa.js decrypt\nxpn:" + util.hexstrdump(xp.toMPI()) + "\nxqn:" + util.hexstrdump(xq.toMPI()));
@@ -65,7 +91,11 @@ function RSA() {
     } else {
       t = t.multiply(u).mod(q);
     }
-    return t.multiply(p).add(xp);
+    t = t.multiply(p).add(xp);
+    if (config.rsa_blinding) {
+      t = unblind(t, n);
+    }
+    return t;
   }
 
   /**

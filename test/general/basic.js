@@ -257,6 +257,13 @@ describe('Basic', function() {
       expect(decrypted).to.equal(plaintext);
       done();
     });
+
+    it('Decrypt message 2x', function() {
+      decrypted = openpgp.decryptMessage(privKey, message);
+      var decrypted2 = openpgp.decryptMessage(privKey, message);
+      expect(decrypted).to.equal(decrypted2);
+    });
+
   });
 
   describe("Message 3DES decryption", function() {
