@@ -454,5 +454,29 @@ describe('Key', function() {
     expect(dest.update.bind(dest, source)).to.throw('Cannot update public key with private key if subkey mismatch');
   });
 
+  it('getPreferredSymAlgo() - one key - AES256', function() {
+    var key1 = openpgp.key.readArmored(twoKeys).keys[0];
+    var prefAlgo = openpgp.key.getPreferredSymAlgo([key1]);
+    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
+  });
+
+  it('getPreferredSymAlgo() - two key - AES192', function() {
+    var keys = openpgp.key.readArmored(twoKeys).keys;
+    var key1 = keys[0];
+    var key2 = keys[1];
+    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = [6,8,3];
+    var prefAlgo = openpgp.key.getPreferredSymAlgo([key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes192);
+  });
+
+  it('getPreferredSymAlgo() - two key - one without pref', function() {
+    var keys = openpgp.key.readArmored(twoKeys).keys;
+    var key1 = keys[0];
+    var key2 = keys[1];
+    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = null;
+    var prefAlgo = openpgp.key.getPreferredSymAlgo([key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
+  });
+
 });
 

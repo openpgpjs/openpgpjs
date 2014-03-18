@@ -28,7 +28,8 @@ var packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),
   config = require('./config'),
-  crypto = require('./crypto');
+  crypto = require('./crypto'),
+  keyModule = require('./key.js');
 
 /**
  * @class
@@ -144,8 +145,8 @@ Message.prototype.getText = function() {
  */
 Message.prototype.encrypt = function(keys) {
   var packetlist = new packet.List();
-  //TODO get preferred algo from signature
-  var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, config.encryption_cipher));
+  var symAlgo = keyModule.getPreferredSymAlgo(keys);
+  var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
   keys.forEach(function(key) {
     var encryptionKeyPacket = key.getEncryptionKeyPacket();
     if (encryptionKeyPacket) {
@@ -153,8 +154,7 @@ Message.prototype.encrypt = function(keys) {
       pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
-      //TODO get preferred algo from signature
-      pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, config.encryption_cipher);
+      pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, symAlgo);
       pkESKeyPacket.encrypt(encryptionKeyPacket);
       packetlist.push(pkESKeyPacket);
     } else {
@@ -168,8 +168,7 @@ Message.prototype.encrypt = function(keys) {
     symEncryptedPacket = new packet.SymmetricallyEncrypted();
   }
   symEncryptedPacket.packets = this.packets;
-  //TODO get preferred algo from signature
-  symEncryptedPacket.encrypt(enums.read(enums.symmetric, config.encryption_cipher), sessionKey);
+  symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
   packetlist.push(symEncryptedPacket);
   // remove packets after encryption
   symEncryptedPacket.packets = new packet.List();

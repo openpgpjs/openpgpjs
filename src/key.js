@@ -939,6 +939,40 @@ function generate(keyType, numBits, userId, passphrase) {
   return new Key(packetlist);
 }
 
+/**
+ * Returns the preferred symmetric algorithm for a set of keys
+ * @param  {Array<module:key~Key>} keys Set of keys
+ * @return {enums.symmetric}   Preferred symmetric algorithm
+ */
+function getPreferredSymAlgo(keys) {
+  var prioMap = {};
+  for (var i = 0; i < keys.length; i++) {
+    var primaryUser = keys[i].getPrimaryUser();
+    if (!primaryUser || !primaryUser.selfCertificate.preferredSymmetricAlgorithms) {
+      return config.encryption_cipher;
+    }
+    primaryUser.selfCertificate.preferredSymmetricAlgorithms.forEach(function(algo, index) {
+      var entry = prioMap[algo] || (prioMap[algo] = {prio: 0, count: 0, algo: algo});
+      entry.prio += 64 >> index;
+      entry.count++;
+    });
+  }
+  var prefAlgo = {prio: 0, algo: config.encryption_cipher};
+  for (var algo in prioMap) {
+    try {
+      if (algo !== enums.symmetric.plaintext &&
+          algo !== enums.symmetric.idea && // not implemented
+          enums.read(enums.symmetric, algo) && // known algorithm
+          prioMap[algo].count === keys.length && // available for all keys
+          prioMap[algo].prio > prefAlgo.prio) {
+        prefAlgo = prioMap[algo];
+      }
+    } catch (e) {}
+  }
+  return prefAlgo.algo;
+}
+
 exports.Key = Key;
 exports.readArmored = readArmored;
 exports.generate = generate;
+exports.getPreferredSymAlgo = getPreferredSymAlgo;
