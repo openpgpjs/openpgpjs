@@ -18,7 +18,11 @@ module.exports = {
   /** @see module:crypto/cipher/twofish */
   twofish: require('./twofish.js'),
   /** @see module:crypto/cipher/blowfish */
-  blowfish: require('./blowfish.js')
+  blowfish: require('./blowfish.js'),
+  /** Not implemented */
+  idea: function() {
+    throw new Error('IDEA symmetric-key algorithm not implemented');
+  }
 };
 
 var aes = require('./aes.js');
