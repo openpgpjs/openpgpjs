@@ -102,6 +102,7 @@ Signature.prototype.read = function (bytes) {
   this.version = bytes.charCodeAt(i++);
   // switch on version (3 and 4)
   switch (this.version) {
+    case 2:
     case 3:
       // One-octet length of following hashed material. MUST be 5.
       if (bytes.charCodeAt(i++) != 5)
