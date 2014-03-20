@@ -77,8 +77,6 @@ describe("Signature", function() {
   var priv_key_arm2 =
     [ '-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
-      'Type: RSA/RSA',
-      'Pwd: hello world',
       '',
       'lQH+BFJhL04BBADclrUEDDsm0PSZbQ6pml9FpzTyXiyCyDN+rMOsy9J300Oc10kt',
       '/nyBej9vZSRcaW5VpNNj0iA+c1/w2FPf84zNsTzvDmuMaNHFUzky4/vkYuZra//3',
@@ -120,7 +118,6 @@ describe("Signature", function() {
   var pub_key_arm2 =
     [ '-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
-      'Type: RSA/RSA',
       '',
       'mI0EUmEvTgEEANyWtQQMOybQ9JltDqmaX0WnNPJeLILIM36sw6zL0nfTQ5zXSS3+',
       'fIF6P29lJFxpblWk02PSID5zX/DYU9/zjM2xPO8Oa4xo0cVTOTLj++Ri5mtr//f5',

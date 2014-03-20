@@ -39,7 +39,7 @@ var config = require('./config'),
 
 function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(packetlist);
+    return new CleartextMessage(text, packetlist);
   }
   // normalize EOL to canonical form <CR><LF>
   this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
@@ -142,8 +142,54 @@ function readArmored(armoredText) {
   }
   var packetlist = new packet.List();
   packetlist.read(input.data);
+  verifyHeaders(input.headers, packetlist);
   var newMessage = new CleartextMessage(input.text, packetlist);
   return newMessage;
+}
+
+/**
+ * Compare hash algorithm specified in the armor header with signatures
+ * @private
+ * @param  {Array<String>} headers    Armor headers
+ * @param  {module:packet/packetlist} packetlist The packetlist with signature packets
+ */
+function verifyHeaders(headers, packetlist) {
+  var checkHashAlgos = function(hashAlgos) {
+    for (var i = 0; i < packetlist.length; i++) {
+      if (packetlist[i].tag === enums.packet.signature &&
+          !hashAlgos.some(function(algo) {
+            return packetlist[i].hashAlgorithm === algo;
+          })) {
+        return false;
+      }
+    }
+    return true;
+  }
+  var oneHeader = null;
+  var hashAlgos = [];
+  for (var i = 0; i < headers.length; i++) {
+    oneHeader = headers[i].match(/Hash: (.+)/); // get header value
+    if (oneHeader) {
+      oneHeader = oneHeader[1].replace(/\s/g, '');  // remove whitespace
+      oneHeader = oneHeader.split(',');
+      oneHeader = oneHeader.map(function(hash) {
+        hash = hash.toLowerCase();
+        try {
+          return enums.write(enums.hash, hash);
+        } catch (e) {
+          throw new Error('Unknown hash algorithm in armor header: ' + hash);
+        }
+      });
+      hashAlgos = hashAlgos.concat(oneHeader);
+    } else {
+      throw new Error('Only "Hash" header allowed in cleartext signed message');
+    }
+  }
+  if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
+    throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
+  } else if (!checkHashAlgos(hashAlgos)) {
+    throw new Error('Hash algorithm mismatch in armor header and signature');
+  }
 }
 
 exports.CleartextMessage = CleartextMessage;

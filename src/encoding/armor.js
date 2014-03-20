@@ -207,8 +207,8 @@ function createcrc24(input) {
  * and an attribute "body" containing the body.
  */
 function splitHeaders(text) {
-  var reEmptyLine = /^[\t ]*\n/m;
-  var headers = "";
+  var reEmptyLine = /^\s*\n/m;
+  var headers = '';
   var body = text;
 
   var matchResult = reEmptyLine.exec(text);
@@ -216,9 +216,29 @@ function splitHeaders(text) {
   if (matchResult !== null) {
     headers = text.slice(0, matchResult.index);
     body = text.slice(matchResult.index + matchResult[0].length);
+  } else {
+    throw new Error('Mandatory blank line missing between armor headers and armor data');
   }
 
+  headers = headers.split('\n');
+  // remove empty entry
+  headers.pop();
+
   return { headers: headers, body: body };
+}
+
+/**
+ * Verify armored headers. RFC4880, section 6.3: "OpenPGP should consider improperly formatted
+ * Armor Headers to be corruption of the ASCII Armor."
+ * @private
+ * @param  {Array<String>} headers Armor headers
+ */
+function verifyHeaders(headers) {
+  for (var i = 0; i < headers.length; i++) {
+    if (!headers[i].match(/^(Version|Comment|MessageID|Hash|Charset): .+$/)) {
+      throw new Error('Improperly formatted armor header: ' + headers[i]);;
+    }
+  }
 }
 
 /**
@@ -280,19 +300,22 @@ function dearmor(text) {
 
     result = {
       data: base64.decode(msg_sum.body),
+      headers: msg.headers,
       type: type
     };
 
     checksum = msg_sum.checksum;
   } else {
-    // Reverse dash-escaping for msg and remove trailing whitespace at end of line
+    // Reverse dash-escaping for msg and remove trailing whitespace (0x20) and tabs (0x09) at end of line
     msg = splitHeaders(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
     var sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
+    verifyHeaders(sig.headers);
     var sig_sum = splitChecksum(sig.body);
 
     result = {
       text:  msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
       data: base64.decode(sig_sum.body),
+      headers: msg.headers,
       type: type
     };
 
@@ -304,9 +327,11 @@ function dearmor(text) {
       checksum +
       "' should be '" +
       getCheckSum(result) + "'");
-  } else {
-    return result;
   }
+
+  verifyHeaders(result.headers);
+
+  return result;
 }
 
 

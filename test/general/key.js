@@ -224,8 +224,6 @@ describe('Key', function() {
   var priv_key_rsa =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
     'Version: GnuPG v2.0.19 (GNU/Linux)',
-    'Type: RSA/RSA 1024',
-    'Pwd: hello world',
     '',
     'lQH+BFJhL04BBADclrUEDDsm0PSZbQ6pml9FpzTyXiyCyDN+rMOsy9J300Oc10kt',
     '/nyBej9vZSRcaW5VpNNj0iA+c1/w2FPf84zNsTzvDmuMaNHFUzky4/vkYuZra//3',
