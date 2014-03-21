@@ -42,9 +42,20 @@ function DSA() {
     // directly in the DSA signature algorithm.
     var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-    var k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
-    var s1 = (g.modPow(k, p)).mod(q);
-    var s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
+    // FIPS-186-4, section 4.6:
+    // The values of r and s shall be checked to determine if r = 0 or s = 0.
+    // If either r = 0 or s = 0, a new value of k shall be generated, and the
+    // signature shall be recalculated. It is extremely unlikely that r = 0 
+    // or s = 0 if signatures are generated properly.
+    var k, s1, s2;
+    while (true) {
+      k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
+      s1 = (g.modPow(k, p)).mod(q);
+      s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
+      if (s1 != 0 && s2 != 0) {
+        break;
+      }
+    }
     var result = [];
     result[0] = s1.toMPI();
     result[1] = s2.toMPI();
