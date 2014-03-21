@@ -100,7 +100,7 @@ Signature.prototype.read = function (bytes) {
   var i = 0;
 
   this.version = bytes.charCodeAt(i++);
-  // switch on version (3 and 4)
+  // switch on version (2, 3 and 4)
   switch (this.version) {
     case 2:
     case 3:
@@ -549,7 +549,7 @@ Signature.prototype.toSign = function (type, data) {
         String.fromCharCode(tag) +
         util.writeNumber(bytes.length, 4) +
         bytes;
-      } else if (this.version == 3) {
+      } else if (this.version == 2 || this.version == 3) {
         return this.toSign(t.key, data) +
         bytes;
       }
@@ -583,8 +583,10 @@ Signature.prototype.toSign = function (type, data) {
 Signature.prototype.calculateTrailer = function () {
   // calculating the trailer
   var trailer = '';
-  // V3 signatures don't have a trailer
-  if (this.version == 3) return trailer;
+  // V3 (and V2) signatures don't have a trailer
+  if (this.version == 2 || this.version == 3) {
+    return trailer;
+  }
   trailer += String.fromCharCode(4); // Version
   trailer += String.fromCharCode(0xFF);
   trailer += util.writeNumber(this.signatureData.length, 4);
