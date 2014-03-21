@@ -49,7 +49,7 @@ function DSA() {
     // or s = 0 if signatures are generated properly.
     var k, s1, s2;
     while (true) {
-      k = random.getRandomBigIntegerInRange(BigInteger.ONE.add(BigInteger.ONE), q.subtract(BigInteger.ONE));
+      k = random.getRandomBigIntegerInRange(BigInteger.ONE, q.subtract(BigInteger.ONE));
       s1 = (g.modPow(k, p)).mod(q);
       s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
       if (s1 != 0 && s2 != 0) {

@@ -730,6 +730,7 @@ BigInteger.prototype.modPowInt = bnModPowInt;
 // "constants"
 BigInteger.ZERO = nbv(0);
 BigInteger.ONE = nbv(1);
+BigInteger.TWO = nbv(2);
 
 module.exports = BigInteger;
 

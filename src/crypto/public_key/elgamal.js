@@ -32,9 +32,8 @@ function Elgamal() {
 
   function encrypt(m, g, p, y) {
     //  choose k in {2,...,p-2}
-    var two = BigInteger.ONE.add(BigInteger.ONE);
-    var pMinus2 = p.subtract(two);
-    var k = random.getRandomBigIntegerInRange(two, pMinus2);
+    var pMinus2 = p.subtract(BigInteger.TWO);
+    var k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
     k = k.mod(pMinus2).add(BigInteger.ONE);
     var c = [];
     c[0] = g.modPow(k, p);

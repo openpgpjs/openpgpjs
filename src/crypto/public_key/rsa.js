@@ -40,13 +40,12 @@ function SecureRandom() {
 
 var blinder = BigInteger.ZERO;
 var unblinder = BigInteger.ZERO;
-var TWO = BigInteger.ONE.add(BigInteger.ONE);
 
 function blind(m, n, e) {
   if (unblinder.bitLength() === n.bitLength()) {
     unblinder = unblinder.square().mod(n);
   } else {
-    unblinder = random.getRandomBigIntegerInRange(TWO, n);
+    unblinder = random.getRandomBigIntegerInRange(BigInteger.TWO, n);
   }
   blinder = unblinder.modInverse(n).modPow(e, n);
   return m.multiply(blinder).mod(n);
