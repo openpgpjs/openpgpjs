@@ -328,4 +328,13 @@ describe('Basic', function() {
     });
   });
 
+  describe("Misc.", function() {
+
+    it('util.decode_utf8 throws error if invalid parameter type', function () {
+      var test = openpgp.util.decode_utf8.bind(null, {chameleon: true});
+      expect(test).to.throw(Error, /Parameter "utf8" is not of type string/);
+    });
+
+  });
+
 });

@@ -142,6 +142,9 @@ module.exports = {
    * @return {String} A native javascript string
    */
   decode_utf8: function (utf8) {
+    if (typeof utf8 !== 'string') {
+      throw new Error('Parameter "utf8" is not of type string');
+    }
     try {
       return decodeURIComponent(escape(utf8));
     } catch (e) {
