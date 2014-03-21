@@ -75,15 +75,15 @@ function PublicKey() {
  */
 PublicKey.prototype.read = function (bytes) {
   var pos = 0;
-  // A one-octet version number (3 or 4).
+  // A one-octet version number (2, 3, or 4).
   this.version = bytes.charCodeAt(pos++);
 
-  if (this.version == 3 || this.version == 4) {
+  if (this.version == 2 || this.version == 3 || this.version == 4) {
     // - A four-octet number denoting the time that the key was created.
     this.created = util.readDate(bytes.substr(pos, 4));
     pos += 4;
 
-    if (this.version == 3) {
+    if (this.version == 2 || this.version == 3) {
       // - A two-octet number denoting the time in days that this key is
       //   valid.  If this number is zero, then it does not expire.
       this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
@@ -132,7 +132,7 @@ PublicKey.prototype.write = function () {
   // Version
   var result = String.fromCharCode(this.version);
   result += util.writeDate(this.created);
-  if (this.version == 3) {
+  if (this.version == 2 || this.version == 3) {
     result += util.writeNumber(this.expirationTimeV3, 2);
   }
   result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
@@ -174,7 +174,7 @@ PublicKey.prototype.getKeyId = function () {
   this.keyid = new type_keyid();
   if (this.version == 4) {
     this.keyid.read(util.hex2bin(this.getFingerprint()).substr(12, 8));
-  } else if (this.version == 3) {
+  } else if (this.version == 2 || this.version == 3) {
     this.keyid.read(this.mpi[0].write().substr(-8));
   }
   return this.keyid;
@@ -192,7 +192,7 @@ PublicKey.prototype.getFingerprint = function () {
   if (this.version == 4) {
     toHash = this.writeOld();
     this.fingerprint = crypto.hash.sha1(toHash);
-  } else if (this.version == 3) {
+  } else if (this.version == 2 || this.version == 3) {
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     for (var i = 0; i < mpicount; i++) {
       toHash += this.mpi[i].toBytes();
