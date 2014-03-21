@@ -112,6 +112,25 @@ describe("ASCII armor", function() {
     expect(msg).to.throw(Error, /Improperly formatted armor header/);
   });
 
+  it('Exception if wrong armor header type', function () {
+    var msg =
+      ['-----BEGIN PGP SIGNED MESSAGE\u2010\u2010\u2010\u2010\u2010\nHash:SHA1\n\nIs this properly-----',
+      '',
+      'sign this',
+      '-----BEGIN PGP SIGNATURE-----',
+      'Version: GnuPG v2.0.22 (GNU/Linux)',
+      '',
+      'iJwEAQECAAYFAlMrPj0ACgkQ4IT3RGwgLJfYkQQAgHMQieazCVdfGAfzQM69Egm5',
+      'HhcQszODD898wpoGCHgiNdNo1+5nujQAtXnkcxM+Vf7onfbTvUqut/siyO3fzqhK',
+      'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
+      'skTzzVXIxMYw8ihbHfk=',
+      '=e/eA',
+      '-----END PGP SIGNATURE-----'].join('\n');
+
+    msg = openpgp.cleartext.readArmored.bind(null, msg);
+    expect(msg).to.throw(Error, /Unknow ASCII armor type/);
+  });
+
 });
 
  

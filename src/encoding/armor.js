@@ -27,7 +27,8 @@ var base64 = require('./base64.js'),
   config = require('../config');
 
 /**
- * Finds out which Ascii Armoring type is used. This is an internal function
+ * Finds out which Ascii Armoring type is used. Throws error if unknown type.
+ * @private
  * @param {String} text [String] ascii armored text
  * @returns {Integer} 0 = MESSAGE PART n of m
  *         1 = MESSAGE PART n
@@ -35,24 +36,27 @@ var base64 = require('./base64.js'),
  *         3 = PGP MESSAGE
  *         4 = PUBLIC KEY BLOCK
  *         5 = PRIVATE KEY BLOCK
- *         null = unknown
  */
 function getType(text) {
-  var reHeader = /^-----([^-]+)-----$\n/m;
+  var reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK)-----$\n/m;
 
   var header = text.match(reHeader);
+
+  if (!header) {
+    throw new Error('Unknow ASCII armor type');
+  }
 
   // BEGIN PGP MESSAGE, PART X/Y
   // Used for multi-part messages, where the armor is split amongst Y
   // parts, and this is the Xth part out of Y.
-  if (header[1].match(/BEGIN PGP MESSAGE, PART \d+\/\d+/)) {
+  if (header[1].match(/MESSAGE, PART \d+\/\d+/)) {
     return enums.armor.multipart_section;
   } else
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
-  if (header[1].match(/BEGIN PGP MESSAGE, PART \d+/)) {
+  if (header[1].match(/MESSAGE, PART \d+/)) {
     return enums.armor.multipart_last;
 
   } else
@@ -60,25 +64,25 @@ function getType(text) {
   // Used for detached signatures, OpenPGP/MIME signatures, and
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
   // for detached signatures.
-  if (header[1].match(/BEGIN PGP SIGNED MESSAGE/)) {
+  if (header[1].match(/SIGNED MESSAGE/)) {
     return enums.armor.signed;
 
   } else
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
-  if (header[1].match(/BEGIN PGP MESSAGE/)) {
+  if (header[1].match(/MESSAGE/)) {
     return enums.armor.message;
 
   } else
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
-  if (header[1].match(/BEGIN PGP PUBLIC KEY BLOCK/)) {
+  if (header[1].match(/PUBLIC KEY BLOCK/)) {
     return enums.armor.public_key;
 
   } else
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
-  if (header[1].match(/BEGIN PGP PRIVATE KEY BLOCK/)) {
+  if (header[1].match(/PRIVATE KEY BLOCK/)) {
     return enums.armor.private_key;
   }
 }
@@ -277,9 +281,6 @@ function dearmor(text) {
   text = text.replace(/\r/g, '');
 
   var type = getType(text);
-  if (!type) {
-    throw new Error('Unknow ASCII armor type');
-  } 
 
   var splittext = text.split(reSplit);
 
