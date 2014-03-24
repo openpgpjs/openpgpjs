@@ -450,7 +450,9 @@ Signature.prototype.read_sub_packet = function (bytes) {
 
         this.notation = this.notation || {};
         this.notation[name] = value;
-      } else throw new Error("Unsupported notation flag.");
+      } else {
+    	  util.print_debug("Unsupported notation flag "+bytes.charCodeAt(mypos));
+      	}
       break;
     case 21:
       // Preferred Hash Algorithms
@@ -509,7 +511,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       this.embeddedSignature.read(bytes.substr(mypos));
       break;
     default:
-      throw new Error("Unknown signature subpacket type " + type + " @:" + mypos);
+    	util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
   }
 };
 
