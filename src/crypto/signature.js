@@ -19,8 +19,6 @@ module.exports = {
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
   verify: function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-    var calc_hash = hashModule.digest(hash_algo, data);
-    var dopublic;
 
     switch (algo) {
       case 1:
@@ -31,15 +29,12 @@ module.exports = {
         // RSA Sign-Only [HAC]
         var rsa = new publicKey.rsa();
         var n = publickey_MPIs[0].toBigInteger();
+        var k = publickey_MPIs[0].byteLength();
         var e = publickey_MPIs[1].toBigInteger();
-        var x = msg_MPIs[0].toBigInteger();
-        dopublic = rsa.verify(x, e, n);
-        var hash = pkcs1.emsa.decode(hash_algo, dopublic.toMPI().substring(2));
-        if (hash == -1) {
-          throw new Error('PKCS1 padding in message or key incorrect. Aborting...');
-        }
-        return hash == calc_hash;
-
+        var m = msg_MPIs[0].toBigInteger();
+        var EM = rsa.verify(m, e, n);
+        var EM2 = pkcs1.emsa.encode(hash_algo, data, k);
+        return EM.compareTo(EM2) === 0;
       case 16:
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error("signing with Elgamal is not defined in the OpenPGP standard.");
@@ -53,7 +48,7 @@ module.exports = {
         var g = publickey_MPIs[2].toBigInteger();
         var y = publickey_MPIs[3].toBigInteger();
         var m = data;
-        dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
+        var dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
         return dopublic.compareTo(s1) === 0;
       default:
         throw new Error('Invalid signature algorithm.');

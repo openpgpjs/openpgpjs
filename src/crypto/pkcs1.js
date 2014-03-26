@@ -91,7 +91,6 @@ module.exports = {
       result += message;
       return result;
     },
-
     /**
      * decodes a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
      * @param {String} message EME-PKCS1 padded message
@@ -110,53 +109,47 @@ module.exports = {
   },
 
   emsa: {
-
     /**
      * create a EMSA-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
      * @param {Integer} algo Hash algorithm type used
-     * @param {String} data Data to be hashed
-     * @param {Integer} keylength Key size of the public mpi in bytes
-     * @returns {String} Hashcode with pkcs1padding as string
+     * @param {String} M message to be encoded
+     * @param {Integer} emLen intended length in octets of the encoded message
+     * @returns {String} encoded message
      */
-    encode: function(algo, data, keylength) {
-      var data2 = "";
-      data2 += String.fromCharCode(0x00);
-      data2 += String.fromCharCode(0x01);
+    encode: function(algo, M, emLen) {
       var i;
-      for (i = 0; i < (keylength - hash_headers[algo].length - 3 -
-        hash.getHashByteLength(algo)); i++)
-
-        data2 += String.fromCharCode(0xff);
-
-      data2 += String.fromCharCode(0x00);
-
-      for (i = 0; i < hash_headers[algo].length; i++)
-        data2 += String.fromCharCode(hash_headers[algo][i]);
-
-      data2 += hash.digest(algo, data);
-      return new BigInteger(util.hexstrdump(data2), 16);
-    },
-
-    /**
-     * extract the hash out of an EMSA-PKCS1-v1.5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
-     * @param {String} data Hash in pkcs1 encoding
-     * @returns {String} The hash as string
-     */
-    decode: function(algo, data) {
-      var i = 0;
-      if (data.charCodeAt(0) === 0) i++;
-      else if (data.charCodeAt(0) != 1) return -1;
-      else i++;
-
-      while (data.charCodeAt(i) == 0xFF) i++;
-      if (data.charCodeAt(i++) !== 0) return -1;
-      var j = 0;
-      for (j = 0; j < hash_headers[algo].length && j + i < data.length; j++) {
-        if (data.charCodeAt(j + i) != hash_headers[algo][j]) return -1;
+      // Apply the hash function to the message M to produce a hash value H
+      var H = hash.digest(algo, M);
+      if (H.length !== hash.getHashByteLength(algo)) {
+        throw new Error('Invalid hash length');
       }
-      i += j;
-      if (data.substring(i).length < hash.getHashByteLength(algo)) return -1;
-      return data.substring(i);
+      // produce an ASN.1 DER value for the hash function used.
+      // Let T be the full hash prefix
+      var T = '';
+      for (i = 0; i < hash_headers[algo].length; i++) {
+        T += String.fromCharCode(hash_headers[algo][i]);
+      }
+      // add hash value to prefix
+      T += H;
+      // and let tLen be the length in octets of T
+      var tLen = T.length;
+      if (emLen < tLen + 11) {
+        throw new Error('Intended encoded message length too short');
+      }
+      // an octet string PS consisting of emLen - tLen - 3 octets with hexadecimal value 0xFF
+      // The length of PS will be at least 8 octets
+      var PS = '';
+      for (i = 0; i < (emLen - tLen - 3); i++) {
+        PS += String.fromCharCode(0xff);
+      }
+      // Concatenate PS, the hash prefix T, and other padding to form the
+      // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || T.
+      var EM = String.fromCharCode(0x00) +
+               String.fromCharCode(0x01) +
+               PS +
+               String.fromCharCode(0x00) +
+               T;
+      return new BigInteger(util.hexstrdump(EM), 16);
     }
   }
 };

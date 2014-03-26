@@ -87,7 +87,7 @@ var jsSHA = (function() {
         if (!isNaN(num)) {
           bin[i >> 3] |= num << (24 - (4 * (i % 8)));
         } else {
-          return "INVALID HEX STRING";
+          throw new Error("INVALID HEX STRING");
         }
       }
 
@@ -870,7 +870,7 @@ var jsSHA = (function() {
             H[7].highOrder, H[7].lowOrder];
         default:
           /* This should never be reached */
-          return [];
+          throw new Error('Unknown SHA variant');
       }
     },
 
@@ -896,7 +896,7 @@ var jsSHA = (function() {
       /* Convert the input string into the correct type */
       if ("HEX" === inputFormat) {
         if (0 !== (srcString.length % 2)) {
-          return "TEXT MUST BE IN BYTE INCREMENTS";
+          throw new Error("TEXT MUST BE IN BYTE INCREMENTS");
         }
         this.strBinLen = srcString.length * 4;
         this.strToHash = hex2binb(srcString);
@@ -905,7 +905,7 @@ var jsSHA = (function() {
         this.strBinLen = srcString.length * charSize;
         this.strToHash = str2binb(srcString);
       } else {
-        return "UNKNOWN TEXT INPUT TYPE";
+        throw new Error("UNKNOWN TEXT INPUT TYPE");
       }
     };
 
@@ -934,7 +934,7 @@ var jsSHA = (function() {
           formatFunc = binb2str;
           break;
         default:
-          return "FORMAT NOT RECOGNIZED";
+          throw new Error("FORMAT NOT RECOGNIZED");
       }
 
       switch (variant) {
@@ -964,7 +964,7 @@ var jsSHA = (function() {
           }
           return formatFunc(this.sha512);
         default:
-          return "HASH NOT RECOGNIZED";
+          throw new Error("HASH NOT RECOGNIZED");
       }
     },
 
@@ -998,7 +998,7 @@ var jsSHA = (function() {
           formatFunc = binb2str;
           break;
         default:
-          return "FORMAT NOT RECOGNIZED";
+          throw new Error("FORMAT NOT RECOGNIZED");
       }
 
       /* Validate the hash variant selection and set needed variables */
@@ -1024,14 +1024,14 @@ var jsSHA = (function() {
           hashBitSize = 512;
           break;
         default:
-          return "HASH NOT RECOGNIZED";
+          throw new Error("HASH NOT RECOGNIZED");
       }
 
       /* Validate input format selection */
       if ("HEX" === inputFormat) {
         /* Nibbles must come in pairs */
         if (0 !== (key.length % 2)) {
-          return "KEY MUST BE IN BYTE INCREMENTS";
+          throw new Error("KEY MUST BE IN BYTE INCREMENTS");
         }
         keyToUse = hex2binb(key);
         keyBinLen = key.length * 4;
@@ -1039,7 +1039,7 @@ var jsSHA = (function() {
         keyToUse = str2binb(key);
         keyBinLen = key.length * charSize;
       } else {
-        return "UNKNOWN KEY INPUT TYPE";
+        throw new Error("UNKNOWN KEY INPUT TYPE");
       }
 
       /* These are used multiple times, calculate and store them */

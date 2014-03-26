@@ -85,7 +85,7 @@ function mixOneRound(a, b, c, d, e, x, s, roundNumber) {
       break;
 
     default:
-      document.write("Bogus round number");
+      throw new Error("Bogus round number");
       break;
   }
 
