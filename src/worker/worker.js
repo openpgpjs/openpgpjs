@@ -31,6 +31,9 @@ onmessage = function (event) {
       correct = false;
   switch (msg.event) {
     case 'seed-random':
+      if (!(msg.buf instanceof Uint8Array)) {
+        msg.buf = new Uint8Array(msg.buf);
+      }
       window.openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
     case 'encrypt-message':

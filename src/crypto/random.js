@@ -76,6 +76,9 @@ module.exports = {
    * @param {Uint8Array} buf
    */
   getRandomValues: function(buf) {
+    if (!(buf instanceof Uint8Array)) {
+      throw new Error('Invalid type: buf not an Uint8Array');
+    }
     if (typeof window !== 'undefined' && window.crypto) {
       window.crypto.getRandomValues(buf);
     } else if (nodeCrypto) {
@@ -142,17 +145,20 @@ function RandomBuffer() {
  * @param  {Integer} size size of buffer
  */
 RandomBuffer.prototype.init = function(size) {
-  this.buffer = new Uint32Array(size);
+  this.buffer = new Uint8Array(size);
   this.size = 0;
 };
 
 /**
  * Concat array of secure random numbers to buffer
- * @param {Uint32Array} buf
+ * @param {Uint8Array} buf
  */
 RandomBuffer.prototype.set = function(buf) {
   if (!this.buffer) {
     throw new Error('RandomBuffer is not initialized');
+  }
+  if (!(buf instanceof Uint8Array)) {
+    throw new Error('Invalid type: buf not an Uint8Array');
   }
   var freeSpace = this.buffer.length - this.size;
   if (buf.length > freeSpace) {
@@ -164,11 +170,14 @@ RandomBuffer.prototype.set = function(buf) {
 
 /**
  * Take numbers out of buffer and copy to array
- * @param {Uint32Array} buf the destination array
+ * @param {Uint8Array} buf the destination array
  */
 RandomBuffer.prototype.get = function(buf) {
   if (!this.buffer) {
     throw new Error('RandomBuffer is not initialized');
+  }
+  if (!(buf instanceof Uint8Array)) {
+    throw new Error('Invalid type: buf not an Uint8Array');
   }
   if (this.size < buf.length) {
     throw new Error('Random number buffer depleted.')
