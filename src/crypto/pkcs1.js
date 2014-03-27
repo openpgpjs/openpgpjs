@@ -76,35 +76,51 @@ module.exports = {
   eme: {
     /**
      * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
-     * @param {String} message message to be padded
-     * @param {Integer} length Length to the resulting message
+     * @param {String} M message to be encoded
+     * @param {Integer} k the length in octets of the key modulus
      * @return {String} EME-PKCS1 padded message
      */
-    encode: function(message, length) {
-      if (message.length > length - 11)
-        return -1;
-      var result = "";
-      result += String.fromCharCode(0);
-      result += String.fromCharCode(2);
-      result += getPkcs1Padding(length - message.length - 3);
-      result += String.fromCharCode(0);
-      result += message;
-      return result;
+    encode: function(M, k) {
+      var mLen = M.length;
+      // length checking
+      if (mLen > k - 11) {
+        throw new Error('Message too long');
+      }
+      // Generate an octet string PS of length k - mLen - 3 consisting of
+      // pseudo-randomly generated nonzero octets
+      var PS = getPkcs1Padding(k - mLen - 3);
+      // Concatenate PS, the message M, and other padding to form an
+      // encoded message EM of length k octets as EM = 0x00 || 0x02 || PS || 0x00 || M.
+      var EM = String.fromCharCode(0) +
+               String.fromCharCode(2) +
+               PS +
+               String.fromCharCode(0) +
+               M;
+      return EM;
     },
     /**
      * decodes a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
-     * @param {String} message EME-PKCS1 padded message
-     * @return {String} decoded message
+     * @param {String} EM encoded message, an octet string
+     * @return {String} message, an octet string
      */
-    decode: function(message, len) {
-      if (message.length < len)
-        message = String.fromCharCode(0) + message;
-      if (message.length < 12 || message.charCodeAt(0) !== 0 || message.charCodeAt(1) != 2)
-        return -1;
+    decode: function(EM) {
+      // leading zeros truncated by jsbn
+      if (EM.charCodeAt(0) !== 0) {
+        EM = String.fromCharCode(0) + EM;
+      }
+      var firstOct = EM.charCodeAt(0);
+      var secondOct = EM.charCodeAt(1);
       var i = 2;
-      while (message.charCodeAt(i) !== 0 && message.length > i)
+      while (EM.charCodeAt(i) !== 0 && i < EM.length) {
         i++;
-      return message.substring(i + 1, message.length);
+      }
+      var psLen = i - 2;
+      var separator = EM.charCodeAt(i++);
+      if (firstOct === 0 && secondOct === 2 && psLen >= 8 && separator === 0) {
+        return EM.substr(i);
+      } else {
+        throw new Error('Decryption error');
+      }
     }
   },
 
