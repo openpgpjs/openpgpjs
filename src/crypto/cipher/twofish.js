@@ -30,10 +30,6 @@
 
 var MAXINT = 0xFFFFFFFF;
 
-function rotb(b, n) {
-  return (b << n | b >>> (8 - n)) & 0xFF;
-}
-
 function rotw(w, n) {
   return (w << n | w >>> (32 - n)) & MAXINT;
 }
@@ -54,24 +50,6 @@ function getB(x, n) {
   return (x >>> (n * 8)) & 0xFF;
 }
 
-function getNrBits(i) {
-  var n = 0;
-  while (i > 0) {
-    n++;
-    i >>>= 1;
-  }
-  return n;
-}
-
-function getMask(n) {
-  return (1 << n) - 1;
-}
-
-//added 2008/11/13 XXX MUST USE ONE-WAY HASH FUNCTION FOR SECURITY REASON
-
-function randByte() {
-  return Math.floor(Math.random() * 256);
-}
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Twofish
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
