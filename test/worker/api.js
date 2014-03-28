@@ -388,7 +388,7 @@ describe('High level API', function() {
       wProxy.encryptMessage([pubKeyRSA], plaintext, function(err, data) {
         expect(data).to.not.exist;
         expect(err).to.exist;
-        expect(err).to.eql(new Error('Random number buffer depleted.'));
+        expect(err).to.eql(new Error('Random number buffer depleted'));
         done();
       });
     });
@@ -538,16 +538,16 @@ describe('Random Buffer', function() {
     expect(randomBuffer.get.bind(randomBuffer, buf)).to.throw('Invalid type: buf not an Uint8Array');
     buf = new Uint8Array(2);
     randomBuffer.get(buf);
-    expect(equal(randomBuffer.buffer, [1,2,5,7,8])).to.be.true;
+    expect(equal(randomBuffer.buffer, [1,2,5,0,0])).to.be.true;
     expect(randomBuffer.size).to.equal(3);
     expect(buf).to.to.have.property('0', 8);
     expect(buf).to.to.have.property('1', 7);
-    expect(equal(randomBuffer.buffer, [1,2,5,7,8])).to.be.true;
     randomBuffer.get(buf);
     expect(buf).to.to.have.property('0', 5);
     expect(buf).to.to.have.property('1', 2);
+    expect(equal(randomBuffer.buffer, [1,0,0,0,0])).to.be.true;
     expect(randomBuffer.size).to.equal(1);
-    expect(function() { randomBuffer.get(buf) }).to.throw('Random number buffer depleted.');
+    expect(function() { randomBuffer.get(buf) }).to.throw('Random number buffer depleted');
   });
 
 });

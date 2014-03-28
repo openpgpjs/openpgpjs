@@ -164,6 +164,7 @@ RandomBuffer.prototype.set = function(buf) {
   if (buf.length > freeSpace) {
     buf = buf.subarray(0, freeSpace);
   }
+  // set buf with offset old size of buffer
   this.buffer.set(buf, this.size);
   this.size += buf.length;
 };
@@ -180,9 +181,11 @@ RandomBuffer.prototype.get = function(buf) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
   if (this.size < buf.length) {
-    throw new Error('Random number buffer depleted.')
+    throw new Error('Random number buffer depleted');
   }
   for (var i = 0; i < buf.length; i++) {
     buf[i] = this.buffer[--this.size];
+    // clear buffer value
+    this.buffer[this.size] = 0;
   }
 };
