@@ -204,7 +204,7 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
  * @param  {function} callback (optional) callback(error, result) for async style
- * @return {Object} {key: Array<module:key~Key>, privateKeyArmored: Array<String>, publicKeyArmored: Array<String>}
+ * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
 function generateKeyPair(keyType, numBits, userId, passphrase, callback) {

@@ -476,5 +476,26 @@ describe('Key', function() {
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
+  it('Preferences of generated key', function() {
+    var testPref = function(key) {
+      // key flags
+      var keyFlags = openpgp.enums.keyFlags;
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certify_keys).to.equal(keyFlags.certify_keys);
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.sign_data).to.equal(keyFlags.sign_data);
+      expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_communication).to.equal(keyFlags.encrypt_communication);
+      expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
+      var sym = openpgp.enums.symmetric;
+      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes192, sym.aes128, sym.cast5, sym.tripledes]);
+      var hash = openpgp.enums.hash;
+      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha1, hash.sha512]);
+      var compr = openpgp.enums.compression;
+      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
+      expect(key.users[0].selfCertifications[0].features).to.eql([1]); // modification detection
+    }
+    var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 'test', 'hello');
+    testPref(key.key);
+    testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
+  });
+
 });
 

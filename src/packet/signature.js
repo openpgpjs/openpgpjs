@@ -294,7 +294,7 @@ Signature.prototype.write_all_sub_packets = function () {
   }
   if (this.preferredCompressionAlgorithms !== null) {
     bytes = util.bin2str(this.preferredCompressionAlgorithms);
-    result += write_sub_packet(sub.preferred_hash_algorithms, bytes);
+    result += write_sub_packet(sub.preferred_compression_algorithms, bytes);
   }
   if (this.keyServerPreferences !== null) {
     bytes = util.bin2str(this.keyServerPreferences);
@@ -411,12 +411,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 11:
       // Preferred Symmetric Algorithms
-      this.preferredSymmetricAlgorithms = [];
-
-      while (mypos != bytes.length) {
-        this.preferredSymmetricAlgorithms.push(bytes.charCodeAt(mypos++));
-      }
-
+      read_array.call(this, 'preferredSymmetricAlgorithms', bytes.substr(mypos));
       break;
     case 12:
       // Revocation Key
@@ -458,7 +453,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 22:
       // Preferred Compression Algorithms
-      read_array.call(this, 'preferredCompressionAlgorithms ', bytes.substr(mypos));
+      read_array.call(this, 'preferredCompressionAlgorithms', bytes.substr(mypos));
       break;
     case 23:
       // Key Server Preferences

@@ -893,6 +893,11 @@ function readArmored(armoredText) {
  * @static
  */
 function generate(keyType, numBits, userId, passphrase) {
+  // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+  if (keyType !== enums.publicKey.rsa_encrypt_sign) {
+    throw new Error('Only RSA Encrypt or Sign supported');
+  }
+
   var packetlist = new packet.List();
 
   var secretKeyPacket = new packet.SecretKey();
@@ -909,9 +914,23 @@ function generate(keyType, numBits, userId, passphrase) {
   var signaturePacket = new packet.Signature();
   signaturePacket.signatureType = enums.signature.cert_generic;
   signaturePacket.publicKeyAlgorithm = keyType;
-  //TODO we should load preferred hash from config, or as input to this function
-  signaturePacket.hashAlgorithm = enums.hash.sha256;
+  signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
   signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+  signaturePacket.preferredSymmetricAlgorithms = [];
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+  signaturePacket.preferredHashAlgorithms = [];
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+  signaturePacket.preferredCompressionAlgorithms = [];
+  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+  signaturePacket.features = [];
+  signaturePacket.features.push(1); // Modification Detection
   signaturePacket.sign(secretKeyPacket, dataToSign);
 
   var secretSubkeyPacket = new packet.SecretSubkey();
@@ -925,8 +944,7 @@ function generate(keyType, numBits, userId, passphrase) {
   var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = keyType;
-  //TODO we should load preferred hash from config, or as input to this function
-  subkeySignaturePacket.hashAlgorithm = enums.hash.sha256;
+  subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
