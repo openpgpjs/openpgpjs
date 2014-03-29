@@ -131,7 +131,7 @@ function getCheckSum(data) {
 function verifyCheckSum(data, checksum) {
   var c = getCheckSum(data);
   var d = checksum;
-  return c[0] == d[0] && c[1] == d[1] && c[2] == d[2];
+  return c[0] == d[0] && c[1] == d[1] && c[2] == d[2] && c[3] == d[3];
 }
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
@@ -323,11 +323,13 @@ function dearmor(text) {
     checksum = sig_sum.checksum;
   }
 
+  checksum = checksum.substr(0, 4);
+
   if (!verifyCheckSum(result.data, checksum)) {
     throw new Error("Ascii armor integrity check on message failed: '" +
       checksum +
       "' should be '" +
-      getCheckSum(result) + "'");
+      getCheckSum(result.data) + "'");
   }
 
   verifyHeaders(result.headers);
