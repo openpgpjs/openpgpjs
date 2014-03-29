@@ -929,8 +929,10 @@ function generate(keyType, numBits, userId, passphrase) {
   signaturePacket.preferredCompressionAlgorithms = [];
   signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
   signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-  signaturePacket.features = [];
-  signaturePacket.features.push(1); // Modification Detection
+  if (config.integrity_protect) {
+    signaturePacket.features = [];
+    signaturePacket.features.push(1); // Modification Detection
+  }
   signaturePacket.sign(secretKeyPacket, dataToSign);
 
   var secretSubkeyPacket = new packet.SecretSubkey();

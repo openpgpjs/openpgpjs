@@ -490,7 +490,7 @@ describe('Key', function() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha1, hash.sha512]);
       var compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql([1]); // modification detection
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
     }
     var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 'test', 'hello');
     testPref(key.key);
