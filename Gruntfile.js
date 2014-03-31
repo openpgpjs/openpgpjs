@@ -4,18 +4,18 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
-      openpgp_nodebug: {
+      openpgp: {
         files: {
-          'dist/openpgp_nodebug.js': [ './src/index.js' ]
+          'dist/openpgp.js': [ './src/index.js' ]
         },
         options: {
           standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
-      openpgp: {
+      openpgp_debug: {
         files: {
-          'dist/openpgp.js': [ './src/index.js' ]
+          'dist/openpgp_debug.js': [ './src/index.js' ]
         },
         options: {
           debug: true,
@@ -28,14 +28,17 @@ module.exports = function(grunt) {
           'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
         }
       },
+      worker_min: {
+        files: {
+          'dist/openpgp.worker.min.js': [ './src/worker/worker.js' ]
+        }
+      },
       unittests: {
         files: {
-          'test/lib/unittests-bundle.js': []
+          'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          debug: true,
-          alias: './test/unittests.js:unittests',
-          external: [ 'openpgp' ]
+          external: [ 'openpgp', 'crypto', 'node-localstorage' ]
         }
       }
     },
@@ -48,19 +51,28 @@ module.exports = function(grunt) {
           to: 'OpenPGP.js v<%= pkg.version %>'
         }]
       },
-      openpgp_nodebug: {
-        src: ['dist/openpgp_nodebug.js'],
-        dest: ['dist/openpgp_nodebug.js'],
+      openpgp_debug: {
+        src: ['dist/openpgp_debug.js'],
+        dest: ['dist/openpgp_debug.js'],
         replacements: [{
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>'
+        }]
+      },
+      worker_min: {
+        src: ['dist/openpgp.worker.min.js'],
+        dest: ['dist/openpgp.worker.min.js'],
+        replacements: [{
+          from: "importScripts('openpgp.js')",
+          to: "importScripts('openpgp.min.js')"
         }]
       }
     },
     uglify: {
       openpgp: {
         files: {
-          'dist/openpgp.min.js' : [ 'dist/openpgp_nodebug.js' ]
+          'dist/openpgp.min.js' : [ 'dist/openpgp.js' ],
+          'dist/openpgp.worker.min.js' : [ 'dist/openpgp.worker.min.js' ]
         }
       },
       options: {

@@ -1,6 +1,6 @@
 'use strict';
 
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../../src/index');
+var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
 
 var util = openpgp.util,
   chai = require('chai'),
