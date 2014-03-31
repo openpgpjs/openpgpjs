@@ -39,6 +39,7 @@
 var util = require('../util.js'),
   packet = require('./packet.js'),
   enums = require('../enums.js');
+  openpgp = require('../openpgp.js');
 
 module.exports = UserAttribute;
 
@@ -59,10 +60,30 @@ UserAttribute.prototype.read = function(bytes) {
   while (i < bytes.length) {
     var len = packet.readSimpleLength(bytes.substr(i));
     i += len.offset;
+    var contentType = bytes.charCodeAt(i)
+    var contentBytes = bytes.substr(i + 1, len.len - 1)
 
-    this.attributes.push(bytes.substr(i, len.len));
+    this.attributes.push(this.subpacket(contentType, contentBytes));
     i += len.len;
   }
+};
+
+UserAttribute.prototype.subpacket = function(contentType, contentBytes) {
+  var result;
+
+  var handler = openpgp.key.subpacketsExtractors[contentType];
+
+  if (typeof(handler) != "undefined") {
+    result = handler(contentBytes);
+  } else {
+    result = {
+      'content': contentBytes
+    }
+  }
+  
+  result['tag'] = contentType;
+  
+  return result;
 };
 
 /**

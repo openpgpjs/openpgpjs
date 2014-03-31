@@ -26,7 +26,8 @@
 var packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),
-  config = require('./config');
+  config = require('./config'),
+  subpacketsExtractors = {};
 
 /**
  * @class
@@ -996,3 +997,5 @@ exports.Key = Key;
 exports.readArmored = readArmored;
 exports.generate = generate;
 exports.getPreferredSymAlgo = getPreferredSymAlgo;
+
+exports.subpacketsExtractors = subpacketsExtractors;
