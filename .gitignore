@@ -5,3 +5,4 @@ npm*
 test/lib/
 dist/
 openpgp.store/
+doc/
