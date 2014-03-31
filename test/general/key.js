@@ -411,22 +411,12 @@ describe('Key', function() {
     expect(pubKeys.err).to.not.exist;
     expect(pubKeys.keys).to.have.length(1);
     expect(pubKeys.keys[0].users).to.have.length(3);
-    
     expect(pubKeys.keys[0].users[1].userAttribute.attributes).to.have.length(1);
     expect(pubKeys.keys[0].users[2].userAttribute.attributes).to.have.length(1);
     expect(pubKeys.keys[0].users[2].userAttribute.attributes[0].tag).to.equal(100);
     expect(pubKeys.keys[0].users[2].userAttribute.attributes[0].version).to.equal(0);
     expect(pubKeys.keys[0].users[2].userAttribute.attributes[0].priority).to.equal(1);
     expect(pubKeys.keys[0].users[2].userAttribute.attributes[0].value).to.equal("xxxxx");
-
-//    expect(pubKeys.keys[0].getKeyPacket().getKeyId().toHex()).to.equal('1341a2743cd1635c');
-//     console.log("\n\n\n======================================================\n\n\n");
-// //  console.log(pubKeys.keys[0]);
-// //  console.log("\n\n\n------------------------------------------------------\n\n\n");
-//     console.log(pubKeys.keys[0].users[1].userAttribute);
-//     console.log("\n\n\n------------------------------------------------------\n\n\n");
-//     console.log(pubKeys.keys[0].users[2].userAttribute);
-//     console.log("\n\n\n======================================================\n\n\n");
     done();
   });
 
