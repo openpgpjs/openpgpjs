@@ -267,6 +267,10 @@ function execute(cmd, callback) {
   return result;
 }
 
+function addSubpacketExtractor(contentType, custumHandler) {
+  key.subpacketsExtractors[contentType] = custumHandler;
+}
+
 exports.initWorker = initWorker;
 exports.encryptMessage = encryptMessage;
 exports.signAndEncryptMessage = signAndEncryptMessage;
@@ -275,3 +279,4 @@ exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;
 exports.generateKeyPair = generateKeyPair;
+exports.addSubpacketExtractor = addSubpacketExtractor;
