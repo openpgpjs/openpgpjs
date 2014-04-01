@@ -76,12 +76,11 @@ UserAttribute.prototype.subpacket = function(contentType, contentBytes) {
   if (typeof(handler) != "undefined") {
     result = handler(contentBytes);
   } else {
-    result = {
-      'content': contentBytes
-    }
+    result = {}
   }
   
   result['tag'] = contentType;
+  result['content'] = contentBytes;
   
   return result;
 };
