@@ -112,7 +112,7 @@ PublicKey.prototype.read = function (bytes) {
 
     return p + 6;
   } else {
-    throw new Error('Version ' + version + ' of the key packet is unsupported.');
+    throw new Error('Version ' + this.version + ' of the key packet is unsupported.');
   }
 };
 
