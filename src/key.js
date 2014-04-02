@@ -26,7 +26,8 @@
 var packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),
-  config = require('./config');
+  config = require('./config'),
+  util = require('./util');
 
 /**
  * @class
@@ -83,6 +84,10 @@ Key.prototype.packetlist2structure = function(packetlist) {
           case enums.signature.cert_persona:
           case enums.signature.cert_casual:
           case enums.signature.cert_positive:
+            if (!user) {
+              util.print_debug('Dropping certification signatures without preceding user packet');
+              continue;
+            }
             if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
               if (!user.selfCertifications) user.selfCertifications = [];
               user.selfCertifications.push(packetlist[i]);
@@ -105,12 +110,20 @@ Key.prototype.packetlist2structure = function(packetlist) {
             this.directSignatures.push(packetlist[i]);
             break;
           case enums.signature.subkey_binding:
+            if (!subKey) {
+              util.print_debug('Dropping subkey binding signature without preceding subkey packet');
+              continue;
+            }
             subKey.bindingSignature = packetlist[i];
             break;
           case enums.signature.key_revocation:
             this.revocationSignature = packetlist[i];
             break;
           case enums.signature.subkey_revocation:
+            if (!subKey) {
+              util.print_debug('Dropping subkey revocation signature without preceding subkey packet');
+              continue;
+            }
             subKey.revocationSignature = packetlist[i];
             break;
         }
