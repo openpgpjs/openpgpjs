@@ -66,6 +66,19 @@ UserAttribute.prototype.read = function(bytes) {
 };
 
 /**
+ * Creates a string representation of the user attribute packet
+ * @return {String} string representation
+ */
+UserAttribute.prototype.write = function() {
+  var result = '';
+  for (var i = 0; i < this.attributes.length; i++) {
+    result += packet.writeSimpleLength(this.attributes[i].length);
+    result += this.attributes[i];
+  }
+  return result;
+};
+
+/**
  * Compare for equality
  * @param  {module:user_attribute~UserAttribute} usrAttr
  * @return {Boolean}         true if equal
