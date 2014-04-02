@@ -68,6 +68,10 @@ UserAttribute.prototype.read = function(bytes) {
   }
 };
 
+UserAttribute.prototype.write = function() {
+  return "";
+};
+
 UserAttribute.prototype.subpacket = function(contentType, contentBytes) {
   var result;
 
