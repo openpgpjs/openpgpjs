@@ -175,7 +175,7 @@ Signature.prototype.read = function (bytes) {
 
       break;
     default:
-      throw new Error('Version ' + version + ' of the signature is unsupported.');
+      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
   // Two-octet field holding left 16 bits of signed hash value.
@@ -186,11 +186,23 @@ Signature.prototype.read = function (bytes) {
 };
 
 Signature.prototype.write = function () {
-  return this.signatureData +
-    // unhashed subpackets or two octets for zero
-    (this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2)) +
-    this.signedHashValue +
-    this.signature;
+  var result = '';
+  switch (this.version) {
+    case 3:
+      result += String.fromCharCode(3); // version
+      result += String.fromCharCode(5); // One-octet length of following hashed material.  MUST be 5
+      result += this.signatureData;
+      result += this.issuerKeyId.write();
+      result += String.fromCharCode(this.publicKeyAlgorithm);
+      result += String.fromCharCode(this.hashAlgorithm);
+      break;
+    case 4:
+      result += this.signatureData;
+      result += this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2);
+      break;
+  }
+  result += this.signedHashValue + this.signature;
+  return result;
 };
 
 /**

@@ -576,4 +576,18 @@ describe("Signature", function() {
     expect(pubKey.users[0].selfCertifications).to.exist;
   });
 
+  it('Write V3 signatures', function() {
+    var pubKey = openpgp.key.readArmored(pub_v3).keys[0];
+    var pubKey2 = openpgp.key.readArmored(pubKey.armor()).keys[0];
+    expect(pubKey2).to.exist;
+    expect(pubKey.users[0].selfCertifications).to.eql(pubKey2.users[0].selfCertifications);
+  });
+
+  it('Write V4 signatures', function() {
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var pubKey2 = openpgp.key.readArmored(pubKey.armor()).keys[0];
+    expect(pubKey2).to.exist;
+    expect(pubKey.users[0].selfCertifications).to.eql(pubKey2.users[0].selfCertifications);
+  });
+
 });
