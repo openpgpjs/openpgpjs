@@ -157,6 +157,32 @@ describe("ASCII armor", function() {
     expect(result.err[0].message).to.match(/Ascii armor integrity check on message failed/);
   });
 
+  it('Accept header with trailing whitespace', function () {
+    var privKey =
+      ['-----BEGIN PGP PRIVATE KEY BLOCK-----\t \r',
+      'Version: OpenPGP.js v0.3.0',
+      'Comment: http://openpgpjs.org',
+      '',
+      'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
+      'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',
+      'Z5cG9Q6+BoXKsEshIdcYOgwsAgRxlPpRA34Vvmg2QBk7PhdrkbK7aqENsJ1w',
+      'dIlLD6p9GmLE20yVff58/fMiUtPRgsD83SpKTAX6EM1ulpkuQQNjmrVc5qc8',
+      '7AMdF80JdW5kZWZpbmVkwj8EEAEIABMFAlLm1+4JEBD8MASZrpALAhsDAAAs',
+      'QgD8CUrwv7Hrp/INR0/UvAvzS52VztREQwQWTJMrgTNHBGjHtgRS5tfuAQEA',
+      'nys9SaSgR+l6iZc/M8hGIUmbuahE2/+mtw+/l0RO+WcAEQEAAf4JAwjr39Yi',
+      'FzjxImDN1IoYVsonA9M+BtIIJHafuQUHjyEr1paJJK5xS6KlyGgpMTXTD6y/',
+      'qxS3ZSPPzHGRrs2CmkVEiPmurn9Ed05tb0y9OnJkWtuh3z9VVq9d8zHzuENa',
+      'bUfli+P/v+dRaZ+1rSOxUFbFYbFB5XK/A9b/OPFrv+mb4KrtLxugwj8EGAEI',
+      'ABMFAlLm1+4JEBD8MASZrpALAhsMAAC3IgD8DnLGbMnpLtrX72RCkPW1ffLq',
+      '71vlXMJNXvoCeuejiRw=',
+      '=wJNM',
+      '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+
+    var result = openpgp.key.readArmored(privKey);
+    expect(result.err).to.not.exist;
+    expect(result.keys[0]).to.be.an.instanceof(openpgp.key.Key);
+  });
+
 });
 
  

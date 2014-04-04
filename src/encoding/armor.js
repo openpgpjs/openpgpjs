@@ -278,7 +278,8 @@ function splitChecksum(text) {
 function dearmor(text) {
   var reSplit = /^-----[^-]+-----$\n/m;
 
-  text = text.replace(/\r/g, '');
+  // remove trailing whitespace at end of line
+  text = text.replace(/[\t\r ]+\n/g, '\n');
 
   var type = getType(text);
 
@@ -307,8 +308,8 @@ function dearmor(text) {
 
     checksum = msg_sum.checksum;
   } else {
-    // Reverse dash-escaping for msg and remove trailing whitespace (0x20) and tabs (0x09) at end of line
-    msg = splitHeaders(splittext[indexBase].replace(/^- /mg, '').replace(/[\t ]+\n/g, "\n"));
+    // Reverse dash-escaping for msg
+    msg = splitHeaders(splittext[indexBase].replace(/^- /mg, ''));
     var sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
     verifyHeaders(sig.headers);
     var sig_sum = splitChecksum(sig.body);
