@@ -24,7 +24,8 @@
 module.exports = LocalStore;
 
 var config = require('../config'),
-  keyModule = require('../key.js');
+  keyModule = require('../key.js'),
+  util = require('../util.js');
 
 function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
@@ -65,8 +66,12 @@ function loadKeys(storage, itemname) {
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
     for (var i = 0; i < armoredKeys.length; i++) {
-      key = keyModule.readArmored(armoredKeys[i]).keys[0];
-      keys.push(key);
+      key = keyModule.readArmored(armoredKeys[i]);
+      if (!key.err) {
+        keys.push(key.keys[0]);
+      } else {
+        util.print_debug("Error reading armored key from keyring index: " + i);
+      }
     }
   }
   return keys;
