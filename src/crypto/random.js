@@ -25,7 +25,7 @@
 var type_mpi = require('../type/mpi.js');
 var nodeCrypto = null;
 
-if (typeof window === 'undefined') {
+if (typeof __dirname !== 'undefined') { //__dirname is only available in a nodejs context
   nodeCrypto = require('crypto');
 }
 
@@ -79,13 +79,13 @@ module.exports = {
     if (!(buf instanceof Uint8Array)) {
       throw new Error('Invalid type: buf not an Uint8Array');
     }
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+    if (nodeCrypto) {
+      var bytes = nodeCrypto.randomBytes(buf.length);
+      buf.set(bytes);
+    } else if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
       window.crypto.getRandomValues(buf);
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
       window.msCrypto.getRandomValues(buf);
-    } else if (nodeCrypto) {
-      var bytes = nodeCrypto.randomBytes(buf.length);
-      buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
       this.randomBuffer.get(buf);
     } else {
