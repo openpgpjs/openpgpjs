@@ -28,7 +28,6 @@ var nodeCrypto = null;
 try {
   nodeCrypto = require('crypto');
 } catch (e) {
-  console.log("Crypto module not present, using window.crypto.")
 }
 
 module.exports = {
