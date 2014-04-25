@@ -252,26 +252,36 @@ describe('API functional testing', function() {
   });
 
   describe('Encrypt and decrypt', function () {
-    var symmAlgo = "aes256"; // AES256
-    var symmKey = openpgp.crypto.generateSessionKey(symmAlgo);
-    var symmencDataOCFB = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, true);
-    var symmencDataCFB  = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(symmAlgo), symmAlgo, "foobarfoobar1234567890", symmKey, false);
-
-    it("Symmetric with OpenPGP CFB resync", function (done) {
-      var text = openpgp.crypto.cfb.decrypt(symmAlgo,symmKey,symmencDataOCFB,true);
-
-      expect(text).to.equal("foobarfoobar1234567890");
-      done();
+    var symmAlgos = Object.keys(openpgp.enums.symmetric);
+    symmAlgos = symmAlgos.filter(function(algo) {
+      return algo !== 'idea' && algo !== 'plaintext';
     });
 
-    it.skip("Symmetric without OpenPGP CFB resync", function (done) {
-      var text = openpgp.crypto.cfb.decrypt(symmAlgo,symmKey,symmencDataCFB,false);
+    function testCFB(plaintext, resync) {
+      symmAlgos.forEach(function(algo) {
+        var symmKey = openpgp.crypto.generateSessionKey(algo);
+        var symmencData = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(algo), algo, plaintext, symmKey, resync);
+        var text = openpgp.crypto.cfb.decrypt(algo, symmKey, symmencData, resync);
+        expect(text).to.equal(plaintext);
+      });
+    }
 
-      expect(text).to.equal("foobarfoobar1234567890");
-      done();
+    it("Symmetric with OpenPGP CFB resync", function () {
+      testCFB("hello", true);
+      testCFB("1234567", true);
+      testCFB("foobarfoobar1234567890", true);
+      testCFB("12345678901234567890123456789012345678901234567890", true);
+    });
+
+    it("Symmetric without OpenPGP CFB resync", function () {
+      testCFB("hello", false);
+      testCFB("1234567", false);
+      testCFB("foobarfoobar1234567890", false);
+      testCFB("12345678901234567890123456789012345678901234567890", false);
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function (done) {
+      var symmKey = openpgp.crypto.generateSessionKey('aes256');
       var RSAUnencryptedData = new openpgp.MPI();
       RSAUnencryptedData.fromBytes(openpgp.crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
       var RSAEncryptedData = openpgp.crypto.publicKeyEncrypt("rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData);
@@ -282,6 +292,7 @@ describe('API functional testing', function() {
     });
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function (done) {
+      var symmKey = openpgp.crypto.generateSessionKey('aes256');
       var ElgamalUnencryptedData = new openpgp.MPI();
       ElgamalUnencryptedData.fromBytes(openpgp.crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
       var ElgamalEncryptedData = openpgp.crypto.publicKeyEncrypt("elgamal", ElgamalpubMPIs, ElgamalUnencryptedData);

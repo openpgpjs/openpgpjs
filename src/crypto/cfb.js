@@ -52,9 +52,10 @@ module.exports = {
     var FRE = new Uint8Array(block_size);
 
     prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
-    util.print_debug("prefixrandom:" + util.hexstrdump(prefixrandom));
-    var ciphertext = '';
-    var i, n;
+    var ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
+    var i, n, begin;
+    var offset = resync ? 0 : 2;
+
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
     for (i = 0; i < block_size; i++) {
       FR[i] = 0;
@@ -67,13 +68,11 @@ module.exports = {
     //     the plaintext to produce C[1] through C[BS], the first BS octets
     //     of ciphertext.
     for (i = 0; i < block_size; i++) {
-      ciphertext += String.fromCharCode(FRE[i] ^ prefixrandom.charCodeAt(i));
+      ciphertext[i] = FRE[i] ^ prefixrandom.charCodeAt(i);
     }
 
     // 4.  FR is loaded with C[1] through C[BS].
-    for (i = 0; i < block_size; i++) {
-      FR[i] = ciphertext.charCodeAt(i);
-    }
+    FR.set(ciphertext.subarray(0, block_size));
 
     // 5.  FR is encrypted to produce FRE, the encryption of the first BS
     //     octets of ciphertext.
@@ -82,82 +81,44 @@ module.exports = {
     // 6.  The left two octets of FRE get xored with the next two octets of
     //     data that were prefixed to the plaintext.  This produces C[BS+1]
     //     and C[BS+2], the next two octets of ciphertext.
-    ciphertext += String.fromCharCode(FRE[0] ^ prefixrandom.charCodeAt(block_size));
-    ciphertext += String.fromCharCode(FRE[1] ^ prefixrandom.charCodeAt(block_size + 1));
+    ciphertext[block_size] = FRE[0] ^ prefixrandom.charCodeAt(block_size);
+    ciphertext[block_size + 1] = FRE[1] ^ prefixrandom.charCodeAt(block_size + 1);
 
     if (resync) {
-      // 7.  (The resync step) FR is loaded with C3-C10.
-      for (i = 0; i < block_size; i++) {
-        FR[i] = ciphertext.charCodeAt(i + 2);
-      }
+      // 7.  (The resync step) FR is loaded with C[3] through C[BS+2].
+      FR.set(ciphertext.subarray(2, block_size + 2));
     } else {
-      for (i = 0; i < block_size; i++) {
-        FR[i] = ciphertext.charCodeAt(i);
-      }
+      FR.set(ciphertext.subarray(0, block_size));
     }
     // 8.  FR is encrypted to produce FRE.
     FRE = cipherfn.encrypt(FR);
 
-    if (resync) {
-      // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //     that we have finished encrypting the 10 octets of prefixed data.
-      //     This produces C11-C18, the next 8 octets of ciphertext.
+    // 9.  FRE is xored with the first BS octets of the given plaintext, now
+    //     that we have finished encrypting the BS+2 octets of prefixed
+    //     data.  This produces C[BS+3] through C[BS+(BS+2)], the next BS
+    //     octets of ciphertext.
+    for (i = 0; i < block_size; i++) {
+      ciphertext[block_size + 2 + i] = FRE[i + offset] ^ plaintext.charCodeAt(i);
+    }
+    for (n = block_size; n < plaintext.length + offset; n += block_size) {
+      // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
+      // an 8-octet block).
+      begin = n + 2 - offset;
+      FR.set(ciphertext.subarray(begin, begin + block_size));
+
+      // 11. FR is encrypted to produce FRE.
+      FRE = cipherfn.encrypt(FR);
+
+      // 12. FRE is xored with the next BS octets of plaintext, to produce
+      // the next BS octets of ciphertext.  These are loaded into FR, and
+      // the process is repeated until the plaintext is used up.
       for (i = 0; i < block_size; i++) {
-        ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
+        ciphertext[block_size + begin + i] = FRE[i] ^ plaintext.charCodeAt(n + i - offset);
       }
-      for (n = block_size + 2; n < plaintext.length; n += block_size) {
-        // 10. FR is loaded with C11-C18
-        for (i = 0; i < block_size; i++) {
-          FR[i] = ciphertext.charCodeAt(n + i);
-        }
-
-        // 11. FR is encrypted to produce FRE.
-        FRE = cipherfn.encrypt(FR);
-
-        // 12. FRE is xored with the next 8 octets of plaintext, to produce the
-        // next 8 octets of ciphertext.  These are loaded into FR and the
-        // process is repeated until the plaintext is used up.
-        for (i = 0; i < block_size; i++) {
-          ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt((n - 2) + i));
-        }
-      }
-    } else {
-      plaintext = "  " + plaintext;
-      // 9.  FRE is xored with the first 8 octets of the given plaintext, now
-      //     that we have finished encrypting the 10 octets of prefixed data.
-      //     This produces C11-C18, the next 8 octets of ciphertext.
-      for (i = 2; i < block_size; i++) {
-        ciphertext += String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(i));
-      }
-
-      var tempCiphertext = ciphertext.substring(0, 2 * block_size);
-      var tempCiphertextString = ciphertext.substring(block_size);
-      var tempCiphertextBlock;
-      for (n = block_size; n < plaintext.length; n += block_size) {
-        // 10. FR is loaded with C11-C18
-        for (i = 0; i < block_size; i++) {
-          FR[i] = tempCiphertextString.charCodeAt(i);
-        }
-        tempCiphertextString = '';
-
-        // 11. FR is encrypted to produce FRE.
-        FRE = cipherfn.encrypt(FR);
-
-        // 12. FRE is xored with the next 8 octets of plaintext, to produce the
-        //     next 8 octets of ciphertext.  These are loaded into FR and the
-        //     process is repeated until the plaintext is used up.
-        for (i = 0; i < block_size; i++) {
-          tempCiphertextBlock = String.fromCharCode(FRE[i] ^ plaintext.charCodeAt(n + i));
-          tempCiphertext += tempCiphertextBlock;
-          tempCiphertextString += tempCiphertextBlock;
-        }
-      }
-      ciphertext = tempCiphertext;
     }
 
-    ciphertext = ciphertext.substring(0, plaintext.length + 2 + block_size);
-
-    return ciphertext;
+    ciphertext = ciphertext.subarray(0, plaintext.length + 2 + block_size);
+    return util.Uint8Array2str(ciphertext);
   },
 
   /**
@@ -233,9 +194,9 @@ module.exports = {
     ablock = cipherfn.encrypt(ablock);
 
     // test check octets
-    if (iblock[block_size - 2] != (ablock[0] ^ ciphertext.charCodeAt(block_size)) || iblock[block_size - 1] != (ablock[
-      1] ^ ciphertext.charCodeAt(block_size + 1))) {
-      throw new Error('Invalid data.');
+    if (iblock[block_size - 2] != (ablock[0] ^ ciphertext.charCodeAt(block_size)) ||
+        iblock[block_size - 1] != (ablock[1] ^ ciphertext.charCodeAt(block_size + 1))) {
+      throw new Error('CFB decrypt: invalid key');
     }
 
     /*  RFC4880: Tag 18 and Resync:
