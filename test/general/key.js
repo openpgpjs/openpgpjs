@@ -546,5 +546,13 @@ describe('Key', function() {
     expect(key.users[1].userAttribute).eql(key2.users[1].userAttribute);
   });
 
+  it('getPrimaryUser()', function() {
+    var key = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var primUser = key.getPrimaryUser();
+    expect(primUser).to.exist;
+    expect(primUser.user.userId.userid).to.equal('Signature Test <signature@test.com>');
+    expect(primUser.selfCertificate).to.be.an.instanceof(openpgp.packet.Signature);
+  });
+
 });
 
