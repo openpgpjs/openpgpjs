@@ -198,24 +198,25 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
 /**
  * Generates a new OpenPGP key pair. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
- * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
- * @param {String}  passphrase The passphrase used to encrypt the resulting private key
+ * @param {Integer} options.numBits    number of bits for the key creation. (should be 1024+, generally)
+ * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param  {function} callback (optional) callback(error, result) for async style
  * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
-function generateKeyPair(keyType, numBits, userId, passphrase, callback) {
+function generateKeyPair(options, callback) {
   if (useWorker(callback)) {
-    asyncProxy.generateKeyPair(keyType, numBits, userId, passphrase, callback);
+    asyncProxy.generateKeyPair(options, callback);
     return;
   }
 
   return execute(function() {
     var result = {};
-    var newKey = key.generate(keyType, numBits, userId, passphrase);
+    var newKey = key.generate(options);
     result.key = newKey;
     result.privateKeyArmored = newKey.armor();
     result.publicKeyArmored = newKey.toPublic().armor();

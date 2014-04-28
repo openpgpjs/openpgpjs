@@ -182,7 +182,6 @@ SecretKey.prototype.encrypt = function (passphrase) {
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
 
-
   this.encrypted = '';
   this.encrypted += String.fromCharCode(254);
   this.encrypted += String.fromCharCode(enums.write(enums.symmetric, symmetric));
@@ -255,8 +254,9 @@ SecretKey.prototype.decrypt = function (passphrase) {
     'mod';
 
   var parsedMPI = parse_cleartext_mpi(hash, cleartext, this.algorithm);
-  if (parsedMPI instanceof Error)
+  if (parsedMPI instanceof Error) {
     return false;
+  }
   this.mpi = this.mpi.concat(parsedMPI);
   this.isDecrypted = true;
   return true;
@@ -265,4 +265,12 @@ SecretKey.prototype.decrypt = function (passphrase) {
 SecretKey.prototype.generate = function (bits) {
   this.mpi = crypto.generateMpi(this.algorithm, bits);
   this.isDecrypted = true;
+};
+
+/**
+ * Clear private MPIs, return to initial state
+ */
+SecretKey.prototype.clearPrivateMPIs = function () {
+  this.mpi = this.mpi.slice(0, crypto.getPublicMpiCount(this.algorithm));
+  this.isDecrypted = false;
 };
