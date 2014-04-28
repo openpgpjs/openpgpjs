@@ -398,7 +398,7 @@ describe('High level API', function() {
   describe('Key generation', function() {
 
     it('Generate 1024-bit RSA/RSA key async', function (done) {
-      openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 1024, 'Test McTestington <test@example.com>', 'hello world', function(err, data) {
+      openpgp.generateKeyPair({numBits: 1024, userId: 'Test McTestington <test@example.com>', passphrase: 'hello world'}, function(err, data) {
         expect(err).to.not.exist;
         expect(data).to.exist;
         expect(data.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
@@ -409,7 +409,7 @@ describe('High level API', function() {
     });
 
     it('Generate 1024-bit RSA/RSA key sync', function () {
-      var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 1024, 'Test McTestington <test@example.com>', 'hello world');
+      var key = openpgp.generateKeyPair({numBits: 1024, userId: 'Test McTestington <test@example.com>', passphrase: 'hello world'});
       expect(key).to.exist;
       expect(key.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
       expect(key.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);

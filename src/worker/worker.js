@@ -98,7 +98,7 @@ onmessage = function (event) {
       break;
     case 'generate-key-pair':
       try {
-        data = window.openpgp.generateKeyPair(msg.keyType, msg.numBits, msg.userId, msg.passphrase);
+        data = window.openpgp.generateKeyPair(msg.options);
         data.key = data.key.toPacketlist();
       } catch (e) {
         err = e.message;

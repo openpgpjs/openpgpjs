@@ -928,36 +928,41 @@ function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} numBits    number of bits for the key creation.
- * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
- * @param {String}  passphrase The passphrase used to encrypt the resulting private key
+ * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @return {module:key~Key}
  * @static
  */
-function generate(keyType, numBits, userId, passphrase) {
+function generate(options) {
+  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
   // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-  if (keyType !== enums.publicKey.rsa_encrypt_sign) {
+  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
     throw new Error('Only RSA Encrypt or Sign supported');
+  }
+  if (!options.passphrase) {
+    throw new Error('Parameter options.passphrase required');
   }
 
   var packetlist = new packet.List();
 
   var secretKeyPacket = new packet.SecretKey();
-  secretKeyPacket.algorithm = enums.read(enums.publicKey, keyType);
-  secretKeyPacket.generate(numBits);
-  secretKeyPacket.encrypt(passphrase);
+  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+  secretKeyPacket.generate(options.numBits);
+  secretKeyPacket.encrypt(options.passphrase);
 
   var userIdPacket = new packet.Userid();
-  userIdPacket.read(userId);
+  userIdPacket.read(options.userId);
 
   var dataToSign = {};
   dataToSign.userid = userIdPacket;
   dataToSign.key = secretKeyPacket;
   var signaturePacket = new packet.Signature();
   signaturePacket.signatureType = enums.signature.cert_generic;
-  signaturePacket.publicKeyAlgorithm = keyType;
+  signaturePacket.publicKeyAlgorithm = options.keyType;
   signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
   signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
   signaturePacket.preferredSymmetricAlgorithms = [];
@@ -980,16 +985,16 @@ function generate(keyType, numBits, userId, passphrase) {
   signaturePacket.sign(secretKeyPacket, dataToSign);
 
   var secretSubkeyPacket = new packet.SecretSubkey();
-  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, keyType);
-  secretSubkeyPacket.generate(numBits);
-  secretSubkeyPacket.encrypt(passphrase);
+  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+  secretSubkeyPacket.generate(options.numBits);
+  secretSubkeyPacket.encrypt(options.passphrase);
 
   dataToSign = {};
   dataToSign.key = secretKeyPacket;
   dataToSign.bind = secretSubkeyPacket;
   var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = keyType;
+  subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
   subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
@@ -999,6 +1004,11 @@ function generate(keyType, numBits, userId, passphrase) {
   packetlist.push(signaturePacket);
   packetlist.push(secretSubkeyPacket);
   packetlist.push(subkeySignaturePacket);
+
+  if (!options.unlocked) {
+    secretKeyPacket.clearPrivateMPIs();
+    secretSubkeyPacket.clearPrivateMPIs();
+  }
 
   return new Key(packetlist);
 }
