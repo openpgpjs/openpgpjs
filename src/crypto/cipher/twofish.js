@@ -337,7 +337,7 @@ var util = require('../../util.js');
 // added by Recurity Labs
 
 function TFencrypt(block, key) {
-  var block_copy = [].concat(block);
+  var block_copy = toArray(block);
   var tf = createTwofish();
   tf.open(util.str2bin(key), 0);
   var result = tf.encrypt(block_copy, 0);
@@ -350,8 +350,17 @@ function TF(key) {
   this.tf.open(util.str2bin(key), 0);
 
   this.encrypt = function(block) {
-    return this.tf.encrypt([].concat(block), 0);
+    return this.tf.encrypt(toArray(block), 0);
   };
+}
+
+function toArray(typedArray) {
+  // Array.apply([], typedArray) does not work in PhantomJS 1.9
+  var result = [];
+  for (var i = 0; i < typedArray.length; i++) {
+    result[i] = typedArray[i];
+  }
+  return result;
 }
 
 

@@ -159,20 +159,10 @@ module.exports = {
    */
   bin2str: function (bin) {
     var result = [];
-
     for (var i = 0; i < bin.length; i++) {
-      result.push(String.fromCharCode(bin[i]));
+      result[i] = String.fromCharCode(bin[i]);
     }
-
     return result.join('');
-  },
-
-  _str2bin: function (str, result) {
-    for (var i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-
-    return result;
   },
 
   /**
@@ -181,7 +171,11 @@ module.exports = {
    * @return {Array<Integer>} An array of (binary) integers
    */
   str2bin: function (str) {
-    return this._str2bin(str, new Array(str.length));
+    var result = [];
+    for (var i = 0; i < str.length; i++) {
+      result[i] = str.charCodeAt(i);
+    }
+    return result;
   },
 
 
@@ -191,7 +185,11 @@ module.exports = {
    * @return {Uint8Array} The array of (binary) integers
    */
   str2Uint8Array: function (str) {
-    return this._str2bin(str, new Uint8Array(new ArrayBuffer(str.length)));
+    var result = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) {
+      result[i] = str.charCodeAt(i);
+    }
+    return result;
   },
 
   /**
@@ -202,7 +200,11 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-    return this.bin2str(bin);
+    var result = '';
+    for (var i = 0; i < bin.length; i++) {
+      result += String.fromCharCode(bin[i]);
+    }
+    return result;
   },
 
   /**
