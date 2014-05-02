@@ -863,15 +863,22 @@ SubKey.prototype.getExpirationTime = function() {
  * @param  {module:packet/signature} primaryKey primary key used for validation
  */
 SubKey.prototype.update = function(subKey, primaryKey) {
-  if (this.verify(primaryKey) === enums.keyStatus.invalid) {
+  if (subKey.verify(primaryKey) === enums.keyStatus.invalid) {
     return;
   }
   if (this.subKey.getFingerprint() !== subKey.subKey.getFingerprint()) {
     throw new Error('SubKey update method: fingerprints of subkeys not equal');
   }
+  // key packet
   if (this.subKey.tag === enums.packet.publicSubkey &&
       subKey.subKey.tag === enums.packet.secretSubkey) {
     this.subKey = subKey.subKey;
+  }
+  // binding signature
+  if (!this.bindingSignature && subKey.bindingSignature &&
+     (subKey.bindingSignature.verified ||
+      subKey.bindingSignature.verify(primaryKey, {key: primaryKey, bind: this.subKey}))) {
+    this.bindingSignature = subKey.bindingSignature;
   }
   // revocation signature
   if (!this.revocationSignature && subKey.revocationSignature && !subKey.revocationSignature.isExpired() &&
