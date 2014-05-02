@@ -535,7 +535,7 @@ describe('Key', function() {
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
     }
-    var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, 'test', 'hello');
+    var key = openpgp.generateKeyPair({numBits: 512, userId: 'test', passphrase: 'hello'});
     testPref(key.key);
     testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
   });
@@ -544,6 +544,13 @@ describe('Key', function() {
     var key = openpgp.key.readArmored(user_attr_key).keys[0];
     var key2 = openpgp.key.readArmored(key.armor()).keys[0];
     expect(key.users[1].userAttribute).eql(key2.users[1].userAttribute);
+  });
+
+  it('Generated key is not unlocked by default', function() {
+    var key = openpgp.generateKeyPair({numBits: 512, userId: 'test', passphrase: '123'});
+    var msg = openpgp.message.fromText('hello').encrypt([key.key]);
+    msg = msg.decrypt.bind(msg, key.key);
+    expect(msg).to.throw('Private key is not decrypted.');
   });
 
 });

@@ -234,13 +234,10 @@ AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message, ca
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
  * @param {Function} callback receives object with key and public and private armored texts
  */
-AsyncProxy.prototype.generateKeyPair = function(keyType, numBits, userId, passphrase, callback) {
+AsyncProxy.prototype.generateKeyPair = function(options, callback) {
   this.worker.postMessage({
     event: 'generate-key-pair', 
-    keyType: keyType, 
-    numBits: numBits, 
-    userId: userId, 
-    passphrase: passphrase
+    options: options
   });
   this.tasks.push(function(err, data) {
     if (data) {

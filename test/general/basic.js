@@ -9,7 +9,7 @@ describe('Basic', function() {
 
   describe("Key generation/encryption/decryption", function() {
     var testHelper = function(passphrase, userid, message) {
-      var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, userid, passphrase);
+      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
       expect(key).to.exist;
       expect(key.key).to.exist;
       expect(key.privateKeyArmored).to.exist;
@@ -72,7 +72,7 @@ describe('Basic', function() {
       var userid = 'Test McTestington <test@example.com>';
       var passphrase = 'password';
 
-      var key = openpgp.generateKeyPair(openpgp.enums.publicKey.rsa_encrypt_sign, 512, userid, passphrase);
+      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
 
       var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
 
