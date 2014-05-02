@@ -496,24 +496,36 @@ function getExpirationTime(keyPacket, selfCertificate) {
  * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}|null} The primary user and the self signature
  */
 Key.prototype.getPrimaryUser = function() {
-  var user = null;
-  var userSelfCert;
+  var primUser = [];
   for (var i = 0; i < this.users.length; i++) {
-    if (!this.users[i].userId) {
+    if (!this.users[i].userId || !this.users[i].selfCertifications) {
       continue;
     }
-    var selfCert = this.users[i].getValidSelfCertificate(this.primaryKey);
-    if (!selfCert) {
-      continue;
-    }
-    if (!user ||
-        (!userSelfCert.isPrimaryUserID || selfCert.isPrimaryUserID) &&
-        userSelfCert.created > selfCert.created) {
-      user = this.users[i];
-      userSelfCert = selfCert;
+    for (var j = 0; j < this.users[i].selfCertifications.length; j++) {
+      primUser.push({user: this.users[i], selfCertificate: this.users[i].selfCertifications[j]});
     }
   }
-  return user ? {user: user, selfCertificate: userSelfCert} : null;
+  // sort by primary user flag and signature creation time
+  primUser = primUser.sort(function(a, b) {
+    if (a.isPrimaryUserID > b.isPrimaryUserID) {
+      return -1;
+    } else if (a.isPrimaryUserID < b.isPrimaryUserID) {
+      return 1;
+    } else if (a.created > b.created) {
+      return -1;
+    } else if (a.created < b.created) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+  // return first valid
+  for (var i = 0; i < primUser.length; i++) {
+    if (primUser[i].user.isValidSelfCertificate(this.primaryKey, primUser[i].selfCertificate)) {
+      return primUser[i];
+    }
+  }
+  return null;
 };
 
 /**
@@ -674,24 +686,36 @@ User.prototype.getValidSelfCertificate = function(primaryKey) {
   if (!this.selfCertifications) {
     return null;
   }
-  var validCert = [];
-  for (var i = 0; i < this.selfCertifications.length; i++) {
-    if (this.isRevoked(this.selfCertifications[i], primaryKey)) {
-      continue;
-    }
-    if (!this.selfCertifications[i].isExpired() &&
-       (this.selfCertifications[i].verified || 
-        this.selfCertifications[i].verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
-      validCert.push(this.selfCertifications[i]);
-    }
-  }
   // most recent first
-  validCert = validCert.sort(function(a, b) {
+  var validCert = this.selfCertifications.sort(function(a, b) {
     a = a.created;
     b = b.created;
     return a>b ? -1 : a<b ? 1 : 0;
   });
-  return validCert[0];
+  for (var i = 0; i < validCert.length; i++) {
+    if (this.isValidSelfCertificate(primaryKey, validCert[i])) {
+      return validCert[i];
+    }
+  }
+  return null;
+};
+
+/**
+ * Returns true if the self certificate is valid
+ * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey      The primary key packet
+ * @param  {module:packet/signature}  selfCertificate A self certificate of this user
+ * @return {Boolean}
+ */
+User.prototype.isValidSelfCertificate = function(primaryKey, selfCertificate) {
+  if (this.isRevoked(selfCertificate, primaryKey)) {
+    return false;
+  }
+  if (!selfCertificate.isExpired() &&
+     (selfCertificate.verified ||
+      selfCertificate.verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
+    return true;
+  }
+  return false;
 };
 
 /**
