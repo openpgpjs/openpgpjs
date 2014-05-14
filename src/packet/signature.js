@@ -603,7 +603,8 @@ Signature.prototype.calculateTrailer = function () {
 /**
  * verifys the signature packet. Note: not signature types are implemented
  * @param {String|Object} data data which on the signature applies
- * @param {module:packet/public_subkey|module:packet/public_key} key the public key to verify the signature
+ * @param {module:packet/public_subkey|module:packet/public_key|
+ *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
  * @return {boolean} True if message is verified, else false.
  */
 Signature.prototype.verify = function (key, data) {

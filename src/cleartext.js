@@ -82,22 +82,22 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<module:key~Key>} publicKeys public keys to verify signatures
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
-CleartextMessage.prototype.verify = function(publicKeys) {
+CleartextMessage.prototype.verify = function(keys) {
   var result = [];
   var signatureList = this.packets.filterByTag(enums.packet.signature);
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  publicKeys.forEach(function(pubKey) {
+  keys.forEach(function(key) {
     for (var i = 0; i < signatureList.length; i++) {
-      var publicKeyPacket = pubKey.getPublicKeyPacket([signatureList[i].issuerKeyId]);
-      if (publicKeyPacket) {
+      var keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
+      if (keyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
-        verifiedSig.valid = signatureList[i].verify(publicKeyPacket, literalDataPacket);
+        verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataPacket);
         result.push(verifiedSig);
         break;
       }

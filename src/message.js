@@ -92,7 +92,7 @@ Message.prototype.decrypt = function(privateKey) {
     // nothing to decrypt return unmodified message
     return this;
   }
-  var privateKeyPacket = privateKey.getPrivateKeyPacket(encryptionKeyIds);
+  var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
   if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
   var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   var pkESKeyPacket;
@@ -222,22 +222,22 @@ Message.prototype.sign = function(privateKeys) {
 
 /**
  * Verify message signatures
- * @param {Array<module:key~Key>} publicKeys public keys to verify signatures
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-Message.prototype.verify = function(publicKeys) {
+Message.prototype.verify = function(keys) {
   var result = [];
   var msg = this.unwrapCompressed();
   var literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) throw new Error('Can only verify message with one literal data packet.');
   var signatureList = msg.packets.filterByTag(enums.packet.signature);
-  publicKeys.forEach(function(pubKey) {
+  keys.forEach(function(key) {
     for (var i = 0; i < signatureList.length; i++) {
-      var publicKeyPacket = pubKey.getPublicKeyPacket([signatureList[i].issuerKeyId]);
-      if (publicKeyPacket) {
+      var keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
+      if (keyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
-        verifiedSig.valid = signatureList[i].verify(publicKeyPacket, literalDataList[0]);
+        verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
         result.push(verifiedSig);
         break;
       }

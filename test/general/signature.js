@@ -455,8 +455,8 @@ describe("Signature", function() {
 
     var keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey2.getPublicKeyPacket(keyids)).to.exist;
-    expect(pubKey3.getPublicKeyPacket(keyids)).to.exist;
+    expect(pubKey2.getKeyPacket(keyids)).to.exist;
+    expect(pubKey3.getKeyPacket(keyids)).to.exist;
 
     expect(sMsg.getText()).to.equal(plaintext);
 
@@ -501,8 +501,8 @@ describe("Signature", function() {
 
     var keyids = csMsg.getSigningKeyIds();
 
-    expect(pubKey2.getPublicKeyPacket(keyids)).to.exist;
-    expect(pubKey3.getPublicKeyPacket(keyids)).to.exist;
+    expect(pubKey2.getKeyPacket(keyids)).to.exist;
+    expect(pubKey3.getKeyPacket(keyids)).to.exist;
 
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg);
 
