@@ -211,7 +211,8 @@ function createcrc24(input) {
  * and an attribute "body" containing the body.
  */
 function splitHeaders(text) {
-  var reEmptyLine = /^\s*\n/m;
+  // empty line with whitespace characters
+  var reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*\n/m;
   var headers = '';
   var body = text;
 

@@ -84,7 +84,7 @@ describe("ASCII armor", function() {
     var msg =
       ['-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
-      '\u000b\u00a0',
+      ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
       'sign this',
       '-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
@@ -181,6 +181,12 @@ describe("ASCII armor", function() {
     var result = openpgp.key.readArmored(privKey);
     expect(result.err).to.not.exist;
     expect(result.keys[0]).to.be.an.instanceof(openpgp.key.Key);
+  });
+
+  it('Do not filter blank lines after header', function () {
+    var msg = getArmor(['Hash: SHA1', '']);
+    msg = openpgp.cleartext.readArmored(msg);
+    expect(msg.text).to.equal('\r\nsign this');
   });
 
 });
