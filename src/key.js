@@ -154,14 +154,6 @@ Key.prototype.toPacketlist = function() {
 };
 
 /** 
- * Returns the primary key packet (secret or public)
- * @returns {(module:packet/secret_key|module:packet/public_key|null)} 
- */
-Key.prototype.getKeyPacket = function() {
-  return this.primaryKey;
-};
-
-/** 
  * Returns all the private and public subkey packets
  * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey)>} 
  */
@@ -180,7 +172,7 @@ Key.prototype.getSubkeyPackets = function() {
  * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key)>} 
  */
 Key.prototype.getAllKeyPackets = function() {
-  return [this.getKeyPacket()].concat(this.getSubkeyPackets());
+  return [this.primaryKey].concat(this.getSubkeyPackets());
 };
 
 /** 
@@ -196,7 +188,14 @@ Key.prototype.getKeyIds = function() {
   return keyIds;
 };
 
-function findKey(keys, keyIds) {
+/**
+ * Returns first key packet for given array of key IDs
+ * @param  {Array<module:type/keyid>} keyIds
+ * @return {(module:packet/public_subkey|module:packet/public_key|
+ *           module:packet/secret_subkey|module:packet/secret_key|null)}
+ */
+Key.prototype.getKeyPacket = function(keyIds) {
+  var keys = this.getAllKeyPackets();
   for (var i = 0; i < keys.length; i++) {
     var keyId = keys[i].getKeyId(); 
     for (var j = 0; j < keyIds.length; j++) {
@@ -206,32 +205,6 @@ function findKey(keys, keyIds) {
     }
   }
   return null;
-}
-
-/**
- * Returns first public key packet for given array of key IDs
- * @param  {Array<module:type/keyid>} keyIds 
- * @return {(module:packet/public_subkey|module:packet/public_key|null)}
- */
-Key.prototype.getPublicKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.publicKey) {
-    return findKey(this.getAllKeyPackets(), keyIds);  
-  } else {
-    return null;
-  }  
-};
-
-/**
- * Returns first private key packet for given array of key IDs
- * @param  {Array<module:type/keyid>} keyIds
- * @return {(module:packet/secret_subkey|module:packet/secret_key|null)}
- */
-Key.prototype.getPrivateKeyPacket = function(keyIds) {
-  if (this.primaryKey.tag == enums.packet.secretKey) {
-    return findKey(this.getAllKeyPackets(), keyIds);  
-  } else {
-    return null;
-  }
 };
 
 /**

@@ -397,8 +397,8 @@ var pgp_desktop_priv =
     expect(pubKeys).to.exist;
     expect(pubKeys.err).to.not.exist;
     expect(pubKeys.keys).to.have.length(2);
-    expect(pubKeys.keys[0].getKeyPacket().getKeyId().toHex()).to.equal('4a63613a4d6e4094');
-    expect(pubKeys.keys[1].getKeyPacket().getKeyId().toHex()).to.equal('dbf223e870534df4');
+    expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('4a63613a4d6e4094');
+    expect(pubKeys.keys[1].primaryKey.getKeyId().toHex()).to.equal('dbf223e870534df4');
     done();
   });
 
@@ -420,10 +420,10 @@ var pgp_desktop_priv =
     var pubKeyV3 = pubKeysV3.keys[0];
     expect(pubKeyV3).to.exist;
 
-    expect(pubKeyV4.getKeyPacket().getKeyId().toHex()).to.equal('4a63613a4d6e4094');
-    expect(pubKeyV4.getKeyPacket().getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
-    expect(pubKeyV3.getKeyPacket().getKeyId().toHex()).to.equal('e5b7a014a237ba9d');
-    expect(pubKeyV3.getKeyPacket().getFingerprint()).to.equal('a44fcee620436a443bc4913640ab3e49');
+    expect(pubKeyV4.primaryKey.getKeyId().toHex()).to.equal('4a63613a4d6e4094');
+    expect(pubKeyV4.primaryKey.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
+    expect(pubKeyV3.primaryKey.getKeyId().toHex()).to.equal('e5b7a014a237ba9d');
+    expect(pubKeyV3.primaryKey.getFingerprint()).to.equal('a44fcee620436a443bc4913640ab3e49');
     done();
   });
 
