@@ -17,7 +17,8 @@ function LocalStorage() {
  * if config is null the default config will be used
  */
 LocalStorage.prototype.read = function () {
-  var cf = JSON.parse(window.localStorage.getItem("config"));
+  var raw = window.localStorage.getItem("config");
+  var cf = (raw === null ? null : JSON.parse(raw));
   if (cf === null) {
     this.config = this.default_config;
     this.write();
