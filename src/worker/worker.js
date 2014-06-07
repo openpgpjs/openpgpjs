@@ -47,6 +47,9 @@ onmessage = function (event) {
       break;
     case 'sign-and-encrypt-message':
       try {
+        if (typeof msg.publicKeys === 'string') {
+          msg.publicKeys = [msg.publicKeys];
+        }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
         data = window.openpgp.signAndEncryptMessage(msg.publicKeys, msg.privateKey, msg.text);
@@ -68,6 +71,9 @@ onmessage = function (event) {
     case 'decrypt-and-verify-message':
       try {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
+        if (typeof msg.publicKeys === 'string') {
+          msg.publicKeys = [msg.publicKeys];
+        }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
         msg.message = packetlistCloneToMessage(msg.message.packets);
         data = window.openpgp.decryptAndVerifyMessage(msg.privateKey, msg.publicKeys, msg.message);
@@ -87,6 +93,9 @@ onmessage = function (event) {
       break;
     case 'verify-clear-signed-message':
       try {
+        if (typeof msg.publicKeys === 'string') {
+          msg.publicKeys = [msg.publicKeys];
+        }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
         var packetlist = window.openpgp.packet.List.fromStructuredClone(msg.message.packets);
         msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist); 

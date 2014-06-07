@@ -120,6 +120,9 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
  * @param  {Function} callback receives encrypted ASCII armored message
  */
 AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text, callback) {
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
   publicKeys = publicKeys.map(function(key) {
     return key.toPacketlist();
   });
@@ -160,6 +163,9 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message, callback) {
  */
 AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, message, callback) {
   privateKey = privateKey.toPacketlist();
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
   publicKeys = publicKeys.map(function(key) {
     return key.toPacketlist();
   });
@@ -205,6 +211,9 @@ AsyncProxy.prototype.signClearMessage = function(privateKeys, text, callback) {
  * @param  {Function} callback   receives cleartext with status of verified signatures
  */
 AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message, callback) {
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
   publicKeys = publicKeys.map(function(key) {
     return key.toPacketlist();
   });

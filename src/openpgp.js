@@ -83,6 +83,10 @@ function encryptMessage(keys, text, callback) {
  * @static
  */
 function signAndEncryptMessage(publicKeys, privateKey, text, callback) {
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
+
   if (useWorker(callback)) {
     asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text, callback);
     return;
@@ -131,6 +135,10 @@ function decryptMessage(privateKey, msg, callback) {
  * @static
  */
 function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
+
   if (useWorker(callback)) {
     asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg, callback);
     return;
@@ -179,6 +187,10 @@ function signClearMessage(privateKeys, text, callback) {
  * @static
  */
 function verifyClearSignedMessage(publicKeys, msg, callback) {
+  if (typeof publicKeys === 'string') {
+    publicKeys = [publicKeys];
+  }
+
   if (useWorker(callback)) {
     asyncProxy.verifyClearSignedMessage(publicKeys, msg, callback);
     return;
