@@ -59,6 +59,10 @@ function initWorker(path) {
  * @static
  */
 function encryptMessage(keys, text, callback) {
+  if (typeof keys === 'string') {
+    keys = [keys];
+  }
+
   if (useWorker(callback)) {
     asyncProxy.encryptMessage(keys, text, callback);
     return;
@@ -165,6 +169,10 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
  * @static
  */
 function signClearMessage(privateKeys, text, callback) {
+  if (typeof privateKeys === 'string') {
+    privateKeys = [privateKeys];
+  }
+
   if (useWorker(callback)) {
     asyncProxy.signClearMessage(privateKeys, text, callback);
     return;

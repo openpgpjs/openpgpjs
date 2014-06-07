@@ -38,6 +38,9 @@ onmessage = function (event) {
       break;
     case 'encrypt-message':
       try {
+        if (typeof msg.keys === 'string') {
+          msg.keys = [msg.keys];
+        }
         msg.keys = msg.keys.map(packetlistCloneToKey);
         data = window.openpgp.encryptMessage(msg.keys, msg.text);
       } catch (e) {

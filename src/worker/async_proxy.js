@@ -101,6 +101,9 @@ AsyncProxy.prototype.terminate = function() {
  * @param  {Function} callback receives encrypted ASCII armored message
  */
 AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
+  if (typeof keys === 'string') {
+    keys = [keys];
+  }
   keys = keys.map(function(key) {
     return key.toPacketlist();
   });
@@ -193,6 +196,9 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
  * @param  {Function} callback       receives ASCII armored message
  */
 AsyncProxy.prototype.signClearMessage = function(privateKeys, text, callback) {
+  if (typeof privateKeys === 'string') {
+    privateKeys = [privateKeys];
+  }
   privateKeys = privateKeys.map(function(key) {
     return key.toPacketlist();
   });
