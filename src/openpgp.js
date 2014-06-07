@@ -59,7 +59,7 @@ function initWorker(path) {
  * @static
  */
 function encryptMessage(keys, text, callback) {
-  if (typeof keys === 'string') {
+  if (!keys.length) {
     keys = [keys];
   }
 
@@ -87,7 +87,7 @@ function encryptMessage(keys, text, callback) {
  * @static
  */
 function signAndEncryptMessage(publicKeys, privateKey, text, callback) {
-  if (typeof publicKeys === 'string') {
+  if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
@@ -139,7 +139,7 @@ function decryptMessage(privateKey, msg, callback) {
  * @static
  */
 function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
-  if (typeof publicKeys === 'string') {
+  if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
@@ -169,7 +169,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
  * @static
  */
 function signClearMessage(privateKeys, text, callback) {
-  if (typeof privateKeys === 'string') {
+  if (!privateKeys.length) {
     privateKeys = [privateKeys];
   }
 
@@ -195,7 +195,7 @@ function signClearMessage(privateKeys, text, callback) {
  * @static
  */
 function verifyClearSignedMessage(publicKeys, msg, callback) {
-  if (typeof publicKeys === 'string') {
+  if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 

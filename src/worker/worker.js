@@ -38,7 +38,7 @@ onmessage = function (event) {
       break;
     case 'encrypt-message':
       try {
-        if (typeof msg.keys === 'string') {
+        if (!msg.keys.length) {
           msg.keys = [msg.keys];
         }
         msg.keys = msg.keys.map(packetlistCloneToKey);
@@ -50,7 +50,7 @@ onmessage = function (event) {
       break;
     case 'sign-and-encrypt-message':
       try {
-        if (typeof msg.publicKeys === 'string') {
+        if (!msg.publicKeys.length) {
           msg.publicKeys = [msg.publicKeys];
         }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
@@ -74,7 +74,7 @@ onmessage = function (event) {
     case 'decrypt-and-verify-message':
       try {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
-        if (typeof msg.publicKeys === 'string') {
+        if (!msg.publicKeys.length) {
           msg.publicKeys = [msg.publicKeys];
         }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
@@ -96,7 +96,7 @@ onmessage = function (event) {
       break;
     case 'verify-clear-signed-message':
       try {
-        if (typeof msg.publicKeys === 'string') {
+        if (!msg.publicKeys.length) {
           msg.publicKeys = [msg.publicKeys];
         }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
