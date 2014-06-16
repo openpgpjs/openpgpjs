@@ -3,7 +3,8 @@
 var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
 
 var chai = require('chai'),
-	expect = chai.expect;
+  expect = chai.expect,
+  fs = require('fs');
 
 describe('Key', function() {
   var twoKeys =
@@ -400,6 +401,64 @@ var pgp_desktop_priv =
     expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('4a63613a4d6e4094');
     expect(pubKeys.keys[1].primaryKey.getKeyId().toHex()).to.equal('dbf223e870534df4');
     done();
+  });
+
+  it('Parsing binary file with a private key', function(done) {
+    fs.readFile(__dirname + '/fixtures/secring_1.gpg', function (err, data) {
+      var secKeys = openpgp.key.readBinary(data.toString('binary'));
+      expect(secKeys).to.exist;
+      expect(secKeys.err).to.not.exist;
+      expect(secKeys.keys).to.have.length(1);
+      expect(secKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('d5afe3fd7514c291');
+      expect(secKeys.keys[0].isPublic()).to.be.false;
+      expect(secKeys.keys[0].isPrivate()).to.be.true;
+      done();
+    });
+  });
+
+  it('Parsing binary file with a public key', function(done) {
+    fs.readFile(__dirname + '/fixtures/pubring_1.gpg', function (err, data) {
+      var pubKeys = openpgp.key.readBinary(data.toString('binary'));
+      expect(pubKeys).to.exist;
+      expect(pubKeys.err).to.not.exist;
+      expect(pubKeys.keys).to.have.length(1);
+      expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('d5afe3fd7514c291');
+      expect(pubKeys.keys[0].isPublic()).to.be.true;
+      expect(pubKeys.keys[0].isPrivate()).to.be.false;
+      done();
+    });
+  });
+
+  it('Parsing binary file with two private keys', function(done) {
+    fs.readFile(__dirname + '/fixtures/secring_2.gpg', function (err, data) {
+      var secKeys = openpgp.key.readBinary(data.toString('binary'));
+      expect(secKeys).to.exist;
+      expect(secKeys.err).to.not.exist;
+      expect(secKeys.keys).to.have.length(2);
+      expect(secKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('d5afe3fd7514c291');
+      expect(secKeys.keys[0].isPublic()).to.be.false;
+      expect(secKeys.keys[0].isPrivate()).to.be.true;
+      expect(secKeys.keys[1].primaryKey.getKeyId().toHex()).to.equal('feec71ef4fc549bf');
+      expect(secKeys.keys[1].isPublic()).to.be.false;
+      expect(secKeys.keys[1].isPrivate()).to.be.true;
+      done();
+    });
+  });
+
+  it('Parsing binary file with two public keys', function(done) {
+    fs.readFile(__dirname + '/fixtures/pubring_2.gpg', function (err, data) {
+      var pubKeys = openpgp.key.readBinary(data.toString('binary'));
+      expect(pubKeys).to.exist;
+      expect(pubKeys.err).to.not.exist;
+      expect(pubKeys.keys).to.have.length(2);
+      expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('d5afe3fd7514c291');
+      expect(pubKeys.keys[0].isPublic()).to.be.true;
+      expect(pubKeys.keys[0].isPrivate()).to.be.false;
+      expect(pubKeys.keys[1].primaryKey.getKeyId().toHex()).to.equal('feec71ef4fc549bf');
+      expect(pubKeys.keys[1].isPublic()).to.be.true;
+      expect(pubKeys.keys[1].isPrivate()).to.be.false;
+      done();
+    });
   });
 
   it('Testing key ID and fingerprint for V3 and V4 keys', function(done) {

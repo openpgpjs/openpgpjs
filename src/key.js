@@ -899,6 +899,39 @@ function readArmored(armoredText) {
 }
 
 /**
+ * Reads OpenPGP binary data and returns one or multiple key objects
+ * @param {String} binaryData binary data to be parsed
+ * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
+ * @static
+ */
+function readBinary(binaryData) {
+  var result = {};
+  result.keys = [];
+  try {
+    var packetlist = new packet.List();
+    packetlist.read(binaryData);
+    var keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+    if (keyIndex.length === 0) {
+      throw new Error('No key packet found in armored text');
+    }
+    for (var i = 0; i < keyIndex.length; i++) {
+      var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+      try {
+        var newKey = new Key(oneKeyList);
+        result.keys.push(newKey);
+      } catch (e) {
+        result.err = result.err || [];
+        result.err.push(e);
+      }
+    }
+  } catch (e) {
+    result.err = result.err || [];
+    result.err.push(e);
+  }
+  return result;
+}
+
+/**
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
@@ -1021,5 +1054,6 @@ function getPreferredSymAlgo(keys) {
 
 exports.Key = Key;
 exports.readArmored = readArmored;
+exports.readBinary = readBinary;
 exports.generate = generate;
 exports.getPreferredSymAlgo = getPreferredSymAlgo;
