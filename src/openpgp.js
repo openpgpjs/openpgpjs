@@ -1,23 +1,23 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @fileoverview The openpgp base module should provide all of the functionality 
- * to consume the openpgp.js library. All additional classes are documented 
+ * @fileoverview The openpgp base module should provide all of the functionality
+ * to consume the openpgp.js library. All additional classes are documented
  * for extending and developing on top of the base library.
  */
 
@@ -52,7 +52,7 @@ function initWorker(path) {
 
 /**
  * Encrypts message text with keys
- * @param  {Array<module:key~Key>}  keys array of keys, used to encrypt the message
+ * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  * @param  {function} callback (optional) callback(error, result) for async style
  * @return {String}      encrypted ASCII armored message
@@ -79,7 +79,7 @@ function encryptMessage(keys, text, callback) {
 
 /**
  * Signs message text and encrypts it
- * @param  {Array<module:key~Key>}  publicKeys array of keys, used to encrypt the message
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
  * @param  {function} callback (optional) callback(error, result) for async style
@@ -130,7 +130,7 @@ function decryptMessage(privateKey, msg, callback) {
 /**
  * Decrypts message and verifies signatures
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
- * @param  {Array<module:key~Key>}   publicKeys public keys to verify signatures
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:message~Message} msg    the message object with signed and encrypted data
  * @param  {function} callback (optional) callback(error, result) for async style
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
@@ -162,7 +162,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
 
 /**
  * Signs a cleartext message
- * @param  {Array<module:key~Key>}  privateKeys private key with decrypted secret key data to sign cleartext
+ * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
  * @param  {function} callback (optional) callback(error, result) for async style
  * @return {String}             ASCII armored message
@@ -187,7 +187,7 @@ function signClearMessage(privateKeys, text, callback) {
 
 /**
  * Verifies signatures of cleartext signed message
- * @param  {Array<module:key~Key>}            publicKeys public keys to verify signatures
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:cleartext~CleartextMessage} msg    cleartext message object with signatures
  * @param  {function} callback (optional) callback(error, result) for async style
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}

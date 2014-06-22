@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -53,7 +53,7 @@ function AsyncProxy(path) {
  * Message handling
  */
 AsyncProxy.prototype.onMessage = function(event) {
-  var msg = event.data; 
+  var msg = event.data;
   switch (msg.event) {
     case 'method-return':
       this.tasks.shift()(msg.err ? new Error(msg.err) : null, msg.data);
@@ -96,7 +96,7 @@ AsyncProxy.prototype.terminate = function() {
 
 /**
  * Encrypts message text with keys
- * @param  {Array<module:key~Key>}  keys array of keys, used to encrypt the message
+ * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  * @param  {Function} callback receives encrypted ASCII armored message
  */
@@ -108,7 +108,7 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
     return key.toPacketlist();
   });
   this.worker.postMessage({
-    event: 'encrypt-message', 
+    event: 'encrypt-message',
     keys: keys,
     text: text
   });
@@ -117,7 +117,7 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, callback) {
 
 /**
  * Signs message text and encrypts it
- * @param  {Array<module:key~Key>}  publicKeys array of keys, used to encrypt the message
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
  * @param  {Function} callback receives encrypted ASCII armored message
@@ -131,7 +131,7 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
   });
   privateKey = privateKey.toPacketlist();
   this.worker.postMessage({
-    event: 'sign-and-encrypt-message', 
+    event: 'sign-and-encrypt-message',
     publicKeys: publicKeys,
     privateKey: privateKey,
     text: text
@@ -149,7 +149,7 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
 AsyncProxy.prototype.decryptMessage = function(privateKey, message, callback) {
   privateKey = privateKey.toPacketlist();
   this.worker.postMessage({
-    event: 'decrypt-message', 
+    event: 'decrypt-message',
     privateKey: privateKey,
     message: message
   });
@@ -159,7 +159,7 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message, callback) {
 /**
  * Decrypts message and verifies signatures
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
- * @param  {Array<module:key~Key>}   publicKeys public keys to verify signatures
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key to verify signatures
  * @param  {module:message~Message} message    the message object with signed and encrypted data
  * @param  {Function} callback   receives decrypted message as as native JavaScript string
  *                               with verified signatures or null if no literal data found
@@ -173,7 +173,7 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
     return key.toPacketlist();
   });
   this.worker.postMessage({
-    event: 'decrypt-and-verify-message', 
+    event: 'decrypt-and-verify-message',
     privateKey: privateKey,
     publicKeys: publicKeys,
     message: message
@@ -191,7 +191,7 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
 
 /**
  * Signs a cleartext message
- * @param  {Array<module:key~Key>}  privateKeys private key with decrypted secret key data to sign cleartext
+ * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key, with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
  * @param  {Function} callback       receives ASCII armored message
  */
@@ -203,7 +203,7 @@ AsyncProxy.prototype.signClearMessage = function(privateKeys, text, callback) {
     return key.toPacketlist();
   });
   this.worker.postMessage({
-    event: 'sign-clear-message', 
+    event: 'sign-clear-message',
     privateKeys: privateKeys,
     text: text
   });
@@ -212,7 +212,7 @@ AsyncProxy.prototype.signClearMessage = function(privateKeys, text, callback) {
 
 /**
  * Verifies signatures of cleartext signed message
- * @param  {Array<module:key~Key>}            publicKeys public keys to verify signatures
+ * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:cleartext~CleartextMessage} message    cleartext message object with signatures
  * @param  {Function} callback   receives cleartext with status of verified signatures
  */
@@ -224,7 +224,7 @@ AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message, ca
     return key.toPacketlist();
   });
   this.worker.postMessage({
-    event: 'verify-clear-signed-message', 
+    event: 'verify-clear-signed-message',
     publicKeys: publicKeys,
     message: message
   });
@@ -251,7 +251,7 @@ AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message, ca
  */
 AsyncProxy.prototype.generateKeyPair = function(options, callback) {
   this.worker.postMessage({
-    event: 'generate-key-pair', 
+    event: 'generate-key-pair',
     options: options
   });
   this.tasks.push(function(err, data) {
