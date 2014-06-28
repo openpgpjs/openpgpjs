@@ -11,12 +11,24 @@ For server side use, install via npm:
 
     npm install openpgp
 
-Example:
+Examples:
 
+Encryption
+  
     var openpgp = require('openpgp');
     var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
     var publicKey = openpgp.key.readArmored(key);
     var pgpMessage = openpgp.encryptMessage(publicKey.keys, 'Hello, World!');
+
+Decryption:
+ 
+    var openpgp = require('openpgp');
+    var key = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+    var privateKey = openpgp.key.readArmored(key).keys[0];
+    privateKey.decrypt('password');
+    var message = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
+    message = openpgp.message.readArmored(message);
+    var pgpMessage = openpgp.decryptMessage(privateKey, message);
 
 ### Browser support
 
