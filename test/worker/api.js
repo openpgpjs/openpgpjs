@@ -194,8 +194,27 @@ describe('High level API', function() {
       });
     });
 
+    it('RSA: encryptMessage one key async', function (done) {
+      openpgp.encryptMessage(pubKeyRSA, plaintext, function(err, data) {
+        expect(err).to.not.exist;
+        expect(data).to.exist;
+        expect(data).to.match(/^-----BEGIN PGP MESSAGE/);
+        var msg = openpgp.message.readArmored(data);
+        expect(msg).to.be.an.instanceof(openpgp.message.Message);
+        done();
+      });
+    });
+
     it('RSA: encryptMessage sync', function () {
       var msg = openpgp.encryptMessage([pubKeyRSA], plaintext);
+      expect(msg).to.exist;
+      expect(msg).to.match(/^-----BEGIN PGP MESSAGE/);
+      msg = openpgp.message.readArmored(msg);
+      expect(msg).to.be.an.instanceof(openpgp.message.Message);
+    });
+
+    it('RSA: encryptMessage one key sync', function () {
+      var msg = openpgp.encryptMessage(pubKeyRSA, plaintext);
       expect(msg).to.exist;
       expect(msg).to.match(/^-----BEGIN PGP MESSAGE/);
       msg = openpgp.message.readArmored(msg);
