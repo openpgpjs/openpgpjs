@@ -232,8 +232,9 @@ Message.prototype.verify = function(keys) {
   if (literalDataList.length !== 1) throw new Error('Can only verify message with one literal data packet.');
   var signatureList = msg.packets.filterByTag(enums.packet.signature);
   keys.forEach(function(key) {
+    var keyPacket = null;
     for (var i = 0; i < signatureList.length; i++) {
-      var keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
+      keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
       if (keyPacket) {
         var verifiedSig = {};
         verifiedSig.keyid = signatureList[i].issuerKeyId;
@@ -241,6 +242,9 @@ Message.prototype.verify = function(keys) {
         result.push(verifiedSig);
         break;
       }
+    }
+    if (!keyPacket) {
+      throw new Error('No matching signature found for specified keys.');
     }
   });
   return result;

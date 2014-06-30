@@ -60,6 +60,40 @@ describe('Basic', function() {
       testHelper('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć');
       done();
     });
+
+    it('should fail to verify signature for wrong public key', function (done) {
+      var userid = 'Test McTestington <test@example.com>';
+      var passphrase = 'password';
+      var message = 'hello world';
+
+      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
+
+      var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
+      var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
+
+      var privKey = privKeys.keys[0];
+      var pubKey = publicKeys.keys[0];
+
+      var success = privKey.decrypt(passphrase);
+
+      var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
+
+      var msg = openpgp.message.readArmored(encrypted);
+      expect(msg).to.exist;
+
+      var anotherKey = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
+      var anotherPubKey = openpgp.key.readArmored(anotherKey.publicKeyArmored).keys[0];
+
+      var decrypted;
+      try {
+        decrypted = openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
+      } catch(e) {
+        expect(e).to.exist;
+        expect(decrypted).to.not.exist;
+        done();
+      }
+    });
+
     it('Performance test', function (done) {
       // init test data
       function randomString(length, chars) {
