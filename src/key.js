@@ -916,16 +916,15 @@ function generate(options) {
   if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
     throw new Error('Only RSA Encrypt or Sign supported');
   }
-  if (!options.passphrase) {
-    throw new Error('Parameter options.passphrase required');
-  }
 
   var packetlist = new packet.List();
 
   var secretKeyPacket = new packet.SecretKey();
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
   secretKeyPacket.generate(options.numBits);
-  secretKeyPacket.encrypt(options.passphrase);
+  if (options.passphrase) {
+    secretKeyPacket.encrypt(options.passphrase);
+  }
 
   var userIdPacket = new packet.Userid();
   userIdPacket.read(options.userId);
@@ -960,7 +959,9 @@ function generate(options) {
   var secretSubkeyPacket = new packet.SecretSubkey();
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
   secretSubkeyPacket.generate(options.numBits);
-  secretSubkeyPacket.encrypt(options.passphrase);
+  if (options.passphrase) {
+    secretSubkeyPacket.encrypt(options.passphrase);
+  }
 
   dataToSign = {};
   dataToSign.key = secretKeyPacket;

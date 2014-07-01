@@ -170,10 +170,18 @@ SecretKey.prototype.write = function () {
 
 
 /** Encrypt the payload. By default, we use aes256 and iterated, salted string
- * to key specifier
+ * to key specifier. If the key is in a decrypted state (isDecrypted == true)
+ * and the passphrase is empty or undefined, the key will be set as not encrypted.
+ * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
  */
 SecretKey.prototype.encrypt = function (passphrase) {
+  if (this.isDecrypted && !passphrase) {
+    this.encrypted = null;
+    return;
+  } else if (!passphrase) {
+    throw new Error('The key must be decrypted before removing passphrase protection.');
+  }
 
   var s2k = new type_s2k(),
     symmetric = 'aes256',
