@@ -236,16 +236,18 @@ Message.prototype.verify = function(keys) {
     for (var i = 0; i < signatureList.length; i++) {
       keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
       if (keyPacket) {
-        var verifiedSig = {};
-        verifiedSig.keyid = signatureList[i].issuerKeyId;
-        verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
-        result.push(verifiedSig);
         break;
       }
     }
-    if (!keyPacket) {
-      throw new Error('No matching signature found for specified keys.');
+    var verifiedSig = {};
+    if (keyPacket) {
+      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
+    } else {
+      verifiedSig.keyid = key.primaryKey.keyid;
+      verifiedSig.valid = null;
     }
+    result.push(verifiedSig);
   });
   return result;
 };
