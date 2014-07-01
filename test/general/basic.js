@@ -84,14 +84,11 @@ describe('Basic', function() {
       var anotherKey = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
       var anotherPubKey = openpgp.key.readArmored(anotherKey.publicKeyArmored).keys[0];
 
-      var decrypted;
-      try {
-        decrypted = openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
-      } catch(e) {
-        expect(e).to.exist;
-        expect(decrypted).to.not.exist;
-        done();
-      }
+      var decrypted = openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
+      expect(decrypted).to.exist;
+      expect(decrypted.signatures[0].valid).to.be.null;
+      expect(decrypted.text).to.equal(message);
+      done();
     });
 
     it('Performance test', function (done) {
