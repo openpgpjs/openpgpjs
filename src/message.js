@@ -291,6 +291,22 @@ function readArmored(armoredText) {
 }
 
 /**
+ * Create a message object from signed content and a detached armored signature.
+ * @param {String} content An 8 bit ascii string containing e.g. a MIME subtree with text nodes or attachments
+ * @param {String} detachedSignature The detached ascii armored PGP signarure
+ */
+function readSignedContent(content, detachedSignature) {
+  var literalDataPacket = new packet.Literal();
+  literalDataPacket.setBytes(content, enums.read(enums.literal, enums.literal.binary));
+  var packetlist = new packet.List();
+  packetlist.push(literalDataPacket);
+  var input = armor.decode(detachedSignature).data;
+  packetlist.read(input);
+  var newMessage = new Message(packetlist);
+  return newMessage;
+}
+
+/**
  * creates new message object from text
  * @param {String} text
  * @return {module:message~Message} new message object
@@ -323,5 +339,6 @@ function fromBinary(bytes) {
 
 exports.Message = Message;
 exports.readArmored = readArmored;
+exports.readSignedContent = readSignedContent;
 exports.fromText = fromText;
 exports.fromBinary = fromBinary;

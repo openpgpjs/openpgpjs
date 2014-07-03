@@ -117,7 +117,7 @@ describe("ASCII armor", function() {
       ['-----BEGIN PGP SIGNED MESSAGE\u2010\u2010\u2010\u2010\u2010\nHash:SHA1\n\nIs this properly-----',
       '',
       'sign this',
-      '-----BEGIN PGP SIGNATURE-----',
+      '-----BEGIN PGP SIGNNATURE-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
       '',
       'iJwEAQECAAYFAlMrPj0ACgkQ4IT3RGwgLJfYkQQAgHMQieazCVdfGAfzQM69Egm5',
@@ -125,7 +125,7 @@ describe("ASCII armor", function() {
       'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
       'skTzzVXIxMYw8ihbHfk=',
       '=e/eA',
-      '-----END PGP SIGNATURE-----'].join('\n');
+      '-----END PGP SIGNNATURE-----'].join('\n');
 
     msg = openpgp.cleartext.readArmored.bind(null, msg);
     expect(msg).to.throw(Error, /Unknow ASCII armor type/);
