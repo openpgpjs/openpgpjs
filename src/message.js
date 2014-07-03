@@ -291,6 +291,21 @@ function readArmored(armoredText) {
 }
 
 /**
+ * reads an OpenPGP binary message and returns a message object
+ * @param {String} binaryData binary data to be parsed
+ * @return {module:message~Message} new message object
+ * @static
+ */
+function readBinary(binaryData) {
+  //TODO how do we want to handle bad data? Exception throwing
+  //TODO don't accept non-message binary data
+  var packetlist = new packet.List();
+  packetlist.read(binaryData);
+  var newMessage = new Message(packetlist);
+  return newMessage;
+}
+
+/**
  * creates new message object from text
  * @param {String} text
  * @return {module:message~Message} new message object
@@ -323,5 +338,6 @@ function fromBinary(bytes) {
 
 exports.Message = Message;
 exports.readArmored = readArmored;
+exports.readBinary = readBinary;
 exports.fromText = fromText;
 exports.fromBinary = fromBinary;
