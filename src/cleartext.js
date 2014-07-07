@@ -91,18 +91,25 @@ CleartextMessage.prototype.verify = function(keys) {
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  keys.forEach(function(key) {
-    for (var i = 0; i < signatureList.length; i++) {
-      var keyPacket = key.getKeyPacket([signatureList[i].issuerKeyId]);
+  for (var i = 0; i < signatureList.length; i++) {
+    var keyPacket = null;
+    for (var j = 0; j < keys.length; j++) {
+      keyPacket = keys[j].getKeyPacket([signatureList[i].issuerKeyId]);
       if (keyPacket) {
-        var verifiedSig = {};
-        verifiedSig.keyid = signatureList[i].issuerKeyId;
-        verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataPacket);
-        result.push(verifiedSig);
         break;
       }
     }
-  });
+
+    var verifiedSig = {};
+    if (keyPacket) {
+      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataPacket);
+    } else {
+      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.valid = null;
+    }
+    result.push(verifiedSig);
+  }
   return result;
 };
 
