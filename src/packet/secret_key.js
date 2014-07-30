@@ -279,6 +279,9 @@ SecretKey.prototype.generate = function (bits) {
  * Clear private MPIs, return to initial state
  */
 SecretKey.prototype.clearPrivateMPIs = function () {
+  if (!this.encrypted) {
+    throw new Error('If secret key is not encrypted, clearing private MPIs is irreversible.');
+  }
   this.mpi = this.mpi.slice(0, crypto.getPublicMpiCount(this.algorithm));
   this.isDecrypted = false;
 };

@@ -636,4 +636,13 @@ describe("Signature", function() {
     expect(result[0].valid).to.be.true;
   });
 
+  it('Sign message with key without password', function() {
+    var key = openpgp.generateKeyPair({numBits: 512, userId: 'ABC', passphrase: null}).key;
+
+    var message = openpgp.message.fromText('hello world');
+    message = message.sign([key]);
+
+    expect(message).to.exist;
+  });
+
 });

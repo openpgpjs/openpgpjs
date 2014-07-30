@@ -916,6 +916,10 @@ function generate(options) {
   if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
     throw new Error('Only RSA Encrypt or Sign supported');
   }
+  // Key without passphrase is unlocked by definition
+  if (!options.passphrase) {
+    options.unlocked = true;
+  }
 
   var packetlist = new packet.List();
 
