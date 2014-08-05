@@ -28,21 +28,22 @@
   },
   "devDependencies": {
     "browserify": "~2.35",
-    "grunt": "~0.4.2",
-    "mocha": "~1.15.1",
-    "mocha-phantomjs": "~3.1.6",
-    "phantomjs": "~1.9.2-5",
     "chai": "~1.8.1",
+    "grunt": "~0.4.2",
+    "grunt-browserify": "~1.2.11",
+    "grunt-cli": "~0.1.13",
+    "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-connect": "~0.6.0",
     "grunt-contrib-copy": "~0.4.1",
-    "grunt-browserify": "~1.2.11",
-    "grunt-contrib-uglify": "~0.3.2",
-    "grunt-text-replace": "~0.3.11",
-    "grunt-jsbeautifier": "~0.2.6",
     "grunt-contrib-jshint": "*",
+    "grunt-contrib-uglify": "~0.3.2",
+    "grunt-jsbeautifier": "~0.2.6",
     "grunt-jsdoc": "*",
     "grunt-mocha-test": "~0.8.1",
-    "grunt-contrib-clean": "~0.5.0"
+    "grunt-text-replace": "~0.3.11",
+    "mocha": "~1.15.1",
+    "mocha-phantomjs": "~3.1.6",
+    "phantomjs": "~1.9.2-5"
   },
   "dependencies": {
     "node-localstorage": "~0.3.4"
