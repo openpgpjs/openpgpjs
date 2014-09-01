@@ -11,6 +11,18 @@ For server side use, install via npm:
 
     npm install openpgp
 
+
+### Browser support
+
+For use in browser, install via bower:
+
+    bower install --save openpgp
+
+Or Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). 
+
+The library can be loaded via  AMD/require.js or accessed globally via `window.openpgp`.
+
+
 ### Examples
 
 #### Encryption
@@ -30,9 +42,7 @@ For server side use, install via npm:
     pgpMessage = openpgp.message.readArmored(pgpMessage);
     var plaintext = openpgp.decryptMessage(privateKey, pgpMessage);
 
-### Browser support
 
-Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases). The library can be loaded via  AMD/require.js or accessed globally via `window.openpgp`.
 
 OpenPGP.js currently only fully supports browsers that implement `window.crypto.getRandomValues`. If you can help us support more browsers and runtimes, please chip in!
 
