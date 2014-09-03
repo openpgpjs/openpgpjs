@@ -480,13 +480,13 @@ Key.prototype.getPrimaryUser = function() {
   }
   // sort by primary user flag and signature creation time
   primUser = primUser.sort(function(a, b) {
-    if (a.isPrimaryUserID > b.isPrimaryUserID) {
+    if (a.selfCertificate.isPrimaryUserID > b.selfCertificate.isPrimaryUserID) {
       return -1;
-    } else if (a.isPrimaryUserID < b.isPrimaryUserID) {
+    } else if (a.selfCertificate.isPrimaryUserID < b.selfCertificate.isPrimaryUserID) {
       return 1;
-    } else if (a.created > b.created) {
+    } else if (a.selfCertificate.created > b.selfCertificate.created) {
       return -1;
-    } else if (a.created < b.created) {
+    } else if (a.selfCertificate.created < b.selfCertificate.created) {
       return 1;
     } else {
       return 0;
