@@ -924,8 +924,15 @@ function generate(options) {
   var packetlist = new packet.List();
 
   var secretKeyPacket = new packet.SecretKey();
+  if (options.created) {
+    secretKeyPacket.created = options.created;
+  }
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-  secretKeyPacket.generate(options.numBits);
+  if (options.prng) {
+    secretKeyPacket.generate(options.numBits, options.prng);
+  } else {
+    secretKeyPacket.generate(options.numBits);
+  }
   if (options.passphrase) {
     secretKeyPacket.encrypt(options.passphrase);
   }

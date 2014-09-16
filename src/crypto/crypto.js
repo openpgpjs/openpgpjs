@@ -178,7 +178,7 @@ module.exports = {
     }
   },
 
-  generateMpi: function(algo, bits) {
+  generateMpi: function(algo, bits, prng) {
     var result = (function() {
       switch (algo) {
         case 'rsa_encrypt':
@@ -186,7 +186,7 @@ module.exports = {
         case 'rsa_sign':
           //remember "publicKey" refers to the crypto/public_key dir
           var rsa = new publicKey.rsa();
-          var keyObject = rsa.generate(bits, "10001");
+          var keyObject = rsa.generate(bits, "10001", prng);
           var output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);
