@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -134,6 +134,63 @@ function RSA() {
   // Generate a new random private key B bits long, using public expt E
 
   function generate(B, E) {
+
+    //
+    // Web Crypto RSA keygen proposal example
+    //
+
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      var keyGenOpt = {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: B, // the specified keysize in bits
+        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),  // Equivalent to 65537, TODO: use provided argument E
+        hash: {
+          name: 'SHA-256' // not required for actual RSA keys, but for crypto api 'sign' and 'verifiy'
+        }
+      };
+
+      var extractable = true; // make generated key extractable
+
+      window.crypto.subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
+        .then(onGenerated)
+        .then(onExported);
+    }
+
+    function onGenerated(key) {
+      // export the generated keys as JsonWebKey (JWK)
+      // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
+      var p1 = window.crypto.subtle.exportKey('jwk', key.privateKey);
+      var p2 = window.crypto.subtle.exportKey('jwk', key.publicKey);
+
+      return window.Promise.all([p1, p2]);
+    }
+
+    function onExported(exported) {
+      // Exported JWK has the following encoded parameters: n, p, q, qi, ...
+
+      var privKey = exported[0];
+      var pubKey = exported[1];
+
+      console.log('Exported private key: ', privKey);
+      console.log('Exported public key: ', pubKey);
+
+      var d = privKey.d;
+      var dp = privKey.dp;
+      var dq = privKey.dq;
+      var e = privKey.e;
+      var n = privKey.n;
+      var p = privKey.p;
+      var q = privKey.q;
+      var qi = privKey.qi;
+
+      // TODO: map JWK parameters to local BigInteger type system?
+      // TODO: add async style callback
+    }
+
+    //
+    // JS code
+    //
+
     var key = new keyObject();
     var rng = new SecureRandom();
     var qs = B >> 1;
