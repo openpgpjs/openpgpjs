@@ -183,7 +183,19 @@ function RSA() {
       var q = privKey.q;
       var qi = privKey.qi;
 
-      // TODO: map JWK parameters to local BigInteger type system?
+      // map JWK parameters to local BigInteger type system
+      var key = new keyObject();
+      key.n = new BigInteger(util.hexstrdump(base64(n)), 16);
+      key.ee = new BigInteger(E, 16);
+      key.d = new BigInteger(util.hexstrdump(base64(d)), 16);
+      key.p = new BigInteger(util.hexstrdump(base64(p)), 16);
+      key.q = new BigInteger(util.hexstrdump(base64(q)), 16);
+      key.u = key.p.modInverse(key.q);
+
+      function base64(base64url) {
+        return base64url.replace(/-/g, '+').replace(/_/g, '/')
+      }
+
       // TODO: add async style callback
     }
 
