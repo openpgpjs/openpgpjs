@@ -133,13 +133,15 @@ function RSA() {
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E) {
+  function generate(B, E, callback) {
 
     //
-    // Web Crypto RSA keygen proposal example
+    // Native RSA keygen using Web Crypto
     //
 
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    if (false && typeof window !== 'undefined' && window.crypto && (window.crypto.subtle || window.crypto.webkitSubtle)) {
+      var subtle = window.crypto.subtle || window.crypto.webkitSubtle;
+
       var keyGenOpt = {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: B, // the specified keysize in bits
@@ -151,52 +153,34 @@ function RSA() {
 
       var extractable = true; // make generated key extractable
 
-      window.crypto.subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
-        .then(onGenerated)
-        .then(onExported);
+      subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
+        .then(onGenerated, callback)
+        .then(onExported, callback);
+
+      return;
     }
 
     function onGenerated(key) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      var p1 = window.crypto.subtle.exportKey('jwk', key.privateKey);
-      var p2 = window.crypto.subtle.exportKey('jwk', key.publicKey);
-
-      return window.Promise.all([p1, p2]);
+      return subtle.exportKey('jwk', key.privateKey);
     }
 
-    function onExported(exported) {
-      // Exported JWK has the following encoded parameters: n, p, q, qi, ...
-
-      var privKey = exported[0];
-      var pubKey = exported[1];
-
-      console.log('Exported private key: ', privKey);
-      console.log('Exported public key: ', pubKey);
-
-      var d = privKey.d;
-      var dp = privKey.dp;
-      var dq = privKey.dq;
-      var e = privKey.e;
-      var n = privKey.n;
-      var p = privKey.p;
-      var q = privKey.q;
-      var qi = privKey.qi;
-
+    function onExported(jwk) {
       // map JWK parameters to local BigInteger type system
       var key = new keyObject();
-      key.n = new BigInteger(util.hexstrdump(base64(n)), 16);
+      key.n = new BigInteger(util.hexstrdump(base64(jwk.n)), 16);
       key.ee = new BigInteger(E, 16);
-      key.d = new BigInteger(util.hexstrdump(base64(d)), 16);
-      key.p = new BigInteger(util.hexstrdump(base64(p)), 16);
-      key.q = new BigInteger(util.hexstrdump(base64(q)), 16);
+      key.d = new BigInteger(util.hexstrdump(base64(jwk.d)), 16);
+      key.p = new BigInteger(util.hexstrdump(base64(jwk.p)), 16);
+      key.q = new BigInteger(util.hexstrdump(base64(jwk.q)), 16);
       key.u = key.p.modInverse(key.q);
 
       function base64(base64url) {
-        return base64url.replace(/-/g, '+').replace(/_/g, '/')
+        return base64url.replace(/-/g, '+').replace(/_/g, '/');
       }
 
-      // TODO: add async style callback
+      callback(null, key);
     }
 
     //
@@ -236,7 +220,8 @@ function RSA() {
         break;
       }
     }
-    return key;
+
+    callback(null, key);
   }
 
   this.encrypt = encrypt;

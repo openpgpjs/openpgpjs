@@ -1,19 +1,19 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 // The GPG4Browsers crypto interface
 
@@ -32,12 +32,12 @@ var random = require('./random.js'),
 
 module.exports = {
   /**
-   * Encrypts data using the specified public key multiprecision integers 
+   * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * @param {module:type/mpi} data Data to be encrypted as MPI
-   * @return {Array<module:type/mpi>} if RSA an module:type/mpi; 
+   * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
    * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
    */
   publicKeyEncrypt: function(algo, publicMPIs, data) {
@@ -76,9 +76,9 @@ module.exports = {
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers 
+   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * of the public key part of the private key
-   * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers 
+   * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
    * of the private key used
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
@@ -178,15 +178,19 @@ module.exports = {
     }
   },
 
-  generateMpi: function(algo, bits) {
-    var result = (function() {
-      switch (algo) {
-        case 'rsa_encrypt':
-        case 'rsa_encrypt_sign':
-        case 'rsa_sign':
-          //remember "publicKey" refers to the crypto/public_key dir
-          var rsa = new publicKey.rsa();
-          var keyObject = rsa.generate(bits, "10001");
+  generateMpi: function(algo, bits, callback) {
+    switch (algo) {
+      case 'rsa_encrypt':
+      case 'rsa_encrypt_sign':
+      case 'rsa_sign':
+        //remember "publicKey" refers to the crypto/public_key dir
+        var rsa = new publicKey.rsa();
+        rsa.generate(bits, "10001", function(err, keyObject) {
+          if (err) {
+            callback(err);
+            return;
+          }
+
           var output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);
@@ -194,17 +198,21 @@ module.exports = {
           output.push(keyObject.p);
           output.push(keyObject.q);
           output.push(keyObject.u);
-          return output;
-        default:
-          throw new Error('Unsupported algorithm for key generation.');
-      }
-    })();
 
-    return result.map(function(bn) {
-      var mpi = new type_mpi();
-      mpi.fromBigInteger(bn);
-      return mpi;
-    });
+          callback(null, mapResult(output));
+        });
+        break;
+      default:
+        callback(new Error('Unsupported algorithm for key generation.'));
+    }
+
+    function mapResult(result) {
+      return result.map(function(bn) {
+        var mpi = new type_mpi();
+        mpi.fromBigInteger(bn);
+        return mpi;
+      });
+    }
   },
 
 

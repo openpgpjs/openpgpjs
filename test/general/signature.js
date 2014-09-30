@@ -312,7 +312,7 @@ describe("Signature", function() {
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', function(done) {
-    var signedArmor = 
+    var signedArmor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
         '',
@@ -335,7 +335,7 @@ describe("Signature", function() {
   });
 
   it('Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)', function(done) {
-    var signedArmor = 
+    var signedArmor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
         '',
@@ -358,7 +358,7 @@ describe("Signature", function() {
   });
 
   it('Verify signature of signed and encrypted message from GPG2 with openpgp.decryptAndVerifyMessage', function(done) {
-    var msg_armor = 
+    var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
         '',
@@ -393,7 +393,7 @@ describe("Signature", function() {
   });
 
   it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decryptAndVerifyMessage', function(done) {
-    var msg_armor = 
+    var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: Encryption Desktop 10.3.0 (Build 9307)',
         'Charset: utf-8',
@@ -429,7 +429,7 @@ describe("Signature", function() {
   });
 
   it('Verify signed message with two one pass signatures', function(done) {
-    var msg_armor = 
+    var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
         '',
@@ -470,7 +470,7 @@ describe("Signature", function() {
   });
 
   it('Verify cleartext signed message with two signatures with openpgp.verifyClearSignedMessage', function(done) {
-    var msg_armor = 
+    var msg_armor =
       [ '-----BEGIN PGP SIGNED MESSAGE-----',
         'Hash: SHA256',
         '',
@@ -523,7 +523,7 @@ describe("Signature", function() {
     var clearSignedArmor = openpgp.signClearMessage([privKey], plaintext);
 
     var csMsg = openpgp.cleartext.readArmored(clearSignedArmor);
-    
+
     var cleartextSig = openpgp.verifyClearSignedMessage([pubKey], csMsg);
 
     expect(cleartextSig).to.exist;
@@ -636,13 +636,19 @@ describe("Signature", function() {
     expect(result[0].valid).to.be.true;
   });
 
-  it('Sign message with key without password', function() {
-    var key = openpgp.generateKeyPair({numBits: 512, userId: 'ABC', passphrase: null}).key;
+  it('Sign message with key without password', function(done) {
+    var opt = {numBits: 512, userId: 'ABC', passphrase: null};
+    openpgp.generateKeyPair(opt, function(err, gen) {
+      expect(err).to.not.exist;
 
-    var message = openpgp.message.fromText('hello world');
-    message = message.sign([key]);
+      var key = gen.key;
 
-    expect(message).to.exist;
+      var message = openpgp.message.fromText('hello world');
+      message = message.sign([key]);
+
+      expect(message).to.exist;
+      done();
+    });
   });
 
 });

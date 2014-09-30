@@ -224,24 +224,28 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param  {function} callback (optional) callback(error, result) for async style
+ * @param  {function} callback(error, result) The required callback
  * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
 function generateKeyPair(options, callback) {
-  if (useWorker(callback)) {
+  if (!callback) {
+    throw new Error('Callback must be set for key generation!');
+  }
+
+  // use web worker if web crypto apis are not supported
+  if (!useWebCrypto() && useWorker(callback)) {
     asyncProxy.generateKeyPair(options, callback);
     return;
   }
 
-  return execute(function() {
+  key.generate(options, function(err, newKey) {
     var result = {};
-    var newKey = key.generate(options);
     result.key = newKey;
     result.privateKeyArmored = newKey.armor();
     result.publicKeyArmored = newKey.toPublic().armor();
-    return result;
-  }, callback);
+    callback(null, result);
+  });
 }
 
 //
@@ -257,10 +261,18 @@ function useWorker(callback) {
   }
 
   if (!asyncProxy) {
-    throw new Error('You need to set the worker path!');
+    console.log('You need to set the worker path!');
+    return false;
   }
 
   return true;
+}
+
+/**
+ * Check for WebCrypto support
+ */
+function useWebCrypto() {
+  return typeof window !== 'undefined' && window.crypto && (window.crypto.subtle || window.crypto.webkitSubtle);
 }
 
 /**

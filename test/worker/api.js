@@ -427,14 +427,6 @@ describe('High level API', function() {
       });
     });
 
-    it('Generate 1024-bit RSA/RSA key sync', function () {
-      var key = openpgp.generateKeyPair({numBits: 1024, userId: 'Test McTestington <test@example.com>', passphrase: 'hello world'});
-      expect(key).to.exist;
-      expect(key.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
-      expect(key.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
-      expect(key.key).to.be.an.instanceof(openpgp.key.Key);
-    });
-
   });
 
   describe('Decrypt secret key', function() {

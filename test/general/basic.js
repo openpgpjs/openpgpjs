@@ -8,57 +8,61 @@ var chai = require('chai'),
 describe('Basic', function() {
 
   describe("Key generation/encryption/decryption", function() {
-    var testHelper = function(passphrase, userid, message) {
-      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
-      expect(key).to.exist;
-      expect(key.key).to.exist;
-      expect(key.privateKeyArmored).to.exist;
-      expect(key.publicKeyArmored).to.exist;
+    var testHelper = function(passphrase, userid, message, done) {
+      var opt = {numBits: 512, userId: userid, passphrase: passphrase};
+      openpgp.generateKeyPair(opt, function(err, key) {
+        expect(err).to.not.exist;
 
-      var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
+        expect(key).to.exist;
+        expect(key.key).to.exist;
+        expect(key.privateKeyArmored).to.exist;
+        expect(key.publicKeyArmored).to.exist;
 
-      var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
-      var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
+        var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
 
-      expect(privKeys).to.exist;
-      expect(privKeys.err).to.not.exist;
-      expect(privKeys.keys).to.have.length(1);
+        var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
+        var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
 
-      var privKey = privKeys.keys[0];
-      var pubKey = publicKeys.keys[0];
+        expect(privKeys).to.exist;
+        expect(privKeys.err).to.not.exist;
+        expect(privKeys.keys).to.have.length(1);
 
-      expect(privKey).to.exist;
-      expect(pubKey).to.exist;
+        var privKey = privKeys.keys[0];
+        var pubKey = publicKeys.keys[0];
 
-      var success = privKey.decrypt(passphrase);
+        expect(privKey).to.exist;
+        expect(pubKey).to.exist;
 
-      expect(success).to.be.true;
+        var success = privKey.decrypt(passphrase);
 
-      var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
+        expect(success).to.be.true;
 
-      expect(encrypted).to.exist;
+        var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
 
-      var msg = openpgp.message.readArmored(encrypted);
+        expect(encrypted).to.exist;
 
-      expect(msg).to.exist;
+        var msg = openpgp.message.readArmored(encrypted);
 
-      var keyids = msg.getEncryptionKeyIds();
+        expect(msg).to.exist;
 
-      expect(keyids).to.exist;
+        var keyids = msg.getEncryptionKeyIds();
 
-      var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
-      expect(decrypted).to.exist;
-      expect(decrypted.signatures[0].valid).to.be.true;
-      expect(decrypted.text).to.equal(message);
+        expect(keyids).to.exist;
+
+        var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
+        expect(decrypted).to.exist;
+        expect(decrypted.signatures[0].valid).to.be.true;
+        expect(decrypted.text).to.equal(message);
+
+        done();
+      });
     };
 
     it('ASCII Text', function (done) {
-      testHelper('password', 'Test McTestington <test@example.com>', 'hello world');
-      done();
+      testHelper('password', 'Test McTestington <test@example.com>', 'hello world', done);
     });
     it('Unicode Text', function (done) {
-      testHelper('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć');
-      done();
+      testHelper('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć', done);
     });
 
     it('should fail to verify signature for wrong public key', function (done) {
@@ -66,29 +70,35 @@ describe('Basic', function() {
       var passphrase = 'password';
       var message = 'hello world';
 
-      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
+      var opt = {numBits: 512, userId: userid, passphrase: passphrase};
+      openpgp.generateKeyPair(opt, function(err, key) {
+        expect(err).to.not.exist;
 
-      var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
-      var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
+        var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
+        var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
 
-      var privKey = privKeys.keys[0];
-      var pubKey = publicKeys.keys[0];
+        var privKey = privKeys.keys[0];
+        var pubKey = publicKeys.keys[0];
 
-      var success = privKey.decrypt(passphrase);
+        var success = privKey.decrypt(passphrase);
 
-      var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
+        var encrypted = openpgp.signAndEncryptMessage([pubKey], privKey, message);
 
-      var msg = openpgp.message.readArmored(encrypted);
-      expect(msg).to.exist;
+        var msg = openpgp.message.readArmored(encrypted);
+        expect(msg).to.exist;
 
-      var anotherKey = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
-      var anotherPubKey = openpgp.key.readArmored(anotherKey.publicKeyArmored).keys[0];
+        openpgp.generateKeyPair(opt, function(err, anotherKey) {
+          expect(err).to.not.exist;
 
-      var decrypted = openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
-      expect(decrypted).to.exist;
-      expect(decrypted.signatures[0].valid).to.be.null;
-      expect(decrypted.text).to.equal(message);
-      done();
+          var anotherPubKey = openpgp.key.readArmored(anotherKey.publicKeyArmored).keys[0];
+
+          var decrypted = openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
+          expect(decrypted).to.exist;
+          expect(decrypted.signatures[0].valid).to.be.null;
+          expect(decrypted.text).to.equal(message);
+          done();
+        });
+      });
     });
 
     it('Performance test', function (done) {
@@ -103,46 +113,49 @@ describe('Basic', function() {
       var userid = 'Test McTestington <test@example.com>';
       var passphrase = 'password';
 
-      var key = openpgp.generateKeyPair({numBits: 512, userId: userid, passphrase: passphrase});
+      var opt = {numBits: 512, userId: userid, passphrase: passphrase};
+      openpgp.generateKeyPair(opt, function(err, key) {
+        expect(err).to.not.exist;
 
-      var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
+        var info = '\npassphrase: ' + passphrase + '\n' + 'userid: ' + userid + '\n' + 'message: ' + message;
 
-      var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
-      var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
+        var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
+        var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
 
-      var privKey = privKeys.keys[0];
-      var pubKey = publicKeys.keys[0];
+        var privKey = privKeys.keys[0];
+        var pubKey = publicKeys.keys[0];
 
-      var success = privKey.decrypt(passphrase);
+        var success = privKey.decrypt(passphrase);
 
-      if (console.profile) {
-        console.profile("encrypt/sign/verify/decrypt");
-      }
+        if (console.profile) {
+          console.profile("encrypt/sign/verify/decrypt");
+        }
 
-      // sign and encrypt
-      var msg, encrypted;
-      msg = openpgp.message.fromBinary(message);
-      msg = msg.sign([privKey]);
-      msg = msg.encrypt([pubKey]);
-      encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
+        // sign and encrypt
+        var msg, encrypted;
+        msg = openpgp.message.fromBinary(message);
+        msg = msg.sign([privKey]);
+        msg = msg.encrypt([pubKey]);
+        encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
 
-      if (console.profileEnd) {
-        console.profileEnd();
-      }
+        if (console.profileEnd) {
+          console.profileEnd();
+        }
 
-      msg = openpgp.message.readArmored(encrypted);
+        msg = openpgp.message.readArmored(encrypted);
 
-      var keyids = msg.getEncryptionKeyIds();
+        var keyids = msg.getEncryptionKeyIds();
 
-      expect(keyids).to.exist;
+        expect(keyids).to.exist;
 
-      var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
+        var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
 
-      expect(decrypted).to.exist;
-      expect(decrypted.signatures[0].valid).to.be.true;
-      expect(decrypted.text).to.equal(message);
+        expect(decrypted).to.exist;
+        expect(decrypted.signatures[0].valid).to.be.true;
+        expect(decrypted.text).to.equal(message);
 
-      done();
+        done();
+      });
     });
   });
 

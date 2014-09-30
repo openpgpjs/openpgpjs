@@ -1,6 +1,6 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
@@ -10,7 +10,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,7 +25,7 @@ var MAX_SIZE_RANDOM_BUFFER = 60000;
 window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
 onmessage = function (event) {
-  var data = null, 
+  var data = null,
       err = null,
       msg = event.data,
       correct = false;
@@ -101,7 +101,7 @@ onmessage = function (event) {
         }
         msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
         var packetlist = window.openpgp.packet.List.fromStructuredClone(msg.message.packets);
-        msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist); 
+        msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist);
         data = window.openpgp.verifyClearSignedMessage(msg.publicKeys, msg.message);
       } catch (e) {
         err = e.message;
@@ -110,12 +110,20 @@ onmessage = function (event) {
       break;
     case 'generate-key-pair':
       try {
-        data = window.openpgp.generateKeyPair(msg.options);
-        data.key = data.key.toPacketlist();
+        window.openpgp.generateKeyPair(msg.options, function(error, data) {
+          if (error) {
+            err = error.message;
+            response({event: 'method-return', data: data, err: err});
+            return;
+          }
+
+          data.key = data.key.toPacketlist();
+          response({event: 'method-return', data: data, err: err});
+        });
       } catch (e) {
         err = e.message;
+        response({event: 'method-return', data: data, err: err});
       }
-      response({event: 'method-return', data: data, err: err});
       break;
     case 'decrypt-key':
       try {
