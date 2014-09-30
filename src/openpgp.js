@@ -240,6 +240,11 @@ function generateKeyPair(options, callback) {
   }
 
   key.generate(options, function(err, newKey) {
+    if (err) {
+      callback(err);
+      return;
+    }
+
     var result = {};
     result.key = newKey;
     result.privateKeyArmored = newKey.armor();

@@ -140,12 +140,15 @@ function RSA() {
     //
 
     if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
+      var Eunit8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
+
       var keyGenOpt = {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: B, // the specified keysize in bits
-        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),  // Equivalent to 65537, TODO: use provided argument E
+        publicExponent: Eunit8.subarray(0, 3), // take three bytes (max 65537)
         hash: {
-          name: 'SHA-256' // not required for actual RSA keys, but for crypto api 'sign' and 'verifiy'
+          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verifiy'
         }
       };
 
@@ -171,15 +174,17 @@ function RSA() {
     function onExported(jwk) {
       // map JWK parameters to local BigInteger type system
       var key = new keyObject();
-      key.n = new BigInteger(util.hexstrdump(base64(jwk.n)), 16);
+      key.n = toBigInteger(jwk.n);
       key.ee = new BigInteger(E, 16);
-      key.d = new BigInteger(util.hexstrdump(base64(jwk.d)), 16);
-      key.p = new BigInteger(util.hexstrdump(base64(jwk.p)), 16);
-      key.q = new BigInteger(util.hexstrdump(base64(jwk.q)), 16);
+      key.d = toBigInteger(jwk.d);
+      key.p = toBigInteger(jwk.p);
+      key.q = toBigInteger(jwk.q);
       key.u = key.p.modInverse(key.q);
 
-      function base64(base64url) {
-        return base64url.replace(/-/g, '+').replace(/_/g, '/');
+      function toBigInteger(base64url) {
+        var base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
+        var hex = util.hexstrdump(atob(base64));
+        return new BigInteger(hex, 16);
       }
 
       callback(null, key);
