@@ -139,9 +139,7 @@ function RSA() {
     // Native RSA keygen using Web Crypto
     //
 
-    if (false && typeof window !== 'undefined' && window.crypto && (window.crypto.subtle || window.crypto.webkitSubtle)) {
-      var subtle = window.crypto.subtle || window.crypto.webkitSubtle;
-
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
       var keyGenOpt = {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: B, // the specified keysize in bits
@@ -153,17 +151,21 @@ function RSA() {
 
       var extractable = true; // make generated key extractable
 
-      subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
-        .then(onGenerated, callback)
-        .then(onExported, callback);
+      window.crypto.subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
+        .then(onGenerated, onError)
+        .then(onExported, onError);
 
       return;
+    }
+
+    function onError() {
+      callback(new Error('Generating key failed!'));
     }
 
     function onGenerated(key) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      return subtle.exportKey('jwk', key.privateKey);
+      return window.crypto.subtle.exportKey('jwk', key.privateKey);
     }
 
     function onExported(jwk) {

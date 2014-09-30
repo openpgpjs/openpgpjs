@@ -272,7 +272,7 @@ function useWorker(callback) {
  * Check for WebCrypto support
  */
 function useWebCrypto() {
-  return typeof window !== 'undefined' && window.crypto && (window.crypto.subtle || window.crypto.webkitSubtle);
+  return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
 }
 
 /**
