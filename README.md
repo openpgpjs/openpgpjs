@@ -72,7 +72,7 @@ You want to help, great! Go ahead and fork our repo, make your changes and send 
 
 ### License
 
-GNU Lesser General Public License (2.1). Please take a look at the [LICENSE](LICENSE) file for more information.
+GNU Lesser General Public License (3.0 or any later version). Please take a look at the [LICENSE](LICENSE) file for more information.
 
 ### Resources
 
