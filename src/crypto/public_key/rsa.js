@@ -134,12 +134,13 @@ function RSA() {
   // Generate a new random private key B bits long, using public expt E
 
   function generate(B, E, callback) {
+    var webCrypto = util.getWebCrypto();
 
     //
     // Native RSA keygen using Web Crypto
     //
 
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    if (webCrypto) {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
 
@@ -152,7 +153,7 @@ function RSA() {
         }
       };
 
-      var gen = window.crypto.subtle.generateKey(keyGenOpt, true, ['sign', 'verify']);
+      var gen = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
       gen.then(exportKey).then(decodeKey).catch(onError);
 
       return;
@@ -161,7 +162,7 @@ function RSA() {
     function exportKey(key) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      return window.crypto.subtle.exportKey('jwk', key.privateKey);
+      return webCrypto.exportKey('jwk', key.privateKey);
     }
 
     function decodeKey(jwk) {

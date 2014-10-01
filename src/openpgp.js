@@ -38,6 +38,7 @@ var armor = require('./encoding/armor.js'),
   message = require('./message.js'),
   cleartext = require('./cleartext.js'),
   key = require('./key.js'),
+  util = require('./util'),
   AsyncProxy = require('./worker/async_proxy.js');
 
 var asyncProxy; // instance of the asyncproxy
@@ -234,7 +235,7 @@ function generateKeyPair(options, callback) {
   }
 
   // use web worker if web crypto apis are not supported
-  if (!useWebCrypto() && useWorker(callback)) {
+  if (!util.getWebCrypto() && useWorker(callback)) {
     asyncProxy.generateKeyPair(options, callback);
     return;
   }
@@ -271,13 +272,6 @@ function useWorker(callback) {
   }
 
   return true;
-}
-
-/**
- * Check for WebCrypto support
- */
-function useWebCrypto() {
-  return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
 }
 
 /**
