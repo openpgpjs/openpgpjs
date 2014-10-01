@@ -227,8 +227,8 @@ module.exports = {
             mypos2 += tmplen;
           } else {
             mypos2++;
-            tmplen = (input.charCodeAt(mypos2++) << 24) | (input.charCodeAt(mypos2++) << 16) | (input[mypos2++]
-              .charCodeAt() << 8) | input.charCodeAt(mypos2++);
+            tmplen = (input.charCodeAt(mypos2++) << 24) | (input.charCodeAt(mypos2++) << 16) | (input
+              .charCodeAt(mypos2++) << 8) | input.charCodeAt(mypos2++);
             bodydata += input.substring(mypos2, mypos2 + tmplen);
             packet_length += tmplen;
             mypos2 += tmplen;
