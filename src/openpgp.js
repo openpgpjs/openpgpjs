@@ -239,8 +239,8 @@ function generateKeyPair(options) {
 /**
  * Are we in a browser and do we support worker?
  */
-function useWorker(callback) {
-  if (typeof window === 'undefined' || !window.Worker || typeof callback !== 'function') {
+function useWorker() {
+  if (typeof window === 'undefined' || !window.Worker) {
     return false;
   }
 
