@@ -635,8 +635,7 @@ var pgp_desktop_priv =
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
     };
     var opt = {numBits: 512, userId: 'test', passphrase: 'hello'};
-    openpgp.generateKeyPair(opt, function(err, key) {
-      expect(err).to.not.exist;
+    openpgp.generateKeyPair(opt).then(function(key) {
       testPref(key.key);
       testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
       done();
@@ -659,8 +658,7 @@ var pgp_desktop_priv =
 
   it('Generated key is not unlocked by default', function(done) {
     var opt = {numBits: 512, userId: 'test', passphrase: '123'};
-    openpgp.generateKeyPair(opt, function(err, key) {
-      expect(err).to.not.exist;
+    openpgp.generateKeyPair(opt).then(function(key) {
       var msg = openpgp.message.fromText('hello').encrypt([key.key]);
       msg = msg.decrypt.bind(msg, key.key);
       expect(msg).to.throw('Private key is not decrypted.');

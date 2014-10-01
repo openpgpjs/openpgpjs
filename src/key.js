@@ -23,6 +23,8 @@
  * @module key
  */
 
+'use strict';
+
 var packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),

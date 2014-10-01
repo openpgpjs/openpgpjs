@@ -38,7 +38,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'openpgp', 'crypto', 'node-localstorage' ]
+          external: [ 'openpgp', 'crypto', 'node-localstorage', 'es6-promise']
         }
       }
     },
@@ -116,7 +116,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
-        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js'],
+        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'es6-promise/dist/promise*.js'],
         dest: 'test/lib/'
       }
     },

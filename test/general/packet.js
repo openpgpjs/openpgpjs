@@ -119,15 +119,13 @@ describe("Packet", function() {
   it('Public key encrypted symmetric key packet', function(done) {
     var rsa = new openpgp.crypto.publicKey.rsa();
 
-    rsa.generate(512, "10001", function(error, mpiGen) {
-      expect(error).to.not.exist;
+    rsa.generate(512, "10001").then(function(mpiGen) {
 
       var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-
       mpi = mpi.map(function(k) {
-              var mpi = new openpgp.MPI();
-              mpi.fromBigInteger(k);
-              return mpi;
+        var mpi = new openpgp.MPI();
+        mpi.fromBigInteger(k);
+        return mpi;
       });
 
       var enc = new openpgp.packet.PublicKeyEncryptedSessionKey(),
@@ -380,50 +378,44 @@ describe("Packet", function() {
 
   it('Writing and encryption of a secret key packet.', function(done) {
     var key = new openpgp.packet.List();
-    key.push(new openpgp.packet.SecretKey);
+    key.push(new openpgp.packet.SecretKey());
 
     var rsa = new openpgp.crypto.publicKey.rsa();
 
-    rsa.generate(512, "10001", function(err, mipGen) {
-        expect(err).to.not.exist;
+    rsa.generate(512, "10001").then(function(mipGen) {
+      var mpi = [mipGen.n, mipGen.ee, mipGen.d, mipGen.p, mipGen.q, mipGen.u];
+      mpi = mpi.map(function(k) {
+        var mpi = new openpgp.MPI();
+        mpi.fromBigInteger(k);
+        return mpi;
+      });
 
-        var mpi = [mipGen.n, mipGen.ee, mipGen.d, mipGen.p, mipGen.q, mipGen.u];
+      key[0].mpi = mpi;
 
-        mpi = mpi.map(function(k) {
-                var mpi = new openpgp.MPI();
-                mpi.fromBigInteger(k);
-                return mpi;
-        });
+      key[0].encrypt('hello');
 
-        key[0].mpi = mpi;
+      var raw = key.write();
 
-        key[0].encrypt('hello');
+      var key2 = new openpgp.packet.List();
+      key2.read(raw);
+      key2[0].decrypt('hello');
 
-        var raw = key.write();
-
-        var key2 = new openpgp.packet.List();
-        key2.read(raw);
-        key2[0].decrypt('hello');
-
-        expect(key[0].mpi.toString()).to.equal(key2[0].mpi.toString());
-        done();
+      expect(key[0].mpi.toString()).to.equal(key2[0].mpi.toString());
+      done();
     });
   });
 
   it('Writing and verification of a signature packet.', function(done) {
     var key = new openpgp.packet.SecretKey();
 
-    var rsa = new openpgp.crypto.publicKey.rsa;
+    var rsa = new openpgp.crypto.publicKey.rsa();
 
-    rsa.generate(512, "10001", function(err, mpiGen) {
-        expect(err).to.not.exist;
-
+    rsa.generate(512, "10001").then(function(mpiGen) {
         var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-
         mpi = mpi.map(function(k) {
-                var mpi = new openpgp.MPI();
-                mpi.fromBigInteger(k);
-                return mpi;
+          var mpi = new openpgp.MPI();
+          mpi.fromBigInteger(k);
+          return mpi;
         });
 
         key.mpi = mpi;

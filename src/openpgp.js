@@ -31,10 +31,10 @@
  * @module openpgp
  */
 
+'use strict';
+
 var armor = require('./encoding/armor.js'),
-  packet = require('./packet'),
   enums = require('./enums.js'),
-  config = require('./config'),
   message = require('./message.js'),
   cleartext = require('./cleartext.js'),
   key = require('./key.js'),
@@ -55,18 +55,16 @@ function initWorker(path) {
  * Encrypts message text with keys
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {String}      encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text, callback) {
+function encryptMessage(keys, text) {
   if (!keys.length) {
     keys = [keys];
   }
 
-  if (useWorker(callback)) {
-    asyncProxy.encryptMessage(keys, text, callback);
-    return;
+  if (useWorker()) {
+    return asyncProxy.encryptMessage(keys, text);
   }
 
   return execute(function() {
@@ -75,7 +73,7 @@ function encryptMessage(keys, text, callback) {
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
-  }, callback);
+  });
 }
 
 /**
@@ -83,18 +81,16 @@ function encryptMessage(keys, text, callback) {
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {String}            encrypted ASCII armored message
  * @static
  */
-function signAndEncryptMessage(publicKeys, privateKey, text, callback) {
+function signAndEncryptMessage(publicKeys, privateKey, text) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker(callback)) {
-    asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text, callback);
-    return;
+  if (useWorker()) {
+    return asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text);
   }
 
   return execute(function() {
@@ -104,28 +100,26 @@ function signAndEncryptMessage(publicKeys, privateKey, text, callback) {
     msg = msg.encrypt(publicKeys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
-  }, callback);
+  });
 }
 
 /**
  * Decrypts message
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {module:message~Message} msg    the message object with the encrypted data
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {(String|null)}        decrypted message as as native JavaScript string
  *                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg, callback) {
-  if (useWorker(callback)) {
-    asyncProxy.decryptMessage(privateKey, msg, callback);
-    return;
+function decryptMessage(privateKey, msg) {
+  if (useWorker()) {
+    return asyncProxy.decryptMessage(privateKey, msg);
   }
 
   return execute(function() {
     msg = msg.decrypt(privateKey);
     return msg.getText();
-  }, callback);
+  });
 }
 
 /**
@@ -133,20 +127,18 @@ function decryptMessage(privateKey, msg, callback) {
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:message~Message} msg    the message object with signed and encrypted data
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
  * @static
  */
-function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
+function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker(callback)) {
-    asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg, callback);
-    return;
+  if (useWorker()) {
+    return asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg);
   }
 
   return execute(function() {
@@ -158,51 +150,47 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg, callback) {
       return result;
     }
     return null;
-  }, callback);
+  });
 }
 
 /**
  * Signs a cleartext message
  * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {String}             ASCII armored message
  * @static
  */
-function signClearMessage(privateKeys, text, callback) {
+function signClearMessage(privateKeys, text) {
   if (!privateKeys.length) {
     privateKeys = [privateKeys];
   }
 
-  if (useWorker(callback)) {
-    asyncProxy.signClearMessage(privateKeys, text, callback);
-    return;
+  if (useWorker()) {
+    return asyncProxy.signClearMessage(privateKeys, text);
   }
 
   return execute(function() {
     var cleartextMessage = new cleartext.CleartextMessage(text);
     cleartextMessage.sign(privateKeys);
     return cleartextMessage.armor();
-  }, callback);
+  });
 }
 
 /**
  * Verifies signatures of cleartext signed message
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:cleartext~CleartextMessage} msg    cleartext message object with signatures
- * @param  {function} callback (optional) callback(error, result) for async style
  * @return {{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
  *                                       cleartext with status of verified signatures
  * @static
  */
-function verifyClearSignedMessage(publicKeys, msg, callback) {
+function verifyClearSignedMessage(publicKeys, msg) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker(callback)) {
-    asyncProxy.verifyClearSignedMessage(publicKeys, msg, callback);
-    return;
+  if (useWorker()) {
+    return asyncProxy.verifyClearSignedMessage(publicKeys, msg);
   }
 
   return execute(function() {
@@ -213,7 +201,7 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
     result.text = msg.getText();
     result.signatures = msg.verify(publicKeys);
     return result;
-  }, callback);
+  });
 }
 
 /**
@@ -225,15 +213,13 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param  {function} callback(error, result) The required callback
  * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
 function generateKeyPair(options) {
   // use web worker if web crypto apis are not supported
   if (!util.getWebCrypto() && useWorker()) {
-    asyncProxy.generateKeyPair(options);
-    return;
+    return asyncProxy.generateKeyPair(options);
   }
 
   return key.generate(options).then(function(newKey) {
@@ -243,10 +229,7 @@ function generateKeyPair(options) {
     result.publicKeyArmored = newKey.toPublic().armor();
     return result;
 
-  }).catch(function(err) {
-    console.error(err.stack);
-    throw new Error('Error generating keypair!');
-  });
+  }).catch(onError.bind(null, 'Error generating keypair!'));
 }
 
 //
@@ -270,28 +253,36 @@ function useWorker(callback) {
 }
 
 /**
- * Command pattern that handles async calls gracefully
+ * Command pattern that wraps synchronous code into a promise
+ * @param  {function} cmd     The synchronous function with a return value
+ *                            to be wrapped in a promise
+ * @param  {String}   errMsg  A human readable error Message
+ * @return {Promise}          The promise wrapped around cmd
  */
-function execute(cmd, callback) {
-  var result;
+function execute(cmd, errMsg) {
+  // wrap the sync cmd in a promise
+  var promise = new Promise(function(resolve) {
+    var result = cmd();
+    resolve(result);
+  });
 
-  try {
-    result = cmd();
-  } catch (err) {
-    if (callback) {
-      callback(err);
-      return;
-    }
+  // handler error globally
+  promise.catch(onError.bind(null, errMsg));
 
-    throw err;
-  }
+  return promise;
+}
 
-  if (callback) {
-    callback(null, result);
-    return;
-  }
-
-  return result;
+/**
+ * Global error handler that logs the stack trace and
+ *   rethrows a high lvl error message
+ * @param  {String} message   A human readable high level error Message
+ * @param  {Error}  error     The internal error that caused the failure
+ */
+function onError(message, error) {
+  // log the stack trace
+  console.error(error.stack);
+  // rethrow new high level error for api users
+  throw new Error(message);
 }
 
 exports.initWorker = initWorker;

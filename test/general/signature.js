@@ -262,10 +262,11 @@ describe("Signature", function() {
     var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
     var msg = openpgp.message.readArmored(msg_arm1);
     priv_key.decrypt("abcd");
-    var decrypted = openpgp.decryptAndVerifyMessage(priv_key, [pub_key], msg);
-    expect(decrypted).to.exist;
-    expect(decrypted.signatures[0].valid).to.be.true;
-    done();
+    openpgp.decryptAndVerifyMessage(priv_key, [pub_key], msg).then(function(decrypted) {
+      expect(decrypted).to.exist;
+      expect(decrypted.signatures[0].valid).to.be.true;
+      done();
+    });
   });
 
   it('Testing GnuPG stripped-key extensions', function(done) {
@@ -383,13 +384,13 @@ describe("Signature", function() {
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
 
-    var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
-
-    expect(decrypted).to.exist;
-    expect(decrypted.text).to.equal(plaintext);
-    expect(decrypted.signatures).to.have.length(1);
-    expect(decrypted.signatures[0].valid).to.be.true;
-    done();
+    openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg).then(function(decrypted) {
+      expect(decrypted).to.exist;
+      expect(decrypted.text).to.equal(plaintext);
+      expect(decrypted.signatures).to.have.length(1);
+      expect(decrypted.signatures[0].valid).to.be.true;
+      done();
+    });
   });
 
   it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decryptAndVerifyMessage', function(done) {
@@ -419,13 +420,14 @@ describe("Signature", function() {
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
 
-    var decrypted = openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg);
+    openpgp.decryptAndVerifyMessage(privKey, [pubKey], esMsg).then(function(decrypted) {
+      expect(decrypted).to.exist;
+      expect(decrypted.text).to.equal(plaintext);
+      expect(decrypted.signatures).to.have.length(1);
+      expect(decrypted.signatures[0].valid).to.be.true;
+      done();
+    });
 
-    expect(decrypted).to.exist;
-    expect(decrypted.text).to.equal(plaintext);
-    expect(decrypted.signatures).to.have.length(1);
-    expect(decrypted.signatures[0].valid).to.be.true;
-    done();
   });
 
   it('Verify signed message with two one pass signatures', function(done) {
@@ -504,14 +506,14 @@ describe("Signature", function() {
     expect(pubKey2.getKeyPacket(keyids)).to.exist;
     expect(pubKey3.getKeyPacket(keyids)).to.exist;
 
-    var cleartextSig = openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg);
-
-    expect(cleartextSig).to.exist;
-    expect(cleartextSig.text).to.equal(plaintext);
-    expect(cleartextSig.signatures).to.have.length(2);
-    expect(cleartextSig.signatures[0].valid).to.be.true;
-    expect(cleartextSig.signatures[1].valid).to.be.true;
-    done();
+    openpgp.verifyClearSignedMessage([pubKey2, pubKey3], csMsg).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.text).to.equal(plaintext);
+      expect(cleartextSig.signatures).to.have.length(2);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[1].valid).to.be.true;
+      done();
+    });
   });
 
   it('Sign text with openpgp.signClearMessage and verify with openpgp.verifyClearSignedMessage leads to same cleartext and valid signatures', function(done) {
@@ -520,17 +522,19 @@ describe("Signature", function() {
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey.getSigningKeyPacket().decrypt('hello world');
 
-    var clearSignedArmor = openpgp.signClearMessage([privKey], plaintext);
+    openpgp.signClearMessage([privKey], plaintext).then(function(clearSignedArmor) {
 
-    var csMsg = openpgp.cleartext.readArmored(clearSignedArmor);
+      var csMsg = openpgp.cleartext.readArmored(clearSignedArmor);
+      return openpgp.verifyClearSignedMessage([pubKey], csMsg);
 
-    var cleartextSig = openpgp.verifyClearSignedMessage([pubKey], csMsg);
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.text).to.equal(plaintext.replace(/\r/g,''));
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      done();
+    });
 
-    expect(cleartextSig).to.exist;
-    expect(cleartextSig.text).to.equal(plaintext.replace(/\r/g,''));
-    expect(cleartextSig.signatures).to.have.length(1);
-    expect(cleartextSig.signatures[0].valid).to.be.true;
-    done();
   });
 
   it('Verify primary key revocation signature', function(done) {
@@ -638,9 +642,7 @@ describe("Signature", function() {
 
   it('Sign message with key without password', function(done) {
     var opt = {numBits: 512, userId: 'ABC', passphrase: null};
-    openpgp.generateKeyPair(opt, function(err, gen) {
-      expect(err).to.not.exist;
-
+    openpgp.generateKeyPair(opt).then(function(gen) {
       var key = gen.key;
 
       var message = openpgp.message.fromText('hello world');

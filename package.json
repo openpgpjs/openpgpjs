@@ -29,6 +29,7 @@
   "devDependencies": {
     "browserify": "~2.35",
     "chai": "~1.8.1",
+    "es6-promise": "1.0.0",
     "grunt": "~0.4.2",
     "grunt-browserify": "~1.2.11",
     "grunt-cli": "~0.1.13",

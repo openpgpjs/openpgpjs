@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,6 +23,8 @@
  * @requires packet
  * @module message
  */
+
+'use strict';
 
 var packet = require('./packet'),
   enums = require('./enums.js'),
@@ -83,7 +85,7 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message
- * @param {module:key~Key} privateKey private key with decrypted secret data           
+ * @param {module:key~Key} privateKey private key with decrypted secret data
  * @return {Array<module:message~Message>} new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey) {
@@ -186,7 +188,7 @@ Message.prototype.sign = function(privateKeys) {
 
   var literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) throw new Error('No literal data packet to sign.');
-  
+
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat == enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
@@ -206,7 +208,7 @@ Message.prototype.sign = function(privateKeys) {
   }
 
   packetlist.push(literalDataPacket);
-  
+
   for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
