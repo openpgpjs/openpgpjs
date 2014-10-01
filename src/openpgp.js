@@ -73,7 +73,8 @@ function encryptMessage(keys, text) {
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
-  });
+
+  }).catch(onError.bind(null, 'Error encrypting message!'));
 }
 
 /**
@@ -100,7 +101,8 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
     msg = msg.encrypt(publicKeys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
-  });
+
+  }).catch(onError.bind(null, 'Error signing and encrypting message!'));
 }
 
 /**
@@ -119,7 +121,8 @@ function decryptMessage(privateKey, msg) {
   return execute(function() {
     msg = msg.decrypt(privateKey);
     return msg.getText();
-  });
+
+  }).catch(onError.bind(null, 'Error decrypting message!'));
 }
 
 /**
@@ -150,7 +153,8 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
       return result;
     }
     return null;
-  });
+
+  }).catch(onError.bind(null, 'Error decrypting and verifying message!'));
 }
 
 /**
@@ -173,7 +177,8 @@ function signClearMessage(privateKeys, text) {
     var cleartextMessage = new cleartext.CleartextMessage(text);
     cleartextMessage.sign(privateKeys);
     return cleartextMessage.armor();
-  });
+
+  }).catch(onError.bind(null, 'Error signing cleartext message!'));
 }
 
 /**
@@ -201,7 +206,8 @@ function verifyClearSignedMessage(publicKeys, msg) {
     result.text = msg.getText();
     result.signatures = msg.verify(publicKeys);
     return result;
-  });
+
+  }).catch(onError.bind(null, 'Error verifying cleartext signed message!'));
 }
 
 /**

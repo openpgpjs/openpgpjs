@@ -348,7 +348,7 @@ describe('High level API', function() {
     it('Signing with not decrypted key gives error', function (done) {
       openpgp.signClearMessage([privKeyRSA], plaintext).catch(function(err) {
         expect(err).to.exist;
-        expect(err.message).to.equal('Private key is not decrypted.');
+        expect(err.message).to.equal('Error signing cleartext message!');
         done();
       });
     });
