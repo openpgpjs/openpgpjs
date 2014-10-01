@@ -17,6 +17,32 @@
 
 window = {}; // to make UMD bundles work
 
+// Mozilla bind polyfill because phantomjs is stupid
+if (!Function.prototype.bind) {
+  Function.prototype.bind = function(oThis) {
+    if (typeof this !== "function") {
+      // closest thing possible to the ECMAScript 5 internal IsCallable function
+      throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+    }
+
+    var aArgs = Array.prototype.slice.call(arguments, 1),
+        fToBind = this,
+        FNOP = function() {},
+        fBound = function() {
+          return fToBind.apply(this instanceof FNOP && oThis ? this : oThis, aArgs.concat(Array.prototype.slice.call(arguments)));
+        };
+
+    FNOP.prototype = this.prototype;
+    fBound.prototype = new FNOP();
+
+    return fBound;
+  };
+}
+
+if (typeof Promise === 'undefined') {
+  // promises polyfill
+  importScripts('promise-1.0.0.js');
+}
 importScripts('openpgp.js');
 
 var MIN_SIZE_RANDOM_BUFFER = 40000;

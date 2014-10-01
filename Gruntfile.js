@@ -118,6 +118,13 @@ module.exports = function(grunt) {
         cwd: 'node_modules/',
         src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'es6-promise/dist/promise*.js'],
         dest: 'test/lib/'
+      },
+      polyfill: {
+        expand: true,
+        flatten: true,
+        cwd: 'node_modules/',
+        src: ['es6-promise/dist/promise*.js'],
+        dest: 'dist/'
       }
     },
     clean: ['dist/'],
