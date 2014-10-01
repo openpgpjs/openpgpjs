@@ -38,7 +38,9 @@ OpenPGP.js uses ES6 promises which are available in [most modern browsers](http:
     var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
     var publicKey = openpgp.key.readArmored(key);
     openpgp.encryptMessage(publicKey.keys, 'Hello, World!').then(function(pgpMessage) {
-        ...
+        // success
+    }).catch(function(error) {
+        // failure
     });
 
 #### Decryption
@@ -50,7 +52,9 @@ OpenPGP.js uses ES6 promises which are available in [most modern browsers](http:
     var pgpMessage = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
     pgpMessage = openpgp.message.readArmored(pgpMessage);
     openpgp.decryptMessage(privateKey, pgpMessage).then(function(plaintext) {
-        ...
+        // success
+    }).catch(function(error) {
+        // failure
     });
 
 
