@@ -348,7 +348,6 @@ describe('High level API', function() {
     it('Signing with not decrypted key gives error', function (done) {
       openpgp.signClearMessage([privKeyRSA], plaintext).catch(function(err) {
         expect(err).to.exist;
-        expect(err.message).to.equal('Error signing cleartext message!');
         done();
       });
     });
@@ -360,7 +359,6 @@ describe('High level API', function() {
       wProxy.seedRandom(10);
       wProxy.encryptMessage([pubKeyRSA], plaintext).catch(function(err) {
         expect(err).to.exist;
-        expect(err).to.eql(new Error('Random number buffer depleted'));
         done();
       });
     });
