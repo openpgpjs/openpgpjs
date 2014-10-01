@@ -152,26 +152,19 @@ function RSA() {
         }
       };
 
-      var extractable = true; // make generated key extractable
-
-      window.crypto.subtle.generateKey(keyGenOpt, extractable, ['sign', 'verify'])
-        .then(onGenerated, onError)
-        .then(onExported, onError);
+      var gen = window.crypto.subtle.generateKey(keyGenOpt, true, ['sign', 'verify']);
+      gen.then(exportKey).then(decodeKey).catch(onError);
 
       return;
     }
 
-    function onError() {
-      callback(new Error('Generating key failed!'));
-    }
-
-    function onGenerated(key) {
+    function exportKey(key) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
       return window.crypto.subtle.exportKey('jwk', key.privateKey);
     }
 
-    function onExported(jwk) {
+    function decodeKey(jwk) {
       // map JWK parameters to local BigInteger type system
       var key = new keyObject();
       key.n = toBigInteger(jwk.n);
@@ -188,6 +181,10 @@ function RSA() {
       }
 
       callback(null, key);
+    }
+
+    function onError() {
+      callback(new Error('Generating key failed!'));
     }
 
     //
