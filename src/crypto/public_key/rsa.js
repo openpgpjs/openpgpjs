@@ -141,14 +141,14 @@ function RSA() {
 
     if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
-      var Eunit8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
+      var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
 
       var keyGenOpt = {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: B, // the specified keysize in bits
-        publicExponent: Eunit8.subarray(0, 3), // take three bytes (max 65537)
+        publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
         hash: {
-          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verifiy'
+          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
         }
       };
 
