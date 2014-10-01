@@ -270,8 +270,8 @@ SecretKey.prototype.decrypt = function (passphrase) {
   return true;
 };
 
-SecretKey.prototype.generate = function (bits) {
-  this.mpi = crypto.generateMpi(this.algorithm, bits);
+SecretKey.prototype.generate = function (bits, prng) {
+  this.mpi = crypto.generateMpi(this.algorithm, bits, prng);
   this.isDecrypted = true;
 };
 

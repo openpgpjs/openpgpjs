@@ -38,6 +38,7 @@ function SecureRandom() {
   this.nextBytes = nextBytes;
 }
 
+
 var blinder = BigInteger.ZERO;
 var unblinder = BigInteger.ZERO;
 
@@ -133,9 +134,12 @@ function RSA() {
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E) {
+  function generate(B, E, prng) {
     var key = new keyObject();
     var rng = new SecureRandom();
+    if (prng) {
+      rng = prng;
+    }
     var qs = B >> 1;
     key.e = parseInt(E, 16);
     key.ee = new BigInteger(E, 16);

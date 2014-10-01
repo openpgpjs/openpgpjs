@@ -224,7 +224,9 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param  {function} callback (optional) callback(error, result) for async style
+ * @param  {function} callback        (optional) callback(error, result) for async style
+ * @param  {Date}     options.created (optional) Set the creation date for the key to this value
+ * @param  {Object}   options.prng    (optional) Supply an alternative PRNG to be used as a seed to the RSA key generation process
  * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
