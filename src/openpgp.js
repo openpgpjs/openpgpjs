@@ -229,28 +229,23 @@ function verifyClearSignedMessage(publicKeys, msg, callback) {
  * @return {Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
-function generateKeyPair(options, callback) {
-  if (!callback) {
-    throw new Error('Callback must be set for key generation!');
-  }
-
+function generateKeyPair(options) {
   // use web worker if web crypto apis are not supported
-  if (!util.getWebCrypto() && useWorker(callback)) {
-    asyncProxy.generateKeyPair(options, callback);
+  if (!util.getWebCrypto() && useWorker()) {
+    asyncProxy.generateKeyPair(options);
     return;
   }
 
-  key.generate(options, function(err, newKey) {
-    if (err) {
-      callback(err);
-      return;
-    }
-
+  return key.generate(options).then(function(newKey) {
     var result = {};
     result.key = newKey;
     result.privateKeyArmored = newKey.armor();
     result.publicKeyArmored = newKey.toPublic().armor();
-    callback(null, result);
+    return result;
+
+  }).catch(function(err) {
+    console.error(err.stack);
+    throw new Error('Error generating keypair!');
   });
 }
 

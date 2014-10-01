@@ -178,19 +178,14 @@ module.exports = {
     }
   },
 
-  generateMpi: function(algo, bits, callback) {
+  generateMpi: function(algo, bits) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
-        rsa.generate(bits, "10001", function(err, keyObject) {
-          if (err) {
-            callback(err);
-            return;
-          }
-
+        return rsa.generate(bits, "10001").then(function(keyObject) {
           var output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);
@@ -198,12 +193,10 @@ module.exports = {
           output.push(keyObject.p);
           output.push(keyObject.q);
           output.push(keyObject.u);
-
-          callback(null, mapResult(output));
+          return mapResult(output);
         });
-        break;
       default:
-        callback(new Error('Unsupported algorithm for key generation.'));
+        throw new Error('Unsupported algorithm for key generation.');
     }
 
     function mapResult(result) {

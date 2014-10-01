@@ -133,8 +133,9 @@ function RSA() {
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E, callback) {
+  function generate(B, E) {
     var webCrypto = util.getWebCrypto();
+    var promise;
 
     //
     // Native RSA keygen using Web Crypto
@@ -143,7 +144,6 @@ function RSA() {
     if (webCrypto) {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
-
       var keyGenOpt = {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: B, // the specified keysize in bits
@@ -152,11 +152,8 @@ function RSA() {
           name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
         }
       };
-
-      var gen = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-      gen.then(exportKey).then(decodeKey).catch(onError);
-
-      return;
+      promise = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+      return promise.then(exportKey).then(decodeKey);
     }
 
     function exportKey(key) {
@@ -181,52 +178,53 @@ function RSA() {
         return new BigInteger(hex, 16);
       }
 
-      callback(null, key);
-    }
-
-    function onError() {
-      callback(new Error('Generating key failed!'));
+      return key;
     }
 
     //
     // JS code
     //
 
-    var key = new keyObject();
-    var rng = new SecureRandom();
-    var qs = B >> 1;
-    key.e = parseInt(E, 16);
-    key.ee = new BigInteger(E, 16);
-    for (;;) {
-      for (;;) {
-        key.p = new BigInteger(B - qs, 1, rng);
-        if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10))
-          break;
-      }
-      for (;;) {
-        key.q = new BigInteger(qs, 1, rng);
-        if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10))
-          break;
-      }
-      if (key.p.compareTo(key.q) <= 0) {
-        var t = key.p;
-        key.p = key.q;
-        key.q = t;
-      }
-      var p1 = key.p.subtract(BigInteger.ONE);
-      var q1 = key.q.subtract(BigInteger.ONE);
-      var phi = p1.multiply(q1);
-      if (phi.gcd(key.ee).compareTo(BigInteger.ONE) === 0) {
-        key.n = key.p.multiply(key.q);
-        key.d = key.ee.modInverse(phi);
-        key.dmp1 = key.d.mod(p1);
-        key.dmq1 = key.d.mod(q1);
-        key.u = key.p.modInverse(key.q);
-        break;
-      }
-    }
+    promise = new Promise(function(resolve) {
+      var key = new keyObject();
+      var rng = new SecureRandom();
+      var qs = B >> 1;
+      key.e = parseInt(E, 16);
+      key.ee = new BigInteger(E, 16);
 
-    callback(null, key);
+      for (;;) {
+        for (;;) {
+          key.p = new BigInteger(B - qs, 1, rng);
+          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10))
+            break;
+        }
+        for (;;) {
+          key.q = new BigInteger(qs, 1, rng);
+          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10))
+            break;
+        }
+        if (key.p.compareTo(key.q) <= 0) {
+          var t = key.p;
+          key.p = key.q;
+          key.q = t;
+        }
+        var p1 = key.p.subtract(BigInteger.ONE);
+        var q1 = key.q.subtract(BigInteger.ONE);
+        var phi = p1.multiply(q1);
+        if (phi.gcd(key.ee).compareTo(BigInteger.ONE) === 0) {
+          key.n = key.p.multiply(key.q);
+          key.d = key.ee.modInverse(phi);
+          key.dmp1 = key.d.mod(p1);
+          key.dmq1 = key.d.mod(q1);
+          key.u = key.p.modInverse(key.q);
+          break;
+        }
+      }
+
+      resolve(key);
+    });
+
+    return promise;
   }
 
   this.encrypt = encrypt;

@@ -5,7 +5,7 @@
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -910,7 +910,7 @@ function readArmored(armoredText) {
  * @return {module:key~Key}
  * @static
  */
-function generate(options, callback) {
+function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
 
   options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
@@ -923,21 +923,31 @@ function generate(options, callback) {
     options.unlocked = true;
   }
 
-  packetlist = new packet.List();
+  // generate
+  var genSecretKey = generateSecretKey();
+  var genSecretSubkey = generateSecretSubkey();
+  return Promise.all([genSecretKey, genSecretSubkey]).then(wrapKeyObject);
 
-  secretKeyPacket = new packet.SecretKey();
-  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-  secretKeyPacket.generate(options.numBits, onSecretKeyGenerated);
+  function generateSecretKey() {
+    secretKeyPacket = new packet.SecretKey();
+    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+    return secretKeyPacket.generate(options.numBits);
+  }
 
-  function onSecretKeyGenerated(err) {
-    if (err) {
-      callback(err);
-      return;
-    }
+  function generateSecretSubkey() {
+    secretSubkeyPacket = new packet.SecretSubkey();
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+    return secretSubkeyPacket.generate(options.numBits);
+  }
 
+  function wrapKeyObject() {
+    // set passphrase protection
     if (options.passphrase) {
       secretKeyPacket.encrypt(options.passphrase);
+      secretSubkeyPacket.encrypt(options.passphrase);
     }
+
+    packetlist = new packet.List();
 
     userIdPacket = new packet.Userid();
     userIdPacket.read(options.userId);
@@ -969,21 +979,6 @@ function generate(options, callback) {
     }
     signaturePacket.sign(secretKeyPacket, dataToSign);
 
-    secretSubkeyPacket = new packet.SecretSubkey();
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    secretSubkeyPacket.generate(options.numBits, onSecretSubkeyGenerated);
-  }
-
-  function onSecretSubkeyGenerated(err) {
-    if (err) {
-      callback(err);
-      return;
-    }
-
-    if (options.passphrase) {
-      secretSubkeyPacket.encrypt(options.passphrase);
-    }
-
     dataToSign = {};
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
@@ -1005,7 +1000,7 @@ function generate(options, callback) {
       secretSubkeyPacket.clearPrivateMPIs();
     }
 
-    callback(null, new Key(packetlist));
+    return new Key(packetlist);
   }
 }
 

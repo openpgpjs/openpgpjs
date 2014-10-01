@@ -417,8 +417,8 @@ describe('High level API', function() {
   describe('Key generation', function() {
 
     it('Generate 1024-bit RSA/RSA key async', function (done) {
-      openpgp.generateKeyPair({numBits: 1024, userId: 'Test McTestington <test@example.com>', passphrase: 'hello world'}, function(err, data) {
-        expect(err).to.not.exist;
+      var opt = {numBits: 1024, userId: 'Test McTestington <test@example.com>', passphrase: 'hello world'};
+      openpgp.generateKeyPair(opt).then(function(data) {
         expect(data).to.exist;
         expect(data.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
         expect(data.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
