@@ -41,6 +41,11 @@ var armor = require('./encoding/armor.js'),
   util = require('./util'),
   AsyncProxy = require('./worker/async_proxy.js');
 
+if (typeof Promise === 'undefined') {
+  // load ES6 Promises polyfill
+  require('es6-promise').polyfill();
+}
+
 var asyncProxy; // instance of the asyncproxy
 
 /**

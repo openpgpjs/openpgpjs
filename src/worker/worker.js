@@ -39,10 +39,6 @@ if (!Function.prototype.bind) {
   };
 }
 
-if (typeof Promise === 'undefined') {
-  // promises polyfill
-  importScripts('promise-1.0.0.js');
-}
 importScripts('openpgp.js');
 
 var MIN_SIZE_RANDOM_BUFFER = 40000;
