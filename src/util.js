@@ -305,5 +305,18 @@ module.exports = {
         return "SHA224";
     }
     return "unknown";
-  }
+  },
+
+  inherits: require('util').inherits,
+
 };
+
+/**
+ * Register functions isFunction, isString, isBoolean.
+ * @return {Boolean} If the object is of the specified type.
+ */
+['Function', 'String', 'Boolean'].forEach(function(name){
+  module.exports['is' + name] = function(obj) {
+    return Object.prototype.toString.call(obj) === '[object ' + name + ']';
+  }
+});
