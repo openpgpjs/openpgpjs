@@ -139,7 +139,7 @@ Literal.prototype.write = function () {
   var filename = util.encode_utf8(this.filename);
 
   var data = this.getBytes();
-
+  
   var result = '';
   result += String.fromCharCode(enums.write(enums.literal, this.format));
   result += String.fromCharCode(filename.length);

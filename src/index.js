@@ -12,6 +12,11 @@ module.exports.key = require('./key.js');
  */
 module.exports.message = require('./message.js');
 /**
+ * @see module:stream
+ * @name module:openpgp.stream
+ */
+module.exports.stream = require('./stream');
+/**
  * @see module:cleartext
  * @name module:openpgp.cleartext
  */
