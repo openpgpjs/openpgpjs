@@ -1133,13 +1133,19 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits);
+    if (options.created) {
+      secretKeyPacket.created = options.created;
+    }
+    return secretKeyPacket.generate(options.numBits, options.prng);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretSubkeyPacket.generate(options.numBits);
+    if (options.created) {
+      secretSubkeyPacket.created = options.created;
+    }
+    return secretSubkeyPacket.generate(options.numBits, options.prng);
   }
 }
 

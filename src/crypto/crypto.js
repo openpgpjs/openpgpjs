@@ -180,14 +180,14 @@ export default {
     }
   },
 
-  generateMpi: function(algo, bits) {
+  generateMpi: function(algo, bits, prng) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
-        return rsa.generate(bits, "10001").then(function(keyObject) {
+        return rsa.generate(bits, "10001", prng).then(function(keyObject) {
           var output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);

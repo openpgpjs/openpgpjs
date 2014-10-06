@@ -62,7 +62,10 @@
   },
   "dependencies": {
     "node-fetch": "^1.3.3",
-    "node-localstorage": "~1.3.0"
+    "node-localstorage": "~1.3.0",
+    "zlibjs": "^0.2.0",
+    "buffer": "~3.0.2",
+    "readable-stream": "~1.0.33"
   },
   "repository": {
     "type": "git",

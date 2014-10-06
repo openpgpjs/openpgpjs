@@ -449,6 +449,8 @@ export default {
     return "unknown";
   },
 
+  inherits: require('util').inherits,
+
   /**
    * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
