@@ -20,7 +20,7 @@
     "openpgp",
     "encryption"
   ],
-  "license": "LGPL 2.1",
+  "license": "LGPL 3.0 or any later version",
   "ignore": [
     "**/.*",
     "dist/openpgp*.tgz",
