@@ -11,6 +11,8 @@ var cryptoStream = require('../../src/stream/crypto.js'),
 var chai = require('chai'),
 	expect = chai.expect;
 
+
+//openpgp.config.integrity_protect = false;
 describe("Encrypted message", function() {
   var pub_key =
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -109,8 +111,8 @@ describe("Encrypted message", function() {
       packetListReal.read(encrypted_message_data);
       encrypted_message_m = new openpgp.message.Message(packetListReal);
 
-      decrypted_message_s = openpgp.decryptMessage(privKey, encrypted_message_s);
       decrypted_message_m = openpgp.decryptMessage(privKey, encrypted_message_m);
+      decrypted_message_s = openpgp.decryptMessage(privKey, encrypted_message_s);
   
       expect(decrypted_message_s).equal(decrypted_message_m);
       done();

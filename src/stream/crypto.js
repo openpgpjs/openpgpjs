@@ -9,16 +9,19 @@ function CipherFeedback(opts) {
   //crypto.getPrefixRandom(this.algo);
   this.cipher = new opts.cipherfn(opts.key);
   this.sessionKey = opts.key;
-  this.resync = opts.resync || true;
+  if (opts.resync === undefined)
+    opts.resync = true;
+  this.resync = opts.resync;
 
   this.blockSize = this.cipher.blockSize;
   this.feedbackRegister = new Uint8Array(this.blockSize);
   this.feedbackRegisterEncrypted = new Uint8Array(this.blockSize);
 
   this._firstBlockEncrypted = false;
-  this._previousChunk = new Uint8Array();
+  this._eof = false;
+  this._previousCiphertext = new Uint8Array();
+  this._previousChunk = new Buffer([]);
 
-  //(prefixrandom, cipher, plaintext, key, resync)
   this._buffer = new Buffer(this.blockSize);
   this._offset = 0;
 }
@@ -79,19 +82,22 @@ CipherFeedback.prototype._encryptFirstBlock = function(chunk) {
   for (i = 0; i < block_size; i++) {
     ciphertext[block_size + 2 + i] = this.feedbackRegisterEncrypted[i + offset] ^ chunk[i];
   }
-  this._previousChunk = ciphertext.subarray(block_size + 2 - offset, 2*block_size + 2 - offset);
-  ciphertext = ciphertext.subarray(0, chunk.length + 2 + block_size);
+  this._previousCiphertext = ciphertext.subarray(block_size + 2 - offset, 2*block_size + 2 - offset);
+  this._previousChunk = chunk;
+  ciphertext = ciphertext.subarray(0, chunk.length + 2 + block_size - offset);
   return ciphertext;
 }
 
 CipherFeedback.prototype._encryptBlock = function(chunk) {
-  var ciphertext = new Uint8Array(chunk.length),
+  var ciphertext = new Uint8Array(chunk.length + 2),
     block_size = this.blockSize,
+    offset = this.resync ? 0 : 2,
     i, n, begin;
-  for (n = 0; n < chunk.length; n += block_size) {
+  for (n = 0; n < (chunk.length + offset); n += block_size) {
+    begin = n;
     // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
     // an 8-octet block).
-    this.feedbackRegister.set(this._previousChunk);
+    this.feedbackRegister.set(this._previousCiphertext);
 
     // 11. FR is encrypted to produce FRE.
     this.feedbackRegisterEncrypted = this.cipher.encrypt(this.feedbackRegister);
@@ -100,11 +106,22 @@ CipherFeedback.prototype._encryptBlock = function(chunk) {
     // the next BS octets of ciphertext. These are loaded into FR, and
     // the process is repeated until the plaintext is used up.
     for (i = 0; i < block_size; i++) {
-      ciphertext[n + i] = this.feedbackRegisterEncrypted[i] ^ chunk[n + i];
+      var byte;
+      if ((n + i - offset) < 0) {
+        byte = this._previousChunk[block_size + (n + i - offset)];
+      } else {
+        byte = chunk[n + i - offset];
+      }
+      ciphertext[begin + i] = this.feedbackRegisterEncrypted[i] ^ byte;
     }
-    this._previousChunk = ciphertext.subarray(n, n + block_size);
+    this._previousCiphertext = ciphertext.subarray(0, chunk.length);
   }
-  return ciphertext.subarray(0, chunk.length);
+  this._previousChunk = chunk;
+  if (this._eof)
+    ciphertext = ciphertext.subarray(0, chunk.length + offset);
+  else
+    ciphertext = ciphertext.subarray(0, chunk.length);
+  return ciphertext;
 }
 
 CipherFeedback.prototype.encryptBlock = function(chunk) {
@@ -153,6 +170,7 @@ CipherFeedback.prototype._transform = function(chunk, encoding, cb) {
 
 CipherFeedback.prototype._flush = function(cb) {
   var block = this._buffer.slice(0, this._offset);
+  this._eof = true;
   this.push(this.encryptBlock(block));
   this.emit('flushed', null);
   cb();

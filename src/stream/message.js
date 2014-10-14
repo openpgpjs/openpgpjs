@@ -1,6 +1,7 @@
 var util = require('../util.js'),
   packet_stream = require('./packet.js'),
   crypto_stream = require('./crypto.js'),
+  node_crypto = require('crypto'),
   packet = require('../packet'),
   enums = require('../enums.js'),
   armor = require('../encoding/armor.js'),
@@ -20,24 +21,29 @@ function MessageStream(keys, file_length, filename, opts) {
   opts['key'] = crypto.generateSessionKey(opts['algo']);
   opts['cipherfn'] = crypto.cipher[opts['algo']];
   opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-
+  if (config.integrity_protect) {
+    var prefixrandom = opts['prefixrandom'];
+    var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length - 1);
+    opts['resync'] = false;
+    this.hash = node_crypto.createHash('sha1', 'binary');
+    this.hash.update(prefix);
+  }
+  
   this.cipher = new crypto_stream.CipherFeedback(opts);
   this.fileLength = file_length;
   this.keys = keys;
 
-  this._prefixWritten = false;
-  this.prefix = Buffer(
+  this.encrypted_packet_header = Buffer(
     String.fromCharCode(enums.write(enums.literal, 'utf8')) + 
     String.fromCharCode(filename.length) +
     filename +
     util.writeDate(new Date()),
     'binary'
   )
-  var prefix_header = new Buffer(packet.packet.writeHeader(enums.packet.literal, 
-                                 this.prefix.length + this.fileLength), 'binary');
-  this.prefix = Buffer.concat([
-                  prefix_header,
-                  this.prefix
+  this.encrypted_packet_header = Buffer.concat([
+                  new Buffer(packet.packet.writeHeader(enums.packet.literal, 
+                             this.encrypted_packet_header.length + this.fileLength), 'binary'),
+                  this.encrypted_packet_header
   ]);
 
   this.cipher.on('data', function(data) {
@@ -65,31 +71,53 @@ MessageStream.prototype.getHeader = function() {
       throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
     }
   });
-  var packet_len = this.prefix.length + this.fileLength + this.cipher.blockSize + 2,
-    first_packet_header = packet.packet.writeHeader(9, packet_len),
-    header = packetList.write();
+  var packet_len = this.encrypted_packet_header.length + this.fileLength + this.cipher.blockSize + 2,
+    header = packetList.write(),
+    first_packet_header;
 
+  if (config.integrity_protect) {
+    packet_len += 2 + 20 + 1;
+    first_packet_header = packet.packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
+  } else {
+    first_packet_header = packet.packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
+  }
   return header + first_packet_header;
 }
 
 MessageStream.prototype._transform = function(chunk, encoding, cb) {
   packet_stream.HeaderPacketStream.prototype._transform.call(this, chunk, encoding);
-  var self = this;
   chunk = new Buffer(chunk, 'binary');
-  if (this.prefix) {
-    chunk = Buffer.concat([this.prefix, chunk]);
-    this.prefix = null;
+  if (this.encrypted_packet_header) {
+    chunk = Buffer.concat([this.encrypted_packet_header, chunk]);
+    this.encrypted_packet_header = null;
   }
   this.cipher.once('encrypted', function(d) {
     cb();
   });
+  if (config.integrity_protect) {
+    this.hash.update(chunk);
+  }
   this.cipher.write(chunk);
 }
 
 MessageStream.prototype._flush = function(cb) {
+  var self = this;
   this.cipher.once('flushed', function(d) {
     cb();
   });
-  this.cipher.end();
+  if (config.integrity_protect) {
+    var mdc_header = String.fromCharCode(0xD3) + String.fromCharCode(0x14);
+    this.hash.update(mdc_header);
+    var hash_digest = this.hash.digest('binary');
+
+    this.cipher.once('encrypted', function() {
+      self.cipher.end();
+    });
+    this.cipher.write(
+      new Buffer(mdc_header + hash_digest, 'binary')
+    );
+  } else {
+    this.cipher.end();
+  }
 }
 module.exports.MessageStream = MessageStream;
