@@ -3,7 +3,8 @@
 var cryptoStream = require('../../src/stream/crypto.js'),
   enums = require('../../src/enums.js'),
   crypto = require('../../src/crypto'),
-  util = require('../../src/util.js');
+  util = require('../../src/util.js'),
+  config = require('../../src/config');
 
 
 var chai = require('chai'),
@@ -154,6 +155,38 @@ describe("CFB Stream", function() {
     cs.end();
 
   });
+
+  it("should work with resync set to false", function(done) {
+    var opts = {};
+    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
+    opts['key'] = crypto.generateSessionKey(opts['algo']);
+    opts['cipherfn'] = crypto.cipher[opts['algo']];
+    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
+    opts['resync'] = false;
+    
+    var plaintext_a = "This is the end,";
+    var plaintext_b = "my only friend,";
+    var plaintext_c = "the end.";
+
+    var encrypted_data = new Buffer([]);
+    var cs = new cryptoStream.CipherFeedback(opts);
+    
+    cs.on('data', function(d) {
+      encrypted_data = Buffer.concat([encrypted_data, d]);
+    });
+
+    cs.on('end', function(d) {
+      var decrypted = crypto.cfb.decrypt(opts['algo'], opts['key'],
+                                         util.bin2str(encrypted_data), false); 
+      expect(decrypted).equal(plaintext_a+plaintext_b+plaintext_c);
+      expect(encrypted_data.length).equal(cs.blockSize + (plaintext_a+plaintext_b+plaintext_c).length + 2);
+      done();
+    });
+    cs.write(plaintext_a+plaintext_b+plaintext_c);
+    cs.end();
+
+  });
+
 
 
 });
