@@ -232,7 +232,7 @@ module.exports = {
     }
 
     n = resync ? 0 : 2;
-
+    
     text = text.substring(n, ciphertext.length - block_size - 2 + n);
 
     return text;
