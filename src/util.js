@@ -307,7 +307,7 @@ module.exports = {
     return "unknown";
   },
 
-  inherits: require('util').inherits,
+  inherits: require('util').inherits
 
 };
 
