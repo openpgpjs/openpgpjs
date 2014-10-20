@@ -79,7 +79,7 @@ function encryptMessage(keys, text) {
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
 
-  }).catch(onError.bind(null, 'Error encrypting message!'));
+  }, 'Error encrypting message!');
 }
 
 /**
@@ -107,7 +107,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
 
-  }).catch(onError.bind(null, 'Error signing and encrypting message!'));
+  }, 'Error signing and encrypting message!');
 }
 
 /**
@@ -127,7 +127,7 @@ function decryptMessage(privateKey, msg) {
     msg = msg.decrypt(privateKey);
     return msg.getText();
 
-  }).catch(onError.bind(null, 'Error decrypting message!'));
+  }, 'Error decrypting message!');
 }
 
 /**
@@ -159,7 +159,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
     }
     return null;
 
-  }).catch(onError.bind(null, 'Error decrypting and verifying message!'));
+  }, 'Error decrypting and verifying message!');
 }
 
 /**
@@ -183,7 +183,7 @@ function signClearMessage(privateKeys, text) {
     cleartextMessage.sign(privateKeys);
     return cleartextMessage.armor();
 
-  }).catch(onError.bind(null, 'Error signing cleartext message!'));
+  }, 'Error signing cleartext message!');
 }
 
 /**
@@ -212,7 +212,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
     result.signatures = msg.verify(publicKeys);
     return result;
 
-  }).catch(onError.bind(null, 'Error verifying cleartext signed message!'));
+  }, 'Error verifying cleartext signed message!');
 }
 
 /**
@@ -240,7 +240,7 @@ function generateKeyPair(options) {
     result.publicKeyArmored = newKey.toPublic().armor();
     return result;
 
-  }).catch(onError.bind(null, 'Error generating keypair!'));
+  }, 'Error generating keypair!');
 }
 
 //
