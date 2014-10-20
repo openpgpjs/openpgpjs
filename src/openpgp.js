@@ -278,9 +278,7 @@ function execute(cmd, errMsg) {
   });
 
   // handler error globally
-  promise.catch(onError.bind(null, errMsg));
-
-  return promise;
+  return promise.catch(onError.bind(null, errMsg));
 }
 
 /**
