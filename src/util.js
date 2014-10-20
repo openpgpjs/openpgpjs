@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -20,6 +20,8 @@
  * @requires config
  * @module util
  */
+
+'use strict';
 
 var config = require('./config');
 
@@ -193,7 +195,7 @@ module.exports = {
   },
 
   /**
-   * Convert a Uint8Array to a string. This currently functions 
+   * Convert a Uint8Array to a string. This currently functions
    * the same as bin2str.
    * @function module:util.Uint8Array2str
    * @param {Uint8Array} bin An array of (binary) integers to convert
@@ -228,7 +230,7 @@ module.exports = {
   },
 
   /**
-   * Helper function to print a debug message. Debug 
+   * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
@@ -240,7 +242,7 @@ module.exports = {
   },
 
   /**
-   * Helper function to print a debug message. Debug 
+   * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
    * Different than print_debug because will call hexstrdump iff necessary.
@@ -265,9 +267,9 @@ module.exports = {
   /**
    * Shifting a string to n bits right
    * @param {String} value The string to shift
-   * @param {Integer} bitcount Amount of bits to shift (MUST be smaller 
+   * @param {Integer} bitcount Amount of bits to shift (MUST be smaller
    * than 9)
-   * @return {String} Resulting string. 
+   * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
     var temp = util.str2bin(value);
@@ -305,5 +307,21 @@ module.exports = {
         return "SHA224";
     }
     return "unknown";
+  },
+
+  /**
+   * Get native Web Cryptography api. The default configuration is to use
+   * the api when available. But it can also be deactivated with config.useWebCrypto
+   * @return {Object} The SubtleCrypto api or 'undefined'
+   */
+  getWebCrypto: function() {
+    if (config.useWebCrypto === false) {
+      // make web crypto optional
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      return window.crypto.subtle;
+    }
   }
 };

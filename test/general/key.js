@@ -137,7 +137,7 @@ describe('Key', function() {
       '=eoGb',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  var pub_sig_test = 
+  var pub_sig_test =
    ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
     'Version: GnuPG v2.0.19 (GNU/Linux)',
     '',
@@ -618,7 +618,7 @@ var pgp_desktop_priv =
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
-  it('Preferences of generated key', function() {
+  it('Preferences of generated key', function(done) {
     var testPref = function(key) {
       // key flags
       var keyFlags = openpgp.enums.keyFlags;
@@ -633,10 +633,13 @@ var pgp_desktop_priv =
       var compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
-    }
-    var key = openpgp.generateKeyPair({numBits: 512, userId: 'test', passphrase: 'hello'});
-    testPref(key.key);
-    testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
+    };
+    var opt = {numBits: 512, userId: 'test', passphrase: 'hello'};
+    openpgp.generateKeyPair(opt).then(function(key) {
+      testPref(key.key);
+      testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
+      done();
+    });
   });
 
   it('User attribute packet read & write', function() {
@@ -653,11 +656,14 @@ var pgp_desktop_priv =
     expect(primUser.selfCertificate).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
-  it('Generated key is not unlocked by default', function() {
-    var key = openpgp.generateKeyPair({numBits: 512, userId: 'test', passphrase: '123'});
-    var msg = openpgp.message.fromText('hello').encrypt([key.key]);
-    msg = msg.decrypt.bind(msg, key.key);
-    expect(msg).to.throw('Private key is not decrypted.');
+  it('Generated key is not unlocked by default', function(done) {
+    var opt = {numBits: 512, userId: 'test', passphrase: '123'};
+    openpgp.generateKeyPair(opt).then(function(key) {
+      var msg = openpgp.message.fromText('hello').encrypt([key.key]);
+      msg = msg.decrypt.bind(msg, key.key);
+      expect(msg).to.throw('Private key is not decrypted.');
+      done();
+    });
   });
 
 });

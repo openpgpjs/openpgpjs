@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -22,6 +22,8 @@
  * @requires packet
  * @module key
  */
+
+'use strict';
 
 var packet = require('./packet'),
   enums = require('./enums.js'),
@@ -148,14 +150,14 @@ Key.prototype.toPacketlist = function() {
   if (this.subKeys) {
     for (i = 0; i < this.subKeys.length; i++) {
       packetlist.concat(this.subKeys[i].toPacketlist());
-    } 
+    }
   }
   return packetlist;
 };
 
-/** 
+/**
  * Returns all the private and public subkey packets
- * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey)>} 
+ * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey)>}
  */
 Key.prototype.getSubkeyPackets = function() {
   var subKeys = [];
@@ -167,17 +169,17 @@ Key.prototype.getSubkeyPackets = function() {
   return subKeys;
 };
 
-/** 
+/**
  * Returns all the private and public key and subkey packets
- * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key)>} 
+ * @returns {Array<(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key)>}
  */
 Key.prototype.getAllKeyPackets = function() {
   return [this.primaryKey].concat(this.getSubkeyPackets());
 };
 
-/** 
+/**
  * Returns key IDs of all key packets
- * @returns {Array<module:type/keyid>} 
+ * @returns {Array<module:type/keyid>}
  */
 Key.prototype.getKeyIds = function() {
   var keyIds = [];
@@ -197,7 +199,7 @@ Key.prototype.getKeyIds = function() {
 Key.prototype.getKeyPacket = function(keyIds) {
   var keys = this.getAllKeyPackets();
   for (var i = 0; i < keys.length; i++) {
-    var keyId = keys[i].getKeyId(); 
+    var keyId = keys[i].getKeyId();
     for (var j = 0; j < keyIds.length; j++) {
       if (keyId.equals(keyIds[j])) {
         return keys[i];
@@ -284,7 +286,7 @@ Key.prototype.getSigningKeyPacket = function() {
     throw new Error('Need private key for signing');
   }
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser && 
+  if (primaryUser &&
       isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
@@ -342,7 +344,7 @@ Key.prototype.getEncryptionKeyPacket = function() {
   }
   // if no valid subkey for encryption, evaluate primary key
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser && 
+  if (primaryUser &&
       isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
@@ -351,7 +353,7 @@ Key.prototype.getEncryptionKeyPacket = function() {
 
 /**
  * Decrypts all secret key and subkey packets
- * @param  {String} passphrase 
+ * @param  {String} passphrase
  * @return {Boolean} true if all key and subkey packets decrypted successfully
  */
 Key.prototype.decrypt = function(passphrase) {
@@ -370,14 +372,14 @@ Key.prototype.decrypt = function(passphrase) {
 /**
  * Decrypts specific key packets by key ID
  * @param  {Array<module:type/keyid>} keyIds
- * @param  {String} passphrase 
+ * @param  {String} passphrase
  * @return {Boolean} true if all key packets decrypted successfully
  */
 Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
   if (this.isPrivate()) {
     var keys = this.getAllKeyPackets();
     for (var i = 0; i < keys.length; i++) {
-      var keyId = keys[i].getKeyId(); 
+      var keyId = keys[i].getKeyId();
       for (var j = 0; j < keyIds.length; j++) {
         if (keyId.equals(keyIds[j])) {
           var success = keys[i].decrypt(passphrase);
@@ -398,8 +400,8 @@ Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
  */
 Key.prototype.verifyPrimaryKey = function() {
   // check revocation signature
-  if (this.revocationSignature && !this.revocationSignature.isExpired() && 
-     (this.revocationSignature.verified || 
+  if (this.revocationSignature && !this.revocationSignature.isExpired() &&
+     (this.revocationSignature.verified ||
       this.revocationSignature.verify(this.primaryKey, {key: this.primaryKey}))) {
     return enums.keyStatus.revoked;
   }
@@ -641,8 +643,8 @@ User.prototype.isRevoked = function(certificate, primaryKey) {
     var that = this;
     return this.revocationCertifications.some(function(revCert) {
              return revCert.issuerKeyId.equals(certificate.issuerKeyId) &&
-                    !revCert.isExpired() && 
-                    (revCert.verified || 
+                    !revCert.isExpired() &&
+                    (revCert.verified ||
                      revCert.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey}));
           });
   } else {
@@ -695,7 +697,7 @@ User.prototype.isValidSelfCertificate = function(primaryKey, selfCertificate) {
  * Verify User. Checks for existence of self signatures, revocation signatures
  * and validity of self signature
  * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
- * @return {module:enums.keyStatus} status of user    
+ * @return {module:enums.keyStatus} status of user
  */
 User.prototype.verify = function(primaryKey) {
   if (!this.selfCertifications) {
@@ -707,7 +709,7 @@ User.prototype.verify = function(primaryKey) {
       status = enums.keyStatus.revoked;
       continue;
     }
-    if (!(this.selfCertifications[i].verified || 
+    if (!(this.selfCertifications[i].verified ||
         this.selfCertifications[i].verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
       status = enums.keyStatus.invalid;
       continue;
@@ -792,8 +794,8 @@ SubKey.prototype.isValidSigningKey = function(primaryKey) {
  */
 SubKey.prototype.verify = function(primaryKey) {
   // check subkey revocation signature
-  if (this.revocationSignature && !this.revocationSignature.isExpired() && 
-     (this.revocationSignature.verified || 
+  if (this.revocationSignature && !this.revocationSignature.isExpired() &&
+     (this.revocationSignature.verified ||
       this.revocationSignature.verify(primaryKey, {key:primaryKey, bind: this.subKey}))) {
     return enums.keyStatus.revoked;
   }
@@ -888,12 +890,12 @@ function readArmored(armoredText) {
         result.keys.push(newKey);
       } catch (e) {
         result.err = result.err || [];
-        result.err.push(e); 
+        result.err.push(e);
       }
     }
   } catch (e) {
     result.err = result.err || [];
-    result.err.push(e); 
+    result.err.push(e);
   }
   return result;
 }
@@ -911,6 +913,8 @@ function readArmored(armoredText) {
  * @static
  */
 function generate(options) {
+  var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
+
   options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
   // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
   if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
@@ -921,74 +925,85 @@ function generate(options) {
     options.unlocked = true;
   }
 
-  var packetlist = new packet.List();
+  // generate
+  var genSecretKey = generateSecretKey();
+  var genSecretSubkey = generateSecretSubkey();
+  return Promise.all([genSecretKey, genSecretSubkey]).then(wrapKeyObject);
 
-  var secretKeyPacket = new packet.SecretKey();
-  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-  secretKeyPacket.generate(options.numBits);
-  if (options.passphrase) {
-    secretKeyPacket.encrypt(options.passphrase);
+  function generateSecretKey() {
+    secretKeyPacket = new packet.SecretKey();
+    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+    return secretKeyPacket.generate(options.numBits);
   }
 
-  var userIdPacket = new packet.Userid();
-  userIdPacket.read(options.userId);
-
-  var dataToSign = {};
-  dataToSign.userid = userIdPacket;
-  dataToSign.key = secretKeyPacket;
-  var signaturePacket = new packet.Signature();
-  signaturePacket.signatureType = enums.signature.cert_generic;
-  signaturePacket.publicKeyAlgorithm = options.keyType;
-  signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-  signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-  signaturePacket.preferredSymmetricAlgorithms = [];
-  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-  signaturePacket.preferredHashAlgorithms = [];
-  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-  signaturePacket.preferredCompressionAlgorithms = [];
-  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-  if (config.integrity_protect) {
-    signaturePacket.features = [];
-    signaturePacket.features.push(1); // Modification Detection
-  }
-  signaturePacket.sign(secretKeyPacket, dataToSign);
-
-  var secretSubkeyPacket = new packet.SecretSubkey();
-  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-  secretSubkeyPacket.generate(options.numBits);
-  if (options.passphrase) {
-    secretSubkeyPacket.encrypt(options.passphrase);
+  function generateSecretSubkey() {
+    secretSubkeyPacket = new packet.SecretSubkey();
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+    return secretSubkeyPacket.generate(options.numBits);
   }
 
-  dataToSign = {};
-  dataToSign.key = secretKeyPacket;
-  dataToSign.bind = secretSubkeyPacket;
-  var subkeySignaturePacket = new packet.Signature();
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-  subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-  subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+  function wrapKeyObject() {
+    // set passphrase protection
+    if (options.passphrase) {
+      secretKeyPacket.encrypt(options.passphrase);
+      secretSubkeyPacket.encrypt(options.passphrase);
+    }
 
-  packetlist.push(secretKeyPacket);
-  packetlist.push(userIdPacket);
-  packetlist.push(signaturePacket);
-  packetlist.push(secretSubkeyPacket);
-  packetlist.push(subkeySignaturePacket);
+    packetlist = new packet.List();
 
-  if (!options.unlocked) {
-    secretKeyPacket.clearPrivateMPIs();
-    secretSubkeyPacket.clearPrivateMPIs();
+    userIdPacket = new packet.Userid();
+    userIdPacket.read(options.userId);
+
+    dataToSign = {};
+    dataToSign.userid = userIdPacket;
+    dataToSign.key = secretKeyPacket;
+    signaturePacket = new packet.Signature();
+    signaturePacket.signatureType = enums.signature.cert_generic;
+    signaturePacket.publicKeyAlgorithm = options.keyType;
+    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+    signaturePacket.preferredSymmetricAlgorithms = [];
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    signaturePacket.preferredHashAlgorithms = [];
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+    signaturePacket.preferredCompressionAlgorithms = [];
+    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+    if (config.integrity_protect) {
+      signaturePacket.features = [];
+      signaturePacket.features.push(1); // Modification Detection
+    }
+    signaturePacket.sign(secretKeyPacket, dataToSign);
+
+    dataToSign = {};
+    dataToSign.key = secretKeyPacket;
+    dataToSign.bind = secretSubkeyPacket;
+    subkeySignaturePacket = new packet.Signature();
+    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+    subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+    subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+
+    packetlist.push(secretKeyPacket);
+    packetlist.push(userIdPacket);
+    packetlist.push(signaturePacket);
+    packetlist.push(secretSubkeyPacket);
+    packetlist.push(subkeySignaturePacket);
+
+    if (!options.unlocked) {
+      secretKeyPacket.clearPrivateMPIs();
+      secretSubkeyPacket.clearPrivateMPIs();
+    }
+
+    return new Key(packetlist);
   }
-
-  return new Key(packetlist);
 }
 
 /**

@@ -1,0 +1,39 @@
+{
+	"indent": 2,
+	"strict": true,
+	"globalstrict": true,
+	"node": true,
+	"browser": true,
+	"nonew": true,
+	"curly": true,
+	"eqeqeq": true,
+	"immed": true,
+	"newcap": true,
+	"regexp": true,
+	"evil": true,
+	"eqnull": true,
+	"expr": true,
+	"trailing": true,
+	"undef": true,
+	"unused": true,
+
+	"predef": [
+			"console",
+			"Promise",
+			"importScripts",
+			"process",
+			"Event",
+			"self",
+			"describe",
+			"it",
+			"sinon",
+			"mocha",
+            "before",
+            "beforeEach",
+            "after",
+            "afterEach"
+	],
+
+	"globals": {
+	}
+}

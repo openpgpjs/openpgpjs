@@ -9,12 +9,13 @@
   <body>
     <div id="mocha"></div>
 
-    <!--<script src="lib/jquery.min.js"></script>-->
+    <!-- libs -->
     <script src="../dist/openpgp.js"></script>
     <script src="lib/chai.js"></script>
     <script src="lib/mocha.js"></script>
     <script>
         mocha.setup('bdd');
+        mocha.timeout(20000);
     </script>
     <script src="lib/unittests-bundle.js"></script>
     <script>

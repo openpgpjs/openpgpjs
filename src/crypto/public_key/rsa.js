@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -134,40 +134,97 @@ function RSA() {
   // Generate a new random private key B bits long, using public expt E
 
   function generate(B, E) {
-    var key = new keyObject();
-    var rng = new SecureRandom();
-    var qs = B >> 1;
-    key.e = parseInt(E, 16);
-    key.ee = new BigInteger(E, 16);
-    for (;;) {
-      for (;;) {
-        key.p = new BigInteger(B - qs, 1, rng);
-        if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10))
-          break;
-      }
-      for (;;) {
-        key.q = new BigInteger(qs, 1, rng);
-        if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10))
-          break;
-      }
-      if (key.p.compareTo(key.q) <= 0) {
-        var t = key.p;
-        key.p = key.q;
-        key.q = t;
-      }
-      var p1 = key.p.subtract(BigInteger.ONE);
-      var q1 = key.q.subtract(BigInteger.ONE);
-      var phi = p1.multiply(q1);
-      if (phi.gcd(key.ee).compareTo(BigInteger.ONE) === 0) {
-        key.n = key.p.multiply(key.q);
-        key.d = key.ee.modInverse(phi);
-        key.dmp1 = key.d.mod(p1);
-        key.dmq1 = key.d.mod(q1);
-        key.u = key.p.modInverse(key.q);
-        break;
-      }
+    var webCrypto = util.getWebCrypto();
+    var promise;
+
+    //
+    // Native RSA keygen using Web Crypto
+    //
+
+    if (webCrypto) {
+      var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
+      var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
+      var keyGenOpt = {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: B, // the specified keysize in bits
+        publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+        hash: {
+          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
+        }
+      };
+      promise = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+      return promise.then(exportKey).then(decodeKey);
     }
-    return key;
+
+    function exportKey(key) {
+      // export the generated keys as JsonWebKey (JWK)
+      // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
+      return webCrypto.exportKey('jwk', key.privateKey);
+    }
+
+    function decodeKey(jwk) {
+      // map JWK parameters to local BigInteger type system
+      var key = new keyObject();
+      key.n = toBigInteger(jwk.n);
+      key.ee = new BigInteger(E, 16);
+      key.d = toBigInteger(jwk.d);
+      key.p = toBigInteger(jwk.p);
+      key.q = toBigInteger(jwk.q);
+      key.u = key.p.modInverse(key.q);
+
+      function toBigInteger(base64url) {
+        var base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
+        var hex = util.hexstrdump(atob(base64));
+        return new BigInteger(hex, 16);
+      }
+
+      return key;
+    }
+
+    //
+    // JS code
+    //
+
+    promise = new Promise(function(resolve) {
+      var key = new keyObject();
+      var rng = new SecureRandom();
+      var qs = B >> 1;
+      key.e = parseInt(E, 16);
+      key.ee = new BigInteger(E, 16);
+
+      for (;;) {
+        for (;;) {
+          key.p = new BigInteger(B - qs, 1, rng);
+          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10))
+            break;
+        }
+        for (;;) {
+          key.q = new BigInteger(qs, 1, rng);
+          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10))
+            break;
+        }
+        if (key.p.compareTo(key.q) <= 0) {
+          var t = key.p;
+          key.p = key.q;
+          key.q = t;
+        }
+        var p1 = key.p.subtract(BigInteger.ONE);
+        var q1 = key.q.subtract(BigInteger.ONE);
+        var phi = p1.multiply(q1);
+        if (phi.gcd(key.ee).compareTo(BigInteger.ONE) === 0) {
+          key.n = key.p.multiply(key.q);
+          key.d = key.ee.modInverse(phi);
+          key.dmp1 = key.d.mod(p1);
+          key.dmq1 = key.d.mod(q1);
+          key.u = key.p.modInverse(key.q);
+          break;
+        }
+      }
+
+      resolve(key);
+    });
+
+    return promise;
   }
 
   this.encrypt = encrypt;
