@@ -39,7 +39,7 @@ var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
  * @constructor
  * @param {String} path The path to the worker or 'openpgp.worker.js' by default
  */
-function AsyncProxy(path) {
+function AsyncProxy(path, config) {
   this.worker = new Worker(path || 'openpgp.worker.js');
   this.worker.onmessage = this.onMessage.bind(this);
   this.worker.onerror = function(e) {
@@ -48,6 +48,7 @@ function AsyncProxy(path) {
   this.seedRandom(INITIAL_RANDOM_SEED);
   // FIFO
   this.tasks = [];
+  this.worker.postMessage({event: 'configure', config: config});
 }
 
 /**
