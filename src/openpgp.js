@@ -60,7 +60,7 @@ function initWorker(path) {
  * Encrypts message text with keys
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
- * @return {Promise -> String}      encrypted ASCII armored message
+ * @return {Promise<String>}      encrypted ASCII armored message
  * @static
  */
 function encryptMessage(keys, text) {
@@ -87,7 +87,7 @@ function encryptMessage(keys, text) {
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
- * @return {Promise -> String} encrypted ASCII armored message
+ * @return {Promise<String>}   encrypted ASCII armored message
  * @static
  */
 function signAndEncryptMessage(publicKeys, privateKey, text) {
@@ -114,7 +114,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * Decrypts message
  * @param  {module:key~Key}                privateKey private key with decrypted secret key data
  * @param  {module:message~Message} msg    the message object with the encrypted data
- * @return {Promise -> (String|null)}      decrypted message as as native JavaScript string
+ * @return {Promise<(String|null)>}        decrypted message as as native JavaScript string
  *                              or null if no literal data found
  * @static
  */
@@ -135,7 +135,7 @@ function decryptMessage(privateKey, msg) {
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:message~Message} msg    the message object with signed and encrypted data
- * @return {Promise -> {text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
+ * @return {Promise<{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}>}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
  * @static
@@ -166,7 +166,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
  * Signs a cleartext message
  * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {String} text        cleartext
- * @return {Promise -> String}  ASCII armored message
+ * @return {Promise<String>}    ASCII armored message
  * @static
  */
 function signClearMessage(privateKeys, text) {
@@ -190,7 +190,7 @@ function signClearMessage(privateKeys, text) {
  * Verifies signatures of cleartext signed message
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:cleartext~CleartextMessage} msg    cleartext message object with signatures
- * @return {Promise -> {text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}}
+ * @return {Promise<{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}>}
  *                                       cleartext with status of verified signatures
  * @static
  */
@@ -224,7 +224,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @return {Promise -> Object} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
+ * @return {Promise<Object>} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
 function generateKeyPair(options) {
