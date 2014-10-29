@@ -240,7 +240,19 @@ function generateKeyPair(options) {
     result.publicKeyArmored = newKey.toPublic().armor();
     return result;
 
-  }, 'Error generating keypair!');
+  }).catch(function(err) {
+    console.error(err);
+
+    if (!util.getWebCrypto()) {
+      // js fallback already tried
+      throw new Error('Error generating keypair using js fallback!');
+    }
+
+    // fall back to js keygen in a worker
+    console.log('Error generating keypair using native WebCrypto... falling back back to js!');
+    return asyncProxy.generateKeyPair(options);
+
+  }).catch(onError.bind(null, 'Error generating keypair!'));
 }
 
 //
