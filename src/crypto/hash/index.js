@@ -3,6 +3,7 @@
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
+  forge_sha1 = require('./forge_sha1.js'),
   forge_sha256 = require('./forge_sha256.js');
 
 module.exports = {
