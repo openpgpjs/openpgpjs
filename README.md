@@ -33,30 +33,31 @@ OpenPGP.js uses ES6 promises which are available in [most modern browsers](http:
 ### Examples
 
 #### Encryption
-
-    var openpgp = require('openpgp');
-    var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-    var publicKey = openpgp.key.readArmored(key);
-    openpgp.encryptMessage(publicKey.keys, 'Hello, World!').then(function(pgpMessage) {
-        // success
-    }).catch(function(error) {
-        // failure
-    });
+```js
+var openpgp = require('openpgp');
+var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var publicKey = openpgp.key.readArmored(key);
+openpgp.encryptMessage(publicKey.keys, 'Hello, World!').then(function(pgpMessage) {
+    // success
+}).catch(function(error) {
+    // failure
+});
+```
 
 #### Decryption
-
-    var openpgp = require('openpgp');
-    var key = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
-    var privateKey = openpgp.key.readArmored(key).keys[0];
-    privateKey.decrypt('passphrase');
-    var pgpMessage = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
-    pgpMessage = openpgp.message.readArmored(pgpMessage);
-    openpgp.decryptMessage(privateKey, pgpMessage).then(function(plaintext) {
-        // success
-    }).catch(function(error) {
-        // failure
-    });
-
+```js
+var openpgp = require('openpgp');
+var key = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+var privateKey = openpgp.key.readArmored(key).keys[0];
+privateKey.decrypt('passphrase');
+var pgpMessage = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
+pgpMessage = openpgp.message.readArmored(pgpMessage);
+openpgp.decryptMessage(privateKey, pgpMessage).then(function(plaintext) {
+    // success
+}).catch(function(error) {
+    // failure
+});
+```
 
 ### Security recommendations
 
