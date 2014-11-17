@@ -43,7 +43,7 @@ function getType(text) {
   var header = text.match(reHeader);
 
   if (!header) {
-    throw new Error('Unknow ASCII armor type');
+    throw new Error('Unknown ASCII armor type');
   }
 
   // BEGIN PGP MESSAGE, PART X/Y
