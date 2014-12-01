@@ -47,7 +47,8 @@
   },
   "dependencies": {
     "es6-promise": "^1.0.0",
-    "node-localstorage": "~0.3.4"
+    "node-localstorage": "~0.3.4",
+    "zlibjs": "^0.2.0"
   },
   "repository": {
     "type": "git",
