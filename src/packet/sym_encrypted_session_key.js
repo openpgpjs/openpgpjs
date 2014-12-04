@@ -46,6 +46,7 @@ module.exports = SymEncryptedSessionKey;
  */
 function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
+  this.version = 4;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
   this.encrypted = null;
