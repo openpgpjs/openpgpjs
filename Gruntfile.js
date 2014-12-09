@@ -118,6 +118,12 @@ module.exports = function(grunt) {
         cwd: 'node_modules/',
         src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js'],
         dest: 'test/lib/'
+      },
+      zlib: {
+        expand: true,
+        cwd: 'node_modules/zlibjs/bin/',
+        src: ['rawdeflate.min.js','rawinflate.min.js','zlib.min.js'],
+        dest: 'src/compression/'
       }
     },
     clean: ['dist/'],
@@ -145,7 +151,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-connect');
 
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'browserify', 'replace', 'uglify', 'npm_pack']);
+    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify', 'npm_pack']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
     grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
   });
@@ -182,5 +188,5 @@ module.exports = function(grunt) {
   });
 
     // Test/Dev tasks
-  grunt.registerTask('test', ['copy', 'mochaTest', 'mocha_phantomjs']);
+  grunt.registerTask('test', ['copy:npm', 'mochaTest', 'mocha_phantomjs']);
 };
