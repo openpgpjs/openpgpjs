@@ -128,7 +128,7 @@ describe("ASCII armor", function() {
       '-----END PGP SIGNNATURE-----'].join('\n');
 
     msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Unknow ASCII armor type/);
+    expect(msg).to.throw(Error, /Unknown ASCII armor type/);
   });
 
   it('Armor checksum validation', function () {
