@@ -181,6 +181,19 @@ describe('High level API', function() {
     initKeys();
   });
 
+  it('Configuration', function(){
+    openpgp.config.show_comment=false;
+    openpgp.config.show_version=false;
+    var opt = {numBits: 128, userId: 'Test <test@example.com>', passphrase: 'hello world'};
+      openpgp.generateKeyPair(opt).then(function(data) {
+        expect(data).to.exist;
+        expect(data.publicKeyArmored).to.not.match(/^Version:/);
+        expect(data.privateKeyArmored).to.not.match(/^Comment:/);
+        expect(data.key).to.be.an.instanceof(openpgp.key.Key);
+        done();
+      });
+  })
+
   describe('Encryption', function() {
 
     it('RSA: encryptMessage async', function (done) {
