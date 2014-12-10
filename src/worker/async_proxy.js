@@ -38,6 +38,7 @@ var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
  * Initializes a new proxy and loads the web worker
  * @constructor
  * @param {String} path The path to the worker or 'openpgp.worker.js' by default
+ * @param {Object} config The worker configuration
  */
 function AsyncProxy(path, config) {
   this.worker = new Worker(path || 'openpgp.worker.js');
