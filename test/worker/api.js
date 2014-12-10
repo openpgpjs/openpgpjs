@@ -181,21 +181,21 @@ describe('High level API', function() {
     initKeys();
   });
 
-  it('Configuration', function(){
-    openpgp.config.show_comment=false;
-    openpgp.config.show_version=false;
-    var opt = {numBits: 128, userId: 'Test <test@example.com>', passphrase: 'hello world'};
-      openpgp.generateKeyPair(opt).then(function(data) {
+  describe('Main', function(){
+    it('Configuration', function(done){
+      openpgp.config.show_comment = false;
+      openpgp.config.show_version = false;
+      openpgp.initWorker('../dist/openpgp.worker.js');
+      openpgp.encryptMessage([pubKeyRSA], plaintext).then(function(data) {
         expect(data).to.exist;
-        expect(data.publicKeyArmored).to.not.match(/^Version:/);
-        expect(data.privateKeyArmored).to.not.match(/^Comment:/);
-        expect(data.key).to.be.an.instanceof(openpgp.key.Key);
+        expect(data).not.to.match(/^Version:/);
+        expect(data).not.to.match(/^Comment:/);
         done();
       });
-  })
+    });
+  });
 
   describe('Encryption', function() {
-
     it('RSA: encryptMessage async', function (done) {
       openpgp.encryptMessage([pubKeyRSA], plaintext).then(function(data) {
         expect(data).to.exist;
