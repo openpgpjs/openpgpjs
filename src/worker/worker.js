@@ -55,7 +55,7 @@ self.onmessage = function (event) {
   switch (msg.event) {
     case 'configure':
       for(var i in msg.config){
-        window.openpgp.config[i]=msg.config[i];
+        window.openpgp.config[i] = msg.config[i];
       }
     break;
     case 'seed-random':

@@ -53,7 +53,7 @@ var asyncProxy; // instance of the asyncproxy
  * @param {String} path relative path to the worker scripts
  */
 function initWorker(path) {
-  asyncProxy = new AsyncProxy(path,this.config);
+  asyncProxy = new AsyncProxy(path, this.config);
 }
 
 /**
