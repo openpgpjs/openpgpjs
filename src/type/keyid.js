@@ -71,3 +71,9 @@ module.exports.fromClone = function (clone) {
   keyid.bytes = clone.bytes;
   return keyid;
 };
+
+module.exports.fromId = function (hex) {
+  var keyid = new Keyid();
+  keyid.read(util.hex2bin(hex));
+  return keyid;
+};
