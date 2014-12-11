@@ -172,6 +172,25 @@ var priv_key_de =
     expect(privKeyDE).to.exist;
   }
 
+describe('Init Worker', function() {
+
+  this.timeout(0);
+
+  it('openpgp.worker initialized', function (done) {
+    expect(openpgp.worker).to.be.null;
+    var workerAvailable = openpgp.initWorker('../dist/openpgp.worker.js');
+    expect(workerAvailable).to.be.true;
+    expect(openpgp.worker).to.exist;
+    privKeyRSA = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    expect(privKeyRSA.primaryKey.isDecrypted).to.be.false;
+    openpgp.worker.decryptKeyPacket(privKeyRSA, [privKeyRSA.primaryKey.getKeyId()], 'hello world').then(function(key) {
+      expect(key.primaryKey.isDecrypted).to.be.true;
+      done();
+    }).catch(done);
+  });
+
+});
+
 describe('High level API', function() {
 
   this.timeout(0);

@@ -46,14 +46,20 @@ if (typeof Promise === 'undefined') {
   require('es6-promise').polyfill();
 }
 
-var asyncProxy; // instance of the asyncproxy
+var asyncProxy = null; // instance of the asyncproxy
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
- * @param {String} path relative path to the worker scripts
+ * @param {String} path relative path to the worker scripts, default: 'openpgp.worker.js'
+ * @return {Boolean} true if worker created successfully
  */
 function initWorker(path) {
+  if (typeof window === 'undefined' || !window.Worker) {
+    return false;
+  }
   asyncProxy = new AsyncProxy(path);
+  exports.worker = asyncProxy;
+  return true;
 }
 
 /**
@@ -68,7 +74,7 @@ function encryptMessage(keys, text) {
     keys = [keys];
   }
 
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.encryptMessage(keys, text);
   }
 
@@ -95,7 +101,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text);
   }
 
@@ -119,7 +125,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * @static
  */
 function decryptMessage(privateKey, msg) {
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.decryptMessage(privateKey, msg);
   }
 
@@ -145,7 +151,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg);
   }
 
@@ -174,7 +180,7 @@ function signClearMessage(privateKeys, text) {
     privateKeys = [privateKeys];
   }
 
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.signClearMessage(privateKeys, text);
   }
 
@@ -199,7 +205,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
     publicKeys = [publicKeys];
   }
 
-  if (useWorker()) {
+  if (asyncProxy) {
     return asyncProxy.verifyClearSignedMessage(publicKeys, msg);
   }
 
@@ -229,7 +235,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
  */
 function generateKeyPair(options) {
   // use web worker if web crypto apis are not supported
-  if (!util.getWebCrypto() && useWorker()) {
+  if (!util.getWebCrypto() && asyncProxy) {
     return asyncProxy.generateKeyPair(options);
   }
 
@@ -258,22 +264,6 @@ function generateKeyPair(options) {
 //
 // helper functions
 //
-
-/**
- * Are we in a browser and do we support worker?
- */
-function useWorker() {
-  if (typeof window === 'undefined' || !window.Worker) {
-    return false;
-  }
-
-  if (!asyncProxy) {
-    console.log('You need to set the worker path!');
-    return false;
-  }
-
-  return true;
-}
 
 /**
  * Command pattern that wraps synchronous code into a promise
@@ -307,6 +297,7 @@ function onError(message, error) {
 }
 
 exports.initWorker = initWorker;
+exports.worker = null;
 exports.encryptMessage = encryptMessage;
 exports.signAndEncryptMessage = signAndEncryptMessage;
 exports.decryptMessage = decryptMessage;
