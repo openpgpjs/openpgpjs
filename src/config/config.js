@@ -37,6 +37,7 @@ module.exports = {
   compression: enums.compression.zip,
   integrity_protect: true,
   rsa_blinding: true,
+  useWebCrypto: true,
 
   show_version: true,
   show_comment: true,
