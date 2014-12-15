@@ -39,8 +39,12 @@ var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
  * @constructor
  * @param {String} path The path to the worker or 'openpgp.worker.js' by default
  */
-function AsyncProxy(path) {
-  this.worker = new Worker(path || 'openpgp.worker.js');
+function AsyncProxy(options) {
+  if (options && options.worker) {
+    this.worker = options.worker;
+  } else {
+    this.worker = new Worker(options && options.path || 'openpgp.worker.js');
+  }
   this.worker.onmessage = this.onMessage.bind(this);
   this.worker.onerror = function(e) {
     throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
