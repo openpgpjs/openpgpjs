@@ -184,16 +184,16 @@ SecretKey.prototype.encrypt = function (passphrase, options) {
   }
 
   var s2k = new type_s2k(),
-    symmetric = 'aes256',
-    cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
-    key = produceEncryptionKey(s2k, passphrase, symmetric),
-    blockLen = crypto.cipher[symmetric].blockSize,
-    iv = crypto.random.getRandomBytes(blockLen);
-
   options = options || {};
   if (options.count) {
     s2k.set_count(options.count);
   }
+  
+  var symmetric = 'aes256';
+    cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
+    key = produceEncryptionKey(s2k, passphrase, symmetric),
+    blockLen = crypto.cipher[symmetric].blockSize,
+    iv = crypto.random.getRandomBytes(blockLen);
 
   this.encrypted = '';
   this.encrypted += String.fromCharCode(254);

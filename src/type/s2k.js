@@ -71,7 +71,6 @@ S2K.prototype.set_count = function (count) {
   }
 
   this.c = lowerBits + (upperBits << 4);
-  console.log('Setting encryption count: ' + count + ' -> ' + this.get_count());
   return this.get_count();
 };
 
