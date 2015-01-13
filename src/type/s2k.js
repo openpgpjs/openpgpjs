@@ -57,6 +57,24 @@ S2K.prototype.get_count = function () {
   return (16 + (this.c & 15)) << ((this.c >> 4) + expbias);
 };
 
+S2K.prototype.set_count = function (count) {
+  var expbias = 6;
+  
+  var upperBits = 0;
+  while (upperBits < 15 && count > (31 << (upperBits + expbias))) {
+    upperBits++;
+  }
+  
+  var lowerBits = 0;
+  while (lowerBits < 15 && count > (16 + lowerBits) << (upperBits + expbias)) {
+    lowerBits++;
+  }
+
+  this.c = lowerBits + (upperBits << 4);
+  console.log('Setting encryption count: ' + count + ' -> ' + this.get_count());
+  return this.get_count();
+};
+
 /**
  * Parsing function for a string-to-key specifier ({@link http://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
  * @param {String} input Payload of string-to-key specifier

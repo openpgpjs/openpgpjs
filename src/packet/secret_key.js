@@ -175,7 +175,7 @@ SecretKey.prototype.write = function () {
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
  */
-SecretKey.prototype.encrypt = function (passphrase) {
+SecretKey.prototype.encrypt = function (passphrase, options) {
   if (this.isDecrypted && !passphrase) {
     this.encrypted = null;
     return;
@@ -189,6 +189,11 @@ SecretKey.prototype.encrypt = function (passphrase) {
     key = produceEncryptionKey(s2k, passphrase, symmetric),
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
+
+  options = options || {};
+  if (options.count) {
+    s2k.set_count(options.count);
+  }
 
   this.encrypted = '';
   this.encrypted += String.fromCharCode(254);
