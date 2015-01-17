@@ -969,9 +969,11 @@ function generate(options) {
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
     signaturePacket.preferredHashAlgorithms = [];
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
     signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha384);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha224);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
     signaturePacket.preferredCompressionAlgorithms = [];
     signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
     signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
