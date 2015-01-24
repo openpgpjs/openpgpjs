@@ -178,7 +178,7 @@ describe('Init Worker', function() {
 
   it('openpgp.getWorker method', function (done) {
     expect(openpgp.getWorker()).to.be.null;
-    var workerAvailable = openpgp.initWorker({path: '../dist/openpgp.worker.js'});
+    var workerAvailable = openpgp.initWorker('../dist/openpgp.worker.js');
     expect(workerAvailable).to.be.true;
     expect(openpgp.getWorker()).to.exist;
     privKeyRSA = openpgp.key.readArmored(priv_key_rsa).keys[0];
@@ -196,7 +196,7 @@ describe('High level API', function() {
   this.timeout(0);
 
   before(function() {
-    openpgp.initWorker({path: '../dist/openpgp.worker.js'});
+    openpgp.initWorker('../dist/openpgp.worker.js');
     initKeys();
   });
 
@@ -372,7 +372,7 @@ describe('High level API', function() {
     });
 
     it('Depleted random buffer in worker gives error', function (done) {
-      var wProxy = new openpgp.AsyncProxy({path: '../dist/openpgp.worker.js'});
+      var wProxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
       wProxy.worker = new Worker('../dist/openpgp.worker.js');
       wProxy.worker.onmessage = wProxy.onMessage.bind(wProxy);
       wProxy.seedRandom(10);
@@ -404,7 +404,7 @@ describe('High level API', function() {
     var msg, proxy;
 
     beforeEach(function() {
-      proxy = new openpgp.AsyncProxy({path: '../dist/openpgp.worker.js'});
+      proxy = new openpgp.AsyncProxy('../dist/openpgp.worker.js');
       initKeys();
       msg = openpgp.message.fromText(plaintext).encrypt([pubKeyRSA]);
     });
