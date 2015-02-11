@@ -55,7 +55,9 @@ function AsyncProxy(path, options) {
   this.seedRandom(INITIAL_RANDOM_SEED);
   // FIFO
   this.tasks = [];
-  this.worker.postMessage({event: 'configure', config: options.config});
+  if (options && options.config) {
+    this.worker.postMessage({event: 'configure', config: options.config});
+  }
 }
 
 /**
