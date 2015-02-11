@@ -124,7 +124,7 @@ module.exports = {
 
     var range = max.subtract(min);
     var r = this.getRandomBigInteger(range.bitLength());
-    while (r > range) {
+    while (r.compareTo(range) > 0) {
       r = this.getRandomBigInteger(range.bitLength());
     }
     return min.add(r);
