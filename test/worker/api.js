@@ -202,13 +202,13 @@ describe('High level API', function() {
 
   describe('Main', function(){
     it('Configuration', function(done){
-      openpgp.config.show_comment = false;
       openpgp.config.show_version = false;
+      openpgp.config.commentstring = 'different';
       openpgp.initWorker('../dist/openpgp.worker.js');
       openpgp.encryptMessage([pubKeyRSA], plaintext).then(function(data) {
         expect(data).to.exist;
         expect(data).not.to.match(/^Version:/);
-        expect(data).not.to.match(/^Comment:/);
+        expect(data).to.match(/Comment: different/);
         done();
       });
     });

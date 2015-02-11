@@ -54,10 +54,10 @@ self.onmessage = function (event) {
 
   switch (msg.event) {
     case 'configure':
-      for(var i in msg.config){
+      for (var i in msg.config) {
         window.openpgp.config[i] = msg.config[i];
       }
-    break;
+      break;
     case 'seed-random':
       if (!(msg.buf instanceof Uint8Array)) {
         msg.buf = new Uint8Array(msg.buf);

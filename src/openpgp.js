@@ -56,8 +56,9 @@ var asyncProxy = null; // instance of the asyncproxy
  * @return {Boolean} true if worker created successfully
  */
 function initWorker(path, options) {
-  if (options && options.worker ||
-      typeof window !== 'undefined' && window.Worker) {
+  if (options && options.worker || typeof window !== 'undefined' && window.Worker) {
+    options = options || {};
+    options.config = this.config;
     asyncProxy = new AsyncProxy(path, options);
     return true;
   } else {
