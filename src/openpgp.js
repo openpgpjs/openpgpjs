@@ -49,11 +49,11 @@ if (typeof Promise === 'undefined') {
 var asyncProxy; // instance of the asyncproxy
 
 /**
- * Set the path for the web worker script and create an instance of the async proxy
+ * Set the path for the web worker script and create an instance of the async proxy, passging current config into it
  * @param {String} path relative path to the worker scripts
  */
 function initWorker(path) {
-  asyncProxy = new AsyncProxy(path);
+  asyncProxy = new AsyncProxy(path, this.config);
 }
 
 /**
