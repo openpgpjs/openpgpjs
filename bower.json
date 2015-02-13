@@ -1,6 +1,6 @@
 {
   "name": "openpgp",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "homepage": "http://openpgpjs.org/",
   "authors": [
     "OpenPGP Development Team <list@openpgpjs.org> (https://github.com/openpgpjs/openpgpjs/graphs/contributors)"
