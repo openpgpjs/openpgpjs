@@ -18,7 +18,7 @@ For use in browser, install via bower:
 
     bower install --save openpgp
 
-Or Fetch a minified build under [releases](https://github.com/openpgpjs/openpgpjs/releases).
+Or Fetch a minified build under [dist](https://github.com/openpgpjs/openpgpjs/tree/master/dist).
 
 The library can be loaded via  AMD/require.js or accessed globally via `window.openpgp`.
 
