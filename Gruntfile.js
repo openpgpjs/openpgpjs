@@ -1,4 +1,7 @@
 module.exports = function(grunt) {
+  'use strict';
+
+  var version = grunt.option('release');
 
   // Project configuration.
   grunt.initConfig({
@@ -150,8 +153,36 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
 
+  grunt.registerTask('set_version', function() {
+    if (!version) {
+      throw new Error('You must specify the version: "--release=1.0.0"');
+    }
+
+    patchFile({
+      fileName: 'package.json',
+      version: version
+    });
+
+    patchFile({
+      fileName: 'bower.json',
+      version: version
+    });
+  });
+
+  function patchFile(options) {
+    var fs = require('fs'),
+      path = './' + options.fileName,
+      file = require(path);
+
+    if (options.version) {
+      file.version = options.version;
+    }
+
+    fs.writeFileSync(path, JSON.stringify(file, null, 2));
+  }
+
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify', 'npm_pack']);
+    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
     grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
   });
@@ -168,25 +199,6 @@ module.exports = function(grunt) {
     mocha.stderr.pipe(process.stderr);
   });
 
-  // Alias the `npm_pack` task to run `npm pack`
-  grunt.registerTask('npm_pack', 'npm pack', function () {
-    var done = this.async();
-    var npm = require('child_process').exec('npm pack ../', { cwd: 'dist'}, function (err, stdout) {
-      var package = stdout;
-      if (err === null) {
-        var install = require('child_process').exec('npm install dist/' + package, function (err) {
-          done(err);
-        });
-        install.stdout.pipe(process.stdout);
-        install.stderr.pipe(process.stderr);
-      } else {
-        done(err);
-      }
-    });
-    npm.stdout.pipe(process.stdout);
-    npm.stderr.pipe(process.stderr);
-  });
-
-    // Test/Dev tasks
+  // Test/Dev tasks
   grunt.registerTask('test', ['copy:npm', 'mochaTest', 'mocha_phantomjs']);
 };
