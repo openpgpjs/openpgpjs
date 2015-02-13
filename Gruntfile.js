@@ -1,5 +1,4 @@
 module.exports = function(grunt) {
-  'use strict';
 
   var version = grunt.option('release');
 
@@ -182,7 +181,7 @@ module.exports = function(grunt) {
   }
 
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
+    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify', 'npm_pack']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
     grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
   });
@@ -197,6 +196,25 @@ module.exports = function(grunt) {
     });
     mocha.stdout.pipe(process.stdout);
     mocha.stderr.pipe(process.stderr);
+  });
+
+  // Alias the `npm_pack` task to run `npm pack`
+  grunt.registerTask('npm_pack', 'npm pack', function () {
+    var done = this.async();
+    var npm = require('child_process').exec('npm pack ../', { cwd: 'dist'}, function (err, stdout) {
+      var package = stdout;
+      if (err === null) {
+        var install = require('child_process').exec('npm install dist/' + package, function (err) {
+          done(err);
+        });
+        install.stdout.pipe(process.stdout);
+        install.stderr.pipe(process.stderr);
+      } else {
+        done(err);
+      }
+    });
+    npm.stdout.pipe(process.stdout);
+    npm.stderr.pipe(process.stderr);
   });
 
   // Test/Dev tasks

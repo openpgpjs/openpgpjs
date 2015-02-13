@@ -22,7 +22,7 @@ grunt set_version --release=$1
 npm test
 
 # Add build files to git
-sed -i "" '/dist/d' .gitignore
+sed -i "" '/^dist\/$/d' .gitignore
 git add dist/ *.json
 git commit -m "Release new version"
 git checkout .gitignore
