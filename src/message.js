@@ -327,11 +327,15 @@ function fromText(text) {
 /**
  * creates new message object from binary data
  * @param {String} bytes
+ * @param {String} filename
  * @return {module:message~Message} new message object
  * @static
  */
-function fromBinary(bytes) {
+function fromBinary(bytes, filename) {
   var literalDataPacket = new packet.Literal();
+  if (filename) {
+    literalDataPacket.setFilename(filename);
+  }
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
