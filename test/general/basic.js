@@ -145,7 +145,7 @@ describe('Basic', function() {
 
         // sign and encrypt
         var msg, encrypted;
-        msg = openpgp.message.fromBinary(message);
+        msg = openpgp.message.fromBinary(message, "test.txt");
         msg = msg.sign([privKey]);
         msg = msg.encrypt([pubKey]);
         encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
