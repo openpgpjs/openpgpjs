@@ -22,6 +22,9 @@ module.exports = {
   /** @see module:crypto/hash/ripe-md */
   ripemd: require('./ripe-md.js'),
 
+  forge_sha1: forge_sha1,
+  forge_sha256: forge_sha256,
+
   /**
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo Hash algorithm type (see {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})

@@ -1,7 +1,6 @@
 var util = require('../util.js'),
   packet_stream = require('./packet.js'),
   crypto_stream = require('./crypto.js'),
-  node_crypto = require('crypto'),
   packet = require('../packet'),
   enums = require('../enums.js'),
   armor = require('../encoding/armor.js'),
@@ -25,7 +24,7 @@ function MessageStream(keys, file_length, filename, opts) {
     var prefixrandom = opts['prefixrandom'];
     var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length - 1);
     opts['resync'] = false;
-    this.hash = node_crypto.createHash('sha1', 'binary');
+    this.hash = crypto.hash.forge_sha1.create();
     this.hash.update(prefix);
   }
   
@@ -95,7 +94,7 @@ MessageStream.prototype._transform = function(chunk, encoding, cb) {
     cb();
   });
   if (config.integrity_protect) {
-    this.hash.update(chunk);
+    this.hash.update(chunk.toString('binary'));
   }
   this.cipher.write(chunk);
 }
@@ -108,7 +107,7 @@ MessageStream.prototype._flush = function(cb) {
   if (config.integrity_protect) {
     var mdc_header = String.fromCharCode(0xD3) + String.fromCharCode(0x14);
     this.hash.update(mdc_header);
-    var hash_digest = this.hash.digest('binary');
+    var hash_digest = this.hash.digest().getBytes();
 
     this.cipher.once('encrypted', function() {
       self.cipher.end();
