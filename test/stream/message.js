@@ -9,6 +9,7 @@ var cryptoStream = require('../../src/stream/crypto.js'),
   util = require('../../src/util.js');
 
 var chai = require('chai'),
+  fs = require('fs'),
 	expect = chai.expect;
 
 
@@ -95,10 +96,13 @@ describe("Encrypted message", function() {
 
       var stream_encrypted_buffer = new Buffer([], 'binary');
       var message_stream = new openpgp.stream.MessageStream([pubKey], plaintext_length, 'msg.txt');
-      message_stream.on('data', function(data) {
-        stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer, data]);
+      message_stream.on('data', function(encrypted_data) {
+        stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer,
+                                                encrypted_data]);
       });
       message_stream.on('end', function() {
+        fs.writeFileSync('test.pgp', stream_encrypted_buffer.toString());
+
         var packetList = new openpgp.packet.List(),
           packetListReal = new openpgp.packet.List(),
           encrypted_message_data = encrypted_message.packets.write(),
