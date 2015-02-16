@@ -309,6 +309,8 @@ module.exports = {
     return "unknown";
   },
 
+  inherits: require('util').inherits,
+
   /**
    * Get native Web Cryptography api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.useWebCrypto
