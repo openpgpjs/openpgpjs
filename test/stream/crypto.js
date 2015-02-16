@@ -187,6 +187,4 @@ describe("CFB Stream", function() {
 
   });
 
-
-
 });
