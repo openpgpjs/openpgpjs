@@ -320,8 +320,8 @@ module.exports = {
       return;
     }
 
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
-      return window.crypto.subtle;
+    if (typeof window !== 'undefined' && window.crypto) {
+      return window.crypto.subtle || window.crypto.webkitSubtle;
     }
   }
 };
