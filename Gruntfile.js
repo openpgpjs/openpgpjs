@@ -1,5 +1,7 @@
 module.exports = function(grunt) {
 
+  var version = grunt.option('release');
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -150,6 +152,34 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
 
+  grunt.registerTask('set_version', function() {
+    if (!version) {
+      throw new Error('You must specify the version: "--release=1.0.0"');
+    }
+
+    patchFile({
+      fileName: 'package.json',
+      version: version
+    });
+
+    patchFile({
+      fileName: 'bower.json',
+      version: version
+    });
+  });
+
+  function patchFile(options) {
+    var fs = require('fs'),
+      path = './' + options.fileName,
+      file = require(path);
+
+    if (options.version) {
+      file.version = options.version;
+    }
+
+    fs.writeFileSync(path, JSON.stringify(file, null, 2));
+  }
+
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
     grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify', 'npm_pack']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
@@ -187,6 +217,6 @@ module.exports = function(grunt) {
     npm.stderr.pipe(process.stderr);
   });
 
-    // Test/Dev tasks
+  // Test/Dev tasks
   grunt.registerTask('test', ['copy:npm', 'mochaTest', 'mocha_phantomjs']);
 };

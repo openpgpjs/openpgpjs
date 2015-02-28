@@ -102,14 +102,18 @@ function DSA() {
   function verify(hashalgo, s1, s2, m, p, q, g, y) {
     var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-    if (BigInteger.ZERO.compareTo(s1) > 0 ||
-      s1.compareTo(q) > 0 ||
-      BigInteger.ZERO.compareTo(s2) > 0 ||
-      s2.compareTo(q) > 0) {
+    if (BigInteger.ZERO.compareTo(s1) >= 0 ||
+      s1.compareTo(q) >= 0 ||
+      BigInteger.ZERO.compareTo(s2) >= 0 ||
+      s2.compareTo(q) >= 0) {
       util.print_debug("invalid DSA Signature");
       return null;
     }
     var w = s2.modInverse(q);
+    if (BigInteger.ZERO.compareTo(w) == 0) {
+      util.print_debug("invalid DSA Signature");
+      return null;
+    }
     var u1 = hash.multiply(w).mod(q);
     var u2 = s1.multiply(w).mod(q);
     return g.modPow(u1, p).multiply(y.modPow(u2, p)).mod(p).mod(q);

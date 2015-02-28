@@ -172,6 +172,25 @@ var priv_key_de =
     expect(privKeyDE).to.exist;
   }
 
+describe('Init Worker', function() {
+
+  this.timeout(0);
+
+  it('openpgp.getWorker method', function (done) {
+    expect(openpgp.getWorker()).to.be.null;
+    var workerAvailable = openpgp.initWorker('../dist/openpgp.worker.js');
+    expect(workerAvailable).to.be.true;
+    expect(openpgp.getWorker()).to.exist;
+    privKeyRSA = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    expect(privKeyRSA.primaryKey.isDecrypted).to.be.false;
+    openpgp.getWorker().decryptKeyPacket(privKeyRSA, [privKeyRSA.primaryKey.getKeyId()], 'hello world').then(function(key) {
+      expect(key.primaryKey.isDecrypted).to.be.true;
+      done();
+    }).catch(done);
+  });
+
+});
+
 describe('High level API', function() {
 
   this.timeout(0);
@@ -181,8 +200,21 @@ describe('High level API', function() {
     initKeys();
   });
 
-  describe('Encryption', function() {
+  describe('Main', function(){
+    it('Configuration', function(done){
+      openpgp.config.show_version = false;
+      openpgp.config.commentstring = 'different';
+      openpgp.initWorker('../dist/openpgp.worker.js');
+      openpgp.encryptMessage([pubKeyRSA], plaintext).then(function(data) {
+        expect(data).to.exist;
+        expect(data).not.to.match(/^Version:/);
+        expect(data).to.match(/Comment: different/);
+        done();
+      });
+    });
+  });
 
+  describe('Encryption', function() {
     it('RSA: encryptMessage async', function (done) {
       openpgp.encryptMessage([pubKeyRSA], plaintext).then(function(data) {
         expect(data).to.exist;

@@ -1,12 +1,17 @@
 {
-  "name": "openpgpjs",
-  "version": "0.7.2",
+  "name": "openpgp",
+  "version": "0.11.0",
   "homepage": "http://openpgpjs.org/",
   "authors": [
     "OpenPGP Development Team <list@openpgpjs.org> (https://github.com/openpgpjs/openpgpjs/graphs/contributors)"
   ],
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
-  "main": "src/index.js",
+  "main": [
+    "dist/openpgp.js",
+    "dist/openpgp.worker.js",
+    "dist/openpgp.min.js",
+    "dist/openpgp.worker.min.js"
+  ],
   "moduleType": [
     "amd",
     "es6",
@@ -23,13 +28,12 @@
   "license": "LGPL 3.0 or any later version",
   "ignore": [
     "**/.*",
-    "dist/openpgp*.tgz",
+    "dist/*.tgz",
+    "dist/*_debug.js",
     "node_modules",
     "bower_components",
     "test",
     "tests",
-    "dist",
     "doc"
   ]
 }
-
