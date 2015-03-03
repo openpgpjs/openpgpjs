@@ -70,6 +70,9 @@ CleartextMessage.prototype.sign = function(privateKeys) {
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
   for (var i = 0; i < privateKeys.length; i++) {
+    if (privateKeys[i].isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
@@ -96,7 +99,7 @@ CleartextMessage.prototype.verify = function(keys) {
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getKeyPacket([signatureList[i].issuerKeyId]);
+      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
       if (keyPacket) {
         break;
       }
