@@ -732,6 +732,9 @@ CleartextMessage.prototype.sign = function(privateKeys) {
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
   for (var i = 0; i < privateKeys.length; i++) {
+    if (privateKeys[i].isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
@@ -758,7 +761,7 @@ CleartextMessage.prototype.verify = function(keys) {
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getKeyPacket([signatureList[i].issuerKeyId]);
+      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
       if (keyPacket) {
         break;
       }
@@ -992,7 +995,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v0.11.0",
+  versionstring: "OpenPGP.js v0.11.1",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
@@ -10692,21 +10695,21 @@ Key.prototype.armor = function() {
 };
 
 /**
- * Returns first key packet that is available for signing
+ * Returns first key packet or key packet by given keyId that is available for signing or signature verification
+ * @param  {module:type/keyid} keyId, optional
  * @return {(module:packet/secret_subkey|module:packet/secret_key|null)} key packet or null if no signing key has been found
  */
-Key.prototype.getSigningKeyPacket = function() {
-  if (this.isPublic()) {
-    throw new Error('Need private key for signing');
-  }
+Key.prototype.getSigningKeyPacket = function(keyId) {
   var primaryUser = this.getPrimaryUser();
   if (primaryUser &&
-      isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+      isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate) &&
+      (!keyId || this.primaryKey.getKeyId().equals(keyId))) {
     return this.primaryKey;
   }
   if (this.subKeys) {
     for (var i = 0; i < this.subKeys.length; i++) {
-      if (this.subKeys[i].isValidSigningKey(this.primaryKey)) {
+      if (this.subKeys[i].isValidSigningKey(this.primaryKey) &&
+          (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
         return this.subKeys[i].subKey;
       }
     }
@@ -11989,6 +11992,9 @@ Message.prototype.sign = function(privateKeys) {
                       enums.signature.binary : enums.signature.text;
   var i;
   for (i = 0; i < privateKeys.length; i++) {
+    if (privateKeys[i].isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     var onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
@@ -12031,7 +12037,7 @@ Message.prototype.verify = function(keys) {
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getKeyPacket([signatureList[i].issuerKeyId]);
+      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
       if (keyPacket) {
         break;
       }
