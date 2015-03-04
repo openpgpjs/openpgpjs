@@ -194,6 +194,9 @@ Message.prototype.sign = function(privateKeys) {
                       enums.signature.binary : enums.signature.text;
   var i;
   for (i = 0; i < privateKeys.length; i++) {
+    if (privateKeys[i].isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     var onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
@@ -236,7 +239,7 @@ Message.prototype.verify = function(keys) {
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getKeyPacket([signatureList[i].issuerKeyId]);
+      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
       if (keyPacket) {
         break;
       }
