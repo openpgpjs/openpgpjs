@@ -181,6 +181,16 @@ describe("Keyring", function() {
     expect(keys).to.exist.and.have.length(1);
   });
 
+  it('publicKeys.getForAddress() - address with regex special char |', function() {
+    var keys = keyring.publicKeys.getForAddress('whiteout.test|not@t-online.de');
+    expect(keys).to.be.empty;
+  });
+
+  it('publicKeys.getForAddress() - address with regex special char .', function() {
+    var keys = keyring.publicKeys.getForAddress('wh.t.out.test@t-online.de');
+    expect(keys).to.be.empty;
+  });
+
   it('privateKeys.getForAddress() - unknown address', function() {
     var key = keyring.privateKeys.getForAddress('nobody@example.com');
     expect(key).to.be.empty;
