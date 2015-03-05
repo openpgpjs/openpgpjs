@@ -123,7 +123,9 @@ KeyArray.prototype.getForAddress = function(email) {
  * @return {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
-  var emailRegex = new RegExp('<' + email.toLowerCase() + '>');
+  // escape email before using in regular expression
+  email = email.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var emailRegex = new RegExp('<' + email + '>');
   var keyEmails = key.getUserIds();
   for (var i = 0; i < keyEmails.length; i++) {
     if (emailRegex.test(keyEmails[i].toLowerCase())) {
