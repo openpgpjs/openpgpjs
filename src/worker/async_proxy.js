@@ -130,24 +130,28 @@ AsyncProxy.prototype.terminate = function() {
 };
 
 /**
- * Encrypts message text with keys
- * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
- * @param  {String} text message as native JavaScript string
+ * Encrypts message text/data with keys or passwords
+ * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
+ * @param  {String} text                                       text message as native JavaScript string/binary string
+ * @param  {(Array<String>|String)} passwords                  passwords for the message
  */
-AsyncProxy.prototype.encryptMessage = function(keys, text) {
+AsyncProxy.prototype.encryptMessage = function(keys, text, passwords) {
   var self = this;
 
   return self.execute(function() {
-    if (!keys.length) {
-      keys = [keys];
+    if(keys) {
+      if (!Array.prototype.isPrototypeOf(keys)) {
+        keys = [keys];
+      }
+      keys = keys.map(function(key) {
+        return key.toPacketlist();
+      });
     }
-    keys = keys.map(function(key) {
-      return key.toPacketlist();
-    });
     self.worker.postMessage({
       event: 'encrypt-message',
       keys: keys,
-      text: text
+      text: text,
+      passwords: passwords
     });
   });
 };
@@ -180,14 +184,18 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
 
 /**
  * Decrypts message
- * @param  {module:key~Key}     privateKey private key with decrypted secret key data
- * @param  {module:message~Message} message    the message object with the encrypted data
+ * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
+ * @param  {module:message~Message} msg         the message object with the encrypted data
+ * @param  {Boolean} binary                     if true, return literal data binaryString instead of converting from UTF-8
  */
 AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
   var self = this;
 
   return self.execute(function() {
-    privateKey = privateKey.toPacketlist();
+    if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string')) {
+      privateKey = privateKey.toPacketlist();
+    }
+
     self.worker.postMessage({
       event: 'decrypt-message',
       privateKey: privateKey,
