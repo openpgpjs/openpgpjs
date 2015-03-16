@@ -72,28 +72,24 @@ function getWorker() {
 }
 
 /**
- * Encrypts message text with keys
- * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
- * @param  {String} text message as native JavaScript string
- * @return {Promise<String>}      encrypted ASCII armored message
+ * Encrypts message text/data with keys or passwords
+ * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
+ * @param  {String} text                                       text message as native JavaScript string
+ * @param  {(Array<String>|String)} passwords                  passwords for the message
+ * @return {Promise<String>}                                   encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text) {
-  if (!keys.length) {
-    keys = [keys];
-  }
+function encryptMessage(keys, text, passwords) {
 
   if (asyncProxy) {
-    return asyncProxy.encryptMessage(keys, text);
+    return asyncProxy.encryptMessage(keys, text, passwords);
   }
 
   return execute(function() {
     var msg, armored;
     msg = message.fromText(text);
-    msg = msg.encrypt(keys);
-    armored = armor.encode(enums.armor.message, msg.packets.write());
-    return armored;
-
+    msg = msg.encrypt(keys, passwords);
+    return armor.encode(enums.armor.message, msg.packets.write());
   }, 'Error encrypting message!');
 }
 
@@ -127,10 +123,10 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
 
 /**
  * Decrypts message
- * @param  {module:key~Key}                privateKey private key with decrypted secret key data
- * @param  {module:message~Message} msg    the message object with the encrypted data
- * @return {Promise<(String|null)>}        decrypted message as as native JavaScript string
- *                              or null if no literal data found
+ * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
+ * @param  {module:message~Message} msg         the message object with the encrypted data
+ * @return {Promise<(String|null)>}             decrypted message as as native JavaScript string
+ *                                              or null if no literal data found
  * @static
  */
 function decryptMessage(privateKey, msg) {
@@ -141,7 +137,6 @@ function decryptMessage(privateKey, msg) {
   return execute(function() {
     msg = msg.decrypt(privateKey);
     return msg.getText();
-
   }, 'Error decrypting message!');
 }
 

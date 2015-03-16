@@ -241,6 +241,9 @@ describe('Basic', function() {
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
 
+    var password1 = 'I am a password';
+    var password2 = 'I am another password';
+
     var privKey, message, keyids;
 
     it('Test initialization', function (done) {
@@ -254,7 +257,7 @@ describe('Basic', function() {
 
       expect(pubKey).to.exist;
 
-      openpgp.encryptMessage([pubKey], plaintext).then(function(encrypted) {
+      openpgp.encryptMessage([pubKey], plaintext, [password1, password2]).then(function(encrypted) {
 
         expect(encrypted).to.exist;
 
@@ -307,6 +310,22 @@ describe('Basic', function() {
 
     it('Encrypt plain text and afterwards decrypt leads to same result', function (done) {
       openpgp.decryptMessage(privKey, message).then(function(decrypted) {
+        expect(decrypted).to.exist;
+        expect(decrypted).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Decrypt with password1 leads to the same result', function (done) {
+      openpgp.decryptMessage(password1, message).then(function(decrypted) {
+        expect(decrypted).to.exist;
+        expect(decrypted).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Decrypt with password2 leads to the same result', function (done) {
+      openpgp.decryptMessage(password2, message).then(function(decrypted) {
         expect(decrypted).to.exist;
         expect(decrypted).to.equal(plaintext);
         done();
