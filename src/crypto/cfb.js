@@ -247,7 +247,12 @@ module.exports = {
     var pos = 0;
     var cyphertext = '';
     var tempBlock = '';
-    blockc = iv.substring(0, block_size);
+    if (iv === null)
+      for (i = 0; i < block_size; i++) {
+        blockc += String.fromCharCode(0);
+      }
+    else
+      blockc = iv.substring(0, block_size);
     while (plaintext.length > block_size * pos) {
       var encblock = cipherfn.encrypt(util.str2bin(blockc));
       blocki = plaintext.substring((pos * block_size), (pos * block_size) + block_size);

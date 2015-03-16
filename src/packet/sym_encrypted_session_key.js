@@ -47,6 +47,7 @@ module.exports = SymEncryptedSessionKey;
 function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
   this.version = 4;
+  this.sessionKey = null;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
   this.encrypted = null;
@@ -109,7 +110,6 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
 
-
   var length = crypto.cipher[algo].keySize;
   var key = this.s2k.produce_key(passphrase, length);
 
@@ -117,30 +117,38 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
     this.sessionKey = key;
 
   } else {
-    var decrypted = crypto.cfb.decrypt(
-      this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
-    decrypted = decrypted.join('');
+
+    var decrypted = crypto.cfb.normalDecrypt(
+      algo, key, this.encrypted, null);
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric,
-      decrypted[0].keyCodeAt());
+      decrypted.charCodeAt(0));
 
     this.sessionKey = decrypted.substr(1);
   }
 };
 
 SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
-  var length = crypto.getKeyLength(this.sessionKeyEncryptionAlgorithm);
+  var algo = this.sessionKeyEncryptionAlgorithm !== null ?
+    this.sessionKeyEncryptionAlgorithm :
+    this.sessionKeyAlgorithm;
+
+  this.sessionKeyEncryptionAlgorithm = algo;
+
+  var length = crypto.cipher[algo].keySize;
   var key = this.s2k.produce_key(passphrase, length);
 
-  var private_key = String.fromCharCode(
-    enums.write(enums.symmetric, this.sessionKeyAlgorithm)) +
+  var algo_enum = String.fromCharCode(
+    enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-  crypto.getRandomBytes(
-    crypto.getKeyLength(this.sessionKeyAlgorithm));
+  var private_key;
+  if(this.sessionKey === null) {
+    this.sessionKey = crypto.getRandomBytes(crypto.cipher[this.sessionKeyAlgorithm].keySize);
+  }
+  private_key = algo_enum + this.sessionKey;
 
-  this.encrypted = crypto.cfb.encrypt(
-    crypto.getPrefixRandom(this.sessionKeyEncryptionAlgorithm),
-    this.sessionKeyEncryptionAlgorithm, key, private_key, true);
+  this.encrypted = crypto.cfb.normalEncrypt(
+    algo, key, private_key, null);
 };
 
 /**
