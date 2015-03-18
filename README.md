@@ -20,7 +20,7 @@ For use in browser, install via bower:
 
 Or Fetch a minified build under [dist](https://github.com/openpgpjs/openpgpjs/tree/master/dist).
 
-The library can be loaded as a common.js module, a AMD/require.js module or accessed globally via `window.openpgp`.
+The library can be loaded as a CommonJS module, an AMD module or accessed globally via `window.openpgp`.
 
 
 ### Dependencies
