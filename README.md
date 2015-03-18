@@ -9,7 +9,7 @@ OpenPGP.js
 
 For server side use, install via npm:
 
-    npm install openpgp
+    npm install --save openpgp
 
 
 ### Browser support
@@ -20,7 +20,7 @@ For use in browser, install via bower:
 
 Or Fetch a minified build under [dist](https://github.com/openpgpjs/openpgpjs/tree/master/dist).
 
-The library can be loaded via  AMD/require.js or accessed globally via `window.openpgp`.
+The library can be loaded as a common.js module, a AMD/require.js module or accessed globally via `window.openpgp`.
 
 
 ### Dependencies
@@ -32,11 +32,32 @@ OpenPGP.js uses ES6 promises which are available in [most modern browsers](http:
 
 ### Examples
 
+#### Generate new keypair
+```js
+var openpgp = require('openpgp');
+
+var options = {
+    numBits: 2048,
+    userId: 'Jon Smith <jon.smith@example.org>',
+    passphrase: 'super long and hard to guess secret'
+};
+
+openpgp.generateKeyPair(options).then(function(keypair) {
+    // success
+    var privkey = keypair.privateKeyArmored;
+    var pubkey = keypair.publicKeyArmored;
+}).catch(function(error) {
+    // failure
+});
+```
+
 #### Encryption
 ```js
 var openpgp = require('openpgp');
+
 var key = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
 var publicKey = openpgp.key.readArmored(key);
+
 openpgp.encryptMessage(publicKey.keys, 'Hello, World!').then(function(pgpMessage) {
     // success
 }).catch(function(error) {
@@ -47,17 +68,24 @@ openpgp.encryptMessage(publicKey.keys, 'Hello, World!').then(function(pgpMessage
 #### Decryption
 ```js
 var openpgp = require('openpgp');
+
 var key = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
 var privateKey = openpgp.key.readArmored(key).keys[0];
 privateKey.decrypt('passphrase');
+
 var pgpMessage = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
 pgpMessage = openpgp.message.readArmored(pgpMessage);
+
 openpgp.decryptMessage(privateKey, pgpMessage).then(function(plaintext) {
     // success
 }).catch(function(error) {
     // failure
 });
 ```
+
+### Documentation
+
+A jsdoc build of our code comments is available at [doc/index.html](http://openpgpjs.org/openpgpjs/doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](http://openpgpjs.org/openpgpjs/doc/module-openpgp.html).
 
 ### Security recommendations
 
@@ -70,10 +98,6 @@ It is also recommended to set a strong passphrase that protects the user's priva
 To create your own build of the library, just run the following command after cloning the git repo. This will download all dependencies, run the tests and create a minifed bundle under `dist/openpgp.min.js` to use in your project:
 
     npm install && npm test
-
-### Documentation
-
-A jsdoc build of our code comments is available at [doc/index.html](http://openpgpjs.org/openpgpjs/doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](http://openpgpjs.org/openpgpjs/doc/module-openpgp.html).
 
 ### Mailing List
 
