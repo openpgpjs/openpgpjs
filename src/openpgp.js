@@ -81,7 +81,7 @@ function getWorker() {
  * @return {Promise<String>}      encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text) {
+function encryptMessage(keys, text, decryptedFilename) {
   if (!keys.length) {
     keys = [keys];
   }
@@ -92,7 +92,7 @@ function encryptMessage(keys, text) {
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = message.fromText(text, decryptedFilename);
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
