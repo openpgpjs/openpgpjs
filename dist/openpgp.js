@@ -12472,8 +12472,11 @@ function readSignedContent(content, detachedSignature) {
  * @return {module:message~Message} new message object
  * @static
  */
-function fromText(text) {
+function fromText(text, filename) {
   var literalDataPacket = new packet.Literal();
+  if (filename) {
+    literalDataPacket.setFilename(filename);
+  }
   // text will be converted to UTF8
   literalDataPacket.setText(text);
   var literalDataPacketlist = new packet.List();
@@ -12587,7 +12590,7 @@ function getWorker() {
  * @return {Promise<String>}      encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text) {
+function encryptMessage(keys, text, decryptedFilename) {
   if (!keys.length) {
     keys = [keys];
   }
@@ -12598,7 +12601,7 @@ function encryptMessage(keys, text) {
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = message.fromText(text, decryptedFilename);
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
@@ -12823,6 +12826,7 @@ exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;
 exports.generateKeyPair = generateKeyPair;
+
 },{"./cleartext.js":3,"./encoding/armor.js":32,"./enums.js":34,"./key.js":36,"./message.js":40,"./util":65,"./worker/async_proxy.js":66,"es6-promise":2}],42:[function(require,module,exports){
 /**
  * @requires enums

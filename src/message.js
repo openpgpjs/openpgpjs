@@ -317,8 +317,11 @@ function readSignedContent(content, detachedSignature) {
  * @return {module:message~Message} new message object
  * @static
  */
-function fromText(text) {
+function fromText(text, filename) {
   var literalDataPacket = new packet.Literal();
+  if (filename) {
+    literalDataPacket.setFilename(filename);
+  }
   // text will be converted to UTF8
   literalDataPacket.setText(text);
   var literalDataPacketlist = new packet.List();
