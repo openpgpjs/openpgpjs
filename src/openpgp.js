@@ -77,22 +77,43 @@ function getWorker() {
 /**
  * Encrypts message text/data with keys or passwords
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
- * @param  {String} text                                       text message as native JavaScript string
+ * @param  {String} data                                       text/data message as native JavaScript string/binary string
  * @param  {(Array<String>|String)} passwords                  passwords for the message
- * @return {Promise<String>}                                   encrypted ASCII armored message
+ * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
+ *                                                             filename {String}, and packets {Boolean}
+ * @return {Promise<String> or Promise<Packetlist>}            encrypted ASCII armored message, or Packetlist if params.packets is true
  * @static
  */
-function encryptMessage(keys, text, passwords) {
+function encryptMessage(keys, data, passwords, params) {
 
   if (asyncProxy) {
-    return asyncProxy.encryptMessage(keys, text, passwords);
+    return asyncProxy.encryptMessage(keys, data, passwords, params);
+  }
+
+  var filename, binary, packets;
+  if(params) {
+    filename = params.filename;
+    binary = params.binary;
+    packets = params.packets;
   }
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    if(binary) {
+      msg = message.fromBinary(data, filename);
+    }
+    else {
+      msg = message.fromText(data, filename);
+    }
     msg = msg.encrypt(keys, passwords);
-    return armor.encode(enums.armor.message, msg.packets.write());
+
+    if(packets) {
+      return msg.packets;
+    } 
+    else {
+      return armor.encode(enums.armor.message, msg.packets.write());
+    }
+
   }, 'Error encrypting message!');
 }
 
@@ -128,18 +149,25 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * Decrypts message
  * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
  * @param  {module:message~Message} msg         the message object with the encrypted data
+ * @param  {Boolean} binary                     if true, return literal data binaryString instead of converting from UTF-8
  * @return {Promise<(String|null)>}             decrypted message as as native JavaScript string
  *                                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg) {
+function decryptMessage(privateKey, msg, binary) {
   if (asyncProxy) {
-    return asyncProxy.decryptMessage(privateKey, msg);
+    return asyncProxy.decryptMessage(privateKey, msg, binary);
   }
 
   return execute(function() {
     msg = msg.decrypt(privateKey);
-    return msg.getText();
+    if(binary) {
+      return msg.getLiteralData();
+    }
+    else {
+      return msg.getText();
+    }
+
   }, 'Error decrypting message!');
 }
 
