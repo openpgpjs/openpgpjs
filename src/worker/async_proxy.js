@@ -132,10 +132,12 @@ AsyncProxy.prototype.terminate = function() {
 /**
  * Encrypts message text/data with keys or passwords
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
- * @param  {String} text                                       text message as native JavaScript string/binary string
+ * @param  {String} data                                       text/data message as native JavaScript string/binary string
  * @param  {(Array<String>|String)} passwords                  passwords for the message
+ * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
+ *                                                             filename {String}, and packets {Boolean}
  */
-AsyncProxy.prototype.encryptMessage = function(keys, text, passwords) {
+AsyncProxy.prototype.encryptMessage = function(keys, data, passwords, params) {
   var self = this;
 
   return self.execute(function() {
@@ -150,8 +152,9 @@ AsyncProxy.prototype.encryptMessage = function(keys, text, passwords) {
     self.worker.postMessage({
       event: 'encrypt-message',
       keys: keys,
-      text: text,
-      passwords: passwords
+      data: data,
+      passwords: passwords,
+      params: params
     });
   });
 };
@@ -188,7 +191,7 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
  * @param  {module:message~Message} msg         the message object with the encrypted data
  * @param  {Boolean} binary                     if true, return literal data binaryString instead of converting from UTF-8
  */
-AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
+AsyncProxy.prototype.decryptMessage = function(privateKey, message, binary) {
   var self = this;
 
   return self.execute(function() {
@@ -199,7 +202,8 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
     self.worker.postMessage({
       event: 'decrypt-message',
       privateKey: privateKey,
-      message: message
+      message: message,
+      binary: binary
     });
   });
 };
