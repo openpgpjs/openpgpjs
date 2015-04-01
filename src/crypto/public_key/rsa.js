@@ -133,14 +133,14 @@ function RSA() {
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E) {
+  function generate(B, E, prng) {
     var webCrypto = util.getWebCrypto();
 
     //
     // Native RSA keygen using Web Crypto
     //
 
-    if (webCrypto) {
+    if (webCrypto && typeof prng === "undefined") {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
       var keyGenOpt;
@@ -206,6 +206,9 @@ function RSA() {
     return new Promise(function(resolve) {
       var key = new keyObject();
       var rng = new SecureRandom();
+      if (prng) {
+        rng = prng;
+      }
       var qs = B >> 1;
       key.e = parseInt(E, 16);
       key.ee = new BigInteger(E, 16);

@@ -6,7 +6,8 @@ var cryptoStream = require('../../src/stream/crypto.js'),
   key = require('../../src/key.js'),
   enums = require('../../src/enums.js'),
   crypto = require('../../src/crypto'),
-  util = require('../../src/util.js');
+  util = require('../../src/util.js'),
+  armor = require('../../src/encoding/armor.js');
 
 var chai = require('chai'),
   fs = require('fs'),
@@ -101,8 +102,6 @@ describe("Encrypted message", function() {
                                                 encrypted_data]);
       });
       message_stream.on('end', function() {
-        fs.writeFileSync('test.pgp', stream_encrypted_buffer.toString());
-
         var packetList = new openpgp.packet.List(),
           packetListReal = new openpgp.packet.List(),
           encrypted_message_data = encrypted_message.packets.write(),

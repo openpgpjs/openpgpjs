@@ -3555,8 +3555,8 @@ function Buffer(subject, encoding, offset) {
         break;
 
       default:
-        throw new Error('First argument needs to be a number, ' +
-                        'array or string.');
+        throw new TypeError('First argument needs to be a number, ' +
+                            'array or string.');
     }
 
     // Treat array-ish objects as a byte array.
@@ -3566,7 +3566,10 @@ function Buffer(subject, encoding, offset) {
           this[i] = subject.readUInt8(i);
         }
         else {
-          this[i] = subject[i];
+          // Round-up subject[i] to a UInt8.
+          // e.g.: ((-432 % 256) + 256) % 256 = (-176 + 256) % 256
+          //                                  = 80
+          this[i] = ((subject[i] % 256) + 256) % 256;
         }
       }
     } else if (type == 'string') {
@@ -3747,9 +3750,9 @@ Buffer.prototype.hexWrite = function(string, offset, length) {
     length = strLen / 2;
   }
   for (var i = 0; i < length; i++) {
-    var byte = parseInt(string.substr(i * 2, 2), 16);
-    if (isNaN(byte)) throw new Error('Invalid hex string');
-    this[offset + i] = byte;
+    var b = parseInt(string.substr(i * 2, 2), 16);
+    if (isNaN(b)) throw new Error('Invalid hex string');
+    this[offset + i] = b;
   }
   Buffer._charsWritten = i * 2;
   return i;
@@ -3908,7 +3911,7 @@ Buffer.prototype.fill = function fill(value, start, end) {
 
 // Static methods
 Buffer.isBuffer = function isBuffer(b) {
-  return b instanceof Buffer || b instanceof Buffer;
+  return b instanceof Buffer;
 };
 
 Buffer.concat = function (list, totalLength) {
@@ -4626,16 +4629,46 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 };
 
 },{"./buffer_ieee754":13,"assert":7,"base64-js":15}],15:[function(require,module,exports){
-(function (exports) {
+var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+;(function (exports) {
 	'use strict';
 
-	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  var Arr = (typeof Uint8Array !== 'undefined')
+    ? Uint8Array
+    : Array
 
-	function b64ToByteArray(b64) {
-		var i, j, l, tmp, placeHolders, arr;
-	
+	var PLUS   = '+'.charCodeAt(0)
+	var SLASH  = '/'.charCodeAt(0)
+	var NUMBER = '0'.charCodeAt(0)
+	var LOWER  = 'a'.charCodeAt(0)
+	var UPPER  = 'A'.charCodeAt(0)
+	var PLUS_URL_SAFE = '-'.charCodeAt(0)
+	var SLASH_URL_SAFE = '_'.charCodeAt(0)
+
+	function decode (elt) {
+		var code = elt.charCodeAt(0)
+		if (code === PLUS ||
+		    code === PLUS_URL_SAFE)
+			return 62 // '+'
+		if (code === SLASH ||
+		    code === SLASH_URL_SAFE)
+			return 63 // '/'
+		if (code < NUMBER)
+			return -1 //no match
+		if (code < NUMBER + 10)
+			return code - NUMBER + 26 + 26
+		if (code < UPPER + 26)
+			return code - UPPER
+		if (code < LOWER + 26)
+			return code - LOWER + 26
+	}
+
+	function b64ToByteArray (b64) {
+		var i, j, l, tmp, placeHolders, arr
+
 		if (b64.length % 4 > 0) {
-			throw 'Invalid string. Length must be a multiple of 4';
+			throw new Error('Invalid string. Length must be a multiple of 4')
 		}
 
 		// the number of equal signs (place holders)
@@ -4643,73 +4676,83 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 		// represent one byte
 		// if there is only one, then the three characters before it represent 2 bytes
 		// this is just a cheap hack to not do indexOf twice
-		placeHolders = b64.indexOf('=');
-		placeHolders = placeHolders > 0 ? b64.length - placeHolders : 0;
+		var len = b64.length
+		placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
 
 		// base64 is 4/3 + up to two characters of the original data
-		arr = [];//new Uint8Array(b64.length * 3 / 4 - placeHolders);
+		arr = new Arr(b64.length * 3 / 4 - placeHolders)
 
 		// if there are placeholders, only get up to the last complete 4 chars
-		l = placeHolders > 0 ? b64.length - 4 : b64.length;
+		l = placeHolders > 0 ? b64.length - 4 : b64.length
+
+		var L = 0
+
+		function push (v) {
+			arr[L++] = v
+		}
 
 		for (i = 0, j = 0; i < l; i += 4, j += 3) {
-			tmp = (lookup.indexOf(b64[i]) << 18) | (lookup.indexOf(b64[i + 1]) << 12) | (lookup.indexOf(b64[i + 2]) << 6) | lookup.indexOf(b64[i + 3]);
-			arr.push((tmp & 0xFF0000) >> 16);
-			arr.push((tmp & 0xFF00) >> 8);
-			arr.push(tmp & 0xFF);
+			tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
+			push((tmp & 0xFF0000) >> 16)
+			push((tmp & 0xFF00) >> 8)
+			push(tmp & 0xFF)
 		}
 
 		if (placeHolders === 2) {
-			tmp = (lookup.indexOf(b64[i]) << 2) | (lookup.indexOf(b64[i + 1]) >> 4);
-			arr.push(tmp & 0xFF);
+			tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
+			push(tmp & 0xFF)
 		} else if (placeHolders === 1) {
-			tmp = (lookup.indexOf(b64[i]) << 10) | (lookup.indexOf(b64[i + 1]) << 4) | (lookup.indexOf(b64[i + 2]) >> 2);
-			arr.push((tmp >> 8) & 0xFF);
-			arr.push(tmp & 0xFF);
+			tmp = (decode(b64.charAt(i)) << 10) | (decode(b64.charAt(i + 1)) << 4) | (decode(b64.charAt(i + 2)) >> 2)
+			push((tmp >> 8) & 0xFF)
+			push(tmp & 0xFF)
 		}
 
-		return arr;
+		return arr
 	}
 
-	function uint8ToBase64(uint8) {
+	function uint8ToBase64 (uint8) {
 		var i,
 			extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
 			output = "",
-			temp, length;
+			temp, length
+
+		function encode (num) {
+			return lookup.charAt(num)
+		}
 
 		function tripletToBase64 (num) {
-			return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F];
-		};
+			return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
+		}
 
 		// go through the array every three bytes, we'll deal with trailing stuff later
 		for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
-			temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2]);
-			output += tripletToBase64(temp);
+			temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+			output += tripletToBase64(temp)
 		}
 
 		// pad the end with zeros, but make sure to not forget the extra bytes
 		switch (extraBytes) {
 			case 1:
-				temp = uint8[uint8.length - 1];
-				output += lookup[temp >> 2];
-				output += lookup[(temp << 4) & 0x3F];
-				output += '==';
-				break;
+				temp = uint8[uint8.length - 1]
+				output += encode(temp >> 2)
+				output += encode((temp << 4) & 0x3F)
+				output += '=='
+				break
 			case 2:
-				temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1]);
-				output += lookup[temp >> 10];
-				output += lookup[(temp >> 4) & 0x3F];
-				output += lookup[(temp << 2) & 0x3F];
-				output += '=';
-				break;
+				temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1])
+				output += encode(temp >> 10)
+				output += encode((temp >> 4) & 0x3F)
+				output += encode((temp << 2) & 0x3F)
+				output += '='
+				break
 		}
 
-		return output;
+		return output
 	}
 
-	module.exports.toByteArray = b64ToByteArray;
-	module.exports.fromByteArray = uint8ToBase64;
-}());
+	exports.toByteArray = b64ToByteArray
+	exports.fromByteArray = uint8ToBase64
+}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
 },{}],16:[function(require,module,exports){
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
@@ -10791,7 +10834,9 @@ module.exports.blockSize = TF.prototype.blockSize = 16;
 var random = require('./random.js'),
   cipher = require('./cipher'),
   publicKey = require('./public_key'),
-  type_mpi = require('../type/mpi.js');
+  type_mpi = require('../type/mpi.js'),
+  BigInteger = require('./public_key/jsbn.js');
+
 
 module.exports = {
   /**
@@ -10940,15 +10985,15 @@ module.exports = {
         throw new Error('Unknown algorithm.');
     }
   },
-
-  generateMpi: function(algo, bits) {
+  
+  generateMpi: function(algo, bits, prng) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
-        return rsa.generate(bits, "10001").then(function(keyObject) {
+        return rsa.generate(bits, "10001", prng).then(function(keyObject) {
           var output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);
@@ -10992,7 +11037,7 @@ module.exports = {
   }
 };
 
-},{"../type/mpi.js":93,"./cipher":39,"./public_key":53,"./random.js":56}],42:[function(require,module,exports){
+},{"../type/mpi.js":93,"./cipher":39,"./public_key":53,"./public_key/jsbn.js":54,"./random.js":56}],42:[function(require,module,exports){
 /**
  * Secure Hash Algorithm with 160-bit digest (SHA-1) implementation.
  *
@@ -16463,14 +16508,14 @@ function RSA() {
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E) {
+  function generate(B, E, prng) {
     var webCrypto = util.getWebCrypto();
 
     //
     // Native RSA keygen using Web Crypto
     //
 
-    if (webCrypto) {
+    if (webCrypto && typeof prng === "undefined") {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
       var keyGenOpt;
@@ -16536,6 +16581,9 @@ function RSA() {
     return new Promise(function(resolve) {
       var key = new keyObject();
       var rng = new SecureRandom();
+      if (prng) {
+        rng = prng;
+      }
       var qs = B >> 1;
       key.e = parseInt(E, 16);
       key.ee = new BigInteger(E, 16);
@@ -17289,7 +17337,6 @@ function armor(messagetype, body, partindex, parttotal) {
       result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
       break;
   }
-
   return result;
 }
 
@@ -18738,13 +18785,19 @@ function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits);
+    if (options.created) {
+      secretKeyPacket.created = options.created;
+    }
+    return secretKeyPacket.generate(options.numBits, options.prng);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretSubkeyPacket.generate(options.numBits);
+    if (options.created) {
+      secretSubkeyPacket.created = options.created;
+    }
+    return secretSubkeyPacket.generate(options.numBits, options.prng);
   }
 
   function wrapKeyObject() {
@@ -21638,10 +21691,9 @@ SecretKey.prototype.decrypt = function (passphrase) {
   return true;
 };
 
-SecretKey.prototype.generate = function (bits) {
+SecretKey.prototype.generate = function (bits, prng) {
   var self = this;
-
-  return crypto.generateMpi(self.algorithm, bits).then(function(mpi) {
+  return crypto.generateMpi(self.algorithm, bits, prng).then(function(mpi) {
     self.mpi = mpi;
     self.isDecrypted = true;
   });
@@ -23142,6 +23194,7 @@ function MessageStream(keys, file_length, filename, opts) {
     'binary'
   )
   this.encrypted_packet_header = Buffer.concat([
+                  //new Buffer(String.fromCharCode(1)),
                   new Buffer(packet.packet.writeHeader(enums.packet.literal, 
                              this.encrypted_packet_header.length + this.fileLength), 'binary'),
                   this.encrypted_packet_header

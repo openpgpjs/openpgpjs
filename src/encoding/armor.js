@@ -398,7 +398,6 @@ function armor(messagetype, body, partindex, parttotal) {
       result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
       break;
   }
-
   return result;
 }
 

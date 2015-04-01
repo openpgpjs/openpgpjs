@@ -40,6 +40,7 @@ function MessageStream(keys, file_length, filename, opts) {
     'binary'
   )
   this.encrypted_packet_header = Buffer.concat([
+                  //new Buffer(String.fromCharCode(1)),
                   new Buffer(packet.packet.writeHeader(enums.packet.literal, 
                              this.encrypted_packet_header.length + this.fileLength), 'binary'),
                   this.encrypted_packet_header
