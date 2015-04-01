@@ -272,13 +272,16 @@ describe('High level API', function() {
 
   describe('Decryption', function() {
 
-    var msgRSA, msgDE;
+    var msgRSA, msgDE, msgAES, keys, data;
 
     before(function() {
       privKeyRSA.decrypt('hello world');
       privKeyDE.decrypt('hello world');
       msgRSA = openpgp.message.fromText(plaintext).encrypt([pubKeyRSA],[password1, password2]);
       msgDE = openpgp.message.fromText(plaintext).encrypt([pubKeyDE]);
+      msgAES = openpgp.message.fromText(plaintext).encrypt([],[password1]);
+      var dataIndex = msgAES.packets.indexOfTag(openpgp.enums.packet.symmetricallyEncrypted, openpgp.enums.packet.symEncryptedIntegrityProtected)[0];
+      data = msgAES.packets.slice(dataIndex,msgAES.packets.length).write();
     });
 
     it('RSA: decryptMessage async', function (done) {
@@ -307,6 +310,43 @@ describe('High level API', function() {
 
     it('AES: decryptMessage password2 async', function (done) {
       openpgp.decryptMessage(password2, msgRSA).then(function(data) {
+        expect(data).to.exist;
+        expect(data).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('RSA: decryptSessionKey/encryptSessionKey/decryptMessage async', function (done) {
+      openpgp.decryptSessionKey(password1, msgAES).then(function(sk) {
+        return openpgp.encryptSessionKey(sk.key, sk.algo, pubKeyRSA);
+      }).then(function(keypacket) {
+        var msg = openpgp.message.read([keypacket, data].join(''));
+        return openpgp.decryptMessage(privKeyRSA, msg);
+      }).then(function(data) {
+        expect(data).to.exist;
+        expect(data).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('AES: decryptSessionKey/encryptSessionKey/decryptMessage async', function (done) {
+      openpgp.decryptSessionKey(password1, msgAES).then(function(sk) {
+        return openpgp.encryptSessionKey(sk.key, sk.algo, [], password2);
+      }).then(function(keypacket) {
+        var msg = openpgp.message.read([keypacket, data].join(''));
+        return openpgp.decryptMessage(password2, msg);
+      }).then(function(data) {
+        expect(data).to.exist;
+        expect(data).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('AES: decryptSessionKey/decryptMessage with session key async', function (done) {
+      openpgp.decryptSessionKey(password1, msgAES).then(function(sk) {
+        var msg = openpgp.message.read(data);
+        return openpgp.decryptMessage(sk.key, msg, {sessionKeyAlgorithm: sk.algo});
+      }).then(function(data) {
         expect(data).to.exist;
         expect(data).to.equal(plaintext);
         done();

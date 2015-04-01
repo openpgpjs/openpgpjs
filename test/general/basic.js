@@ -259,10 +259,15 @@ describe('Basic', function() {
 
       expect(pubKey).to.exist;
 
-      openpgp.encryptMessage([pubKey], plaintext, [password1, password2]).then(function(encrypted) {
+      var params = {
+        packets: true
+      };
+
+      openpgp.encryptMessage([pubKey], plaintext, [password1, password2], params).then(function(encrypted) {
 
         expect(encrypted).to.exist;
-
+        encrypted = encrypted.join('');
+        encrypted = openpgp.armor.encode(openpgp.enums.armor.message, encrypted);
         message = openpgp.message.readArmored(encrypted);
 
         expect(message).to.exist;
