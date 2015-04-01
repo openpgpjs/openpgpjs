@@ -160,6 +160,35 @@ AsyncProxy.prototype.encryptMessage = function(keys, data, passwords, params) {
 };
 
 /**
+ * Encrypts session key with keys or passwords
+ * @param  {String} sessionKey                                 sessionKey as a binary string
+ * @param  {String} algo                                       algorithm of sessionKey
+ * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the key
+ * @param  {(Array<String>|String)} passwords                  passwords for the message
+ */
+AsyncProxy.prototype.encryptSessionKey = function(sessionKey, algo, keys, passwords) {
+  var self = this;
+
+  return self.execute(function() {
+    if(keys) {
+      if (!Array.prototype.isPrototypeOf(keys)) {
+        keys = [keys];
+      }
+      keys = keys.map(function(key) {
+        return key.toPacketlist();
+      });
+    }
+    self.worker.postMessage({
+      event: 'encrypt-session-key',
+      sessionKey: sessionKey,
+      algo: algo,
+      keys: keys,
+      passwords: passwords
+    });
+  });
+};
+
+/**
  * Signs message text and encrypts it
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
@@ -189,9 +218,10 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
  * Decrypts message
  * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
  * @param  {module:message~Message} msg         the message object with the encrypted data
- * @param  {Boolean} binary                     if true, return literal data binaryString instead of converting from UTF-8
+ * @param  {Object} params                      parameter object with optional properties binary {Boolean}
+ *                                              and sessionKeyAlgorithm {String} which must only be set when privateKey is a session key
  */
-AsyncProxy.prototype.decryptMessage = function(privateKey, message, binary) {
+AsyncProxy.prototype.decryptMessage = function(privateKey, message, params) {
   var self = this;
 
   return self.execute(function() {
@@ -203,7 +233,29 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message, binary) {
       event: 'decrypt-message',
       privateKey: privateKey,
       message: message,
-      binary: binary
+      params: params
+    });
+  });
+};
+
+/**
+ * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
+ * @param  {module:message~Message} msg         the message object with the encrypted session key packets
+ * @return {Promise<Object|null>}               decrypted session key and algorithm in object form
+ *                                              or null if no key packets found
+ */
+AsyncProxy.prototype.decryptSessionKey = function(privateKey, message) {
+  var self = this;
+
+  return self.execute(function() {
+    if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string')) {
+      privateKey = privateKey.toPacketlist();
+    }
+
+    self.worker.postMessage({
+      event: 'decrypt-session-key',
+      privateKey: privateKey,
+      message: message
     });
   });
 };
