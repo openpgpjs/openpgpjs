@@ -74,6 +74,16 @@ self.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+    case 'encrypt-session-key':
+      if(msg.keys) {
+        msg.keys = msg.keys.map(packetlistCloneToKey);
+      }
+      window.openpgp.encryptSessionKey(msg.sessionKey, msg.algo, msg.keys, msg.passwords).then(function(data) {
+        response({event: 'method-return', data: data});
+      }).catch(function(e) {
+        response({event: 'method-return', err: e.message});
+      });
+      break;
     case 'sign-and-encrypt-message':
       if (!msg.publicKeys.length) {
         msg.publicKeys = [msg.publicKeys];
@@ -91,7 +101,18 @@ self.onmessage = function (event) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
       }
       msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptMessage(msg.privateKey, msg.message, msg.binary).then(function(data) {
+      window.openpgp.decryptMessage(msg.privateKey, msg.message, msg.params).then(function(data) {
+        response({event: 'method-return', data: data});
+      }).catch(function(e) {
+        response({event: 'method-return', err: e.message});
+      });
+      break;
+    case 'decrypt-session-key':
+      if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string')) {
+        msg.privateKey = packetlistCloneToKey(msg.privateKey);
+      }
+      msg.message = packetlistCloneToMessage(msg.message.packets);
+      window.openpgp.decryptSessionKey(msg.privateKey, msg.message).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
