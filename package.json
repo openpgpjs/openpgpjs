@@ -50,7 +50,7 @@
     "phantomjs": "~1.9.2-5"
   },
   "dependencies": {
-    "es6-promise": "^2.0.1",
+    "es6-promise": "^1.0.0",
     "node-localstorage": "~0.3.4",
     "zlibjs": "^0.2.0"
   },
