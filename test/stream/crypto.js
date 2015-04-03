@@ -1,10 +1,11 @@
 'use strict';
 
-var cryptoStream = require('../../src/stream/crypto.js'),
-  enums = require('../../src/enums.js'),
-  crypto = require('../../src/crypto'),
-  util = require('../../src/util.js'),
-  config = require('../../src/config');
+var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+
+var enums = openpgp.enums,
+  crypto = openpgp.crypto,
+  util = openpgp.util,
+  config = openpgp.config;
 
 
 var chai = require('chai'),
@@ -23,7 +24,7 @@ describe("CFB Stream", function() {
     var plaintext_c = "the end.";
 
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);
@@ -53,7 +54,7 @@ describe("CFB Stream", function() {
     var plaintext_c = "the end.";
 
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);
@@ -84,7 +85,7 @@ describe("CFB Stream", function() {
     var plaintext_c = "the end.";
 
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);
@@ -111,7 +112,7 @@ describe("CFB Stream", function() {
     
     var plaintext_a = "实事求是。";
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);
@@ -138,7 +139,7 @@ describe("CFB Stream", function() {
     
     var buffer_a = new Buffer([0x81, 0x02, 0xcc, 0x86, 0x92, 0xA9]);
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);
@@ -169,7 +170,7 @@ describe("CFB Stream", function() {
     var plaintext_c = "the end.";
 
     var encrypted_data = new Buffer([]);
-    var cs = new cryptoStream.CipherFeedback(opts);
+    var cs = new openpgp.stream.CipherFeedbackStream(opts);
     
     cs.on('data', function(d) {
       encrypted_data = Buffer.concat([encrypted_data, d]);

@@ -1,13 +1,12 @@
 'use strict';
 
-var cryptoStream = require('../../src/stream/crypto.js'),
-  messageStream = require('../../src/stream/message.js'),
-  openpgp = require('../../src/index.js'),
-  key = require('../../src/key.js'),
-  enums = require('../../src/enums.js'),
-  crypto = require('../../src/crypto'),
-  util = require('../../src/util.js'),
-  armor = require('../../src/encoding/armor.js');
+var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+
+var enums = openpgp.enums,
+  crypto = openpgp.crypto,
+  util = openpgp.util,
+  config = openpgp.config,
+  key = openpgp.key;
 
 var chai = require('chai'),
   fs = require('fs'),
