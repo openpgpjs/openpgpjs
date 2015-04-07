@@ -196,7 +196,11 @@ function decryptMessage(privateKey, msg, params) {
   return execute(function() {
     msg = msg.decrypt(privateKey, sessionKeyAlgorithm);
     if(binary) {
-      return msg.getLiteralData();
+      var obj = {
+        data: msg.getLiteralData(),
+        filename: msg.filename
+      };
+      return obj;
     }
     else {
       return msg.getText();
