@@ -11377,6 +11377,7 @@ function generate(options) {
     signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
+    signaturePacket.keyExpirationTime = options.numExpDay*86400;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
@@ -11404,6 +11405,7 @@ function generate(options) {
     subkeySignaturePacket = new packet.Signature();
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+    subkeySignaturePacket.keyExpirationTime = options.numExpDay*86400;
     subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
     subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
@@ -12390,6 +12392,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation. (should be 1024+, generally)
+ * @param {Integer} options.numExpDay    number expiration in days. (should be 0= never expires, generally)
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
@@ -16523,6 +16526,7 @@ AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message) {
  * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
+ * @param {Integer} options.numExpDay    number expiration in days. (should be 0= never expires, generally)
  * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  passphrase The passphrase used to encrypt the resulting private key
  */
