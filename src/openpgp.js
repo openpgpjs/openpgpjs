@@ -105,11 +105,12 @@ function encryptMessage(keys, data, passwords, params) {
     msg = msg.encrypt(keys, passwords);
 
     if(packets) {
-      var arr = [];
       var dataIndex = msg.packets.indexOfTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected)[0];
-      arr.push(msg.packets.slice(0,dataIndex).write()); // Keys
-      arr.push(msg.packets.slice(dataIndex,msg.packets.length).write()); // Data
-      return arr;
+      var obj = {
+        keys: msg.packets.slice(0,dataIndex).write(),
+        data: msg.packets.slice(dataIndex,msg.packets.length).write()
+      };
+      return obj;
     } 
     else {
       return armor.encode(enums.armor.message, msg.packets.write());
@@ -195,7 +196,7 @@ function decryptMessage(privateKey, msg, params) {
     if(binary) {
       var obj = {
         data: msg.getLiteralData(),
-        filename: msg.filename
+        filename: msg.getFilename()
       };
       return obj;
     }
