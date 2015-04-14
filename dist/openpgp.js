@@ -12026,6 +12026,15 @@ Message.prototype.getLiteralData = function() {
 };
 
 /**
+ * Get filename from literal data packet
+ * @return {(String|null)} filename of literal data packet as string
+ */
+Message.prototype.getFilename = function() {
+  var literal = this.packets.findPacket(enums.packet.literal);
+  return literal && literal.getFilename() || null;
+};
+
+/**
  * Get literal data as text
  * @return {(String|null)} literal body of the message interpreted as text
  */
@@ -12481,11 +12490,12 @@ function encryptMessage(keys, data, passwords, params) {
     msg = msg.encrypt(keys, passwords);
 
     if(packets) {
-      var arr = [];
       var dataIndex = msg.packets.indexOfTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected)[0];
-      arr.push(msg.packets.slice(0,dataIndex).write()); // Keys
-      arr.push(msg.packets.slice(dataIndex,msg.packets.length).write()); // Data
-      return arr;
+      var obj = {
+        keys: msg.packets.slice(0,dataIndex).write(),
+        data: msg.packets.slice(dataIndex,msg.packets.length).write()
+      };
+      return obj;
     } 
     else {
       return armor.encode(enums.armor.message, msg.packets.write());
@@ -12569,7 +12579,11 @@ function decryptMessage(privateKey, msg, params) {
   return execute(function() {
     msg = msg.decrypt(privateKey, sessionKeyAlgorithm);
     if(binary) {
-      return msg.getLiteralData();
+      var obj = {
+        data: msg.getLiteralData(),
+        filename: msg.getFilename()
+      };
+      return obj;
     }
     else {
       return msg.getText();
