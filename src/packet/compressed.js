@@ -70,10 +70,10 @@ function Compressed() {
  */
 Compressed.prototype.read = function (bytes) {
   // One octet that gives the algorithm used to compress the packet.
-  this.algorithm = enums.read(enums.compression, bytes.charCodeAt(0));
+  this.algorithm = enums.read(enums.compression, bytes[0]);
 
   // Compressed data, which makes up the remainder of the packet.
-  this.compressed = bytes.substr(1);
+  this.compressed = bytes.subarray(1, bytes.length);
 
   this.decompress();
 };
@@ -88,7 +88,7 @@ Compressed.prototype.write = function () {
   if (this.compressed === null)
     this.compress();
 
-  return String.fromCharCode(enums.write(enums.compression, this.algorithm)) + this.compressed;
+  return util.concatUint8Array(new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed);
 };
 
 
@@ -105,13 +105,13 @@ Compressed.prototype.decompress = function () {
       break;
 
     case 'zip':
-      var inflate = new RawInflate.Zlib.RawInflate(util.str2Uint8Array(this.compressed));
-      decompressed = util.Uint8Array2str(inflate.decompress());
+      var inflate = new RawInflate.Zlib.RawInflate(this.compressed);
+      decompressed = inflate.decompress();
       break;
 
     case 'zlib':
-      var inflate = new Zlib.Zlib.Inflate(util.str2Uint8Array(this.compressed));
-      decompressed = util.Uint8Array2str(inflate.decompress());
+      var inflate = new Zlib.Zlib.Inflate(this.compressed);
+      decompressed = inflate.decompress();
       break;
 
     case 'bzip2':
@@ -141,14 +141,14 @@ Compressed.prototype.compress = function () {
 
     case 'zip':
       // - ZIP [RFC1951]
-      deflate = new RawDeflate.Zlib.RawDeflate(util.str2Uint8Array(uncompressed));
-      this.compressed = util.Uint8Array2str(deflate.compress());
+      deflate = new RawDeflate.Zlib.RawDeflate(uncompressed);
+      this.compressed = deflate.compress();
       break;
 
     case 'zlib':
       // - ZLIB [RFC1950]
-      deflate = new Zlib.Zlib.Deflate(util.str2Uint8Array(uncompressed));
-      this.compressed = util.Uint8Array2str(deflate.compress());
+      deflate = new Zlib.Zlib.Deflate(uncompressed);
+      this.compressed = deflate.compress();
       break;
 
     case 'bzip2':

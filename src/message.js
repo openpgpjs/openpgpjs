@@ -26,7 +26,8 @@
 
 'use strict';
 
-var packet = require('./packet'),
+var util = require('./util.js'),
+  packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),
   config = require('./config'),
@@ -463,11 +464,11 @@ function read(input) {
 /**
  * Create a message object from signed content and a detached armored signature.
  * @param {String} content An 8 bit ascii string containing e.g. a MIME subtree with text nodes or attachments
- * @param {String} detachedSignature The detached ascii armored PGP signarure
+ * @param {String} detachedSignature The detached ascii armored PGP signature
  */
 function readSignedContent(content, detachedSignature) {
   var literalDataPacket = new packet.Literal();
-  literalDataPacket.setBytes(content, enums.read(enums.literal, enums.literal.binary));
+  literalDataPacket.setBytes(util.str2Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
   var packetlist = new packet.List();
   packetlist.push(literalDataPacket);
   var input = armor.decode(detachedSignature).data;
@@ -496,12 +497,16 @@ function fromText(text, filename) {
 
 /**
  * creates new message object from binary data
- * @param {String} bytes
+ * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @return {module:message~Message} new message object
  * @static
  */
 function fromBinary(bytes, filename) {
+  if(!Uint8Array.prototype.isPrototypeOf(bytes)) {
+    throw new Error('Data must be in the form of a Uint8Array');
+  }
+
   var literalDataPacket = new packet.Literal();
   if (filename) {
     literalDataPacket.setFilename(filename);

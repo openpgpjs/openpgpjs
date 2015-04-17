@@ -90,13 +90,12 @@ function encryptMessage(keys, data, passwords, params) {
   var filename, binary, packets;
   if(params) {
     filename = params.filename;
-    binary = params.binary;
     packets = params.packets;
   }
 
   return execute(function() {
     var msg, armored;
-    if(binary) {
+    if(data instanceof Uint8Array) {
       msg = message.fromBinary(data, filename);
     }
     else {

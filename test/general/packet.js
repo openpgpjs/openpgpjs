@@ -2,6 +2,18 @@
 
 var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
+function stringify(array) {
+  if(!Uint8Array.prototype.isPrototypeOf(array)) {
+    throw new Error('Data must be in the form of a Uint8Array');
+  }
+
+  var result = [];
+  for (var i = 0; i < array.length; i++) {
+    result[i] = String.fromCharCode(array[i]);
+  }
+  return result.join('');
+}
+
 var chai = require('chai'),
   expect = chai.expect;
 
@@ -53,8 +65,8 @@ describe("Packet", function() {
     message.push(enc);
     enc.packets.push(literal);
 
-    var key = '123456789012345678901234',
-        algo = 'tripledes';
+    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
+        algo = 'aes256';
 
     enc.encrypt(algo, key);
 
@@ -62,7 +74,7 @@ describe("Packet", function() {
     msg2.read(message.write());
     msg2[0].decrypt(algo, key);
 
-    expect(msg2[0].packets[0].data).to.equal(literal.data);
+    expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
     done();
   });
 
@@ -87,7 +99,7 @@ describe("Packet", function() {
   });
 
   it('Sym. encrypted integrity protected packet', function(done) {
-    var key = '12345678901234567890123456789012',
+    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
         algo = 'aes256';
 
     var literal = new openpgp.packet.Literal(),
@@ -104,7 +116,7 @@ describe("Packet", function() {
 
     msg2[0].decrypt(algo, key);
 
-    expect(msg2[0].packets[0].data).to.equal(literal.data);
+    expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
     done();
   });
 
@@ -129,7 +141,7 @@ describe("Packet", function() {
     parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key);
     var compressed = parsed[1].packets[0];
 
-    var result = compressed.packets[0].data;
+    var result = stringify(compressed.packets[0].data);
 
     expect(result).to.equal('Hello world!\n');
     done();
@@ -152,7 +164,7 @@ describe("Packet", function() {
           msg = new openpgp.packet.List(),
           msg2 = new openpgp.packet.List();
 
-      enc.sessionKey = '12345678901234567890123456789012';
+      enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
@@ -164,13 +176,13 @@ describe("Packet", function() {
 
       msg2[0].decrypt({ mpi: mpi });
 
-      expect(msg2[0].sessionKey).to.equal(enc.sessionKey);
+      expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
       expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
       done();
     });
   });
 
-  it('Secret key packet (reading, unencrpted)', function(done) {
+  it('Secret key packet (reading, unencrypted)', function(done) {
     var armored_key =
         '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -198,7 +210,7 @@ describe("Packet", function() {
     key = key[0];
 
     var enc = new openpgp.packet.PublicKeyEncryptedSessionKey(),
-        secret = '12345678901234567890123456789012';
+        secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
 
     enc.sessionKey = secret;
     enc.publicKeyAlgorithm = 'rsa_encrypt';
@@ -209,7 +221,7 @@ describe("Packet", function() {
 
     enc.decrypt(key);
 
-    expect(enc.sessionKey).to.equal(secret);
+    expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
     done();
   });
 
@@ -271,7 +283,7 @@ describe("Packet", function() {
     msg[0].decrypt(key);
     msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = msg[1].packets[0].packets[0].data;
+    var text = stringify(msg[1].packets[0].packets[0].data);
 
     expect(text).to.equal('Hello world!');
     done();
@@ -306,7 +318,7 @@ describe("Packet", function() {
     var key2 = msg2[0].sessionKey;
     msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
 
-    expect(msg2[1].packets[0].data).to.equal(literal.data);
+    expect(stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
     done();
   });
 
@@ -334,7 +346,7 @@ describe("Packet", function() {
     msg[0].decrypt(key);
     msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = msg[1].packets[0].packets[0].data;
+    var text = stringify(msg[1].packets[0].packets[0].data);
 
     expect(text).to.equal('Hello world!');
     done();

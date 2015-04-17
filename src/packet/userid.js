@@ -47,16 +47,16 @@ function Userid() {
 
 /**
  * Parsing function for a user id packet (tag 13).
- * @param {String} input payload of a tag 13 packet
+ * @param {Uint8Array} input payload of a tag 13 packet
  */
 Userid.prototype.read = function (bytes) {
-  this.userid = util.decode_utf8(bytes);
+  this.userid = util.decode_utf8(util.Uint8Array2str(bytes));
 };
 
 /**
- * Creates a string representation of the user id packet
- * @return {String} string representation
+ * Creates a binary representation of the user id packet
+ * @return {Uint8Array} binary representation
  */
 Userid.prototype.write = function () {
-  return util.encode_utf8(this.userid);
+  return util.str2Uint8Array(util.encode_utf8(this.userid));
 };

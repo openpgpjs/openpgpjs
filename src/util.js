@@ -31,16 +31,16 @@ module.exports = {
 
     for (var i = 0; i < bytes.length; i++) {
       n <<= 8;
-      n += bytes.charCodeAt(i);
+      n += bytes[i];
     }
 
     return n;
   },
 
   writeNumber: function (n, bytes) {
-    var b = '';
+    var b = new Uint8Array(bytes);
     for (var i = 0; i < bytes; i++) {
-      b += String.fromCharCode((n >> (8 * (bytes - i - 1))) & 0xFF);
+      b[i] = (n >> (8 * (bytes - i - 1))) & 0xFF;
     }
 
     return b;
@@ -187,6 +187,12 @@ module.exports = {
    * @return {Uint8Array} The array of (binary) integers
    */
   str2Uint8Array: function (str) {
+
+    // Uncomment for debugging
+    if(!(typeof str === 'string') && !String.prototype.isPrototypeOf(str)) {
+      throw new Error('Data must be in the form of a string');
+    }
+
     var result = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i++) {
       result[i] = str.charCodeAt(i);
@@ -202,6 +208,12 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
+
+    // Uncomment for debugging
+    if(!Uint8Array.prototype.isPrototypeOf(bin)) {
+      throw new Error('Data must be in the form of a Uint8Array');
+    }
+
     var result = [];
     for (var i = 0; i < bin.length; i++) {
       result[i] = String.fromCharCode(bin[i]);
@@ -210,9 +222,82 @@ module.exports = {
   },
 
   /**
-   * Calculates a 16bit sum of a string by adding each character
+   * Concat Uint8arrays
+   * @function module:util.concatUint8Array
+   * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
+   * @return {Uint8array} Concatenated array
+   */
+   concatUint8Array: function (arrays) {
+
+    var totalLength = 0;
+    arrays.forEach(function (element) {
+
+      // Uncomment for debugging
+      if(!Uint8Array.prototype.isPrototypeOf(element)) {
+        throw new Error('Data must be in the form of a Uint8Array');
+      }
+
+      totalLength += element.length;
+    });
+
+    var result = new Uint8Array(totalLength);
+    var pos = 0;
+    arrays.forEach(function (element) {
+      result.set(element,pos);
+      pos += element.length;
+    });
+
+    return result;
+   },
+
+  /**
+   * Deep copy Uint8Array
+   * @function module:util.copyUint8Array
+   * @param {Uint8Array} Array to copy
+   * @return {Uint8Array} new Uint8Array
+   */
+  copyUint8Array: function (array) {
+
+    // Uncomment for debugging
+    if(!Uint8Array.prototype.isPrototypeOf(array)) {
+      throw new Error('Data must be in the form of a Uint8Array');
+    }
+
+    var copy = new Uint8Array(array.length);
+    copy.set(array);
+    return copy;
+  },
+
+  /**
+   * Check Uint8Array equality
+   * @function module:util.equalsUint8Array
+   * @param {Uint8Array} first array
+   * @param {Uint8Array} second array
+   * @return {Boolean} equality
+   */
+  equalsUint8Array: function (array1, array2) {
+
+    // Uncomment for debugging
+    if(!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
+      throw new Error('Data must be in the form of a Uint8Array');
+    }
+
+    if(array1.length !== array2.length) {
+      return false;
+    }
+
+    for(var i = 0; i < array1.length; i++) {
+      if(array1[i] !== array2[i]) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  /**
+   * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
-   * @param {String} text String to create a sum of
+   * @param {Uint8Array} Uint8Array to create a sum of
    * @return {Integer} An integer containing the sum of all character
    * codes % 65535
    */
@@ -224,7 +309,7 @@ module.exports = {
       }
     };
     for (var i = 0; i < text.length; i++) {
-      checksum.add(text.charCodeAt(i));
+      checksum.add(text[i]);
     }
     return checksum.s;
   },

@@ -12,13 +12,10 @@
  */
 
 /**
- * @requires util
  * @module crypto/cipher/aes
  */
 
 'use strict';
-
-var util = require('../../util.js');
 
 // The round constants used in subkey expansion
 var Rcon = new Uint8Array([
@@ -398,7 +395,7 @@ function keyExpansion(key) {
   }
 
   for (i = 0, j = 0; j < keylen; j++, i += 4) {
-    k[j] = key.charCodeAt(i) | (key.charCodeAt(i + 1) << 8) | (key.charCodeAt(i + 2) << 16) | (key.charCodeAt(i + 3) << 24);
+    k[j] = key[i] | (key[i + 1] << 8) | (key[i + 2] << 16) | (key[i + 3] << 24);
   }
 
   for (j = kc - 1; j >= 0; j--) {
