@@ -115,10 +115,8 @@ function addheader() {
  */
 function getCheckSum(data) {
   var c = createcrc24(data);
-  var str = "" + String.fromCharCode(c >> 16) +
-    String.fromCharCode((c >> 8) & 0xFF) +
-    String.fromCharCode(c & 0xFF);
-  return base64.encode(str);
+  var bytes = new Uint8Array([c >> 16, (c >> 8) & 0xFF, c & 0xFF]);
+  return base64.encode(bytes);
 }
 
 /**
@@ -178,27 +176,27 @@ function createcrc24(input) {
   var index = 0;
 
   while ((input.length - index) > 16) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 1)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 2)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 3)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 4)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 5)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 6)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 7)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 8)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 9)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 10)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 11)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 12)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 13)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 14)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 15)) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 1]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 2]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 3]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 4]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 5]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 6]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 7]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 8]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 9]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 10]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 11]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 12]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 13]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 14]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 15]) & 0xff];
     index += 16;
   }
 
   for (var j = index; j < input.length; j++) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index++]) & 0xff];
   }
   return crc & 0xffffff;
 }

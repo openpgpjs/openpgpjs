@@ -19,10 +19,12 @@
 
 /**
  * @requires type/mpi
+ * @requires util
  * @module crypto/random
  */
 
-var type_mpi = require('../type/mpi.js');
+var type_mpi = require('../type/mpi.js'),
+  util = require('../util.js');
 var nodeCrypto = null;
 
 if (typeof window === 'undefined') {
@@ -31,14 +33,14 @@ if (typeof window === 'undefined') {
 
 module.exports = {
   /**
-   * Retrieve secure random byte string of the specified length
+   * Retrieve secure random byte array of the specified length
    * @param {Integer} length Length in bytes to generate
-   * @return {String} Random byte string
+   * @return {Uint8Array} Random byte array
    */
   getRandomBytes: function(length) {
-    var result = '';
+    var result = new Uint8Array(length);
     for (var i = 0; i < length; i++) {
-      result += String.fromCharCode(this.getSecureRandomOctet());
+      result[i] = this.getSecureRandomOctet();
     }
     return result;
   },
@@ -104,7 +106,7 @@ module.exports = {
     }
     var numBytes = Math.floor((bits + 7) / 8);
 
-    var randomBits = this.getRandomBytes(numBytes);
+    var randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
     if (bits % 8 > 0) {
 
       randomBits = String.fromCharCode(

@@ -1,10 +1,12 @@
 /**
+ * @requires util
  * @requires crypto/hash
  * @requires crypto/pkcs1
  * @requires crypto/public_key
  * @module crypto/signature */
 
-var publicKey = require('./public_key'),
+var util = require('../util'),
+  publicKey = require('./public_key'),
   pkcs1 = require('./pkcs1.js'),
   hashModule = require('./hash');
 
@@ -15,10 +17,12 @@ module.exports = {
    * @param {module:enums.hash} hash_algo Hash algorithm
    * @param {Array<module:type/mpi>} msg_MPIs Signature multiprecision integers
    * @param {Array<module:type/mpi>} publickey_MPIs Public key multiprecision integers 
-   * @param {String} data Data on where the signature was computed on.
+   * @param {Uint8Array} data Data on where the signature was computed on.
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
   verify: function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
+
+    data = util.Uint8Array2str(data);
 
     switch (algo) {
       case 1:
@@ -63,10 +67,12 @@ module.exports = {
    * of the private key 
    * @param {Array<module:type/mpi>} secretMPIs Private key multiprecision 
    * integers which is used to sign the data
-   * @param {String} data Data to be signed
+   * @param {Uint8Array} data Data to be signed
    * @return {Array<module:type/mpi>}
    */
   sign: function(hash_algo, algo, keyIntegers, data) {
+
+    data = util.Uint8Array2str(data);
 
     var m;
 
@@ -82,7 +88,6 @@ module.exports = {
         var n = keyIntegers[0].toBigInteger();
         m = pkcs1.emsa.encode(hash_algo,
           data, keyIntegers[0].byteLength());
-
         return rsa.sign(m, d, n).toMPI();
 
       case 17:

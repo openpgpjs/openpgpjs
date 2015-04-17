@@ -43,11 +43,11 @@ function Keyid() {
  * @param {String} input Input to read the key id from
  */
 Keyid.prototype.read = function(bytes) {
-  this.bytes = bytes.substr(0, 8);
+  this.bytes = util.Uint8Array2str(bytes.subarray(0, 8));
 };
 
 Keyid.prototype.write = function() {
-  return this.bytes;
+  return util.str2Uint8Array(this.bytes);
 };
 
 Keyid.prototype.toHex = function() {

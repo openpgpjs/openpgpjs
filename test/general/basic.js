@@ -122,7 +122,7 @@ describe('Basic', function() {
         }
         return result;
       }
-      var message = randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      var message = 'HI there';//randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
       var userid = 'Test McTestington <test@example.com>';
       var passphrase = 'password';
@@ -145,7 +145,7 @@ describe('Basic', function() {
 
         // sign and encrypt
         var msg, encrypted;
-        msg = openpgp.message.fromBinary(message, "test.txt");
+        msg = openpgp.message.fromText(message, "test.txt");
         msg = msg.sign([privKey]);
         msg = msg.encrypt([pubKey]);
         encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
@@ -169,6 +169,9 @@ describe('Basic', function() {
         expect(decrypted.text).to.equal(message);
         done();
 
+      }).catch(function (err) {
+        console.log(err.message);
+        console.log(err.stack);
       });
     });
   });
@@ -264,7 +267,7 @@ describe('Basic', function() {
       openpgp.encryptMessage([pubKey], plaintext, [password1, password2], params).then(function(encrypted) {
 
         expect(encrypted).to.exist;
-        encrypted = encrypted.keys+encrypted.data;
+        encrypted = openpgp.util.concatUint8Array([encrypted.keys,encrypted.data]);
         encrypted = openpgp.armor.encode(openpgp.enums.armor.message, encrypted);
         message = openpgp.message.readArmored(encrypted);
 

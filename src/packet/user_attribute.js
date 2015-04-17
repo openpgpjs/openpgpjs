@@ -52,30 +52,30 @@ function UserAttribute() {
 
 /**
  * parsing function for a user attribute packet (tag 17).
- * @param {String} input payload of a tag 17 packet
+ * @param {Uint8Array} input payload of a tag 17 packet
  */
 UserAttribute.prototype.read = function(bytes) {
   var i = 0;
   while (i < bytes.length) {
-    var len = packet.readSimpleLength(bytes.substr(i));
+    var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
     i += len.offset;
 
-    this.attributes.push(bytes.substr(i, len.len));
+    this.attributes.push(util.Uint8Array2str(bytes.subarray(i, i + len.len)));
     i += len.len;
   }
 };
 
 /**
- * Creates a string representation of the user attribute packet
- * @return {String} string representation
+ * Creates a binary representation of the user attribute packet
+ * @return {Uint8Array} string representation
  */
 UserAttribute.prototype.write = function() {
-  var result = '';
+  var arr = [];
   for (var i = 0; i < this.attributes.length; i++) {
-    result += packet.writeSimpleLength(this.attributes[i].length);
-    result += this.attributes[i];
+    arr.push(packet.writeSimpleLength(this.attributes[i].length));
+    arr.push(util.str2Uint8Array(this.attributes[i]));
   }
-  return result;
+  return util.concatUint8Array(arr);
 };
 
 /**

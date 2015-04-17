@@ -56,7 +56,7 @@ function SymEncryptedIntegrityProtected() {
 
 SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
   // - A one-octet version number. The only currently defined value is 1.
-  var version = bytes.charCodeAt(0);
+  var version = bytes[0];
 
   if (version != 1) {
     throw new Error('Invalid packet version.');
@@ -65,40 +65,35 @@ SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
   // - Encrypted data, the output of the selected symmetric-key cipher
   //   operating in Cipher Feedback mode with shift amount equal to the
   //   block size of the cipher (CFB-n where n is the block size).
-  this.encrypted = bytes.substr(1);
+  this.encrypted = bytes.subarray(1, bytes.length);
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
 
   // 1 = Version
-  return String.fromCharCode(1) + this.encrypted;
+  return util.concatUint8Array([new Uint8Array([1]), this.encrypted]);
 };
 
 SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
   var bytes = this.packets.write();
 
   var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
-  var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length -
-    1);
-
-  var tohash = bytes;
-
+  var repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+  var prefix = util.concatUint8Array([prefixrandom, repeat]);
 
   // Modification detection code packet.
-  tohash += String.fromCharCode(0xD3);
-  tohash += String.fromCharCode(0x14);
+  var mdc = new Uint8Array([0xD3, 0x14]);
 
+  // This could probably be cleaned up to use less memory
+  var tohash = util.concatUint8Array([bytes, mdc]);
 
-  tohash += crypto.hash.sha1(prefix + tohash);
+  var hash = util.str2Uint8Array(crypto.hash.sha1(util.Uint8Array2str(util.concatUint8Array([prefix, tohash]))));
 
+  tohash = util.concatUint8Array([tohash, hash]);
 
   this.encrypted = crypto.cfb.encrypt(prefixrandom,
-      sessionKeyAlgorithm, tohash, key, false);
-
-  if (prefix.length + tohash.length != this.encrypted.length)
-  {
-    this.encrypted = this.encrypted.substring(0, prefix.length + tohash.length);
-  }
+    sessionKeyAlgorithm, tohash, key, false).subarray(0,
+    prefix.length + tohash.length);
 };
 
 /**
@@ -114,20 +109,15 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   var decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, false);
 
-  var mdc = decrypted.slice(decrypted.length - 20, decrypted.length).join('');
-
-  decrypted.splice(decrypted.length - 20);
-
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  this.hash = crypto.hash.sha1(
-    crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted) + decrypted.join(''));
+  this.hash = crypto.hash.sha1(util.Uint8Array2str(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), 
+    decrypted.subarray(0, decrypted.length - 20)])));
 
+  var mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
   if (this.hash != mdc) {
     throw new Error('Modification detected.');
-  } else {
-    decrypted.splice(decrypted.length - 2);
-    this.packets.read(decrypted.join(''));
-  }
+  } else
+    this.packets.read(decrypted.subarray(0, decrypted.length - 22));
 };
