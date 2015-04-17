@@ -8,7 +8,7 @@ var util = openpgp.util,
 
 it('Twofish with test vectors from http://www.schneier.com/code/ecb_ival.txt', function(done) {
   function TFencrypt(block, key) {
-    var tf = new openpgp.crypto.cipher.twofish(key);
+    var tf = new openpgp.crypto.cipher.twofish(util.str2Uint8Array(key));
 
     return tf.encrypt(block);
   }

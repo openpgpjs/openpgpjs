@@ -70,40 +70,40 @@ function PublicKey() {
 /**
  * Internal Parser for public keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
  * called by read_tag&lt;num&gt;
- * @param {String} input Input string to read the packet from
+ * @param {Uint8Array} bytes Input array to read the packet from
  * @return {Object} This object with attributes set by the parser
  */
 PublicKey.prototype.read = function (bytes) {
   var pos = 0;
   // A one-octet version number (3 or 4).
-  this.version = bytes.charCodeAt(pos++);
+  this.version = bytes[pos++];
 
   if (this.version == 3 || this.version == 4) {
     // - A four-octet number denoting the time that the key was created.
-    this.created = util.readDate(bytes.substr(pos, 4));
+    this.created = util.readDate(bytes.subarray(pos, pos + 4));
     pos += 4;
 
     if (this.version == 3) {
       // - A two-octet number denoting the time in days that this key is
       //   valid.  If this number is zero, then it does not expire.
-      this.expirationTimeV3 = util.readNumber(bytes.substr(pos, 2));
+      this.expirationTimeV3 = util.readNumber(bytes.subarray(pos, pos + 2));
       pos += 2;
     }
 
     // - A one-octet number denoting the public-key algorithm of this key.
-    this.algorithm = enums.read(enums.publicKey, bytes.charCodeAt(pos++));
+    this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
 
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     this.mpi = [];
 
-    var bmpi = bytes.substr(pos);
+    var bmpi = bytes.subarray(pos, bytes.length);
     var p = 0;
 
     for (var i = 0; i < mpicount && p < bmpi.length; i++) {
 
       this.mpi[i] = new type_mpi();
 
-      p += this.mpi[i].read(bmpi.substr(p));
+      p += this.mpi[i].read(bmpi.subarray(p, bmpi.length));
 
       if (p > bmpi.length) {
         throw new Error('Error reading MPI @:' + p);
@@ -125,25 +125,26 @@ PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
 /**
  * Same as write_private_key, but has less information because of
  * public key.
- * @return {Object} {body: [string]OpenPGP packet body contents,
- * header: [string] OpenPGP packet header, string: [string] header+body}
+ * @return {Uint8Array} OpenPGP packet body contents,
  */
 PublicKey.prototype.write = function () {
+
+  var arr = [];
   // Version
-  var result = String.fromCharCode(this.version);
-  result += util.writeDate(this.created);
+  arr.push(new Uint8Array([this.version]));
+  arr.push(util.writeDate(this.created));
   if (this.version == 3) {
-    result += util.writeNumber(this.expirationTimeV3, 2);
+    arr.push(util.writeNumber(this.expirationTimeV3, 2));
   }
-  result += String.fromCharCode(enums.write(enums.publicKey, this.algorithm));
+  arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
 
   var mpicount = crypto.getPublicMpiCount(this.algorithm);
 
   for (var i = 0; i < mpicount; i++) {
-    result += this.mpi[i].write();
+    arr.push(this.mpi[i].write());
   }
 
-  return result;
+  return util.concatUint8Array(arr);
 };
 
 /**
@@ -158,9 +159,7 @@ PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 PublicKey.prototype.writeOld = function () {
   var bytes = this.writePublicKey();
 
-  return String.fromCharCode(0x99) +
-    util.writeNumber(bytes.length, 2) +
-    bytes;
+  return util.concatUint8Array([new Uint8Array([0x99]), util.writeNumber(bytes.length, 2), bytes]);
 };
 
 /**
@@ -173,9 +172,10 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new type_keyid();
   if (this.version == 4) {
-    this.keyid.read(util.hex2bin(this.getFingerprint()).substr(12, 8));
+    this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
   } else if (this.version == 3) {
-    this.keyid.read(this.mpi[0].write().substr(-8));
+    var arr = this.mpi[0].write();
+    this.keyid.read(arr.subarray(arr.length - 8, arr.length));
   }
   return this.keyid;
 };
@@ -191,7 +191,7 @@ PublicKey.prototype.getFingerprint = function () {
   var toHash = '';
   if (this.version == 4) {
     toHash = this.writeOld();
-    this.fingerprint = crypto.hash.sha1(toHash);
+    this.fingerprint = crypto.hash.sha1(util.Uint8Array2str(toHash));
   } else if (this.version == 3) {
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     for (var i = 0; i < mpicount; i++) {

@@ -52,9 +52,9 @@ function Marker() {
  * @return {module:packet/marker} Object representation
  */
 Marker.prototype.read = function (bytes) {
-  if (bytes.charCodeAt(0) == 0x50 && // P
-      bytes.charCodeAt(1) == 0x47 && // G
-      bytes.charCodeAt(2) == 0x50) // P
+  if (bytes[0] == 0x50 && // P
+      bytes[1] == 0x47 && // G
+      bytes[2] == 0x50) // P
     return true;
   // marker packet does not contain "PGP"
   return false;

@@ -391,19 +391,17 @@ Blowfish.prototype.init = function(key) {
   }
 };
 
-var util = require('../../util.js');
-
 // added by Recurity Labs
 
 function BFencrypt(block, key) {
   var bf = new Blowfish();
-  bf.init(util.str2bin(key));
+  bf.init(key);
   return bf.encrypt_block(block);
 }
 
 function BF(key) {
   this.bf = new Blowfish();
-  this.bf.init(util.str2bin(key));
+  this.bf.init(key);
 
   this.encrypt = function(block) {
     return this.bf.encrypt_block(block);

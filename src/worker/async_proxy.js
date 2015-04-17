@@ -132,7 +132,7 @@ AsyncProxy.prototype.terminate = function() {
 /**
  * Encrypts message text/data with keys or passwords
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
- * @param  {String} data                                       text/data message as native JavaScript string/binary string
+ * @param  {Uint8Array} data                                   message as Uint8Array
  * @param  {(Array<String>|String)} passwords                  passwords for the message
  * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
  *                                                             filename {String}, and packets {Boolean}
@@ -161,7 +161,7 @@ AsyncProxy.prototype.encryptMessage = function(keys, data, passwords, params) {
 
 /**
  * Encrypts session key with keys or passwords
- * @param  {String} sessionKey                                 sessionKey as a binary string
+ * @param  {Uint8Array} sessionKey                             sessionKey as Uint8Array
  * @param  {String} algo                                       algorithm of sessionKey
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the key
  * @param  {(Array<String>|String)} passwords                  passwords for the message
@@ -192,7 +192,7 @@ AsyncProxy.prototype.encryptSessionKey = function(sessionKey, algo, keys, passwo
  * Signs message text and encrypts it
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
- * @param  {String} text       message as native JavaScript string
+ * @param  {Uint8Array} text       message as Uint8Array
  */
 AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text) {
   var self = this;
@@ -299,7 +299,7 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
 /**
  * Signs a cleartext message
  * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key, with decrypted secret key data to sign cleartext
- * @param  {String} text        cleartext
+ * @param  {Uint8Array} text        cleartext
  */
 AsyncProxy.prototype.signClearMessage = function(privateKeys, text) {
   var self = this;
