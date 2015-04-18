@@ -98,7 +98,7 @@ self.onmessage = function (event) {
       });
       break;
     case 'decrypt-message':
-      if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string')) {
+      if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(msg.privateKey))) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
       }
       msg.message = packetlistCloneToMessage(msg.message.packets);

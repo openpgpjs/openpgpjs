@@ -12383,7 +12383,7 @@ function readArmored(armoredText) {
 
 /**
  * reads an OpenPGP binary string message and returns a message object
- * @param {String} binary string message
+ * @param {Uint8Array} binary message
  * @return {module:message~Message} new message object
  * @static
  */
@@ -16968,7 +16968,7 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message, params) {
   var self = this;
 
   return self.execute(function() {
-    if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string')) {
+    if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(privateKey))) {
       privateKey = privateKey.toPacketlist();
     }
 
