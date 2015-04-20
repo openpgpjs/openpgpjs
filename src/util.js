@@ -190,7 +190,7 @@ module.exports = {
 
     // Uncomment for debugging
     if(!(typeof str === 'string') && !String.prototype.isPrototypeOf(str)) {
-      throw new Error('Data must be in the form of a string');
+      throw new Error('str2Uint8Array: Data must be in the form of a string');
     }
 
     var result = new Uint8Array(str.length);
@@ -211,7 +211,7 @@ module.exports = {
 
     // Uncomment for debugging
     if(!Uint8Array.prototype.isPrototypeOf(bin)) {
-      throw new Error('Data must be in the form of a Uint8Array');
+      throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
 
     var result = [];
@@ -234,7 +234,9 @@ module.exports = {
 
       // Uncomment for debugging
       if(!Uint8Array.prototype.isPrototypeOf(element)) {
-        throw new Error('Data must be in the form of a Uint8Array');
+        var err = new Error('here');
+        console.log(err.stack);
+        throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
       totalLength += element.length;

@@ -88,7 +88,7 @@ module.exports = {
         var n = keyIntegers[0].toBigInteger();
         m = pkcs1.emsa.encode(hash_algo,
           data, keyIntegers[0].byteLength());
-        return rsa.sign(m, d, n).toMPI();
+        return util.str2Uint8Array(rsa.sign(m, d, n).toMPI());
 
       case 17:
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
@@ -102,7 +102,7 @@ module.exports = {
         m = data;
         var result = dsa.sign(hash_algo, m, g, p, q, x);
 
-        return result[0].toString() + result[1].toString();
+        return util.str2Uint8Array(result[0].toString() + result[1].toString());
       case 16:
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
