@@ -135,7 +135,7 @@ module.exports = {
     encode: function(algo, M, emLen) {
       var i;
       // Apply the hash function to the message M to produce a hash value H
-      var H = hash.digest(algo, M);
+      var H = util.Uint8Array2str(hash.digest(algo, util.str2Uint8Array(M)));
       if (H.length !== hash.getHashByteLength(algo)) {
         throw new Error('Invalid hash length');
       }

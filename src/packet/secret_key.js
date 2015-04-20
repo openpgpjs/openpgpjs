@@ -68,7 +68,7 @@ function get_hash_fn(hash) {
     return crypto.hash.sha1;
   else
     return function(c) {
-      return util.Uint8Array2str(util.writeNumber(util.calc_checksum(util.str2Uint8Array(c)), 2));
+      return util.writeNumber(util.calc_checksum(c), 2);
   };
 }
 
@@ -81,7 +81,11 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
   var hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
 
-  var hash = hashfn(util.Uint8Array2str(cleartext));
+  var hash = util.Uint8Array2str(hashfn(cleartext));
+
+  console.log(hash);
+  console.log(hashtext);
+  console.log(hash_algorithm);
 
   if (hash != hashtext)
     return new Error("Hash mismatch.");
@@ -109,9 +113,9 @@ function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
 
   var bytes = util.concatUint8Array(arr);
 
-  var hash = get_hash_fn(hash_algorithm)(util.Uint8Array2str(bytes));
+  var hash = get_hash_fn(hash_algorithm)(bytes);
 
-  return util.concatUint8Array([bytes, util.str2Uint8Array(hash)]);
+  return util.concatUint8Array([bytes, hash]);
 }
 
 
@@ -220,16 +224,6 @@ SecretKey.prototype.decrypt = function (passphrase) {
     symmetric,
     key;
 
-  if(!Uint8Array.prototype.isPrototypeOf(this.encrypted)) {
-    if(Uint8Array.prototype.isPrototypeOf(this.encrypted.message)) {
-      throw new Error('this.encrypted.message is a typed array!');
-    }
-    if(this.encrypted === null) {
-      throw new Error('this.encrypted is null!');
-    }
-    throw new Error(Object.prototype.toString.call(this.encrypted));
-  }
-
   var s2k_usage = this.encrypted[i++];
 
   // - [Optional] If string-to-key usage octet was 255 or 254, a one-
@@ -248,7 +242,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
   } else {
     symmetric = s2k_usage;
     symmetric = enums.read(enums.symmetric, symmetric);
-    key = util.str2Uint8Array(crypto.hash.md5(passphrase));
+    key = crypto.hash.md5(passphrase);
   }
 
 
