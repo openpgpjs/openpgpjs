@@ -142,33 +142,33 @@ S2K.prototype.write = function () {
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
-  passphrase = util.encode_utf8(passphrase);
+  passphrase = util.str2Uint8Array(util.encode_utf8(passphrase));
 
   function round(prefix, s2k) {
     var algorithm = enums.write(enums.hash, s2k.algorithm);
 
     switch (s2k.type) {
       case 'simple':
-        return util.str2Uint8Array(crypto.hash.digest(algorithm, prefix + passphrase));
+        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix,passphrase]));
 
       case 'salted':
-        return util.str2Uint8Array(crypto.hash.digest(algorithm,
-          prefix + util.Uint8Array2str(s2k.salt) + passphrase));
+        return crypto.hash.digest(algorithm,
+          util.concatUint8Array([prefix, s2k.salt, passphrase]));
 
       case 'iterated':
         var isp = [],
           count = s2k.get_count(),
-          data = util.Uint8Array2str(s2k.salt) + passphrase;
+          data = util.concatUint8Array([s2k.salt,passphrase]);
 
         while (isp.length * data.length < count)
           isp.push(data);
 
-        isp = isp.join('');
+        isp = util.concatUint8Array(isp);
 
         if (isp.length > count)
-          isp = isp.substr(0, count);
+          isp = isp.subarray(0, count);
 
-        return util.str2Uint8Array(crypto.hash.digest(algorithm, prefix + isp));
+        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix,isp]));
 
       case 'gnu':
         throw new Error("GNU s2k type not supported.");
@@ -179,14 +179,19 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   }
 
   var arr = [],
+    i = 0,
     rlength = 0,
-    prefix = '';
+    prefix = new Uint8Array(numBytes);
+
+  for(var i = 0; i<numBytes; i++) {
+    prefix[i] = 0;
+  }
 
   while (rlength <= numBytes) {
-    var result = round(prefix, this);
+    var result = round(prefix.subarray(0,i), this);
     arr.push(result);
     rlength += result.length;
-    prefix += String.fromCharCode(0);
+    i++;
   }
 
   return util.concatUint8Array(arr).subarray(0, numBytes);

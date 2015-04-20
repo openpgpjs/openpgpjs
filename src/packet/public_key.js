@@ -191,13 +191,13 @@ PublicKey.prototype.getFingerprint = function () {
   var toHash = '';
   if (this.version == 4) {
     toHash = this.writeOld();
-    this.fingerprint = crypto.hash.sha1(util.Uint8Array2str(toHash));
+    this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
   } else if (this.version == 3) {
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     for (var i = 0; i < mpicount; i++) {
       toHash += this.mpi[i].toBytes();
     }
-    this.fingerprint = crypto.hash.md5(toHash);
+    this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
   }
   this.fingerprint = util.hexstrdump(this.fingerprint);
   return this.fingerprint;

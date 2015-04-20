@@ -224,14 +224,14 @@ Signature.prototype.sign = function (key, data) {
 
   var trailer = this.calculateTrailer();
 
-  var toHash = util.Uint8Array2str(util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]));
+  var toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
 
   var hash = crypto.hash.digest(hashAlgorithm, toHash);
 
-  this.signedHashValue = util.str2Uint8Array(hash.substr(0, 2));
+  this.signedHashValue = hash.subarray(0, 2);
 
-  this.signature = util.str2Uint8Array(crypto.signature.sign(hashAlgorithm,
-    publicKeyAlgorithm, key.mpi, util.str2Uint8Array(toHash)));
+  this.signature = crypto.signature.sign(hashAlgorithm,
+    publicKeyAlgorithm, key.mpi, toHash);
 };
 
 /**
@@ -287,7 +287,7 @@ Signature.prototype.write_all_sub_packets = function () {
         // 2 octets of value length
         bytes.push(util.writeNumber(value.length, 2));
         bytes.push(util.str2Uint8Array(name + value));
-        bytes = concatUint8Array(bytes);
+        bytes = util.concatUint8Array(bytes);
         arr.push(write_sub_packet(sub.notation_data, bytes));
       }
     }

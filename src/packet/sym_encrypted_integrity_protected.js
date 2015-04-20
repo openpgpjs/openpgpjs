@@ -87,7 +87,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   // This could probably be cleaned up to use less memory
   var tohash = util.concatUint8Array([bytes, mdc]);
 
-  var hash = util.str2Uint8Array(crypto.hash.sha1(util.Uint8Array2str(util.concatUint8Array([prefix, tohash]))));
+  var hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
 
   tohash = util.concatUint8Array([tohash, hash]);
 
@@ -111,7 +111,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  this.hash = crypto.hash.sha1(util.Uint8Array2str(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), 
+  this.hash = util.Uint8Array2str(crypto.hash.sha1(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), 
     decrypted.subarray(0, decrypted.length - 20)])));
 
   var mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));

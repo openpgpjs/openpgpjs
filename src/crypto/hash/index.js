@@ -3,7 +3,8 @@
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
-  forge_sha256 = require('./forge_sha256.js');
+  forge_sha256 = require('./forge_sha256.js'),
+  util = require('../../util.js');
 
 module.exports = {
   /** @see module:crypto/hash/md5 */
@@ -24,8 +25,8 @@ module.exports = {
   /**
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo Hash algorithm type (see {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
-   * @param {String} data Data to be hashed
-   * @return {String} hash value
+   * @param {Uint8Array} data Data to be hashed
+   * @return {Uint8Array} hash value
    */
   digest: function(algo, data) {
     switch (algo) {
@@ -40,9 +41,10 @@ module.exports = {
         return this.ripemd(data);
       case 8:
         // - SHA256 [FIPS180]
+        //return this.sha256(data);
         var sha256 = forge_sha256.create();
-        sha256.update(data);
-        return sha256.digest().getBytes();
+        sha256.update(util.Uint8Array2str(data));
+        return util.str2Uint8Array(sha256.digest().getBytes());
       case 9:
         // - SHA384 [FIPS180]
         return this.sha384(data);
