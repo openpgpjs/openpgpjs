@@ -168,10 +168,7 @@ describe('Basic', function() {
         expect(decrypted.signatures[0].valid).to.be.true;
         expect(decrypted.text).to.equal(message);
         done();
-
-      }).catch(function (err) {
-        console.log(err.message);
-        console.log(err.stack);
+        
       });
     });
   });
