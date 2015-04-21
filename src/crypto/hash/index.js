@@ -4,13 +4,18 @@
  */
 var sha = require('./sha.js'),
   forge_sha256 = require('./forge_sha256.js'),
+  rusha = require('./rusha.js'),
   util = require('../../util.js');
 
 module.exports = {
   /** @see module:crypto/hash/md5 */
   md5: require('./md5.js'),
   /** @see module:crypto/hash/sha.sha1 */
-  sha1: sha.sha1,
+  //sha1: sha.sha1,
+  sha1: function (data) {
+    var r = new rusha();
+    return util.str2Uint8Array(util.hex2bin(r.digest(data)));
+  },
   /** @see module:crypto/hash/sha.sha224 */
   sha224: sha.sha224,
   /** @see module:crypto/hash/sha.sha256 */
@@ -35,13 +40,16 @@ module.exports = {
         return this.md5(data);
       case 2:
         // - SHA-1 [FIPS180]
-        return this.sha1(data);
+        // return this.sha1(data);
+        var r = new rusha();
+        return util.str2Uint8Array(util.hex2bin(r.digest(data)));
       case 3:
         // - RIPE-MD/160 [HAC]
         return this.ripemd(data);
       case 8:
         // - SHA256 [FIPS180]
         //return this.sha256(data);
+
         var sha256 = forge_sha256.create();
         sha256.update(util.Uint8Array2str(data));
         return util.str2Uint8Array(sha256.digest().getBytes());
