@@ -240,7 +240,7 @@ describe('API functional testing', function() {
 
     it('DSA', function (done) {
       // DSA
-      var DSAsignedData = openpgp.crypto.signature.sign(2, 17, DSApubMPIs.concat(DSAsecMPIs), data);
+      var DSAsignedData = util.Uint8Array2str(openpgp.crypto.signature.sign(2, 17, DSApubMPIs.concat(DSAsecMPIs), data));
 
       var DSAmsgMPIs = [];
       DSAmsgMPIs[0] = new openpgp.MPI();

@@ -83,10 +83,6 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
 
   var hash = util.Uint8Array2str(hashfn(cleartext));
 
-  console.log(hash);
-  console.log(hashtext);
-  console.log(hash_algorithm);
-
   if (hash != hashtext)
     return new Error("Hash mismatch.");
 
@@ -244,7 +240,6 @@ SecretKey.prototype.decrypt = function (passphrase) {
     symmetric = enums.read(enums.symmetric, symmetric);
     key = crypto.hash.md5(passphrase);
   }
-
 
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the

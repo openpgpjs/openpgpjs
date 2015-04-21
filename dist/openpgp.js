@@ -869,7 +869,7 @@ function verifyHeaders(headers, packetlist) {
 exports.CleartextMessage = CleartextMessage;
 exports.readArmored = readArmored;
 
-},{"./config":17,"./encoding/armor.js":41,"./enums.js":43,"./packet":53}],13:[function(require,module,exports){
+},{"./config":17,"./encoding/armor.js":42,"./enums.js":44,"./packet":54}],13:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */(function() {'use strict';var n=void 0,u=!0,aa=this;function ba(e,d){var c=e.split("."),f=aa;!(c[0]in f)&&f.execScript&&f.execScript("var "+c[0]);for(var a;c.length&&(a=c.shift());)!c.length&&d!==n?f[a]=d:f=f[a]?f[a]:f[a]={}};var C="undefined"!==typeof Uint8Array&&"undefined"!==typeof Uint16Array&&"undefined"!==typeof Uint32Array&&"undefined"!==typeof DataView;function K(e,d){this.index="number"===typeof d?d:0;this.d=0;this.buffer=e instanceof(C?Uint8Array:Array)?e:new (C?Uint8Array:Array)(32768);if(2*this.buffer.length<=this.index)throw Error("invalid index");this.buffer.length<=this.index&&ca(this)}function ca(e){var d=e.buffer,c,f=d.length,a=new (C?Uint8Array:Array)(f<<1);if(C)a.set(d);else for(c=0;c<f;++c)a[c]=d[c];return e.buffer=a}
 K.prototype.a=function(e,d,c){var f=this.buffer,a=this.index,b=this.d,k=f[a],m;c&&1<d&&(e=8<d?(L[e&255]<<24|L[e>>>8&255]<<16|L[e>>>16&255]<<8|L[e>>>24&255])>>32-d:L[e]>>8-d);if(8>d+b)k=k<<d|e,b+=d;else for(m=0;m<d;++m)k=k<<1|e>>d-m-1&1,8===++b&&(b=0,f[a++]=L[k],k=0,a===f.length&&(f=ca(this)));f[a]=k;this.buffer=f;this.d=b;this.index=a};K.prototype.finish=function(){var e=this.buffer,d=this.index,c;0<this.d&&(e[d]<<=8-this.d,e[d]=L[e[d]],d++);C?c=e.subarray(0,d):(e.length=d,c=e);return c};
 var ga=new (C?Uint8Array:Array)(256),M;for(M=0;256>M;++M){for(var R=M,S=R,ha=7,R=R>>>1;R;R>>>=1)S<<=1,S|=R&1,--ha;ga[M]=(S<<ha&255)>>>0}var L=ga;function ja(e){this.buffer=new (C?Uint16Array:Array)(2*e);this.length=0}ja.prototype.getParent=function(e){return 2*((e-2)/4|0)};ja.prototype.push=function(e,d){var c,f,a=this.buffer,b;c=this.length;a[this.length++]=d;for(a[this.length++]=e;0<c;)if(f=this.getParent(c),a[c]>a[f])b=a[c],a[c]=a[f],a[f]=b,b=a[c+1],a[c+1]=a[f+1],a[f+1]=b,c=f;else break;return this.length};
@@ -1008,7 +1008,7 @@ module.exports = {
   debug: false
 };
 
-},{"../enums.js":43}],17:[function(require,module,exports){
+},{"../enums.js":44}],17:[function(require,module,exports){
 /**
  * @see module:config/config
  * @module config
@@ -3331,7 +3331,7 @@ module.exports = {
   originalDes: OriginalDes
 };
 
-},{"../../util.js":74}],23:[function(require,module,exports){
+},{"../../util.js":75}],23:[function(require,module,exports){
 /**
  * @requires crypto/cipher/aes
  * @requires crypto/cipher/blowfish
@@ -3966,7 +3966,7 @@ module.exports = {
   }
 };
 
-},{"../type/mpi.js":72,"./cipher":23,"./public_key":36,"./random.js":39}],26:[function(require,module,exports){
+},{"../type/mpi.js":73,"./cipher":23,"./public_key":37,"./random.js":40}],26:[function(require,module,exports){
 /**
  * Secure Hash Algorithm with 256-bit digest (SHA-256) implementation.
  *
@@ -5102,13 +5102,18 @@ util.decodeUtf8 = function(str) {
  */
 var sha = require('./sha.js'),
   forge_sha256 = require('./forge_sha256.js'),
+  rusha = require('./rusha.js'),
   util = require('../../util.js');
 
 module.exports = {
   /** @see module:crypto/hash/md5 */
   md5: require('./md5.js'),
   /** @see module:crypto/hash/sha.sha1 */
-  sha1: sha.sha1,
+  //sha1: sha.sha1,
+  sha1: function (data) {
+    var r = new rusha();
+    return util.str2Uint8Array(util.hex2bin(r.digest(data)));
+  },
   /** @see module:crypto/hash/sha.sha224 */
   sha224: sha.sha224,
   /** @see module:crypto/hash/sha.sha256 */
@@ -5133,13 +5138,16 @@ module.exports = {
         return this.md5(data);
       case 2:
         // - SHA-1 [FIPS180]
-        return this.sha1(data);
+        // return this.sha1(data);
+        var r = new rusha();
+        return util.str2Uint8Array(util.hex2bin(r.digest(data)));
       case 3:
         // - RIPE-MD/160 [HAC]
         return this.ripemd(data);
       case 8:
         // - SHA256 [FIPS180]
         //return this.sha256(data);
+
         var sha256 = forge_sha256.create();
         sha256.update(util.Uint8Array2str(data));
         return util.str2Uint8Array(sha256.digest().getBytes());
@@ -5190,7 +5198,7 @@ module.exports = {
   }
 };
 
-},{"../../util.js":74,"./forge_sha256.js":26,"./md5.js":29,"./ripe-md.js":30,"./sha.js":31}],29:[function(require,module,exports){
+},{"../../util.js":75,"./forge_sha256.js":26,"./md5.js":29,"./ripe-md.js":30,"./rusha.js":31,"./sha.js":32}],29:[function(require,module,exports){
 /**
  * A fast MD5 JavaScript implementation
  * Copyright (c) 2012 Joseph Myers
@@ -5409,7 +5417,7 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
   }
 }
 
-},{"../../util.js":74}],30:[function(require,module,exports){
+},{"../../util.js":75}],30:[function(require,module,exports){
 /*
  * CryptoMX Tools
  * Copyright (C) 2004 - 2006 Derek Buitenhuis
@@ -5714,7 +5722,421 @@ function RMDstring(message) {
 
 module.exports = RMDstring;
 
-},{"../../util.js":74}],31:[function(require,module,exports){
+},{"../../util.js":75}],31:[function(require,module,exports){
+var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};/*
+ * Rusha, a JavaScript implementation of the Secure Hash Algorithm, SHA-1,
+ * as defined in FIPS PUB 180-1, tuned for high performance with large inputs.
+ * (http://github.com/srijs/rusha)
+ *
+ * Inspired by Paul Johnstons implementation (http://pajhome.org.uk/crypt/md5).
+ *
+ * Copyright (c) 2013 Sam Rijs (http://awesam.de).
+ * Released under the terms of the MIT license as follows:
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+(function () {
+    // If we'e running in Node.JS, export a module.
+    // if (typeof module !== 'undefined') {
+        module.exports = Rusha;
+    // } else if (typeof window !== 'undefined') {
+    //     window.Rusha = Rusha;
+    // }
+    // If we're running in a webworker, accept
+    // messages containing a jobid and a buffer
+    // or blob object, and return the hash result.
+    // if (typeof FileReaderSync !== 'undefined') {
+    //     var reader = new FileReaderSync(), hasher = new Rusha(4 * 1024 * 1024);
+    //     self.onmessage = function onMessage(event) {
+    //         var hash, data = event.data.data;
+    //         try {
+    //             hash = hasher.digest(data);
+    //             self.postMessage({
+    //                 id: event.data.id,
+    //                 hash: hash
+    //             });
+    //         } catch (e) {
+    //             self.postMessage({
+    //                 id: event.data.id,
+    //                 error: e.name
+    //             });
+    //         }
+    //     };
+    // }
+    var util = {
+            getDataType: function (data) {
+                if (typeof data === 'string') {
+                    return 'string';
+                }
+                if (data instanceof Array) {
+                    return 'array';
+                }
+                if (typeof global !== 'undefined' && global.Buffer && global.Buffer.isBuffer(data)) {
+                    return 'buffer';
+                }
+                if (data instanceof ArrayBuffer) {
+                    return 'arraybuffer';
+                }
+                if (data.buffer instanceof ArrayBuffer) {
+                    return 'view';
+                }
+                if (data instanceof Blob) {
+                    return 'blob';
+                }
+                throw new Error('Unsupported data type.');
+            }
+        };
+    // The Rusha object is a wrapper around the low-level RushaCore.
+    // It provides means of converting different inputs to the
+    // format accepted by RushaCore as well as other utility methods.
+    function Rusha(chunkSize) {
+        'use strict';
+        // Private object structure.
+        var self$2 = { fill: 0 };
+        // Calculate the length of buffer that the sha1 routine uses
+        // including the padding.
+        var padlen = function (len) {
+            for (len += 9; len % 64 > 0; len += 1);
+            return len;
+        };
+        var padZeroes = function (bin, len) {
+            for (var i = len >> 2; i < bin.length; i++)
+                bin[i] = 0;
+        };
+        var padData = function (bin, chunkLen, msgLen) {
+            bin[chunkLen >> 2] |= 128 << 24 - (chunkLen % 4 << 3);
+            bin[((chunkLen >> 2) + 2 & ~15) + 14] = msgLen >> 29;
+            bin[((chunkLen >> 2) + 2 & ~15) + 15] = msgLen << 3;
+        };
+        // Convert a binary string and write it to the heap.
+        // A binary string is expected to only contain char codes < 256.
+        var convStr = function (H8, H32, start, len, off) {
+            var str = this, i, om = off % 4, lm = len % 4, j = len - lm;
+            if (j > 0) {
+                switch (om) {
+                case 0:
+                    H8[off + 3 | 0] = str.charCodeAt(start);
+                case 1:
+                    H8[off + 2 | 0] = str.charCodeAt(start + 1);
+                case 2:
+                    H8[off + 1 | 0] = str.charCodeAt(start + 2);
+                case 3:
+                    H8[off | 0] = str.charCodeAt(start + 3);
+                }
+            }
+            for (i = om; i < j; i = i + 4 | 0) {
+                H32[off + i >> 2] = str.charCodeAt(start + i) << 24 | str.charCodeAt(start + i + 1) << 16 | str.charCodeAt(start + i + 2) << 8 | str.charCodeAt(start + i + 3);
+            }
+            switch (lm) {
+            case 3:
+                H8[off + j + 1 | 0] = str.charCodeAt(start + j + 2);
+            case 2:
+                H8[off + j + 2 | 0] = str.charCodeAt(start + j + 1);
+            case 1:
+                H8[off + j + 3 | 0] = str.charCodeAt(start + j);
+            }
+        };
+        // Convert a buffer or array and write it to the heap.
+        // The buffer or array is expected to only contain elements < 256.
+        var convBuf = function (H8, H32, start, len, off) {
+            var buf = this, i, om = off % 4, lm = len % 4, j = len - lm;
+            if (j > 0) {
+                switch (om) {
+                case 0:
+                    H8[off + 3 | 0] = buf[start];
+                case 1:
+                    H8[off + 2 | 0] = buf[start + 1];
+                case 2:
+                    H8[off + 1 | 0] = buf[start + 2];
+                case 3:
+                    H8[off | 0] = buf[start + 3];
+                }
+            }
+            for (i = 4 - om; i < j; i = i += 4 | 0) {
+                H32[off + i >> 2] = buf[start + i] << 24 | buf[start + i + 1] << 16 | buf[start + i + 2] << 8 | buf[start + i + 3];
+            }
+            switch (lm) {
+            case 3:
+                H8[off + j + 1 | 0] = buf[start + j + 2];
+            case 2:
+                H8[off + j + 2 | 0] = buf[start + j + 1];
+            case 1:
+                H8[off + j + 3 | 0] = buf[start + j];
+            }
+        };
+        var convBlob = function (H8, H32, start, len, off) {
+            var blob = this, i, om = off % 4, lm = len % 4, j = len - lm;
+            var buf = new Uint8Array(reader.readAsArrayBuffer(blob.slice(start, start + len)));
+            if (j > 0) {
+                switch (om) {
+                case 0:
+                    H8[off + 3 | 0] = buf[0];
+                case 1:
+                    H8[off + 2 | 0] = buf[1];
+                case 2:
+                    H8[off + 1 | 0] = buf[2];
+                case 3:
+                    H8[off | 0] = buf[3];
+                }
+            }
+            for (i = 4 - om; i < j; i = i += 4 | 0) {
+                H32[off + i >> 2] = buf[i] << 24 | buf[i + 1] << 16 | buf[i + 2] << 8 | buf[i + 3];
+            }
+            switch (lm) {
+            case 3:
+                H8[off + j + 1 | 0] = buf[j + 2];
+            case 2:
+                H8[off + j + 2 | 0] = buf[j + 1];
+            case 1:
+                H8[off + j + 3 | 0] = buf[j];
+            }
+        };
+        var convFn = function (data) {
+            switch (util.getDataType(data)) {
+            case 'string':
+                return convStr.bind(data);
+            case 'array':
+                return convBuf.bind(data);
+            case 'buffer':
+                return convBuf.bind(data);
+            case 'arraybuffer':
+                return convBuf.bind(new Uint8Array(data));
+            case 'view':
+                return convBuf.bind(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+            case 'blob':
+                return convBlob.bind(data);
+            }
+        };
+        var slice = function (data, offset) {
+            switch (util.getDataType(data)) {
+            case 'string':
+                return data.slice(offset);
+            case 'array':
+                return data.slice(offset);
+            case 'buffer':
+                return data.slice(offset);
+            case 'arraybuffer':
+                return data.slice(offset);
+            case 'view':
+                return data.buffer.slice(offset);
+            }
+        };
+        // Convert an ArrayBuffer into its hexadecimal string representation.
+        var hex = function (arrayBuffer) {
+            var i, x, hex_tab = '0123456789abcdef', res = [], binarray = new Uint8Array(arrayBuffer);
+            for (i = 0; i < binarray.length; i++) {
+                x = binarray[i];
+                res[i] = hex_tab.charAt(x >> 4 & 15) + hex_tab.charAt(x >> 0 & 15);
+            }
+            return res.join('');
+        };
+        var ceilHeapSize = function (v) {
+            // The asm.js spec says:
+            // The heap object's byteLength must be either
+            // 2^n for n in [12, 24) or 2^24 * n for n ≥ 1.
+            // Also, byteLengths smaller than 2^16 are deprecated.
+            var p;
+            // If v is smaller than 2^16, the smallest possible solution
+            // is 2^16.
+            if (v <= 65536)
+                return 65536;
+            // If v < 2^24, we round up to 2^n,
+            // otherwise we round up to 2^24 * n.
+            if (v < 16777216) {
+                for (p = 1; p < v; p = p << 1);
+            } else {
+                for (p = 16777216; p < v; p += 16777216);
+            }
+            return p;
+        };
+        // Initialize the internal data structures to a new capacity.
+        var init = function (size) {
+            if (size % 64 > 0) {
+                throw new Error('Chunk size must be a multiple of 128 bit');
+            }
+            self$2.maxChunkLen = size;
+            self$2.padMaxChunkLen = padlen(size);
+            // The size of the heap is the sum of:
+            // 1. The padded input message size
+            // 2. The extended space the algorithm needs (320 byte)
+            // 3. The 160 bit state the algoritm uses
+            self$2.heap = new ArrayBuffer(ceilHeapSize(self$2.padMaxChunkLen + 320 + 20));
+            self$2.h32 = new Int32Array(self$2.heap);
+            self$2.h8 = new Int8Array(self$2.heap);
+            self$2.core = new Rusha._core({
+                Int32Array: Int32Array,
+                DataView: DataView
+            }, {}, self$2.heap);
+            self$2.buffer = null;
+        };
+        // Iinitializethe datastructures according
+        // to a chunk siyze.
+        init(chunkSize || 64 * 1024);
+        var initState = function (heap, padMsgLen) {
+            var io = new Int32Array(heap, padMsgLen + 320, 5);
+            io[0] = 1732584193;
+            io[1] = -271733879;
+            io[2] = -1732584194;
+            io[3] = 271733878;
+            io[4] = -1009589776;
+        };
+        var padChunk = function (chunkLen, msgLen) {
+            var padChunkLen = padlen(chunkLen);
+            var view = new Int32Array(self$2.heap, 0, padChunkLen >> 2);
+            padZeroes(view, chunkLen);
+            padData(view, chunkLen, msgLen);
+            return padChunkLen;
+        };
+        // Write data to the heap.
+        var write = function (data, chunkOffset, chunkLen) {
+            convFn(data)(self$2.h8, self$2.h32, chunkOffset, chunkLen, 0);
+        };
+        // Initialize and call the RushaCore,
+        // assuming an input buffer of length len * 4.
+        var coreCall = function (data, chunkOffset, chunkLen, msgLen, finalize) {
+            var padChunkLen = chunkLen;
+            if (finalize) {
+                padChunkLen = padChunk(chunkLen, msgLen);
+            }
+            write(data, chunkOffset, chunkLen);
+            self$2.core.hash(padChunkLen, self$2.padMaxChunkLen);
+        };
+        var getRawDigest = function (heap, padMaxChunkLen) {
+            var io = new Int32Array(heap, padMaxChunkLen + 320, 5);
+            var out = new Int32Array(5);
+            var arr = new DataView(out.buffer);
+            arr.setInt32(0, io[0], false);
+            arr.setInt32(4, io[1], false);
+            arr.setInt32(8, io[2], false);
+            arr.setInt32(12, io[3], false);
+            arr.setInt32(16, io[4], false);
+            return out;
+        };
+        // Calculate the hash digest as an array of 5 32bit integers.
+        var rawDigest = this.rawDigest = function (str) {
+                var msgLen = str.byteLength || str.length || str.size || 0;
+                initState(self$2.heap, self$2.padMaxChunkLen);
+                var chunkOffset = 0, chunkLen = self$2.maxChunkLen, last;
+                for (chunkOffset = 0; msgLen > chunkOffset + chunkLen; chunkOffset += chunkLen) {
+                    coreCall(str, chunkOffset, chunkLen, msgLen, false);
+                }
+                coreCall(str, chunkOffset, msgLen - chunkOffset, msgLen, true);
+                return getRawDigest(self$2.heap, self$2.padMaxChunkLen);
+            };
+        // The digest and digestFrom* interface returns the hash digest
+        // as a hex string.
+        this.digest = this.digestFromString = this.digestFromBuffer = this.digestFromArrayBuffer = function (str) {
+            return hex(rawDigest(str).buffer);
+        };
+    }
+    ;
+    // The low-level RushCore module provides the heart of Rusha,
+    // a high-speed sha1 implementation working on an Int32Array heap.
+    // At first glance, the implementation seems complicated, however
+    // with the SHA1 spec at hand, it is obvious this almost a textbook
+    // implementation that has a few functions hand-inlined and a few loops
+    // hand-unrolled.
+    Rusha._core = function RushaCore(stdlib, foreign, heap) {
+        'use asm';
+        var H = new stdlib.Int32Array(heap);
+        function hash(k, x) {
+            // k in bytes
+            k = k | 0;
+            x = x | 0;
+            var i = 0, j = 0, y0 = 0, z0 = 0, y1 = 0, z1 = 0, y2 = 0, z2 = 0, y3 = 0, z3 = 0, y4 = 0, z4 = 0, t0 = 0, t1 = 0;
+            y0 = H[x + 320 >> 2] | 0;
+            y1 = H[x + 324 >> 2] | 0;
+            y2 = H[x + 328 >> 2] | 0;
+            y3 = H[x + 332 >> 2] | 0;
+            y4 = H[x + 336 >> 2] | 0;
+            for (i = 0; (i | 0) < (k | 0); i = i + 64 | 0) {
+                z0 = y0;
+                z1 = y1;
+                z2 = y2;
+                z3 = y3;
+                z4 = y4;
+                for (j = 0; (j | 0) < 64; j = j + 4 | 0) {
+                    t1 = H[i + j >> 2] | 0;
+                    t0 = ((y0 << 5 | y0 >>> 27) + (y1 & y2 | ~y1 & y3) | 0) + ((t1 + y4 | 0) + 1518500249 | 0) | 0;
+                    y4 = y3;
+                    y3 = y2;
+                    y2 = y1 << 30 | y1 >>> 2;
+                    y1 = y0;
+                    y0 = t0;
+                    H[k + j >> 2] = t1;
+                }
+                for (j = k + 64 | 0; (j | 0) < (k + 80 | 0); j = j + 4 | 0) {
+                    t1 = (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) << 1 | (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) >>> 31;
+                    t0 = ((y0 << 5 | y0 >>> 27) + (y1 & y2 | ~y1 & y3) | 0) + ((t1 + y4 | 0) + 1518500249 | 0) | 0;
+                    y4 = y3;
+                    y3 = y2;
+                    y2 = y1 << 30 | y1 >>> 2;
+                    y1 = y0;
+                    y0 = t0;
+                    H[j >> 2] = t1;
+                }
+                for (j = k + 80 | 0; (j | 0) < (k + 160 | 0); j = j + 4 | 0) {
+                    t1 = (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) << 1 | (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) >>> 31;
+                    t0 = ((y0 << 5 | y0 >>> 27) + (y1 ^ y2 ^ y3) | 0) + ((t1 + y4 | 0) + 1859775393 | 0) | 0;
+                    y4 = y3;
+                    y3 = y2;
+                    y2 = y1 << 30 | y1 >>> 2;
+                    y1 = y0;
+                    y0 = t0;
+                    H[j >> 2] = t1;
+                }
+                for (j = k + 160 | 0; (j | 0) < (k + 240 | 0); j = j + 4 | 0) {
+                    t1 = (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) << 1 | (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) >>> 31;
+                    t0 = ((y0 << 5 | y0 >>> 27) + (y1 & y2 | y1 & y3 | y2 & y3) | 0) + ((t1 + y4 | 0) - 1894007588 | 0) | 0;
+                    y4 = y3;
+                    y3 = y2;
+                    y2 = y1 << 30 | y1 >>> 2;
+                    y1 = y0;
+                    y0 = t0;
+                    H[j >> 2] = t1;
+                }
+                for (j = k + 240 | 0; (j | 0) < (k + 320 | 0); j = j + 4 | 0) {
+                    t1 = (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) << 1 | (H[j - 12 >> 2] ^ H[j - 32 >> 2] ^ H[j - 56 >> 2] ^ H[j - 64 >> 2]) >>> 31;
+                    t0 = ((y0 << 5 | y0 >>> 27) + (y1 ^ y2 ^ y3) | 0) + ((t1 + y4 | 0) - 899497514 | 0) | 0;
+                    y4 = y3;
+                    y3 = y2;
+                    y2 = y1 << 30 | y1 >>> 2;
+                    y1 = y0;
+                    y0 = t0;
+                    H[j >> 2] = t1;
+                }
+                y0 = y0 + z0 | 0;
+                y1 = y1 + z1 | 0;
+                y2 = y2 + z2 | 0;
+                y3 = y3 + z3 | 0;
+                y4 = y4 + z4 | 0;
+            }
+            H[x + 320 >> 2] = y0;
+            H[x + 324 >> 2] = y1;
+            H[x + 328 >> 2] = y2;
+            H[x + 332 >> 2] = y3;
+            H[x + 336 >> 2] = y4;
+        }
+        return { hash: hash };
+    };
+}());
+},{}],32:[function(require,module,exports){
 /**
  * @preserve A JavaScript implementation of the SHA family of hashes, as
  * defined in FIPS PUB 180-2 as well as the corresponding HMAC implementation
@@ -7324,7 +7746,7 @@ var SUPPORTED_ALGS = 4 | 2 | 1;
 	};
 }(this));
 
-},{"../../util.js":74}],32:[function(require,module,exports){
+},{"../../util.js":75}],33:[function(require,module,exports){
 /**
  * @see module:crypto/crypto
  * @module crypto
@@ -7351,7 +7773,7 @@ var crypto = require('./crypto.js');
 for (var i in crypto)
   module.exports[i] = crypto[i];
 
-},{"./cfb.js":18,"./cipher":23,"./crypto.js":25,"./hash":28,"./pkcs1.js":33,"./public_key":36,"./random.js":39,"./signature.js":40}],33:[function(require,module,exports){
+},{"./cfb.js":18,"./cipher":23,"./crypto.js":25,"./hash":28,"./pkcs1.js":34,"./public_key":37,"./random.js":40,"./signature.js":41}],34:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -7524,7 +7946,7 @@ module.exports = {
   }
 };
 
-},{"../util.js":74,"./crypto.js":25,"./hash":28,"./public_key/jsbn.js":37,"./random.js":39}],34:[function(require,module,exports){
+},{"../util.js":75,"./crypto.js":25,"./hash":28,"./public_key/jsbn.js":38,"./random.js":40}],35:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -7567,7 +7989,7 @@ function DSA() {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
@@ -7627,7 +8049,7 @@ function DSA() {
   this.select_hash_algorithm = select_hash_algorithm;
 
   function verify(hashalgo, s1, s2, m, p, q, g, y) {
-    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     if (BigInteger.ZERO.compareTo(s1) >= 0 ||
       s1.compareTo(q) >= 0 ||
@@ -7712,7 +8134,7 @@ function DSA() {
 
 module.exports = DSA;
 
-},{"../../config":17,"../../util.js":74,"../hash":28,"../random.js":39,"./jsbn.js":37}],35:[function(require,module,exports){
+},{"../../config":17,"../../util.js":75,"../hash":28,"../random.js":40,"./jsbn.js":38}],36:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -7773,7 +8195,7 @@ function Elgamal() {
 
 module.exports = Elgamal;
 
-},{"../../util.js":74,"../random.js":39,"./jsbn.js":37}],36:[function(require,module,exports){
+},{"../../util.js":75,"../random.js":40,"./jsbn.js":38}],37:[function(require,module,exports){
 /**
  * @requires crypto/public_key/dsa
  * @requires crypto/public_key/elgamal
@@ -7789,7 +8211,7 @@ module.exports = {
   dsa: require('./dsa.js')
 };
 
-},{"./dsa.js":34,"./elgamal.js":35,"./rsa.js":38}],37:[function(require,module,exports){
+},{"./dsa.js":35,"./elgamal.js":36,"./rsa.js":39}],38:[function(require,module,exports){
 /*
  * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
  * All Rights Reserved.
@@ -9502,7 +9924,7 @@ BigInteger.prototype.toMPI = bnToMPI;
 // JSBN-specific extension
 BigInteger.prototype.square = bnSquare;
 
-},{"../../util.js":74,"./jsbn.js":37}],38:[function(require,module,exports){
+},{"../../util.js":75,"./jsbn.js":38}],39:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -9800,7 +10222,7 @@ function RSA() {
 
 module.exports = RSA;
 
-},{"../../config":17,"../../util.js":74,"../random.js":39,"./jsbn.js":37}],39:[function(require,module,exports){
+},{"../../config":17,"../../util.js":75,"../random.js":40,"./jsbn.js":38}],40:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -9997,7 +10419,7 @@ RandomBuffer.prototype.get = function(buf) {
   }
 };
 
-},{"../type/mpi.js":72,"../util.js":74,"crypto":false}],40:[function(require,module,exports){
+},{"../type/mpi.js":73,"../util.js":75,"crypto":false}],41:[function(require,module,exports){
 /**
  * @requires util
  * @requires crypto/hash
@@ -10112,7 +10534,7 @@ module.exports = {
   }
 };
 
-},{"../util":74,"./hash":28,"./pkcs1.js":33,"./public_key":36}],41:[function(require,module,exports){
+},{"../util":75,"./hash":28,"./pkcs1.js":34,"./public_key":37}],42:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -10520,7 +10942,7 @@ module.exports = {
   decode: dearmor
 };
 
-},{"../config":17,"../enums.js":43,"./base64.js":42}],42:[function(require,module,exports){
+},{"../config":17,"../enums.js":44,"./base64.js":43}],43:[function(require,module,exports){
 /* OpenPGP radix-64/base64 string encoding/decoding
  * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
  * version 1.0, check www.haneWIN.de for the latest version
@@ -10641,7 +11063,7 @@ module.exports = {
   decode: r2s
 };
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 /**
@@ -10962,7 +11384,7 @@ module.exports = {
   }
 };
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./openpgp.js');
@@ -11037,7 +11459,7 @@ module.exports.Keyring = require('./keyring');
  */
 module.exports.AsyncProxy = require('./worker/async_proxy.js');
 
-},{"./cleartext.js":12,"./config/config.js":16,"./crypto":32,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./keyring":46,"./message.js":49,"./openpgp.js":50,"./packet":53,"./type/keyid.js":71,"./type/mpi.js":72,"./type/s2k.js":73,"./util.js":74,"./worker/async_proxy.js":75}],45:[function(require,module,exports){
+},{"./cleartext.js":12,"./config/config.js":16,"./crypto":33,"./encoding/armor.js":42,"./enums.js":44,"./key.js":46,"./keyring":47,"./message.js":50,"./openpgp.js":51,"./packet":54,"./type/keyid.js":72,"./type/mpi.js":73,"./type/s2k.js":74,"./util.js":75,"./worker/async_proxy.js":76}],46:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -12084,7 +12506,7 @@ exports.readArmored = readArmored;
 exports.generate = generate;
 exports.getPreferredSymAlgo = getPreferredSymAlgo;
 
-},{"./config":17,"./encoding/armor.js":41,"./enums.js":43,"./packet":53,"./util":74}],46:[function(require,module,exports){
+},{"./config":17,"./encoding/armor.js":42,"./enums.js":44,"./packet":54,"./util":75}],47:[function(require,module,exports){
 /**
  * @see module:keyring/keyring
  * @module keyring
@@ -12092,7 +12514,7 @@ exports.getPreferredSymAlgo = getPreferredSymAlgo;
 module.exports = require('./keyring.js');
 module.exports.localstore = require('./localstore.js');
 
-},{"./keyring.js":47,"./localstore.js":48}],47:[function(require,module,exports){
+},{"./keyring.js":48,"./localstore.js":49}],48:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12314,7 +12736,7 @@ KeyArray.prototype.removeForId = function (keyId) {
   return null;
 };
 
-},{"../enums.js":43,"../key.js":45,"../util.js":74,"./localstore.js":48}],48:[function(require,module,exports){
+},{"../enums.js":44,"../key.js":46,"../util.js":75,"./localstore.js":49}],49:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12420,7 +12842,7 @@ function storeKeys(storage, itemname, keys) {
   storage.setItem(itemname, JSON.stringify(armoredKeys));
 }
 
-},{"../config":17,"../key.js":45,"../util.js":74,"node-localstorage":false}],49:[function(require,module,exports){
+},{"../config":17,"../key.js":46,"../util.js":75,"node-localstorage":false}],50:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -12952,7 +13374,7 @@ exports.fromText = fromText;
 exports.fromBinary = fromBinary;
 exports.encryptSessionKey = encryptSessionKey;
 
-},{"./config":17,"./crypto":32,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./packet":53,"./util.js":74}],50:[function(require,module,exports){
+},{"./config":17,"./crypto":33,"./encoding/armor.js":42,"./enums.js":44,"./key.js":46,"./packet":54,"./util.js":75}],51:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13355,7 +13777,7 @@ exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;
 exports.generateKeyPair = generateKeyPair;
-},{"./cleartext.js":12,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./message.js":49,"./util":74,"./worker/async_proxy.js":75,"es6-promise":2}],51:[function(require,module,exports){
+},{"./cleartext.js":12,"./encoding/armor.js":42,"./enums.js":44,"./key.js":46,"./message.js":50,"./util":75,"./worker/async_proxy.js":76,"es6-promise":2}],52:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet
@@ -13435,7 +13857,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":43,"./compressed.js":52,"./literal.js":54,"./marker.js":55,"./one_pass_signature.js":56,"./public_key.js":59,"./public_key_encrypted_session_key.js":60,"./public_subkey.js":61,"./secret_key.js":62,"./secret_subkey.js":63,"./signature.js":64,"./sym_encrypted_integrity_protected.js":65,"./sym_encrypted_session_key.js":66,"./symmetrically_encrypted.js":67,"./trust.js":68,"./user_attribute.js":69,"./userid.js":70}],52:[function(require,module,exports){
+},{"../enums.js":44,"./compressed.js":53,"./literal.js":55,"./marker.js":56,"./one_pass_signature.js":57,"./public_key.js":60,"./public_key_encrypted_session_key.js":61,"./public_subkey.js":62,"./secret_key.js":63,"./secret_subkey.js":64,"./signature.js":65,"./sym_encrypted_integrity_protected.js":66,"./sym_encrypted_session_key.js":67,"./symmetrically_encrypted.js":68,"./trust.js":69,"./user_attribute.js":70,"./userid.js":71}],53:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -13599,7 +14021,7 @@ Compressed.prototype.compress = function () {
   }
 };
 
-},{"../compression/rawdeflate.min.js":13,"../compression/rawinflate.min.js":14,"../compression/zlib.min.js":15,"../enums.js":43,"../util.js":74}],53:[function(require,module,exports){
+},{"../compression/rawdeflate.min.js":13,"../compression/rawinflate.min.js":14,"../compression/zlib.min.js":15,"../enums.js":44,"../util.js":75}],54:[function(require,module,exports){
 var enums = require('../enums.js');
 
 module.exports = {
@@ -13615,7 +14037,7 @@ var packets = require('./all_packets.js');
 for (var i in packets)
   module.exports[i] = packets[i];
 
-},{"../enums.js":43,"./all_packets.js":51,"./packetlist.js":58}],54:[function(require,module,exports){
+},{"../enums.js":44,"./all_packets.js":52,"./packetlist.js":59}],55:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -13758,7 +14180,7 @@ Literal.prototype.write = function () {
   return util.concatUint8Array([format, filename_length, filename, date, data]);
 };
 
-},{"../enums.js":43,"../util.js":74}],55:[function(require,module,exports){
+},{"../enums.js":44,"../util.js":75}],56:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -13821,7 +14243,7 @@ Marker.prototype.read = function (bytes) {
   return false;
 };
 
-},{"../enums.js":43}],56:[function(require,module,exports){
+},{"../enums.js":44}],57:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -13927,7 +14349,7 @@ OnePassSignature.prototype.postCloneTypeFix = function() {
   this.signingKeyId = type_keyid.fromClone(this.signingKeyId);
 };
 
-},{"../enums.js":43,"../type/keyid.js":71,"../util.js":74}],57:[function(require,module,exports){
+},{"../enums.js":44,"../type/keyid.js":72,"../util.js":75}],58:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14184,7 +14606,7 @@ module.exports = {
   }
 };
 
-},{"../enums.js":43,"../util.js":74}],58:[function(require,module,exports){
+},{"../enums.js":44,"../util.js":75}],59:[function(require,module,exports){
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
@@ -14383,7 +14805,7 @@ module.exports.fromStructuredClone = function(packetlistClone) {
   }
   return packetlist;
 };
-},{"../enums.js":43,"../util":74,"./all_packets.js":51,"./packet.js":57}],59:[function(require,module,exports){
+},{"../enums.js":44,"../util":75,"./all_packets.js":52,"./packet.js":58}],60:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14609,7 +15031,7 @@ PublicKey.prototype.postCloneTypeFix = function() {
   }
 };
 
-},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74}],60:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../type/keyid.js":72,"../type/mpi.js":73,"../util.js":75}],61:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14788,7 +15210,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   }
 };
 
-},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74}],61:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../type/keyid.js":72,"../type/mpi.js":73,"../util.js":75}],62:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14829,7 +15251,7 @@ function PublicSubkey() {
 PublicSubkey.prototype = new publicKey();
 PublicSubkey.prototype.constructor = PublicSubkey;
 
-},{"../enums.js":43,"./public_key.js":59}],62:[function(require,module,exports){
+},{"../enums.js":44,"./public_key.js":60}],63:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -14914,10 +15336,6 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
 
   var hash = util.Uint8Array2str(hashfn(cleartext));
-
-  console.log(hash);
-  console.log(hashtext);
-  console.log(hash_algorithm);
 
   if (hash != hashtext)
     return new Error("Hash mismatch.");
@@ -15077,7 +15495,6 @@ SecretKey.prototype.decrypt = function (passphrase) {
     key = crypto.hash.md5(passphrase);
   }
 
-
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the
   //   cipher's block size.
@@ -15124,7 +15541,7 @@ SecretKey.prototype.clearPrivateMPIs = function () {
   this.isDecrypted = false;
 };
 
-},{"../crypto":32,"../enums.js":43,"../type/mpi.js":72,"../type/s2k.js":73,"../util.js":74,"./public_key.js":59}],63:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../type/mpi.js":73,"../type/s2k.js":74,"../util.js":75,"./public_key.js":60}],64:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15165,7 +15582,7 @@ function SecretSubkey() {
 SecretSubkey.prototype = new secretKey();
 SecretSubkey.prototype.constructor = SecretSubkey;
 
-},{"../enums.js":43,"./secret_key.js":62}],64:[function(require,module,exports){
+},{"../enums.js":44,"./secret_key.js":63}],65:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15817,7 +16234,7 @@ Signature.prototype.postCloneTypeFix = function() {
   this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };
 
-},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74,"./packet.js":57}],65:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../type/keyid.js":72,"../type/mpi.js":73,"../util.js":75,"./packet.js":58}],66:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15970,7 +16387,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 >>>>>>> binary strings to typed arrays in most places
 };
 
-},{"../crypto":32,"../enums.js":43,"../util.js":74}],66:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../util.js":75}],67:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16136,7 +16553,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.s2k = type_s2k.fromClone(this.s2k);
 };
 
-},{"../crypto":32,"../enums.js":43,"../type/s2k.js":73,"../util.js":74}],67:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../type/s2k.js":74,"../util.js":75}],68:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16214,7 +16631,7 @@ SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
     crypto.getPrefixRandom(algo), algo, data, key, true);
 };
 
-},{"../crypto":32,"../enums.js":43}],68:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44}],69:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet/trust
@@ -16240,7 +16657,7 @@ Trust.prototype.read = function (bytes) {
 
 };
 
-},{"../enums.js":43}],69:[function(require,module,exports){
+},{"../enums.js":44}],70:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16335,7 +16752,7 @@ UserAttribute.prototype.equals = function(usrAttr) {
   });
 };
 
-},{"../enums.js":43,"../util.js":74,"./packet.js":57}],70:[function(require,module,exports){
+},{"../enums.js":44,"../util.js":75,"./packet.js":58}],71:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16399,7 +16816,7 @@ Userid.prototype.write = function () {
   return util.str2Uint8Array(util.encode_utf8(this.userid));
 };
 
-},{"../enums.js":43,"../util.js":74}],71:[function(require,module,exports){
+},{"../enums.js":44,"../util.js":75}],72:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16480,7 +16897,7 @@ module.exports.fromId = function (hex) {
   return keyid;
 };
 
-},{"../util.js":74}],72:[function(require,module,exports){
+},{"../util.js":75}],73:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16599,7 +17016,7 @@ module.exports.fromClone = function (clone) {
   return mpi;
 };
 
-},{"../crypto/public_key/jsbn.js":37,"../util.js":74}],73:[function(require,module,exports){
+},{"../crypto/public_key/jsbn.js":38,"../util.js":75}],74:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16771,13 +17188,14 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   }
 
   var arr = [],
-    i = 0,
     rlength = 0,
+    prefix = '';
     prefix = new Uint8Array(numBytes);
 
   for(var i = 0; i<numBytes; i++) {
     prefix[i] = 0;
   }
+  i = 0;
 
   while (rlength <= numBytes) {
     var result = round(prefix.subarray(0,i), this);
@@ -16798,7 +17216,7 @@ module.exports.fromClone = function (clone) {
   return s2k;
 };
 
-},{"../crypto":32,"../enums.js":43,"../util.js":74}],74:[function(require,module,exports){
+},{"../crypto":33,"../enums.js":44,"../util.js":75}],75:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17040,8 +17458,6 @@ module.exports = {
 
       // Uncomment for debugging
       if(!Uint8Array.prototype.isPrototypeOf(element)) {
-        var err = new Error('here');
-        console.log(err.stack);
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
@@ -17232,7 +17648,7 @@ module.exports = {
   }
 };
 
-},{"./config":17}],75:[function(require,module,exports){
+},{"./config":17}],76:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17671,7 +18087,7 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
 
 module.exports = AsyncProxy;
 
-},{"../crypto":32,"../key.js":45,"../packet":53,"../type/keyid.js":71}]},{},[44])
-(44)
+},{"../crypto":33,"../key.js":46,"../packet":54,"../type/keyid.js":72}]},{},[45])
+(45)
 });
 ;

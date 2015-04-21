@@ -234,8 +234,6 @@ module.exports = {
 
       // Uncomment for debugging
       if(!Uint8Array.prototype.isPrototypeOf(element)) {
-        var err = new Error('here');
-        console.log(err.stack);
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
