@@ -178,6 +178,60 @@ Message.prototype.encrypt = function(keys) {
 };
 
 /**
+ * Encrypt the message symmetrically using a passphrase.
+ *   https://tools.ietf.org/html/rfc4880#section-3.7.2.2
+ * @param {String} passphrase
+ * @return {Array<module:message~Message>} new message with encrypted content
+ */
+Message.prototype.symEncrypt = function(passphrase) {
+  if (!passphrase) {
+    throw new Error('The passphrase cannot be empty!');
+  }
+
+  var algo = enums.read(enums.symmetric, config.encryption_cipher);
+  var packetlist = new packet.List();
+
+  // create a Symmetric-key Encrypted Session Key (ESK)
+  var symESKPacket = new packet.SymEncryptedSessionKey();
+  symESKPacket.sessionKeyAlgorithm = algo;
+  symESKPacket.decrypt(passphrase); // generate the session key
+  packetlist.push(symESKPacket);
+
+  // create integrity protected packet
+  var symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
+  symEncryptedPacket.packets = this.packets;
+  symEncryptedPacket.encrypt(algo, symESKPacket.sessionKey);
+  packetlist.push(symEncryptedPacket);
+
+  // remove packets after encryption
+  symEncryptedPacket.packets = new packet.List();
+  return new Message(packetlist);
+};
+
+/**
+ * Decrypt the message symmetrically using a passphrase.
+ *   https://tools.ietf.org/html/rfc4880#section-3.7.2.2
+ * @param {String} passphrase
+ * @return {Array<module:message~Message>} new message with decrypted content
+ */
+Message.prototype.symDecrypt = function(passphrase) {
+  var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey, enums.packet.symEncryptedIntegrityProtected);
+
+  // decrypt Symmetric-key Encrypted Session Key (ESK)
+  var symESKPacket = symEncryptedPacketlist[0];
+  symESKPacket.decrypt(passphrase);
+
+  // decrypt integrity protected packet
+  var symEncryptedPacket = symEncryptedPacketlist[1];
+  symEncryptedPacket.decrypt(symESKPacket.sessionKeyAlgorithm, symESKPacket.sessionKey);
+
+  var resultMsg = new Message(symEncryptedPacket.packets);
+  // remove packets after decryption
+  symEncryptedPacket.packets = new packet.List();
+  return resultMsg;
+};
+
+/**
  * Sign the message (the literal data packet of the message)
  * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
  * @return {module:message~Message}      new message with signed content
