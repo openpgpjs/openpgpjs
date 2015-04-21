@@ -268,6 +268,25 @@ describe('API functional testing', function() {
       });
     }
 
+    function testAESCFB(plaintext) {
+      symmAlgos.forEach(function(algo) {
+        if(algo.substr(0,3) === 'aes') {
+          var symmKey = openpgp.crypto.generateSessionKey(algo);
+          var rndm = openpgp.crypto.getPrefixRandom(algo);
+
+          var symmencData = openpgp.crypto.cfb.encrypt(rndm, algo, util.str2Uint8Array(plaintext), symmKey, false);
+          var symmencData2 = asmCrypto.AES_CFB.encrypt(util.str2Uint8Array(plaintext), key);
+
+          var decrypted = asmCrypto.AES_CFB.decrypt(symmencData, key);
+          decrypted = decrypted.subarray(openpgp.crypto.cipher[algo].blockSize + 2, decrypted.length);
+          expect(symmencData).to.equal(symmencData2);
+
+          var text = util.Uint8Array2str(decrypted);
+          expect(text).to.equal(plaintext);
+        }
+      });
+    }
+
     it("Symmetric with OpenPGP CFB resync", function () {
       testCFB("hello", true);
       testCFB("1234567", true);
@@ -280,6 +299,13 @@ describe('API functional testing', function() {
       testCFB("1234567", false);
       testCFB("foobarfoobar1234567890", false);
       testCFB("12345678901234567890123456789012345678901234567890", false);
+    });
+
+    it("asmCrypto AES without OpenPGP CFB resync", function () {
+      testCFB("hello");
+      testCFB("1234567");
+      testCFB("foobarfoobar1234567890");
+      testCFB("12345678901234567890123456789012345678901234567890");
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function (done) {

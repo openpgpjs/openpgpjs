@@ -28,6 +28,7 @@
  * @requires crypto
  * @requires util
  * @requires enums
+ * @requires config
  * @module packet/sym_encrypted_integrity_protected
  */
 
@@ -35,6 +36,7 @@ module.exports = SymEncryptedIntegrityProtected;
 
 var util = require('../util.js'),
   crypto = require('../crypto'),
+  config = require('../config'),
   enums = require('../enums.js');
 
 /**
@@ -91,9 +93,29 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
   tohash = util.concatUint8Array([tohash, hash]);
 
-  this.encrypted = crypto.cfb.encrypt(prefixrandom,
-    sessionKeyAlgorithm, tohash, key, false).subarray(0,
-    prefix.length + tohash.length);
+  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
+    var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
+    // Node crypto library. Not clear that it is faster than asmCrypto
+    if(typeof module !== 'undefined' && module.exports && config.useNative) {
+      var nodeCrypto = require('crypto');
+      var Buffer = require('buffer').Buffer;
+      var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+        new Buffer(key), new Buffer(new Uint8Array(blockSize)));
+      this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
+      //var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+      //  util.Uint8Array2str(key), util.Uint8Array2str(new Uint8Array(blockSize)));
+      //this.encrypted = new Uint8Array(cipherObj.update(util.Uint8Array2str(util.concatUint8Array([prefix, tohash]))));
+    }
+    else {
+      this.encrypted = asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, tohash]), key);
+    }
+  }
+  else {
+    this.encrypted = crypto.cfb.encrypt(prefixrandom,
+      sessionKeyAlgorithm, tohash, key, false).subarray(0,
+      prefix.length + tohash.length);
+  }
 };
 
 /**
@@ -106,8 +128,29 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  * @return {String} The decrypted data of this packet
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted = crypto.cfb.decrypt(
+  
+  var decrypted;
+  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
+    var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
+    // Node crypto library. Not clear that it is faster than asmCrypto
+    if(typeof module !== 'undefined' && module.exports && config.useNative) {
+      var nodeCrypto = require('crypto');
+      var Buffer = require('buffer').Buffer;
+      var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+        new Buffer(key), new Buffer(new Uint8Array(blockSize)));
+      decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
+    }
+    else {
+      decrypted = asmCrypto.AES_CFB.decrypt(this.encrypted, key);
+    }
+    // Remove random prefix
+    decrypted = decrypted.subarray(blockSize + 2, decrypted.length);
+  }
+  else {
+    decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, false);
+  }
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself

@@ -41,6 +41,7 @@ module.exports = {
   ignore_mdc_error: false,
   rsa_blinding: true,
   useWebCrypto: true,
+  useNative: false, // Node crypto library for AES
 
   show_version: true,
   show_comment: true,

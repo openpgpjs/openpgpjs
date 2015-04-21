@@ -180,7 +180,6 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
   var arr = [],
     rlength = 0,
-    prefix = '';
     prefix = new Uint8Array(numBytes);
 
   for(var i = 0; i<numBytes; i++) {

@@ -2,6 +2,10 @@
  * @see module:crypto/crypto
  * @module crypto
  */
+
+// asmCrypto global object
+require('./asmcrypto-aes-cfb');
+
 module.exports = {
   /** @see module:crypto/cipher */
   cipher: require('./cipher'),
@@ -16,7 +20,7 @@ module.exports = {
   /** @see module:crypto/random */
   random: require('./random.js'),
   /** @see module:crypto/pkcs1 */
-  pkcs1: require('./pkcs1.js')
+  pkcs1: require('./pkcs1.js'),
 };
 
 var crypto = require('./crypto.js');
