@@ -5110,14 +5110,15 @@ var sha = require('./sha.js'),
   rusha = require('./rusha.js'),
   util = require('../../util.js');
 
+var rusha_obj = new rusha();
+
 module.exports = {
   /** @see module:crypto/hash/md5 */
   md5: require('./md5.js'),
   /** @see module:crypto/hash/sha.sha1 */
   //sha1: sha.sha1,
   sha1: function (data) {
-    var r = new rusha();
-    return util.str2Uint8Array(util.hex2bin(r.digest(data)));
+    return util.str2Uint8Array(util.hex2bin(rusha_obj.digest(data)));
   },
   /** @see module:crypto/hash/sha.sha224 */
   sha224: sha.sha224,
@@ -5143,9 +5144,7 @@ module.exports = {
         return this.md5(data);
       case 2:
         // - SHA-1 [FIPS180]
-        // return this.sha1(data);
-        var r = new rusha();
-        return util.str2Uint8Array(util.hex2bin(r.digest(data)));
+        return this.sha1(data);
       case 3:
         // - RIPE-MD/160 [HAC]
         return this.ripemd(data);
