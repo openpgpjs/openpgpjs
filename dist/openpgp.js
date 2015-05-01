@@ -869,7 +869,7 @@ function verifyHeaders(headers, packetlist) {
 exports.CleartextMessage = CleartextMessage;
 exports.readArmored = readArmored;
 
-},{"./config":17,"./encoding/armor.js":43,"./enums.js":45,"./packet":55}],13:[function(require,module,exports){
+},{"./config":17,"./encoding/armor.js":41,"./enums.js":43,"./packet":53}],13:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */(function() {'use strict';var n=void 0,u=!0,aa=this;function ba(e,d){var c=e.split("."),f=aa;!(c[0]in f)&&f.execScript&&f.execScript("var "+c[0]);for(var a;c.length&&(a=c.shift());)!c.length&&d!==n?f[a]=d:f=f[a]?f[a]:f[a]={}};var C="undefined"!==typeof Uint8Array&&"undefined"!==typeof Uint16Array&&"undefined"!==typeof Uint32Array&&"undefined"!==typeof DataView;function K(e,d){this.index="number"===typeof d?d:0;this.d=0;this.buffer=e instanceof(C?Uint8Array:Array)?e:new (C?Uint8Array:Array)(32768);if(2*this.buffer.length<=this.index)throw Error("invalid index");this.buffer.length<=this.index&&ca(this)}function ca(e){var d=e.buffer,c,f=d.length,a=new (C?Uint8Array:Array)(f<<1);if(C)a.set(d);else for(c=0;c<f;++c)a[c]=d[c];return e.buffer=a}
 K.prototype.a=function(e,d,c){var f=this.buffer,a=this.index,b=this.d,k=f[a],m;c&&1<d&&(e=8<d?(L[e&255]<<24|L[e>>>8&255]<<16|L[e>>>16&255]<<8|L[e>>>24&255])>>32-d:L[e]>>8-d);if(8>d+b)k=k<<d|e,b+=d;else for(m=0;m<d;++m)k=k<<1|e>>d-m-1&1,8===++b&&(b=0,f[a++]=L[k],k=0,a===f.length&&(f=ca(this)));f[a]=k;this.buffer=f;this.d=b;this.index=a};K.prototype.finish=function(){var e=this.buffer,d=this.index,c;0<this.d&&(e[d]<<=8-this.d,e[d]=L[e[d]],d++);C?c=e.subarray(0,d):(e.length=d,c=e);return c};
 var ga=new (C?Uint8Array:Array)(256),M;for(M=0;256>M;++M){for(var R=M,S=R,ha=7,R=R>>>1;R;R>>>=1)S<<=1,S|=R&1,--ha;ga[M]=(S<<ha&255)>>>0}var L=ga;function ja(e){this.buffer=new (C?Uint16Array:Array)(2*e);this.length=0}ja.prototype.getParent=function(e){return 2*((e-2)/4|0)};ja.prototype.push=function(e,d){var c,f,a=this.buffer,b;c=this.length;a[this.length++]=d;for(a[this.length++]=e;0<c;)if(f=this.getParent(c),a[c]>a[f])b=a[c],a[c]=a[f],a[f]=b,b=a[c+1],a[c+1]=a[f+1],a[f+1]=b,c=f;else break;return this.length};
@@ -1009,7 +1009,7 @@ module.exports = {
   debug: false
 };
 
-},{"../enums.js":45}],17:[function(require,module,exports){
+},{"../enums.js":43}],17:[function(require,module,exports){
 /**
  * @see module:config/config
  * @module config
@@ -1018,7 +1018,7 @@ module.exports = require('./config.js');
 
 },{"./config.js":16}],18:[function(require,module,exports){
 /*! asmCrypto, (c) 2013 Artem S Vybornov, opensource.org/licenses/MIT */
-!function(a,b){function c(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function d(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function e(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function f(a){for(var b=a.length,c=new Uint8Array(b),d=0;b>d;d++){var e=a.charCodeAt(d);if(e>>>8)throw new Error("Wide characters are not allowed");c[d]=e}return c}function g(a){return"string"==typeof a}function h(a){return a instanceof ArrayBuffer}function i(a){return a instanceof Uint8Array}function j(a,b){var c=b.heap,d=c?c.byteLength:b.heapSize||65536;if(4095&d||0>=d)throw new Error("heap size must be a positive integer and a multiple of 4096");return c=c||new a(new ArrayBuffer(d))}function k(a,b,c,d,e){var f=a.length-b,g=e>f?f:e;return a.set(c.subarray(d,d+g),b),g}function l(a){a=a||{},this.heap=j(Uint8Array,a).subarray(z.HEAP_DATA),this.asm=a.asm||z(b,null,this.heap.buffer),this.mode=null,this.key=null,this.reset(a)}function m(a){if(void 0!==a){if(h(a)||i(a))a=new Uint8Array(a);else{if(!g(a))throw new TypeError("unexpected key type");a=f(a)}var b=a.length;if(16!==b&&24!==b&&32!==b)throw new d("illegal key size");var c=new DataView(a.buffer,a.byteOffset,a.byteLength);this.asm.set_key(b>>2,c.getUint32(0),c.getUint32(4),c.getUint32(8),c.getUint32(12),b>16?c.getUint32(16):0,b>16?c.getUint32(20):0,b>24?c.getUint32(24):0,b>24?c.getUint32(28):0),this.key=a}else if(!this.key)throw new Error("key is required")}function n(a){if(void 0!==a){if(h(a)||i(a))a=new Uint8Array(a);else{if(!g(a))throw new TypeError("unexpected iv type");a=f(a)}if(16!==a.length)throw new d("illegal iv size");var b=new DataView(a.buffer,a.byteOffset,a.byteLength);this.iv=a,this.asm.set_iv(b.getUint32(0),b.getUint32(4),b.getUint32(8),b.getUint32(12))}else this.iv=null,this.asm.set_iv(0,0,0,0)}function o(a){this.padding=void 0!==a?!!a:!0}function p(a){return a=a||{},this.result=null,this.pos=0,this.len=0,m.call(this,a.key),this.hasOwnProperty("iv")&&n.call(this,a.iv),this.hasOwnProperty("padding")&&o.call(this,a.padding),this}function q(a){if(g(a)&&(a=f(a)),h(a)&&(a=new Uint8Array(a)),!i(a))throw new TypeError("data isn't of expected type");for(var b=this.asm,c=this.heap,d=z.ENC[this.mode],e=z.HEAP_DATA,j=this.pos,l=this.len,m=0,n=a.length||0,o=0,p=l+n&-16,q=0,r=new Uint8Array(p);n>0;)q=k(c,j+l,a,m,n),l+=q,m+=q,n-=q,q=b.cipher(d,e+j,l),q&&r.set(c.subarray(j,j+q),o),o+=q,l>q?(j+=q,l-=q):(j=0,l=0);return this.result=r,this.pos=j,this.len=l,this}function r(a){var b=null,c=0;void 0!==a&&(b=q.call(this,a).result,c=b.length);var e=this.asm,f=this.heap,g=z.ENC[this.mode],h=z.HEAP_DATA,i=this.pos,j=this.len,k=16-j%16,l=j;if(this.hasOwnProperty("padding")){if(this.padding){for(var m=0;k>m;++m)f[i+j+m]=k;j+=k,l=j}else if(j%16)throw new d("data length must be a multiple of the block size")}else j+=k;var n=new Uint8Array(c+l);return c&&n.set(b),j&&e.cipher(g,h+i,j),l&&n.set(f.subarray(i,i+l),c),this.result=n,this.pos=0,this.len=0,this}function s(a){if(g(a)&&(a=f(a)),h(a)&&(a=new Uint8Array(a)),!i(a))throw new TypeError("data isn't of expected type");var b=this.asm,c=this.heap,d=z.DEC[this.mode],e=z.HEAP_DATA,j=this.pos,l=this.len,m=0,n=a.length||0,o=0,p=l+n&-16,q=0,r=0;this.hasOwnProperty("padding")&&this.padding&&(q=l+n-p||16,p-=q);for(var s=new Uint8Array(p);n>0;)r=k(c,j+l,a,m,n),l+=r,m+=r,n-=r,r=b.cipher(d,e+j,l-(n?0:q)),r&&s.set(c.subarray(j,j+r),o),o+=r,l>r?(j+=r,l-=r):(j=0,l=0);return this.result=s,this.pos=j,this.len=l,this}function t(a){var b=null,c=0;void 0!==a&&(b=s.call(this,a).result,c=b.length);var f=this.asm,g=this.heap,h=z.DEC[this.mode],i=z.HEAP_DATA,j=this.pos,k=this.len,l=k;if(k>0){if(k%16){if(this.hasOwnProperty("padding"))throw new d("data length must be a multiple of the block size");k+=16-k%16}if(f.cipher(h,i+j,k),this.hasOwnProperty("padding")&&this.padding){var m=g[j+l-1];if(1>m||m>16||m>l)throw new e("bad padding");for(var n=0,o=m;o>1;o--)n|=m^g[j+l-o];if(n)throw new e("bad padding");l-=m}}var p=new Uint8Array(c+l);return c>0&&p.set(b),l>0&&p.set(g.subarray(j,j+l),c),this.result=p,this.pos=0,this.len=0,this}function u(a){this.iv=null,l.call(this,a),this.mode="CFB"}function v(a){u.call(this,a)}function w(a){u.call(this,a)}function x(a,b,c){if(void 0===a)throw new SyntaxError("data required");if(void 0===b)throw new SyntaxError("key required");return new u({heap:D,asm:E,key:b,iv:c}).encrypt(a).result}function y(a,b,c){if(void 0===a)throw new SyntaxError("data required");if(void 0===b)throw new SyntaxError("key required");return new u({heap:D,asm:E,key:b,iv:c}).decrypt(a).result}b.asmCrypto=a,c.prototype=Object.create(Error.prototype,{name:{value:"IllegalStateError"}}),d.prototype=Object.create(Error.prototype,{name:{value:"IllegalArgumentError"}}),e.prototype=Object.create(Error.prototype,{name:{value:"SecurityError"}});var z=(b.Float64Array||b.Float32Array,function(){"use strict";function a(){e=[],f=[];var a,b,c=1;for(a=0;255>a;a++)e[a]=c,b=128&c,c<<=1,c&=255,128===b&&(c^=27),c^=e[a],f[e[a]]=a;e[255]=e[0],f[0]=0,k=!0}function b(a,b){var c=e[(f[a]+f[b])%255];return(0===a||0===b)&&(c=0),c}function c(a){var b=e[255-f[a]];return 0===a&&(b=0),b}function d(){function d(a){var b,d,e;for(d=e=c(a),b=0;4>b;b++)d=255&(d<<1|d>>>7),e^=d;return e^=99}k||a(),g=[],h=[],i=[[],[],[],[]],j=[[],[],[],[]];for(var e=0;256>e;e++){var f=d(e);g[e]=f,h[f]=e,i[0][e]=b(2,f)<<24|f<<16|f<<8|b(3,f),j[0][f]=b(14,e)<<24|b(9,e)<<16|b(13,e)<<8|b(11,e);for(var l=1;4>l;l++)i[l][e]=i[l-1][e]>>>8|i[l-1][e]<<24,j[l][f]=j[l-1][f]>>>8|j[l-1][f]<<24}}var e,f,g,h,i,j,k=!1,l=!1,m=function(a,b,c){function e(a,b,c,d,e,h,i,k,l){var n=f.subarray(0,60),o=f.subarray(256,316);n.set([b,c,d,e,h,i,k,l]);for(var p=a,q=1;4*a+28>p;p++){var r=n[p-1];(p%a===0||8===a&&p%a===4)&&(r=g[r>>>24]<<24^g[r>>>16&255]<<16^g[r>>>8&255]<<8^g[255&r]),p%a===0&&(r=r<<8^r>>>24^q<<24,q=q<<1^(128&q?27:0)),n[p]=n[p-a]^r}for(var s=0;p>s;s+=4)for(var t=0;4>t;t++){var r=n[p-(4+s)+(4-t)%4];o[s+t]=4>s||s>=p-4?r:j[0][g[r>>>24]]^j[1][g[r>>>16&255]]^j[2][g[r>>>8&255]]^j[3][g[255&r]]}m.set_rounds(a+5)}l||d();var f=new Uint32Array(c);f.set(g,512),f.set(h,768);for(var k=0;4>k;k++)f.set(i[k],4096+1024*k>>2),f.set(j[k],8192+1024*k>>2);var m=function(a,b,c){"use asm";function d(a,b,c,d,e,f,g,h){a|=0,b|=0,c|=0,d|=0,e|=0,f|=0,g|=0,h|=0;var i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0;for(i=c|1024,j=c|2048,k=c|3072,e^=T[(a|0)>>2],f^=T[(a|4)>>2],g^=T[(a|8)>>2],h^=T[(a|12)>>2],p=16;(p|0)<=d<<4;p=p+16|0)l=T[(c|e>>22&1020)>>2]^T[(i|f>>14&1020)>>2]^T[(j|g>>6&1020)>>2]^T[(k|h<<2&1020)>>2]^T[(a|p|0)>>2],m=T[(c|f>>22&1020)>>2]^T[(i|g>>14&1020)>>2]^T[(j|h>>6&1020)>>2]^T[(k|e<<2&1020)>>2]^T[(a|p|4)>>2],n=T[(c|g>>22&1020)>>2]^T[(i|h>>14&1020)>>2]^T[(j|e>>6&1020)>>2]^T[(k|f<<2&1020)>>2]^T[(a|p|8)>>2],o=T[(c|h>>22&1020)>>2]^T[(i|e>>14&1020)>>2]^T[(j|f>>6&1020)>>2]^T[(k|g<<2&1020)>>2]^T[(a|p|12)>>2],e=l,f=m,g=n,h=o;y=T[(b|e>>22&1020)>>2]<<24^T[(b|f>>14&1020)>>2]<<16^T[(b|g>>6&1020)>>2]<<8^T[(b|h<<2&1020)>>2]^T[(a|p|0)>>2],z=T[(b|f>>22&1020)>>2]<<24^T[(b|g>>14&1020)>>2]<<16^T[(b|h>>6&1020)>>2]<<8^T[(b|e<<2&1020)>>2]^T[(a|p|4)>>2],A=T[(b|g>>22&1020)>>2]<<24^T[(b|h>>14&1020)>>2]<<16^T[(b|e>>6&1020)>>2]<<8^T[(b|f<<2&1020)>>2]^T[(a|p|8)>>2],B=T[(b|h>>22&1020)>>2]<<24^T[(b|e>>14&1020)>>2]<<16^T[(b|f>>6&1020)>>2]<<8^T[(b|g<<2&1020)>>2]^T[(a|p|12)>>2]}function e(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,a,b,c,e)}function f(a,b,c,e){a|=0,b|=0,c|=0,e|=0;var f=0;d(1024,3072,8192,S,a,e,c,b),f=z,z=B,B=f}function g(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C^a,D^b,E^c,F^e),C=y,D=z,E=A,F=B}function h(a,b,c,e){a|=0,b|=0,c|=0,e|=0;var f=0;d(1024,3072,8192,S,a,e,c,b),f=z,z=B,B=f,y^=C,z^=D,A^=E,B^=F,C=a,D=b,E=c,F=e}function i(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),C=y^=a,D=z^=b,E=A^=c,F=B^=e}function j(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),y^=a,z^=b,A^=c,B^=e,C=a,D=b,E=c,F=e}function k(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),C=y,D=z,E=A,F=B,y^=a,z^=b,A^=c,B^=e}function l(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,G,H,I,J),J=~N&J|N&J+1,I=~M&I|M&I+((J|0)==0),H=~L&H|L&H+((I|0)==0),G=~K&G|K&G+((H|0)==0),y^=a,z^=b,A^=c,B^=e}function m(a,b,c,d){a|=0,b|=0,c|=0,d|=0;var e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0;for(a^=C,b^=D,c^=E,d^=F,e=O|0,f=P|0,g=Q|0,h=R|0;(m|0)<128;m=m+1|0)e>>>31&&(i^=a,j^=b,k^=c,l^=d),e=e<<1|f>>>31,f=f<<1|g>>>31,g=g<<1|h>>>31,h<<=1,n=d&1,d=d>>>1|c<<31,c=c>>>1|b<<31,b=b>>>1|a<<31,a>>>=1,n&&(a^=3774873600);C=i,D=j,E=k,F=l}function n(a){a|=0,S=a}function o(a,b,c,d){a|=0,b|=0,c|=0,d|=0,y=a,z=b,A=c,B=d}function p(a,b,c,d){a|=0,b|=0,c|=0,d|=0,C=a,D=b,E=c,F=d}function q(a,b,c,d){a|=0,b|=0,c|=0,d|=0,G=a,H=b,I=c,J=d}function r(a,b,c,d){a|=0,b|=0,c|=0,d|=0,K=a,L=b,M=c,N=d}function s(a,b,c,d){a|=0,b|=0,c|=0,d|=0,J=~N&J|N&d,I=~M&I|M&c,H=~L&H|L&b,G=~K&G|K&a}function t(a){return a|=0,a&15?-1:(U[a|0]=y>>>24,U[a|1]=y>>>16&255,U[a|2]=y>>>8&255,U[a|3]=y&255,U[a|4]=z>>>24,U[a|5]=z>>>16&255,U[a|6]=z>>>8&255,U[a|7]=z&255,U[a|8]=A>>>24,U[a|9]=A>>>16&255,U[a|10]=A>>>8&255,U[a|11]=A&255,U[a|12]=B>>>24,U[a|13]=B>>>16&255,U[a|14]=B>>>8&255,U[a|15]=B&255,16)}function u(a){return a|=0,a&15?-1:(U[a|0]=C>>>24,U[a|1]=C>>>16&255,U[a|2]=C>>>8&255,U[a|3]=C&255,U[a|4]=D>>>24,U[a|5]=D>>>16&255,U[a|6]=D>>>8&255,U[a|7]=D&255,U[a|8]=E>>>24,U[a|9]=E>>>16&255,U[a|10]=E>>>8&255,U[a|11]=E&255,U[a|12]=F>>>24,U[a|13]=F>>>16&255,U[a|14]=F>>>8&255,U[a|15]=F&255,16)}function v(){e(0,0,0,0),O=y,P=z,Q=A,R=B}function w(a,b,c){a|=0,b|=0,c|=0;var d=0;if(b&15)return-1;for(;(c|0)>=16;)V[a&7](U[b|0]<<24|U[b|1]<<16|U[b|2]<<8|U[b|3],U[b|4]<<24|U[b|5]<<16|U[b|6]<<8|U[b|7],U[b|8]<<24|U[b|9]<<16|U[b|10]<<8|U[b|11],U[b|12]<<24|U[b|13]<<16|U[b|14]<<8|U[b|15]),U[b|0]=y>>>24,U[b|1]=y>>>16&255,U[b|2]=y>>>8&255,U[b|3]=y&255,U[b|4]=z>>>24,U[b|5]=z>>>16&255,U[b|6]=z>>>8&255,U[b|7]=z&255,U[b|8]=A>>>24,U[b|9]=A>>>16&255,U[b|10]=A>>>8&255,U[b|11]=A&255,U[b|12]=B>>>24,U[b|13]=B>>>16&255,U[b|14]=B>>>8&255,U[b|15]=B&255,d=d+16|0,b=b+16|0,c=c-16|0;return d|0}function x(a,b,c){a|=0,b|=0,c|=0;var d=0;if(b&15)return-1;for(;(c|0)>=16;)W[a&1](U[b|0]<<24|U[b|1]<<16|U[b|2]<<8|U[b|3],U[b|4]<<24|U[b|5]<<16|U[b|6]<<8|U[b|7],U[b|8]<<24|U[b|9]<<16|U[b|10]<<8|U[b|11],U[b|12]<<24|U[b|13]<<16|U[b|14]<<8|U[b|15]),d=d+16|0,b=b+16|0,c=c-16|0;return d|0}var y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,P=0,Q=0,R=0,S=0,T=new a.Uint32Array(c),U=new a.Uint8Array(c),V=[e,f,g,h,i,j,k,l],W=[g,m];return{set_rounds:n,set_state:o,set_iv:p,set_nonce:q,set_mask:r,set_counter:s,get_state:t,get_iv:u,gcm_init:v,cipher:w,mac:x}}(a,b,c);return m.set_key=e,m};return m.ENC={ECB:0,CBC:2,CFB:4,OFB:6,CTR:7},m.DEC={ECB:1,CBC:3,CFB:5,OFB:6,CTR:7},m.MAC={CBC:0,GCM:1},m.HEAP_DATA=16384,m}()),A=u.prototype;A.BLOCK_SIZE=16,A.reset=p,A.encrypt=r,A.decrypt=t;var B=v.prototype;B.BLOCK_SIZE=16,B.reset=p,B.process=q,B.finish=r;var C=w.prototype;C.BLOCK_SIZE=16,C.reset=p,C.process=s,C.finish=t;var D=new Uint8Array(1048576),E=z(b,null,D.buffer);a.AES_CFB=u,a.AES_CFB.encrypt=x,a.AES_CFB.decrypt=y,a.AES_CFB.Encrypt=v,a.AES_CFB.Decrypt=w}({},function(){return this}());
+!function(a,b){function c(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function d(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function e(){var a=Error.apply(this,arguments);this.message=a.message,this.stack=a.stack}function f(a){for(var b=a.length,c=new Uint8Array(b),d=0;b>d;d++){var e=a.charCodeAt(d);if(e>>>8)throw new Error("Wide characters are not allowed");c[d]=e}return c}function g(a){for(var b="",c=0;c<a.length;c++)b+=String.fromCharCode(a[c]);return b}function h(a){for(var b="",c=0;c<a.length;c++){var d=(255&a[c]).toString(16);d.length<2&&(b+="0"),b+=d}return b}function i(a){return btoa(g(a))}function j(a){return"string"==typeof a}function k(a){return a instanceof ArrayBuffer}function l(a){return a instanceof Uint8Array}function m(a,b){var c=b.heap,d=c?c.byteLength:b.heapSize||65536;if(4095&d||0>=d)throw new Error("heap size must be a positive integer and a multiple of 4096");return c=c||new a(new ArrayBuffer(d))}function n(a,b,c,d,e){var f=a.length-b,g=e>f?f:e;return a.set(c.subarray(d,d+g),b),g}function o(a){a=a||{},this.heap=m(Uint8Array,a).subarray(L.HEAP_DATA),this.asm=a.asm||L(b,null,this.heap.buffer),this.mode=null,this.key=null,this.reset(a)}function p(a){if(void 0!==a){if(k(a)||l(a))a=new Uint8Array(a);else{if(!j(a))throw new TypeError("unexpected key type");a=f(a)}var b=a.length;if(16!==b&&24!==b&&32!==b)throw new d("illegal key size");var c=new DataView(a.buffer,a.byteOffset,a.byteLength);this.asm.set_key(b>>2,c.getUint32(0),c.getUint32(4),c.getUint32(8),c.getUint32(12),b>16?c.getUint32(16):0,b>16?c.getUint32(20):0,b>24?c.getUint32(24):0,b>24?c.getUint32(28):0),this.key=a}else if(!this.key)throw new Error("key is required")}function q(a){if(void 0!==a){if(k(a)||l(a))a=new Uint8Array(a);else{if(!j(a))throw new TypeError("unexpected iv type");a=f(a)}if(16!==a.length)throw new d("illegal iv size");var b=new DataView(a.buffer,a.byteOffset,a.byteLength);this.iv=a,this.asm.set_iv(b.getUint32(0),b.getUint32(4),b.getUint32(8),b.getUint32(12))}else this.iv=null,this.asm.set_iv(0,0,0,0)}function r(a){this.padding=void 0!==a?!!a:!0}function s(a){return a=a||{},this.result=null,this.pos=0,this.len=0,p.call(this,a.key),this.hasOwnProperty("iv")&&q.call(this,a.iv),this.hasOwnProperty("padding")&&r.call(this,a.padding),this}function t(a){if(j(a)&&(a=f(a)),k(a)&&(a=new Uint8Array(a)),!l(a))throw new TypeError("data isn't of expected type");for(var b=this.asm,c=this.heap,d=L.ENC[this.mode],e=L.HEAP_DATA,g=this.pos,h=this.len,i=0,m=a.length||0,o=0,p=h+m&-16,q=0,r=new Uint8Array(p);m>0;)q=n(c,g+h,a,i,m),h+=q,i+=q,m-=q,q=b.cipher(d,e+g,h),q&&r.set(c.subarray(g,g+q),o),o+=q,h>q?(g+=q,h-=q):(g=0,h=0);return this.result=r,this.pos=g,this.len=h,this}function u(a){var b=null,c=0;void 0!==a&&(b=t.call(this,a).result,c=b.length);var e=this.asm,f=this.heap,g=L.ENC[this.mode],h=L.HEAP_DATA,i=this.pos,j=this.len,k=16-j%16,l=j;if(this.hasOwnProperty("padding")){if(this.padding){for(var m=0;k>m;++m)f[i+j+m]=k;j+=k,l=j}else if(j%16)throw new d("data length must be a multiple of the block size")}else j+=k;var n=new Uint8Array(c+l);return c&&n.set(b),j&&e.cipher(g,h+i,j),l&&n.set(f.subarray(i,i+l),c),this.result=n,this.pos=0,this.len=0,this}function v(a){if(j(a)&&(a=f(a)),k(a)&&(a=new Uint8Array(a)),!l(a))throw new TypeError("data isn't of expected type");var b=this.asm,c=this.heap,d=L.DEC[this.mode],e=L.HEAP_DATA,g=this.pos,h=this.len,i=0,m=a.length||0,o=0,p=h+m&-16,q=0,r=0;this.hasOwnProperty("padding")&&this.padding&&(q=h+m-p||16,p-=q);for(var s=new Uint8Array(p);m>0;)r=n(c,g+h,a,i,m),h+=r,i+=r,m-=r,r=b.cipher(d,e+g,h-(m?0:q)),r&&s.set(c.subarray(g,g+r),o),o+=r,h>r?(g+=r,h-=r):(g=0,h=0);return this.result=s,this.pos=g,this.len=h,this}function w(a){var b=null,c=0;void 0!==a&&(b=v.call(this,a).result,c=b.length);var f=this.asm,g=this.heap,h=L.DEC[this.mode],i=L.HEAP_DATA,j=this.pos,k=this.len,l=k;if(k>0){if(k%16){if(this.hasOwnProperty("padding"))throw new d("data length must be a multiple of the block size");k+=16-k%16}if(f.cipher(h,i+j,k),this.hasOwnProperty("padding")&&this.padding){var m=g[j+l-1];if(1>m||m>16||m>l)throw new e("bad padding");for(var n=0,o=m;o>1;o--)n|=m^g[j+l-o];if(n)throw new e("bad padding");l-=m}}var p=new Uint8Array(c+l);return c>0&&p.set(b),l>0&&p.set(g.subarray(j,j+l),c),this.result=p,this.pos=0,this.len=0,this}function x(a){this.iv=null,o.call(this,a),this.mode="CFB"}function y(a){x.call(this,a)}function z(a){x.call(this,a)}function A(a,b,c){if(void 0===a)throw new SyntaxError("data required");if(void 0===b)throw new SyntaxError("key required");return new x({heap:P,asm:Q,key:b,iv:c}).encrypt(a).result}function B(a,b,c){if(void 0===a)throw new SyntaxError("data required");if(void 0===b)throw new SyntaxError("key required");return new x({heap:P,asm:Q,key:b,iv:c}).decrypt(a).result}function C(){return this.result=null,this.pos=0,this.len=0,this.asm.reset(),this}function D(a){if(null!==this.result)throw new c("state must be reset before processing new data");if(j(a)&&(a=f(a)),k(a)&&(a=new Uint8Array(a)),!l(a))throw new TypeError("data isn't of expected type");for(var b=this.asm,d=this.heap,e=this.pos,g=this.len,h=0,i=a.length,m=0;i>0;)m=n(d,e+g,a,h,i),g+=m,h+=m,i-=m,m=b.process(e,g),e+=m,g-=m,g||(e=0);return this.pos=e,this.len=g,this}function E(){if(null!==this.result)throw new c("state must be reset before processing new data");return this.asm.finish(this.pos,this.len,0),this.result=new Uint8Array(this.HASH_SIZE),this.result.set(this.heap.subarray(0,this.HASH_SIZE)),this.pos=0,this.len=0,this}function F(a,b,c){"use asm";function d(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,x){a|=0,b|=0,c|=0,d|=0,e|=0,f|=0,g|=0,h|=0,i|=0,j|=0,k|=0,l|=0,m|=0,n|=0,o|=0,x|=0;var y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0;y=p,z=q,A=r,B=s,C=t,D=u,E=v,F=w,G=a+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1116352408|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=b+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1899447441|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=c+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3049323471|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=d+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3921009573|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=e+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+961987163|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=f+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1508970993|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=g+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2453635748|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=h+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2870763221|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=i+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3624381080|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=j+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+310598401|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=k+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+607225278|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=l+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1426881987|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=m+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1925078388|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=n+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2162078206|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=o+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2614888103|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,G=x+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3248222580|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,a=G=(b>>>7^b>>>18^b>>>3^b<<25^b<<14)+(o>>>17^o>>>19^o>>>10^o<<15^o<<13)+a+j|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3835390401|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,b=G=(c>>>7^c>>>18^c>>>3^c<<25^c<<14)+(x>>>17^x>>>19^x>>>10^x<<15^x<<13)+b+k|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+4022224774|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,c=G=(d>>>7^d>>>18^d>>>3^d<<25^d<<14)+(a>>>17^a>>>19^a>>>10^a<<15^a<<13)+c+l|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+264347078|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,d=G=(e>>>7^e>>>18^e>>>3^e<<25^e<<14)+(b>>>17^b>>>19^b>>>10^b<<15^b<<13)+d+m|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+604807628|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,e=G=(f>>>7^f>>>18^f>>>3^f<<25^f<<14)+(c>>>17^c>>>19^c>>>10^c<<15^c<<13)+e+n|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+770255983|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,f=G=(g>>>7^g>>>18^g>>>3^g<<25^g<<14)+(d>>>17^d>>>19^d>>>10^d<<15^d<<13)+f+o|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1249150122|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,g=G=(h>>>7^h>>>18^h>>>3^h<<25^h<<14)+(e>>>17^e>>>19^e>>>10^e<<15^e<<13)+g+x|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1555081692|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,h=G=(i>>>7^i>>>18^i>>>3^i<<25^i<<14)+(f>>>17^f>>>19^f>>>10^f<<15^f<<13)+h+a|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1996064986|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,i=G=(j>>>7^j>>>18^j>>>3^j<<25^j<<14)+(g>>>17^g>>>19^g>>>10^g<<15^g<<13)+i+b|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2554220882|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,j=G=(k>>>7^k>>>18^k>>>3^k<<25^k<<14)+(h>>>17^h>>>19^h>>>10^h<<15^h<<13)+j+c|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2821834349|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,k=G=(l>>>7^l>>>18^l>>>3^l<<25^l<<14)+(i>>>17^i>>>19^i>>>10^i<<15^i<<13)+k+d|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2952996808|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,l=G=(m>>>7^m>>>18^m>>>3^m<<25^m<<14)+(j>>>17^j>>>19^j>>>10^j<<15^j<<13)+l+e|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3210313671|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,m=G=(n>>>7^n>>>18^n>>>3^n<<25^n<<14)+(k>>>17^k>>>19^k>>>10^k<<15^k<<13)+m+f|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3336571891|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,n=G=(o>>>7^o>>>18^o>>>3^o<<25^o<<14)+(l>>>17^l>>>19^l>>>10^l<<15^l<<13)+n+g|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3584528711|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,o=G=(x>>>7^x>>>18^x>>>3^x<<25^x<<14)+(m>>>17^m>>>19^m>>>10^m<<15^m<<13)+o+h|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+113926993|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,x=G=(a>>>7^a>>>18^a>>>3^a<<25^a<<14)+(n>>>17^n>>>19^n>>>10^n<<15^n<<13)+x+i|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+338241895|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,a=G=(b>>>7^b>>>18^b>>>3^b<<25^b<<14)+(o>>>17^o>>>19^o>>>10^o<<15^o<<13)+a+j|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+666307205|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,b=G=(c>>>7^c>>>18^c>>>3^c<<25^c<<14)+(x>>>17^x>>>19^x>>>10^x<<15^x<<13)+b+k|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+773529912|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,c=G=(d>>>7^d>>>18^d>>>3^d<<25^d<<14)+(a>>>17^a>>>19^a>>>10^a<<15^a<<13)+c+l|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1294757372|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,d=G=(e>>>7^e>>>18^e>>>3^e<<25^e<<14)+(b>>>17^b>>>19^b>>>10^b<<15^b<<13)+d+m|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1396182291|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,e=G=(f>>>7^f>>>18^f>>>3^f<<25^f<<14)+(c>>>17^c>>>19^c>>>10^c<<15^c<<13)+e+n|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1695183700|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,f=G=(g>>>7^g>>>18^g>>>3^g<<25^g<<14)+(d>>>17^d>>>19^d>>>10^d<<15^d<<13)+f+o|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1986661051|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,g=G=(h>>>7^h>>>18^h>>>3^h<<25^h<<14)+(e>>>17^e>>>19^e>>>10^e<<15^e<<13)+g+x|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2177026350|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,h=G=(i>>>7^i>>>18^i>>>3^i<<25^i<<14)+(f>>>17^f>>>19^f>>>10^f<<15^f<<13)+h+a|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2456956037|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,i=G=(j>>>7^j>>>18^j>>>3^j<<25^j<<14)+(g>>>17^g>>>19^g>>>10^g<<15^g<<13)+i+b|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2730485921|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,j=G=(k>>>7^k>>>18^k>>>3^k<<25^k<<14)+(h>>>17^h>>>19^h>>>10^h<<15^h<<13)+j+c|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2820302411|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,k=G=(l>>>7^l>>>18^l>>>3^l<<25^l<<14)+(i>>>17^i>>>19^i>>>10^i<<15^i<<13)+k+d|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3259730800|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,l=G=(m>>>7^m>>>18^m>>>3^m<<25^m<<14)+(j>>>17^j>>>19^j>>>10^j<<15^j<<13)+l+e|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3345764771|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,m=G=(n>>>7^n>>>18^n>>>3^n<<25^n<<14)+(k>>>17^k>>>19^k>>>10^k<<15^k<<13)+m+f|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3516065817|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,n=G=(o>>>7^o>>>18^o>>>3^o<<25^o<<14)+(l>>>17^l>>>19^l>>>10^l<<15^l<<13)+n+g|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3600352804|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,o=G=(x>>>7^x>>>18^x>>>3^x<<25^x<<14)+(m>>>17^m>>>19^m>>>10^m<<15^m<<13)+o+h|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+4094571909|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,x=G=(a>>>7^a>>>18^a>>>3^a<<25^a<<14)+(n>>>17^n>>>19^n>>>10^n<<15^n<<13)+x+i|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+275423344|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,a=G=(b>>>7^b>>>18^b>>>3^b<<25^b<<14)+(o>>>17^o>>>19^o>>>10^o<<15^o<<13)+a+j|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+430227734|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,b=G=(c>>>7^c>>>18^c>>>3^c<<25^c<<14)+(x>>>17^x>>>19^x>>>10^x<<15^x<<13)+b+k|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+506948616|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,c=G=(d>>>7^d>>>18^d>>>3^d<<25^d<<14)+(a>>>17^a>>>19^a>>>10^a<<15^a<<13)+c+l|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+659060556|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,d=G=(e>>>7^e>>>18^e>>>3^e<<25^e<<14)+(b>>>17^b>>>19^b>>>10^b<<15^b<<13)+d+m|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+883997877|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,e=G=(f>>>7^f>>>18^f>>>3^f<<25^f<<14)+(c>>>17^c>>>19^c>>>10^c<<15^c<<13)+e+n|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+958139571|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,f=G=(g>>>7^g>>>18^g>>>3^g<<25^g<<14)+(d>>>17^d>>>19^d>>>10^d<<15^d<<13)+f+o|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1322822218|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,g=G=(h>>>7^h>>>18^h>>>3^h<<25^h<<14)+(e>>>17^e>>>19^e>>>10^e<<15^e<<13)+g+x|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1537002063|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,h=G=(i>>>7^i>>>18^i>>>3^i<<25^i<<14)+(f>>>17^f>>>19^f>>>10^f<<15^f<<13)+h+a|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1747873779|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,i=G=(j>>>7^j>>>18^j>>>3^j<<25^j<<14)+(g>>>17^g>>>19^g>>>10^g<<15^g<<13)+i+b|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+1955562222|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,j=G=(k>>>7^k>>>18^k>>>3^k<<25^k<<14)+(h>>>17^h>>>19^h>>>10^h<<15^h<<13)+j+c|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2024104815|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,k=G=(l>>>7^l>>>18^l>>>3^l<<25^l<<14)+(i>>>17^i>>>19^i>>>10^i<<15^i<<13)+k+d|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2227730452|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,l=G=(m>>>7^m>>>18^m>>>3^m<<25^m<<14)+(j>>>17^j>>>19^j>>>10^j<<15^j<<13)+l+e|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2361852424|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,m=G=(n>>>7^n>>>18^n>>>3^n<<25^n<<14)+(k>>>17^k>>>19^k>>>10^k<<15^k<<13)+m+f|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2428436474|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,n=G=(o>>>7^o>>>18^o>>>3^o<<25^o<<14)+(l>>>17^l>>>19^l>>>10^l<<15^l<<13)+n+g|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+2756734187|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,o=G=(x>>>7^x>>>18^x>>>3^x<<25^x<<14)+(m>>>17^m>>>19^m>>>10^m<<15^m<<13)+o+h|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3204031479|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,x=G=(a>>>7^a>>>18^a>>>3^a<<25^a<<14)+(n>>>17^n>>>19^n>>>10^n<<15^n<<13)+x+i|0,G=G+F+(C>>>6^C>>>11^C>>>25^C<<26^C<<21^C<<7)+(E^C&(D^E))+3329325298|0,F=E,E=D,D=C,C=B+G|0,B=A,A=z,z=y,y=G+(z&A^B&(z^A))+(z>>>2^z>>>13^z>>>22^z<<30^z<<19^z<<10)|0,p=p+y|0,q=q+z|0,r=r+A|0,s=s+B|0,t=t+C|0,u=u+D|0,v=v+E|0,w=w+F|0}function e(a){a|=0,d(O[a|0]<<24|O[a|1]<<16|O[a|2]<<8|O[a|3],O[a|4]<<24|O[a|5]<<16|O[a|6]<<8|O[a|7],O[a|8]<<24|O[a|9]<<16|O[a|10]<<8|O[a|11],O[a|12]<<24|O[a|13]<<16|O[a|14]<<8|O[a|15],O[a|16]<<24|O[a|17]<<16|O[a|18]<<8|O[a|19],O[a|20]<<24|O[a|21]<<16|O[a|22]<<8|O[a|23],O[a|24]<<24|O[a|25]<<16|O[a|26]<<8|O[a|27],O[a|28]<<24|O[a|29]<<16|O[a|30]<<8|O[a|31],O[a|32]<<24|O[a|33]<<16|O[a|34]<<8|O[a|35],O[a|36]<<24|O[a|37]<<16|O[a|38]<<8|O[a|39],O[a|40]<<24|O[a|41]<<16|O[a|42]<<8|O[a|43],O[a|44]<<24|O[a|45]<<16|O[a|46]<<8|O[a|47],O[a|48]<<24|O[a|49]<<16|O[a|50]<<8|O[a|51],O[a|52]<<24|O[a|53]<<16|O[a|54]<<8|O[a|55],O[a|56]<<24|O[a|57]<<16|O[a|58]<<8|O[a|59],O[a|60]<<24|O[a|61]<<16|O[a|62]<<8|O[a|63])}function f(a){a|=0,O[a|0]=p>>>24,O[a|1]=p>>>16&255,O[a|2]=p>>>8&255,O[a|3]=p&255,O[a|4]=q>>>24,O[a|5]=q>>>16&255,O[a|6]=q>>>8&255,O[a|7]=q&255,O[a|8]=r>>>24,O[a|9]=r>>>16&255,O[a|10]=r>>>8&255,O[a|11]=r&255,O[a|12]=s>>>24,O[a|13]=s>>>16&255,O[a|14]=s>>>8&255,O[a|15]=s&255,O[a|16]=t>>>24,O[a|17]=t>>>16&255,O[a|18]=t>>>8&255,O[a|19]=t&255,O[a|20]=u>>>24,O[a|21]=u>>>16&255,O[a|22]=u>>>8&255,O[a|23]=u&255,O[a|24]=v>>>24,O[a|25]=v>>>16&255,O[a|26]=v>>>8&255,O[a|27]=v&255,O[a|28]=w>>>24,O[a|29]=w>>>16&255,O[a|30]=w>>>8&255,O[a|31]=w&255}function g(){p=1779033703,q=3144134277,r=1013904242,s=2773480762,t=1359893119,u=2600822924,v=528734635,w=1541459225,x=0}function h(a,b,c,d,e,f,g,h,i){a|=0,b|=0,c|=0,d|=0,e|=0,f|=0,g|=0,h|=0,i|=0,p=a,q=b,r=c,s=d,t=e,u=f,v=g,w=h,x=i}function i(a,b){a|=0,b|=0;var c=0;if(a&63)return-1;for(;(b|0)>=64;)e(a),a=a+64|0,b=b-64|0,c=c+64|0;return x=x+c|0,c|0}function j(a,b,c){a|=0,b|=0,c|=0;var d=0,g=0;if(a&63)return-1;if(~c&&c&31)return-1;if((b|0)>=64){if(d=i(a,b)|0,(d|0)==-1)return-1;a=a+d|0,b=b-d|0}if(d=d+b|0,x=x+b|0,O[a|b]=128,(b|0)>=56){for(g=b+1|0;(g|0)<64;g=g+1|0)O[a|g]=0;e(a),b=0,O[a|0]=0}for(g=b+1|0;(g|0)<59;g=g+1|0)O[a|g]=0;return O[a|59]=x>>>29,O[a|60]=x>>>21&255,O[a|61]=x>>>13&255,O[a|62]=x>>>5&255,O[a|63]=x<<3&255,e(a),~c&&f(c),d|0}function k(){p=y,q=z,r=A,s=B,t=C,u=D,v=E,w=F,x=64}function l(){p=G,q=H,r=I,s=J,t=K,u=L,v=M,w=N,x=64}function m(a,b,c,e,f,h,i,j,k,l,m,n,o,O,P,Q){a|=0,b|=0,c|=0,e|=0,f|=0,h|=0,i|=0,j|=0,k|=0,l|=0,m|=0,n|=0,o|=0,O|=0,P|=0,Q|=0,g(),d(a^1549556828,b^1549556828,c^1549556828,e^1549556828,f^1549556828,h^1549556828,i^1549556828,j^1549556828,k^1549556828,l^1549556828,m^1549556828,n^1549556828,o^1549556828,O^1549556828,P^1549556828,Q^1549556828),G=p,H=q,I=r,J=s,K=t,L=u,M=v,N=w,g(),d(a^909522486,b^909522486,c^909522486,e^909522486,f^909522486,h^909522486,i^909522486,j^909522486,k^909522486,l^909522486,m^909522486,n^909522486,o^909522486,O^909522486,P^909522486,Q^909522486),y=p,z=q,A=r,B=s,C=t,D=u,E=v,F=w,x=64}function n(a,b,c){a|=0,b|=0,c|=0;var e=0,g=0,h=0,i=0,k=0,m=0,n=0,o=0,x=0;return a&63?-1:~c&&c&31?-1:(x=j(a,b,-1)|0,e=p,g=q,h=r,i=s,k=t,m=u,n=v,o=w,l(),d(e,g,h,i,k,m,n,o,2147483648,0,0,0,0,0,0,768),~c&&f(c),x|0)}function o(a,b,c,e,g){a|=0,b|=0,c|=0,e|=0,g|=0;var h=0,i=0,j=0,m=0,o=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0;if(a&63)return-1;if(~g&&g&31)return-1;for(O[a+b|0]=c>>>24,O[a+b+1|0]=c>>>16&255,O[a+b+2|0]=c>>>8&255,O[a+b+3|0]=c&255,n(a,b+4|0,-1)|0,h=A=p,i=B=q,j=C=r,m=D=s,o=E=t,x=F=u,y=G=v,z=H=w,e=e-1|0;(e|0)>0;)k(),d(A,B,C,D,E,F,G,H,2147483648,0,0,0,0,0,0,768),A=p,B=q,C=r,D=s,E=t,F=u,G=v,H=w,l(),d(A,B,C,D,E,F,G,H,2147483648,0,0,0,0,0,0,768),A=p,B=q,C=r,D=s,E=t,F=u,G=v,H=w,h^=p,i^=q,j^=r,m^=s,o^=t,x^=u,y^=v,z^=w,e=e-1|0;return p=h,q=i,r=j,s=m,t=o,u=x,v=y,w=z,~g&&f(g),0}var p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=new a.Uint8Array(c);return{reset:g,init:h,process:i,finish:j,hmac_reset:k,hmac_init:m,hmac_finish:n,pbkdf2_generate_block:o}}function G(a){a=a||{},this.heap=m(Uint8Array,a),this.asm=a.asm||F(b,null,this.heap.buffer),this.BLOCK_SIZE=R,this.HASH_SIZE=S,this.reset()}function H(){return null===U&&(U=new G({heapSize:1048576})),U}function I(a){if(void 0===a)throw new SyntaxError("data required");return H().reset().process(a).finish().result}function J(a){var b=I(a);return h(b)}function K(a){var b=I(a);return i(b)}b.asmCrypto=a,c.prototype=Object.create(Error.prototype,{name:{value:"IllegalStateError"}}),d.prototype=Object.create(Error.prototype,{name:{value:"IllegalArgumentError"}}),e.prototype=Object.create(Error.prototype,{name:{value:"SecurityError"}});var L=(b.Float64Array||b.Float32Array,function(){"use strict";function a(){e=[],f=[];var a,b,c=1;for(a=0;255>a;a++)e[a]=c,b=128&c,c<<=1,c&=255,128===b&&(c^=27),c^=e[a],f[e[a]]=a;e[255]=e[0],f[0]=0,k=!0}function b(a,b){var c=e[(f[a]+f[b])%255];return(0===a||0===b)&&(c=0),c}function c(a){var b=e[255-f[a]];return 0===a&&(b=0),b}function d(){function d(a){var b,d,e;for(d=e=c(a),b=0;4>b;b++)d=255&(d<<1|d>>>7),e^=d;return e^=99}k||a(),g=[],h=[],i=[[],[],[],[]],j=[[],[],[],[]];for(var e=0;256>e;e++){var f=d(e);g[e]=f,h[f]=e,i[0][e]=b(2,f)<<24|f<<16|f<<8|b(3,f),j[0][f]=b(14,e)<<24|b(9,e)<<16|b(13,e)<<8|b(11,e);for(var l=1;4>l;l++)i[l][e]=i[l-1][e]>>>8|i[l-1][e]<<24,j[l][f]=j[l-1][f]>>>8|j[l-1][f]<<24}}var e,f,g,h,i,j,k=!1,l=!1,m=function(a,b,c){function e(a,b,c,d,e,h,i,k,l){var n=f.subarray(0,60),o=f.subarray(256,316);n.set([b,c,d,e,h,i,k,l]);for(var p=a,q=1;4*a+28>p;p++){var r=n[p-1];(p%a===0||8===a&&p%a===4)&&(r=g[r>>>24]<<24^g[r>>>16&255]<<16^g[r>>>8&255]<<8^g[255&r]),p%a===0&&(r=r<<8^r>>>24^q<<24,q=q<<1^(128&q?27:0)),n[p]=n[p-a]^r}for(var s=0;p>s;s+=4)for(var t=0;4>t;t++){var r=n[p-(4+s)+(4-t)%4];o[s+t]=4>s||s>=p-4?r:j[0][g[r>>>24]]^j[1][g[r>>>16&255]]^j[2][g[r>>>8&255]]^j[3][g[255&r]]}m.set_rounds(a+5)}l||d();var f=new Uint32Array(c);f.set(g,512),f.set(h,768);for(var k=0;4>k;k++)f.set(i[k],4096+1024*k>>2),f.set(j[k],8192+1024*k>>2);var m=function(a,b,c){"use asm";function d(a,b,c,d,e,f,g,h){a|=0,b|=0,c|=0,d|=0,e|=0,f|=0,g|=0,h|=0;var i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0;for(i=c|1024,j=c|2048,k=c|3072,e^=T[(a|0)>>2],f^=T[(a|4)>>2],g^=T[(a|8)>>2],h^=T[(a|12)>>2],p=16;(p|0)<=d<<4;p=p+16|0)l=T[(c|e>>22&1020)>>2]^T[(i|f>>14&1020)>>2]^T[(j|g>>6&1020)>>2]^T[(k|h<<2&1020)>>2]^T[(a|p|0)>>2],m=T[(c|f>>22&1020)>>2]^T[(i|g>>14&1020)>>2]^T[(j|h>>6&1020)>>2]^T[(k|e<<2&1020)>>2]^T[(a|p|4)>>2],n=T[(c|g>>22&1020)>>2]^T[(i|h>>14&1020)>>2]^T[(j|e>>6&1020)>>2]^T[(k|f<<2&1020)>>2]^T[(a|p|8)>>2],o=T[(c|h>>22&1020)>>2]^T[(i|e>>14&1020)>>2]^T[(j|f>>6&1020)>>2]^T[(k|g<<2&1020)>>2]^T[(a|p|12)>>2],e=l,f=m,g=n,h=o;y=T[(b|e>>22&1020)>>2]<<24^T[(b|f>>14&1020)>>2]<<16^T[(b|g>>6&1020)>>2]<<8^T[(b|h<<2&1020)>>2]^T[(a|p|0)>>2],z=T[(b|f>>22&1020)>>2]<<24^T[(b|g>>14&1020)>>2]<<16^T[(b|h>>6&1020)>>2]<<8^T[(b|e<<2&1020)>>2]^T[(a|p|4)>>2],A=T[(b|g>>22&1020)>>2]<<24^T[(b|h>>14&1020)>>2]<<16^T[(b|e>>6&1020)>>2]<<8^T[(b|f<<2&1020)>>2]^T[(a|p|8)>>2],B=T[(b|h>>22&1020)>>2]<<24^T[(b|e>>14&1020)>>2]<<16^T[(b|f>>6&1020)>>2]<<8^T[(b|g<<2&1020)>>2]^T[(a|p|12)>>2]}function e(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,a,b,c,e)}function f(a,b,c,e){a|=0,b|=0,c|=0,e|=0;var f=0;d(1024,3072,8192,S,a,e,c,b),f=z,z=B,B=f}function g(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C^a,D^b,E^c,F^e),C=y,D=z,E=A,F=B}function h(a,b,c,e){a|=0,b|=0,c|=0,e|=0;var f=0;d(1024,3072,8192,S,a,e,c,b),f=z,z=B,B=f,y^=C,z^=D,A^=E,B^=F,C=a,D=b,E=c,F=e}function i(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),C=y^=a,D=z^=b,E=A^=c,F=B^=e}function j(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),y^=a,z^=b,A^=c,B^=e,C=a,D=b,E=c,F=e}function k(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,C,D,E,F),C=y,D=z,E=A,F=B,y^=a,z^=b,A^=c,B^=e}function l(a,b,c,e){a|=0,b|=0,c|=0,e|=0,d(0,2048,4096,S,G,H,I,J),J=~N&J|N&J+1,I=~M&I|M&I+((J|0)==0),H=~L&H|L&H+((I|0)==0),G=~K&G|K&G+((H|0)==0),y^=a,z^=b,A^=c,B^=e}function m(a,b,c,d){a|=0,b|=0,c|=0,d|=0;var e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0;for(a^=C,b^=D,c^=E,d^=F,e=O|0,f=P|0,g=Q|0,h=R|0;(m|0)<128;m=m+1|0)e>>>31&&(i^=a,j^=b,k^=c,l^=d),e=e<<1|f>>>31,f=f<<1|g>>>31,g=g<<1|h>>>31,h<<=1,n=d&1,d=d>>>1|c<<31,c=c>>>1|b<<31,b=b>>>1|a<<31,a>>>=1,n&&(a^=3774873600);C=i,D=j,E=k,F=l}function n(a){a|=0,S=a}function o(a,b,c,d){a|=0,b|=0,c|=0,d|=0,y=a,z=b,A=c,B=d}function p(a,b,c,d){a|=0,b|=0,c|=0,d|=0,C=a,D=b,E=c,F=d}function q(a,b,c,d){a|=0,b|=0,c|=0,d|=0,G=a,H=b,I=c,J=d}function r(a,b,c,d){a|=0,b|=0,c|=0,d|=0,K=a,L=b,M=c,N=d}function s(a,b,c,d){a|=0,b|=0,c|=0,d|=0,J=~N&J|N&d,I=~M&I|M&c,H=~L&H|L&b,G=~K&G|K&a}function t(a){return a|=0,a&15?-1:(U[a|0]=y>>>24,U[a|1]=y>>>16&255,U[a|2]=y>>>8&255,U[a|3]=y&255,U[a|4]=z>>>24,U[a|5]=z>>>16&255,U[a|6]=z>>>8&255,U[a|7]=z&255,U[a|8]=A>>>24,U[a|9]=A>>>16&255,U[a|10]=A>>>8&255,U[a|11]=A&255,U[a|12]=B>>>24,U[a|13]=B>>>16&255,U[a|14]=B>>>8&255,U[a|15]=B&255,16)}function u(a){return a|=0,a&15?-1:(U[a|0]=C>>>24,U[a|1]=C>>>16&255,U[a|2]=C>>>8&255,U[a|3]=C&255,U[a|4]=D>>>24,U[a|5]=D>>>16&255,U[a|6]=D>>>8&255,U[a|7]=D&255,U[a|8]=E>>>24,U[a|9]=E>>>16&255,U[a|10]=E>>>8&255,U[a|11]=E&255,U[a|12]=F>>>24,U[a|13]=F>>>16&255,U[a|14]=F>>>8&255,U[a|15]=F&255,16)}function v(){e(0,0,0,0),O=y,P=z,Q=A,R=B}function w(a,b,c){a|=0,b|=0,c|=0;var d=0;if(b&15)return-1;for(;(c|0)>=16;)V[a&7](U[b|0]<<24|U[b|1]<<16|U[b|2]<<8|U[b|3],U[b|4]<<24|U[b|5]<<16|U[b|6]<<8|U[b|7],U[b|8]<<24|U[b|9]<<16|U[b|10]<<8|U[b|11],U[b|12]<<24|U[b|13]<<16|U[b|14]<<8|U[b|15]),U[b|0]=y>>>24,U[b|1]=y>>>16&255,U[b|2]=y>>>8&255,U[b|3]=y&255,U[b|4]=z>>>24,U[b|5]=z>>>16&255,U[b|6]=z>>>8&255,U[b|7]=z&255,U[b|8]=A>>>24,U[b|9]=A>>>16&255,U[b|10]=A>>>8&255,U[b|11]=A&255,U[b|12]=B>>>24,U[b|13]=B>>>16&255,U[b|14]=B>>>8&255,U[b|15]=B&255,d=d+16|0,b=b+16|0,c=c-16|0;return d|0}function x(a,b,c){a|=0,b|=0,c|=0;var d=0;if(b&15)return-1;for(;(c|0)>=16;)W[a&1](U[b|0]<<24|U[b|1]<<16|U[b|2]<<8|U[b|3],U[b|4]<<24|U[b|5]<<16|U[b|6]<<8|U[b|7],U[b|8]<<24|U[b|9]<<16|U[b|10]<<8|U[b|11],U[b|12]<<24|U[b|13]<<16|U[b|14]<<8|U[b|15]),d=d+16|0,b=b+16|0,c=c-16|0;return d|0}var y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,P=0,Q=0,R=0,S=0,T=new a.Uint32Array(c),U=new a.Uint8Array(c),V=[e,f,g,h,i,j,k,l],W=[g,m];return{set_rounds:n,set_state:o,set_iv:p,set_nonce:q,set_mask:r,set_counter:s,get_state:t,get_iv:u,gcm_init:v,cipher:w,mac:x}}(a,b,c);return m.set_key=e,m};return m.ENC={ECB:0,CBC:2,CFB:4,OFB:6,CTR:7},m.DEC={ECB:1,CBC:3,CFB:5,OFB:6,CTR:7},m.MAC={CBC:0,GCM:1},m.HEAP_DATA=16384,m}()),M=x.prototype;M.BLOCK_SIZE=16,M.reset=s,M.encrypt=u,M.decrypt=w;var N=y.prototype;N.BLOCK_SIZE=16,N.reset=s,N.process=t,N.finish=u;var O=z.prototype;O.BLOCK_SIZE=16,O.reset=s,O.process=v,O.finish=w;var P=new Uint8Array(1048576),Q=L(b,null,P.buffer);a.AES_CFB=x,a.AES_CFB.encrypt=A,a.AES_CFB.decrypt=B,a.AES_CFB.Encrypt=y,a.AES_CFB.Decrypt=z;var R=64,S=32;G.BLOCK_SIZE=R,G.HASH_SIZE=S;var T=G.prototype;T.reset=C,T.process=D,T.finish=E;var U=null;G.bytes=I,G.hex=J,G.base64=K,a.SHA256=G}({},function(){return this}());
 //# sourceMappingURL=asmcrypto.js.map
 },{}],19:[function(require,module,exports){
 // Modified by ProtonTech AG
@@ -3336,7 +3336,7 @@ module.exports = {
   originalDes: OriginalDes
 };
 
-},{"../../util.js":76}],24:[function(require,module,exports){
+},{"../../util.js":74}],24:[function(require,module,exports){
 /**
  * @requires crypto/cipher/aes
  * @requires crypto/cipher/blowfish
@@ -3971,1165 +3971,78 @@ module.exports = {
   }
 };
 
-},{"../type/mpi.js":74,"./cipher":24,"./public_key":38,"./random.js":41}],27:[function(require,module,exports){
-/**
- * Secure Hash Algorithm with 256-bit digest (SHA-256) implementation.
- *
- * See FIPS 180-2 for details.
- *
- * This implementation is currently limited to message lengths (in bytes) that
- * are up to 32-bits in size.
- *
- * @author Dave Longley
- *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
- */
-
-var sha256 = module.exports = {};
-var util = require('./forge_util.js');
-
-// sha-256 padding bytes not initialized yet
-var _padding = null;
-var _initialized = false;
-
-// table of constants
-var _k = null;
-
-/**
- * Initializes the constant tables.
- */
-var _init = function() {
-  // create padding
-  _padding = String.fromCharCode(128);
-  _padding += util.fillString(String.fromCharCode(0x00), 64);
-
-  // create K table for SHA-256
-  _k = [
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-    0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-    0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-    0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-  ];
-
-  // now initialized
-  _initialized = true;
-};
-
-/**
- * Updates a SHA-256 state with the given byte buffer.
- *
- * @param s the SHA-256 state to update.
- * @param w the array to use to store words.
- * @param bytes the byte buffer to update with.
- */
-var _update = function(s, w, bytes) {
-  // consume 512 bit (64 byte) chunks
-  var t1, t2, s0, s1, ch, maj, i, a, b, c, d, e, f, g, h;
-  var len = bytes.length();
-  while (len >= 64) {
-    // the w array will be populated with sixteen 32-bit big-endian words
-    // and then extended into 64 32-bit words according to SHA-256
-    for (i = 0; i < 16; ++i) {
-      w[i] = bytes.getInt32();
-    }
-    for (; i < 64; ++i) {
-      // XOR word 2 words ago rot right 17, rot right 19, shft right 10
-      t1 = w[i - 2];
-      t1 =
-        ((t1 >>> 17) | (t1 << 15)) ^
-        ((t1 >>> 19) | (t1 << 13)) ^
-        (t1 >>> 10);
-      // XOR word 15 words ago rot right 7, rot right 18, shft right 3
-      t2 = w[i - 15];
-      t2 =
-        ((t2 >>> 7) | (t2 << 25)) ^
-        ((t2 >>> 18) | (t2 << 14)) ^
-        (t2 >>> 3);
-      // sum(t1, word 7 ago, t2, word 16 ago) modulo 2^32
-      w[i] = (t1 + w[i - 7] + t2 + w[i - 16]) & 0xFFFFFFFF;
-    }
-
-    // initialize hash value for this chunk
-    a = s.h0;
-    b = s.h1;
-    c = s.h2;
-    d = s.h3;
-    e = s.h4;
-    f = s.h5;
-    g = s.h6;
-    h = s.h7;
-
-    // round function
-    for (i = 0; i < 64; ++i) {
-      // Sum1(e)
-      s1 =
-        ((e >>> 6) | (e << 26)) ^
-        ((e >>> 11) | (e << 21)) ^
-        ((e >>> 25) | (e << 7));
-      // Ch(e, f, g) (optimized the same way as SHA-1)
-      ch = g ^ (e & (f ^ g));
-      // Sum0(a)
-      s0 =
-        ((a >>> 2) | (a << 30)) ^
-        ((a >>> 13) | (a << 19)) ^
-        ((a >>> 22) | (a << 10));
-      // Maj(a, b, c) (optimized the same way as SHA-1)
-      maj = (a & b) | (c & (a ^ b));
-
-      // main algorithm
-      t1 = h + s1 + ch + _k[i] + w[i];
-      t2 = s0 + maj;
-      h = g;
-      g = f;
-      f = e;
-      e = (d + t1) & 0xFFFFFFFF;
-      d = c;
-      c = b;
-      b = a;
-      a = (t1 + t2) & 0xFFFFFFFF;
-    }
-
-    // update hash state
-    s.h0 = (s.h0 + a) & 0xFFFFFFFF;
-    s.h1 = (s.h1 + b) & 0xFFFFFFFF;
-    s.h2 = (s.h2 + c) & 0xFFFFFFFF;
-    s.h3 = (s.h3 + d) & 0xFFFFFFFF;
-    s.h4 = (s.h4 + e) & 0xFFFFFFFF;
-    s.h5 = (s.h5 + f) & 0xFFFFFFFF;
-    s.h6 = (s.h6 + g) & 0xFFFFFFFF;
-    s.h7 = (s.h7 + h) & 0xFFFFFFFF;
-    len -= 64;
-  }
-};
-
-/**
- * Creates a SHA-256 message digest object.
- *
- * @return a message digest object.
- */
-sha256.create = function() {
-  // do initialization as necessary
-  if (!_initialized) {
-    _init();
-  }
-
-  // SHA-256 state contains eight 32-bit integers
-  var _state = null;
-
-  // input buffer
-  var _input = util.createBuffer();
-
-  // used for word storage
-  var _w = new Array(64);
-
-  // message digest object
-  var md = {
-    algorithm: 'sha256',
-    blockLength: 64,
-    digestLength: 32,
-    // length of message so far (does not including padding)
-    messageLength: 0
-  };
-
-  /**
-   * Starts the digest.
-   *
-   * @return this digest object.
-   */
-  md.start = function() {
-    md.messageLength = 0;
-    _input = util.createBuffer();
-    _state = {
-      h0: 0x6A09E667,
-      h1: 0xBB67AE85,
-      h2: 0x3C6EF372,
-      h3: 0xA54FF53A,
-      h4: 0x510E527F,
-      h5: 0x9B05688C,
-      h6: 0x1F83D9AB,
-      h7: 0x5BE0CD19
-    };
-    return md;
-  };
-  // start digest automatically for first time
-  md.start();
-
-  /**
-   * Updates the digest with the given message input. The given input can
-   * treated as raw input (no encoding will be applied) or an encoding of
-   * 'utf8' maybe given to encode the input using UTF-8.
-   *
-   * @param msg the message input to update with.
-   * @param encoding the encoding to use (default: 'raw', other: 'utf8').
-   *
-   * @return this digest object.
-   */
-  md.update = function(msg, encoding) {
-    if (encoding === 'utf8') {
-      msg = util.encodeUtf8(msg);
-    }
-
-    // update message length
-    md.messageLength += msg.length;
-
-    // add bytes to input buffer
-    _input.putBytes(msg);
-
-    // process bytes
-    _update(_state, _w, _input);
-
-    // compact input buffer every 2K or if empty
-    if (_input.read > 2048 || _input.length() === 0) {
-      _input.compact();
-    }
-
-    return md;
-  };
-
-  /**
-   * Produces the digest.
-   *
-   * @return a byte buffer containing the digest value.
-   */
-  md.digest = function() {
-    /* Note: Here we copy the remaining bytes in the input buffer and
-      add the appropriate SHA-256 padding. Then we do the final update
-      on a copy of the state so that if the user wants to get
-      intermediate digests they can do so. */
-
-    /* Determine the number of bytes that must be added to the message
-      to ensure its length is congruent to 448 mod 512. In other words,
-      a 64-bit integer that gives the length of the message will be
-      appended to the message and whatever the length of the message is
-      plus 64 bits must be a multiple of 512. So the length of the
-      message must be congruent to 448 mod 512 because 512 - 64 = 448.
-
-      In order to fill up the message length it must be filled with
-      padding that begins with 1 bit followed by all 0 bits. Padding
-      must *always* be present, so if the message length is already
-      congruent to 448 mod 512, then 512 padding bits must be added. */
-
-    // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
-    // _padding starts with 1 byte with first bit is set in it which
-    // is byte value 128, then there may be up to 63 other pad bytes
-    var len = md.messageLength;
-    var padBytes = util.createBuffer();
-    padBytes.putBytes(_input.bytes());
-    padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
-
-    /* Now append length of the message. The length is appended in bits
-      as a 64-bit number in big-endian order. Since we store the length
-      in bytes, we must multiply it by 8 (or left shift by 3). So here
-      store the high 3 bits in the low end of the first 32-bits of the
-      64-bit number and the lower 5 bits in the high end of the second
-      32-bits. */
-    padBytes.putInt32((len >>> 29) & 0xFF);
-    padBytes.putInt32((len << 3) & 0xFFFFFFFF);
-    var s2 = {
-      h0: _state.h0,
-      h1: _state.h1,
-      h2: _state.h2,
-      h3: _state.h3,
-      h4: _state.h4,
-      h5: _state.h5,
-      h6: _state.h6,
-      h7: _state.h7
-    };
-    _update(s2, _w, padBytes);
-    var rval = util.createBuffer();
-    rval.putInt32(s2.h0);
-    rval.putInt32(s2.h1);
-    rval.putInt32(s2.h2);
-    rval.putInt32(s2.h3);
-    rval.putInt32(s2.h4);
-    rval.putInt32(s2.h5);
-    rval.putInt32(s2.h6);
-    rval.putInt32(s2.h7);
-    return rval;
-  };
-
-  return md;
-};
-},{"./forge_util.js":28}],28:[function(require,module,exports){
-/**
- * Utility functions for web applications.
- *
- * @author Dave Longley
- *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
- */
-
-/* Utilities API */
-var util = module.exports = {};
-
-// define isArray
-util.isArray = Array.isArray || function(x) {
-  return Object.prototype.toString.call(x) === '[object Array]';
-};
-
-// define isArrayBuffer
-util.isArrayBuffer = function(x) {
-  return typeof ArrayBuffer !== 'undefined' && x instanceof ArrayBuffer;
-};
-
-// define isArrayBufferView
-var _arrayBufferViews = [];
-if(typeof Int8Array !== 'undefined') {
-  _arrayBufferViews.push(Int8Array);
-}
-if(typeof Uint8Array !== 'undefined') {
-  _arrayBufferViews.push(Uint8Array);
-}
-if(typeof Uint8ClampedArray !== 'undefined') {
-  _arrayBufferViews.push(Uint8ClampedArray);
-}
-if(typeof Int16Array !== 'undefined') {
-  _arrayBufferViews.push(Int16Array);
-}
-if(typeof Uint16Array !== 'undefined') {
-  _arrayBufferViews.push(Uint16Array);
-}
-if(typeof Int32Array !== 'undefined') {
-  _arrayBufferViews.push(Int32Array);
-}
-if(typeof Uint32Array !== 'undefined') {
-  _arrayBufferViews.push(Uint32Array);
-}
-if(typeof Float32Array !== 'undefined') {
-  _arrayBufferViews.push(Float32Array);
-}
-if(typeof Float64Array !== 'undefined') {
-  _arrayBufferViews.push(Float64Array);
-}
-util.isArrayBufferView = function(x) {
-  for(var i = 0; i < _arrayBufferViews.length; ++i) {
-    if(x instanceof _arrayBufferViews[i]) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Constructor for a byte buffer.
- *
- * @param [b] the bytes to wrap (either encoded as string, one byte per
- *          character, or as an ArrayBuffer or Typed Array).
- */
-util.ByteBuffer = function(b) {
-  // the data in this buffer
-  this.data = '';
-  // the pointer for reading from this buffer
-  this.read = 0;
-
-  if(typeof b === 'string') {
-    this.data = b;
-  }
-  else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
-    // convert native buffer to forge buffer
-    // FIXME: support native buffers internally instead
-    var arr = new Uint8Array(b);
-    try {
-      this.data = String.fromCharCode.apply(null, arr);
-    }
-    catch(e) {
-      for(var i = 0; i < arr.length; ++i) {
-        this.putByte(arr[i]);
-      }
-    }
-  }
-};
-
-/**
- * Gets the number of bytes in this buffer.
- *
- * @return the number of bytes in this buffer.
- */
-util.ByteBuffer.prototype.length = function() {
-  return this.data.length - this.read;
-};
-
-/**
- * Gets whether or not this buffer is empty.
- *
- * @return true if this buffer is empty, false if not.
- */
-util.ByteBuffer.prototype.isEmpty = function() {
-  return this.length() <= 0;
-};
-
-/**
- * Puts a byte in this buffer.
- *
- * @param b the byte to put.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putByte = function(b) {
-  this.data += String.fromCharCode(b);
-  return this;
-};
-
-/**
- * Puts a byte in this buffer N times.
- *
- * @param b the byte to put.
- * @param n the number of bytes of value b to put.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.fillWithByte = function(b, n) {
-  b = String.fromCharCode(b);
-  var d = this.data;
-  while(n > 0) {
-    if(n & 1) {
-      d += b;
-    }
-    n >>>= 1;
-    if(n > 0) {
-      b += b;
-    }
-  }
-  this.data = d;
-  return this;
-};
-
-/**
- * Puts bytes in this buffer.
- *
- * @param bytes the bytes (as a UTF-8 encoded string) to put.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putBytes = function(bytes) {
-  this.data += bytes;
-  return this;
-};
-
-/**
- * Puts a UTF-16 encoded string into this buffer.
- *
- * @param str the string to put.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putString = function(str) {
-  this.data += util.encodeUtf8(str);
-  return this;
-};
-
-/**
- * Puts a 16-bit integer in this buffer in big-endian order.
- *
- * @param i the 16-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt16 = function(i) {
-  this.data +=
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
-};
-
-/**
- * Puts a 24-bit integer in this buffer in big-endian order.
- *
- * @param i the 24-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt24 = function(i) {
-  this.data +=
-    String.fromCharCode(i >> 16 & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
-};
-
-/**
- * Puts a 32-bit integer in this buffer in big-endian order.
- *
- * @param i the 32-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt32 = function(i) {
-  this.data +=
-    String.fromCharCode(i >> 24 & 0xFF) +
-    String.fromCharCode(i >> 16 & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
-};
-
-/**
- * Puts a 16-bit integer in this buffer in little-endian order.
- *
- * @param i the 16-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt16Le = function(i) {
-  this.data +=
-    String.fromCharCode(i & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF);
-  return this;
-};
-
-/**
- * Puts a 24-bit integer in this buffer in little-endian order.
- *
- * @param i the 24-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt24Le = function(i) {
-  this.data +=
-    String.fromCharCode(i & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i >> 16 & 0xFF);
-  return this;
-};
-
-/**
- * Puts a 32-bit integer in this buffer in little-endian order.
- *
- * @param i the 32-bit integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt32Le = function(i) {
-  this.data +=
-    String.fromCharCode(i & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i >> 16 & 0xFF) +
-    String.fromCharCode(i >> 24 & 0xFF);
-  return this;
-};
-
-/**
- * Puts an n-bit integer in this buffer in big-endian order.
- *
- * @param i the n-bit integer.
- * @param n the number of bits in the integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putInt = function(i, n) {
-  do {
-    n -= 8;
-    this.data += String.fromCharCode((i >> n) & 0xFF);
-  }
-  while(n > 0);
-  return this;
-};
-
-/**
- * Puts a signed n-bit integer in this buffer in big-endian order. Two's
- * complement representation is used.
- *
- * @param i the n-bit integer.
- * @param n the number of bits in the integer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putSignedInt = function(i, n) {
-  if(i < 0) {
-    i += 2 << (n - 1);
-  }
-  return this.putInt(i, n);
-};
-
-/**
- * Puts the given buffer into this buffer.
- *
- * @param buffer the buffer to put into this one.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.putBuffer = function(buffer) {
-  this.data += buffer.getBytes();
-  return this;
-};
-
-/**
- * Gets a byte from this buffer and advances the read pointer by 1.
- *
- * @return the byte.
- */
-util.ByteBuffer.prototype.getByte = function() {
-  return this.data.charCodeAt(this.read++);
-};
-
-/**
- * Gets a uint16 from this buffer in big-endian order and advances the read
- * pointer by 2.
- *
- * @return the uint16.
- */
-util.ByteBuffer.prototype.getInt16 = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) << 8 ^
-    this.data.charCodeAt(this.read + 1));
-  this.read += 2;
-  return rval;
-};
-
-/**
- * Gets a uint24 from this buffer in big-endian order and advances the read
- * pointer by 3.
- *
- * @return the uint24.
- */
-util.ByteBuffer.prototype.getInt24 = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) << 16 ^
-    this.data.charCodeAt(this.read + 1) << 8 ^
-    this.data.charCodeAt(this.read + 2));
-  this.read += 3;
-  return rval;
-};
-
-/**
- * Gets a uint32 from this buffer in big-endian order and advances the read
- * pointer by 4.
- *
- * @return the word.
- */
-util.ByteBuffer.prototype.getInt32 = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) << 24 ^
-    this.data.charCodeAt(this.read + 1) << 16 ^
-    this.data.charCodeAt(this.read + 2) << 8 ^
-    this.data.charCodeAt(this.read + 3));
-  this.read += 4;
-  return rval;
-};
-
-/**
- * Gets a uint16 from this buffer in little-endian order and advances the read
- * pointer by 2.
- *
- * @return the uint16.
- */
-util.ByteBuffer.prototype.getInt16Le = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) ^
-    this.data.charCodeAt(this.read + 1) << 8);
-  this.read += 2;
-  return rval;
-};
-
-/**
- * Gets a uint24 from this buffer in little-endian order and advances the read
- * pointer by 3.
- *
- * @return the uint24.
- */
-util.ByteBuffer.prototype.getInt24Le = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) ^
-    this.data.charCodeAt(this.read + 1) << 8 ^
-    this.data.charCodeAt(this.read + 2) << 16);
-  this.read += 3;
-  return rval;
-};
-
-/**
- * Gets a uint32 from this buffer in little-endian order and advances the read
- * pointer by 4.
- *
- * @return the word.
- */
-util.ByteBuffer.prototype.getInt32Le = function() {
-  var rval = (
-    this.data.charCodeAt(this.read) ^
-    this.data.charCodeAt(this.read + 1) << 8 ^
-    this.data.charCodeAt(this.read + 2) << 16 ^
-    this.data.charCodeAt(this.read + 3) << 24);
-  this.read += 4;
-  return rval;
-};
-
-/**
- * Gets an n-bit integer from this buffer in big-endian order and advances the
- * read pointer by n/8.
- *
- * @param n the number of bits in the integer.
- *
- * @return the integer.
- */
-util.ByteBuffer.prototype.getInt = function(n) {
-  var rval = 0;
-  do {
-    rval = (rval << 8) + this.data.charCodeAt(this.read++);
-    n -= 8;
-  }
-  while(n > 0);
-  return rval;
-};
-
-/**
- * Gets a signed n-bit integer from this buffer in big-endian order, using
- * two's complement, and advances the read pointer by n/8.
- *
- * @param n the number of bits in the integer.
- *
- * @return the integer.
- */
-util.ByteBuffer.prototype.getSignedInt = function(n) {
-  var x = this.getInt(n);
-  var max = 2 << (n - 2);
-  if(x >= max) {
-    x -= max << 1;
-  }
-  return x;
-};
-
-/**
- * Reads bytes out into a UTF-8 string and clears them from the buffer.
- *
- * @param count the number of bytes to read, undefined or null for all.
- *
- * @return a UTF-8 string of bytes.
- */
-util.ByteBuffer.prototype.getBytes = function(count) {
-  var rval;
-  if(count) {
-    // read count bytes
-    count = Math.min(this.length(), count);
-    rval = this.data.slice(this.read, this.read + count);
-    this.read += count;
-  }
-  else if(count === 0) {
-    rval = '';
-  }
-  else {
-    // read all bytes, optimize to only copy when needed
-    rval = (this.read === 0) ? this.data : this.data.slice(this.read);
-    this.clear();
-  }
-  return rval;
-};
-
-/**
- * Gets a UTF-8 encoded string of the bytes from this buffer without modifying
- * the read pointer.
- *
- * @param count the number of bytes to get, omit to get all.
- *
- * @return a string full of UTF-8 encoded characters.
- */
-util.ByteBuffer.prototype.bytes = function(count) {
-  return (typeof(count) === 'undefined' ?
-    this.data.slice(this.read) :
-    this.data.slice(this.read, this.read + count));
-};
-
-/**
- * Gets a byte at the given index without modifying the read pointer.
- *
- * @param i the byte index.
- *
- * @return the byte.
- */
-util.ByteBuffer.prototype.at = function(i) {
-  return this.data.charCodeAt(this.read + i);
-};
-
-/**
- * Puts a byte at the given index without modifying the read pointer.
- *
- * @param i the byte index.
- * @param b the byte to put.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.setAt = function(i, b) {
-  this.data = this.data.substr(0, this.read + i) +
-    String.fromCharCode(b) +
-    this.data.substr(this.read + i + 1);
-  return this;
-};
-
-/**
- * Gets the last byte without modifying the read pointer.
- *
- * @return the last byte.
- */
-util.ByteBuffer.prototype.last = function() {
-  return this.data.charCodeAt(this.data.length - 1);
-};
-
-/**
- * Creates a copy of this buffer.
- *
- * @return the copy.
- */
-util.ByteBuffer.prototype.copy = function() {
-  var c = util.createBuffer(this.data);
-  c.read = this.read;
-  return c;
-};
-
-/**
- * Compacts this buffer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.compact = function() {
-  if(this.read > 0) {
-    this.data = this.data.slice(this.read);
-    this.read = 0;
-  }
-  return this;
-};
-
-/**
- * Clears this buffer.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.clear = function() {
-  this.data = '';
-  this.read = 0;
-  return this;
-};
-
-/**
- * Shortens this buffer by triming bytes off of the end of this buffer.
- *
- * @param count the number of bytes to trim off.
- *
- * @return this buffer.
- */
-util.ByteBuffer.prototype.truncate = function(count) {
-  var len = Math.max(0, this.length() - count);
-  this.data = this.data.substr(this.read, len);
-  this.read = 0;
-  return this;
-};
-
-/**
- * Converts this buffer to a hexadecimal string.
- *
- * @return a hexadecimal string.
- */
-util.ByteBuffer.prototype.toHex = function() {
-  var rval = '';
-  for(var i = this.read; i < this.data.length; ++i) {
-    var b = this.data.charCodeAt(i);
-    if(b < 16) {
-      rval += '0';
-    }
-    rval += b.toString(16);
-  }
-  return rval;
-};
-
-/**
- * Converts this buffer to a UTF-16 string (standard JavaScript string).
- *
- * @return a UTF-16 string.
- */
-util.ByteBuffer.prototype.toString = function() {
-  return util.decodeUtf8(this.bytes());
-};
-
-/**
- * Creates a buffer that stores bytes. A value may be given to put into the
- * buffer that is either a string of bytes or a UTF-16 string that will
- * be encoded using UTF-8 (to do the latter, specify 'utf8' as the encoding).
- *
- * @param [input] the bytes to wrap (as a string) or a UTF-16 string to encode
- *          as UTF-8.
- * @param [encoding] (default: 'raw', other: 'utf8').
- */
-util.createBuffer = function(input, encoding) {
-  encoding = encoding || 'raw';
-  if(input !== undefined && encoding === 'utf8') {
-    input = util.encodeUtf8(input);
-  }
-  return new util.ByteBuffer(input);
-};
-
-/**
- * Fills a string with a particular value. If you want the string to be a byte
- * string, pass in String.fromCharCode(theByte).
- *
- * @param c the character to fill the string with, use String.fromCharCode
- *          to fill the string with a byte value.
- * @param n the number of characters of value c to fill with.
- *
- * @return the filled string.
- */
-util.fillString = function(c, n) {
-  var s = '';
-  while(n > 0) {
-    if(n & 1) {
-      s += c;
-    }
-    n >>>= 1;
-    if(n > 0) {
-      c += c;
-    }
-  }
-  return s;
-};
-
-/**
- * Performs a per byte XOR between two byte strings and returns the result as a
- * string of bytes.
- *
- * @param s1 first string of bytes.
- * @param s2 second string of bytes.
- * @param n the number of bytes to XOR.
- *
- * @return the XOR'd result.
- */
-util.xorBytes = function(s1, s2, n) {
-  var s3 = '';
-  var b = '';
-  var t = '';
-  var i = 0;
-  var c = 0;
-  for(; n > 0; --n, ++i) {
-    b = s1.charCodeAt(i) ^ s2.charCodeAt(i);
-    if(c >= 10) {
-      s3 += t;
-      t = '';
-      c = 0;
-    }
-    t += String.fromCharCode(b);
-    ++c;
-  }
-  s3 += t;
-  return s3;
-};
-
-/**
- * Converts a hex string into a UTF-8 string of bytes.
- *
- * @param hex the hexadecimal string to convert.
- *
- * @return the string of bytes.
- */
-util.hexToBytes = function(hex) {
-  var rval = '';
-  var i = 0;
-  if(hex.length & 1 == 1) {
-    // odd number of characters, convert first character alone
-    i = 1;
-    rval += String.fromCharCode(parseInt(hex[0], 16));
-  }
-  // convert 2 characters (1 byte) at a time
-  for(; i < hex.length; i += 2) {
-    rval += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-  }
-  return rval;
-};
-
-/**
- * Converts a UTF-8 byte string into a string of hexadecimal characters.
- *
- * @param bytes the byte string to convert.
- *
- * @return the string of hexadecimal characters.
- */
-util.bytesToHex = function(bytes) {
-  return util.createBuffer(bytes).toHex();
-};
-
-/**
- * Converts an 32-bit integer to 4-big-endian byte string.
- *
- * @param i the integer.
- *
- * @return the byte string.
- */
-util.int32ToBytes = function(i) {
-  return (
-    String.fromCharCode(i >> 24 & 0xFF) +
-    String.fromCharCode(i >> 16 & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF));
-};
-
-// base64 characters, reverse mapping
-var _base64 =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-var _base64Idx = [
-/*43 -43 = 0*/
-/*'+',  1,  2,  3,'/' */
-   62, -1, -1, -1, 63,
-
-/*'0','1','2','3','4','5','6','7','8','9' */
-   52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
-
-/*15, 16, 17,'=', 19, 20, 21 */
-  -1, -1, -1, 64, -1, -1, -1,
-
-/*65 - 43 = 22*/
-/*'A','B','C','D','E','F','G','H','I','J','K','L','M', */
-   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12,
-
-/*'N','O','P','Q','R','S','T','U','V','W','X','Y','Z' */
-   13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-
-/*91 - 43 = 48 */
-/*48, 49, 50, 51, 52, 53 */
-  -1, -1, -1, -1, -1, -1,
-
-/*97 - 43 = 54*/
-/*'a','b','c','d','e','f','g','h','i','j','k','l','m' */
-   26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
-
-/*'n','o','p','q','r','s','t','u','v','w','x','y','z' */
-   39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
-];
-
-/**
- * Base64 encodes a UTF-8 string of bytes.
- *
- * @param input the UTF-8 string of bytes to encode.
- * @param maxline the maximum number of encoded bytes per line to use,
- *          defaults to none.
- *
- * @return the base64-encoded output.
- */
-util.encode64 = function(input, maxline) {
-  var line = '';
-  var output = '';
-  var chr1, chr2, chr3;
-  var i = 0;
-  while(i < input.length) {
-    chr1 = input.charCodeAt(i++);
-    chr2 = input.charCodeAt(i++);
-    chr3 = input.charCodeAt(i++);
-
-    // encode 4 character group
-    line += _base64.charAt(chr1 >> 2);
-    line += _base64.charAt(((chr1 & 3) << 4) | (chr2 >> 4));
-    if(isNaN(chr2)) {
-      line += '==';
-    }
-    else {
-      line += _base64.charAt(((chr2 & 15) << 2) | (chr3 >> 6));
-      line += isNaN(chr3) ? '=' : _base64.charAt(chr3 & 63);
-    }
-
-    if(maxline && line.length > maxline) {
-      output += line.substr(0, maxline) + '\r\n';
-      line = line.substr(maxline);
-    }
-  }
-  output += line;
-
-  return output;
-};
-
-/**
- * Base64 decodes a string into a UTF-8 string of bytes.
- *
- * @param input the base64-encoded input.
- *
- * @return the raw bytes.
- */
-util.decode64 = function(input) {
-  // remove all non-base64 characters
-  input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
-
-  var output = '';
-  var enc1, enc2, enc3, enc4;
-  var i = 0;
-
-  while(i < input.length) {
-    enc1 = _base64Idx[input.charCodeAt(i++) - 43];
-    enc2 = _base64Idx[input.charCodeAt(i++) - 43];
-    enc3 = _base64Idx[input.charCodeAt(i++) - 43];
-    enc4 = _base64Idx[input.charCodeAt(i++) - 43];
-
-    output += String.fromCharCode((enc1 << 2) | (enc2 >> 4));
-    if(enc3 !== 64) {
-      // decoded at least 2 bytes
-      output += String.fromCharCode(((enc2 & 15) << 4) | (enc3 >> 2));
-      if(enc4 !== 64) {
-        // decoded 3 bytes
-        output += String.fromCharCode(((enc3 & 3) << 6) | enc4);
-      }
-    }
-  }
-
-  return output;
-};
-
-/**
- * UTF-8 encodes the given UTF-16 encoded string (a standard JavaScript
- * string). Non-ASCII characters will be encoded as multiple bytes according
- * to UTF-8.
- *
- * @param str the string to encode.
- *
- * @return the UTF-8 encoded string.
- */
-util.encodeUtf8 = function(str) {
-  return unescape(encodeURIComponent(str));
-};
-
-/**
- * Decodes a UTF-8 encoded string into a UTF-16 string.
- *
- * @param str the string to encode.
- *
- * @return the UTF-16 encoded string (standard JavaScript string).
- */
-util.decodeUtf8 = function(str) {
-  return decodeURIComponent(escape(str));
-};
-
-},{}],29:[function(require,module,exports){
+},{"../type/mpi.js":72,"./cipher":24,"./public_key":36,"./random.js":39}],27:[function(require,module,exports){
 /**
  * @requires crypto/hash/sha
+ * @requires crypto/hash/rusha
+ * @requires util
+ * @requires config
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
-  forge_sha256 = require('./forge_sha256.js'),
   rusha = require('./rusha.js'),
+  config = require('../../config')
   util = require('../../util.js');
 
 var rusha_obj = new rusha();
 
+function node_hash(type) {
+  return function (data) {
+    var nodeCrypto = require('crypto');
+    var Buffer = require('buffer').Buffer;
+    var shasum = nodeCrypto.createHash(type);
+    shasum.update(new Buffer(data));
+    return new Uint8Array(shasum.digest());
+  }
+}
+
+var hash_fns;
+if(typeof module !== 'undefined' && module.exports && config.useNative) { // Use Node native crypto
+  hash_fns = {
+    md5: node_hash('md5'),
+    sha1: node_hash('sha1'),
+    sha224: node_hash('sha224'),
+    sha256: node_hash('sha256'),
+    sha384: node_hash('sha384'),
+    sha512: node_hash('sha512'),
+    ripemd: node_hash('ripemd160')
+  };
+}
+else { // JS
+  hash_fns = {
+    /** @see module:crypto/hash/md5 */
+    md5: require('./md5.js'),
+    /** @see module:crypto/hash/sha.sha1 */
+    /** @see module:crypto/hash/rusha */
+    // sha1: sha.sha1,
+    sha1: function (data) {
+      return util.str2Uint8Array(util.hex2bin(rusha_obj.digest(data)));
+    },
+    //sha1: asmCrypto.SHA1.bytes,
+    /** @see module:crypto/hash/sha.sha224 */
+    sha224: sha.sha224,
+    /** @see module:crypto/hash/sha.sha256 */
+    /** @see module:crypto/asmcrypto */
+    //sha256: sha.sha256,
+    sha256: asmCrypto.SHA256.bytes,
+    /** @see module:crypto/hash/sha.sha384 */
+    sha384: sha.sha384,
+    /** @see module:crypto/hash/sha.sha512 */
+    sha512: sha.sha512,
+    /** @see module:crypto/hash/ripe-md */
+    ripemd: require('./ripe-md.js')
+  };
+}
+
 module.exports = {
-  /** @see module:crypto/hash/md5 */
-  md5: require('./md5.js'),
-  /** @see module:crypto/hash/sha.sha1 */
-  //sha1: sha.sha1,
-  sha1: function (data) {
-    return util.str2Uint8Array(util.hex2bin(rusha_obj.digest(data)));
-  },
-  /** @see module:crypto/hash/sha.sha224 */
-  sha224: sha.sha224,
-  /** @see module:crypto/hash/sha.sha256 */
-  sha256: sha.sha256,
-  /** @see module:crypto/hash/sha.sha384 */
-  sha384: sha.sha384,
-  /** @see module:crypto/hash/sha.sha512 */
-  sha512: sha.sha512,
-  /** @see module:crypto/hash/ripe-md */
-  ripemd: require('./ripe-md.js'),
+
+  md5: hash_fns.md5,
+  sha1: hash_fns.sha1,
+  sha224: hash_fns.sha224,
+  sha256: hash_fns.sha256,
+  sha384: hash_fns.sha384,
+  sha512: hash_fns.sha512,
+  ripemd: hash_fns.ripemd,
 
   /**
    * Create a hash on the specified data using the specified algorithm
@@ -5150,11 +4063,7 @@ module.exports = {
         return this.ripemd(data);
       case 8:
         // - SHA256 [FIPS180]
-        //return this.sha256(data);
-
-        var sha256 = forge_sha256.create();
-        sha256.update(util.Uint8Array2str(data));
-        return util.str2Uint8Array(sha256.digest().getBytes());
+        return this.sha256(data);
       case 9:
         // - SHA384 [FIPS180]
         return this.sha384(data);
@@ -5202,7 +4111,7 @@ module.exports = {
   }
 };
 
-},{"../../util.js":76,"./forge_sha256.js":27,"./md5.js":30,"./ripe-md.js":31,"./rusha.js":32,"./sha.js":33}],30:[function(require,module,exports){
+},{"../../config":17,"../../util.js":74,"./md5.js":28,"./ripe-md.js":29,"./rusha.js":30,"./sha.js":31,"buffer":false,"crypto":false}],28:[function(require,module,exports){
 /**
  * A fast MD5 JavaScript implementation
  * Copyright (c) 2012 Joseph Myers
@@ -5421,7 +4330,7 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
   }
 }
 
-},{"../../util.js":76}],31:[function(require,module,exports){
+},{"../../util.js":74}],29:[function(require,module,exports){
 /*
  * CryptoMX Tools
  * Copyright (C) 2004 - 2006 Derek Buitenhuis
@@ -5726,7 +4635,7 @@ function RMDstring(message) {
 
 module.exports = RMDstring;
 
-},{"../../util.js":76}],32:[function(require,module,exports){
+},{"../../util.js":74}],30:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};/*
  * Rusha, a JavaScript implementation of the Secure Hash Algorithm, SHA-1,
  * as defined in FIPS PUB 180-1, tuned for high performance with large inputs.
@@ -6140,7 +5049,7 @@ var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? 
         return { hash: hash };
     };
 }());
-},{}],33:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /**
  * @preserve A JavaScript implementation of the SHA family of hashes, as
  * defined in FIPS PUB 180-2 as well as the corresponding HMAC implementation
@@ -7750,14 +6659,14 @@ var SUPPORTED_ALGS = 4 | 2 | 1;
 	};
 }(this));
 
-},{"../../util.js":76}],34:[function(require,module,exports){
+},{"../../util.js":74}],32:[function(require,module,exports){
 /**
  * @see module:crypto/crypto
  * @module crypto
  */
 
-// asmCrypto global object
-require('./asmcrypto-aes-cfb');
+// asmCrypto global object (AES CFB, SHA1, SHA256, SHA512)
+require('./asmcrypto.js');
 
 module.exports = {
   /** @see module:crypto/cipher */
@@ -7781,7 +6690,7 @@ var crypto = require('./crypto.js');
 for (var i in crypto)
   module.exports[i] = crypto[i];
 
-},{"./asmcrypto-aes-cfb":18,"./cfb.js":19,"./cipher":24,"./crypto.js":26,"./hash":29,"./pkcs1.js":35,"./public_key":38,"./random.js":41,"./signature.js":42}],35:[function(require,module,exports){
+},{"./asmcrypto.js":18,"./cfb.js":19,"./cipher":24,"./crypto.js":26,"./hash":27,"./pkcs1.js":33,"./public_key":36,"./random.js":39,"./signature.js":40}],33:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -7954,7 +6863,7 @@ module.exports = {
   }
 };
 
-},{"../util.js":76,"./crypto.js":26,"./hash":29,"./public_key/jsbn.js":39,"./random.js":41}],36:[function(require,module,exports){
+},{"../util.js":74,"./crypto.js":26,"./hash":27,"./public_key/jsbn.js":37,"./random.js":39}],34:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -8142,7 +7051,7 @@ function DSA() {
 
 module.exports = DSA;
 
-},{"../../config":17,"../../util.js":76,"../hash":29,"../random.js":41,"./jsbn.js":39}],37:[function(require,module,exports){
+},{"../../config":17,"../../util.js":74,"../hash":27,"../random.js":39,"./jsbn.js":37}],35:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -8203,7 +7112,7 @@ function Elgamal() {
 
 module.exports = Elgamal;
 
-},{"../../util.js":76,"../random.js":41,"./jsbn.js":39}],38:[function(require,module,exports){
+},{"../../util.js":74,"../random.js":39,"./jsbn.js":37}],36:[function(require,module,exports){
 /**
  * @requires crypto/public_key/dsa
  * @requires crypto/public_key/elgamal
@@ -8219,7 +7128,7 @@ module.exports = {
   dsa: require('./dsa.js')
 };
 
-},{"./dsa.js":36,"./elgamal.js":37,"./rsa.js":40}],39:[function(require,module,exports){
+},{"./dsa.js":34,"./elgamal.js":35,"./rsa.js":38}],37:[function(require,module,exports){
 /*
  * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
  * All Rights Reserved.
@@ -9932,7 +8841,7 @@ BigInteger.prototype.toMPI = bnToMPI;
 // JSBN-specific extension
 BigInteger.prototype.square = bnSquare;
 
-},{"../../util.js":76,"./jsbn.js":39}],40:[function(require,module,exports){
+},{"../../util.js":74,"./jsbn.js":37}],38:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -10230,7 +9139,7 @@ function RSA() {
 
 module.exports = RSA;
 
-},{"../../config":17,"../../util.js":76,"../random.js":41,"./jsbn.js":39}],41:[function(require,module,exports){
+},{"../../config":17,"../../util.js":74,"../random.js":39,"./jsbn.js":37}],39:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -10427,7 +9336,7 @@ RandomBuffer.prototype.get = function(buf) {
   }
 };
 
-},{"../type/mpi.js":74,"../util.js":76,"crypto":false}],42:[function(require,module,exports){
+},{"../type/mpi.js":72,"../util.js":74,"crypto":false}],40:[function(require,module,exports){
 /**
  * @requires util
  * @requires crypto/hash
@@ -10542,7 +9451,7 @@ module.exports = {
   }
 };
 
-},{"../util":76,"./hash":29,"./pkcs1.js":35,"./public_key":38}],43:[function(require,module,exports){
+},{"../util":74,"./hash":27,"./pkcs1.js":33,"./public_key":36}],41:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -10950,7 +9859,7 @@ module.exports = {
   decode: dearmor
 };
 
-},{"../config":17,"../enums.js":45,"./base64.js":44}],44:[function(require,module,exports){
+},{"../config":17,"../enums.js":43,"./base64.js":42}],42:[function(require,module,exports){
 /* OpenPGP radix-64/base64 string encoding/decoding
  * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
  * version 1.0, check www.haneWIN.de for the latest version
@@ -11071,7 +9980,7 @@ module.exports = {
   decode: r2s
 };
 
-},{}],45:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 'use strict';
 
 /**
@@ -11392,7 +10301,7 @@ module.exports = {
   }
 };
 
-},{}],46:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./openpgp.js');
@@ -11467,7 +10376,7 @@ module.exports.Keyring = require('./keyring');
  */
 module.exports.AsyncProxy = require('./worker/async_proxy.js');
 
-},{"./cleartext.js":12,"./config/config.js":16,"./crypto":34,"./encoding/armor.js":43,"./enums.js":45,"./key.js":47,"./keyring":48,"./message.js":51,"./openpgp.js":52,"./packet":55,"./type/keyid.js":73,"./type/mpi.js":74,"./type/s2k.js":75,"./util.js":76,"./worker/async_proxy.js":77}],47:[function(require,module,exports){
+},{"./cleartext.js":12,"./config/config.js":16,"./crypto":32,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./keyring":46,"./message.js":49,"./openpgp.js":50,"./packet":53,"./type/keyid.js":71,"./type/mpi.js":72,"./type/s2k.js":73,"./util.js":74,"./worker/async_proxy.js":75}],45:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -12514,7 +11423,7 @@ exports.readArmored = readArmored;
 exports.generate = generate;
 exports.getPreferredSymAlgo = getPreferredSymAlgo;
 
-},{"./config":17,"./encoding/armor.js":43,"./enums.js":45,"./packet":55,"./util":76}],48:[function(require,module,exports){
+},{"./config":17,"./encoding/armor.js":41,"./enums.js":43,"./packet":53,"./util":74}],46:[function(require,module,exports){
 /**
  * @see module:keyring/keyring
  * @module keyring
@@ -12522,7 +11431,7 @@ exports.getPreferredSymAlgo = getPreferredSymAlgo;
 module.exports = require('./keyring.js');
 module.exports.localstore = require('./localstore.js');
 
-},{"./keyring.js":49,"./localstore.js":50}],49:[function(require,module,exports){
+},{"./keyring.js":47,"./localstore.js":48}],47:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12744,7 +11653,7 @@ KeyArray.prototype.removeForId = function (keyId) {
   return null;
 };
 
-},{"../enums.js":45,"../key.js":47,"../util.js":76,"./localstore.js":50}],50:[function(require,module,exports){
+},{"../enums.js":43,"../key.js":45,"../util.js":74,"./localstore.js":48}],48:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -12850,7 +11759,7 @@ function storeKeys(storage, itemname, keys) {
   storage.setItem(itemname, JSON.stringify(armoredKeys));
 }
 
-},{"../config":17,"../key.js":47,"../util.js":76,"node-localstorage":false}],51:[function(require,module,exports){
+},{"../config":17,"../key.js":45,"../util.js":74,"node-localstorage":false}],49:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13382,7 +12291,7 @@ exports.fromText = fromText;
 exports.fromBinary = fromBinary;
 exports.encryptSessionKey = encryptSessionKey;
 
-},{"./config":17,"./crypto":34,"./encoding/armor.js":43,"./enums.js":45,"./key.js":47,"./packet":55,"./util.js":76}],52:[function(require,module,exports){
+},{"./config":17,"./crypto":32,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./packet":53,"./util.js":74}],50:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13758,7 +12667,10 @@ function execute(cmd, errMsg) {
   });
 
   // handler error globally
-  return promise.catch(onError.bind(null, errMsg));
+  return promise.catch(function(err) {
+    onError.bind(null, err.stack)
+  });
+  //return promise.catch(onError.bind(null, errMsg));
 }
 
 /**
@@ -13785,7 +12697,7 @@ exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;
 exports.generateKeyPair = generateKeyPair;
-},{"./cleartext.js":12,"./encoding/armor.js":43,"./enums.js":45,"./key.js":47,"./message.js":51,"./util":76,"./worker/async_proxy.js":77,"es6-promise":2}],53:[function(require,module,exports){
+},{"./cleartext.js":12,"./encoding/armor.js":41,"./enums.js":43,"./key.js":45,"./message.js":49,"./util":74,"./worker/async_proxy.js":75,"es6-promise":2}],51:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet
@@ -13865,7 +12777,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":45,"./compressed.js":54,"./literal.js":56,"./marker.js":57,"./one_pass_signature.js":58,"./public_key.js":61,"./public_key_encrypted_session_key.js":62,"./public_subkey.js":63,"./secret_key.js":64,"./secret_subkey.js":65,"./signature.js":66,"./sym_encrypted_integrity_protected.js":67,"./sym_encrypted_session_key.js":68,"./symmetrically_encrypted.js":69,"./trust.js":70,"./user_attribute.js":71,"./userid.js":72}],54:[function(require,module,exports){
+},{"../enums.js":43,"./compressed.js":52,"./literal.js":54,"./marker.js":55,"./one_pass_signature.js":56,"./public_key.js":59,"./public_key_encrypted_session_key.js":60,"./public_subkey.js":61,"./secret_key.js":62,"./secret_subkey.js":63,"./signature.js":64,"./sym_encrypted_integrity_protected.js":65,"./sym_encrypted_session_key.js":66,"./symmetrically_encrypted.js":67,"./trust.js":68,"./user_attribute.js":69,"./userid.js":70}],52:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14029,7 +12941,7 @@ Compressed.prototype.compress = function () {
   }
 };
 
-},{"../compression/rawdeflate.min.js":13,"../compression/rawinflate.min.js":14,"../compression/zlib.min.js":15,"../enums.js":45,"../util.js":76}],55:[function(require,module,exports){
+},{"../compression/rawdeflate.min.js":13,"../compression/rawinflate.min.js":14,"../compression/zlib.min.js":15,"../enums.js":43,"../util.js":74}],53:[function(require,module,exports){
 var enums = require('../enums.js');
 
 module.exports = {
@@ -14045,7 +12957,7 @@ var packets = require('./all_packets.js');
 for (var i in packets)
   module.exports[i] = packets[i];
 
-},{"../enums.js":45,"./all_packets.js":53,"./packetlist.js":60}],56:[function(require,module,exports){
+},{"../enums.js":43,"./all_packets.js":51,"./packetlist.js":58}],54:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14188,7 +13100,7 @@ Literal.prototype.write = function () {
   return util.concatUint8Array([format, filename_length, filename, date, data]);
 };
 
-},{"../enums.js":45,"../util.js":76}],57:[function(require,module,exports){
+},{"../enums.js":43,"../util.js":74}],55:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14251,7 +13163,7 @@ Marker.prototype.read = function (bytes) {
   return false;
 };
 
-},{"../enums.js":45}],58:[function(require,module,exports){
+},{"../enums.js":43}],56:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14357,7 +13269,7 @@ OnePassSignature.prototype.postCloneTypeFix = function() {
   this.signingKeyId = type_keyid.fromClone(this.signingKeyId);
 };
 
-},{"../enums.js":45,"../type/keyid.js":73,"../util.js":76}],59:[function(require,module,exports){
+},{"../enums.js":43,"../type/keyid.js":71,"../util.js":74}],57:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -14614,7 +13526,7 @@ module.exports = {
   }
 };
 
-},{"../enums.js":45,"../util.js":76}],60:[function(require,module,exports){
+},{"../enums.js":43,"../util.js":74}],58:[function(require,module,exports){
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
@@ -14813,7 +13725,7 @@ module.exports.fromStructuredClone = function(packetlistClone) {
   }
   return packetlist;
 };
-},{"../enums.js":45,"../util":76,"./all_packets.js":53,"./packet.js":59}],61:[function(require,module,exports){
+},{"../enums.js":43,"../util":74,"./all_packets.js":51,"./packet.js":57}],59:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15039,7 +13951,7 @@ PublicKey.prototype.postCloneTypeFix = function() {
   }
 };
 
-},{"../crypto":34,"../enums.js":45,"../type/keyid.js":73,"../type/mpi.js":74,"../util.js":76}],62:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74}],60:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15218,7 +14130,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   }
 };
 
-},{"../crypto":34,"../enums.js":45,"../type/keyid.js":73,"../type/mpi.js":74,"../util.js":76}],63:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74}],61:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15259,7 +14171,7 @@ function PublicSubkey() {
 PublicSubkey.prototype = new publicKey();
 PublicSubkey.prototype.constructor = PublicSubkey;
 
-},{"../enums.js":45,"./public_key.js":61}],64:[function(require,module,exports){
+},{"../enums.js":43,"./public_key.js":59}],62:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15549,7 +14461,7 @@ SecretKey.prototype.clearPrivateMPIs = function () {
   this.isDecrypted = false;
 };
 
-},{"../crypto":34,"../enums.js":45,"../type/mpi.js":74,"../type/s2k.js":75,"../util.js":76,"./public_key.js":61}],65:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../type/mpi.js":72,"../type/s2k.js":73,"../util.js":74,"./public_key.js":59}],63:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -15590,7 +14502,7 @@ function SecretSubkey() {
 SecretSubkey.prototype = new secretKey();
 SecretSubkey.prototype.constructor = SecretSubkey;
 
-},{"../enums.js":45,"./secret_key.js":64}],66:[function(require,module,exports){
+},{"../enums.js":43,"./secret_key.js":62}],64:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16242,7 +15154,7 @@ Signature.prototype.postCloneTypeFix = function() {
   this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };
 
-},{"../crypto":34,"../enums.js":45,"../type/keyid.js":73,"../type/mpi.js":74,"../util.js":76,"./packet.js":59}],67:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../type/keyid.js":71,"../type/mpi.js":72,"../util.js":74,"./packet.js":57}],65:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16339,6 +15251,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   tohash = util.concatUint8Array([tohash, hash]);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   this.encrypted = crypto.cfb.encrypt(prefixrandom,
 <<<<<<< HEAD
       sessionKeyAlgorithm, tohash, key, false);
@@ -16353,6 +15266,9 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 >>>>>>> binary strings to typed arrays in most places
 =======
   // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+=======
+  // AES optimizations. Native code for node, asmCrypto for browser.
+>>>>>>> native crypto and hash for nodeJS
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
@@ -16390,7 +15306,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   
   var decrypted;
-  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+  // AES optimizations. Native code for node, asmCrypto for browser.
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
@@ -16444,7 +15360,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 >>>>>>> binary strings to typed arrays in most places
 };
 
-},{"../config":17,"../crypto":34,"../enums.js":45,"../util.js":76,"buffer":false,"crypto":false}],68:[function(require,module,exports){
+},{"../config":17,"../crypto":32,"../enums.js":43,"../util.js":74,"buffer":false,"crypto":false}],66:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16610,7 +15526,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.s2k = type_s2k.fromClone(this.s2k);
 };
 
-},{"../crypto":34,"../enums.js":45,"../type/s2k.js":75,"../util.js":76}],69:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../type/s2k.js":73,"../util.js":74}],67:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16688,7 +15604,7 @@ SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
     crypto.getPrefixRandom(algo), algo, data, key, true);
 };
 
-},{"../crypto":34,"../enums.js":45}],70:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43}],68:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet/trust
@@ -16714,7 +15630,7 @@ Trust.prototype.read = function (bytes) {
 
 };
 
-},{"../enums.js":45}],71:[function(require,module,exports){
+},{"../enums.js":43}],69:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16809,7 +15725,7 @@ UserAttribute.prototype.equals = function(usrAttr) {
   });
 };
 
-},{"../enums.js":45,"../util.js":76,"./packet.js":59}],72:[function(require,module,exports){
+},{"../enums.js":43,"../util.js":74,"./packet.js":57}],70:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16873,7 +15789,7 @@ Userid.prototype.write = function () {
   return util.str2Uint8Array(util.encode_utf8(this.userid));
 };
 
-},{"../enums.js":45,"../util.js":76}],73:[function(require,module,exports){
+},{"../enums.js":43,"../util.js":74}],71:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -16954,7 +15870,7 @@ module.exports.fromId = function (hex) {
   return keyid;
 };
 
-},{"../util.js":76}],74:[function(require,module,exports){
+},{"../util.js":74}],72:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -17073,7 +15989,7 @@ module.exports.fromClone = function (clone) {
   return mpi;
 };
 
-},{"../crypto/public_key/jsbn.js":39,"../util.js":76}],75:[function(require,module,exports){
+},{"../crypto/public_key/jsbn.js":37,"../util.js":74}],73:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 // 
@@ -17272,7 +16188,7 @@ module.exports.fromClone = function (clone) {
   return s2k;
 };
 
-},{"../crypto":34,"../enums.js":45,"../util.js":76}],76:[function(require,module,exports){
+},{"../crypto":32,"../enums.js":43,"../util.js":74}],74:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17704,7 +16620,7 @@ module.exports = {
   }
 };
 
-},{"./config":17}],77:[function(require,module,exports){
+},{"./config":17}],75:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18143,7 +17059,7 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
 
 module.exports = AsyncProxy;
 
-},{"../crypto":34,"../key.js":47,"../packet":55,"../type/keyid.js":73}]},{},[46])
-(46)
+},{"../crypto":32,"../key.js":45,"../packet":53,"../type/keyid.js":71}]},{},[44])
+(44)
 });
 ;

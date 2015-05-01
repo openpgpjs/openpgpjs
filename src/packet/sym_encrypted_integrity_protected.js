@@ -93,7 +93,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
   tohash = util.concatUint8Array([tohash, hash]);
 
-  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+  // AES optimizations. Native code for node, asmCrypto for browser.
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
@@ -130,7 +130,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   
   var decrypted;
-  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
+  // AES optimizations. Native code for node, asmCrypto for browser.
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
