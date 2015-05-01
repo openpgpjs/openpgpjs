@@ -12667,10 +12667,7 @@ function execute(cmd, errMsg) {
   });
 
   // handler error globally
-  return promise.catch(function(err) {
-    onError.bind(null, err.stack)
-  });
-  //return promise.catch(onError.bind(null, errMsg));
+  return promise.catch(onError.bind(null, errMsg));
 }
 
 /**
