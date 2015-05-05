@@ -1,5 +1,6 @@
-[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs)
-[![Bountysource](https://www.bountysource.com/badge/team?team_id=10316&style=raised)](https://www.bountysource.com/teams/openpgpjs?utm_source=openpgpjs&utm_medium=shield&utm_campaign=raised)
+[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Coverage Status](https://coveralls.io/repos/openpgpjs/openpgpjs/badge.svg)](https://coveralls.io/r/evilaliv3/openpgpjs)
+
+[![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs)](https://saucelabs.com/u/openpgpjs)
 
 OpenPGP.js
 ==========

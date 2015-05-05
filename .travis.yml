@@ -1,5 +1,9 @@
 language: node_js
 node_js:
-  - "0.10"
-before_install:
+  - "0.12.2"
+before_script:
   - npm install -g grunt-cli
+script:
+  - grunt
+  - grunt test_travis_mocha_coveralls
+  - grunt test_travis_mocha_saucelabs || true

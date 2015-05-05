@@ -37,6 +37,7 @@ module.exports = function(grunt) {
       },
       unittests: {
         files: {
+          'test/openpgp.js': [ './test/src/index.js' ],
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
@@ -105,10 +106,29 @@ module.exports = function(grunt) {
         }
       }
     },
+    mocha_istanbul: {
+      coverage: {
+        src: 'test',
+        options: {
+          root: 'node_modules/openpgp',
+          timeout: 120000,
+        }
+      },
+      coveralls: {
+        src: ['test'],
+        options: {
+          root: 'node_modules/openpgp',
+          timeout: 120000,
+          coverage: true,
+          reportFormats: ['cobertura','lcovonly']
+        }
+      }
+    },
     mochaTest: {
       unittests: {
         options: {
-          reporter: 'spec'
+          reporter: 'spec',
+          timeout: 120000
         },
         src: [ 'test/unittests.js' ]
       }
@@ -121,6 +141,13 @@ module.exports = function(grunt) {
         src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js'],
         dest: 'test/lib/'
       },
+      unittests: {
+        expand: true,
+        flatten: false,
+        cwd: './',
+        src: ['src/**'],
+        dest: 'test/'
+      },
       zlib: {
         expand: true,
         cwd: 'node_modules/zlibjs/bin/',
@@ -132,11 +159,43 @@ module.exports = function(grunt) {
     connect: {
       dev: {
         options: {
-          port: 8588,
-          base: '.',
-          keepalive: true
+          port: 9000,
+          base: '.'
         }
       }
+    },
+    'saucelabs-mocha': {
+      all: {
+        options: {
+          username: 'openpgpjs',
+          key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
+          urls: ['http://127.0.0.1:9000/test/unittests.html'],
+          build: process.env.TRAVIS_JOB_ID,
+          testname: 'Sauce Unit Test for openpgpjs',
+          browsers: [
+            { browserName:"firefox", version:"38.0", platform:"Linux" },
+            { browserName:"firefox", version:"42.0", platform:"OS X 10.10" },
+            { browserName:"firefox", version:"beta", platform:"Windows 10" },
+            { browserName:"chrome", version:"38.0", platform:"Linux" },
+            { browserName:"chrome", version:"46.0", platform:"OS X 10.10" },
+            { browserName:"chrome", version:"beta", platform:"Windows 10" },
+            { browserName:"internet explorer", version:"11", platform:"Windows 10" },
+            { browserName:"microsoftEdge", version:"20.10240", platform:"Windows 10" },
+            { browserName:"safari", version:"8", platform:"OS X 10.10" },
+            { browserName:"safari", version:"9", platform:"OS X 10.11" },
+            { browserName:"android", version:"4.4", deviceName: "Android Emulator", platform: "Linux" },
+            { browserName:"android", version:"5.1", deviceName: "Android Emulator", platform: "Linux" },
+            { browserName: "iphone", version:"7.0", deviceName: "iPad Simulator", "device-orientation": "portrait", platform:"OS X 10.10" },
+            { browserName: "iphone", version:"9.1", deviceName: "iPad Simulator", "device-orientation": "portrait", platform:"OS X 10.10" }
+          ],
+          public: "public",
+          'max-duration': 360,
+          maxRetries: 1,
+          throttled: 3,
+          pollInterval: 2000,
+          statusCheckAttempts: 360
+        }
+      },
     }
   });
 
@@ -147,10 +206,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-jsdoc');
+  grunt.loadNpmTasks('grunt-mocha-istanbul');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-saucelabs');
 
   grunt.registerTask('set_version', function() {
     if (!version) {
@@ -188,16 +249,6 @@ module.exports = function(grunt) {
 
   grunt.registerTask('documentation', ['jsdoc']);
 
-  // Alias the `mocha_phantomjs` task to run `mocha-phantomjs`
-  grunt.registerTask('mocha_phantomjs', 'mocha-phantomjs', function () {
-    var done = this.async();
-    var mocha = require('child_process').exec('node_modules/mocha-phantomjs/bin/mocha-phantomjs ./test/unittests.html', function (err) {
-      done(err);
-    });
-    mocha.stdout.pipe(process.stdout);
-    mocha.stderr.pipe(process.stderr);
-  });
-
   // Alias the `npm_pack` task to run `npm pack`
   grunt.registerTask('npm_pack', 'npm pack', function () {
     var done = this.async();
@@ -217,6 +268,21 @@ module.exports = function(grunt) {
     npm.stderr.pipe(process.stderr);
   });
 
+  grunt.event.on('coverage', function(lcov, done){
+    require('coveralls').handleInput(lcov, function(err){
+      if (err) {
+        return done(err);
+      }
+    done();
+    });
+  });
+
   // Test/Dev tasks
-  grunt.registerTask('test', ['copy:npm', 'mochaTest', 'mocha_phantomjs']);
+  grunt.registerTask('test', ['copy:npm', 'copy:unittests', 'mochaTest']);
+  grunt.registerTask('coverage', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coverage']);
+  grunt.registerTask('coveralls', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coveralls']);
+  grunt.registerTask('saucelabs', ['default', 'copy:npm', 'copy:unittests', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test_travis_mocha_coveralls', ['copy:npm', 'copy:unittests', 'mocha_istanbul:coveralls']);
+  grunt.registerTask('test_travis_mocha_saucelabs', ['copy:npm', 'copy:unittests', 'connect', 'saucelabs-mocha']);
+
 };
