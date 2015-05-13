@@ -13,6 +13,10 @@ describe('Basic', function() {
       var privKey;
       var pubKey;
 
+      if (openpgp.util.getWebCrypto()) {
+        opt.numBits = 2048; // webkit webcrypto accepts minimum 2048 bit keys
+      }
+
       openpgp.generateKeyPair(opt).then(function(key) {
 
         expect(key).to.exist;
