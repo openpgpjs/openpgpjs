@@ -1,9 +1,10 @@
+[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs)
+[![Bountysource](https://www.bountysource.com/badge/team?team_id=10316&style=raised)](https://www.bountysource.com/teams/openpgpjs?utm_source=openpgpjs&utm_medium=shield&utm_campaign=raised)
+
 OpenPGP.js
 ==========
 
 [OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
-
-[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs)
 
 ### Node support
 
