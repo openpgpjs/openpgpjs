@@ -3,6 +3,7 @@
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
+  forge_sha1 = require('./forge_sha1.js'),
   forge_sha256 = require('./forge_sha256.js');
 
 module.exports = {
@@ -20,6 +21,9 @@ module.exports = {
   sha512: sha.sha512,
   /** @see module:crypto/hash/ripe-md */
   ripemd: require('./ripe-md.js'),
+
+  forge_sha1: forge_sha1,
+  forge_sha256: forge_sha256,
 
   /**
    * Create a hash on the specified data using the specified algorithm

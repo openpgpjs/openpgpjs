@@ -31,7 +31,8 @@
 module.exports = SymmetricallyEncrypted;
 
 var crypto = require('../crypto'),
-  enums = require('../enums.js');
+  enums = require('../enums.js')
+  util = require('../util.js');
 
 /**
  * @constructor
