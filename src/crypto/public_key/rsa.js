@@ -167,7 +167,7 @@ function RSA() {
         };
         
         keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-        if(!(keys instanceof Promise)) { // IE11 KeyOperation
+        if (!(keys instanceof Promise)) { // IE11 KeyOperation
           keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
         }
       }
