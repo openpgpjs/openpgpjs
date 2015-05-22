@@ -140,17 +140,6 @@ function RSA() {
     // Native RSA keygen using Web Crypto
     //
 
-    function convertKeyOperation(keyop, errmsg) {
-      return new Promise(function(resolve, reject) {
-        keyop.onerror = function (err) { 
-          reject(new Error(errmsg));
-        }
-        keyop.oncomplete = function (e) {
-          resolve(e.target.result);
-        }
-      });
-    }
-
     if (webCrypto) {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
@@ -195,8 +184,8 @@ function RSA() {
     function exportKey(keypair) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if(!(key instanceof Promise)) { // IE11 KeyOperation
+      var key = webCrypto.exportKey('jwk', keypair.privateKey);
+      if (!(key instanceof Promise)) { // IE11 KeyOperation
         key = convertKeyOperation(key, 'Error exporting RSA key pair.');
       }
       return key;
@@ -219,6 +208,17 @@ function RSA() {
       }
 
       return key;
+    }
+
+    function convertKeyOperation(keyop, errmsg) {
+      return new Promise(function(resolve, reject) {
+        keyop.onerror = function (err) { 
+          reject(new Error(errmsg));
+        }
+        keyop.oncomplete = function (e) {
+          resolve(e.target.result);
+        }
+      });
     }
 
     //

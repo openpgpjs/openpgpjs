@@ -321,10 +321,10 @@ module.exports = {
     }
 
     if (typeof window !== 'undefined') {
-      if(window.crypto) {
+      if (window.crypto) {
         return window.crypto.subtle || window.crypto.webkitSubtle;
       }
-      if(window.msCrypto) {
+      if (window.msCrypto) {
         return window.msCrypto.subtle;
       }
     }
