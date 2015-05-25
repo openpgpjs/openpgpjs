@@ -4,14 +4,16 @@ var util = require('../util'),
   stream = require('stream');
 
 function CipherFeedback(opts) {
+  opts.objectMode = true;
   stream.Transform.call(this, opts);
-  this.prefixRandom = opts.prefixrandom;
-  //crypto.getPrefixRandom(this.algo);
-  this.cipher = new opts.cipherfn(opts.key);
+
+  this.algo = opts.algo;
+  this.key = (opts.key === undefined) ? crypto.generateSessionKey(this.algo) : opts.key;
+  this.cipherFn = (opts.cipherFn === undefined) ? crypto.cipher[this.algo] : opts.cipherFn;
+  this.cipher = new this.cipherFn(this.key);
   this.sessionKey = opts.key;
-  if (opts.resync === undefined)
-    opts.resync = true;
-  this.resync = opts.resync;
+  this.prefixRandom = (opts.prefixRandom === undefined) ? crypto.getPrefixRandom(this.algo) : opts.prefixRandom;
+  this.resync = (opts.resync === undefined) ? true : opts.resync;
 
   this.blockSize = this.cipher.blockSize;
   this.feedbackRegister = new Uint8Array(this.blockSize);
@@ -140,6 +142,9 @@ CipherFeedback.prototype.encryptBlock = function(chunk) {
 };
 
 CipherFeedback.prototype._transform = function(chunk, encoding, cb) {
+  if (typeof chunk == 'string') {
+    chunk = new Buffer(chunk);
+  }
   var availableIn = chunk && chunk.length || 0;
   if (availableIn + this._offset + 1 < this.blockSize) {
     chunk.copy(this._buffer, this._offset);
@@ -153,7 +158,7 @@ CipherFeedback.prototype._transform = function(chunk, encoding, cb) {
       this.push(encrypted);
     }
     while (availableIn > needed && needed > 0) {
-      block = Buffer.concat([block, 
+      block = Buffer.concat([block,
                             chunk.slice(chunkOffset, chunkOffset + needed)]);
       chunkOffset += needed;
       this.push(this.encryptBlock(block));

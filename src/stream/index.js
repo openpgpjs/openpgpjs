@@ -1,7 +1,7 @@
 'use strict';
 
-var message = require('./message.js'),
-  crypto = require('./crypto.js'),
+var crypto = require('./crypto.js'),
+  message = require('./message.js'),
   packet = require('./packet.js');
 
 module.exports = {

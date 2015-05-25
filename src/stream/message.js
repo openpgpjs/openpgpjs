@@ -16,14 +16,14 @@ function MessageStream(keys, file_length, filename, opts) {
   opts = opts || {};
   packet_stream.HeaderPacketStream.call(this, opts);
 
-  opts['algo'] = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-  opts['key'] = crypto.generateSessionKey(opts['algo']);
-  opts['cipherfn'] = crypto.cipher[opts['algo']];
-  opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
+  opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
+  opts.key = crypto.generateSessionKey(opts.algo);
+  opts.cipherFn = crypto.cipher[opts.algo];
+  opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
   if (config.integrity_protect) {
-    var prefixrandom = opts['prefixrandom'];
+    opts.resync = false;
+    var prefixrandom = opts.prefixRandom;
     var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length - 1);
-    opts['resync'] = false;
     this.hash = crypto.hash.forge_sha1.create();
     this.hash.update(prefix);
   }
@@ -39,16 +39,18 @@ function MessageStream(keys, file_length, filename, opts) {
     util.writeDate(new Date()),
     'binary'
   )
+
   this.encrypted_packet_header = Buffer.concat([
-                  new Buffer(packet.packet.writeHeader(enums.packet.literal, 
-                             this.encrypted_packet_header.length + this.fileLength), 'binary'),
-                  this.encrypted_packet_header
+    new Buffer(packet.Packet.writeHeader(enums.packet.literal,
+               this.encrypted_packet_header.length + this.fileLength), 'binary'),
+               this.encrypted_packet_header
   ]);
 
   this.cipher.on('data', function(data) {
     self.push(util.bin2str(data));
   });
 }
+
 util.inherits(MessageStream, packet_stream.HeaderPacketStream);
 
 MessageStream.prototype.getHeader = function() {
@@ -76,9 +78,9 @@ MessageStream.prototype.getHeader = function() {
 
   if (config.integrity_protect) {
     packet_len += 2 + 20 + 1;
-    first_packet_header = packet.packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
+    first_packet_header = packet.Packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
   } else {
-    first_packet_header = packet.packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
+    first_packet_header = packet.Packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
   }
   return header + first_packet_header;
 }

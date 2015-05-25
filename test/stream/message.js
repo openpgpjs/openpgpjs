@@ -1,19 +1,17 @@
 'use strict';
 
-var cryptoStream = require('../../src/stream/crypto.js'),
-  messageStream = require('../../src/stream/message.js'),
-  openpgp = require('../../src/index.js'),
-  key = require('../../src/key.js'),
-  enums = require('../../src/enums.js'),
-  crypto = require('../../src/crypto'),
-  util = require('../../src/util.js');
+var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+
+var enums = openpgp.enums,
+  crypto = openpgp.crypto,
+  util = openpgp.util,
+  config = openpgp.config,
+  key = openpgp.key;
 
 var chai = require('chai'),
   fs = require('fs'),
 	expect = chai.expect;
 
-
-//openpgp.config.integrity_protect = false;
 describe("Encrypted message", function() {
   var pub_key =
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -82,55 +80,62 @@ describe("Encrypted message", function() {
 
   var pubKeys = openpgp.key.readArmored(pub_key);
   var pubKey = pubKeys.keys[0];
- 
+
   var privKey = openpgp.key.readArmored(priv_key).keys[0];
   privKey.decrypt('hello world');
 
-  it("should decrypt to the same content that was encrypted", function(done) {
+  var integrity_protect_configs = [true, false];
 
-    var plaintext = 'short message\nnext line\n한국어/조선말',
-      plaintext_length = util.encode_utf8(plaintext).length;
+  integrity_protect_configs.forEach(function(config) {
 
-    openpgp.encryptMessage([pubKey], plaintext).then(function(encrypted){
-      var encrypted_message = openpgp.message.readArmored(encrypted);
+    openpgp.config.integrity_protect = config;
 
-      var stream_encrypted_buffer = new Buffer([], 'binary');
-      var message_stream = new openpgp.stream.MessageStream([pubKey], plaintext_length, 'msg.txt');
-      message_stream.on('data', function(encrypted_data) {
-        stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer,
-                                                encrypted_data]);
-      });
-      message_stream.on('end', function() {
-        fs.writeFileSync('test.pgp', stream_encrypted_buffer.toString());
+    it("should decrypt to the same content that was encrypted (integrity_protected: " + config + ")", function(done) {
 
-        var packetList = new openpgp.packet.List(),
-          packetListReal = new openpgp.packet.List(),
-          encrypted_message_data = encrypted_message.packets.write(),
-          encrypted_message_s, encrypted_message_m,
-          decrypted_message_s, decrypted_message_m;
-        
-        packetList.read(stream_encrypted_buffer.toString());
-        encrypted_message_s = new openpgp.message.Message(packetList);
+      var plaintext = 'short message\nnext line\n한국어/조선말',
+        plaintext_length = util.encode_utf8(plaintext).length;
 
-        packetListReal.read(encrypted_message_data);
-        encrypted_message_m = new openpgp.message.Message(packetListReal);
+      openpgp.encryptMessage([pubKey], plaintext).then(function(encrypted){
+        var encrypted_message = openpgp.message.readArmored(encrypted);
 
-        openpgp.decryptMessage(privKey, encrypted_message_m).then(function(decrypted){
-          decrypted_message_m = decrypted;
-          return openpgp.decryptMessage(privKey, encrypted_message_s);
-        }).then(function(decrypted){
-          decrypted_message_s = decrypted;
-          expect(decrypted_message_s).equal(decrypted_message_m);
-          done();
+        var stream_encrypted_buffer = new Buffer([], 'binary');
+        var message_stream = new openpgp.stream.MessageStream([pubKey],
+                                                              plaintext_length,
+                                                              'msg.txt');
+
+        message_stream.on('data', function(encrypted_data) {
+          stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer,
+                                                  encrypted_data]);
         });
 
+        message_stream.on('end', function() {
+          var packetList = new openpgp.packet.List(),
+            packetListReal = new openpgp.packet.List(),
+            encrypted_message_data = encrypted_message.packets.write(),
+            encrypted_message_s, encrypted_message_m,
+            decrypted_message_s, decrypted_message_m;
+
+          packetList.read(stream_encrypted_buffer.toString());
+          encrypted_message_s = new openpgp.message.Message(packetList);
+
+          packetListReal.read(encrypted_message_data);
+          encrypted_message_m = new openpgp.message.Message(packetListReal);
+
+          openpgp.decryptMessage(privKey, encrypted_message_m).then(function(decrypted){
+            decrypted_message_m = decrypted;
+            return openpgp.decryptMessage(privKey, encrypted_message_s);
+          }).then(function(decrypted){
+            decrypted_message_s = decrypted;
+            expect(decrypted_message_s).equal(decrypted_message_m);
+            done();
+          });
+        });
+        message_stream.write(plaintext);
+        message_stream.end();
       });
-      message_stream.write(plaintext);
-      message_stream.end();
+
     });
 
   });
 
 });
-
-
