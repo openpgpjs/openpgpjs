@@ -261,7 +261,7 @@ describe('API functional testing', function() {
       symmAlgos.forEach(function(algo) {
         var symmKey = openpgp.crypto.generateSessionKey(algo);
         var symmencData = openpgp.crypto.cfb.encrypt(openpgp.crypto.getPrefixRandom(algo), algo, plaintext, symmKey, resync);
-        var text = openpgp.crypto.cfb.decrypt(algo, symmKey, symmencData, resync);
+        var text = openpgp.crypto.cfb.decrypt(algo, symmKey, symmencData, resync).join('');
         expect(text).to.equal(plaintext);
       });
     }

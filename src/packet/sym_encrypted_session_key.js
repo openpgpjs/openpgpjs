@@ -119,6 +119,7 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
   } else {
     var decrypted = crypto.cfb.decrypt(
       this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
+    decrypted = decrypted.join('');
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric,
       decrypted[0].keyCodeAt());

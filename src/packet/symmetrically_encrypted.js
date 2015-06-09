@@ -65,7 +65,7 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   var decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, true);
 
-  this.packets.read(decrypted);
+  this.packets.read(decrypted.join(''))
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {

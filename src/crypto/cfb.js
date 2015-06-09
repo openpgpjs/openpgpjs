@@ -178,7 +178,7 @@ module.exports = {
     var iblock = new Uint8Array(block_size);
     var ablock = new Uint8Array(block_size);
     var i, n = '';
-    var text = '';
+    var text = [];
 
     // initialisation vector
     for (i = 0; i < block_size; i++) {
@@ -200,11 +200,11 @@ module.exports = {
     }
 
     /*  RFC4880: Tag 18 and Resync:
-		 *  [...] Unlike the Symmetrically Encrypted Data Packet, no
-		 *  special CFB resynchronization is done after encrypting this prefix
-		 *  data.  See "OpenPGP CFB Mode" below for more details.
+     *  [...] Unlike the Symmetrically Encrypted Data Packet, no
+     *  special CFB resynchronization is done after encrypting this prefix
+     *  data.  See "OpenPGP CFB Mode" below for more details.
 
-		 */
+     */
 
     if (resync) {
       for (i = 0; i < block_size; i++) {
@@ -215,7 +215,7 @@ module.exports = {
 
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext.charCodeAt(n + i);
-          text += String.fromCharCode(ablock[i] ^ iblock[i]);
+          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
         }
       }
     } else {
@@ -226,18 +226,17 @@ module.exports = {
         ablock = cipherfn.encrypt(iblock);
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext.charCodeAt(n + i);
-          text += String.fromCharCode(ablock[i] ^ iblock[i]);
+          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
         }
       }
     }
-
-    n = resync ? 0 : 2;
-
-    text = text.substring(n, ciphertext.length - block_size - 2 + n);
-
+    if (!resync)
+    {
+      text.splice(0, 2);
+    }
+    text.splice(ciphertext.length - block_size - 2);
     return text;
   },
-
 
   normalEncrypt: function(cipherfn, key, plaintext, iv) {
     cipherfn = new cipher[cipherfn](key);
