@@ -93,8 +93,12 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
 
   this.encrypted = crypto.cfb.encrypt(prefixrandom,
-    sessionKeyAlgorithm, tohash, key, false).substring(0,
-    prefix.length + tohash.length);
+      sessionKeyAlgorithm, tohash, key, false);
+
+  if (prefix.length + tohash.length != this.encrypted.length)
+  {
+    this.encrypted = this.encrypted.substring(0, prefix.length + tohash.length);
+  }
 };
 
 /**
