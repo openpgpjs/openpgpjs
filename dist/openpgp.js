@@ -995,7 +995,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.0.1",
+  versionstring: "OpenPGP.js v1.1.0",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
@@ -9092,7 +9092,17 @@ function RSA() {
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
       var keyGenOpt;
 
-      if (window.crypto.subtle) {
+      var keys;
+      if (window.crypto && window.crypto.webkitSubtle) {
+        // outdated spec implemented by Webkit
+        keyGenOpt = {
+          name: 'RSA-OAEP',
+          modulusLength: B, // the specified keysize in bits
+          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+        };
+        keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
+      }
+      else {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
@@ -9102,29 +9112,30 @@ function RSA() {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
         };
-        return webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']).then(exportKey).then(decodeKey);
-
-      } else if (window.crypto.webkitSubtle) {
-        // outdated spec implemented by Webkit
-        keyGenOpt = {
-          name: 'RSA-OAEP',
-          modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
-        };
-        return webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']).then(exportKey).then(function(key) {
-          if (key instanceof ArrayBuffer) {
-            // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari quirk)
-            return decodeKey(JSON.parse(String.fromCharCode.apply(null, new Uint8Array(key))));
-          }
-          return decodeKey(key);
-        });
+        
+        keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+        if (!(keys instanceof Promise)) { // IE11 KeyOperation
+          keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
+        }
       }
+
+      return keys.then(exportKey).then(function(key) {
+        if (key instanceof ArrayBuffer) {
+          // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
+          return decodeKey(JSON.parse(String.fromCharCode.apply(null, new Uint8Array(key))));
+        }
+        return decodeKey(key);
+      });
     }
 
     function exportKey(keypair) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      return webCrypto.exportKey('jwk', keypair.privateKey);
+      var key = webCrypto.exportKey('jwk', keypair.privateKey);
+      if (!(key instanceof Promise)) { // IE11 KeyOperation
+        key = convertKeyOperation(key, 'Error exporting RSA key pair.');
+      }
+      return key;
     }
 
     function decodeKey(jwk) {
@@ -9144,6 +9155,17 @@ function RSA() {
       }
 
       return key;
+    }
+
+    function convertKeyOperation(keyop, errmsg) {
+      return new Promise(function(resolve, reject) {
+        keyop.onerror = function (err) { 
+          reject(new Error(errmsg));
+        }
+        keyop.oncomplete = function (e) {
+          resolve(e.target.result);
+        }
+      });
     }
 
     //
@@ -11975,6 +11997,60 @@ Message.prototype.encrypt = function(keys) {
   // remove packets after encryption
   symEncryptedPacket.packets = new packet.List();
   return new Message(packetlist);
+};
+
+/**
+ * Encrypt the message symmetrically using a passphrase.
+ *   https://tools.ietf.org/html/rfc4880#section-3.7.2.2
+ * @param {String} passphrase
+ * @return {Array<module:message~Message>} new message with encrypted content
+ */
+Message.prototype.symEncrypt = function(passphrase) {
+  if (!passphrase) {
+    throw new Error('The passphrase cannot be empty!');
+  }
+
+  var algo = enums.read(enums.symmetric, config.encryption_cipher);
+  var packetlist = new packet.List();
+
+  // create a Symmetric-key Encrypted Session Key (ESK)
+  var symESKPacket = new packet.SymEncryptedSessionKey();
+  symESKPacket.sessionKeyAlgorithm = algo;
+  symESKPacket.decrypt(passphrase); // generate the session key
+  packetlist.push(symESKPacket);
+
+  // create integrity protected packet
+  var symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
+  symEncryptedPacket.packets = this.packets;
+  symEncryptedPacket.encrypt(algo, symESKPacket.sessionKey);
+  packetlist.push(symEncryptedPacket);
+
+  // remove packets after encryption
+  symEncryptedPacket.packets = new packet.List();
+  return new Message(packetlist);
+};
+
+/**
+ * Decrypt the message symmetrically using a passphrase.
+ *   https://tools.ietf.org/html/rfc4880#section-3.7.2.2
+ * @param {String} passphrase
+ * @return {Array<module:message~Message>} new message with decrypted content
+ */
+Message.prototype.symDecrypt = function(passphrase) {
+  var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey, enums.packet.symEncryptedIntegrityProtected);
+
+  // decrypt Symmetric-key Encrypted Session Key (ESK)
+  var symESKPacket = symEncryptedPacketlist[0];
+  symESKPacket.decrypt(passphrase);
+
+  // decrypt integrity protected packet
+  var symEncryptedPacket = symEncryptedPacketlist[1];
+  symEncryptedPacket.decrypt(symESKPacket.sessionKeyAlgorithm, symESKPacket.sessionKey);
+
+  var resultMsg = new Message(symEncryptedPacket.packets);
+  // remove packets after decryption
+  symEncryptedPacket.packets = new packet.List();
+  return resultMsg;
 };
 
 /**
@@ -16220,8 +16296,13 @@ module.exports = {
       return;
     }
 
-    if (typeof window !== 'undefined' && window.crypto) {
-      return window.crypto.subtle || window.crypto.webkitSubtle;
+    if (typeof window !== 'undefined') {
+      if (window.crypto) {
+        return window.crypto.subtle || window.crypto.webkitSubtle;
+      }
+      if (window.msCrypto) {
+        return window.msCrypto.subtle;
+      }
     }
   }
 };
