@@ -202,11 +202,19 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-    var result = '';
+    var result = [];
     for (var i = 0; i < bin.length; i++) {
-      result += String.fromCharCode(bin[i]);
+      result[i] = String.fromCharCode(bin[i]);
     }
-    return result;
+    return result.join('');
+    // probably a faster alternative as follows
+    // however this function is obviously called with non UInt's at the end sometimes, so this won't pass the unit tests
+    //var CHUNK_SZ = 0x8000;
+    //var result = [];
+    //for (var i = 0; i < bin.length; i += CHUNK_SZ) {
+    //  result.push(String.fromCharCode.apply(null, bin.subarray(i, CHUNK_SZ)));
+    //}
+    //return result.join("");
   },
 
   /**
