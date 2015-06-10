@@ -93,8 +93,12 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
 
   this.encrypted = crypto.cfb.encrypt(prefixrandom,
-    sessionKeyAlgorithm, tohash, key, false).substring(0,
-    prefix.length + tohash.length);
+      sessionKeyAlgorithm, tohash, key, false);
+
+  if (prefix.length + tohash.length != this.encrypted.length)
+  {
+    this.encrypted = this.encrypted.substring(0, prefix.length + tohash.length);
+  }
 };
 
 /**
@@ -110,17 +114,20 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   var decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, false);
 
+  var mdc = decrypted.slice(decrypted.length - 20, decrypted.length).join('');
+
+  decrypted.splice(decrypted.length - 20);
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
   this.hash = crypto.hash.sha1(
-    crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted) + decrypted.substring(0, decrypted.length - 20));
+    crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted) + decrypted.join(''));
 
-
-  var mdc = decrypted.substr(decrypted.length - 20, 20);
 
   if (this.hash != mdc) {
     throw new Error('Modification detected.');
-  } else
-    this.packets.read(decrypted.substr(0, decrypted.length - 22));
+  } else {
+    decrypted.splice(decrypted.length - 2);
+    this.packets.read(decrypted.join(''));
+  }
 };

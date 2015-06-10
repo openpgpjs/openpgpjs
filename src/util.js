@@ -202,11 +202,11 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-    var result = '';
+    var result = [];
     for (var i = 0; i < bin.length; i++) {
-      result += String.fromCharCode(bin[i]);
+      result[i] = String.fromCharCode(bin[i]);
     }
-    return result;
+    return result.join('');
   },
 
   /**

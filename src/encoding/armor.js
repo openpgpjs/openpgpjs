@@ -350,56 +350,56 @@ function dearmor(text) {
  * @static
  */
 function armor(messagetype, body, partindex, parttotal) {
-  var result = "";
+  var result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:
-      result += "-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
-      result += addheader();
-      result += base64.encode(body);
-      result += "\r\n=" + getCheckSum(body) + "\r\n";
-      result += "-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n";
+      result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       break;
     case enums.armor.multipart_last:
-      result += "-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n";
-      result += addheader();
-      result += base64.encode(body);
-      result += "\r\n=" + getCheckSum(body) + "\r\n";
-      result += "-----END PGP MESSAGE, PART " + partindex + "-----\r\n";
+      result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP MESSAGE, PART " + partindex + "-----\r\n");
       break;
     case enums.armor.signed:
-      result += "\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n";
-      result += "Hash: " + body.hash + "\r\n\r\n";
-      result += body.text.replace(/\n-/g, "\n- -");
-      result += "\r\n-----BEGIN PGP SIGNATURE-----\r\n";
-      result += addheader();
-      result += base64.encode(body.data);
-      result += "\r\n=" + getCheckSum(body.data) + "\r\n";
-      result += "-----END PGP SIGNATURE-----\r\n";
+      result.push("\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n");
+      result.push("Hash: " + body.hash + "\r\n\r\n");
+      result.push(body.text.replace(/\n-/g, "\n- -"));
+      result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body.data));
+      result.push("\r\n=" + getCheckSum(body.data) + "\r\n");
+      result.push("-----END PGP SIGNATURE-----\r\n");
       break;
     case enums.armor.message:
-      result += "-----BEGIN PGP MESSAGE-----\r\n";
-      result += addheader();
-      result += base64.encode(body);
-      result += "\r\n=" + getCheckSum(body) + "\r\n";
-      result += "-----END PGP MESSAGE-----\r\n";
+      result.push("-----BEGIN PGP MESSAGE-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP MESSAGE-----\r\n");
       break;
     case enums.armor.public_key:
-      result += "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n";
-      result += addheader();
-      result += base64.encode(body);
-      result += "\r\n=" + getCheckSum(body) + "\r\n";
-      result += "-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n";
+      result.push("-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n");
       break;
     case enums.armor.private_key:
-      result += "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n";
-      result += addheader();
-      result += base64.encode(body);
-      result += "\r\n=" + getCheckSum(body) + "\r\n";
-      result += "-----END PGP PRIVATE KEY BLOCK-----\r\n";
+      result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP PRIVATE KEY BLOCK-----\r\n");
       break;
   }
 
-  return result;
+  return result.join('');
 }
 
 module.exports = {
