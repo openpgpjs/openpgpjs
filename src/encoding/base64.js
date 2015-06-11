@@ -23,51 +23,55 @@ var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
  * @returns {string} radix-64 version of input string
  * @static
  */
-function s2r(t) {
+function s2r(t, o) {
+  // TODO check btoa alternative
   var a, c, n;
-  var r = '',
-    l = 0,
-    s = 0;
+  var r = o ? o : [],
+      l = 0,
+      s = 0;
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = t.charCodeAt(n);
     if (s === 0) {
-      r += b64s.charAt((c >> 2) & 63);
+      r.push(b64s.charAt((c >> 2) & 63));
       a = (c & 3) << 4;
     } else if (s == 1) {
-      r += b64s.charAt((a | (c >> 4) & 15));
+      r.push(b64s.charAt((a | (c >> 4) & 15)));
       a = (c & 15) << 2;
     } else if (s == 2) {
-      r += b64s.charAt(a | ((c >> 6) & 3));
+      r.push(b64s.charAt(a | ((c >> 6) & 3)));
       l += 1;
       if ((l % 60) === 0)
-        r += "\n";
-      r += b64s.charAt(c & 63);
+        r.push("\n");
+      r.push(b64s.charAt(c & 63));
     }
     l += 1;
     if ((l % 60) === 0)
-      r += "\n";
+      r.push("\n");
 
     s += 1;
     if (s == 3)
       s = 0;
   }
   if (s > 0) {
-    r += b64s.charAt(a);
+    r.push(b64s.charAt(a));
     l += 1;
     if ((l % 60) === 0)
-      r += "\n";
-    r += '=';
+      r.push("\n");
+    r.push('=');
     l += 1;
   }
   if (s == 1) {
     if ((l % 60) === 0)
-      r += "\n";
-    r += '=';
+      r.push("\n");
+    r.push('=');
   }
-
-  return r;
+  if (o)
+  {
+    return;
+  }
+  return r.join('');
 }
 
 /**
@@ -77,22 +81,23 @@ function s2r(t) {
  * @static
  */
 function r2s(t) {
+  // TODO check atob alternative
   var c, n;
-  var r = '',
-    s = 0,
-    a = 0;
+  var r = [],
+      s = 0,
+      a = 0;
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64s.indexOf(t.charAt(n));
     if (c >= 0) {
       if (s)
-        r += String.fromCharCode(a | (c >> (6 - s)) & 255);
+        r.push(String.fromCharCode(a | (c >> (6 - s)) & 255));
       s = (s + 2) & 7;
       a = (c << s) & 255;
     }
   }
-  return r;
+  return r.join('');
 }
 
 module.exports = {
