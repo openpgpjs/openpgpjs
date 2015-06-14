@@ -38,7 +38,7 @@ describe("CFB Stream", function() {
 
       cs.on('end', function(d) {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), true);
-        expect(decrypted).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
       });
 
@@ -64,7 +64,7 @@ describe("CFB Stream", function() {
       cs.on('end', function(d) {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key,
                                            util.bin2str(encrypted_data), true);
-        expect(decrypted).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
       });
 
@@ -96,7 +96,7 @@ describe("CFB Stream", function() {
       cs.on('end', function(d) {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key,
                                            util.bin2str(encrypted_data), false);
-        expect(decrypted).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
       });
 
