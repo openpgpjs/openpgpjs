@@ -72,7 +72,7 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
        sessionKeyAlgorithm === 'aes256')) {
     throw new Error('Decryption failed due to missing MDC in combination with modern cipher.')
   }
-  this.packets.read(decrypted.join(''));
+  this.packets.read(decrypted);
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
