@@ -996,11 +996,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-<<<<<<< HEAD
   versionstring: "OpenPGP.js v1.2.0",
-=======
-  versionstring: "OpenPGP.js v0.11.0-PM",
->>>>>>> direct session key manipulation and encryption/decryption
   commentstring: "http://openpgpjs.org",
 
   keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
@@ -1207,13 +1203,9 @@ module.exports = {
 
     var iblock = new Uint8Array(block_size);
     var ablock = new Uint8Array(block_size);
-<<<<<<< HEAD
-    var i, n = '';
-    var text = [];
-=======
+
     var i, j, n;
     var text = new Uint8Array(ciphertext.length - block_size);
->>>>>>> binary strings to typed arrays in most places
 
     // initialisation vector
     for (i = 0; i < block_size; i++) {
@@ -1250,16 +1242,11 @@ module.exports = {
         ablock = cipherfn.encrypt(iblock);
 
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-<<<<<<< HEAD
-          iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
-=======
           iblock[i] = ciphertext[n + i];
           if(j < text.length) {
             text[j] = ablock[i] ^ iblock[i];
             j++;
           }
->>>>>>> binary strings to typed arrays in most places
         }
       }
     } else {
@@ -1269,18 +1256,6 @@ module.exports = {
       for (n = block_size; n < ciphertext.length; n += block_size) {
         ablock = cipherfn.encrypt(iblock);
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-<<<<<<< HEAD
-          iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
-        }
-      }
-    }
-    if (!resync)
-    {
-      text.splice(0, 2);
-    }
-    text.splice(ciphertext.length - block_size - 2);
-=======
           iblock[i] = ciphertext[n + i];
           if(j < text.length) {
             text[j] = ablock[i] ^ iblock[i];
@@ -1294,7 +1269,6 @@ module.exports = {
 
     text = text.subarray(n, ciphertext.length - block_size - 2 + n);
 
->>>>>>> binary strings to typed arrays in most places
     return text;
   },
 
@@ -8984,17 +8958,6 @@ function RSA() {
     // Native RSA keygen using Web Crypto
     //
 
-    function convertKeyOperation(keyop, errmsg) {
-      return new Promise(function(resolve, reject) {
-        keyop.onerror = function (err) { 
-          reject(new Error(errmsg));
-        }
-        keyop.oncomplete = function (e) {
-          resolve(e.target.result);
-        }
-      });
-    }
-
     if (webCrypto) {
       var Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
       var Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
@@ -9022,11 +8985,7 @@ function RSA() {
         };
         
         keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-<<<<<<< HEAD
         if (!(keys instanceof Promise)) { // IE11 KeyOperation
-=======
-        if(!(keys instanceof Promise)) { // IE11 KeyOperation
->>>>>>> direct session key manipulation and encryption/decryption
           keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
         }
       }
@@ -9043,13 +9002,8 @@ function RSA() {
     function exportKey(keypair) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-<<<<<<< HEAD
       var key = webCrypto.exportKey('jwk', keypair.privateKey);
       if (!(key instanceof Promise)) { // IE11 KeyOperation
-=======
-      key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if(!(key instanceof Promise)) { // IE11 KeyOperation
->>>>>>> direct session key manipulation and encryption/decryption
         key = convertKeyOperation(key, 'Error exporting RSA key pair.');
       }
       return key;
@@ -9946,33 +9900,20 @@ function r2s(t) {
   // TODO check atob alternative
   var c, n;
   var r = [],
-<<<<<<< HEAD
-      s = 0,
-      a = 0;
-=======
     s = 0,
     a = 0;
->>>>>>> binary strings to typed arrays in most places
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64s.indexOf(t.charAt(n));
     if (c >= 0) {
       if (s)
-<<<<<<< HEAD
-        r.push(String.fromCharCode(a | (c >> (6 - s)) & 255));
-=======
         r.push(a | (c >> (6 - s)) & 255);
->>>>>>> binary strings to typed arrays in most places
       s = (s + 2) & 7;
       a = (c << s) & 255;
     }
   }
-<<<<<<< HEAD
-  return r.join('');
-=======
   return new Uint8Array(r);
->>>>>>> binary strings to typed arrays in most places
 }
 
 module.exports = {
@@ -15247,25 +15188,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
   tohash = util.concatUint8Array([tohash, hash]);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  this.encrypted = crypto.cfb.encrypt(prefixrandom,
-<<<<<<< HEAD
-      sessionKeyAlgorithm, tohash, key, false);
-
-  if (prefix.length + tohash.length != this.encrypted.length)
-  {
-    this.encrypted = this.encrypted.substring(0, prefix.length + tohash.length);
-  }
-=======
-    sessionKeyAlgorithm, tohash, key, false).subarray(0,
-    prefix.length + tohash.length);
->>>>>>> binary strings to typed arrays in most places
-=======
-  // AES optimizations. Native code for node, asmCrypto is about 50% faster than the default, but does not support resync.
-=======
   // AES optimizations. Native code for node, asmCrypto for browser.
->>>>>>> native crypto and hash for nodeJS
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
@@ -15288,7 +15211,6 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
       sessionKeyAlgorithm, tohash, key, false).subarray(0,
       prefix.length + tohash.length);
   }
->>>>>>> Add asmCrypto, native node crypto calls for faster AES
 };
 
 /**
@@ -15325,24 +15247,6 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
     sessionKeyAlgorithm, key, this.encrypted, false);
   }
 
-<<<<<<< HEAD
-  var mdc = decrypted.slice(decrypted.length - 20, decrypted.length).join('');
-
-  decrypted.splice(decrypted.length - 20);
-
-  // there must be a modification detection code packet as the
-  // last packet and everything gets hashed except the hash itself
-  this.hash = crypto.hash.sha1(
-    crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted) + decrypted.join(''));
-
-
-  if (this.hash != mdc) {
-    throw new Error('Modification detected.');
-  } else {
-    decrypted.splice(decrypted.length - 2);
-    this.packets.read(decrypted.join(''));
-  }
-=======
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
   this.hash = util.Uint8Array2str(crypto.hash.sha1(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), 
@@ -15354,7 +15258,6 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
     throw new Error('Modification detected.');
   } else
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
->>>>>>> binary strings to typed arrays in most places
 };
 
 },{"../config":17,"../crypto":32,"../enums.js":43,"../util.js":74,"buffer":false,"crypto":false}],66:[function(require,module,exports){
@@ -15477,14 +15380,9 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
     this.sessionKey = key;
 
   } else {
-<<<<<<< HEAD
-    var decrypted = crypto.cfb.decrypt(
-      this.sessionKeyEncryptionAlgorithm, key, this.encrypted, true);
-    decrypted = decrypted.join('');
-=======
+
     var decrypted = crypto.cfb.normalDecrypt(
       algo, key, this.encrypted, null);
->>>>>>> direct session key manipulation and encryption/decryption
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric,
       decrypted[0]);
@@ -15591,7 +15489,7 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   var decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, true);
 
-  this.packets.read(decrypted.join(''))
+  this.packets.read(decrypted);
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
@@ -16396,22 +16294,17 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-<<<<<<< HEAD
-=======
 
     // Uncomment for debugging
     if(!Uint8Array.prototype.isPrototypeOf(bin)) {
       throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
 
->>>>>>> binary strings to typed arrays in most places
     var result = [];
     for (var i = 0; i < bin.length; i++) {
       result[i] = String.fromCharCode(bin[i]);
     }
     return result.join('');
-<<<<<<< HEAD
-=======
   },
 
   /**
@@ -16485,7 +16378,6 @@ module.exports = {
       }
     }
     return true;
->>>>>>> binary strings to typed arrays in most places
   },
 
   /**
@@ -16600,17 +16492,10 @@ module.exports = {
     }
 
     if (typeof window !== 'undefined') {
-<<<<<<< HEAD
       if (window.crypto) {
         return window.crypto.subtle || window.crypto.webkitSubtle;
       }
       if (window.msCrypto) {
-=======
-      if(window.crypto) {
-        return window.crypto.subtle || window.crypto.webkitSubtle;
-      }
-      if(window.msCrypto) {
->>>>>>> direct session key manipulation and encryption/decryption
         return window.msCrypto.subtle;
       }
     }

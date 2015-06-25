@@ -84,9 +84,8 @@ function r2s(t) {
   // TODO check atob alternative
   var c, n;
   var r = [],
-
-  var s = 0,
-  var a = 0;
+    s = 0,
+    a = 0;
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
