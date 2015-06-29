@@ -666,5 +666,31 @@ var pgp_desktop_priv =
     });
   });
 
+  it('Generate key - single userid', function(done) {
+    var userId = 'single user';
+    var opt = {numBits: 512, userId: userId, passphrase: '123'};
+    openpgp.generateKeyPair(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId);
+      done();
+    }).catch(done);
+  });
+
+  it('Generate key - multi userid', function(done) {
+    var userId1 = 'first user';
+    var userId2 = 'second user';
+    var opt = {numBits: 512, userId: [userId1, userId2], passphrase: '123'};
+    openpgp.generateKeyPair(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(2);
+      expect(key.users[0].userId.userid).to.equal(userId1);
+      expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.users[1].userId.userid).to.equal(userId2);
+      expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
+      done();
+    }).catch(done);
+  });
+
 });
 

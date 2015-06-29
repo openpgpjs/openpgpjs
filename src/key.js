@@ -906,7 +906,8 @@ function readArmored(armoredText) {
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
- * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String|Array<String>}  options.userId     assumes already in form of "User Name <username@email.com>"
+                                                     If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @return {module:key~Key}
@@ -923,6 +924,9 @@ function generate(options) {
   // Key without passphrase is unlocked by definition
   if (!options.passphrase) {
     options.unlocked = true;
+  }
+  if (String.prototype.isPrototypeOf(options.userId) || typeof options.userId === 'string') {
+    options.userId = [options.userId];
   }
 
   // generate
@@ -951,35 +955,47 @@ function generate(options) {
 
     packetlist = new packet.List();
 
-    userIdPacket = new packet.Userid();
-    userIdPacket.read(options.userId);
+    packetlist.push(secretKeyPacket);
 
-    dataToSign = {};
-    dataToSign.userid = userIdPacket;
-    dataToSign.key = secretKeyPacket;
-    signaturePacket = new packet.Signature();
-    signaturePacket.signatureType = enums.signature.cert_generic;
-    signaturePacket.publicKeyAlgorithm = options.keyType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-    signaturePacket.preferredHashAlgorithms = [];
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-    if (config.integrity_protect) {
-      signaturePacket.features = [];
-      signaturePacket.features.push(1); // Modification Detection
-    }
-    signaturePacket.sign(secretKeyPacket, dataToSign);
+    options.userId.forEach(function(userId, index) {
+
+      userIdPacket = new packet.Userid();
+      userIdPacket.read(userId);
+
+      dataToSign = {};
+      dataToSign.userid = userIdPacket;
+      dataToSign.key = secretKeyPacket;
+      signaturePacket = new packet.Signature();
+      signaturePacket.signatureType = enums.signature.cert_generic;
+      signaturePacket.publicKeyAlgorithm = options.keyType;
+      signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+      signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+      signaturePacket.preferredSymmetricAlgorithms = [];
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+      signaturePacket.preferredHashAlgorithms = [];
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+      signaturePacket.preferredCompressionAlgorithms = [];
+      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+      if (index === 0) {
+        signaturePacket.isPrimaryUserID = true;
+      }
+      if (config.integrity_protect) {
+        signaturePacket.features = [];
+        signaturePacket.features.push(1); // Modification Detection
+      }
+      signaturePacket.sign(secretKeyPacket, dataToSign);
+
+      packetlist.push(userIdPacket);
+      packetlist.push(signaturePacket);
+
+    });
 
     dataToSign = {};
     dataToSign.key = secretKeyPacket;
@@ -991,9 +1007,6 @@ function generate(options) {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
     subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-    packetlist.push(secretKeyPacket);
-    packetlist.push(userIdPacket);
-    packetlist.push(signaturePacket);
     packetlist.push(secretSubkeyPacket);
     packetlist.push(subkeySignaturePacket);
 
