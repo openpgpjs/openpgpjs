@@ -207,7 +207,7 @@ function signClearMessage(privateKeys, text) {
 /**
  * Verifies signatures of cleartext signed message
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
- * @param  {module:cleartext~CleartextMessage} msg    cleartext message object with signatures
+ * @param  {module:cleartext~CleartextMessage|String} msg    cleartext message object with signatures, or armored string
  * @return {Promise<{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}>}
  *                                       cleartext with status of verified signatures
  * @static
@@ -215,6 +215,10 @@ function signClearMessage(privateKeys, text) {
 function verifyClearSignedMessage(publicKeys, msg) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
+  }
+  
+  if (typeof msg === 'string') {
+    msg = new cleartext.readArmored(msg);
   }
 
   if (asyncProxy) {
