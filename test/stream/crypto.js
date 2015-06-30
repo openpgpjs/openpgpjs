@@ -22,28 +22,34 @@ describe("CFB Stream", function() {
 
   symmAlgos.forEach(function(algo) {
     it("should work when calling write once (" + algo + ")", function(done) {
+      var encrypted_data = new Uint8Array(0);
+
       var opts = {};
       opts.algo = algo;
       opts.key = crypto.generateSessionKey(opts.algo);
       opts.cipherFn = crypto.cipher[opts.algo];
       opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
 
-      var encrypted_data = new Buffer([]);
+      opts.onDataFn = function(d) {
+        if(encrypted_data.length) {
+          var tmp = new Uint8Array(encrypted_data.length + d.length);
+          tmp.set(encrypted_data, 0);
+          tmp.set(d, encrypted_data.length);
+          encrypted_data = tmp;
+        } else {
+          encrypted_data = d;
+        }
+      };
 
-      var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-      cs.on('data', function(d) {
-        encrypted_data = Buffer.concat([encrypted_data, d]);
-      });
-
-      cs.on('end', function(d) {
+      opts.onEndFn = function(d) {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), true);
         expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
-      });
+      };
 
-      cs.write(plaintext_a + plaintext_b);
-      cs.end(plaintext_c);
+      var cs = new openpgp.stream.CipherFeedbackStream(opts);
+      cs.write(plaintext_a+plaintext_b+plaintext_c);
+      cs.end();
     });
 
     it("should decrypt when calling write multiple times (" + algo + ")", function(done) {
@@ -53,21 +59,22 @@ describe("CFB Stream", function() {
       opts.cipherFn = crypto.cipher[opts.algo];
       opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
     
-      var encrypted_data = new Buffer([]);
+      var encrypted_data = new Uint8Array(0);
 
-      var cs = new openpgp.stream.CipherFeedbackStream(opts);
+      opts.onDataFn = function(d) {
+        var tmp = new Uint8Array(encrypted_data.length + d.length);
+        tmp.set(encrypted_data, 0);
+        tmp.set(d, encrypted_data.length);
+        encrypted_data = tmp;
+      };
 
-      cs.on('data', function(d) {
-        encrypted_data = Buffer.concat([encrypted_data, d]);
-      });
-
-      cs.on('end', function(d) {
-        var decrypted = crypto.cfb.decrypt(opts.algo, opts.key,
-                                           util.bin2str(encrypted_data), true);
+      opts.onEndFn = function(d) {
+        var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), true);
         expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
-      });
+      };
 
+      var cs = new openpgp.stream.CipherFeedbackStream(opts);
       cs.write(plaintext_a);
       cs.write(plaintext_b);
       cs.write(plaintext_c);
@@ -82,24 +89,23 @@ describe("CFB Stream", function() {
       opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
       opts.resync = false;
     
-      var encrypted_data = new Buffer([]);
+      var encrypted_data = new Uint8Array(0);
 
-      var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-      cs.on('data', function(d) {
+      opts.onDataFn = function(d) {
         var tmp = new Uint8Array(encrypted_data.length + d.length);
         tmp.set(encrypted_data, 0);
         tmp.set(d, encrypted_data.length);
         encrypted_data = tmp;
-      });
+      };
 
-      cs.on('end', function(d) {
+      opts.onEndFn = function(d) {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key,
                                            util.bin2str(encrypted_data), false);
         expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
         done();
-      });
+      };
 
+      var cs = new openpgp.stream.CipherFeedbackStream(opts);
       cs.write(plaintext_a + plaintext_b + plaintext_c);
       cs.end();
     });

@@ -1,5 +1,4 @@
 var util = require('../util.js'),
-  packet_stream = require('./packet.js'),
   crypto_stream = require('./crypto.js'),
   packet = require('../packet'),
   enums = require('../enums.js'),
@@ -13,45 +12,38 @@ function MessageStream(keys, file_length, filename, opts) {
   var self = this;
   filename = filename || 'msg.txt';
   filename = util.encode_utf8(filename);
-  opts = opts || {};
-  packet_stream.HeaderPacketStream.call(this, opts);
-
-  opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-  opts.key = crypto.generateSessionKey(opts.algo);
-  opts.cipherFn = crypto.cipher[opts.algo];
-  opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
+  self.opts = opts || {};
+  self.opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
+  self.opts.key = crypto.generateSessionKey(opts.algo);
+  self.opts.cipherFn = crypto.cipher[opts.algo];
+  self.opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
   if (config.integrity_protect) {
-    opts.resync = false;
-    var prefixrandom = opts.prefixRandom;
+    self.opts.resync = false;
+    var prefixrandom = self.opts.prefixRandom;
     var prefix = prefixrandom + prefixrandom.charAt(prefixrandom.length - 2) + prefixrandom.charAt(prefixrandom.length - 1);
     this.hash = crypto.hash.forge_sha1.create();
     this.hash.update(prefix);
   }
-  
-  this.cipher = new crypto_stream.CipherFeedback(opts);
+
+  this.cipher = new crypto_stream.CipherFeedback(self.opts);
   this.fileLength = file_length;
   this.keys = keys;
 
-  this.encrypted_packet_header = Buffer(
-    String.fromCharCode(enums.write(enums.literal, 'utf8')) + 
+  encrypted_packet_header_part2 = util.str2Uint8Array(
+    String.fromCharCode(enums.write(enums.literal, 'utf8')) +
     String.fromCharCode(filename.length) +
     filename +
-    util.writeDate(new Date()),
-    'binary'
-  )
+    util.writeDate(new Date())
+  );
 
-  this.encrypted_packet_header = Buffer.concat([
-    new Buffer(packet.Packet.writeHeader(enums.packet.literal,
-               this.encrypted_packet_header.length + this.fileLength), 'binary'),
-               this.encrypted_packet_header
-  ]);
+  encrypted_packet_header_part1 = util.str2Uint8Array(
+    packet.Packet.writeHeader(enums.packet.literal, encrypted_packet_header_part2.length + this.fileLength)
+  );
 
-  this.cipher.on('data', function(data) {
-    self.push(util.bin2str(data));
-  });
+  this.encrypted_packet_header = new Uint8Array(encrypted_packet_header_part1.length + encrypted_packet_header_part2.length);
+  this.encrypted_packet_header.set(encrypted_packet_header_part1, 0);
+  this.encrypted_packet_header.set(encrypted_packet_header_part2, encrypted_packet_header_part1.length);
 }
-
-util.inherits(MessageStream, packet_stream.HeaderPacketStream);
 
 MessageStream.prototype.getHeader = function() {
   var that = this,
@@ -82,43 +74,38 @@ MessageStream.prototype.getHeader = function() {
   } else {
     first_packet_header = packet.Packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
   }
-  return header + first_packet_header;
+  return util.str2bin(header + first_packet_header);
 }
 
-MessageStream.prototype._transform = function(chunk, encoding, cb) {
-  packet_stream.HeaderPacketStream.prototype._transform.call(this, chunk, encoding);
-  chunk = new Buffer(chunk, 'binary');
+MessageStream.prototype.write = function(chunk) {
+  if (typeof chunk == 'string') {
+    chunk = util.str2Uint8Array(chunk);
+  }
+  
   if (this.encrypted_packet_header) {
-    chunk = Buffer.concat([this.encrypted_packet_header, chunk]);
+    this.opts.onDataFn(this.getHeader());
+    var tmp = new Uint8Array(this.encrypted_packet_header.length + chunk.length);
+    tmp.set(this.encrypted_packet_header, 0);
+    tmp.set(chunk, this.encrypted_packet_header.length);
+    chunk = tmp;
     this.encrypted_packet_header = null;
   }
-  this.cipher.once('encrypted', function(d) {
-    cb();
-  });
   if (config.integrity_protect) {
-    this.hash.update(chunk.toString('binary'));
+    this.hash.update(util.Uint8Array2str(chunk));
   }
-  this.cipher.write(chunk);
+
+  this.cipher.write(util.Uint8Array2str(chunk)); 
 }
 
-MessageStream.prototype._flush = function(cb) {
-  var self = this;
-  this.cipher.once('flushed', function(d) {
-    cb();
-  });
+MessageStream.prototype.end = function(cb) {
   if (config.integrity_protect) {
     var mdc_header = String.fromCharCode(0xD3) + String.fromCharCode(0x14);
     this.hash.update(mdc_header);
     var hash_digest = this.hash.digest().getBytes();
-
-    this.cipher.once('encrypted', function() {
-      self.cipher.end();
-    });
-    this.cipher.write(
-      new Buffer(mdc_header + hash_digest, 'binary')
-    );
-  } else {
-    this.cipher.end();
+    this.cipher.write(mdc_header + hash_digest);
   }
+
+  this.cipher.end();
 }
+
 module.exports.MessageStream = MessageStream;

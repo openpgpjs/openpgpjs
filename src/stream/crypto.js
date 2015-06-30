@@ -1,12 +1,8 @@
 'use strict';
 
-var util = require('../util'),
-  stream = require('stream');
+var util = require('../util');
 
 function CipherFeedback(opts) {
-  opts.objectMode = true;
-  stream.Transform.call(this, opts);
-
   this.algo = opts.algo;
   this.key = (opts.key === undefined) ? crypto.generateSessionKey(this.algo) : opts.key;
   this.cipherFn = (opts.cipherFn === undefined) ? crypto.cipher[this.algo] : opts.cipherFn;
@@ -21,13 +17,15 @@ function CipherFeedback(opts) {
 
   this._firstBlockEncrypted = false;
   this._eof = false;
-  this._previousCiphertext = new Uint8Array();
-  this._previousChunk = new Buffer([]);
+  this._previousCiphertext = new Uint8Array(0);
+  this._previousChunk = new Uint8Array(0);
 
-  this._buffer = new Buffer(this.blockSize);
+  this._buffer = new Uint8Array(this.blockSize);
   this._offset = 0;
+
+  this.onDataFn = opts.onDataFn;
+  this.onEndFn = opts.onEndFn;
 }
-util.inherits(CipherFeedback, stream.Transform);
 
 CipherFeedback.prototype._encryptFirstBlock = function(chunk) {
   var prefixrandom = this.prefixRandom;
@@ -74,6 +72,7 @@ CipherFeedback.prototype._encryptFirstBlock = function(chunk) {
   } else {
     this.feedbackRegister.set(ciphertext.subarray(0, block_size));
   }
+
   // 8.  FR is encrypted to produce FRE.
   this.feedbackRegisterEncrypted = this.cipher.encrypt(this.feedbackRegister);
 
@@ -95,7 +94,7 @@ CipherFeedback.prototype._encryptBlock = function(chunk) {
     block_size = this.blockSize,
     offset = this.resync ? 0 : 2,
     i, n, begin;
-  for (n = 0; n < (chunk.length + offset); n += block_size) {
+  for (n = 0; n < chunk.length + offset; n += block_size) {
     begin = n;
     // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
     // an 8-octet block).
@@ -118,11 +117,14 @@ CipherFeedback.prototype._encryptBlock = function(chunk) {
     }
     this._previousCiphertext = ciphertext.subarray(0, chunk.length);
   }
+
   this._previousChunk = chunk;
-  if (this._eof)
+  if (this._eof) {
     ciphertext = ciphertext.subarray(0, chunk.length + offset);
-  else
+  } else {
     ciphertext = ciphertext.subarray(0, chunk.length);
+  }
+
   return ciphertext;
 }
 
@@ -134,51 +136,52 @@ CipherFeedback.prototype.encryptBlock = function(chunk) {
   } else {
     ciphertext = this._encryptBlock(chunk);
   }
-  var buffer = new Buffer(ciphertext.length, 'binary');
-  for (var i = 0; i < ciphertext.length; i++) {
-    buffer[i] = ciphertext[i];
-  }
-  return buffer;
+  return ciphertext;
 };
 
-CipherFeedback.prototype._transform = function(chunk, encoding, cb) {
+CipherFeedback.prototype.write = function(chunk) {
+  var i;
   if (typeof chunk == 'string') {
-    chunk = new Buffer(chunk);
+    chunk = util.str2Uint8Array(chunk);
   }
   var availableIn = chunk && chunk.length || 0;
   if (availableIn + this._offset + 1 < this.blockSize) {
-    chunk.copy(this._buffer, this._offset);
+    for(i = 0; i < chunk.length; i += 1) {
+      this._buffer[this._offset + i] = chunk[i];
+    }
     this._offset += availableIn;
   } else {
-    var block = this._buffer.slice(0, this._offset);
+    var block = this._buffer.subarray(0, this._offset);
     var needed = this.blockSize - block.length;
     var chunkOffset = 0;
     if (needed === 0) {
-      var encrypted = this.encryptBlock(block);
-      this.push(encrypted);
+      this.onDataFn(this.encryptBlock(block));
     }
     while (availableIn > needed && needed > 0) {
-      block = Buffer.concat([block,
-                            chunk.slice(chunkOffset, chunkOffset + needed)]);
+      var tmp = new Uint8Array(block.length + needed);
+      tmp.set(block, 0);
+      tmp.set(chunk.subarray(chunkOffset, chunkOffset + needed), block.length);
+      block = tmp;
+
       chunkOffset += needed;
-      this.push(this.encryptBlock(block));
+      this.onDataFn(this.encryptBlock(block));
       availableIn -= needed;
       needed = this.blockSize;
-      block = new Buffer([], 'binary');
+      block = new Uint8Array(0);
     }
     this._offset = availableIn;
-    chunk.slice(chunkOffset).copy(this._buffer);
+    var tmp = chunk.subarray(chunkOffset);
+    for(i = 0; i < tmp.length; i += 1) {
+      this._buffer[i] = tmp[i];
+    }
   }
-  this.emit('encrypted', chunk);
-  cb();
 }
 
-CipherFeedback.prototype._flush = function(cb) {
-  var block = this._buffer.slice(0, this._offset);
+CipherFeedback.prototype.end = function() {
   this._eof = true;
-  this.push(this.encryptBlock(block));
-  this.emit('flushed', null);
-  cb();
+  var block = this._buffer.subarray(0, this._offset);
+  this.onDataFn(this.encryptBlock(block));
+  this.onEndFn();
 }
 
 module.exports.CipherFeedback = CipherFeedback;
