@@ -83,7 +83,9 @@ MessageStream.prototype.write = function(chunk) {
   }
   
   if (this.encrypted_packet_header) {
-    this.opts.onDataFn(this.getHeader());
+    if (this.opts.onDataFn)
+        this.opts.onDataFn(this.getHeader());
+
     var tmp = new Uint8Array(this.encrypted_packet_header.length + chunk.length);
     tmp.set(this.encrypted_packet_header, 0);
     tmp.set(chunk, this.encrypted_packet_header.length);

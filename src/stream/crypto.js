@@ -154,7 +154,7 @@ CipherFeedback.prototype.write = function(chunk) {
     var block = this._buffer.subarray(0, this._offset);
     var needed = this.blockSize - block.length;
     var chunkOffset = 0;
-    if (needed === 0) {
+    if (needed === 0 && this.onDataFn) {
       this.onDataFn(this.encryptBlock(block));
     }
     while (availableIn > needed && needed > 0) {
@@ -164,7 +164,10 @@ CipherFeedback.prototype.write = function(chunk) {
       block = tmp;
 
       chunkOffset += needed;
-      this.onDataFn(this.encryptBlock(block));
+
+      if (this.onDataFn)
+          this.onDataFn(this.encryptBlock(block));
+
       availableIn -= needed;
       needed = this.blockSize;
       block = new Uint8Array(0);
@@ -180,8 +183,12 @@ CipherFeedback.prototype.write = function(chunk) {
 CipherFeedback.prototype.end = function() {
   this._eof = true;
   var block = this._buffer.subarray(0, this._offset);
-  this.onDataFn(this.encryptBlock(block));
-  this.onEndFn();
+
+  if (this.onDataFn)
+    this.onDataFn(this.encryptBlock(block));
+
+  if (this.onEndFn)
+    this.onEndFn();
 }
 
 module.exports.CipherFeedback = CipherFeedback;
