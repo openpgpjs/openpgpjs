@@ -17,6 +17,9 @@ function MessageStream(keys, file_length, filename, opts) {
   self.opts.key = crypto.generateSessionKey(self.opts.algo);
   self.opts.cipherFn = crypto.cipher[self.opts.algo];
   self.opts.prefixRandom = crypto.getPrefixRandom(self.opts.algo);
+
+  this.headerWritten = false;
+
   if (config.integrity_protect) {
     self.opts.resync = false;
     var prefixrandom = self.opts.prefixRandom;
@@ -43,6 +46,37 @@ function MessageStream(keys, file_length, filename, opts) {
   this.encrypted_packet_header = new Uint8Array(encrypted_packet_header_part1.length + encrypted_packet_header_part2.length);
   this.encrypted_packet_header.set(encrypted_packet_header_part1, 0);
   this.encrypted_packet_header.set(encrypted_packet_header_part2, encrypted_packet_header_part1.length);
+
+  var packetList = new packet.List(),
+    symAlgo = keyModule.getPreferredSymAlgo(this.keys),
+    packet_len = this.encrypted_packet_header.length + this.fileLength + this.cipher.blockSize + 2;
+
+  this.keys.forEach(function(key) {
+    var encryptionKeyPacket = key.getEncryptionKeyPacket();
+    if (encryptionKeyPacket) {
+      var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
+      pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
+      pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+      pkESKeyPacket.sessionKey = self.cipher.sessionKey;
+      pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, symAlgo);
+      pkESKeyPacket.encrypt(encryptionKeyPacket);
+      packetList.push(pkESKeyPacket);
+    } else {
+      throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+    }
+  });
+
+  this.header = packetList.write();
+  this.first_packet_header;
+
+  if (config.integrity_protect) {
+    packet_len += 2 + 20 + 1;
+    this.first_packet_header = packet.Packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
+  } else {
+    this.first_packet_header = packet.Packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
+  }
+
+  this.size = this.header.length + this.first_packet_header.length + packet_len;
 }
 
 MessageStream.prototype.setOnDataCallback = function(callback) {
@@ -55,54 +89,25 @@ MessageStream.prototype.setOnEndCallback = function(callback) {
   this.cipher.setOnEndCallback(callback);
 }
 
-MessageStream.prototype.getHeader = function() {
-  var that = this,
-    packetList = new packet.List(),
-    symAlgo = keyModule.getPreferredSymAlgo(this.keys);
-
-  this.keys.forEach(function(key) {
-    var encryptionKeyPacket = key.getEncryptionKeyPacket();
-    if (encryptionKeyPacket) {
-      var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-      pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
-      pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
-      pkESKeyPacket.sessionKey = that.cipher.sessionKey;
-      pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, symAlgo);
-      pkESKeyPacket.encrypt(encryptionKeyPacket);
-      packetList.push(pkESKeyPacket);
-    } else {
-      throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
-    }
-  });
-  var packet_len = this.encrypted_packet_header.length + this.fileLength + this.cipher.blockSize + 2,
-    header = packetList.write(),
-    first_packet_header;
-
-  if (config.integrity_protect) {
-    packet_len += 2 + 20 + 1;
-    first_packet_header = packet.Packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
-  } else {
-    first_packet_header = packet.Packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
-  }
-  return util.str2bin(header + first_packet_header);
-}
-
 MessageStream.prototype.write = function(chunk) {
   if (typeof chunk == 'string') {
     chunk = util.str2Uint8Array(chunk);
   }
   
-  if (this.encrypted_packet_header) {
+  if (!this.headerWritten) {
 
-    if (this.onDataFn)
-        this.onDataFn(this.getHeader());
+    if (this.onDataFn) {
+      this.onDataFn(util.str2bin(this.header + this.first_packet_header));
+    }
 
     var tmp = new Uint8Array(this.encrypted_packet_header.length + chunk.length);
     tmp.set(this.encrypted_packet_header, 0);
     tmp.set(chunk, this.encrypted_packet_header.length);
     chunk = tmp;
-    this.encrypted_packet_header = null;
+
+    this.headerWritten = true;
   }
+
   if (config.integrity_protect) {
     this.hash.update(util.Uint8Array2str(chunk));
   }
