@@ -22,9 +22,14 @@ function CipherFeedback(opts) {
 
   this._buffer = new Uint8Array(this.blockSize);
   this._offset = 0;
+}
 
-  this.onDataFn = opts.onDataFn;
-  this.onEndFn = opts.onEndFn;
+CipherFeedback.prototype.setOnDataCallback = function(callback) {
+  this.onDataFn = callback;
+}
+
+CipherFeedback.prototype.setOnEndCallback = function(callback) {
+  this.onEndFn = callback;
 }
 
 CipherFeedback.prototype._encryptFirstBlock = function(chunk) {

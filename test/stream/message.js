@@ -98,20 +98,18 @@ describe("Encrypted message", function() {
 
       var stream_encrypted_buffer = new Uint8Array(0);
 
-      var opts = {};
+      var message_stream = new openpgp.stream.MessageStream([pubKey],
+                                                            plaintext.length,
+                                                            'msg.txt');
 
-      opts.onDataFn = function(d) {
-        if(stream_encrypted_buffer.length) {
-          var tmp = new Uint8Array(stream_encrypted_buffer.length + d.length);
-          tmp.set(stream_encrypted_buffer, 0);
-          tmp.set(d, stream_encrypted_buffer.length);
-          stream_encrypted_buffer = tmp;
-        } else {
-          stream_encrypted_buffer = d;
-        }
-      };
+      message_stream.setOnDataCallback(function(d) {
+        var tmp = new Uint8Array(stream_encrypted_buffer.length + d.length);
+        tmp.set(stream_encrypted_buffer, 0);
+        tmp.set(d, stream_encrypted_buffer.length);
+        stream_encrypted_buffer = tmp;
+      });
 
-      opts.onEndFn = function() {
+      message_stream.setOnEndCallback(function() {
         var packetList = new openpgp.packet.List(),
           encrypted_message;
 
@@ -123,12 +121,7 @@ describe("Encrypted message", function() {
           expect(decrypted).equal(util.decode_utf8(plaintext));
           done();
         });
-      };
-
-      var message_stream = new openpgp.stream.MessageStream([pubKey],
-                                                            plaintext.length,
-                                                            'msg.txt',
-                                                            opts);
+      });
 
       message_stream.write(plaintext_1);
       message_stream.write(plaintext_2);

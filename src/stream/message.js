@@ -14,9 +14,9 @@ function MessageStream(keys, file_length, filename, opts) {
   filename = util.encode_utf8(filename);
   self.opts = opts || {};
   self.opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-  self.opts.key = crypto.generateSessionKey(opts.algo);
-  self.opts.cipherFn = crypto.cipher[opts.algo];
-  self.opts.prefixRandom = crypto.getPrefixRandom(opts.algo);
+  self.opts.key = crypto.generateSessionKey(self.opts.algo);
+  self.opts.cipherFn = crypto.cipher[self.opts.algo];
+  self.opts.prefixRandom = crypto.getPrefixRandom(self.opts.algo);
   if (config.integrity_protect) {
     self.opts.resync = false;
     var prefixrandom = self.opts.prefixRandom;
@@ -43,6 +43,16 @@ function MessageStream(keys, file_length, filename, opts) {
   this.encrypted_packet_header = new Uint8Array(encrypted_packet_header_part1.length + encrypted_packet_header_part2.length);
   this.encrypted_packet_header.set(encrypted_packet_header_part1, 0);
   this.encrypted_packet_header.set(encrypted_packet_header_part2, encrypted_packet_header_part1.length);
+}
+
+MessageStream.prototype.setOnDataCallback = function(callback) {
+  this.onDataFn = callback;
+  this.cipher.setOnDataCallback(callback);
+}
+
+MessageStream.prototype.setOnEndCallback = function(callback) {
+  this.onEndFn = callback;
+  this.cipher.setOnEndCallback(callback);
 }
 
 MessageStream.prototype.getHeader = function() {
@@ -83,8 +93,9 @@ MessageStream.prototype.write = function(chunk) {
   }
   
   if (this.encrypted_packet_header) {
-    if (this.opts.onDataFn)
-        this.opts.onDataFn(this.getHeader());
+
+    if (this.onDataFn)
+        this.onDataFn(this.getHeader());
 
     var tmp = new Uint8Array(this.encrypted_packet_header.length + chunk.length);
     tmp.set(this.encrypted_packet_header, 0);
