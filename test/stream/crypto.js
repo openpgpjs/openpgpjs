@@ -10,9 +10,9 @@ var   config = openpgp.config,
 var chai = require('chai'),
 	expect = chai.expect;
 
-var plaintext_a = "This is the end, ";
-var plaintext_b = "my only friend, ";
-var plaintext_c = "the end."
+var repetitions = 10;
+var plaintext_part = "This is the end, my only friend, the end.";
+var plaintext = Array(repetitions + 1).join(plaintext_part);
 
 describe("CFB Stream", function() {
   var symmAlgos = Object.keys(openpgp.enums.symmetric);
@@ -41,11 +41,12 @@ describe("CFB Stream", function() {
 
       cs.setOnEndCallback(function() {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), true);
-        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext);
         done();
       });
 
-      cs.write(plaintext_a+plaintext_b+plaintext_c);
+      cs.write(plaintext);
+
       cs.end();
     });
 
@@ -69,13 +70,14 @@ describe("CFB Stream", function() {
 
       cs.setOnEndCallback(function() {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), true);
-        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext);
         done();
       });
 
-      cs.write(plaintext_a);
-      cs.write(plaintext_b);
-      cs.write(plaintext_c);
+      for (var i = 0; i < repetitions; i++) {
+        cs.write(plaintext_part);
+      }
+
       cs.end();
     });
 
@@ -100,11 +102,14 @@ describe("CFB Stream", function() {
 
       cs.setOnEndCallback(function() {
         var decrypted = crypto.cfb.decrypt(opts.algo, opts.key, util.bin2str(encrypted_data), false);
-        expect(decrypted.join("")).equal(plaintext_a + plaintext_b + plaintext_c);
+        expect(decrypted.join("")).equal(plaintext);
         done();
       });
 
-      cs.write(plaintext_a + plaintext_b + plaintext_c);
+      for (var i = 0; i < repetitions; i++) {
+        cs.write(plaintext_part);
+      }
+
       cs.end();
     });
   });

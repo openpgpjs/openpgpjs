@@ -12,6 +12,10 @@ var chai = require('chai'),
   fs = require('fs'),
 	expect = chai.expect;
 
+var repetitions = 10;
+var plaintext_part = util.encode_utf8('七転び八起き\n');
+var plaintext = Array(repetitions + 1).join(plaintext_part);
+
 describe("Encrypted message", function() {
   var pub_key =
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -91,11 +95,6 @@ describe("Encrypted message", function() {
     openpgp.config.integrity_protect = config;
 
     it("should decrypt to the same content that was encrypted (integrity_protected: " + config + ")", function(done) {
-      var plaintext_1 = util.encode_utf8('short message\n');
-      var plaintext_2 = util.encode_utf8('next line\n');
-      var plaintext_3 = util.encode_utf8('最終ステップ');
-      var plaintext = plaintext_1 + plaintext_2 + plaintext_3;
-
       var stream_encrypted_buffer = new Uint8Array(0);
 
       var message_stream = new openpgp.stream.MessageStream([pubKey],
@@ -123,9 +122,10 @@ describe("Encrypted message", function() {
         });
       });
 
-      message_stream.write(plaintext_1);
-      message_stream.write(plaintext_2);
-      message_stream.write(plaintext_3);
+      for (var i = 0; i < repetitions; i++) { 
+        message_stream.write(plaintext_part);
+      }
+
       message_stream.end();
 
     });
