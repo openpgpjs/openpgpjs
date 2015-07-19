@@ -146,43 +146,57 @@ CipherFeedback.prototype.encryptBlock = function(chunk) {
 
 CipherFeedback.prototype.write = function(chunk) {
   var i;
+
   if (typeof chunk == 'string') {
     chunk = util.str2Uint8Array(chunk);
   }
+
   var availableIn = chunk && chunk.length || 0;
-  if (availableIn + this._offset + 1 < this.blockSize) {
-    for(i = 0; i < chunk.length; i += 1) {
-      this._buffer[this._offset + i] = chunk[i];
-    }
-    this._offset += availableIn;
-  } else {
+  var chunkOffset = 0;
+
+  if (this._offset + 1 + availableIn > this.blockSize) {
     var block = this._buffer.subarray(0, this._offset);
     var needed = this.blockSize - block.length;
-    var chunkOffset = 0;
-    if (needed === 0 && this.onDataFn) {
-      this.onDataFn(this.encryptBlock(block));
-    }
-    while (availableIn > needed && needed > 0) {
-      var tmp = new Uint8Array(block.length + needed);
-      tmp.set(block, 0);
-      tmp.set(chunk.subarray(chunkOffset, chunkOffset + needed), block.length);
-      block = tmp;
+    this._offset = 0;
 
-      chunkOffset += needed;
+    if (needed === 0) {
+      if (this.onDataFn) {
+        this.onDataFn(this.encryptBlock(block));
+      }
+    } else {
+      if (availableIn >= needed) {
+        var buf = new Uint8Array(this.blockSize);
+        buf.set(block, 0);
+        buf.set(chunk.subarray(chunkOffset, chunkOffset + needed), block.length);
 
-      if (this.onDataFn)
-          this.onDataFn(this.encryptBlock(block));
+        chunkOffset += needed;
+        availableIn -= needed;
 
-      availableIn -= needed;
-      needed = this.blockSize;
-      block = new Uint8Array(0);
-    }
-    this._offset = availableIn;
-    var tmp = chunk.subarray(chunkOffset);
-    for(i = 0; i < tmp.length; i += 1) {
-      this._buffer[i] = tmp[i];
+        if (this.onDataFn) {
+          this.onDataFn(this.encryptBlock(buf));
+        }
+      }
+
+      while (availableIn >= this.blockSize) {
+        var buf = new Uint8Array(this.blockSize);
+        buf.set(chunk.subarray(chunkOffset, chunkOffset + this.blockSize), 0);
+
+        chunkOffset += this.blockSize;
+        availableIn -= this.blockSize;
+
+        if (this.onDataFn) {
+          this.onDataFn(this.encryptBlock(buf));
+        }
+      }
     }
   }
+
+  var tmp = chunk.subarray(chunkOffset);
+  for(i = 0; i < tmp.length; i += 1) {
+    this._buffer[this._offset + i] = tmp[i];
+  }
+
+  this._offset += availableIn;
 }
 
 CipherFeedback.prototype.end = function() {
