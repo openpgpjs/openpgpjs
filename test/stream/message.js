@@ -12,7 +12,7 @@ var chai = require('chai'),
   fs = require('fs'),
 	expect = chai.expect;
 
-var repetitions = 10;
+var repetitions = 20;
 var plaintext_part = util.encode_utf8('七転び八起き\n');
 var plaintext = Array(repetitions + 1).join(plaintext_part);
 
