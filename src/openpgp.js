@@ -78,18 +78,28 @@ function getWorker() {
  * @return {Promise<String>}      encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text) {
+function encryptMessage(keys, text, encoding) {
   if (!keys.length) {
     keys = [keys];
   }
 
+  if (encoding === undefined) {
+    encoding = 'utf8';
+  }
+
   if (asyncProxy) {
-    return asyncProxy.encryptMessage(keys, text);
+    return asyncProxy.encryptMessage(keys, text, encoding);
   }
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+
+    if (encoding === 'utf8') {
+      msg = message.fromText(text);
+    } else {
+      msg = message.fromBinary(text);
+    }
+
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
@@ -133,14 +143,23 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  *                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg) {
+function decryptMessage(privateKey, msg, encoding) {
+  if (encoding === undefined) {
+    encoding = 'utf8';
+  }
+
   if (asyncProxy) {
-    return asyncProxy.decryptMessage(privateKey, msg);
+    return asyncProxy.decryptMessage(privateKey, msg, encoding);
   }
 
   return execute(function() {
     msg = msg.decrypt(privateKey);
-    return msg.getText();
+
+    if (encoding === 'utf8') {
+      return msg.getText();
+    } else {
+      return msg.getLiteralData();
+    }
 
   }, 'Error decrypting message!');
 }

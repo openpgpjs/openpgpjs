@@ -134,7 +134,7 @@ AsyncProxy.prototype.terminate = function() {
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
  */
-AsyncProxy.prototype.encryptMessage = function(keys, text) {
+AsyncProxy.prototype.encryptMessage = function(keys, text, encoding) {
   var self = this;
 
   return self.execute(function() {
@@ -147,7 +147,8 @@ AsyncProxy.prototype.encryptMessage = function(keys, text) {
     self.worker.postMessage({
       event: 'encrypt-message',
       keys: keys,
-      text: text
+      text: text,
+      encoding: encoding
     });
   });
 };
@@ -183,7 +184,7 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {module:message~Message} message    the message object with the encrypted data
  */
-AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
+AsyncProxy.prototype.decryptMessage = function(privateKey, message, encoding) {
   var self = this;
 
   return self.execute(function() {
@@ -191,7 +192,8 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
     self.worker.postMessage({
       event: 'decrypt-message',
       privateKey: privateKey,
-      message: message
+      message: message,
+      encoding: encoding
     });
   });
 };

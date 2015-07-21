@@ -1,3 +1,5 @@
+'use strict';
+
 var util = require('../util.js'),
   crypto_stream = require('./crypto.js'),
   packet = require('../packet'),
@@ -17,6 +19,7 @@ function MessageStream(keys, file_length, filename, opts) {
   self.opts.key = crypto.generateSessionKey(self.opts.algo);
   self.opts.cipherFn = crypto.cipher[self.opts.algo];
   self.opts.prefixRandom = crypto.getPrefixRandom(self.opts.algo);
+  self.opts.encoding = self.opts.encoding || 'binary';
 
   this.headerWritten = false;
 
@@ -32,14 +35,14 @@ function MessageStream(keys, file_length, filename, opts) {
   this.fileLength = file_length;
   this.keys = keys;
 
-  encrypted_packet_header_part2 = util.str2Uint8Array(
-    String.fromCharCode(enums.write(enums.literal, 'utf8')) +
+  var encrypted_packet_header_part2 = util.str2Uint8Array(
+    String.fromCharCode(enums.write(enums.literal, self.opts.encoding)) +
     String.fromCharCode(filename.length) +
     filename +
     util.writeDate(new Date())
   );
 
-  encrypted_packet_header_part1 = util.str2Uint8Array(
+  var encrypted_packet_header_part1 = util.str2Uint8Array(
     packet.Packet.writeHeader(enums.packet.literal, encrypted_packet_header_part2.length + this.fileLength)
   );
 
@@ -70,7 +73,7 @@ function MessageStream(keys, file_length, filename, opts) {
   this.first_packet_header;
 
   if (config.integrity_protect) {
-    packet_len += 2 + 20 + 1;
+    packet_len += 1 + 20 + 2;
     this.first_packet_header = packet.Packet.writeHeader(enums.packet.symEncryptedIntegrityProtected, packet_len) + String.fromCharCode(1);
   } else {
     this.first_packet_header = packet.Packet.writeHeader(enums.packet.symmetricallyEncrypted, packet_len);
@@ -90,14 +93,14 @@ MessageStream.prototype.setOnEndCallback = function(callback) {
 }
 
 MessageStream.prototype.write = function(chunk) {
-  if (typeof chunk == 'string') {
-    chunk = util.str2Uint8Array(chunk);
+  if (!(chunk instanceof Uint8Array)) {
+    throw new Error('MessageStream.write accepts only Uint8Array');
   }
-  
+
   if (!this.headerWritten) {
 
     if (this.onDataFn) {
-      this.onDataFn(util.str2bin(this.header + this.first_packet_header));
+      this.onDataFn(util.str2Uint8Array(this.header + this.first_packet_header));
     }
 
     var tmp = new Uint8Array(this.encrypted_packet_header.length + chunk.length);
@@ -112,7 +115,7 @@ MessageStream.prototype.write = function(chunk) {
     this.hash.update(util.Uint8Array2str(chunk));
   }
 
-  this.cipher.write(util.Uint8Array2str(chunk)); 
+  this.cipher.write(chunk);
 }
 
 MessageStream.prototype.end = function(cb) {
@@ -120,7 +123,7 @@ MessageStream.prototype.end = function(cb) {
     var mdc_header = String.fromCharCode(0xD3) + String.fromCharCode(0x14);
     this.hash.update(mdc_header);
     var hash_digest = this.hash.digest().getBytes();
-    this.cipher.write(mdc_header + hash_digest);
+    this.cipher.write(util.str2Uint8Array(mdc_header + hash_digest));
   }
 
   this.cipher.end();

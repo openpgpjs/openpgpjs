@@ -20,8 +20,15 @@ function CipherFeedback(opts) {
   this._previousCiphertext = new Uint8Array(0);
   this._previousChunk = new Uint8Array(0);
 
-  this._buffer = new Uint8Array(this.blockSize);
-  this._offset = 0;
+  this._buffers = [];
+  this._buffered_total = 0;
+
+  this._blocks = [];
+  this._blocks.push(new Uint8Array(this.blockSize));
+  this._blocks.push(new Uint8Array(this.blockSize));
+  this._total = 0;
+
+  this._current_block = 0;
 }
 
 CipherFeedback.prototype.setOnDataCallback = function(callback) {
@@ -145,69 +152,57 @@ CipherFeedback.prototype.encryptBlock = function(chunk) {
 };
 
 CipherFeedback.prototype.write = function(chunk) {
-  var i;
-
-  if (typeof chunk == 'string') {
-    chunk = util.str2Uint8Array(chunk);
+  if (!(chunk instanceof Uint8Array)) {
+    throw new Error('MessageStream.write accepts only Uint8Array');
   }
 
-  var availableIn = chunk && chunk.length || 0;
-  var chunkOffset = 0;
+  if (chunk.length) {
+    this._total += chunk.length;
+    this._buffers.push(chunk);
+    this._buffered_total += chunk.length;
+  }
 
-  if (this._offset + 1 + availableIn > this.blockSize) {
-    var block = this._buffer.subarray(0, this._offset);
-    var needed = this.blockSize - block.length;
-    this._offset = 0;
-
-    if (needed === 0) {
-      if (this.onDataFn) {
-        this.onDataFn(this.encryptBlock(block));
-      }
-    } else {
-      if (availableIn >= needed) {
-        var buf = new Uint8Array(this.blockSize);
-        buf.set(block, 0);
-        buf.set(chunk.subarray(chunkOffset, chunkOffset + needed), block.length);
-
-        chunkOffset += needed;
-        availableIn -= needed;
-
-        if (this.onDataFn) {
-          this.onDataFn(this.encryptBlock(buf));
+  while (this._buffered_total >= this.blockSize) {
+    this._current_block = (this._current_block == 0) ? 1 : 0;
+    var buf = new Uint8Array(this.blockSize); //this._blocks[this._current_block];
+    var missing = this.blockSize;
+    var offset = 0;
+    for (var i = 0; i < this._buffers.length; i++) {
+      var copy_length = this._buffers[i].length > missing ? missing : this._buffers[i].length;
+      buf.set(this._buffers[i].subarray(0, copy_length), offset);
+      offset += copy_length;
+      missing -= copy_length;
+      this._buffered_total -= copy_length;
+      if (missing === 0) {
+        if (copy_length != this._buffers[i].length) {
+          this._buffers[i] = this._buffers[i].subarray(copy_length);
+          this._buffers = this._buffers.slice(i);
+        } else {
+          this._buffers = this._buffers.slice(i + 1);
         }
-      }
-
-      while (availableIn >= this.blockSize) {
-        var buf = new Uint8Array(this.blockSize);
-        buf.set(chunk.subarray(chunkOffset, chunkOffset + this.blockSize), 0);
-
-        chunkOffset += this.blockSize;
-        availableIn -= this.blockSize;
-
-        if (this.onDataFn) {
-          this.onDataFn(this.encryptBlock(buf));
-        }
+        this.onDataFn(this.encryptBlock(buf));
+        break;
       }
     }
   }
-
-  var tmp = chunk.subarray(chunkOffset);
-  for(i = 0; i < tmp.length; i += 1) {
-    this._buffer[this._offset + i] = tmp[i];
-  }
-
-  this._offset += availableIn;
 }
 
 CipherFeedback.prototype.end = function() {
   this._eof = true;
-  var block = this._buffer.subarray(0, this._offset);
 
-  if (this.onDataFn)
-    this.onDataFn(this.encryptBlock(block));
+  if (this._buffered_total > 0) {
+    var buf = new Uint8Array(this._buffered_total);
+    var offset = 0;
+    for (var i = 0; i < this._buffers.length; i++) {
+      buf.set(this._buffers[i], offset);
+      offset += this._buffers[i].length;
+    }
+    this.onDataFn(this.encryptBlock(buf));
+  }
 
-  if (this.onEndFn)
+  if (this.onEndFn) {
     this.onEndFn();
+  }
 }
 
 module.exports.CipherFeedback = CipherFeedback;

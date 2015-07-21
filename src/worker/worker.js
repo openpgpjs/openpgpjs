@@ -69,7 +69,7 @@ self.onmessage = function (event) {
         msg.keys = [msg.keys];
       }
       msg.keys = msg.keys.map(packetlistCloneToKey);
-      window.openpgp.encryptMessage(msg.keys, msg.text).then(function(data) {
+      window.openpgp.encryptMessage(msg.keys, msg.text, msg.encoding).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
@@ -90,7 +90,7 @@ self.onmessage = function (event) {
     case 'decrypt-message':
       msg.privateKey = packetlistCloneToKey(msg.privateKey);
       msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptMessage(msg.privateKey, msg.message).then(function(data) {
+      window.openpgp.decryptMessage(msg.privateKey, msg.message, msg.encoding).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});

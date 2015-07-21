@@ -9,12 +9,11 @@ var enums = openpgp.enums,
   key = openpgp.key;
 
 var chai = require('chai'),
-  fs = require('fs'),
-	expect = chai.expect;
+  expect = chai.expect;
 
 var repetitions = 20;
-var plaintext_part = util.encode_utf8('七転び八起き\n');
-var plaintext = Array(repetitions + 1).join(plaintext_part);
+var plaintext_part = "antani\n";
+var plaintext = new Array(repetitions + 1).join(plaintext_part);
 
 describe("Encrypted message", function() {
   var pub_key =
@@ -99,7 +98,8 @@ describe("Encrypted message", function() {
 
       var message_stream = new openpgp.stream.MessageStream([pubKey],
                                                             plaintext.length,
-                                                            'msg.txt');
+                                                            'msg.txt',
+                                                            {encoding: 'binary'});
 
       message_stream.setOnDataCallback(function(d) {
         var tmp = new Uint8Array(stream_encrypted_buffer.length + d.length);
@@ -115,15 +115,14 @@ describe("Encrypted message", function() {
         packetList.read(util.Uint8Array2str(stream_encrypted_buffer));
         encrypted_message = new openpgp.message.Message(packetList);
 
-        openpgp.decryptMessage(privKey, encrypted_message).then(function(decrypted) {
-          // openpgp.decryptMessage automatically apply a decode_utf8
-          expect(decrypted).equal(util.decode_utf8(plaintext));
+        openpgp.decryptMessage(privKey, encrypted_message, 'binary').then(function(decrypted) {
+          expect(decrypted).equal(plaintext);
           done();
         });
       });
 
-      for (var i = 0; i < repetitions; i++) { 
-        message_stream.write(plaintext_part);
+      for (var i = 0; i < repetitions; i++) {
+        message_stream.write(util.str2Uint8Array(plaintext_part));
       }
 
       message_stream.end();

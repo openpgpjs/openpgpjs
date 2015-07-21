@@ -45,7 +45,7 @@ describe("CFB Stream", function() {
         done();
       });
 
-      cs.write(plaintext);
+      cs.write(util.str2Uint8Array(plaintext));
 
       cs.end();
     });
@@ -75,7 +75,7 @@ describe("CFB Stream", function() {
       });
 
       for (var i = 0; i < repetitions; i++) {
-        cs.write(plaintext_part);
+        cs.write(util.str2Uint8Array(plaintext_part));
       }
 
       cs.end();
@@ -107,7 +107,7 @@ describe("CFB Stream", function() {
       });
 
       for (var i = 0; i < repetitions; i++) {
-        cs.write(plaintext_part);
+        cs.write(util.str2Uint8Array(plaintext_part));
       }
 
       cs.end();
