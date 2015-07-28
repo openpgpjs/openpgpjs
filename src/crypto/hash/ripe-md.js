@@ -20,9 +20,15 @@
 /* Modified by Recurity Labs GmbH
  */
 
+/* Modified by ProtonTech AG
+ */
+
 /**
+ * @requires util
  * @module crypto/hash/ripe-md
  */
+
+var util = require('../../util.js');
 
 var RMDsize = 160;
 var X = [];
@@ -284,14 +290,14 @@ function RMD(message) {
 
 
 function RMDstring(message) {
-  var hashcode = RMD(message);
+  var hashcode = RMD(util.Uint8Array2str(message));
   var retString = "";
 
   for (var i = 0; i < RMDsize / 8; i++) {
     retString += String.fromCharCode(hashcode[i]);
   }
 
-  return retString;
+  return util.str2Uint8Array(retString);
 }
 
 module.exports = RMDstring;

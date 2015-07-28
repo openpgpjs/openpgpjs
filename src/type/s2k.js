@@ -64,30 +64,30 @@ S2K.prototype.get_count = function () {
  */
 S2K.prototype.read = function (bytes) {
   var i = 0;
-  this.type = enums.read(enums.s2k, bytes.charCodeAt(i++));
-  this.algorithm = enums.read(enums.hash, bytes.charCodeAt(i++));
+  this.type = enums.read(enums.s2k, bytes[i++]);
+  this.algorithm = enums.read(enums.hash, bytes[i++]);
 
   switch (this.type) {
     case 'simple':
       break;
 
     case 'salted':
-      this.salt = bytes.substr(i, 8);
+      this.salt = bytes.subarray(i, i + 8);
       i += 8;
       break;
 
     case 'iterated':
-      this.salt = bytes.substr(i, 8);
+      this.salt = bytes.subarray(i, i + 8);
       i += 8;
 
       // Octet 10: count, a one-octet, coded value
-      this.c = bytes.charCodeAt(i++);
+      this.c = bytes[i++];
       break;
 
     case 'gnu':
-      if (bytes.substr(i, 3) == "GNU") {
+      if (util.Uint8Array2str(bytes.subarray(i, 3)) == "GNU") {
         i += 3; // GNU
-        var gnuExtType = 1000 + bytes.charCodeAt(i++);
+        var gnuExtType = 1000 + bytes[i++];
         if (gnuExtType == 1001) {
           this.type = gnuExtType;
           // GnuPG extension mode 1001 -- don't write secret key at all
@@ -108,82 +108,90 @@ S2K.prototype.read = function (bytes) {
 
 
 /**
- * writes an s2k hash based on the inputs.
- * @return {String} Produced key of hashAlgorithm hash length
+ * Serializes s2k information
+ * @return {Uint8Array} binary representation of s2k
  */
 S2K.prototype.write = function () {
-  var bytes = String.fromCharCode(enums.write(enums.s2k, this.type));
-  bytes += String.fromCharCode(enums.write(enums.hash, this.algorithm));
+
+  var arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
 
   switch (this.type) {
     case 'simple':
       break;
     case 'salted':
-      bytes += this.salt;
+      arr.push(this.salt);
       break;
     case 'iterated':
-      bytes += this.salt;
-      bytes += String.fromCharCode(this.c);
+      arr.push(this.salt);
+      arr.push(new Uint8Array([this.c]));
       break;
   }
 
-  return bytes;
+  return util.concatUint8Array(arr);
 };
 
 /**
  * Produces a key using the specified passphrase and the defined
  * hashAlgorithm
  * @param {String} passphrase Passphrase containing user input
- * @return {String} Produced key with a length corresponding to
+ * @return {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
-  passphrase = util.encode_utf8(passphrase);
+  passphrase = util.str2Uint8Array(util.encode_utf8(passphrase));
 
   function round(prefix, s2k) {
     var algorithm = enums.write(enums.hash, s2k.algorithm);
 
     switch (s2k.type) {
       case 'simple':
-        return crypto.hash.digest(algorithm, prefix + passphrase);
+        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix,passphrase]));
 
       case 'salted':
         return crypto.hash.digest(algorithm,
-          prefix + s2k.salt + passphrase);
+          util.concatUint8Array([prefix, s2k.salt, passphrase]));
 
       case 'iterated':
         var isp = [],
           count = s2k.get_count();
-        data = s2k.salt + passphrase;
+        data = util.concatUint8Array([s2k.salt,passphrase]);
 
         while (isp.length * data.length < count)
           isp.push(data);
 
-        isp = isp.join('');
+        isp = util.concatUint8Array(isp);
 
         if (isp.length > count)
-          isp = isp.substr(0, count);
+          isp = isp.subarray(0, count);
 
-        return crypto.hash.digest(algorithm, prefix + isp);
+        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix,isp]));
     }
   }
 
-  var result = '',
-    prefix = '';
+  var arr = [],
+    rlength = 0,
+    prefix = new Uint8Array(numBytes);
 
-  while (result.length <= numBytes) {
-    result += round(prefix, this);
-    prefix += String.fromCharCode(0);
+  for(var i = 0; i<numBytes; i++) {
+    prefix[i] = 0;
+  }
+  i = 0;
+
+  while (rlength <= numBytes) {
+    var result = round(prefix.subarray(0,i), this);
+    arr.push(result);
+    rlength += result.length;
+    i++;
   }
 
-  return result.substr(0, numBytes);
+  return util.concatUint8Array(arr).subarray(0, numBytes);
 };
 
 module.exports.fromClone = function (clone) {
   var s2k = new S2K();
-  this.algorithm = clone.algorithm;
-  this.type = clone.type;
-  this.c = clone.c;
-  this.salt = clone.salt;
+  s2k.algorithm = clone.algorithm;
+  s2k.type = clone.type;
+  s2k.c = clone.c;
+  s2k.salt = clone.salt;
   return s2k;
 };

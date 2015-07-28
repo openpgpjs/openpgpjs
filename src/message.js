@@ -26,7 +26,8 @@
 
 'use strict';
 
-var packet = require('./packet'),
+var util = require('./util.js'),
+  packet = require('./packet'),
   enums = require('./enums.js'),
   armor = require('./encoding/armor.js'),
   config = require('./config'),
@@ -85,36 +86,79 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message
- * @param {module:key~Key} privateKey private key with decrypted secret data
+ * @param {module:key~Key|String} privateKey private key with decrypted secret data, password or session key
+ * @param {String} sessionKeyAlgorithm if privateKey is a session key, this must be set to the session key algorithm (i.e. 'aes256'). 
+ *                              Do not set if privateKey is not a session key.
  * @return {Array<module:message~Message>} new message with decrypted content
  */
-Message.prototype.decrypt = function(privateKey) {
-  var encryptionKeyIds = this.getEncryptionKeyIds();
-  if (!encryptionKeyIds.length) {
-    // nothing to decrypt return unmodified message
-    return this;
+Message.prototype.decrypt = function(privateKey, sessionKeyAlgorithm) {
+  var keyObj;
+  if(sessionKeyAlgorithm) {
+    keyObj = {key: privateKey, algo: sessionKeyAlgorithm};
   }
-  var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
-  if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
-  var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-  var pkESKeyPacket;
-  for (var i = 0; i < pkESKeyPacketlist.length; i++) {
-    if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
-      pkESKeyPacket = pkESKeyPacketlist[i];
-      pkESKeyPacket.decrypt(privateKeyPacket);
-      break;
-    }
+  else {
+    keyObj = this.decryptSessionKey(privateKey);
   }
-  if (pkESKeyPacket) {
+  if(keyObj) {
     var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
     if (symEncryptedPacketlist.length !== 0) {
       var symEncryptedPacket = symEncryptedPacketlist[0];
-      symEncryptedPacket.decrypt(pkESKeyPacket.sessionKeyAlgorithm, pkESKeyPacket.sessionKey);
+      symEncryptedPacket.decrypt(keyObj.algo, keyObj.key);
       var resultMsg = new Message(symEncryptedPacket.packets);
       // remove packets after decryption
       symEncryptedPacket.packets = new packet.List();
       return resultMsg;
     }
+  }
+};
+
+/**
+ * Decrypt session key
+ * @param {module:key~Key|String} privateKey private key with decrypted secret data or password
+ * @return {Object} object with sessionKey, algo
+ */
+Message.prototype.decryptSessionKey = function(privateKey) {
+  var keyPacket;
+  if(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string') {
+    var symEncryptedSessionKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
+    var symLength = symEncryptedSessionKeyPacketlist.length;
+    for (var i = 0; i < symLength; i++) {
+      keyPacket = symEncryptedSessionKeyPacketlist[i];
+      try {
+        keyPacket.decrypt(privateKey);
+        break;
+      }
+      catch(err) {
+        if(i === (symLength-1)) {
+          throw err;
+        }
+      }
+    }
+
+    if(!keyPacket) {
+      throw new Error('No symmetrically encrypted session key packet found.');
+    }
+  }
+  else {
+    var encryptionKeyIds = this.getEncryptionKeyIds();
+    if (!encryptionKeyIds.length) {
+      // nothing to decrypt return unmodified message
+      return this;
+    }
+    var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
+    if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+    for (var i = 0; i < pkESKeyPacketlist.length; i++) {
+      if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
+        keyPacket = pkESKeyPacketlist[i];
+        keyPacket.decrypt(privateKeyPacket);
+        break;
+      }
+    }
+  }
+
+  if (keyPacket) {
+    return {key: keyPacket.sessionKey, algo: keyPacket.sessionKeyAlgorithm};
   }
 };
 
@@ -125,6 +169,15 @@ Message.prototype.decrypt = function(privateKey) {
 Message.prototype.getLiteralData = function() {
   var literal = this.packets.findPacket(enums.packet.literal);
   return literal && literal.data || null;
+};
+
+/**
+ * Get filename from literal data packet
+ * @return {(String|null)} filename of literal data packet as string
+ */
+Message.prototype.getFilename = function() {
+  var literal = this.packets.findPacket(enums.packet.literal);
+  return literal && literal.getFilename() || null;
 };
 
 /**
@@ -142,27 +195,29 @@ Message.prototype.getText = function() {
 
 /**
  * Encrypt the message
- * @param  {Array<module:key~Key>} keys array of keys, used to encrypt the message
+ * @param  {(Array<module:key~Key>|module:key~Key)} public key(s) for message encryption
+ * @param  {(Array<String>|String)} password(s) for message encryption
  * @return {Array<module:message~Message>} new message with encrypted content
  */
-Message.prototype.encrypt = function(keys) {
-  var packetlist = new packet.List();
-  var symAlgo = keyModule.getPreferredSymAlgo(keys);
+Message.prototype.encrypt = function(keys, passwords) {
+
+  /** Choose symAlgo */
+  var symAlgo;
+  if(keys) {
+    symAlgo = keyModule.getPreferredSymAlgo(keys);
+  }
+  else if(passwords) {
+    symAlgo = config.encryption_cipher;
+  }
+  else {
+    throw new Error('No keys or passwords');
+  }
+
   var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
-  keys.forEach(function(key) {
-    var encryptionKeyPacket = key.getEncryptionKeyPacket();
-    if (encryptionKeyPacket) {
-      var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-      pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
-      pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
-      pkESKeyPacket.sessionKey = sessionKey;
-      pkESKeyPacket.sessionKeyAlgorithm = enums.read(enums.symmetric, symAlgo);
-      pkESKeyPacket.encrypt(encryptionKeyPacket);
-      packetlist.push(pkESKeyPacket);
-    } else {
-      throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
-    }
-  });
+
+  var msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
+  var packetlist = msg.packets;
+
   var symEncryptedPacket;
   if (config.integrity_protect) {
     symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
@@ -174,6 +229,54 @@ Message.prototype.encrypt = function(keys) {
   packetlist.push(symEncryptedPacket);
   // remove packets after encryption
   symEncryptedPacket.packets = new packet.List();
+  return msg;
+};
+
+/**
+ * Encrypt a session key
+ * @param  {String} session key for encryption
+ * @param  {String} session key algorithm
+ * @param  {(Array<module:key~Key>|module:key~Key)} public key(s) for message encryption
+ * @param  {(Array<String>|String)} password(s) for message encryption
+ * @return {Array<module:message~Message>} new message with encrypted content
+ */
+function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
+
+  /** Convert to arrays if necessary */
+  if(keys && !Array.prototype.isPrototypeOf(keys)) {
+    keys = [keys]
+  }
+  if(passwords && !Array.prototype.isPrototypeOf(passwords)) {
+    passwords = [passwords]
+  }
+
+  var packetlist = new packet.List();
+  if(keys) {
+    keys.forEach(function(key) {
+      var encryptionKeyPacket = key.getEncryptionKeyPacket();
+      if (encryptionKeyPacket) {
+        var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
+        pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
+        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+        pkESKeyPacket.sessionKey = sessionKey;
+        pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
+        pkESKeyPacket.encrypt(encryptionKeyPacket);
+        packetlist.push(pkESKeyPacket);
+      } else {
+        throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+      }
+    });
+  }
+  if(passwords) {
+    passwords.forEach(function(password) {
+      var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
+      symEncryptedSessionKeyPacket.sessionKey = sessionKey;
+      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
+      symEncryptedSessionKeyPacket.encrypt(password);
+      packetlist.push(symEncryptedSessionKeyPacket);
+    });
+  }
+
   return new Message(packetlist);
 };
 
@@ -343,6 +446,16 @@ function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   var input = armor.decode(armoredText).data;
+  return read(input);
+}
+
+/**
+ * reads an OpenPGP binary string message and returns a message object
+ * @param {Uint8Array} binary message
+ * @return {module:message~Message} new message object
+ * @static
+ */
+function read(input) {
   var packetlist = new packet.List();
   packetlist.read(input);
   var newMessage = new Message(packetlist);
@@ -352,11 +465,11 @@ function readArmored(armoredText) {
 /**
  * Create a message object from signed content and a detached armored signature.
  * @param {String} content An 8 bit ascii string containing e.g. a MIME subtree with text nodes or attachments
- * @param {String} detachedSignature The detached ascii armored PGP signarure
+ * @param {String} detachedSignature The detached ascii armored PGP signature
  */
 function readSignedContent(content, detachedSignature) {
   var literalDataPacket = new packet.Literal();
-  literalDataPacket.setBytes(content, enums.read(enums.literal, enums.literal.binary));
+  literalDataPacket.setBytes(util.str2Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
   var packetlist = new packet.List();
   packetlist.push(literalDataPacket);
   var input = armor.decode(detachedSignature).data;
@@ -368,13 +481,17 @@ function readSignedContent(content, detachedSignature) {
 /**
  * creates new message object from text
  * @param {String} text
+ * @param {String} filename (optional)
  * @return {module:message~Message} new message object
  * @static
  */
-function fromText(text) {
+function fromText(text, filename) {
   var literalDataPacket = new packet.Literal();
   // text will be converted to UTF8
   literalDataPacket.setText(text);
+  if(filename !== undefined) {
+    literalDataPacket.setFilename(filename);
+  }
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
@@ -383,13 +500,21 @@ function fromText(text) {
 
 /**
  * creates new message object from binary data
- * @param {String} bytes
+ * @param {Uint8Array} bytes
+ * @param {String} filename (optional)
  * @return {module:message~Message} new message object
  * @static
  */
-function fromBinary(bytes) {
+function fromBinary(bytes, filename) {
+  if(!Uint8Array.prototype.isPrototypeOf(bytes)) {
+    throw new Error('Data must be in the form of a Uint8Array');
+  }
+
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
+  if(filename !== undefined) {
+    literalDataPacket.setFilename(filename);
+  }
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   var newMessage = new Message(literalDataPacketlist);
@@ -397,7 +522,9 @@ function fromBinary(bytes) {
 }
 
 exports.Message = Message;
+exports.read = read;
 exports.readArmored = readArmored;
 exports.readSignedContent = readSignedContent;
 exports.fromText = fromText;
 exports.fromBinary = fromBinary;
+exports.encryptSessionKey = encryptSessionKey;

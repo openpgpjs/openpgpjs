@@ -217,7 +217,7 @@ Key.prototype.getUserIds = function() {
   var userids = [];
   for (var i = 0; i < this.users.length; i++) {
     if (this.users[i].userId) {
-      userids.push(this.users[i].userId.write());
+      userids.push(util.Uint8Array2str(this.users[i].userId.write()));
     }
   }
   return userids;
@@ -590,7 +590,7 @@ function mergeSignatures(source, dest, attr, checkFn) {
       source.forEach(function(sourceSig) {
         if (!sourceSig.isExpired() && (!checkFn || checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
-              return destSig.signature === sourceSig.signature;
+              return util.equalsUint8Array(destSig.signature,sourceSig.signature);
             })) {
           dest[attr].push(sourceSig);
         }
@@ -952,7 +952,7 @@ function generate(options) {
     packetlist = new packet.List();
 
     userIdPacket = new packet.Userid();
-    userIdPacket.read(options.userId);
+    userIdPacket.read(util.str2Uint8Array(options.userId));
 
     dataToSign = {};
     dataToSign.userid = userIdPacket;

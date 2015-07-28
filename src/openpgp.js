@@ -75,29 +75,73 @@ function getWorker() {
 }
 
 /**
- * Encrypts message text with keys
- * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
- * @param  {String} text message as native JavaScript string
- * @return {Promise<String>}      encrypted ASCII armored message
+ * Encrypts message text/data with keys or passwords
+ * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
+ * @param  {String} data                                       text/data message as native JavaScript string/binary string
+ * @param  {(Array<String>|String)} passwords                  passwords for the message
+ * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
+ *                                                             filename {String}, and packets {Boolean}
+ * @return {Promise<String> or Promise<Packetlist>}            encrypted ASCII armored message, or Packetlist if params.packets is true
  * @static
  */
-function encryptMessage(keys, text) {
-  if (!keys.length) {
-    keys = [keys];
-  }
+function encryptMessage(keys, data, passwords, params) {
 
   if (asyncProxy) {
-    return asyncProxy.encryptMessage(keys, text);
+    return asyncProxy.encryptMessage(keys, data, passwords, params);
+  }
+
+  var filename, binary, packets;
+  if(params) {
+    filename = params.filename;
+    packets = params.packets;
   }
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
-    msg = msg.encrypt(keys);
-    armored = armor.encode(enums.armor.message, msg.packets.write());
-    return armored;
+    if(data instanceof Uint8Array) {
+      msg = message.fromBinary(data, filename);
+    }
+    else {
+      msg = message.fromText(data, filename);
+    }
+    msg = msg.encrypt(keys, passwords);
+
+    if(packets) {
+      var dataIndex = msg.packets.indexOfTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected)[0];
+      var obj = {
+        keys: msg.packets.slice(0,dataIndex).write(),
+        data: msg.packets.slice(dataIndex,msg.packets.length).write()
+      };
+      return obj;
+    } 
+    else {
+      return armor.encode(enums.armor.message, msg.packets.write());
+    }
 
   }, 'Error encrypting message!');
+}
+
+/**
+ * Encrypts session key with keys or passwords
+ * @param  {String} sessionKey                                 sessionKey as a binary string
+ * @param  {String} algo                                       algorithm of sessionKey
+ * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the key
+ * @param  {(Array<String>|String)} passwords                  passwords for the message
+ * @return {Promise<Packetlist>}                               Binary string of key packets
+ * @static
+ */
+function encryptSessionKey(sessionKey, algo, keys, passwords) {
+
+  if (asyncProxy) {
+    return asyncProxy.encryptSessionKey(sessionKey, algo, keys, passwords);
+  }
+
+  return execute(function() {
+
+    var msg = message.encryptSessionKey(sessionKey, algo, keys, passwords);
+    return msg.packets.write();
+
+  }, 'Error encrypting session key!');
 }
 
 /**
@@ -130,22 +174,59 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
 
 /**
  * Decrypts message
- * @param  {module:key~Key}                privateKey private key with decrypted secret key data
- * @param  {module:message~Message} msg    the message object with the encrypted data
- * @return {Promise<(String|null)>}        decrypted message as as native JavaScript string
- *                              or null if no literal data found
+ * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data, string password, or session key
+ * @param  {module:message~Message} msg         the message object with the encrypted data
+ * @param  {Object} params                      parameter object with optional properties binary {Boolean}
+ *                                              and sessionKeyAlgorithm {String} which must only be set when privateKey is a session key
+ * @return {Promise<(String|null)>}             decrypted message as as native JavaScript string
+ *                                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg) {
+function decryptMessage(privateKey, msg, params) {
   if (asyncProxy) {
-    return asyncProxy.decryptMessage(privateKey, msg);
+    return asyncProxy.decryptMessage(privateKey, msg, params);
+  }
+
+  var binary, sessionKeyAlgorithm;
+  if(params) {
+    binary = params.binary;
+    sessionKeyAlgorithm = params.sessionKeyAlgorithm;
   }
 
   return execute(function() {
-    msg = msg.decrypt(privateKey);
-    return msg.getText();
+    msg = msg.decrypt(privateKey, sessionKeyAlgorithm);
+    if(binary) {
+      var obj = {
+        data: msg.getLiteralData(),
+        filename: msg.getFilename()
+      };
+      return obj;
+    }
+    else {
+      return msg.getText();
+    }
 
   }, 'Error decrypting message!');
+}
+
+/**
+ * Decrypts message
+ * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
+ * @param  {module:message~Message} msg         the message object with the encrypted session key packets
+ * @return {Promise<Object|null>}               decrypted session key and algorithm in object form
+ *                                              or null if no key packets found
+ * @static
+ */
+function decryptSessionKey(privateKey, msg) {
+  if (asyncProxy) {
+    return asyncProxy.decryptSessionKey(privateKey, msg);
+  }
+
+  return execute(function() {
+    var obj = msg.decryptSessionKey(privateKey);
+    return obj;
+
+  }, 'Error decrypting session key!');
 }
 
 /**
@@ -311,8 +392,10 @@ function onError(message, error) {
 exports.initWorker = initWorker;
 exports.getWorker = getWorker;
 exports.encryptMessage = encryptMessage;
+exports.encryptSessionKey = encryptSessionKey;
 exports.signAndEncryptMessage = signAndEncryptMessage;
 exports.decryptMessage = decryptMessage;
+exports.decryptSessionKey = decryptSessionKey;
 exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
 exports.signClearMessage = signClearMessage;
 exports.verifyClearSignedMessage = verifyClearSignedMessage;

@@ -12,7 +12,7 @@ module.exports = function(grunt) {
         },
         options: {
           standalone: 'openpgp',
-          external: [ 'crypto', 'node-localstorage' ]
+          external: [ 'crypto', 'node-localstorage' , 'buffer' ]
         }
       },
       openpgp_debug: {
@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         options: {
           debug: true,
           standalone: 'openpgp',
-          external: [ 'crypto', 'node-localstorage' ]
+          external: [ 'crypto', 'node-localstorage' , 'buffer' ]
         }
       },
       worker: {
