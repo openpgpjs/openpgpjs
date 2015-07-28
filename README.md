@@ -84,6 +84,56 @@ openpgp.decryptMessage(privateKey, pgpMessage).then(function(plaintext) {
 });
 ```
 
+#### Initialize keyring to use HTML5 local store handler
+```js
+var openpgp = require('openpgp');
+var prefix = 'openpgp-';
+var html5 = new openpgp.Keyring.localstore(prefix);
+var keyring = new openpgp.Keyring(html5);
+```
+
+#### Import to keyring
+```js
+var openpgp = require('openpgp');
+var keyring = new openpgp.Keyring();
+
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+keyring.privateKeys.importKey(privkey);
+
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+keyring.publicKeys.importKey(pubkey);
+```
+
+#### Get from keyring
+```js
+var openpgp = require('openpgp');
+var keyring = new openpgp.Keyring();
+
+var userId = 'Jon Smith <jon.smith@example.org>';
+
+var keyArray = keyring.getKeysForId(userId); // Get keys matching specified key id
+var privkey = keyring.privateKeys.getForId(userId); // Get private key with specified key id
+var pubkey = keyring.publicKeys.getForId(userId); // Get private key with specified key id
+```
+
+#### Iterate keyring
+```js
+var openpgp = require('openpgp');
+var keyring = new openpgp.Keyring();
+
+for (var k in keyring.privateKeys.keys) {
+	var key = keyring.privateKeys.keys[k];
+	var userId = key.users[0].userId.userid; // Jon Smith <jon.smith@example.org>'
+	var KeyArmored = key.armor(); // -----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----
+}
+
+for (var k in keyring.publicKeys.keys) {
+	var key = keyring.publicKeys.keys[k];
+	var userId = key.users[0].userId.userid; // Jon Smith <jon.smith@example.org>'
+	var KeyArmored = key.armor(); // -----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----
+}
+```
+
 ### Documentation
 
 A jsdoc build of our code comments is available at [doc/index.html](http://openpgpjs.org/openpgpjs/doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](http://openpgpjs.org/openpgpjs/doc/module-openpgp.html).
