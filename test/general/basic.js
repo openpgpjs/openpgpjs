@@ -325,6 +325,21 @@ describe('Basic', function() {
       });
     });
 
+    it('Forgetting password returns true', function (done) {
+      var success = privKey.forget();
+
+      expect(success).to.be.true;
+      done();
+    });
+
+    it('Calling decryptMessage with "forgotten" key packet leads to exception', function (done) {
+      openpgp.decryptMessage(privKey, message).catch(function(error) {
+        expect(error).to.exist;
+        done();
+      });
+    });
+
+
   });
 
   describe('Encrypt message symmetrically using passphrase', function() {

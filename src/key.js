@@ -370,6 +370,23 @@ Key.prototype.decrypt = function(passphrase) {
 };
 
 /**
+ * Forget any decrypted information for all secret key and subkey packets - i.e. 
+ * revert to a state where the passphrase is required again.
+ * @return {Boolean} true if all information is forgotten.
+ */
+Key.prototype.forget = function() {
+  if (this.isPrivate()) {
+    var keys = this.getAllKeyPackets();
+    for (var i = 0; i < keys.length; i++) {
+      keys[i].clearPrivateMPIs();
+    }
+  } else {
+    throw new Error("Nothing to forget in a public key");
+  }
+  return true;
+}
+
+/**
  * Decrypts specific key packets by key ID
  * @param  {Array<module:type/keyid>} keyIds
  * @param  {String} passphrase
