@@ -97,8 +97,12 @@ LocalStore.prototype.storePrivate = function (keys) {
 
 function storeKeys(storage, itemname, keys) {
   var armoredKeys = [];
-  for (var i = 0; i < keys.length; i++) {
-    armoredKeys.push(keys[i].armor());
+  if (keys.length) {
+    for (var i = 0; i < keys.length; i++) {
+      armoredKeys.push(keys[i].armor());
+    }
+    storage.setItem(itemname, JSON.stringify(armoredKeys));
+  } else {
+    storage.removeItem(itemname);
   }
-  storage.setItem(itemname, JSON.stringify(armoredKeys));
 }
