@@ -248,21 +248,6 @@ describe("Keyring", function() {
     expect(localstore3.loadPublic()).to.have.length(0);
   });
 
-  it('emptying keyring and storing removes keys', function() {
-    var key = openpgp.key.readArmored(pubkey).keys[0];
-
-    var localstore = new openpgp.Keyring.localstore('remove-prefix-');
-
-    localstore.storePublic([]);
-    expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
-
-    localstore.storePublic([key]);
-    expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.not.null;
-    
-    localstore.storePublic([]);
-    expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
-  })
-
   it('removeKeysForId() - unknown id', function() {
     keyring.publicKeys.importKey(pubkey);
     keyring.publicKeys.importKey(pubkey2);
