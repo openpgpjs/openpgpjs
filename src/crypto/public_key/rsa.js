@@ -214,10 +214,10 @@ function RSA() {
       return new Promise(function(resolve, reject) {
         keyop.onerror = function (err) { 
           reject(new Error(errmsg));
-        }
+        };
         keyop.oncomplete = function (e) {
           resolve(e.target.result);
-        }
+        };
       });
     }
 

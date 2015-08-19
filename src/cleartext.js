@@ -176,7 +176,7 @@ function verifyHeaders(headers, packetlist) {
       }
     }
     return true;
-  }
+  };
   var oneHeader = null;
   var hashAlgos = [];
   for (var i = 0; i < headers.length; i++) {
