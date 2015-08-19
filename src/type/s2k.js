@@ -153,8 +153,8 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
       case 'iterated':
         var isp = [],
-          count = s2k.get_count();
-        data = s2k.salt + passphrase;
+          count = s2k.get_count(),
+          data = s2k.salt + passphrase;
 
         while (isp.length * data.length < count)
           isp.push(data);
