@@ -241,7 +241,7 @@ function splitHeaders(text) {
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
     if (!headers[i].match(/^(Version|Comment|MessageID|Hash|Charset): .+$/)) {
-      throw new Error('Improperly formatted armor header: ' + headers[i]);;
+      throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
   }
 }
