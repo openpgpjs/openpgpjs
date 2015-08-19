@@ -246,7 +246,7 @@ Message.prototype.sign = function(privateKeys) {
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat == enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
-  var i;
+  var i, signingKeyPacket;
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -255,7 +255,7 @@ Message.prototype.sign = function(privateKeys) {
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
-    var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+    signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' + privateKeys[i].primaryKey.getKeyId().toHex());
     }
