@@ -132,7 +132,6 @@ function ii(a, b, c, d, x, s, t) {
 }
 
 function md51(s) {
-  txt = '';
   var n = s.length,
     state = [1732584193, -271733879, -1732584194, 271733878],
     i;
