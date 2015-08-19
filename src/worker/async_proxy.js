@@ -333,8 +333,8 @@ AsyncProxy.prototype.decryptKey = function(privateKey, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data),
-        data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
@@ -361,8 +361,8 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data),
-        data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
