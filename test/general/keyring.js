@@ -82,6 +82,28 @@ describe("Keyring", function() {
       'y61IhKbJCOlQxyem+kepjNapkhKDAQDIDL38bZWU4Rm0nq82Xb4yaI0BCWDcFkHV',
       'og2umGfGng==',
       '=v3+L',
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
+    user3 = 'plain@email.org',
+    keyFingerP3 = 'f9972bf320a86a93c6614711ed241e1de755d53c',
+    pubkey3 =
+      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      '',
+      'xo0EVe6wawEEAKG4LDE9946jdvvbfVTF9qWtOyxHYjb40z7hgcZsPEGd6QfN',
+      'XbfNJBeQ5S9j/2jRu8NwBgdXIpMp4QwB2Q/cEp1rbw5kUVuRbhfsb2BzuiBr',
+      'Q5jHa5oZSGbbLWRoOXTvJH8VE2gbKSj/km1VaXzq2Qmv+YIHxav1it7vNmg5',
+      'E2kBABEBAAHND3BsYWluQGVtYWlsLm9yZ8K1BBABCAApBQJV7rBrBgsJCAcD',
+      'AgkQ7SQeHedV1TwEFQgCCgMWAgECGQECGwMCHgEAAGJmBACVJPoFtW96UkIW',
+      'GX1bgW99c4K87Me+5ZCHqPOdXFpRinAPBdJT9vkBWLb/aOQQCDWJvdVXKFLD',
+      'FCbSBjcohR71n6145F5im8b0XzXnKh+MRRv/0UHiHGtB/Pkg38jbLeXbVfCM',
+      '9JJm+s+PFef+8wN84sEtD/MX2cj61teuPf2VEs6NBFXusGsBBACoJW/0y5Ea',
+      'FH0nJOuoenrEBZkFtGbdwo8A4ufCCrm9ppFHVVnw4uTPH9dOjw8IAnNy7wA8',
+      '8yZCkreQ491em09knR7k2YdJccWwW8mGRILHQDDEPetZO1dSVW+MA9X7Pcle',
+      'wbFEHCIkWEgymn3zenie1LXIljPzizHje5vWBrSlFwARAQABwp8EGAEIABMF',
+      'AlXusGsJEO0kHh3nVdU8AhsMAACB2AP/eRJFAVTyiP5MnMjsSBuNMNBp1X0Y',
+      '+RrWDpO9H929+fm9oFTedohf/Ja5w9hsRk2VzjLOXe/uHdrcgaBmAdFunbvv',
+      'IWneczohBvLOarevZj1J+H3Ej/DVF2W7kJZLpvPfh7eo0biClS/GQUVw1rlE',
+      'ph10hhUaSJ326LsFJccT3jk=',
+      '=4jat',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
   it('Import key pair', function() {
@@ -178,6 +200,13 @@ describe("Keyring", function() {
 
   it('publicKeys.getForAddress() - valid address', function() {
     var keys = keyring.publicKeys.getForAddress(user);
+    expect(keys).to.exist.and.have.length(1);
+  });
+
+  it('publicKeys.getForAddress() - valid address, plain email user id', function() {
+    keyring.publicKeys.importKey(pubkey3);
+    var keys = keyring.publicKeys.getForAddress(user3);
+    keyring.removeKeysForId(keyFingerP3);
     expect(keys).to.exist.and.have.length(1);
   });
 
