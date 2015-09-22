@@ -127,3 +127,4 @@ Below is a collection of resources, many of these were projects that were in som
 * [http://qooxdoo.org/contrib/project/crypto](http://qooxdoo.org/contrib/project/crypto)
 * [https://github.com/GPGTools/Mobile/wiki/Introduction](https://github.com/GPGTools/Mobile/wiki/Introduction)
 * [http://gpg4browsers.recurity.com/](http://gpg4browsers.recurity.com/)
+* [https://github.com/gmontalvoriv/mailock](https://github.com/gmontalvoriv/mailock)
