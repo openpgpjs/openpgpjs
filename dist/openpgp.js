@@ -5255,7 +5255,6 @@ function ii(a, b, c, d, x, s, t) {
 }
 
 function md51(s) {
-  txt = '';
   var n = s.length,
     state = [1732584193, -271733879, -1732584194, 271733878],
     i;
@@ -15950,8 +15949,8 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
       case 'iterated':
         var isp = [],
-          count = s2k.get_count();
-        data = s2k.salt + passphrase;
+          count = s2k.get_count(),
+          data = s2k.salt + passphrase;
 
         while (isp.length * data.length < count)
           isp.push(data);
@@ -16655,8 +16654,8 @@ AsyncProxy.prototype.decryptKey = function(privateKey, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data),
+        data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
@@ -16683,8 +16682,8 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data),
+        data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
