@@ -125,6 +125,10 @@ S2K.prototype.write = function () {
       bytes += this.salt;
       bytes += String.fromCharCode(this.c);
       break;
+    case 'gnu':
+      throw new Error("GNU s2k type not supported.");
+    default:
+      throw new Error("Unknown s2k type.");
   }
 
   return bytes;
@@ -165,6 +169,12 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
           isp = isp.substr(0, count);
 
         return crypto.hash.digest(algorithm, prefix + isp);
+
+      case 'gnu':
+        throw new Error("GNU s2k type not supported.");
+
+      default:
+        throw new Error("Unknown s2k type.");
     }
   }
 
