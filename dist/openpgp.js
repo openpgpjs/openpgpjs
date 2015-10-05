@@ -995,7 +995,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.2.0",
+  versionstring: "OpenPGP.js v1.3.0",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
@@ -5255,7 +5255,6 @@ function ii(a, b, c, d, x, s, t) {
 }
 
 function md51(s) {
-  txt = '';
   var n = s.length,
     state = [1732584193, -271733879, -1732584194, 271733878],
     i;
@@ -15922,6 +15921,10 @@ S2K.prototype.write = function () {
       bytes += this.salt;
       bytes += String.fromCharCode(this.c);
       break;
+    case 'gnu':
+      throw new Error("GNU s2k type not supported.");
+    default:
+      throw new Error("Unknown s2k type.");
   }
 
   return bytes;
@@ -15950,8 +15953,8 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
       case 'iterated':
         var isp = [],
-          count = s2k.get_count();
-        data = s2k.salt + passphrase;
+          count = s2k.get_count(),
+          data = s2k.salt + passphrase;
 
         while (isp.length * data.length < count)
           isp.push(data);
@@ -15962,6 +15965,12 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
           isp = isp.substr(0, count);
 
         return crypto.hash.digest(algorithm, prefix + isp);
+
+      case 'gnu':
+        throw new Error("GNU s2k type not supported.");
+
+      default:
+        throw new Error("Unknown s2k type.");
     }
   }
 
@@ -16655,8 +16664,8 @@ AsyncProxy.prototype.decryptKey = function(privateKey, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data),
+        data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
@@ -16683,8 +16692,8 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data),
+        data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
