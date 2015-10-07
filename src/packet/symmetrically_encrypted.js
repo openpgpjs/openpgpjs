@@ -31,7 +31,8 @@
 module.exports = SymmetricallyEncrypted;
 
 var crypto = require('../crypto'),
-  enums = require('../enums.js');
+  enums = require('../enums.js'),
+  config = require('../config');
 
 /**
  * @constructor
@@ -42,13 +43,20 @@ function SymmetricallyEncrypted() {
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
   this.packets =  null;
+  this.enforce_integrity_protection = config.enforce_integrity_protection;
 }
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
+  if (this.enforce_integrity_protection) {
+    throw new Error('Support for Symmetrically Encrypted Data Packet (Tag 9) deactivated.');
+  }
   this.encrypted = bytes;
 };
 
 SymmetricallyEncrypted.prototype.write = function () {
+  if (this.enforce_integrity_protection) {
+    throw new Error('Support for Symmetrically Encrypted Data Packet (Tag 9) deactivated.');
+  }
   return this.encrypted;
 };
 
