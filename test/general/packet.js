@@ -44,6 +44,8 @@ describe("Packet", function() {
       '-----END PGP PRIVATE KEY BLOCK-----';
 
   it('Symmetrically encrypted packet', function(done) {
+    var enforce_integrity_protection = openpgp.config.enforce_integrity_protection;
+    openpgp.config.enforce_integrity_protection = false;
     var message = new openpgp.packet.List();
 
     var literal = new openpgp.packet.Literal();
@@ -64,7 +66,49 @@ describe("Packet", function() {
     msg2[0].decrypt(algo, key);
 
     expect(msg2[0].packets[0].data).to.equal(literal.data);
+    openpgp.config.enforce_integrity_protection = enforce_integrity_protection;
     done();
+  });
+
+  it('Symmetrically encrypted packet write - enforce integrity protection', function() {
+    var enforce_integrity_protection = openpgp.config.enforce_integrity_protection;
+
+    openpgp.config.enforce_integrity_protection = true;
+
+    var message = new openpgp.packet.List();
+    var literal = new openpgp.packet.Literal();
+    literal.setText('Hello world');
+    var enc = new openpgp.packet.SymmetricallyEncrypted();
+    message.push(enc);
+    enc.packets.push(literal);
+
+    expect(message.write.bind(message)).to.throw('Support for Symmetrically Encrypted Data Packet (Tag 9) deactivated.');
+
+    openpgp.config.enforce_integrity_protection = enforce_integrity_protection;
+  });
+
+  it('Symmetrically encrypted packet read - enforce integrity protection', function() {
+    var enforce_integrity_protection = openpgp.config.enforce_integrity_protection;
+
+    openpgp.config.enforce_integrity_protection = false;
+
+    var message = new openpgp.packet.List();
+    var literal = new openpgp.packet.Literal();
+    literal.setText('Hello world');
+    var enc = new openpgp.packet.SymmetricallyEncrypted();
+    message.push(enc);
+    enc.packets.push(literal);
+    var key = '12345678901234567890123456789012',
+        algo = 'aes256';
+    enc.encrypt(algo, key);
+    var binary = message.write();
+
+    openpgp.config.enforce_integrity_protection = true;
+
+    message = new openpgp.packet.List();
+    expect(message.read.bind(message, binary)).to.throw('Support for Symmetrically Encrypted Data Packet (Tag 9) deactivated.');
+
+    openpgp.config.enforce_integrity_protection = enforce_integrity_protection;
   });
 
   it('Sym. encrypted integrity protected packet', function(done) {
