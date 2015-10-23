@@ -423,7 +423,7 @@ function bnpSubTo(a, r) {
     c -= a.s;
   }
   r.s = (c < 0) ? -1 : 0;
-  if (c < -1) r[i++] = this.DV + c;
+  if (c <= -1) r[i++] = this.DV + c;
   else if (c > 0) r[i++] = c;
   r.t = i;
   r.clamp();
@@ -1169,7 +1169,7 @@ function bnpAddTo(a, r) {
   }
   r.s = (c < 0) ? -1 : 0;
   if (c > 0) r[i++] = c;
-  else if (c < -1) r[i++] = this.DV + c;
+  else if (c <= -1) r[i++] = this.DV + c;
   r.t = i;
   r.clamp();
 }
