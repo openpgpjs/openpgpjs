@@ -35,7 +35,10 @@ module.exports = {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
+  // use integrity protection for symmetric encryption
   integrity_protect: true,
+  // fail on decrypt if message is not integrity protected
+  ignore_mdc_error: false,
   rsa_blinding: true,
   useWebCrypto: true,
 

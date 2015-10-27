@@ -31,7 +31,8 @@
 module.exports = SymmetricallyEncrypted;
 
 var crypto = require('../crypto'),
-  enums = require('../enums.js');
+  enums = require('../enums.js'),
+  config = require('../config');
 
 /**
  * @constructor
@@ -42,6 +43,7 @@ function SymmetricallyEncrypted() {
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
   this.packets =  null;
+  this.ignore_mdc_error = config.ignore_mdc_error;
 }
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
@@ -64,7 +66,13 @@ SymmetricallyEncrypted.prototype.write = function () {
 SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   var decrypted = crypto.cfb.decrypt(
     sessionKeyAlgorithm, key, this.encrypted, true);
-
+  // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
+  if (!this.ignore_mdc_error &&
+      (sessionKeyAlgorithm === 'aes128' ||
+       sessionKeyAlgorithm === 'aes192' ||
+       sessionKeyAlgorithm === 'aes256')) {
+    throw new Error('Decryption failed due to missing MDC in combination with modern cipher.')
+  }
   this.packets.read(decrypted.join(''))
 };
 
