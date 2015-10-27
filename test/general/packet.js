@@ -53,6 +53,29 @@ describe("Packet", function() {
     message.push(enc);
     enc.packets.push(literal);
 
+    var key = '123456789012345678901234',
+        algo = 'tripledes';
+
+    enc.encrypt(algo, key);
+
+    var msg2 = new openpgp.packet.List();
+    msg2.read(message.write());
+    msg2[0].decrypt(algo, key);
+
+    expect(msg2[0].packets[0].data).to.equal(literal.data);
+    done();
+  });
+
+  it('Symmetrically encrypted packet - MDC error for modern cipher', function() {
+    var message = new openpgp.packet.List();
+
+    var literal = new openpgp.packet.Literal();
+    literal.setText('Hello world');
+
+    var enc = new openpgp.packet.SymmetricallyEncrypted();
+    message.push(enc);
+    enc.packets.push(literal);
+
     var key = '12345678901234567890123456789012',
         algo = 'aes256';
 
@@ -60,11 +83,7 @@ describe("Packet", function() {
 
     var msg2 = new openpgp.packet.List();
     msg2.read(message.write());
-
-    msg2[0].decrypt(algo, key);
-
-    expect(msg2[0].packets[0].data).to.equal(literal.data);
-    done();
+    expect(msg2[0].decrypt.bind(msg2[0], algo, key)).to.throw('Decryption failed due to missing MDC in combination with modern cipher.');
   });
 
   it('Sym. encrypted integrity protected packet', function(done) {
