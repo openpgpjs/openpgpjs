@@ -167,7 +167,7 @@ function RSA() {
         };
         
         keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-        if (!(keys instanceof Promise)) { // IE11 KeyOperation
+        if ('function' !== typeof keys.then) { // IE11 KeyOperation
           keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
         }
       }
@@ -185,7 +185,7 @@ function RSA() {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
       var key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if (!(key instanceof Promise)) { // IE11 KeyOperation
+      if ('function' !== typeof keys.then) { // IE11 KeyOperation
         key = convertKeyOperation(key, 'Error exporting RSA key pair.');
       }
       return key;
