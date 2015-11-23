@@ -123,7 +123,7 @@ To date the OpenPGP.js code base has undergone two complete security audits from
 
 ### Security recommendations
 
-It should be noted that js crypto apps deployed via regular web hosting (a.k.a. [**host-based security**](https://www.schneier.com/blog/archives/2012/08/cryptocat.html)) provide users with less security than installable apps with auditable static versions. Installable apps can be deployed as a [Firefox](https://developer.mozilla.org/en-US/Marketplace/Publishing/Packaged_apps) or [Chrome](http://developer.chrome.com/apps/about_apps.html) packaged app. These apps are basically signed zip files and their runtimes typically enforce a strict [Content Security Policy (CSP)](http://www.html5rocks.com/en/tutorials/security/content-security-policy/) to protect users against [XSS](http://en.wikipedia.org/wiki/Cross-site_scripting). This [blogpost](http://tonyarcieri.com/whats-wrong-with-webcrypto) explains the trust model of the web quite well.
+It should be noted that js crypto apps deployed via regular web hosting (a.k.a. [**host-based security**](https://www.schneier.com/blog/archives/2012/08/cryptocat.html)) provide users with less security than installable apps with auditable static versions. Installable apps can be deployed as a [Firefox](https://developer.mozilla.org/en-US/Marketplace/Options/Packaged_apps) or [Chrome](https://developer.chrome.com/apps/about_apps.html) packaged app. These apps are basically signed zip files and their runtimes typically enforce a strict [Content Security Policy (CSP)](http://www.html5rocks.com/en/tutorials/security/content-security-policy/) to protect users against [XSS](https://en.wikipedia.org/wiki/Cross-site_scripting). This [blogpost](http://tonyarcieri.com/whats-wrong-with-webcrypto) explains the trust model of the web quite well.
 
 It is also recommended to set a strong passphrase that protects the user's private key on disk.
 
@@ -151,8 +151,8 @@ Below is a collection of resources, many of these were projects that were in som
 
 * [http://www.hanewin.net/encrypt/](http://www.hanewin.net/encrypt/)
 * [https://github.com/seancolyer/gmail-crypt](https://github.com/seancolyer/gmail-crypt)
-* [https://github.com/mete0r/openpgp-js](https://github.com/mete0r/openpgp-js)
-* [http://fitblip.github.com/JSPGP-Stuffs/](http://fitblip.github.com/JSPGP-Stuffs/)
+* [https://github.com/mete0r/jspg](https://github.com/mete0r/jspg)
+* [http://fitblip.pub/JSPGP-Stuffs/](http://fitblip.pub/JSPGP-Stuffs/)
 * [http://qooxdoo.org/contrib/project/crypto](http://qooxdoo.org/contrib/project/crypto)
 * [https://github.com/GPGTools/Mobile/wiki/Introduction](https://github.com/GPGTools/Mobile/wiki/Introduction)
 * [http://gpg4browsers.recurity.com/](http://gpg4browsers.recurity.com/)
