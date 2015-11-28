@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Coverage Status](https://coveralls.io/repos/openpgpjs/openpgpjs/badge.svg)](https://coveralls.io/r/evilaliv3/openpgpjs)
+[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Coverage Status](https://coveralls.io/repos/openpgpjs/openpgpjs/badge.svg)](https://coveralls.io/r/openpgpjs/openpgpjs)
 
-[![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs)](https://saucelabs.com/u/openpgpjs)
+[![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs.svg)](https://saucelabs.com/u/openpgpjs)
 
 OpenPGP.js
 ==========
