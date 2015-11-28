@@ -129,3 +129,4 @@ Below is a collection of resources, many of these were projects that were in som
 * [https://github.com/GPGTools/Mobile/wiki/Introduction](https://github.com/GPGTools/Mobile/wiki/Introduction)
 * [http://gpg4browsers.recurity.com/](http://gpg4browsers.recurity.com/)
 * [https://github.com/gmontalvoriv/mailock](https://github.com/gmontalvoriv/mailock)
+* [https://pgp.help](https://pgp.help)
