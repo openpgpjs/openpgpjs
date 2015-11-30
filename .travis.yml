@@ -32,24 +32,24 @@ matrix:
     - node_js: "0.12.2"
       env: OPENPGPJSTEST='end2end-11' BROWSER='android 5.1'
     - node_js: "0.12.2"
-      env: OPENPGPJSTEST='end2end-12' BROWSER='iphoee 7.0'
+      env: OPENPGPJSTEST='end2end-12' BROWSER='iphone 7.0'
     - node_js: "0.12.2"
       env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
   allow_failures:
-    - env: OPENPGPJSTEST='end2end-0'
-    - env: OPENPGPJSTEST='end2end-1'
-    - env: OPENPGPJSTEST='end2end-2'
-    - env: OPENPGPJSTEST='end2end-3'
-    - env: OPENPGPJSTEST='end2end-4'
-    - env: OPENPGPJSTEST='end2end-5'
-    - env: OPENPGPJSTEST='end2end-6'
-    - env: OPENPGPJSTEST='end2end-7'
-    - env: OPENPGPJSTEST='end2end-8'
-    - env: OPENPGPJSTEST='end2end-9'
-    - env: OPENPGPJSTEST='end2end-10'
-    - env: OPENPGPJSTEST='end2end-11'
-    - env: OPENPGPJSTEST='end2end-12'
-    - env: OPENPGPJSTEST='end2end-13'
+    - env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
+    - env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 42'
+    - env: OPENPGPJSTEST='end2end-2' BROWSER='firefox beta'
+    - env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 38'
+    - env: OPENPGPJSTEST='end2end-4' BROWSER='chrome 46'
+    - env: OPENPGPJSTEST='end2end-5' BROWSER='chrome beta'
+    - env: OPENPGPJSTEST='end2end-6' BROWSER='internet explorer 11'
+    - env: OPENPGPJSTEST='end2end-7' BROWSER='microsoft edge 20.10240'
+    - env: OPENPGPJSTEST='end2end-8' BROWSER='safari 8'
+    - env: OPENPGPJSTEST='end2end-9' BROWSER='safari 9'
+    - env: OPENPGPJSTEST='end2end-10' BROWSER='android 4.4'
+    - env: OPENPGPJSTEST='end2end-11' BROWSER='android 5.1'
+    - env: OPENPGPJSTEST='end2end-12' BROWSER='iphone 7.0'
+    - env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
 before_script:
   - npm install -g grunt-cli
 script:
