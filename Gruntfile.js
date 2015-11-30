@@ -2,6 +2,10 @@ module.exports = function(grunt) {
 
   var version = grunt.option('release');
 
+  if (process.env.SELENIUM_BROWSER_CAPABILITIES != undefined) {
+    var browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
+  }
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -111,14 +115,14 @@ module.exports = function(grunt) {
         src: 'test',
         options: {
           root: 'node_modules/openpgp',
-          timeout: 120000,
+          timeout: 240000,
         }
       },
       coveralls: {
         src: ['test'],
         options: {
           root: 'node_modules/openpgp',
-          timeout: 120000,
+          timeout: 240000,
           coverage: true,
           reportFormats: ['cobertura','lcovonly']
         }
@@ -172,22 +176,7 @@ module.exports = function(grunt) {
           urls: ['http://127.0.0.1:9000/test/unittests.html'],
           build: process.env.TRAVIS_JOB_ID,
           testname: 'Sauce Unit Test for openpgpjs',
-          browsers: [
-            { browserName:"firefox", version:"38.0", platform:"Linux" },
-            { browserName:"firefox", version:"42.0", platform:"OS X 10.10" },
-            { browserName:"firefox", version:"beta", platform:"Windows 10" },
-            { browserName:"chrome", version:"38.0", platform:"Linux" },
-            { browserName:"chrome", version:"46.0", platform:"OS X 10.10" },
-            { browserName:"chrome", version:"beta", platform:"Windows 10" },
-            { browserName:"internet explorer", version:"11", platform:"Windows 10" },
-            { browserName:"microsoftEdge", version:"20.10240", platform:"Windows 10" },
-            { browserName:"safari", version:"8", platform:"OS X 10.10" },
-            { browserName:"safari", version:"9", platform:"OS X 10.11" },
-            { browserName:"android", version:"4.4", deviceName: "Android Emulator", platform: "Linux" },
-            { browserName:"android", version:"5.1", deviceName: "Android Emulator", platform: "Linux" },
-            { browserName: "iphone", version:"7.0", deviceName: "iPad Simulator", "device-orientation": "portrait", platform:"OS X 10.10" },
-            { browserName: "iphone", version:"9.1", deviceName: "iPad Simulator", "device-orientation": "portrait", platform:"OS X 10.10" }
-          ],
+          browsers: [browser_capabilities],
           public: "public",
           'max-duration': 360,
           maxRetries: 1,
@@ -282,7 +271,4 @@ module.exports = function(grunt) {
   grunt.registerTask('coverage', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coverage']);
   grunt.registerTask('coveralls', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coveralls']);
   grunt.registerTask('saucelabs', ['default', 'copy:npm', 'copy:unittests', 'connect', 'saucelabs-mocha']);
-  grunt.registerTask('test_travis_mocha_coveralls', ['copy:npm', 'copy:unittests', 'mocha_istanbul:coveralls']);
-  grunt.registerTask('test_travis_mocha_saucelabs', ['copy:npm', 'copy:unittests', 'connect', 'saucelabs-mocha']);
-
 };
