@@ -48,7 +48,7 @@ export default function Literal() {
  */
 Literal.prototype.setText = function(text) {
   // normalize EOL to \r\n
-  text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
   // encode UTF8
   this.data = this.format === 'utf8' ? util.str2Uint8Array(util.encode_utf8(text)) : util.str2Uint8Array(text);
 };
