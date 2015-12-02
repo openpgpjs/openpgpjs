@@ -174,7 +174,7 @@ module.exports = function(grunt) {
           username: 'openpgpjs',
           key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
           urls: ['http://127.0.0.1:9000/test/unittests.html'],
-          build: process.env.TRAVIS_JOB_ID,
+          build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
           browsers: [browser_capabilities],
           public: "public",
