@@ -44,7 +44,7 @@ module.exports = {
   versionstring: "OpenPGP.js VERSION",
   commentstring: "http://openpgpjs.org",
 
-  keyserver: "keyserver.linux.it", // "pgp.mit.edu:11371"
+  keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store',
 
   debug: false

@@ -142,7 +142,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
-        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js'],
+        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'whatwg-fetch/fetch.js'],
         dest: 'test/lib/'
       },
       unittests: {

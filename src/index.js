@@ -71,3 +71,8 @@ module.exports.Keyring = require('./keyring');
  * @name module:openpgp.AsyncProxy
  */
 module.exports.AsyncProxy = require('./worker/async_proxy.js');
+/**
+ * @see module:hkp
+ * @name module:openpgp.HKP
+ */
+module.exports.HKP = require('./hkp');

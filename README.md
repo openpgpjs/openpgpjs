@@ -31,6 +31,8 @@ OpenPGP.js only supports browsers that implement `window.crypto.getRandomValues`
 
 OpenPGP.js uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in the build step. So no action required on the developer's part for promises!
 
+For the OpenPGP HTTP Key Server (HKP) client the new [fetch api](https://fetch.spec.whatwg.org) is used. There is a polyfill for both [browsers](https://github.com/github/fetch) and [node.js](https://github.com/bitinn/node-fetch) runtimes. These are not bundled in the library however and users must add these themselves. See the unit tests for examples of how to integrate them.
+
 
 ### Examples
 

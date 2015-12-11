@@ -5,5 +5,6 @@ describe('General', function () {
   require('./keyring.js');
   require('./packet.js');
   require('./signature.js');
+  require('./hkp.js');
 });
 
