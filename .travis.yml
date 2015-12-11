@@ -8,8 +8,6 @@ matrix:
   include:
     - node_js: "0.12.2"
       env: OPENPGPJSTEST='unit'
-    - node_js: "4.2"
-      env: OPENPGPJSTEST='unit'
     - node_js: "0.12.2"
       env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - node_js: "0.12.2"
