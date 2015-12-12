@@ -55,6 +55,18 @@ openpgp.generateKeyPair(options).then(function(keypair) {
 });
 ```
 
+#### Public key lookup on HKP server
+```js
+var openpgp = require('openpgp');
+var hkp = new openpgp.HKP('https://pgp.mit.edu');
+
+hkp.lookup({
+    query: 'alice@example.com'
+}).then(function(key) {
+    var publicKey = openpgp.key.readArmored(key);
+});
+```
+
 #### Encryption
 ```js
 var openpgp = require('openpgp');

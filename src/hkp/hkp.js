@@ -44,8 +44,8 @@ function HKP(keyServerBaseUrl, fetch) {
 /**
  * Search for a public key on the key server either by key ID or part of the user ID.
  * @param  {String}   options.keyID   The long public key ID.
- * @param  {String}   options.query   This can be any part of the key user ID such as name.
- *   or email address
+ * @param  {String}   options.query   This can be any part of the key user ID such as name
+ *   or email address.
  * @return {Promise<String>}          The ascii armored public key.
  */
 HKP.prototype.lookup = function(options) {
