@@ -995,7 +995,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.4.0",
+  versionstring: "OpenPGP.js v1.4.1",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "https://keyserver.ubuntu.com",
@@ -10420,9 +10420,9 @@ HKP.prototype.lookup = function(options) {
     fetch = this._fetch;
 
   if (options.keyId) {
-    uri += '0x' + options.keyId;
+    uri += '0x' + encodeURIComponent(options.keyId);
   } else if (options.query) {
-    uri += options.query;
+    uri += encodeURIComponent(options.query);
   } else {
     throw new Error('You must provide a query parameter!');
   }
@@ -10454,7 +10454,6 @@ HKP.prototype.upload = function(publicKeyArmored) {
     body: 'keytext=' + encodeURIComponent(publicKeyArmored)
   });
 };
-
 },{"../config":17}],45:[function(require,module,exports){
 /**
  * @see module:hkp/hkp
