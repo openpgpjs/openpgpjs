@@ -145,8 +145,8 @@ var indexes = [
 ];
 
 function compress(MDbuf, X) {
-  blockA = [];
-  blockB = [];
+  var blockA = [];
+  var blockB = [];
 
   var retBlock;
 

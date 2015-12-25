@@ -54,7 +54,7 @@ module.exports = {
    * @returns {Object} new packet object with data from packet clone
    */
   fromStructuredClone: function(packetClone) {
-    var tagName = enums.read(enums.packet, packetClone.tag)
+    var tagName = enums.read(enums.packet, packetClone.tag);
     var packet = this.newPacketFromTag(tagName);
     for (var attr in packetClone) {
         if (packetClone.hasOwnProperty(attr)) {
