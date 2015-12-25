@@ -101,8 +101,8 @@ function des(keys, message, encrypt, mode, iv, padding) {
   }
 
   //store the result here
-  result = "";
-  tempresult = "";
+  var result = "";
+  var tempresult = "";
 
   if (mode == 1) { //CBC mode
     cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
@@ -231,6 +231,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
 function des_createKeys(key) {
   //declaring this locally speeds things up a bit
+  var pc2bytes0;
   pc2bytes0 = new Array(0, 0x4, 0x20000000, 0x20000004, 0x10000, 0x10004, 0x20010000, 0x20010004, 0x200, 0x204,
     0x20000200, 0x20000204, 0x10200, 0x10204, 0x20010200, 0x20010204);
   pc2bytes1 = new Array(0, 0x1, 0x100000, 0x100001, 0x4000000, 0x4000001, 0x4100000, 0x4100001, 0x100, 0x101, 0x100100,
@@ -271,8 +272,8 @@ function des_createKeys(key) {
     temp;
 
   for (var j = 0; j < iterations; j++) { //either 1 or 3 iterations
-    left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
-    right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    var left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    var right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
 
     temp = ((left >>> 4) ^ right) & 0x0f0f0f0f;
     right ^= temp;

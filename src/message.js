@@ -345,8 +345,7 @@ function readArmored(armoredText) {
   var input = armor.decode(armoredText).data;
   var packetlist = new packet.List();
   packetlist.read(input);
-  var newMessage = new Message(packetlist);
-  return newMessage;
+  return new Message(packetlist);
 }
 
 /**
@@ -361,8 +360,7 @@ function readSignedContent(content, detachedSignature) {
   packetlist.push(literalDataPacket);
   var input = armor.decode(detachedSignature).data;
   packetlist.read(input);
-  var newMessage = new Message(packetlist);
-  return newMessage;
+  return new Message(packetlist);
 }
 
 /**
@@ -377,8 +375,7 @@ function fromText(text) {
   literalDataPacket.setText(text);
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  var newMessage = new Message(literalDataPacketlist);
-  return newMessage;
+  return new Message(literalDataPacketlist);
 }
 
 /**
@@ -392,8 +389,7 @@ function fromBinary(bytes) {
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  var newMessage = new Message(literalDataPacketlist);
-  return newMessage;
+  return new Message(literalDataPacketlist);
 }
 
 exports.Message = Message;

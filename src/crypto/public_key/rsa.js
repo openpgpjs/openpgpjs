@@ -151,7 +151,7 @@ function RSA() {
         keyGenOpt = {
           name: 'RSA-OAEP',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          publicExponent: Euint8.subarray(0, 3) // take three bytes (max 65537)
         };
         keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
       }
@@ -214,10 +214,10 @@ function RSA() {
       return new Promise(function(resolve, reject) {
         keyop.onerror = function (err) { 
           reject(new Error(errmsg));
-        }
+        };
         keyop.oncomplete = function (e) {
           resolve(e.target.result);
-        }
+        };
       });
     }
 
