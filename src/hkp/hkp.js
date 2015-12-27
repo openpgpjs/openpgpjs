@@ -61,7 +61,10 @@ HKP.prototype.lookup = function(options) {
   }
 
   return fetch(uri).then(function(response) {
-    return response.text();
+    if (response.status === 200) {
+      return response.text();
+    }
+
   }).then(function(publicKeyArmored) {
     if (!publicKeyArmored || publicKeyArmored.indexOf('-----END PGP PUBLIC KEY BLOCK-----') < 0) {
       return;
