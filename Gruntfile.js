@@ -15,8 +15,10 @@ module.exports = function(grunt) {
           'dist/openpgp.js': [ './src/index.js' ]
         },
         options: {
-          standalone: 'openpgp',
-          external: [ 'crypto', 'node-localstorage' ]
+          browserifyOptions: {
+            standalone: 'openpgp',
+            external: [ 'crypto', 'node-localstorage' ]
+          }
         }
       },
       openpgp_debug: {
@@ -24,9 +26,11 @@ module.exports = function(grunt) {
           'dist/openpgp_debug.js': [ './src/index.js' ]
         },
         options: {
-          debug: true,
-          standalone: 'openpgp',
-          external: [ 'crypto', 'node-localstorage' ]
+          browserifyOptions: {
+            debug: true,
+            standalone: 'openpgp',
+            external: [ 'crypto', 'node-localstorage' ]
+          }
         }
       },
       worker: {
@@ -45,7 +49,9 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'openpgp', 'crypto', 'node-localstorage']
+          browserifyOptions: {
+            external: [ 'openpgp', 'crypto', 'node-localstorage']
+          }
         }
       }
     },
