@@ -838,7 +838,7 @@ function verifyHeaders(headers, packetlist) {
       }
     }
     return true;
-  }
+  };
   var oneHeader = null;
   var hashAlgos = [];
   for (var i = 0; i < headers.length; i++) {
@@ -989,7 +989,10 @@ module.exports = {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
+  // use integrity protection for symmetric encryption
   integrity_protect: true,
+  // fail on decrypt if message is not integrity protected
+  ignore_mdc_error: false,
   rsa_blinding: true,
   useWebCrypto: true,
 
@@ -2954,8 +2957,8 @@ function des(keys, message, encrypt, mode, iv, padding) {
   }
 
   //store the result here
-  result = "";
-  tempresult = "";
+  var result = "";
+  var tempresult = "";
 
   if (mode == 1) { //CBC mode
     cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
@@ -3084,6 +3087,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
 function des_createKeys(key) {
   //declaring this locally speeds things up a bit
+  var pc2bytes0;
   pc2bytes0 = new Array(0, 0x4, 0x20000000, 0x20000004, 0x10000, 0x10004, 0x20010000, 0x20010004, 0x200, 0x204,
     0x20000200, 0x20000204, 0x10200, 0x10204, 0x20010200, 0x20010204);
   pc2bytes1 = new Array(0, 0x1, 0x100000, 0x100001, 0x4000000, 0x4000001, 0x4100000, 0x4100001, 0x100, 0x101, 0x100100,
@@ -3124,8 +3128,8 @@ function des_createKeys(key) {
     temp;
 
   for (var j = 0; j < iterations; j++) { //either 1 or 3 iterations
-    left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
-    right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    var left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    var right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
 
     temp = ((left >>> 4) ^ right) & 0x0f0f0f0f;
     right ^= temp;
@@ -5486,8 +5490,8 @@ var indexes = [
 ];
 
 function compress(MDbuf, X) {
-  blockA = [];
-  blockB = [];
+  var blockA = [];
+  var blockB = [];
 
   var retBlock;
 
@@ -9096,7 +9100,7 @@ function RSA() {
         keyGenOpt = {
           name: 'RSA-OAEP',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          publicExponent: Euint8.subarray(0, 3) // take three bytes (max 65537)
         };
         keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
       }
@@ -9112,7 +9116,7 @@ function RSA() {
         };
         
         keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-        if (!(keys instanceof Promise)) { // IE11 KeyOperation
+        if (!(typeof keys.then === 'function')) { // IE11 KeyOperation
           keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
         }
       }
@@ -9130,7 +9134,7 @@ function RSA() {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
       var key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if (!(key instanceof Promise)) { // IE11 KeyOperation
+      if (!(typeof key.then === 'function')) { // IE11 KeyOperation
         key = convertKeyOperation(key, 'Error exporting RSA key pair.');
       }
       return key;
@@ -9159,10 +9163,10 @@ function RSA() {
       return new Promise(function(resolve, reject) {
         keyop.onerror = function (err) { 
           reject(new Error(errmsg));
-        }
+        };
         keyop.oncomplete = function (e) {
           resolve(e.target.result);
-        }
+        };
       });
     }
 
@@ -9577,14 +9581,14 @@ function getType(text) {
   // BEGIN PGP MESSAGE, PART X/Y
   // Used for multi-part messages, where the armor is split amongst Y
   // parts, and this is the Xth part out of Y.
-  if (header[1].match(/MESSAGE, PART \d+\/\d+/)) {
+  if (/MESSAGE, PART \d+\/\d+/.test(header[1])) {
     return enums.armor.multipart_section;
   } else
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
-  if (header[1].match(/MESSAGE, PART \d+/)) {
+  if (/MESSAGE, PART \d+/.test(header[1])) {
     return enums.armor.multipart_last;
 
   } else
@@ -9592,25 +9596,25 @@ function getType(text) {
   // Used for detached signatures, OpenPGP/MIME signatures, and
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
   // for detached signatures.
-  if (header[1].match(/SIGNED MESSAGE/)) {
+  if (/SIGNED MESSAGE/.test(header[1])) {
     return enums.armor.signed;
 
   } else
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
-  if (header[1].match(/MESSAGE/)) {
+  if (/MESSAGE/.test(header[1])) {
     return enums.armor.message;
 
   } else
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
-  if (header[1].match(/PUBLIC KEY BLOCK/)) {
+  if (/PUBLIC KEY BLOCK/.test(header[1])) {
     return enums.armor.public_key;
 
   } else
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
-  if (header[1].match(/PRIVATE KEY BLOCK/)) {
+  if (/PRIVATE KEY BLOCK/.test(header[1])) {
     return enums.armor.private_key;
   }
 }
@@ -9768,8 +9772,8 @@ function splitHeaders(text) {
  */
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
-    if (!headers[i].match(/^(Version|Comment|MessageID|Hash|Charset): .+$/)) {
-      throw new Error('Improperly formatted armor header: ' + headers[i]);;
+    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+      throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
   }
 }
@@ -9844,7 +9848,7 @@ function dearmor(text) {
     var sig_sum = splitChecksum(sig.body);
 
     result = {
-      text:  msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
+      text: msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
       data: base64.decode(sig_sum.body),
       headers: msg.headers,
       type: type
@@ -10428,7 +10432,10 @@ HKP.prototype.lookup = function(options) {
   }
 
   return fetch(uri).then(function(response) {
-    return response.text();
+    if (response.status === 200) {
+      return response.text();
+    }
+
   }).then(function(publicKeyArmored) {
     if (!publicKeyArmored || publicKeyArmored.indexOf('-----END PGP PUBLIC KEY BLOCK-----') < 0) {
       return;
@@ -11450,7 +11457,8 @@ function readArmored(armoredText) {
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
- * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String|Array<String>}  options.userId     assumes already in form of "User Name <username@email.com>"
+                                                     If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @return {module:key~Key}
@@ -11467,6 +11475,9 @@ function generate(options) {
   // Key without passphrase is unlocked by definition
   if (!options.passphrase) {
     options.unlocked = true;
+  }
+  if (String.prototype.isPrototypeOf(options.userId) || typeof options.userId === 'string') {
+    options.userId = [options.userId];
   }
 
   // generate
@@ -11495,35 +11506,47 @@ function generate(options) {
 
     packetlist = new packet.List();
 
-    userIdPacket = new packet.Userid();
-    userIdPacket.read(options.userId);
+    packetlist.push(secretKeyPacket);
 
-    dataToSign = {};
-    dataToSign.userid = userIdPacket;
-    dataToSign.key = secretKeyPacket;
-    signaturePacket = new packet.Signature();
-    signaturePacket.signatureType = enums.signature.cert_generic;
-    signaturePacket.publicKeyAlgorithm = options.keyType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-    signaturePacket.preferredHashAlgorithms = [];
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-    if (config.integrity_protect) {
-      signaturePacket.features = [];
-      signaturePacket.features.push(1); // Modification Detection
-    }
-    signaturePacket.sign(secretKeyPacket, dataToSign);
+    options.userId.forEach(function(userId, index) {
+
+      userIdPacket = new packet.Userid();
+      userIdPacket.read(userId);
+
+      dataToSign = {};
+      dataToSign.userid = userIdPacket;
+      dataToSign.key = secretKeyPacket;
+      signaturePacket = new packet.Signature();
+      signaturePacket.signatureType = enums.signature.cert_generic;
+      signaturePacket.publicKeyAlgorithm = options.keyType;
+      signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+      signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+      signaturePacket.preferredSymmetricAlgorithms = [];
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+      signaturePacket.preferredHashAlgorithms = [];
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+      signaturePacket.preferredCompressionAlgorithms = [];
+      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+      if (index === 0) {
+        signaturePacket.isPrimaryUserID = true;
+      }
+      if (config.integrity_protect) {
+        signaturePacket.features = [];
+        signaturePacket.features.push(1); // Modification Detection
+      }
+      signaturePacket.sign(secretKeyPacket, dataToSign);
+
+      packetlist.push(userIdPacket);
+      packetlist.push(signaturePacket);
+
+    });
 
     dataToSign = {};
     dataToSign.key = secretKeyPacket;
@@ -11535,9 +11558,6 @@ function generate(options) {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
     subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-    packetlist.push(secretKeyPacket);
-    packetlist.push(userIdPacket);
-    packetlist.push(signaturePacket);
     packetlist.push(secretSubkeyPacket);
     packetlist.push(subkeySignaturePacket);
 
@@ -11722,12 +11742,14 @@ KeyArray.prototype.getForAddress = function(email) {
  * @return {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
+  email = email.toLowerCase();
   // escape email before using in regular expression
-  email = email.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var emailRegex = new RegExp('<' + email + '>');
-  var keyEmails = key.getUserIds();
-  for (var i = 0; i < keyEmails.length; i++) {
-    if (emailRegex.test(keyEmails[i].toLowerCase())) {
+  var emailEsc = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var emailRegex = new RegExp('<' + emailEsc + '>');
+  var userIds = key.getUserIds();
+  for (var i = 0; i < userIds.length; i++) {
+    var userId = userIds[i].toLowerCase();
+    if (email === userId || emailRegex.test(userId)) {
       return true;
     }
   }
@@ -11918,10 +11940,14 @@ LocalStore.prototype.storePrivate = function (keys) {
 
 function storeKeys(storage, itemname, keys) {
   var armoredKeys = [];
-  for (var i = 0; i < keys.length; i++) {
-    armoredKeys.push(keys[i].armor());
+  if (keys.length) {
+    for (var i = 0; i < keys.length; i++) {
+      armoredKeys.push(keys[i].armor());
+    }
+    storage.setItem(itemname, JSON.stringify(armoredKeys));
+  } else {
+    storage.removeItem(itemname);
   }
-  storage.setItem(itemname, JSON.stringify(armoredKeys));
 }
 
 },{"../config":17,"../key.js":47,"../util.js":76,"node-localstorage":false}],51:[function(require,module,exports){
@@ -12173,7 +12199,7 @@ Message.prototype.sign = function(privateKeys) {
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat == enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
-  var i;
+  var i, signingKeyPacket;
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -12182,7 +12208,7 @@ Message.prototype.sign = function(privateKeys) {
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
-    var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+    signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' + privateKeys[i].primaryKey.getKeyId().toHex());
     }
@@ -12272,8 +12298,7 @@ function readArmored(armoredText) {
   var input = armor.decode(armoredText).data;
   var packetlist = new packet.List();
   packetlist.read(input);
-  var newMessage = new Message(packetlist);
-  return newMessage;
+  return new Message(packetlist);
 }
 
 /**
@@ -12288,8 +12313,7 @@ function readSignedContent(content, detachedSignature) {
   packetlist.push(literalDataPacket);
   var input = armor.decode(detachedSignature).data;
   packetlist.read(input);
-  var newMessage = new Message(packetlist);
-  return newMessage;
+  return new Message(packetlist);
 }
 
 /**
@@ -12304,23 +12328,25 @@ function fromText(text) {
   literalDataPacket.setText(text);
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  var newMessage = new Message(literalDataPacketlist);
-  return newMessage;
+  return new Message(literalDataPacketlist);
 }
 
 /**
  * creates new message object from binary data
  * @param {String} bytes
+ * @param {String} filename
  * @return {module:message~Message} new message object
  * @static
  */
-function fromBinary(bytes) {
+function fromBinary(bytes, filename) {
   var literalDataPacket = new packet.Literal();
+  if (filename) {
+    literalDataPacket.setFilename(filename);
+  }
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
   var literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  var newMessage = new Message(literalDataPacketlist);
-  return newMessage;
+  return new Message(literalDataPacketlist);
 }
 
 exports.Message = Message;
@@ -12706,7 +12732,7 @@ module.exports = {
    * @returns {Object} new packet object with data from packet clone
    */
   fromStructuredClone: function(packetClone) {
-    var tagName = enums.read(enums.packet, packetClone.tag)
+    var tagName = enums.read(enums.packet, packetClone.tag);
     var packet = this.newPacketFromTag(tagName);
     for (var attr in packetClone) {
         if (packetClone.hasOwnProperty(attr)) {
@@ -15472,7 +15498,8 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
 module.exports = SymmetricallyEncrypted;
 
 var crypto = require('../crypto'),
-  enums = require('../enums.js');
+  enums = require('../enums.js'),
+  config = require('../config');
 
 /**
  * @constructor
@@ -15483,6 +15510,7 @@ function SymmetricallyEncrypted() {
   /** Decrypted packets contained within. 
    * @type {module:packet/packetlist} */
   this.packets =  null;
+  this.ignore_mdc_error = config.ignore_mdc_error;
 }
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
@@ -15503,10 +15531,15 @@ SymmetricallyEncrypted.prototype.write = function () {
  *            algorithm
  */
 SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted = crypto.cfb.decrypt(
-    sessionKeyAlgorithm, key, this.encrypted, true);
-
-  this.packets.read(decrypted.join(''))
+  var decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
+  // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
+  if (!this.ignore_mdc_error &&
+      (sessionKeyAlgorithm === 'aes128' ||
+       sessionKeyAlgorithm === 'aes192' ||
+       sessionKeyAlgorithm === 'aes256')) {
+    throw new Error('Decryption failed due to missing MDC in combination with modern cipher.')
+  }
+  this.packets.read(decrypted.join(''));
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
@@ -15516,7 +15549,7 @@ SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
     crypto.getPrefixRandom(algo), algo, data, key, true);
 };
 
-},{"../crypto":32,"../enums.js":43}],70:[function(require,module,exports){
+},{"../config":17,"../crypto":32,"../enums.js":43}],70:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet/trust
