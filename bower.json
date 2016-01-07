@@ -1,6 +1,7 @@
 {
   "name": "openpgp",
   "version": "1.4.1",
+  "license" : "LGPL-3.0+",
   "homepage": "http://openpgpjs.org/",
   "authors": [
     "OpenPGP Development Team <list@openpgpjs.org> (https://github.com/openpgpjs/openpgpjs/graphs/contributors)"
@@ -25,7 +26,6 @@
     "openpgp",
     "encryption"
   ],
-  "license": "LGPL 3.0 or any later version",
   "ignore": [
     "**/.*",
     "dist/*.tgz",
