@@ -10,33 +10,33 @@ matrix:
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='0.12'
     - node_js: "4.2"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 42'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-2' BROWSER='firefox beta'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 38'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-4' BROWSER='chrome 46'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-5' BROWSER='chrome beta'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-6' BROWSER='internet explorer 11'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-7' BROWSER='microsoft edge 20.10240'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-8' BROWSER='safari 8'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-9' BROWSER='safari 9'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-10' BROWSER='android 4.4'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-11' BROWSER='android 5.1'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-12' BROWSER='iphone 7.0'
-    - node_js: "0.12.2"
+    - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
   allow_failures:
     - env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
