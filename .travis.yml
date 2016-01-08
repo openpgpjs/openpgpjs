@@ -57,4 +57,4 @@ matrix:
 before_script:
   - npm install -g grunt-cli
 script:
-  - $TRAVIS_BUILD_DIR/travis.sh
+  - travis_wait $TRAVIS_BUILD_DIR/travis.sh
