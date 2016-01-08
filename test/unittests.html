@@ -32,8 +32,6 @@
             window.mochaResults.reports = failedTests;
           });
 
-          runner.on('fail', logFailure);
-
           function logFailure(test, err) {
             var flattenTitles = function(test) {
               var titles = [];
@@ -46,6 +44,8 @@
 
             failedTests.push({name: test.title, result: false, message: err.message, stack: err.stack, titles: flattenTitles(test)});
           };
+
+          runner.on('fail', logFailure);
         }
     </script>
   </body>
