@@ -169,7 +169,7 @@ module.exports = function(grunt) {
     connect: {
       dev: {
         options: {
-          port: 9000,
+          port: 3000,
           base: '.'
         }
       }
@@ -179,16 +179,15 @@ module.exports = function(grunt) {
         options: {
           username: 'openpgpjs',
           key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
-          urls: ['http://127.0.0.1:9000/test/unittests.html'],
+          urls: ['http://127.0.0.1:3000/test/unittests.html'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
           browsers: [browser_capabilities],
           public: "public",
-          'max-duration': 360,
-          maxRetries: 1,
-          throttled: 3,
-          pollInterval: 2000,
-          statusCheckAttempts: 360
+          maxRetries: 3,
+          throttled: 2,
+          pollInterval: 4000,
+          statusCheckAttempts: 200
         }
       },
     }
