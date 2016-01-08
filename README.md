@@ -1,11 +1,9 @@
-[![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Coverage Status](https://coveralls.io/repos/openpgpjs/openpgpjs/badge.svg)](https://coveralls.io/r/openpgpjs/openpgpjs)
-
-[![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs.svg)](https://saucelabs.com/u/openpgpjs)
-
-OpenPGP.js
+OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Coverage Status](https://coveralls.io/repos/openpgpjs/openpgpjs/badge.svg)](https://coveralls.io/r/openpgpjs/openpgpjs)
 ==========
 
 [OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
+
+[![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs.svg)](https://saucelabs.com/u/openpgpjs)
 
 ### Node support
 
