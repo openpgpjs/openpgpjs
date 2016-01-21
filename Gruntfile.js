@@ -45,7 +45,13 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          transform: [
+            ["babelify", {
+              ignore: ['*.min.js'],
+              presets: ["es2015"]
+            }]
+          ]
         }
       },
       openpgp_debug: {
@@ -57,7 +63,13 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          transform: [
+            ["babelify", {
+              ignore: ['*.min.js'],
+              presets: ["es2015"]
+            }]
+          ]
         }
       },
       worker: {
@@ -139,8 +151,8 @@ module.exports = function(grunt) {
       build: ['Gruntfile.js'],
       options: {
         config: ".jscsrc",
-        esnext: false, // If you use ES6 http://jscs.info/overview.html#esnext
-        verbose: true, // If you need output with rule names http://jscs.info/overview.html#verbose
+        esnext: true,
+        verbose: true,
       }
     },
     jsdoc: {
@@ -260,16 +272,12 @@ module.exports = function(grunt) {
     fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
 
-  grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
-    //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
-    grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
-  });
-
+  // Build tasks
+  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
   grunt.registerTask('documentation', ['jsdoc']);
-
   // Test/Dev tasks
   grunt.registerTask('test', ['jshint', 'jscs', 'copy:zlib', 'mochaTest']);
   grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
+
 };

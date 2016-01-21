@@ -11,6 +11,7 @@
   "expr": true,
   "undef": true,
   "unused": true,
+  "esnext": true,
 
   "globals": {
     "console": true,
