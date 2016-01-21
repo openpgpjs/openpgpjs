@@ -45,7 +45,6 @@ module.exports = function(grunt) {
       },
       unittests: {
         files: {
-          'test/openpgp.js': [ './test/src/index.js' ],
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
@@ -150,13 +149,6 @@ module.exports = function(grunt) {
         cwd: 'node_modules/',
         src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'whatwg-fetch/fetch.js'],
         dest: 'test/lib/'
-      },
-      unittests: {
-        expand: true,
-        flatten: false,
-        cwd: './',
-        src: ['src/**'],
-        dest: 'test/'
       },
       zlib: {
         expand: true,
@@ -272,8 +264,8 @@ module.exports = function(grunt) {
   });
 
   // Test/Dev tasks
-  grunt.registerTask('test', ['copy:npm', 'copy:unittests', 'mochaTest']);
-  grunt.registerTask('coverage', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coverage']);
-  grunt.registerTask('coveralls', ['default', 'copy:npm', 'copy:unittests', 'mocha_istanbul:coveralls']);
-  grunt.registerTask('saucelabs', ['default', 'copy:npm', 'copy:unittests', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['copy:npm', 'mochaTest']);
+  grunt.registerTask('coverage', ['default', 'copy:npm', 'mocha_istanbul:coverage']);
+  grunt.registerTask('coveralls', ['default', 'copy:npm', 'mocha_istanbul:coveralls']);
+  grunt.registerTask('saucelabs', ['default', 'copy:npm', 'connect', 'saucelabs-mocha']);
 };
