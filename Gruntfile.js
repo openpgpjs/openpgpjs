@@ -16,9 +16,9 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
-            standalone: 'openpgp',
-            external: [ 'crypto', 'node-localstorage' ]
-          }
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       openpgp_debug: {
@@ -28,9 +28,9 @@ module.exports = function(grunt) {
         options: {
           browserifyOptions: {
             debug: true,
-            standalone: 'openpgp',
-            external: [ 'crypto', 'node-localstorage' ]
-          }
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       worker: {
@@ -48,9 +48,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          browserifyOptions: {
-            external: [ 'openpgp', 'crypto', 'node-localstorage']
-          }
+          external: [ 'openpgp']
         }
       }
     },
@@ -119,14 +117,14 @@ module.exports = function(grunt) {
       coverage: {
         src: 'test',
         options: {
-          root: 'node_modules/openpgp',
+          root: '.',
           timeout: 240000,
         }
       },
       coveralls: {
         src: ['test'],
         options: {
-          root: 'node_modules/openpgp',
+          root: '.',
           timeout: 240000,
           coverage: true,
           reportFormats: ['cobertura','lcovonly']
@@ -143,7 +141,7 @@ module.exports = function(grunt) {
       }
     },
     copy: {
-      npm: {
+      browsertest: {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
@@ -245,8 +243,8 @@ module.exports = function(grunt) {
   });
 
   // Test/Dev tasks
-  grunt.registerTask('test', ['copy:npm', 'mochaTest']);
-  grunt.registerTask('coverage', ['default', 'copy:npm', 'mocha_istanbul:coverage']);
-  grunt.registerTask('coveralls', ['default', 'copy:npm', 'mocha_istanbul:coveralls']);
-  grunt.registerTask('saucelabs', ['default', 'copy:npm', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['copy:zlib', 'mochaTest']);
+  grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
+  grunt.registerTask('coveralls', ['copy:zlib', 'mocha_istanbul:coveralls']);
+  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
 };
