@@ -2,7 +2,7 @@
   "name": "openpgp",
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
   "version": "1.4.1",
-  "license" : "LGPL-3.0+",
+  "license": "LGPL-3.0+",
   "homepage": "http://openpgpjs.org/",
   "engines": {
     "node": ">=0.8"
@@ -13,7 +13,7 @@
     "gpg",
     "openpgp"
   ],
-  "main": "src/index.js",
+  "main": "dist/openpgp.js",
   "directories": {
     "lib": "src"
   },
@@ -32,7 +32,7 @@
     "test": "grunt test"
   },
   "devDependencies": {
-    "browserify": "~12.0",
+    "browserify": "~13.0",
     "chai": "~3.4.1",
     "coveralls": "^2.11.2",
     "grunt": "~0.4.5",
@@ -40,23 +40,23 @@
     "grunt-contrib-clean": "~0.7.0",
     "grunt-contrib-connect": "~0.11.2",
     "grunt-contrib-copy": "~0.8.0",
-    "grunt-contrib-jshint": "*",
+    "grunt-contrib-jshint": "~0.12.0",
     "grunt-contrib-uglify": "~0.11.0",
     "grunt-jsbeautifier": "~0.2.10",
-    "grunt-jsdoc": "*",
+    "grunt-jsdoc": "~1.1.0",
     "grunt-mocha-istanbul": "^3.0.1",
     "grunt-mocha-test": "~0.12.7",
     "grunt-saucelabs": "8.6.2",
     "grunt-text-replace": "~0.4.0",
-    "istanbul": "^0.4.1",
+    "istanbul": "~0.4.1",
     "mocha": "~2.3.4",
     "node-fetch": "^1.3.3",
-    "whatwg-fetch": "^0.10.1"
+    "whatwg-fetch": "~0.11.0"
   },
   "dependencies": {
-    "es6-promise": "^3.0.2",
+    "es6-promise": "~3.0.2",
     "node-localstorage": "~1.1.2",
-    "zlibjs": "^0.2.0"
+    "zlibjs": "~0.2.0"
   },
   "repository": {
     "type": "git",
