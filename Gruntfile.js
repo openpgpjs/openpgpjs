@@ -15,9 +15,7 @@ module.exports = function(grunt) {
           'dist/openpgp.js': [ './src/index.js' ]
         },
         options: {
-          browserifyOptions: {
-            standalone: 'openpgp'
-          },
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
@@ -26,10 +24,8 @@ module.exports = function(grunt) {
           'dist/openpgp_debug.js': [ './src/index.js' ]
         },
         options: {
-          browserifyOptions: {
-            debug: true,
-            standalone: 'openpgp'
-          },
+          debug: true,
+          standalone: 'openpgp',
           external: [ 'crypto', 'node-localstorage' ]
         }
       },
