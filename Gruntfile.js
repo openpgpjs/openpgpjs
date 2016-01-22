@@ -48,7 +48,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'openpgp']
+          external: ['crypto', 'node-localstorage', 'openpgp', '../../../dist/openpgp', '../../dist/openpgp']
         }
       }
     },
