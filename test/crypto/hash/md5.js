@@ -1,6 +1,6 @@
 'use strict';
 
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
 
 var util = openpgp.util,
   MD5 = openpgp.crypto.hash.md5,

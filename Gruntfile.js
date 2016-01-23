@@ -16,9 +16,9 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
-            standalone: 'openpgp',
-            external: [ 'crypto', 'node-localstorage' ]
-          }
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       openpgp_debug: {
@@ -28,9 +28,9 @@ module.exports = function(grunt) {
         options: {
           browserifyOptions: {
             debug: true,
-            standalone: 'openpgp',
-            external: [ 'crypto', 'node-localstorage' ]
-          }
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       worker: {
@@ -48,9 +48,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          browserifyOptions: {
-            external: [ 'openpgp', 'crypto', 'node-localstorage']
-          }
+          external: ['crypto', 'node-localstorage', 'openpgp', '../../../dist/openpgp', '../../dist/openpgp']
         }
       }
     },
@@ -119,14 +117,14 @@ module.exports = function(grunt) {
       coverage: {
         src: 'test',
         options: {
-          root: 'node_modules/openpgp',
+          root: '.',
           timeout: 240000,
         }
       },
       coveralls: {
         src: ['test'],
         options: {
-          root: 'node_modules/openpgp',
+          root: '.',
           timeout: 240000,
           coverage: true,
           reportFormats: ['cobertura','lcovonly']
@@ -143,7 +141,7 @@ module.exports = function(grunt) {
       }
     },
     copy: {
-      npm: {
+      browsertest: {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
@@ -228,31 +226,12 @@ module.exports = function(grunt) {
   }
 
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify', 'npm_pack']);
+    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
     grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
   });
 
   grunt.registerTask('documentation', ['jsdoc']);
-
-  // Alias the `npm_pack` task to run `npm pack`
-  grunt.registerTask('npm_pack', 'npm pack', function () {
-    var done = this.async();
-    var npm = require('child_process').exec('npm pack ../', { cwd: 'dist'}, function (err, stdout) {
-      var package = stdout;
-      if (err === null) {
-        var install = require('child_process').exec('npm install dist/' + package, function (err) {
-          done(err);
-        });
-        install.stdout.pipe(process.stdout);
-        install.stderr.pipe(process.stderr);
-      } else {
-        done(err);
-      }
-    });
-    npm.stdout.pipe(process.stdout);
-    npm.stderr.pipe(process.stderr);
-  });
 
   grunt.event.on('coverage', function(lcov, done){
     require('coveralls').handleInput(lcov, function(err){
@@ -264,8 +243,8 @@ module.exports = function(grunt) {
   });
 
   // Test/Dev tasks
-  grunt.registerTask('test', ['copy:npm', 'mochaTest']);
-  grunt.registerTask('coverage', ['default', 'copy:npm', 'mocha_istanbul:coverage']);
-  grunt.registerTask('coveralls', ['default', 'copy:npm', 'mocha_istanbul:coveralls']);
-  grunt.registerTask('saucelabs', ['default', 'copy:npm', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['copy:zlib', 'mochaTest']);
+  grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
+  grunt.registerTask('coveralls', ['copy:zlib', 'mocha_istanbul:coveralls']);
+  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
 };

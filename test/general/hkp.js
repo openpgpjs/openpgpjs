@@ -1,6 +1,6 @@
 'use strict';
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('openpgp');
+var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 var fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 
 var chai = require('chai'),
