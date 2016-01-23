@@ -31,7 +31,7 @@
 
 'use strict';
 
-var enums = require('../enums.js');
+import enums from '../enums.js';
 
 module.exports = {
   prefer_hash_algorithm: enums.hash.sha256,
