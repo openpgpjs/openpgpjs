@@ -395,7 +395,7 @@ Blowfish.prototype.init = function(key) {
 
 // added by Recurity Labs
 
-function BF(key) {
+export default function BF(key) {
   this.bf = new Blowfish();
   this.bf.init(key);
 
@@ -403,8 +403,5 @@ function BF(key) {
     return this.bf.encrypt_block(block);
   };
 }
-
-
-module.exports = BF;
-module.exports.keySize = BF.prototype.keySize = 16;
-module.exports.blockSize = BF.prototype.blockSize = 16;
+BF.keySize = BF.prototype.keySize = 16;
+BF.blockSize = BF.prototype.blockSize = 16;

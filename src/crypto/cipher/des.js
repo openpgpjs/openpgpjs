@@ -422,7 +422,7 @@ function OriginalDes(key) {
   };
 }
 
-module.exports = {
+export default {
   /** @static */
   des: Des,
   /** @static */

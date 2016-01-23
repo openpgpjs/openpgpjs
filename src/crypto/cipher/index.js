@@ -8,8 +8,11 @@
 
 'use strict';
 
-import desModule from './des.js';
 import aes from'./aes.js';
+import desModule from './des.js';
+import cast5 from './cast5.js';
+import twofish from './twofish.js';
+import blowfish from './blowfish.js';
 
 module.exports = {
   /** @see module:crypto/cipher/aes */
@@ -21,11 +24,11 @@ module.exports = {
   /** @see module:crypto/cipher/des.des */
   tripledes: desModule.des,
   /** @see module:crypto/cipher/cast5 */
-  cast5: require('./cast5.js'),
+  cast5: cast5,
   /** @see module:crypto/cipher/twofish */
-  twofish: require('./twofish.js'),
+  twofish: twofish,
   /** @see module:crypto/cipher/blowfish */
-  blowfish: require('./blowfish.js'),
+  blowfish: blowfish,
   /** Not implemented */
   idea: function() {
     throw new Error('IDEA symmetric-key algorithm not implemented');

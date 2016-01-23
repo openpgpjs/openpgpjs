@@ -329,7 +329,7 @@ function createTwofish() {
 
 // added by Recurity Labs
 
-function TF(key) {
+export default function TF(key) {
   this.tf = createTwofish();
   this.tf.open(toArray(key), 0);
 
@@ -347,7 +347,5 @@ function toArray(typedArray) {
   return result;
 }
 
-
-module.exports = TF;
-module.exports.keySize = TF.prototype.keySize = 32;
-module.exports.blockSize = TF.prototype.blockSize = 16;
+TF.keySize = TF.prototype.keySize = 32;
+TF.blockSize = TF.prototype.blockSize = 16;

@@ -511,4 +511,4 @@ export default {
   128: makeClass(128),
   192: makeClass(192),
   256: makeClass(256)
-}
+};
