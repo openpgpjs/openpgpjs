@@ -32,7 +32,6 @@
     "test": "grunt test"
   },
   "devDependencies": {
-    "browserify": "~13.0",
     "chai": "~3.4.1",
     "coveralls": "^2.11.2",
     "grunt": "~0.4.5",
