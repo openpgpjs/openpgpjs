@@ -108,8 +108,7 @@ module.exports = function(grunt) {
         src: ['README.md', 'src'],
         options: {
           destination: 'doc',
-          recurse: true,
-          template: 'jsdoc.template'
+          recurse: true
         }
       }
     },
