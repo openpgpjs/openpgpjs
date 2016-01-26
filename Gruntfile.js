@@ -18,13 +18,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage' ],
-          transform: [
-            ["babelify", {
-              ignore: ['*.min.js'],
-              presets: ["es2015"]
-            }]
-          ]
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       openpgp_debug: {
@@ -36,13 +30,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage' ],
-          transform: [
-            ["babelify", {
-              ignore: ['*.min.js'],
-              presets: ["es2015"]
-            }]
-          ]
+          external: [ 'crypto', 'node-localstorage' ]
         }
       },
       worker: {

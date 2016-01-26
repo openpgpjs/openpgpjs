@@ -32,8 +32,6 @@
     "test": "grunt test"
   },
   "devDependencies": {
-    "babel-preset-es2015": "^6.3.13",
-    "babelify": "^7.2.0",
     "chai": "~3.4.1",
     "coveralls": "^2.11.2",
     "grunt": "~0.4.5",
