@@ -16,7 +16,6 @@
 	"trailing": true,
 	"undef": true,
 	"unused": true,
-	"esnext": true,
 
 	"predef": [
 			"console",
