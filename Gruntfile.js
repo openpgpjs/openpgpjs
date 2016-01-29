@@ -1,6 +1,7 @@
 module.exports = function(grunt) {
 
   var version = grunt.option('release');
+  var fs = require('fs');
 
   if (process.env.SELENIUM_BROWSER_CAPABILITIES != undefined) {
     var browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
@@ -213,16 +214,24 @@ module.exports = function(grunt) {
   });
 
   function patchFile(options) {
-    var fs = require('fs'),
-      path = './' + options.fileName,
+    var path = './' + options.fileName,
       file = require(path);
 
     if (options.version) {
       file.version = options.version;
     }
 
-    fs.writeFileSync(path, JSON.stringify(file, null, 2));
+    fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
+
+  // remove 'fsevents' from shrinkwrap, since it causes errors on non-Mac hosts
+  // see https://github.com/npm/npm/issues/2679
+  grunt.registerTask('fix_shrinkwrap', function () {
+    var path = './npm-shrinkwrap.json';
+    var shrinkwrap = require(path);
+    delete shrinkwrap.dependencies.fsevents;
+    fs.writeFileSync(path, JSON.stringify(shrinkwrap, null, 2) + '\n');
+  });
 
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
     grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);

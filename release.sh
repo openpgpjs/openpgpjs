@@ -24,6 +24,7 @@ npm test
 
 # shrinkwrap production and dev dependencies
 npm shrinkwrap --dev
+grunt fix_shrinkwrap
 
 # Add build files to git
 sed -i "" '/^dist\/$/d' .gitignore
