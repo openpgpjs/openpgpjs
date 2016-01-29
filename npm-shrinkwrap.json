@@ -1,6 +1,6 @@
 {
   "name": "openpgp",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "dependencies": {
     "abbrev": {
       "version": "1.0.7",
@@ -1027,9 +1027,9 @@
       "resolved": "https://registry.npmjs.org/grunt-jsbeautifier/-/grunt-jsbeautifier-0.2.10.tgz",
       "dependencies": {
         "lodash": {
-          "version": "4.0.1",
+          "version": "4.1.0",
           "from": "lodash@>=2.4.1",
-          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.0.1.tgz"
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.1.0.tgz"
         }
       }
     },
