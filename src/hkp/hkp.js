@@ -31,14 +31,10 @@ var config = require('../config');
  * @constructor
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
  *   the protocol to use e.g. https://pgp.mit.edu
- * @param {function}  fetch             (optional) The fetch function is an easier way
- *   to make web requests and handle responses than using an XMLHttpRequest. You can
- *   pass in a custom implementaion or just leave the parameter empty to fall back to
- *   window.fetch (https://fetch.spec.whatwg.org).
  */
-function HKP(keyServerBaseUrl, fetch) {
+function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl ? keyServerBaseUrl : config.keyserver;
-  this._fetch = fetch ? fetch : typeof window !== 'undefined' && window.fetch;
+  this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
 
 /**

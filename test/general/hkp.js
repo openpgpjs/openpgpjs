@@ -1,7 +1,6 @@
 'use strict';
 
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
-var fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 
 var chai = require('chai'),
   expect = chai.expect;
@@ -108,7 +107,7 @@ describe('HKP unit tests', function() {
       '-----END PGP PUBLIC KEY BLOCK-----';
 
   beforeEach(function() {
-    hkp = new openpgp.HKP(openpgp.config.keyserver, fetch);
+    hkp = new openpgp.HKP(openpgp.config.keyserver);
   });
 
   afterEach(function() {});
