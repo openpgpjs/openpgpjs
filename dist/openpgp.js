@@ -1401,7 +1401,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.5.0",
+  versionstring: "OpenPGP.js v1.5.1",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "https://keyserver.ubuntu.com",
@@ -3284,6 +3284,7 @@ module.exports.keySize = cast5.prototype.keySize = 16;
  * @module crypto/cipher/des
  */
 
+'use strict';
 
 function des(keys, message, encrypt, mode, iv, padding) {
   //declaring this locally speeds things up a bit
@@ -3413,7 +3414,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
     for (j = 0; j < iterations; j += 3) {
       endloop = looping[j + 1];
       loopinc = looping[j + 2];
-      //now go through and perform the encryption or decryption  
+      //now go through and perform the encryption or decryption
       for (i = looping[j]; i != endloop; i += loopinc) { //for efficiency
         right1 = right ^ keys[i];
         right2 = ((right >>> 4) | (right << 28)) ^ keys[i + 1];
@@ -3562,7 +3563,7 @@ function des_createKeys(key) {
     right = temp;
 
     //now go through and perform these shifts on the left and right keys
-    for (i = 0; i < shifts.length; i++) {
+    for (var i = 0; i < shifts.length; i++) {
       //shift the keys either one or two bits to the left
       if (shifts[i]) {
         left = (left << 2) | (left >>> 26);
@@ -3576,7 +3577,7 @@ function des_createKeys(key) {
 
       //now apply PC-2, in such a way that E is easier when encrypting or decrypting
       //this conversion will look like PC-2 except only the last 6 bits of each byte are used
-      //rather than 48 consecutive bits and the order of lines will be according to 
+      //rather than 48 consecutive bits and the order of lines will be according to
       //how the S selection functions will be applied: S2, S4, S6, S8, S1, S3, S5, S7
       lefttemp = pc2bytes0[left >>> 28] | pc2bytes1[(left >>> 24) & 0xf] | pc2bytes2[(left >>> 20) & 0xf] | pc2bytes3[(
         left >>> 16) & 0xf] | pc2bytes4[(left >>> 12) & 0xf] | pc2bytes5[(left >>> 8) & 0xf] | pc2bytes6[(left >>> 4) &
