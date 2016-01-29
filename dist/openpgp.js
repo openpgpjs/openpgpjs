@@ -1401,7 +1401,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.5.3",
+  versionstring: "OpenPGP.js v1.5.4",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "https://keyserver.ubuntu.com",
@@ -10805,14 +10805,10 @@ var config = require('../config');
  * @constructor
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
  *   the protocol to use e.g. https://pgp.mit.edu
- * @param {function}  fetch             (optional) The fetch function is an easier way
- *   to make web requests and handle responses than using an XMLHttpRequest. You can
- *   pass in a custom implementaion or just leave the parameter empty to fall back to
- *   window.fetch (https://fetch.spec.whatwg.org).
  */
-function HKP(keyServerBaseUrl, fetch) {
+function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl ? keyServerBaseUrl : config.keyserver;
-  this._fetch = fetch ? fetch : typeof window !== 'undefined' && window.fetch;
+  this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
 
 /**
@@ -10864,7 +10860,7 @@ HKP.prototype.upload = function(publicKeyArmored) {
     body: 'keytext=' + encodeURIComponent(publicKeyArmored)
   });
 };
-},{"../config":8}],36:[function(require,module,exports){
+},{"../config":8,"node-fetch":"node-fetch"}],36:[function(require,module,exports){
 /**
  * @see module:hkp/hkp
  * @module hkp
