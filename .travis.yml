@@ -7,6 +7,8 @@ matrix:
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='0.12'
     - node_js: "4.2"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
+    - node_js: "5"
+      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='5'
     - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - node_js: "0.12"
@@ -37,6 +39,7 @@ matrix:
       env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
   allow_failures:
     - env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
+    - env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='5'
     - env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 42'
     - env: OPENPGPJSTEST='end2end-2' BROWSER='firefox beta'
