@@ -12,8 +12,6 @@ if [ "$#" -ne 1 ] ; then
 fi
 
 # install dependencies
-rm npm-shrinkwrap.json
-rm -rf node_modules/
 npm install
 
 # set version
@@ -21,10 +19,6 @@ grunt set_version --release=$1
 
 # build and test
 npm test
-
-# shrinkwrap production and dev dependencies
-npm shrinkwrap --dev
-grunt fix_shrinkwrap
 
 # Add build files to git
 sed -i "" '/^dist\/$/d' .gitignore

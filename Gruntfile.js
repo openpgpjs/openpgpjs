@@ -208,6 +208,11 @@ module.exports = function(grunt) {
     });
 
     patchFile({
+      fileName: 'npm-shrinkwrap.json',
+      version: version
+    });
+
+    patchFile({
       fileName: 'bower.json',
       version: version
     });
