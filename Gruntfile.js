@@ -229,15 +229,6 @@ module.exports = function(grunt) {
     fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
 
-  // remove 'fsevents' from shrinkwrap, since it causes errors on non-Mac hosts
-  // see https://github.com/npm/npm/issues/2679
-  grunt.registerTask('fix_shrinkwrap', function () {
-    var path = './npm-shrinkwrap.json';
-    var shrinkwrap = require(path);
-    delete shrinkwrap.dependencies.fsevents;
-    fs.writeFileSync(path, JSON.stringify(shrinkwrap, null, 2) + '\n');
-  });
-
   grunt.registerTask('default', 'Build OpenPGP.js', function() {
     grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
     //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
