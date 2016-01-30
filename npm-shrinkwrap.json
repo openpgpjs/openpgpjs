@@ -1,6 +1,6 @@
 {
   "name": "openpgp",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "dependencies": {
     "chai": {
       "version": "3.4.1",
