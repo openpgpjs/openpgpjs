@@ -1,10 +1,13 @@
+'use strict';
+
 module.exports = function(grunt) {
 
   var version = grunt.option('release');
   var fs = require('fs');
+  var browser_capabilities;
 
-  if (process.env.SELENIUM_BROWSER_CAPABILITIES != undefined) {
-    var browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
+  if (process.env.SELENIUM_BROWSER_CAPABILITIES !== undefined) {
+    browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
   }
 
   // Project configuration.
@@ -102,7 +105,20 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      all: ['src/**/*.js']
+      src: ['src/**/*.js'],
+      build: ['Gruntfile.js', '*.json'],
+      options: {
+        jshintrc: '.jshintrc'
+      }
+    },
+    jscs: {
+      src: ['src/**/*.js'],
+      build: ['Gruntfile.js'],
+      options: {
+        config: ".jscsrc",
+        esnext: false, // If you use ES6 http://jscs.info/overview.html#esnext
+        verbose: true, // If you need output with rule names http://jscs.info/overview.html#verbose
+      }
     },
     jsdoc: {
       dist: {
@@ -189,6 +205,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-jscs');
   grunt.loadNpmTasks('grunt-jsdoc');
   grunt.loadNpmTasks('grunt-mocha-istanbul');
   grunt.loadNpmTasks('grunt-mocha-test');
@@ -242,12 +259,12 @@ module.exports = function(grunt) {
       if (err) {
         return done(err);
       }
-    done();
+      done();
     });
   });
 
   // Test/Dev tasks
-  grunt.registerTask('test', ['copy:zlib', 'mochaTest']);
+  grunt.registerTask('test', ['jshint:build', 'jscs:build', 'copy:zlib', 'mochaTest']);
   grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
   grunt.registerTask('coveralls', ['copy:zlib', 'mocha_istanbul:coveralls']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
