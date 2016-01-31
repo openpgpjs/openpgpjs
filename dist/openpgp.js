@@ -1040,7 +1040,7 @@ module.exports = {
 
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v1.5.6",
+  versionstring: "OpenPGP.js v1.5.7",
   commentstring: "http://openpgpjs.org",
 
   keyserver: "https://keyserver.ubuntu.com",
