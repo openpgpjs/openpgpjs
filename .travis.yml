@@ -41,8 +41,6 @@ matrix:
     - node_js: "0.12"
       env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
   allow_failures:
-    - env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
-    - env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='5'
     - env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - env: OPENPGPJSTEST='end2end-2' BROWSER='firefox beta'
     - env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 38'
