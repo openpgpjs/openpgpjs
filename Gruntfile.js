@@ -136,15 +136,6 @@ module.exports = function(grunt) {
           root: '.',
           timeout: 240000,
         }
-      },
-      coveralls: {
-        src: ['test'],
-        options: {
-          root: '.',
-          timeout: 240000,
-          coverage: true,
-          reportFormats: ['cobertura','lcovonly']
-        }
       }
     },
     mochaTest: {
@@ -254,18 +245,8 @@ module.exports = function(grunt) {
 
   grunt.registerTask('documentation', ['jsdoc']);
 
-  grunt.event.on('coverage', function(lcov, done){
-    require('coveralls').handleInput(lcov, function(err){
-      if (err) {
-        return done(err);
-      }
-      done();
-    });
-  });
-
   // Test/Dev tasks
   grunt.registerTask('test', ['jshint:build', 'jscs:build', 'copy:zlib', 'mochaTest']);
   grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
-  grunt.registerTask('coveralls', ['copy:zlib', 'mocha_istanbul:coveralls']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
 };

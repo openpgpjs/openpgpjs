@@ -4,7 +4,8 @@ set -e
 
 if [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit-tests"
-  grunt coveralls
+  grunt coverage
+  codeclimate-test-reporter < coverage/lcov.info
 
 elif [[ $OPENPGPJSTEST =~ ^end2end-.* ]]; then
   echo "Running browser-testing on Saucelabs"

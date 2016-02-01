@@ -1,5 +1,8 @@
 sudo: false
 language: node_js
+addons:
+    code_climate:
+        repo_token: $CODECLIMATE_REPO_TOKEN
 matrix:
   fast_finish: true
   include:
@@ -52,6 +55,6 @@ matrix:
     - env: OPENPGPJSTEST='end2end-12' BROWSER='iphone 7.0'
     - env: OPENPGPJSTEST='end2end-13' BROWSER='iphone 9.1'
 before_script:
-  - npm install -g grunt-cli
+  - npm install -g grunt-cli codeclimate-test-reporter
 script:
   - $TRAVIS_BUILD_DIR/travis.sh
