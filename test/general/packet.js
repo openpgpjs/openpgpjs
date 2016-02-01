@@ -72,6 +72,7 @@ describe("Packet", function() {
 
     var msg2 = new openpgp.packet.List();
     msg2.read(message.write());
+    msg2[0].ignore_mdc_error = true;
     msg2[0].decrypt(algo, key);
 
     expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
