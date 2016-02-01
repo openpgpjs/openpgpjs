@@ -113,7 +113,7 @@ describe('Basic', function() {
       });
     });
 
-    it('Performance test', function (done) {
+    it.skip('Performance test', function (done) {
       // init test data
       function randomString(length, chars) {
         var result = '';
