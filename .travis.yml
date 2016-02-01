@@ -2,7 +2,7 @@ sudo: false
 language: node_js
 addons:
     code_climate:
-        repo_token: tanxchangeme!46ecd492907f8224b0ae64890d4befb4bbd9ebbeba55b5acb38
+        repo_token: $CODECLIMATE_REPO_TOKEN
 matrix:
   fast_finish: true
   include:
