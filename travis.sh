@@ -2,13 +2,17 @@
 
 set -e
 
-if [ $OPENPGPJSTEST = "unit" ]; then
-  echo "Running OpenPGP.js unit-tests"
+if [ $OPENPGPJSTEST = "coverage" ]; then
+  echo "Running OpenPGP.js unit tests on node.js with code coverage."
   grunt coverage
   codeclimate-test-reporter < coverage/lcov.info
 
+elif [ $OPENPGPJSTEST = "unit" ]; then
+  echo "Running OpenPGP.js unit tests on node.js."
+  npm test
+
 elif [[ $OPENPGPJSTEST =~ ^end2end-.* ]]; then
-  echo "Running browser-testing on Saucelabs"
+  echo "Running OpenPGP.js browser unit tests on Saucelabs."
 
   declare -a capabilities=(
     "export SELENIUM_BROWSER_CAPABILITIES='{\"browserName\":\"firefox\", \"version\":\"38.0\", \"platform\":\"Linux\"}'"
