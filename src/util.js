@@ -408,11 +408,10 @@ module.exports = {
   /**
    * Get native Web Cryptography api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.useNative
-   * @return {Object} The SubtleCrypto api or 'undefined'
+   * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
     if (!config.useNative) {
-      // make web crypto optional
       return;
     }
 
@@ -465,6 +464,32 @@ module.exports = {
    */
   detectNode: function() {
     return typeof window === 'undefined';
+  },
+
+  /**
+   * Get native Node.js crypto api. The default configuration is to use
+   * the api when available. But it can also be deactivated with config.useNative
+   * @return {Object}   The crypto module or 'undefined'
+   */
+  getNodeCrypto: function() {
+    if (!this.detectNode() || !config.useNative) {
+      return;
+    }
+
+    return require('crypto');
+  },
+
+  /**
+   * Get native Node.js Buffer constructor. This should be used since
+   * Buffer is not available under browserify.
+   * @return {Function}   The Buffer constructor or 'undefined'
+   */
+  getNodeBuffer: function() {
+    if (!this.detectNode()) {
+      return;
+    }
+
+    return require('buffer').Buffer;
   }
 
 };

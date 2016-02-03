@@ -38,8 +38,9 @@ module.exports = SymEncryptedIntegrityProtected;
 
 var util = require('../util.js'),
   crypto = require('../crypto'),
-  config = require('../config'),
-  enums = require('../enums.js');
+  enums = require('../enums.js'),
+  nodeCrypto = util.getNodeCrypto(),
+  Buffer = util.getNodeBuffer();
 
 /**
  * @constructor
@@ -98,15 +99,10 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
-    if(util.detectNode() && config.useNative) {
-      var nodeCrypto = require('crypto');
-      var Buffer = require('buffer').Buffer;
+    if(nodeCrypto) {
       var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
-      //var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
-      //  util.Uint8Array2str(key), util.Uint8Array2str(new Uint8Array(blockSize)));
-      //this.encrypted = new Uint8Array(cipherObj.update(util.Uint8Array2str(util.concatUint8Array([prefix, tohash]))));
     }
     else {
       this.encrypted = asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, tohash]), key);
@@ -134,9 +130,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
-    if(util.detectNode() && config.useNative) {
-      var nodeCrypto = require('crypto');
-      var Buffer = require('buffer').Buffer;
+    if(nodeCrypto) {
       var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
