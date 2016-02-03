@@ -396,11 +396,11 @@ module.exports = {
 
   /**
    * Get native Web Cryptography api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useWebCrypto
+   * the api when available. But it can also be deactivated with config.useNative
    * @return {Object} The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (config.useWebCrypto === false) {
+    if (!config.useNative) {
       // make web crypto optional
       return;
     }
