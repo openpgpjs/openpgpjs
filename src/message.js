@@ -87,7 +87,7 @@ Message.prototype.getSigningKeyIds = function() {
 /**
  * Decrypt the message
  * @param {module:key~Key|String} privateKey private key with decrypted secret data, password or session key
- * @param {String} sessionKeyAlgorithm if privateKey is a session key, this must be set to the session key algorithm (i.e. 'aes256'). 
+ * @param {String} sessionKeyAlgorithm if privateKey is a session key, this must be set to the session key algorithm (i.e. 'aes256').
  *                              Do not set if privateKey is not a session key.
  * @return {Array<module:message~Message>} new message with decrypted content
  */
@@ -146,11 +146,13 @@ Message.prototype.decryptSessionKey = function(privateKey) {
       return this;
     }
     var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
-    if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    if (!privateKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
     var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-    for (var i = 0; i < pkESKeyPacketlist.length; i++) {
-      if (pkESKeyPacketlist[i].publicKeyId.equals(privateKeyPacket.getKeyId())) {
-        keyPacket = pkESKeyPacketlist[i];
+    for (var j = 0; j < pkESKeyPacketlist.length; j++) {
+      if (pkESKeyPacketlist[j].publicKeyId.equals(privateKeyPacket.getKeyId())) {
+        keyPacket = pkESKeyPacketlist[j];
         keyPacket.decrypt(privateKeyPacket);
         break;
       }
@@ -244,10 +246,10 @@ function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
 
   /** Convert to arrays if necessary */
   if(keys && !Array.prototype.isPrototypeOf(keys)) {
-    keys = [keys]
+    keys = [keys];
   }
   if(passwords && !Array.prototype.isPrototypeOf(passwords)) {
-    passwords = [passwords]
+    passwords = [passwords];
   }
 
   var packetlist = new packet.List();
@@ -278,7 +280,7 @@ function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
   }
 
   return new Message(packetlist);
-};
+}
 
 /**
  * Encrypt the message symmetrically using a passphrase.
@@ -344,10 +346,12 @@ Message.prototype.sign = function(privateKeys) {
   var packetlist = new packet.List();
 
   var literalDataPacket = this.packets.findPacket(enums.packet.literal);
-  if (!literalDataPacket) throw new Error('No literal data packet to sign.');
+  if (!literalDataPacket) {
+    throw new Error('No literal data packet to sign.');
+  }
 
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  var signatureType = literalFormat == enums.literal.binary ?
+  var signatureType = literalFormat === enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
   var i, signingKeyPacket;
   for (i = 0; i < privateKeys.length; i++) {
@@ -374,7 +378,9 @@ Message.prototype.sign = function(privateKeys) {
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
@@ -391,7 +397,9 @@ Message.prototype.verify = function(keys) {
   var result = [];
   var msg = this.unwrapCompressed();
   var literalDataList = msg.packets.filterByTag(enums.packet.literal);
-  if (literalDataList.length !== 1) throw new Error('Can only verify message with one literal data packet.');
+  if (literalDataList.length !== 1) {
+    throw new Error('Can only verify message with one literal data packet.');
+  }
   var signatureList = msg.packets.filterByTag(enums.packet.signature);
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;

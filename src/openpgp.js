@@ -37,6 +37,7 @@ var armor = require('./encoding/armor.js'),
   enums = require('./enums.js'),
   message = require('./message.js'),
   cleartext = require('./cleartext.js'),
+  config = require('./config/config.js'),
   key = require('./key.js'),
   util = require('./util'),
   AsyncProxy = require('./worker/async_proxy.js');
@@ -55,7 +56,7 @@ var asyncProxy = null; // instance of the asyncproxy
 function initWorker(path, options) {
   if (options && options.worker || typeof window !== 'undefined' && window.Worker) {
     options = options || {};
-    options.config = this.config;
+    options.config = config;
     asyncProxy = new AsyncProxy(path, options);
     return true;
   } else {
@@ -76,7 +77,7 @@ function getWorker() {
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
  * @param  {String} data                                       text/data message as native JavaScript string/binary string
  * @param  {(Array<String>|String)} passwords                  passwords for the message
- * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
+ * @param  {Object} params                                     parameter object with optional properties binary {Boolean},
  *                                                             filename {String}, and packets {Boolean}
  * @return {Promise<String> or Promise<Packetlist>}            encrypted ASCII armored message, or Packetlist if params.packets is true
  * @static
@@ -87,14 +88,14 @@ function encryptMessage(keys, data, passwords, params) {
     return asyncProxy.encryptMessage(keys, data, passwords, params);
   }
 
-  var filename, binary, packets;
+  var filename, packets;
   if(params) {
     filename = params.filename;
     packets = params.packets;
   }
 
   return execute(function() {
-    var msg, armored;
+    var msg;
     if(data instanceof Uint8Array) {
       msg = message.fromBinary(data, filename);
     }
@@ -110,7 +111,7 @@ function encryptMessage(keys, data, passwords, params) {
         data: msg.packets.slice(dataIndex,msg.packets.length).write()
       };
       return obj;
-    } 
+    }
     else {
       return armor.encode(enums.armor.message, msg.packets.write());
     }

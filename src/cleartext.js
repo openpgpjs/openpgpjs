@@ -78,7 +78,9 @@ CleartextMessage.prototype.sign = function(privateKeys) {
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
@@ -167,11 +169,11 @@ function readArmored(armoredText) {
  */
 function verifyHeaders(headers, packetlist) {
   var checkHashAlgos = function(hashAlgos) {
+    function check(algo) {
+      return packetlist[i].hashAlgorithm === algo;
+    }
     for (var i = 0; i < packetlist.length; i++) {
-      if (packetlist[i].tag === enums.packet.signature &&
-          !hashAlgos.some(function(algo) {
-            return packetlist[i].hashAlgorithm === algo;
-          })) {
+      if (packetlist[i].tag === enums.packet.signature && !hashAlgos.some(check)) {
         return false;
       }
     }
@@ -179,8 +181,8 @@ function verifyHeaders(headers, packetlist) {
   };
   var oneHeader = null;
   var hashAlgos = [];
-  for (var i = 0; i < headers.length; i++) {
-    oneHeader = headers[i].match(/Hash: (.+)/); // get header value
+  headers.forEach(function(header) {
+    oneHeader = header.match(/Hash: (.+)/); // get header value
     if (oneHeader) {
       oneHeader = oneHeader[1].replace(/\s/g, '');  // remove whitespace
       oneHeader = oneHeader.split(',');
@@ -196,7 +198,7 @@ function verifyHeaders(headers, packetlist) {
     } else {
       throw new Error('Only "Hash" header allowed in cleartext signed message');
     }
-  }
+  });
   if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
     throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
   } else if (!checkHashAlgos(hashAlgos)) {

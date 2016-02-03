@@ -301,19 +301,26 @@ module.exports = {
 
   /** Asserts validity and converts from string/integer to integer. */
   write: function(type, e) {
-    if (typeof e == 'number') {
+    if (typeof e === 'number') {
       e = this.read(type, e);
     }
 
     if (type[e] !== undefined) {
       return type[e];
-    } else throw new Error('Invalid enum value.');
+    } else {
+      throw new Error('Invalid enum value.');
+    }
   },
+
   /** Converts from an integer to string. */
   read: function(type, e) {
-    for (var i in type)
-      if (type[i] == e) return i;
+    for (var i in type) {
+      if (type[i] === parseInt(e)) {
+        return i;
+      }
+    }
 
     throw new Error('Invalid enum value.');
   }
+
 };

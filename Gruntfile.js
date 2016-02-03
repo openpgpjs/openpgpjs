@@ -105,14 +105,14 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      src: ['src/**/*.js'],
+      src: ['src/*.js'], // add more over time ... goal should be 100% coverage
       build: ['Gruntfile.js', '*.json'],
       options: {
         jshintrc: '.jshintrc'
       }
     },
     jscs: {
-      src: ['src/**/*.js'],
+      src: ['src/*.js'], // add more over time ... goal should be 100% coverage
       build: ['Gruntfile.js'],
       options: {
         config: ".jscsrc",
@@ -246,7 +246,7 @@ module.exports = function(grunt) {
   grunt.registerTask('documentation', ['jsdoc']);
 
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint:build', 'jscs:build', 'copy:zlib', 'mochaTest']);
+  grunt.registerTask('test', ['jshint', 'jscs', 'copy:zlib', 'mochaTest']);
   grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
 };
