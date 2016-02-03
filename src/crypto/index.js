@@ -3,6 +3,8 @@
  * @module crypto
  */
 
+'use strict';
+
 // asmCrypto global object (AES CFB, SHA1, SHA256, SHA512)
 require('./asmcrypto.js');
 
@@ -25,5 +27,6 @@ module.exports = {
 
 var crypto = require('./crypto.js');
 
-for (var i in crypto)
+for (var i in crypto) {
   module.exports[i] = crypto[i];
+}
