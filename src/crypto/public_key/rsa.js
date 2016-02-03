@@ -24,6 +24,8 @@
  * @module crypto/public_key/rsa
  */
 
+'use strict';
+
 var BigInteger = require('./jsbn.js'),
   util = require('../../util.js'),
   random = require('../random.js'),
@@ -119,7 +121,7 @@ function RSA() {
 
   // "empty" RSA key constructor
 
-  function keyObject() {
+  function KeyObject() {
     this.n = null;
     this.e = 0;
     this.ee = null;
@@ -165,10 +167,10 @@ function RSA() {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
         };
-        
+
         keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-        if (!(typeof keys.then === 'function')) { // IE11 KeyOperation
-          keys = convertKeyOperation(keys, 'Error generating RSA key pair.');
+        if (typeof keys.then !== 'function') { // IE11 KeyOperation
+          keys = util.promisifyIE11Op(keys, 'Error generating RSA key pair.');
         }
       }
 
@@ -185,15 +187,15 @@ function RSA() {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
       var key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if (!(typeof key.then === 'function')) { // IE11 KeyOperation
-        key = convertKeyOperation(key, 'Error exporting RSA key pair.');
+      if (typeof key.then !== 'function') { // IE11 KeyOperation
+        key = util.promisifyIE11Op(key, 'Error exporting RSA key pair.');
       }
       return key;
     }
 
     function decodeKey(jwk) {
       // map JWK parameters to local BigInteger type system
-      var key = new keyObject();
+      var key = new KeyObject();
       key.n = toBigInteger(jwk.n);
       key.ee = new BigInteger(E, 16);
       key.d = toBigInteger(jwk.d);
@@ -210,23 +212,12 @@ function RSA() {
       return key;
     }
 
-    function convertKeyOperation(keyop, errmsg) {
-      return new Promise(function(resolve, reject) {
-        keyop.onerror = function (err) { 
-          reject(new Error(errmsg));
-        };
-        keyop.oncomplete = function (e) {
-          resolve(e.target.result);
-        };
-      });
-    }
-
     //
     // JS code
     //
 
     return new Promise(function(resolve) {
-      var key = new keyObject();
+      var key = new KeyObject();
       var rng = new SecureRandom();
       var qs = B >> 1;
       key.e = parseInt(E, 16);
@@ -235,13 +226,15 @@ function RSA() {
       for (;;) {
         for (;;) {
           key.p = new BigInteger(B - qs, 1, rng);
-          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10))
+          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10)) {
             break;
+          }
         }
         for (;;) {
           key.q = new BigInteger(qs, 1, rng);
-          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10))
+          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10)) {
             break;
+          }
         }
         if (key.p.compareTo(key.q) <= 0) {
           var t = key.p;
@@ -270,7 +263,7 @@ function RSA() {
   this.verify = verify;
   this.sign = sign;
   this.generate = generate;
-  this.keyObject = keyObject;
+  this.keyObject = KeyObject;
 }
 
 module.exports = RSA;

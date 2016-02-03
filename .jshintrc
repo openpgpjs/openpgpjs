@@ -29,6 +29,9 @@
     "before": true,
     "beforeEach": true,
     "after": true,
-    "afterEach": true
+    "afterEach": true,
+    "escape": true,
+    "unescape": true,
+    "asmCrypto": true
   }
 }

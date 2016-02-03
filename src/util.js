@@ -69,11 +69,14 @@ module.exports = {
     var i = 0;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push(" " + h);
       i++;
-      if (i % 32 === 0)
+      if (i % 32 === 0) {
         r.push("\n           ");
+      }
     }
     return r.join('');
   },
@@ -84,15 +87,18 @@ module.exports = {
    * @return {String} String containing the hexadecimal values
    */
   hexstrdump: function (str) {
-    if (str === null)
+    if (str === null) {
       return "";
+    }
     var r = [];
     var e = str.length;
     var c = 0;
     var h;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push("" + h);
     }
     return r.join('');
@@ -105,8 +111,9 @@ module.exports = {
    */
   hex2bin: function (hex) {
     var str = '';
-    for (var i = 0; i < hex.length; i += 2)
+    for (var i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
     return str;
   },
 
@@ -122,7 +129,9 @@ module.exports = {
     var h;
     while (c < e) {
       h = str[c++].toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push("" + h);
     }
     return r.join('');
@@ -189,7 +198,7 @@ module.exports = {
   str2Uint8Array: function (str) {
 
     // Uncomment for debugging
-    if(!(typeof str === 'string') && !String.prototype.isPrototypeOf(str)) {
+    if(typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
       throw new Error('str2Uint8Array: Data must be in the form of a string');
     }
 
@@ -227,7 +236,7 @@ module.exports = {
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @return {Uint8array} Concatenated array
    */
-   concatUint8Array: function (arrays) {
+  concatUint8Array: function (arrays) {
 
     var totalLength = 0;
     arrays.forEach(function (element) {
@@ -248,7 +257,7 @@ module.exports = {
     });
 
     return result;
-   },
+  },
 
   /**
    * Deep copy Uint8Array
@@ -342,8 +351,9 @@ module.exports = {
 
   getLeftNBits: function (string, bitcount) {
     var rest = bitcount % 8;
-    if (rest === 0)
+    if (rest === 0) {
       return string.substring(0, bitcount / 8);
+    }
     var bytes = (bitcount - rest) / 8 + 1;
     var result = string.substring(0, bytes);
     return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
@@ -357,17 +367,18 @@ module.exports = {
    * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
-    var temp = util.str2bin(value);
+    var temp = this.str2bin(value);
     if (bitcount % 8 !== 0) {
       for (var i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
-        if (i > 0)
+        if (i > 0) {
           temp[i] |= (temp[i - 1] << (8 - (bitcount % 8))) & 0xFF;
+        }
       }
     } else {
       return value;
     }
-    return util.bin2str(temp);
+    return this.bin2str(temp);
   },
 
   /**
@@ -413,5 +424,40 @@ module.exports = {
         return window.msCrypto.subtle;
       }
     }
+  },
+
+  /**
+   * Wraps a generic synchronous function in an ES6 Promise.
+   * @param  {Function} fn  The function to be wrapped
+   * @return {Function}     The function wrapped in a Promise
+   */
+  promisify: function(fn) {
+    return function() {
+      var args = arguments;
+      return new Promise(function(resolve) {
+        var result = fn.apply(null, args);
+        resolve(result);
+      });
+    };
+  },
+
+  /**
+   * Converts an IE11 web crypro api result to a promise.
+   *   This is required since IE11 implements an old version of the
+   *   Web Crypto specification that does not use promises.
+   * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call
+   * @param  {String} errmsg   An error message for a specific operation
+   * @return {Promise}         The resulting Promise
+   */
+  promisifyIE11Op: function(cryptoOp, errmsg) {
+    return new Promise(function(resolve, reject) {
+      cryptoOp.onerror = function () {
+        reject(new Error(errmsg));
+      };
+      cryptoOp.oncomplete = function (e) {
+        resolve(e.target.result);
+      };
+    });
   }
+
 };
