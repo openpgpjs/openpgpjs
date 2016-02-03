@@ -13,9 +13,7 @@ describe('Basic', function() {
       var privKey;
       var pubKey;
 
-      if (openpgp.util.getWebCrypto()) {
-        opt.numBits = 2048; // webkit webcrypto accepts minimum 2048 bit keys
-      }
+      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
       openpgp.generateKeyPair(opt).then(function(key) {
 
@@ -77,6 +75,8 @@ describe('Basic', function() {
       var msg;
 
       var opt = {numBits: 512, userId: userid, passphrase: passphrase};
+      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
       openpgp.generateKeyPair(opt).then(function(key) {
 
         var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
@@ -128,6 +128,8 @@ describe('Basic', function() {
       var passphrase = 'password';
 
       var opt = {numBits: 512, userId: userid, passphrase: passphrase};
+      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
       openpgp.generateKeyPair(opt).then(function(key) {
 
         var privKeys = openpgp.key.readArmored(key.privateKeyArmored);

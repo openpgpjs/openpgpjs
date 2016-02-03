@@ -642,6 +642,7 @@ describe("Signature", function() {
 
   it('Sign message with key without password', function(done) {
     var opt = {numBits: 512, userId: 'ABC', passphrase: null};
+    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     openpgp.generateKeyPair(opt).then(function(gen) {
       var key = gen.key;
 
