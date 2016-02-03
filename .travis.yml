@@ -1,5 +1,8 @@
 sudo: false
 language: node_js
+cache:
+  directories:
+    - node_modules
 addons:
     code_climate:
         repo_token: $CODECLIMATE_REPO_TOKEN
