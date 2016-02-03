@@ -23,7 +23,7 @@ function node_hash(type) {
 }
 
 var hash_fns;
-if(typeof module !== 'undefined' && module.exports && config.useNative) { // Use Node native crypto
+if(util.detectNode() && config.useNative) { // Use Node native crypto
   hash_fns = {
     md5: node_hash('md5'),
     sha1: node_hash('sha1'),

@@ -458,6 +458,13 @@ module.exports = {
         resolve(e.target.result);
       };
     });
+  },
+
+  /**
+   * Detect Node.js runtime.
+   */
+  detectNode: function() {
+    return typeof window === 'undefined';
   }
 
 };

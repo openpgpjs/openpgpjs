@@ -1,19 +1,19 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 // The GPG4Browsers crypto interface
 
@@ -23,13 +23,11 @@
  * @module crypto/random
  */
 
-var type_mpi = require('../type/mpi.js'),
-  util = require('../util.js');
-var nodeCrypto = null;
+'use strict';
 
-if (typeof window === 'undefined') {
-  nodeCrypto = require('crypto');
-}
+var TypeMPI = require('../type/mpi.js'),
+  util = require('../util.js'),
+  nodeCrypto = util.detectNode() && require('crypto');
 
 module.exports = {
   /**
@@ -114,7 +112,7 @@ module.exports = {
         randomBits.charCodeAt(0)) +
         randomBits.substring(1);
     }
-    var mpi = new type_mpi();
+    var mpi = new TypeMPI();
     mpi.fromBytes(randomBits);
     return mpi.toBigInteger();
   },

@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -31,6 +31,8 @@
  * @requires config
  * @module packet/sym_encrypted_integrity_protected
  */
+
+'use strict';
 
 module.exports = SymEncryptedIntegrityProtected;
 
@@ -60,7 +62,7 @@ SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
   // - A one-octet version number. The only currently defined value is 1.
   var version = bytes[0];
 
-  if (version != 1) {
+  if (version !== 1) {
     throw new Error('Invalid packet version.');
   }
 
@@ -71,7 +73,6 @@ SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
-
   // 1 = Version
   return util.concatUint8Array([new Uint8Array([1]), this.encrypted]);
 };
@@ -97,13 +98,13 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
-    if(typeof module !== 'undefined' && module.exports && config.useNative) {
+    if(util.detectNode() && config.useNative) {
       var nodeCrypto = require('crypto');
       var Buffer = require('buffer').Buffer;
-      var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+      var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
-      //var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+      //var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
       //  util.Uint8Array2str(key), util.Uint8Array2str(new Uint8Array(blockSize)));
       //this.encrypted = new Uint8Array(cipherObj.update(util.Uint8Array2str(util.concatUint8Array([prefix, tohash]))));
     }
@@ -128,16 +129,15 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  * @return {String} The decrypted data of this packet
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  
   var decrypted;
   // AES optimizations. Native code for node, asmCrypto for browser.
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
     // Node crypto library. Not clear that it is faster than asmCrypto
-    if(typeof module !== 'undefined' && module.exports && config.useNative) {
+    if(util.detectNode() && config.useNative) {
       var nodeCrypto = require('crypto');
       var Buffer = require('buffer').Buffer;
-      var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb', 
+      var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
     }
@@ -154,13 +154,14 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  this.hash = util.Uint8Array2str(crypto.hash.sha1(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), 
+  this.hash = util.Uint8Array2str(crypto.hash.sha1(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted),
     decrypted.subarray(0, decrypted.length - 20)])));
 
   var mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
-  if (this.hash != mdc) {
+  if (this.hash !== mdc) {
     throw new Error('Modification detected.');
-  } else
+  } else {
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
+  }
 };
