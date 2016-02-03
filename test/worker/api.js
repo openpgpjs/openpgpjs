@@ -564,8 +564,8 @@ describe('Random Buffer', function() {
   });
 
   it('Throw error if not initialized', function () {
-    expect(randomBuffer.set).to.throw('RandomBuffer is not initialized');
-    expect(randomBuffer.get).to.throw('RandomBuffer is not initialized');
+    expect(randomBuffer.set.bind(randomBuffer)).to.throw('RandomBuffer is not initialized');
+    expect(randomBuffer.get.bind(randomBuffer)).to.throw('RandomBuffer is not initialized');
   });
 
   it('Initialization', function () {
