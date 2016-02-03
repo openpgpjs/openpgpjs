@@ -50,7 +50,6 @@ matrix:
     - env: OPENPGPJSTEST='end2end-5' BROWSER='chrome beta'
     - env: OPENPGPJSTEST='end2end-7' BROWSER='microsoft edge 20.10240'
     - env: OPENPGPJSTEST='end2end-8' BROWSER='safari 8'
-    - env: OPENPGPJSTEST='end2end-9' BROWSER='safari 9'
     - env: OPENPGPJSTEST='end2end-10' BROWSER='android 4.4'
     - env: OPENPGPJSTEST='end2end-11' BROWSER='android 5.1'
     - env: OPENPGPJSTEST='end2end-12' BROWSER='iphone 7.0'

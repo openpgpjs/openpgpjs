@@ -455,7 +455,7 @@ describe('High level API', function() {
 
     it('Error on wrong password decryptKey', function (done) {
       proxy.decryptKey(privKeyRSA, 'what?').catch(function(err) {
-        expect(err).to.eql(new Error('Wrong password'));
+        expect(err.message).to.eql('Wrong password');
         done();
       });
     });
@@ -463,7 +463,7 @@ describe('High level API', function() {
     it('Error on wrong password decryptKeyPacket', function (done) {
       var keyid = privKeyRSA.subKeys[0].subKey.getKeyId();
       proxy.decryptKeyPacket(privKeyRSA, [keyid], 'what?').catch(function(err) {
-        expect(err).to.eql(new Error('Wrong password'));
+        expect(err.message).to.eql('Wrong password');
         done();
       });
     });
