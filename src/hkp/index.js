@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * @see module:hkp/hkp
  * @module hkp

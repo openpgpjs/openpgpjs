@@ -81,14 +81,14 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
   //create the 16 or 48 subkeys we will need
   var m = 0,
-    i, j, temp, temp2, right1, right2, left, right, looping;
+    i, j, temp, right1, right2, left, right, looping;
   var cbcleft, cbcleft2, cbcright, cbcright2;
   var endloop, loopinc;
   var len = message.length;
 
   //set up the loops for single and triple des
-  var iterations = keys.length == 32 ? 3 : 9; //single or triple des
-  if (iterations == 3) {
+  var iterations = keys.length === 32 ? 3 : 9; //single or triple des
+  if (iterations === 3) {
     looping = encrypt ? new Array(0, 32, 2) : new Array(30, -2, -2);
   } else {
     looping = encrypt ? new Array(0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array(94, 62, -2, 32, 64, 2, 30, -2, -2);
@@ -105,7 +105,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
   var result = new Uint8Array(len);
   var k = 0;
 
-  if (mode == 1) { //CBC mode
+  if (mode === 1) { //CBC mode
     cbcleft = (iv[m++] << 24) | (iv[m++] << 16) | (iv[m++] << 8) | iv[m++];
     cbcright = (iv[m++] << 24) | (iv[m++] << 16) | (iv[m++] << 8) | iv[m++];
     m = 0;
@@ -117,7 +117,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
     right = (message[m++] << 24) | (message[m++] << 16) | (message[m++] << 8) | message[m++];
 
     //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {
+    if (mode === 1) {
       if (encrypt) {
         left ^= cbcleft;
         right ^= cbcright;
@@ -154,7 +154,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
       endloop = looping[j + 1];
       loopinc = looping[j + 2];
       //now go through and perform the encryption or decryption
-      for (i = looping[j]; i != endloop; i += loopinc) { //for efficiency
+      for (i = looping[j]; i !== endloop; i += loopinc) { //for efficiency
         right1 = right ^ keys[i];
         right2 = ((right >>> 4) | (right << 28)) ^ keys[i + 1];
         //the result is attained by passing these bytes through the S selection functions
@@ -191,7 +191,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
     left ^= (temp << 4);
 
     //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {
+    if (mode === 1) {
       if (encrypt) {
         cbcleft = left;
         cbcright = right;
@@ -335,13 +335,13 @@ function des_addPadding(message, padding) {
   var padLength = 8 - (message.length % 8);
 
   var pad;
-  if (padding == 2 && (padLength < 8)) { //pad the message with spaces
+  if (padding === 2 && (padLength < 8)) { //pad the message with spaces
     pad = " ".charCodeAt(0);
-  } else if (padding == 1) { //PKCS7 padding
+  } else if (padding === 1) { //PKCS7 padding
     pad = padLength;
   } else if (!padding && (padLength < 8)) { //pad the message out with null bytes
     pad = 0;
-  } else if (padLength == 8) {
+  } else if (padLength === 8) {
     return message;
   }
   else {
@@ -362,9 +362,9 @@ function des_addPadding(message, padding) {
 function des_removePadding(message, padding) {
   var padLength = null;
   var pad;
-  if (padding == 2) { // space padded
+  if (padding === 2) { // space padded
     pad = " ".charCodeAt(0);
-  } else if (padding == 1) { // PKCS7
+  } else if (padding === 1) { // PKCS7
     padLength = message[message.length - 1];
   } else if (!padding) { // null padding
     pad = 0;
@@ -383,9 +383,6 @@ function des_removePadding(message, padding) {
 
   return message.subarray(0, message.length - padLength);
 }
-
-
-var util = require('../../util.js');
 
 // added by Recurity Labs
 

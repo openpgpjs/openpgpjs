@@ -9,6 +9,8 @@
  * @module packet/packetlist
  */
 
+'use strict';
+
 module.exports = Packetlist;
 
 var util = require('../util'),
@@ -67,7 +69,9 @@ Packetlist.prototype.write = function () {
  * writing to packetlist[i] directly will result in an error.
  */
 Packetlist.prototype.push = function (packet) {
-  if (!packet) return;
+  if (!packet) {
+    return;
+  }
 
   packet.packets = packet.packets || new Packetlist();
 
@@ -100,7 +104,7 @@ Packetlist.prototype.filterByTag = function () {
   var that = this;
 
   for (var i = 0; i < this.length; i++) {
-    if (args.some(function(packetType) {return that[i].tag == packetType;})) {
+    if (args.some(function(packetType) {return that[i].tag === packetType;})) {
       filtered.push(this[i]);
     }
   }
@@ -131,7 +135,9 @@ Packetlist.prototype.findPacket = function (type) {
     for (var i = 0; i < this.length; i++) {
       if (this[i].packets.length) {
         found = this[i].packets.findPacket(type);
-        if (found) return found;
+        if (found) {
+          return found;
+        }
       }
     }
   }

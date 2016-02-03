@@ -2,10 +2,10 @@
  * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
  * version 1.1, check www.haneWIN.de for the latest version
 
- * This software is provided as-is, without express or implied warranty.  
+ * This software is provided as-is, without express or implied warranty.
  * Permission to use, copy, modify, distribute or sell this software, with or
  * without fee, for any purpose and by any individual or organization, is hereby
- * granted, provided that the above copyright notice and this paragraph appear 
+ * granted, provided that the above copyright notice and this paragraph appear
  * in all copies. Distribution as a part of an application or binary must
  * include the above copyright notice in the documentation and/or other
  * materials provided with the application or distribution.
@@ -339,7 +339,9 @@ function packBytes(octets) {
   var len = octets.length;
   var b = new Array(len / 4);
 
-  if (!octets || len % 4) return;
+  if (!octets || len % 4) {
+    return;
+  }
 
   for (i = 0, j = 0; j < len; j += 4) {
     b[i++] = octets[j] | (octets[j + 1] << 8) | (octets[j + 2] << 16) | (octets[j + 3] << 24);
@@ -377,13 +379,13 @@ function keyExpansion(key) {
   var tk = new Array(maxkc);
   var rconpointer = 0;
 
-  if (keylen == 16) {
+  if (keylen === 16) {
     rounds = 10;
     kc = 4;
-  } else if (keylen == 24) {
+  } else if (keylen === 24) {
     rounds = 12;
     kc = 6;
-  } else if (keylen == 32) {
+  } else if (keylen === 32) {
     rounds = 14;
     kc = 8;
   } else {
@@ -408,7 +410,7 @@ function keyExpansion(key) {
     for (; (j < kc) && (t < 4); j++, t++) {
       keySched[r][t] = tk[j];
     }
-    if (t == 4) {
+    if (t === 4) {
       r++;
       t = 0;
     }
@@ -420,7 +422,7 @@ function keyExpansion(key) {
     tk[0] ^= S[B1(temp)] | (S[B2(temp)] << 8) | (S[B3(temp)] << 16) | (S[B0(temp)] << 24);
     tk[0] ^= Rcon[rconpointer++];
 
-    if (kc != 8) {
+    if (kc !== 8) {
       for (j = 1; j < kc; j++) {
         tk[j] ^= tk[j - 1];
       }
@@ -441,7 +443,7 @@ function keyExpansion(key) {
       for (; (j < kc) && (t < 4); j++, t++) {
         keySched[r][t] = tk[j];
       }
-      if (t == 4) {
+      if (t === 4) {
         r++;
         t = 0;
       }

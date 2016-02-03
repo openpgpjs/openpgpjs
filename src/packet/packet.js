@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,8 +21,9 @@
  * @module packet/packet
  */
 
-var enums = require('../enums.js'),
-  util = require('../util.js');
+'use strict';
+
+var util = require('../util.js');
 
 module.exports = {
   readSimpleLength: function(bytes) {
@@ -37,7 +38,7 @@ module.exports = {
     } else if (type < 255) {
       len = ((bytes[0] - 192) << 8) + (bytes[1]) + 192;
       offset = 2;
-    } else if (type == 255) {
+    } else if (type === 255) {
       len = util.readNumber(bytes.subarray(1, 1 + 4));
       offset = 5;
     }
@@ -51,7 +52,7 @@ module.exports = {
   /**
    * Encodes a given integer of length to the openpgp length specifier to a
    * string
-   * 
+   *
    * @param {Integer} length The length to encode
    * @return {Uint8Array} String with openpgp length representation
    */
@@ -73,7 +74,7 @@ module.exports = {
   /**
    * Writes a packet header version 4 with the given tag_type and length to a
    * string
-   * 
+   *
    * @param {Integer} tag_type Tag type
    * @param {Integer} length Length of the payload
    * @return {String} String of the header
@@ -86,7 +87,7 @@ module.exports = {
   /**
    * Writes a packet header Version 3 with the given tag_type and length to a
    * string
-   * 
+   *
    * @param {Integer} tag_type Tag type
    * @param {Integer} length Length of the payload
    * @return {String} String of the header
@@ -104,7 +105,7 @@ module.exports = {
 
   /**
    * Generic static Packet Parser function
-   * 
+   *
    * @param {String} input Input stream as string
    * @param {integer} position Position to start parsing
    * @param {integer} len Length of the input from position on
@@ -167,11 +168,11 @@ module.exports = {
           // 3 - The packet is of indeterminate length. The header is 1
           // octet long, and the implementation must determine how long
           // the packet is. If the packet is in a file, this means that
-          // the packet extends until the end of the file. In general, 
-          // an implementation SHOULD NOT use indeterminate-length 
-          // packets except where the end of the data will be clear 
-          // from the context, and even then it is better to use a 
-          // definite length, or a new format header. The new format 
+          // the packet extends until the end of the file. In general,
+          // an implementation SHOULD NOT use indeterminate-length
+          // packets except where the end of the data will be clear
+          // from the context, and even then it is better to use a
+          // definite length, or a new format header. The new format
           // headers described below have a mechanism for precisely
           // encoding data of indeterminate length.
           packet_length = len;
@@ -235,7 +236,7 @@ module.exports = {
 
     // if there was'nt a partial body length: use the specified
     // packet_length
-    if (real_packet_length == -1) {
+    if (real_packet_length === -1) {
       real_packet_length = packet_length;
     }
 

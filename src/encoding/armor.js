@@ -22,6 +22,8 @@
  * @module encoding/armor
  */
 
+'use strict';
+
 var base64 = require('./base64.js'),
   enums = require('../enums.js'),
   config = require('../config');
@@ -129,7 +131,7 @@ function getCheckSum(data) {
 function verifyCheckSum(data, checksum) {
   var c = getCheckSum(data);
   var d = checksum;
-  return c[0] == d[0] && c[1] == d[1] && c[2] == d[2] && c[3] == d[3];
+  return c[0] === d[0] && c[1] === d[1] && c[2] === d[2] && c[3] === d[3];
 }
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
@@ -291,11 +293,11 @@ function dearmor(text) {
 
   var result, checksum, msg;
 
-  if (text.search(reSplit) != splittext[0].length) {
+  if (text.search(reSplit) !== splittext[0].length) {
     indexBase = 0;
   }
 
-  if (type != 2) {
+  if (type !== 2) {
     msg = splitHeaders(splittext[indexBase]);
     var msg_sum = splitChecksum(msg.body);
 

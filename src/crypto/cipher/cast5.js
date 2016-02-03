@@ -16,9 +16,9 @@
 
 /** @module crypto/cipher/cast5 */
 
+'use strict';
 
-
-function openpgp_symenc_cast5() {
+function OpenpgpSymencCast5() {
   this.BlockSize = 8;
   this.KeySize = 16;
 
@@ -28,7 +28,7 @@ function openpgp_symenc_cast5() {
 
     this.reset();
 
-    if (key.length == this.KeySize) {
+    if (key.length === this.KeySize) {
       this.keySchedule(key);
     } else {
       throw new Error('CAST-128: keys must be 16 bytes');
@@ -44,7 +44,7 @@ function openpgp_symenc_cast5() {
   };
 
   this.getBlockSize = function() {
-    return BlockSize;
+    return this.BlockSize;
   };
 
   this.encrypt = function(src) {
@@ -592,8 +592,8 @@ function openpgp_symenc_cast5() {
 
 }
 
-function cast5(key) {
-  this.cast5 = new openpgp_symenc_cast5();
+function Cast5(key) {
+  this.cast5 = new OpenpgpSymencCast5();
   this.cast5.setKey(key);
 
   this.encrypt = function(block) {
@@ -601,6 +601,6 @@ function cast5(key) {
   };
 }
 
-module.exports = cast5;
-module.exports.blockSize = cast5.prototype.blockSize = 8;
-module.exports.keySize = cast5.prototype.keySize = 16;
+module.exports = Cast5;
+module.exports.blockSize = Cast5.prototype.blockSize = 8;
+module.exports.keySize = Cast5.prototype.keySize = 16;

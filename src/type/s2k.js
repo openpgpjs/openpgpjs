@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,6 +28,8 @@
  * @requires util
  * @module type/s2k
  */
+
+'use strict';
 
 module.exports = S2K;
 
@@ -85,10 +87,10 @@ S2K.prototype.read = function (bytes) {
       break;
 
     case 'gnu':
-      if (util.Uint8Array2str(bytes.subarray(i, 3)) == "GNU") {
+      if (util.Uint8Array2str(bytes.subarray(i, 3)) === "GNU") {
         i += 3; // GNU
         var gnuExtType = 1000 + bytes[i++];
-        if (gnuExtType == 1001) {
+        if (gnuExtType === 1001) {
           this.type = gnuExtType;
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
@@ -160,13 +162,15 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
           count = s2k.get_count(),
           data = util.concatUint8Array([s2k.salt,passphrase]);
 
-        while (isp.length * data.length < count)
+        while (isp.length * data.length < count) {
           isp.push(data);
+        }
 
         isp = util.concatUint8Array(isp);
 
-        if (isp.length > count)
+        if (isp.length > count) {
           isp = isp.subarray(0, count);
+        }
 
         return crypto.hash.digest(algorithm, util.concatUint8Array([prefix,isp]));
 

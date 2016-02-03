@@ -25,6 +25,8 @@
  * @module crypto/crypto
  */
 
+'use strict';
+
 var random = require('./random.js'),
   cipher = require('./cipher'),
   publicKey = require('./public_key'),

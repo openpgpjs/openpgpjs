@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * @see module:keyring/keyring
  * @module keyring

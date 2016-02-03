@@ -1,5 +1,5 @@
-/* Modified by Recurity Labs GmbH 
- * 
+/* Modified by Recurity Labs GmbH
+ *
  * Cipher.js
  * A block-cipher algorithm implementation on JavaScript
  * See Cipher.readme.txt for further information.
@@ -10,10 +10,10 @@
  * ACKNOWLEDGMENT
  *
  *     The main subroutines are written by Michiel van Everdingen.
- * 
+ *
  *     Michiel van Everdingen
  *     http://home.versatel.nl/MAvanEverdingen/index.html
- * 
+ *
  *     All rights for these routines are reserved to Michiel van Everdingen.
  *
  */
@@ -22,7 +22,7 @@
  * @module crypto/cipher/twofish
  */
 
-
+'use strict';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Math
@@ -40,10 +40,6 @@ function getW(a, i) {
 
 function setW(a, i, w) {
   a.splice(i, 4, w & 0xFF, (w >>> 8) & 0xFF, (w >>> 16) & 0xFF, (w >>> 24) & 0xFF);
-}
-
-function setWInv(a, i, w) {
-  a.splice(i, 4, (w >>> 24) & 0xFF, (w >>> 16) & 0xFF, (w >>> 8) & 0xFF, w & 0xFF);
 }
 
 function getB(x, n) {
@@ -176,8 +172,9 @@ function createTwofish() {
 
     keyBytes = keyBytes.slice(0, 32);
     i = keyBytes.length;
-    while (i != 16 && i != 24 && i != 32)
+    while (i !== 16 && i !== 24 && i !== 32) {
       keyBytes[i++] = 0;
+    }
 
     for (i = 0; i < keyBytes.length; i += 4) {
       inKey[i >> 2] = getW(keyBytes, i);
@@ -333,15 +330,6 @@ function createTwofish() {
 }
 
 // added by Recurity Labs
-
-function TFencrypt(block, key) {
-  var block_copy = toArray(block);
-  var tf = createTwofish();
-  tf.open(toArray(key), 0);
-  var result = tf.encrypt(block_copy, 0);
-  tf.close();
-  return result;
-}
 
 function TF(key) {
   this.tf = createTwofish();

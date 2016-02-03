@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,6 +28,8 @@
  * @requires util
  * @module packet/compressed
  */
+
+'use strict';
 
 module.exports = Compressed;
 
@@ -85,8 +87,9 @@ Compressed.prototype.read = function (bytes) {
  * @return {String} binary compressed packet
  */
 Compressed.prototype.write = function () {
-  if (this.compressed === null)
+  if (this.compressed === null) {
     this.compress();
+  }
 
   return util.concatUint8Array(new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed);
 };
@@ -97,7 +100,7 @@ Compressed.prototype.write = function () {
  * read by read_packet
  */
 Compressed.prototype.decompress = function () {
-  var decompressed;
+  var decompressed, inflate;
 
   switch (this.algorithm) {
     case 'uncompressed':
@@ -105,12 +108,12 @@ Compressed.prototype.decompress = function () {
       break;
 
     case 'zip':
-      var inflate = new RawInflate.Zlib.RawInflate(this.compressed);
+      inflate = new RawInflate.Zlib.RawInflate(this.compressed);
       decompressed = inflate.decompress();
       break;
 
     case 'zlib':
-      var inflate = new Zlib.Zlib.Inflate(this.compressed);
+      inflate = new Zlib.Zlib.Inflate(this.compressed);
       decompressed = inflate.decompress();
       break;
 

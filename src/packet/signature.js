@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -103,10 +103,11 @@ Signature.prototype.read = function (bytes) {
   switch (this.version) {
     case 3:
       // One-octet length of following hashed material. MUST be 5.
-      if (bytes[i++] != 5)
+      if (bytes[i++] !== 5) {
         util.print_debug("packet/signature.js\n" +
           'invalid One-octet length of following hashed material.' +
           'MUST be 5. @:' + (i - 1));
+      }
 
       var sigpos = i;
       // One-octet signature type.
@@ -142,7 +143,6 @@ Signature.prototype.read = function (bytes) {
         var i = 2;
 
         // subpacket data set (zero or more subpackets)
-        var subpacked_read = 0;
         while (i < 2 + subpacket_length) {
 
           var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
@@ -252,7 +252,7 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.exportable_certification, new Uint8Array([this.exportable ? 1 : 0])));
   }
   if (this.trustLevel !== null) {
-    bytes = new Uint8Array([this.trustLevel,this.trustAmount]);;
+    bytes = new Uint8Array([this.trustLevel,this.trustAmount]);
     arr.push(write_sub_packet(sub.trust_signature, bytes));
   }
   if (this.regularExpression !== null) {
@@ -340,7 +340,7 @@ Signature.prototype.write_all_sub_packets = function () {
 
   var result = util.concatUint8Array(arr);
   var length = util.writeNumber(result.length, 2);
-  
+
   return util.concatUint8Array([length, result]);
 };
 
@@ -392,7 +392,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 4:
       // Exportable Certification
-      this.exportable = bytes[mypos++] == 1;
+      this.exportable = bytes[mypos++] === 1;
       break;
     case 5:
       // Trust Signature
@@ -405,7 +405,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 7:
       // Revocable
-      this.revocable = bytes[mypos++] == 1;
+      this.revocable = bytes[mypos++] === 1;
       break;
     case 9:
       // Key Expiration Time in seconds
@@ -437,7 +437,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
     case 20:
       // Notation Data
       // We don't know how to handle anything but a text flagged data.
-      if (bytes[mypos] == 0x80) {
+      if (bytes[mypos] === 0x80) {
 
         // We extract key/value tuple from the byte stream.
         mypos += 4;
@@ -452,8 +452,8 @@ Signature.prototype.read_sub_packet = function (bytes) {
         this.notation = this.notation || {};
         this.notation[name] = value;
       } else {
-    	  util.print_debug("Unsupported notation flag "+bytes[mypos]);
-      	}
+        util.print_debug("Unsupported notation flag "+bytes[mypos]);
+      }
       break;
     case 21:
       // Preferred Hash Algorithms
@@ -512,7 +512,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       this.embeddedSignature.read(bytes.subarray(mypos, bytes.length));
       break;
     default:
-    	util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
+      util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
   }
 };
 
@@ -541,17 +541,19 @@ Signature.prototype.toSign = function (type, data) {
       } else if (data.userattribute !== undefined) {
         tag = 0xD1;
         packet = data.userattribute;
-      } else throw new Error('Either a userid or userattribute packet needs to be ' +
+      } else {
+        throw new Error('Either a userid or userattribute packet needs to be ' +
           'supplied for certification.');
+      }
 
       var bytes = packet.write();
 
-      if (this.version == 4) {
+      if (this.version === 4) {
         return util.concatUint8Array([this.toSign(t.key, data),
           new Uint8Array([tag]),
           util.writeNumber(bytes.length, 4),
           bytes]);
-      } else if (this.version == 3) {
+      } else if (this.version === 3) {
         return util.concatUint8Array([this.toSign(t.key, data),
           bytes]);
       }
@@ -565,8 +567,9 @@ Signature.prototype.toSign = function (type, data) {
       })]);
 
     case t.key:
-      if (data.key === undefined)
+      if (data.key === undefined) {
         throw new Error('Key packet is required for this signature.');
+      }
       return data.key.writeOld();
 
     case t.key_revocation:
@@ -584,7 +587,9 @@ Signature.prototype.toSign = function (type, data) {
 Signature.prototype.calculateTrailer = function () {
   // calculating the trailer
   // V3 signatures don't have a trailer
-  if (this.version == 3) return new Uint8Array(0);
+  if (this.version === 3) {
+    return new Uint8Array(0);
+  }
   var first = new Uint8Array([4, 0xFF]); //Version, ?
   return util.concatUint8Array([first, util.writeNumber(this.signatureData.length, 4)]);
 };
@@ -609,13 +614,15 @@ Signature.prototype.verify = function (key, data) {
   var mpicount = 0;
   // Algorithm-Specific Fields for RSA signatures:
   //      - multiprecision number (MPI) of RSA signature value m**d mod n.
-  if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4)
+  if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
     mpicount = 1;
+  }
   //    Algorithm-Specific Fields for DSA signatures:
   //      - MPI of DSA value r.
   //      - MPI of DSA value s.
-  else if (publicKeyAlgorithm == 17)
+  else if (publicKeyAlgorithm === 17) {
     mpicount = 2;
+  }
 
   var mpi = [],
     i = 0;

@@ -1,4 +1,4 @@
-var enums = require('../enums.js');
+'use strict';
 
 module.exports = {
   /**
@@ -10,5 +10,6 @@ module.exports = {
 
 var packets = require('./all_packets.js');
 
-for (var i in packets)
+for (var i in packets) {
   module.exports[i] = packets[i];
+}

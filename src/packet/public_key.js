@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,6 +29,8 @@
  * @requires util
  * @module packet/public_key
  */
+
+'use strict';
 
 module.exports = PublicKey;
 
@@ -78,12 +80,12 @@ PublicKey.prototype.read = function (bytes) {
   // A one-octet version number (3 or 4).
   this.version = bytes[pos++];
 
-  if (this.version == 3 || this.version == 4) {
+  if (this.version === 3 || this.version === 4) {
     // - A four-octet number denoting the time that the key was created.
     this.created = util.readDate(bytes.subarray(pos, pos + 4));
     pos += 4;
 
-    if (this.version == 3) {
+    if (this.version === 3) {
       // - A two-octet number denoting the time in days that this key is
       //   valid.  If this number is zero, then it does not expire.
       this.expirationTimeV3 = util.readNumber(bytes.subarray(pos, pos + 2));
@@ -133,7 +135,7 @@ PublicKey.prototype.write = function () {
   // Version
   arr.push(new Uint8Array([this.version]));
   arr.push(util.writeDate(this.created));
-  if (this.version == 3) {
+  if (this.version === 3) {
     arr.push(util.writeNumber(this.expirationTimeV3, 2));
   }
   arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
@@ -171,9 +173,9 @@ PublicKey.prototype.getKeyId = function () {
     return this.keyid;
   }
   this.keyid = new type_keyid();
-  if (this.version == 4) {
+  if (this.version === 4) {
     this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
-  } else if (this.version == 3) {
+  } else if (this.version === 3) {
     var arr = this.mpi[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
   }
@@ -189,10 +191,10 @@ PublicKey.prototype.getFingerprint = function () {
     return this.fingerprint;
   }
   var toHash = '';
-  if (this.version == 4) {
+  if (this.version === 4) {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
-  } else if (this.version == 3) {
+  } else if (this.version === 3) {
     var mpicount = crypto.getPublicMpiCount(this.algorithm);
     for (var i = 0; i < mpicount; i++) {
       toHash += this.mpi[i].toBytes();

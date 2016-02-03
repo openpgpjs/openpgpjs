@@ -116,7 +116,9 @@ AsyncProxy.prototype.seedRandom = function(size) {
  * @return {Uint8Array}
  */
 AsyncProxy.prototype.getRandomBuffer = function(size) {
-  if (!size) return null;
+  if (!size) {
+    return null;
+  }
   var buf = new Uint8Array(size);
   crypto.random.getRandomValues(buf);
   return buf;
@@ -134,7 +136,7 @@ AsyncProxy.prototype.terminate = function() {
  * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
  * @param  {Uint8Array} data                                   message as Uint8Array
  * @param  {(Array<String>|String)} passwords                  passwords for the message
- * @param  {Object} params                                     parameter object with optional properties binary {Boolean}, 
+ * @param  {Object} params                                     parameter object with optional properties binary {Boolean},
  *                                                             filename {String}, and packets {Boolean}
  */
 AsyncProxy.prototype.encryptMessage = function(keys, data, passwords, params) {
@@ -397,8 +399,8 @@ AsyncProxy.prototype.decryptKey = function(privateKey, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data),
-        data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });
@@ -425,8 +427,8 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
     });
 
     self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data),
-        data = new key.Key(packetlist);
+      var packetlist = packet.List.fromStructuredClone(data);
+      data = new key.Key(packetlist);
       resolve(data);
     }, reject:reject });
   });

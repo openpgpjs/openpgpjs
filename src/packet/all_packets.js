@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * @requires enums
  * @module packet
@@ -57,10 +59,10 @@ module.exports = {
     var tagName = enums.read(enums.packet, packetClone.tag);
     var packet = this.newPacketFromTag(tagName);
     for (var attr in packetClone) {
-        if (packetClone.hasOwnProperty(attr)) {
-          packet[attr] = packetClone[attr];
-        }
+      if (packetClone.hasOwnProperty(attr)) {
+        packet[attr] = packetClone[attr];
       }
+    }
     if (packet.postCloneTypeFix) {
       packet.postCloneTypeFix();
     }

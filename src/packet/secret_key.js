@@ -31,6 +31,8 @@
  * @module packet/secret_key
  */
 
+'use strict';
+
 module.exports = SecretKey;
 
 var publicKey = require('./public_key.js'),
@@ -57,19 +59,21 @@ SecretKey.prototype = new publicKey();
 SecretKey.prototype.constructor = SecretKey;
 
 function get_hash_len(hash) {
-  if (hash == 'sha1')
+  if (hash === 'sha1') {
     return 20;
-  else
+  } else {
     return 2;
+  }
 }
 
 function get_hash_fn(hash) {
-  if (hash == 'sha1')
+  if (hash === 'sha1') {
     return crypto.hash.sha1;
-  else
+  } else {
     return function(c) {
       return util.writeNumber(util.calc_checksum(c), 2);
-  };
+    };
+  }
 }
 
 // Helper function
@@ -83,8 +87,9 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
 
   var hash = util.Uint8Array2str(hashfn(cleartext));
 
-  if (hash != hashtext)
+  if (hash !== hashtext) {
     return new Error("Hash mismatch.");
+  }
 
   var mpis = crypto.getPrivateMpiCount(algorithm);
 
@@ -141,8 +146,9 @@ SecretKey.prototype.read = function (bytes) {
     //   key data.  These algorithm-specific fields are as described
     //   below.
     var parsedMPI = parse_cleartext_mpi('mod', bytes.subarray(1, bytes.length), this.algorithm);
-    if (parsedMPI instanceof Error)
+    if (parsedMPI instanceof Error) {
       throw parsedMPI;
+    }
     this.mpi = this.mpi.concat(parsedMPI);
     this.isDecrypted = true;
   }
@@ -169,7 +175,7 @@ SecretKey.prototype.write = function () {
 
 
 /** Encrypt the payload. By default, we use aes256 and iterated, salted string
- * to key specifier. If the key is in a decrypted state (isDecrypted == true)
+ * to key specifier. If the key is in a decrypted state (isDecrypted === true)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
@@ -213,8 +219,9 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  *                   decrypted; false if not
  */
 SecretKey.prototype.decrypt = function (passphrase) {
-  if (this.isDecrypted)
+  if (this.isDecrypted) {
     return true;
+  }
 
   var i = 0,
     symmetric,
@@ -224,7 +231,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
 
   // - [Optional] If string-to-key usage octet was 255 or 254, a one-
   //   octet symmetric encryption algorithm.
-  if (s2k_usage == 255 || s2k_usage == 254) {
+  if (s2k_usage === 255 || s2k_usage === 254) {
     symmetric = this.encrypted[i++];
     symmetric = enums.read(enums.symmetric, symmetric);
 
@@ -254,7 +261,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
 
   cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
 
-  var hash = s2k_usage == 254 ?
+  var hash = s2k_usage === 254 ?
     'sha1' :
     'mod';
 

@@ -4,6 +4,9 @@
  * @requires crypto/public_key/rsa
  * @module crypto/public_key
  */
+
+'use strict';
+
 module.exports = {
   /** @see module:crypto/public_key/rsa */
   rsa: require('./rsa.js'),

@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,6 +24,8 @@
  * @requires util
  * @module packet/literal
  */
+
+'use strict';
 
 module.exports = Literal;
 
@@ -50,7 +52,7 @@ Literal.prototype.setText = function (text) {
   // normalize EOL to \r\n
   text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
   // encode UTF8
-  this.data = this.format == 'utf8' ? util.str2Uint8Array(util.encode_utf8(text)) : util.str2Uint8Array(text);
+  this.data = this.format === 'utf8' ? util.str2Uint8Array(util.encode_utf8(text)) : util.str2Uint8Array(text);
 };
 
 /**
@@ -96,7 +98,7 @@ Literal.prototype.setFilename = function (filename) {
 
 /**
  * Get the filename of the literal packet data
- * @returns {String} filename 
+ * @returns {String} filename
  */
 Literal.prototype.getFilename = function() {
   return this.filename;

@@ -3,6 +3,8 @@
  * @module packet/trust
  */
 
+'use strict';
+
 module.exports = Trust;
 
 var enums = require('../enums.js');
@@ -19,6 +21,4 @@ function Trust() {
  * Currently empty as we ignore trust packets
  * @param {String} byptes payload of a tag 12 packet
  */
-Trust.prototype.read = function (bytes) {
-
-};
+Trust.prototype.read = function () {};

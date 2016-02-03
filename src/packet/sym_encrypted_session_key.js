@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -35,6 +35,8 @@
  * @requires type/s2k
  * @module packet/sym_encrypted_session_key
  */
+
+'use strict';
 
 var util = require('../util.js'),
   type_s2k = require('../type/s2k.js'),
@@ -83,8 +85,9 @@ SymEncryptedSessionKey.prototype.read = function(bytes) {
   if (done < bytes.length) {
     this.encrypted = bytes.subarray(done, bytes.length);
     this.sessionKeyEncryptionAlgorithm = algo;
-  } else
+  } else {
     this.sessionKeyAlgorithm = algo;
+  }
 };
 
 SymEncryptedSessionKey.prototype.write = function() {
@@ -94,8 +97,9 @@ SymEncryptedSessionKey.prototype.write = function() {
 
   var bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
 
-  if (this.encrypted !== null)
+  if (this.encrypted !== null) {
     bytes = util.concatUint8Array([bytes, this.encrypted]);
+  }
   return bytes;
 };
 
@@ -117,7 +121,6 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
     this.sessionKey = key;
 
   } else {
-
     var decrypted = crypto.cfb.normalDecrypt(
       algo, key, this.encrypted, null);
 

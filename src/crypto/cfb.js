@@ -1,6 +1,6 @@
 // Modified by ProtonTech AG
 
-// Modified by Recurity Labs GmbH 
+// Modified by Recurity Labs GmbH
 
 // modified version of http://www.hanewin.net/encrypt/PGdecode.js:
 
@@ -8,10 +8,10 @@
  * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de
  * version 2.0, check www.haneWIN.de for the latest version
 
- * This software is provided as-is, without express or implied warranty.  
+ * This software is provided as-is, without express or implied warranty.
  * Permission to use, copy, modify, distribute or sell this software, with or
  * without fee, for any purpose and by any individual or organization, is hereby
- * granted, provided that the above copyright notice and this paragraph appear 
+ * granted, provided that the above copyright notice and this paragraph appear
  * in all copies. Distribution as a part of an application or binary must
  * include the above copyright notice in the documentation and/or other
  * materials provided with the application or distribution.
@@ -29,18 +29,18 @@ var cipher = require('./cipher');
 module.exports = {
 
   /**
-   * This function encrypts a given with the specified prefixrandom 
+   * This function encrypts a given with the specified prefixrandom
    * using the specified blockcipher to encrypt a message
    * @param {Uint8Array} prefixrandom random bytes of block_size length
    *  to be used in prefixing the data
    * @param {String} cipherfn the algorithm cipher class to encrypt
    *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {Uint8Array} plaintext data to be encrypted 
+   * @param {Uint8Array} plaintext data to be encrypted
    * @param {Uint8Array} key key to be used to encrypt the plaintext.
    * This will be passed to the cipherfn
    * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the 
-   *  "old" style with a resync. Encryption within an 
+   *  IV should be used or not. The encrypteddatapacket uses the
+   *  "old" style with a resync. Encryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
    * @return {Uint8Array} encrypted data
    */
@@ -172,8 +172,8 @@ module.exports = {
    * This will be passed to the cipherfn
    * @param {Uint8Array} ciphertext to be decrypted
    * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the 
-   *  "old" style with a resync. Decryption within an 
+   *  IV should be used or not. The encrypteddatapacket uses the
+   *  "old" style with a resync. Decryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
    * @return {Uint8Array} the plaintext data
    */
@@ -202,8 +202,8 @@ module.exports = {
     ablock = cipherfn.encrypt(ablock);
 
     // test check octets
-    if (iblock[block_size - 2] != (ablock[0] ^ ciphertext[block_size]) ||
-        iblock[block_size - 1] != (ablock[1] ^ ciphertext[block_size + 1])) {
+    if (iblock[block_size - 2] !== (ablock[0] ^ ciphertext[block_size]) ||
+        iblock[block_size - 1] !== (ablock[1] ^ ciphertext[block_size + 1])) {
       throw new Error('CFB decrypt: invalid key');
     }
 
@@ -261,7 +261,7 @@ module.exports = {
     var blockc = new Uint8Array(block_size);
     var pos = 0;
     var cyphertext = new Uint8Array(plaintext.length);
-    var j = 0;
+    var i, j = 0;
 
     if (iv === null) {
       for (i = 0; i < block_size; i++) {
@@ -276,7 +276,7 @@ module.exports = {
     while (plaintext.length > block_size * pos) {
       var encblock = cipherfn.encrypt(blockc);
       blocki = plaintext.subarray((pos * block_size), (pos * block_size) + block_size);
-      for (var i = 0; i < blocki.length; i++) {
+      for (i = 0; i < blocki.length; i++) {
         blockc[i] = blocki[i] ^ encblock[i];
         cyphertext[j++] = blockc[i];
       }
@@ -293,7 +293,7 @@ module.exports = {
     var pos = 0;
     var plaintext = new Uint8Array(ciphertext.length);
     var offset = 0;
-    var j = 0;
+    var i, j = 0;
 
     if (iv === null) {
       blockp = new Uint8Array(block_size);
@@ -307,7 +307,7 @@ module.exports = {
     while (ciphertext.length > (block_size * pos)) {
       var decblock = cipherfn.encrypt(blockp);
       blockp = ciphertext.subarray((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
-      for (var i = 0; i < blockp.length; i++) {
+      for (i = 0; i < blockp.length; i++) {
         plaintext[j++] = blockp[i] ^ decblock[i];
       }
       pos++;

@@ -2,6 +2,50 @@
 
 module.exports = function(grunt) {
 
+  var lintFiles = [
+    'src/config/*.js',
+    'src/crypto/cipher/aes.js',
+    'src/crypto/cipher/blowfish.js',
+    'src/crypto/cipher/cast5.js',
+    'src/crypto/cipher/des.js',
+    'src/crypto/cipher/index.js',
+    'src/crypto/hash/md5.js',
+    'src/crypto/public_key/dsa.js',
+    'src/crypto/public_key/elgamal.js',
+    'src/crypto/public_key/index.js',
+    'src/crypto/public_key/rsa.js',
+    'src/crypto/cfb.js',
+    'src/crypto/crypto.js',
+    'src/crypto/index.js',
+    'src/crypto/pkcs1.js',
+    'src/crypto/random.js',
+    'src/crypto/signature.js',
+    'src/encoding/*.js',
+    'src/hkp/*.js',
+    'src/keyring/*.js',
+    'src/packet/all_packets.js',
+    'src/packet/compressed.js',
+    'src/packet/index.js',
+    'src/packet/literal.js',
+    'src/packet/marker.js',
+    'src/packet/one_pass_signature.js',
+    'src/packet/packet.js',
+    'src/packet/public_key.js',
+    'src/packet/public_key_encrypted_session_key.js',
+    'src/packet/public_subkey.js',
+    'src/packet/secret_key.js',
+    'src/packet/secret_subkey.js',
+    'src/packet/sym_encrypted_integrity_protected.js',
+    'src/packet/sym_encrypted_session_key.js',
+    'src/packet/symmetrically_encrypted.js',
+    'src/packet/trust.js',
+    'src/packet/user_attribute.js',
+    'src/packet/userid.js',
+    'src/type/*.js',
+    'src/worker/async_proxy.js',
+    'src/*.js',
+  ]; // add more over time ... goal should be 100% coverage
+
   var version = grunt.option('release');
   var fs = require('fs');
   var browser_capabilities;
@@ -105,14 +149,14 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      src: ['src/*.js'], // add more over time ... goal should be 100% coverage
+      src: lintFiles,
       build: ['Gruntfile.js', '*.json'],
       options: {
         jshintrc: '.jshintrc'
       }
     },
     jscs: {
-      src: ['src/*.js'], // add more over time ... goal should be 100% coverage
+      src: lintFiles,
       build: ['Gruntfile.js'],
       options: {
         config: ".jscsrc",

@@ -6,6 +6,8 @@
  * @module crypto/cipher
  */
 
+'use strict';
+
 var desModule = require('./des.js');
 
 module.exports = {

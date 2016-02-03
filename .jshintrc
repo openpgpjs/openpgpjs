@@ -7,7 +7,6 @@
   "curly": true,
   "eqeqeq": true,
   "immed": true,
-  "newcap": true,
   "regexp": true,
   "evil": true,
   "eqnull": true,
@@ -32,6 +31,7 @@
     "afterEach": true,
     "escape": true,
     "unescape": true,
-    "asmCrypto": true
+    "asmCrypto": true,
+    "postMessage": true
   }
 }
