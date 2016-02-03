@@ -332,14 +332,12 @@ function createTwofish() {
   };
 }
 
-var util = require('../../util.js');
-
 // added by Recurity Labs
 
 function TFencrypt(block, key) {
   var block_copy = toArray(block);
   var tf = createTwofish();
-  tf.open(util.str2bin(key), 0);
+  tf.open(toArray(key), 0);
   var result = tf.encrypt(block_copy, 0);
   tf.close();
   return result;
@@ -347,7 +345,7 @@ function TFencrypt(block, key) {
 
 function TF(key) {
   this.tf = createTwofish();
-  this.tf.open(util.str2bin(key), 0);
+  this.tf.open(toArray(key), 0);
 
   this.encrypt = function(block) {
     return this.tf.encrypt(toArray(block), 0);

@@ -22,7 +22,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'node-localstorage', 'node-fetch', 'buffer' ]
         }
       },
       openpgp_debug: {
@@ -34,7 +34,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'node-localstorage', 'node-fetch', 'buffer' ]
         }
       },
       worker: {

@@ -7,7 +7,7 @@ matrix:
   fast_finish: true
   include:
     - node_js: "0.12"
-      env: OPENPGPJSTEST='coverage' OPENPGP_NODE_JS='0.12'
+      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='0.12'
     - node_js: "4.2"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
     - node_js: "5"

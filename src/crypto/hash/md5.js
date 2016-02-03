@@ -24,8 +24,8 @@ var util = require('../../util.js');
  * @param {String} entree string to hash
  */
 module.exports = function (entree) {
-  var hex = md5(entree);
-  var bin = util.hex2bin(hex);
+  var hex = md5(util.Uint8Array2str(entree));
+  var bin = util.str2Uint8Array(util.hex2bin(hex));
   return bin;
 };
 

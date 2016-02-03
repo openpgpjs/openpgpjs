@@ -40,7 +40,7 @@ function DSA() {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
@@ -100,7 +100,7 @@ function DSA() {
   this.select_hash_algorithm = select_hash_algorithm;
 
   function verify(hashalgo, s1, s2, m, p, q, g, y) {
-    var hashed_data = util.getLeftNBits(hashModule.digest(hashalgo, m), q.bitLength());
+    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
     var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     if (BigInteger.ZERO.compareTo(s1) >= 0 ||
       s1.compareTo(q) >= 0 ||

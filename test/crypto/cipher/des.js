@@ -7,7 +7,7 @@ var util = openpgp.util,
   expect = chai.expect;
 
 describe('TripleDES (EDE) cipher test with test vectors from http://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf', function() {
-  var key = util.bin2str([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
+  var key = new Uint8Array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
   var testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],
                      [[0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0xDD,0x7F,0x12,0x1C,0xA5,0x01,0x56,0x19]],
                      [[0x20,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x2E,0x86,0x53,0x10,0x4F,0x38,0x34,0xEA]],
@@ -80,7 +80,7 @@ describe('TripleDES (EDE) cipher test with test vectors from http://csrc.nist.go
       var encr = util.bin2str(des.encrypt(testvectors[i][0], key));
 
       expect(encr, 'vector with block ' + util.hexidump(testvectors[i][0]) +
-                   ' and key ' + util.hexstrdump(key) +
+                   ' and key ' + util.hexstrdump(util.Uint8Array2str(key)) +
                    ' should be ' + util.hexidump(testvectors[i][1]) +
                    ' != ' + util.hexidump(encr)).to.be.equal(util.bin2str(testvectors[i][1]));
     }
@@ -88,7 +88,7 @@ describe('TripleDES (EDE) cipher test with test vectors from http://csrc.nist.go
   });
 
   it('DES encrypt/decrypt padding tests', function (done) {
-    var key = util.bin2str([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]);
+    var key = new Uint8Array([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]);
     var testvectors = new Array();
     testvectors[0] = [[[0x01], [0x24, 0xC7, 0x4A, 0x9A, 0x79, 0x75, 0x4B, 0xC7]],
 	                  [[0x02, 0x03], [0xA7, 0x7A, 0x9A, 0x59, 0x8A, 0x86, 0x85, 0xC5]],
@@ -125,13 +125,13 @@ describe('TripleDES (EDE) cipher test with test vectors from http://csrc.nist.go
         var decrypted = des.decrypt(encrypted, padding);
 
         expect(util.bin2str(encrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
-          '] and key [' + util.hexstrdump(key) +
+          '] and key [' + util.hexstrdump(util.Uint8Array2str(key)) +
           '] and padding [' + padding +
           '] should be ' + util.hexidump(thisVectorSet[i][1]) +
           ' - Actually [' + util.hexidump(encrypted) +
           ']').to.equal(util.bin2str(thisVectorSet[i][1]));
         expect(util.bin2str(decrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
-          '] and key [' + util.hexstrdump(key) +
+          '] and key [' + util.hexstrdump(util.Uint8Array2str(key)) +
           '] and padding [' + padding +
           '] should be ' + util.hexidump(thisVectorSet[i][0]) +
           ' - Actually [' + util.hexidump(decrypted) +

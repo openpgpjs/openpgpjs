@@ -2,6 +2,7 @@
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
+ * @requires util
  * @requires enums
  * @requires packet
  * @requires packet/packet
@@ -10,7 +11,8 @@
 
 module.exports = Packetlist;
 
-var packetParser = require('./packet.js'),
+var util = require('../util'),
+  packetParser = require('./packet.js'),
   packets = require('./all_packets.js'),
   enums = require('../enums.js');
 
@@ -25,7 +27,7 @@ function Packetlist() {
 }
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
- * @param {String} A binary string of bytes.
+ * @param {Uint8Array} A Uint8Array of bytes.
  */
 Packetlist.prototype.read = function (bytes) {
   var i = 0;
@@ -46,18 +48,18 @@ Packetlist.prototype.read = function (bytes) {
 /**
  * Creates a binary representation of openpgp objects contained within the
  * class instance.
- * @returns {String} A binary string of bytes containing valid openpgp packets.
+ * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
 Packetlist.prototype.write = function () {
-  var bytes = '';
+  var arr = [];
 
   for (var i = 0; i < this.length; i++) {
     var packetbytes = this[i].write();
-    bytes += packetParser.writeHeader(this[i].tag, packetbytes.length);
-    bytes += packetbytes;
+    arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+    arr.push(packetbytes);
   }
 
-  return bytes;
+  return util.concatUint8Array(arr);
 };
 
 /**

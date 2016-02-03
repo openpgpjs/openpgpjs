@@ -18,8 +18,8 @@
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /**
- * Convert binary string to radix-64
- * @param {String} t binary string to convert
+ * Convert binary array to radix-64
+ * @param {Uint8Array} t Uint8Array to convert
  * @returns {string} radix-64 version of input string
  * @static
  */
@@ -32,7 +32,7 @@ function s2r(t, o) {
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
-    c = t.charCodeAt(n);
+    c = t[n];
     if (s === 0) {
       r.push(b64s.charAt((c >> 2) & 63));
       a = (c & 3) << 4;
@@ -75,29 +75,29 @@ function s2r(t, o) {
 }
 
 /**
- * Convert radix-64 to binary string
+ * Convert radix-64 to binary array
  * @param {String} t radix-64 string to convert
- * @returns {string} binary version of input string
+ * @returns {Uint8Array} binary array version of input string
  * @static
  */
 function r2s(t) {
   // TODO check atob alternative
   var c, n;
   var r = [],
-      s = 0,
-      a = 0;
+    s = 0,
+    a = 0;
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64s.indexOf(t.charAt(n));
     if (c >= 0) {
       if (s)
-        r.push(String.fromCharCode(a | (c >> (6 - s)) & 255));
+        r.push(a | (c >> (6 - s)) & 255);
       s = (s + 2) & 7;
       a = (c << s) & 255;
     }
   }
-  return r.join('');
+  return new Uint8Array(r);
 }
 
 module.exports = {

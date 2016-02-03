@@ -78,10 +78,10 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
   var hashlen = get_hash_len(hash_algorithm),
     hashfn = get_hash_fn(hash_algorithm);
 
-  var hashtext = cleartext.substr(cleartext.length - hashlen);
-  cleartext = cleartext.substr(0, cleartext.length - hashlen);
+  var hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+  cleartext = cleartext.subarray(0, cleartext.length - hashlen);
 
-  var hash = hashfn(cleartext);
+  var hash = util.Uint8Array2str(hashfn(cleartext));
 
   if (hash != hashtext)
     return new Error("Hash mismatch.");
@@ -93,24 +93,25 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
 
   for (var i = 0; i < mpis && j < cleartext.length; i++) {
     mpi[i] = new type_mpi();
-    j += mpi[i].read(cleartext.substr(j));
+    j += mpi[i].read(cleartext.subarray(j, cleartext.length));
   }
 
   return mpi;
 }
 
 function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
-  var bytes = '';
+  var arr = [];
   var discard = crypto.getPublicMpiCount(algorithm);
 
   for (var i = discard; i < mpi.length; i++) {
-    bytes += mpi[i].write();
+    arr.push(mpi[i].write());
   }
 
+  var bytes = util.concatUint8Array(arr);
 
-  bytes += get_hash_fn(hash_algorithm)(bytes);
+  var hash = get_hash_fn(hash_algorithm)(bytes);
 
-  return bytes;
+  return util.concatUint8Array([bytes, hash]);
 }
 
 
@@ -124,23 +125,22 @@ SecretKey.prototype.read = function (bytes) {
   // - A Public-Key or Public-Subkey packet, as described above.
   var len = this.readPublicKey(bytes);
 
-  bytes = bytes.substr(len);
+  bytes = bytes.subarray(len, bytes.length);
 
 
   // - One octet indicating string-to-key usage conventions.  Zero
   //   indicates that the secret-key data is not encrypted.  255 or 254
   //   indicates that a string-to-key specifier is being given.  Any
   //   other value is a symmetric-key encryption algorithm identifier.
-  var isEncrypted = bytes.charCodeAt(0);
+  var isEncrypted = bytes[0];
 
   if (isEncrypted) {
     this.encrypted = bytes;
   } else {
-
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
-    var parsedMPI = parse_cleartext_mpi('mod', bytes.substr(1), this.algorithm);
+    var parsedMPI = parse_cleartext_mpi('mod', bytes.subarray(1, bytes.length), this.algorithm);
     if (parsedMPI instanceof Error)
       throw parsedMPI;
     this.mpi = this.mpi.concat(parsedMPI);
@@ -153,17 +153,16 @@ SecretKey.prototype.read = function (bytes) {
   * @return {String} A string of bytes containing the secret key OpenPGP packet
   */
 SecretKey.prototype.write = function () {
-  var bytes = this.writePublicKey();
+  var arr = [this.writePublicKey()];
 
   if (!this.encrypted) {
-    bytes += String.fromCharCode(0);
-
-    bytes += write_cleartext_mpi('mod', this.algorithm, this.mpi);
+    arr.push(new Uint8Array([0]));
+    arr.push(write_cleartext_mpi('mod', this.algorithm, this.mpi));
   } else {
-    bytes += this.encrypted;
+    arr.push(this.encrypted);
   }
 
-  return bytes;
+  return util.concatUint8Array(arr);
 };
 
 
@@ -190,13 +189,12 @@ SecretKey.prototype.encrypt = function (passphrase) {
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
 
-  this.encrypted = '';
-  this.encrypted += String.fromCharCode(254);
-  this.encrypted += String.fromCharCode(enums.write(enums.symmetric, symmetric));
-  this.encrypted += s2k.write();
-  this.encrypted += iv;
+  var arr = [ new Uint8Array([254, enums.write(enums.symmetric, symmetric)]) ];
+  arr.push(s2k.write());
+  arr.push(iv);
+  arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
 
-  this.encrypted += crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv);
+  this.encrypted = util.concatUint8Array(arr);
 };
 
 function produceEncryptionKey(s2k, passphrase, algorithm) {
@@ -222,19 +220,19 @@ SecretKey.prototype.decrypt = function (passphrase) {
     symmetric,
     key;
 
-  var s2k_usage = this.encrypted.charCodeAt(i++);
+  var s2k_usage = this.encrypted[i++];
 
   // - [Optional] If string-to-key usage octet was 255 or 254, a one-
   //   octet symmetric encryption algorithm.
   if (s2k_usage == 255 || s2k_usage == 254) {
-    symmetric = this.encrypted.charCodeAt(i++);
+    symmetric = this.encrypted[i++];
     symmetric = enums.read(enums.symmetric, symmetric);
 
     // - [Optional] If string-to-key usage octet was 255 or 254, a
     //   string-to-key specifier.  The length of the string-to-key
     //   specifier is implied by its type, as described above.
     var s2k = new type_s2k();
-    i += s2k.read(this.encrypted.substr(i));
+    i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
     key = produceEncryptionKey(s2k, passphrase, symmetric);
   } else {
@@ -243,17 +241,16 @@ SecretKey.prototype.decrypt = function (passphrase) {
     key = crypto.hash.md5(passphrase);
   }
 
-
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the
   //   cipher's block size.
-  var iv = this.encrypted.substr(i,
-    crypto.cipher[symmetric].blockSize);
+  var iv = this.encrypted.subarray(i,
+    i + crypto.cipher[symmetric].blockSize);
 
   i += iv.length;
 
   var cleartext,
-    ciphertext = this.encrypted.substr(i);
+    ciphertext = this.encrypted.subarray(i, this.encrypted.length);
 
   cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
 

@@ -122,7 +122,7 @@ describe('Basic', function() {
         }
         return result;
       }
-      var message = randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      var message = 'HI there';//randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
       var userid = 'Test McTestington <test@example.com>';
       var passphrase = 'password';
@@ -145,7 +145,7 @@ describe('Basic', function() {
 
         // sign and encrypt
         var msg, encrypted;
-        msg = openpgp.message.fromBinary(message, "test.txt");
+        msg = openpgp.message.fromText(message, "test.txt");
         msg = msg.sign([privKey]);
         msg = msg.encrypt([pubKey]);
         encrypted = openpgp.armor.encode(openpgp.enums.armor.message, msg.packets.write());
@@ -168,7 +168,7 @@ describe('Basic', function() {
         expect(decrypted.signatures[0].valid).to.be.true;
         expect(decrypted.text).to.equal(message);
         done();
-
+        
       });
     });
   });
@@ -241,6 +241,9 @@ describe('Basic', function() {
 
     var plaintext = 'short message\nnext line\n한국어/조선말';
 
+    var password1 = 'I am a password';
+    var password2 = 'I am another password';
+
     var privKey, message, keyids;
 
     it('Test initialization', function (done) {
@@ -254,10 +257,15 @@ describe('Basic', function() {
 
       expect(pubKey).to.exist;
 
-      openpgp.encryptMessage([pubKey], plaintext).then(function(encrypted) {
+      var params = {
+        packets: true
+      };
+
+      openpgp.encryptMessage([pubKey], plaintext, [password1, password2], params).then(function(encrypted) {
 
         expect(encrypted).to.exist;
-
+        encrypted = openpgp.util.concatUint8Array([encrypted.keys,encrypted.data]);
+        encrypted = openpgp.armor.encode(openpgp.enums.armor.message, encrypted);
         message = openpgp.message.readArmored(encrypted);
 
         expect(message).to.exist;
@@ -307,6 +315,22 @@ describe('Basic', function() {
 
     it('Encrypt plain text and afterwards decrypt leads to same result', function (done) {
       openpgp.decryptMessage(privKey, message).then(function(decrypted) {
+        expect(decrypted).to.exist;
+        expect(decrypted).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Decrypt with password1 leads to the same result', function (done) {
+      openpgp.decryptMessage(password1, message).then(function(decrypted) {
+        expect(decrypted).to.exist;
+        expect(decrypted).to.equal(plaintext);
+        done();
+      });
+    });
+
+    it('Decrypt with password2 leads to the same result', function (done) {
+      openpgp.decryptMessage(password2, message).then(function(decrypted) {
         expect(decrypted).to.exist;
         expect(decrypted).to.equal(plaintext);
         done();

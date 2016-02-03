@@ -29,6 +29,8 @@
  * @module config/config
  */
 
+'use strict';
+
 var enums = require('../enums.js');
 
 module.exports = {
@@ -40,7 +42,7 @@ module.exports = {
   // fail on decrypt if message is not integrity protected
   ignore_mdc_error: false,
   rsa_blinding: true,
-  useWebCrypto: true,
+  useNative: true, // use native node.js crypto and Web Crypto apis (if available)
 
   show_version: true,
   show_comment: true,
