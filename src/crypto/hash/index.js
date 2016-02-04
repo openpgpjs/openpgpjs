@@ -1,5 +1,7 @@
 /**
  * @requires crypto/hash/sha
+ * @requires crypto/hash/md5
+ * @requires crypto/hash/ripe-md
  * @requires util
  * @module crypto/hash
  */
@@ -10,6 +12,8 @@ var sha = require('./sha.js'),
   asmCrypto = require('asmcrypto'),
   Rusha = require('rusha'),
   rusha = new Rusha(),
+  md5 = require('./md5.js'),
+  ripemd = require('./ripe-md.js'),
   util = require('../../util.js'),
   nodeCrypto = util.getNodeCrypto(),
   Buffer = util.getNodeBuffer();
@@ -39,26 +43,21 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
 
   hash_fns = {
     /** @see module:crypto/hash/md5 */
-    md5: require('./md5.js'),
-    /** @see module:crypto/hash/sha.sha1 */
-    /** @see module:crypto/hash/rusha */
-    // sha1: sha.sha1,
-    sha1: function (data) {
+    md5: md5,
+    /** @see module:rusha */
+    sha1: function(data) {
       return util.str2Uint8Array(util.hex2bin(rusha.digest(data)));
     },
-    //sha1: asmCrypto.SHA1.bytes,
     /** @see module:crypto/hash/sha.sha224 */
     sha224: sha.sha224,
-    /** @see module:crypto/hash/sha.sha256 */
-    /** @see module:crypto/asmcrypto */
-    //sha256: sha.sha256,
+    /** @see module:asmcrypto */
     sha256: asmCrypto.SHA256.bytes,
     /** @see module:crypto/hash/sha.sha384 */
     sha384: sha.sha384,
     /** @see module:crypto/hash/sha.sha512 */
     sha512: sha.sha512,
     /** @see module:crypto/hash/ripe-md */
-    ripemd: require('./ripe-md.js')
+    ripemd: ripemd
   };
 }
 
