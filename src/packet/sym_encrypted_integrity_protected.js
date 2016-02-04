@@ -91,28 +91,24 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
 
   // This could probably be cleaned up to use less memory
   var tohash = util.concatUint8Array([bytes, mdc]);
-
   var hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
-
   tohash = util.concatUint8Array([tohash, hash]);
 
-  // AES optimizations. Native code for node, asmCrypto for browser.
-  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
+  if(sessionKeyAlgorithm.substr(0,3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
-    // Node crypto library. Not clear that it is faster than asmCrypto
-    if(nodeCrypto) {
+
+    if(nodeCrypto) { // Node crypto library. Only loaded if config.useNative === true
       var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
-    }
-    else {
+
+    } else { // asm.js fallback
       this.encrypted = asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, tohash]), key);
     }
-  }
-  else {
-    this.encrypted = crypto.cfb.encrypt(prefixrandom,
-      sessionKeyAlgorithm, tohash, key, false).subarray(0,
-      prefix.length + tohash.length);
+
+  } else {
+    this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false)
+      .subarray(0, prefix.length + tohash.length);
   }
 };
 
@@ -127,24 +123,24 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   var decrypted;
-  // AES optimizations. Native code for node, asmCrypto for browser.
-  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {
+
+  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {  // AES optimizations. Native code for node, asmCrypto for browser.
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
-    // Node crypto library. Not clear that it is faster than asmCrypto
-    if(nodeCrypto) {
+
+    if(nodeCrypto) { // Node crypto library. Only loaded if config.useNative === true
       var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
-    }
-    else {
+
+    } else { // asm.js fallback
       decrypted = asmCrypto.AES_CFB.decrypt(this.encrypted, key);
     }
+
     // Remove random prefix
     decrypted = decrypted.subarray(blockSize + 2, decrypted.length);
-  }
-  else {
-    decrypted = crypto.cfb.decrypt(
-    sessionKeyAlgorithm, key, this.encrypted, false);
+
+  } else {
+    decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, false);
   }
 
   // there must be a modification detection code packet as the
