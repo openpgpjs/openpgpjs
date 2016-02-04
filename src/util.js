@@ -23,7 +23,7 @@
 
 'use strict';
 
-var config = require('./config');
+import config from './config';
 
 module.exports = {
   readNumber: function (bytes) {

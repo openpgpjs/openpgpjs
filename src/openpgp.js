@@ -33,16 +33,17 @@
 
 'use strict';
 
-var armor = require('./encoding/armor.js'),
-  enums = require('./enums.js'),
-  message = require('./message.js'),
-  cleartext = require('./cleartext.js'),
-  config = require('./config/config.js'),
-  key = require('./key.js'),
-  util = require('./util'),
-  AsyncProxy = require('./worker/async_proxy.js');
+import armor from './encoding/armor.js';
+import enums from './enums.js';
+import message from './message.js';
+import cleartext from './cleartext.js';
+import config from './config/config.js';
+import key from './key.js';
+import util from './util';
+import AsyncProxy from './worker/async_proxy.js';
+import es6Promise from 'es6-promise';
 
-require('es6-promise').polyfill(); // load ES6 Promises polyfill
+es6Promise.polyfill(); // load ES6 Promises polyfill
 
 var asyncProxy = null; // instance of the asyncproxy
 

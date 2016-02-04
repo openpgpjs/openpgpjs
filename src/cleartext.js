@@ -25,10 +25,10 @@
 
 'use strict';
 
-var config = require('./config'),
-  packet = require('./packet'),
-  enums = require('./enums.js'),
-  armor = require('./encoding/armor.js');
+import config from './config';
+import packet from './packet';
+import enums from './enums.js';
+import armor from './encoding/armor.js';
 
 /**
  * @class

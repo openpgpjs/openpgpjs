@@ -507,10 +507,8 @@ function makeClass(length) {
   return c;
 }
 
-module.exports = {};
-
-var types = [128, 192, 256];
-
-for (var i in types) {
-  module.exports[types[i]] = makeClass(types[i]);
+export default {
+  128: makeClass(128),
+  192: makeClass(192),
+  256: makeClass(256)
 }

@@ -8,9 +8,14 @@
 
 'use strict';
 
-var desModule = require('./des.js');
+import desModule from './des.js';
+import aes from'./aes.js';
 
 module.exports = {
+  /** @see module:crypto/cipher/aes */
+  aes128: aes[128],
+  aes192: aes[192],
+  aes256: aes[256],
   /** @see module:crypto/cipher/des.originalDes */
   des: desModule.originalDes,
   /** @see module:crypto/cipher/des.des */
@@ -26,9 +31,3 @@ module.exports = {
     throw new Error('IDEA symmetric-key algorithm not implemented');
   }
 };
-
-var aes = require('./aes.js');
-
-for (var i in aes) {
-  module.exports['aes' + i] = aes[i];
-}

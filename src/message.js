@@ -26,13 +26,13 @@
 
 'use strict';
 
-var util = require('./util.js'),
-  packet = require('./packet'),
-  enums = require('./enums.js'),
-  armor = require('./encoding/armor.js'),
-  config = require('./config'),
-  crypto = require('./crypto'),
-  keyModule = require('./key.js');
+import util from './util.js';
+import packet from './packet';
+import enums from './enums.js';
+import armor from './encoding/armor.js';
+import config from './config';
+import crypto from './crypto';
+import keyModule from './key.js';
 
 /**
  * @class
