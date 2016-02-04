@@ -1,13 +1,12 @@
 /**
  * @requires crypto/hash/sha
- * @requires crypto/hash/rusha
  * @requires util
  * @requires config
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
   asmCrypto = require('asmcrypto'),
-  rusha = require('./rusha.js'),
+  rusha = require('rusha'),
   config = require('../../config'),
   util = require('../../util.js');
 
