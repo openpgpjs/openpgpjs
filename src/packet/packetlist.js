@@ -103,8 +103,9 @@ Packetlist.prototype.filterByTag = function () {
   var filtered = new Packetlist();
   var that = this;
 
+  function handle(packetType) {return that[i].tag === packetType;}
   for (var i = 0; i < this.length; i++) {
-    if (args.some(function(packetType) {return that[i].tag === packetType;})) {
+    if (args.some(handle)) {
       filtered.push(this[i]);
     }
   }
@@ -151,8 +152,10 @@ Packetlist.prototype.indexOfTag = function () {
   var args = Array.prototype.slice.call(arguments);
   var tagIndex = [];
   var that = this;
+
+  function handle(packetType) {return that[i].tag === packetType;}
   for (var i = 0; i < this.length; i++) {
-    if (args.some(function(packetType) {return that[i].tag == packetType;})) {
+    if (args.some(handle)) {
       tagIndex.push(i);
     }
   }

@@ -19,7 +19,7 @@ function node_hash(type) {
     var shasum = nodeCrypto.createHash(type);
     shasum.update(new Buffer(data));
     return new Uint8Array(shasum.digest());
-  }
+  };
 }
 
 var hash_fns;
