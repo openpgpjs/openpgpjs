@@ -382,7 +382,9 @@ function execute(cmd, errMsg) {
  */
 function onError(message, error) {
   // log the stack trace
-  console.error(error.stack);
+  if (config.debug) {
+    console.error(error.stack);
+  }
   // rethrow new high level error for api users
   throw new Error(message);
 }
