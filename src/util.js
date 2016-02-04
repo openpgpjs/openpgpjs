@@ -196,8 +196,6 @@ module.exports = {
    * @return {Uint8Array} The array of (binary) integers
    */
   str2Uint8Array: function (str) {
-
-    // Uncomment for debugging
     if(typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
       throw new Error('str2Uint8Array: Data must be in the form of a string');
     }
@@ -217,8 +215,6 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-
-    // Uncomment for debugging
     if(!Uint8Array.prototype.isPrototypeOf(bin)) {
       throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
@@ -237,11 +233,8 @@ module.exports = {
    * @return {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
-
     var totalLength = 0;
     arrays.forEach(function (element) {
-
-      // Uncomment for debugging
       if(!Uint8Array.prototype.isPrototypeOf(element)) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
@@ -266,8 +259,6 @@ module.exports = {
    * @return {Uint8Array} new Uint8Array
    */
   copyUint8Array: function (array) {
-
-    // Uncomment for debugging
     if(!Uint8Array.prototype.isPrototypeOf(array)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
@@ -285,8 +276,6 @@ module.exports = {
    * @return {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {
-
-    // Uncomment for debugging
     if(!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
