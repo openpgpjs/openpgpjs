@@ -5,9 +5,6 @@
 
 'use strict';
 
-// asmCrypto global object (AES CFB, SHA1, SHA256, SHA512)
-require('./asmcrypto.js');
-
 module.exports = {
   /** @see module:crypto/cipher */
   cipher: require('./cipher'),

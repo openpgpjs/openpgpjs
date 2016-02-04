@@ -6,8 +6,9 @@
  * @module crypto/hash
  */
 var sha = require('./sha.js'),
+  asmCrypto = require('asmcrypto'),
   rusha = require('./rusha.js'),
-  config = require('../../config')
+  config = require('../../config'),
   util = require('../../util.js');
 
 var rusha_obj = new rusha();

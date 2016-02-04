@@ -39,6 +39,7 @@ module.exports = SymEncryptedIntegrityProtected;
 var util = require('../util.js'),
   crypto = require('../crypto'),
   enums = require('../enums.js'),
+  asmCrypto = require('asmcrypto'),
   nodeCrypto = util.getNodeCrypto(),
   Buffer = util.getNodeBuffer();
 

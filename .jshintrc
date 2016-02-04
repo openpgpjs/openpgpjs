@@ -31,7 +31,6 @@
     "afterEach": true,
     "escape": true,
     "unescape": true,
-    "asmCrypto": true,
     "postMessage": true
   }
 }
