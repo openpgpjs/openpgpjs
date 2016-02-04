@@ -1,21 +1,21 @@
 /**
  * @requires crypto/hash/sha
  * @requires util
- * @requires config
  * @module crypto/hash
  */
+
+'use strict';
+
 var sha = require('./sha.js'),
   asmCrypto = require('asmcrypto'),
-  rusha = require('rusha'),
-  config = require('../../config'),
-  util = require('../../util.js');
-
-var rusha_obj = new rusha();
+  Rusha = require('rusha'),
+  rusha = new Rusha(),
+  util = require('../../util.js'),
+  nodeCrypto = util.getNodeCrypto(),
+  Buffer = util.getNodeBuffer();
 
 function node_hash(type) {
   return function (data) {
-    var nodeCrypto = require('crypto');
-    var Buffer = require('buffer').Buffer;
     var shasum = nodeCrypto.createHash(type);
     shasum.update(new Buffer(data));
     return new Uint8Array(shasum.digest());
@@ -23,7 +23,8 @@ function node_hash(type) {
 }
 
 var hash_fns;
-if(util.detectNode() && config.useNative) { // Use Node native crypto
+if(nodeCrypto) { // Use Node native crypto for all hash functions
+
   hash_fns = {
     md5: node_hash('md5'),
     sha1: node_hash('sha1'),
@@ -33,8 +34,9 @@ if(util.detectNode() && config.useNative) { // Use Node native crypto
     sha512: node_hash('sha512'),
     ripemd: node_hash('ripemd160')
   };
-}
-else { // JS
+
+} else { // Use JS fallbacks
+
   hash_fns = {
     /** @see module:crypto/hash/md5 */
     md5: require('./md5.js'),
@@ -42,7 +44,7 @@ else { // JS
     /** @see module:crypto/hash/rusha */
     // sha1: sha.sha1,
     sha1: function (data) {
-      return util.str2Uint8Array(util.hex2bin(rusha_obj.digest(data)));
+      return util.str2Uint8Array(util.hex2bin(rusha.digest(data)));
     },
     //sha1: asmCrypto.SHA1.bytes,
     /** @see module:crypto/hash/sha.sha224 */
