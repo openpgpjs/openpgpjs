@@ -32,7 +32,7 @@
     "test": "grunt test"
   },
   "devDependencies": {
-    "asmcrypto": "git://github.com/openpgpjs/asmcrypto.js.git#openpgp_build",
+    "asmcrypto-lite": "^1.0.0",
     "chai": "~3.4.1",
     "es6-promise": "^1.0.0",
     "grunt": "~0.4.5",

@@ -9,7 +9,7 @@
 'use strict';
 
 var sha = require('./sha.js'),
-  asmCrypto = require('asmcrypto'),
+  asmCrypto = require('asmcrypto-lite'),
   Rusha = require('rusha'),
   rusha = new Rusha(),
   md5 = require('./md5.js'),
