@@ -353,25 +353,6 @@ describe('Basic', function() {
 
   });
 
-  describe('Encrypt message symmetrically using passphrase', function() {
-    it('should encrypt/decrypt successfully', function() {
-      var passphrase = 'passphrase';
-      var plaintext = 'secret stuff';
-
-      // encrypt
-      var msg = openpgp.message.fromText(plaintext);
-      msg = msg.symEncrypt(passphrase);
-      var encrypted = msg.armor();
-
-      // decrypt
-      var msg2 = openpgp.message.readArmored(encrypted);
-      msg2 = msg2.symDecrypt(passphrase);
-      var decrypted = msg2.getText();
-
-      expect(decrypted).to.equal(plaintext);
-    });
-  });
-
   describe("Message 3DES decryption", function() {
     var pgp_msg =
         ['-----BEGIN PGP MESSAGE-----',
