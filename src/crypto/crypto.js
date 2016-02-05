@@ -27,12 +27,12 @@
 
 'use strict';
 
-var random = require('./random.js'),
-  cipher = require('./cipher'),
-  publicKey = require('./public_key'),
-  type_mpi = require('../type/mpi.js');
+import random from './random.js';
+import cipher from './cipher';
+import publicKey from './public_key';
+import type_mpi from '../type/mpi.js';
 
-module.exports = {
+export default {
   /**
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.

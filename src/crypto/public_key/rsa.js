@@ -26,10 +26,10 @@
 
 'use strict';
 
-var BigInteger = require('./jsbn.js'),
-  util = require('../../util.js'),
-  random = require('../random.js'),
-  config = require('../../config');
+import BigInteger from './jsbn.js';
+import util from '../../util.js';
+import random from '../random.js';
+import config from '../../config';
 
 function SecureRandom() {
   function nextBytes(byteArray) {
@@ -57,7 +57,7 @@ function unblind(t, n) {
   return t.multiply(unblinder).mod(n);
 }
 
-function RSA() {
+export default function RSA() {
   /**
    * This function uses jsbn Big Num library to decrypt RSA
    * @param m
@@ -265,5 +265,3 @@ function RSA() {
   this.generate = generate;
   this.keyObject = KeyObject;
 }
-
-module.exports = RSA;

@@ -5,24 +5,31 @@
 
 'use strict';
 
+import cipher from './cipher';
+import hash from './hash';
+import cfb from './cfb';
+import publicKey from './public_key';
+import signature from './signature';
+import random from './random';
+import pkcs1 from './pkcs1';
+import crypto from './crypto.js';
+
 module.exports = {
   /** @see module:crypto/cipher */
-  cipher: require('./cipher'),
+  cipher: cipher,
   /** @see module:crypto/hash */
-  hash: require('./hash'),
+  hash: hash,
   /** @see module:crypto/cfb */
-  cfb: require('./cfb.js'),
+  cfb: cfb,
   /** @see module:crypto/public_key */
-  publicKey: require('./public_key'),
+  publicKey: publicKey,
   /** @see module:crypto/signature */
-  signature: require('./signature.js'),
+  signature: signature,
   /** @see module:crypto/random */
-  random: require('./random.js'),
+  random: random,
   /** @see module:crypto/pkcs1 */
-  pkcs1: require('./pkcs1.js'),
+  pkcs1: pkcs1,
 };
-
-var crypto = require('./crypto.js');
 
 for (var i in crypto) {
   module.exports[i] = crypto[i];

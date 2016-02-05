@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
+ * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU)
  * All Rights Reserved.
  *
- * Modified by Recurity Labs GmbH 
- * 
+ * Modified by Recurity Labs GmbH
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -15,9 +15,9 @@
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
  *
  * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
  * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
@@ -37,7 +37,7 @@
  * @module crypto/public_key/jsbn
  */
 
-var util = require('../../util.js');
+import util from '../../util.js';
 
 // Basic JavaScript BN library - subset useful for RSA encryption.
 
@@ -50,7 +50,7 @@ var j_lm = ((canary & 0xffffff) == 0xefcafe);
 
 // (public) Constructor
 
-function BigInteger(a, b, c) {
+export default function BigInteger(a, b, c) {
   if (a != null)
     if ("number" == typeof a) this.fromNumber(a, b, c);
     else if (b == null && "string" != typeof a) this.fromString(a, 256);
@@ -113,7 +113,7 @@ function am3(i, x, w, j, c, n) {
   }
   return c;
 }
-/*if(j_lm && (navigator != undefined && 
+/*if(j_lm && (navigator != undefined &&
 	navigator.appName == "Microsoft Internet Explorer")) {
   BigInteger.prototype.am = am2;
   dbits = 30;
@@ -732,8 +732,6 @@ BigInteger.ZERO = nbv(0);
 BigInteger.ONE = nbv(1);
 BigInteger.TWO = nbv(2);
 
-module.exports = BigInteger;
-
 
 
 
@@ -753,7 +751,7 @@ module.exports = BigInteger;
 
 
 /*
- * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU) 
+ * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU)
  * All Rights Reserved.
  *
  * Modified by Recurity Labs GmbH
@@ -769,9 +767,9 @@ module.exports = BigInteger;
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
  *
  * IN NO EVENT SHALL TOM WU BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
  * INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND, OR ANY DAMAGES WHATSOEVER
@@ -1653,8 +1651,6 @@ function bnpMillerRabin(t) {
   }
   return true;
 }
-
-var BigInteger = require('./jsbn.js');
 
 // protected
 BigInteger.prototype.chunkSize = bnpChunkSize;

@@ -25,11 +25,11 @@
 
 'use strict';
 
-var TypeMPI = require('../type/mpi.js'),
-  util = require('../util.js'),
-  nodeCrypto = util.detectNode() && require('crypto');
+import TypeMPI from '../type/mpi.js';
+import util from '../util.js';
+const nodeCrypto = util.detectNode() && require('crypto');
 
-module.exports = {
+export default {
   /**
    * Retrieve secure random byte array of the specified length
    * @param {Integer} length Length in bytes to generate

@@ -26,11 +26,11 @@
 
 'use strict';
 
-var BigInteger = require('./jsbn.js'),
-  random = require('../random.js'),
-  util = require('../../util.js');
+import BigInteger from './jsbn.js';
+import random from '../random.js';
+import util from '../../util.js';
 
-function Elgamal() {
+export default function Elgamal() {
 
   function encrypt(m, g, p, y) {
     //  choose k in {2,...,p-2}
@@ -57,5 +57,3 @@ function Elgamal() {
   this.encrypt = encrypt;
   this.decrypt = decrypt;
 }
-
-module.exports = Elgamal;

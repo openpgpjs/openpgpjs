@@ -14,7 +14,7 @@ import cast5 from './cast5.js';
 import twofish from './twofish.js';
 import blowfish from './blowfish.js';
 
-module.exports = {
+export default {
   /** @see module:crypto/cipher/aes */
   aes128: aes[128],
   aes192: aes[192],

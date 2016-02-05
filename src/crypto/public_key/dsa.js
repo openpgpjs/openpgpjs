@@ -27,13 +27,13 @@
 
 'use strict';
 
-var BigInteger = require('./jsbn.js'),
-  random = require('../random.js'),
-  hashModule = require('../hash'),
-  util = require('../../util.js'),
-  config = require('../../config');
+import BigInteger from './jsbn.js';
+import random from '../random.js';
+import hashModule from '../hash';
+import util from '../../util.js';
+import config from '../../config';
 
-function DSA() {
+export default function DSA() {
   // s1 = ((g**s) mod p) mod q
   // s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
   function sign(hashalgo, m, g, p, q, x) {
@@ -126,5 +126,3 @@ function DSA() {
   this.sign = sign;
   this.verify = verify;
 }
-
-module.exports = DSA;

@@ -7,11 +7,15 @@
 
 'use strict';
 
-module.exports = {
-  /** @see module:crypto/public_key/rsa */
-  rsa: require('./rsa.js'),
-  /** @see module:crypto/public_key/elgamal */
-  elgamal: require('./elgamal.js'),
-  /** @see module:crypto/public_key/dsa */
-  dsa: require('./dsa.js')
+/** @see module:crypto/public_key/rsa */
+import rsa from './rsa.js';
+/** @see module:crypto/public_key/elgamal */
+import elgamal from './elgamal.js';
+/** @see module:crypto/public_key/dsa */
+import dsa from './dsa.js';
+
+export default {
+  rsa: rsa,
+  elgamal: elgamal,
+  dsa: dsa
 };

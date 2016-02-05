@@ -62,7 +62,7 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
   };
 }
 
-module.exports = {
+export default {
 
   md5: hash_fns.md5,
   sha1: hash_fns.sha1,

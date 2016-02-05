@@ -7,11 +7,11 @@
 
 'use strict';
 
-var util = require('../util'),
-  publicKey = require('./public_key'),
-  pkcs1 = require('./pkcs1.js');
+import util from '../util';
+import publicKey from './public_key';
+import pkcs1 from './pkcs1.js';
 
-module.exports = {
+export default {
   /**
    *
    * @param {module:enums.publicKey} algo public Key algorithm

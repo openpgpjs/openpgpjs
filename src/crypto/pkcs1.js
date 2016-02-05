@@ -27,6 +27,11 @@
 
 'use strict';
 
+import random from './random.js';
+import util from '../util.js';
+import BigInteger from './public_key/jsbn.js';
+import hash from './hash';
+
 /**
  * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
  */
@@ -49,11 +54,6 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
     0x00, 0x04, 0x1C
 ];
 
-var random = require('./random.js'),
-  util = require('../util.js'),
-  BigInteger = require('./public_key/jsbn.js'),
-  hash = require('./hash');
-
 /**
  * Create padding with secure random data
  * @private
@@ -73,7 +73,7 @@ function getPkcs1Padding(length) {
 }
 
 
-module.exports = {
+export default {
   eme: {
     /**
      * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})

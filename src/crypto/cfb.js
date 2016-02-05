@@ -24,9 +24,9 @@
 
 'use strict';
 
-var cipher = require('./cipher');
+import cipher from './cipher';
 
-module.exports = {
+export default {
 
   /**
    * This function encrypts a given with the specified prefixrandom
