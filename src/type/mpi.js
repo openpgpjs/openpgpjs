@@ -39,12 +39,10 @@
 import BigInteger from '../crypto/public_key/jsbn.js';
 import util from '../util.js';
 
-module.exports = MPI;
-
 /**
  * @constructor
  */
-function MPI() {
+export default function MPI() {
   /** An implementation dependent integer */
   this.data = null;
 }
@@ -109,7 +107,7 @@ MPI.prototype.fromBigInteger = function (bn) {
   this.data = bn.clone();
 };
 
-module.exports.fromClone = function (clone) {
+MPI.fromClone = function (clone) {
   clone.data.copyTo = BigInteger.prototype.copyTo;
   var bn = new BigInteger();
   clone.data.copyTo(bn);

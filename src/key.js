@@ -38,7 +38,7 @@ import util from './util';
  * @param  {module:packet/packetlist} packetlist The packets that form this key
  */
 
-function Key(packetlist) {
+export function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
   }
@@ -887,7 +887,7 @@ SubKey.prototype.update = function(subKey, primaryKey) {
  * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
-function readArmored(armoredText) {
+export function readArmored(armoredText) {
   var result = {};
   result.keys = [];
   try {
@@ -931,7 +931,7 @@ function readArmored(armoredText) {
  * @return {module:key~Key}
  * @static
  */
-function generate(options) {
+export function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
 
   options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
@@ -1042,7 +1042,7 @@ function generate(options) {
  * @param  {Array<module:key~Key>} keys Set of keys
  * @return {enums.symmetric}   Preferred symmetric algorithm
  */
-function getPreferredSymAlgo(keys) {
+export function getPreferredSymAlgo(keys) {
   var prioMap = {};
   keys.forEach(function(key) {
     var primaryUser = key.getPrimaryUser();
@@ -1069,8 +1069,3 @@ function getPreferredSymAlgo(keys) {
   }
   return prefAlgo.algo;
 }
-
-exports.Key = Key;
-exports.readArmored = readArmored;
-exports.generate = generate;
-exports.getPreferredSymAlgo = getPreferredSymAlgo;

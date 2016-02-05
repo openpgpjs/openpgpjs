@@ -25,7 +25,7 @@
 
 import config from './config';
 
-module.exports = {
+export default {
   readNumber: function (bytes) {
     var n = 0;
 

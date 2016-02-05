@@ -39,7 +39,7 @@ import armor from './encoding/armor.js';
  *                                 if message not yet signed
  */
 
-function CleartextMessage(text, packetlist) {
+export function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(text, packetlist);
   }
@@ -149,7 +149,7 @@ CleartextMessage.prototype.armor = function() {
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
-function readArmored(armoredText) {
+export function readArmored(armoredText) {
   var input = armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -205,6 +205,3 @@ function verifyHeaders(headers, packetlist) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }
-
-exports.CleartextMessage = CleartextMessage;
-exports.readArmored = readArmored;

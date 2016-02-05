@@ -28,7 +28,7 @@
 
 import crypto from '../crypto';
 import packet from '../packet';
-import key from '../key.js';
+import * as key from '../key.js';
 import type_keyid from '../type/keyid.js';
 
 var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker

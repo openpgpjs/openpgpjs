@@ -108,7 +108,7 @@ function r2s(t) {
   return new Uint8Array(r);
 }
 
-module.exports = {
+export default {
   encode: s2r,
   decode: r2s
 };

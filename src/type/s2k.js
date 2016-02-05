@@ -35,12 +35,10 @@ import enums from '../enums.js';
 import util from '../util.js';
 import crypto from '../crypto';
 
-module.exports = S2K;
-
 /**
  * @constructor
  */
-function S2K() {
+export default function S2K() {
   /** @type {module:enums.hash} */
   this.algorithm = 'sha256';
   /** @type {module:enums.s2k} */
@@ -201,7 +199,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   return util.concatUint8Array(arr).subarray(0, numBytes);
 };
 
-module.exports.fromClone = function (clone) {
+S2K.fromClone = function (clone) {
   var s2k = new S2K();
   s2k.algorithm = clone.algorithm;
   s2k.type = clone.type;

@@ -14,7 +14,7 @@ import random from './random';
 import pkcs1 from './pkcs1';
 import crypto from './crypto.js';
 
-module.exports = {
+const mod = {
   /** @see module:crypto/cipher */
   cipher: cipher,
   /** @see module:crypto/hash */
@@ -32,5 +32,7 @@ module.exports = {
 };
 
 for (var i in crypto) {
-  module.exports[i] = crypto[i];
+  mod[i] = crypto[i];
 }
+
+export default mod;

@@ -33,7 +33,7 @@
 
 import enums from '../enums.js';
 
-module.exports = {
+export default {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,

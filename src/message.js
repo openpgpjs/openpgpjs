@@ -32,7 +32,7 @@ import enums from './enums.js';
 import armor from './encoding/armor.js';
 import config from './config';
 import crypto from './crypto';
-import keyModule from './key.js';
+import * as keyModule from './key.js';
 
 /**
  * @class
@@ -42,7 +42,7 @@ import keyModule from './key.js';
  * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
-function Message(packetlist) {
+export function Message(packetlist) {
   if (!(this instanceof Message)) {
     return new Message(packetlist);
   }
@@ -242,7 +242,7 @@ Message.prototype.encrypt = function(keys, passwords) {
  * @param  {(Array<String>|String)} password(s) for message encryption
  * @return {Array<module:message~Message>} new message with encrypted content
  */
-function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
+export function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
 
   /** Convert to arrays if necessary */
   if(keys && !Array.prototype.isPrototypeOf(keys)) {
@@ -396,7 +396,7 @@ Message.prototype.armor = function() {
  * @return {module:message~Message} new message object
  * @static
  */
-function readArmored(armoredText) {
+export function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   var input = armor.decode(armoredText).data;
@@ -409,7 +409,7 @@ function readArmored(armoredText) {
  * @return {module:message~Message} new message object
  * @static
  */
-function read(input) {
+export function read(input) {
   var packetlist = new packet.List();
   packetlist.read(input);
   return new Message(packetlist);
@@ -420,7 +420,7 @@ function read(input) {
  * @param {String} content An 8 bit ascii string containing e.g. a MIME subtree with text nodes or attachments
  * @param {String} detachedSignature The detached ascii armored PGP signature
  */
-function readSignedContent(content, detachedSignature) {
+export function readSignedContent(content, detachedSignature) {
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setBytes(util.str2Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
   var packetlist = new packet.List();
@@ -437,7 +437,7 @@ function readSignedContent(content, detachedSignature) {
  * @return {module:message~Message} new message object
  * @static
  */
-function fromText(text, filename) {
+export function fromText(text, filename) {
   var literalDataPacket = new packet.Literal();
   // text will be converted to UTF8
   literalDataPacket.setText(text);
@@ -456,7 +456,7 @@ function fromText(text, filename) {
  * @return {module:message~Message} new message object
  * @static
  */
-function fromBinary(bytes, filename) {
+export function fromBinary(bytes, filename) {
   if(!Uint8Array.prototype.isPrototypeOf(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
@@ -473,11 +473,3 @@ function fromBinary(bytes, filename) {
   literalDataPacketlist.push(literalDataPacket);
   return new Message(literalDataPacketlist);
 }
-
-exports.Message = Message;
-exports.read = read;
-exports.readArmored = readArmored;
-exports.readSignedContent = readSignedContent;
-exports.fromText = fromText;
-exports.fromBinary = fromBinary;
-exports.encryptSessionKey = encryptSessionKey;

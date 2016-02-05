@@ -33,19 +33,19 @@
 
 'use strict';
 
+import * as message from './message.js';
+import * as cleartext from './cleartext.js';
+import * as key from './key.js';
 import armor from './encoding/armor.js';
 import enums from './enums.js';
-import message from './message.js';
-import cleartext from './cleartext.js';
 import config from './config/config.js';
-import key from './key.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
 import es6Promise from 'es6-promise';
 
 es6Promise.polyfill(); // load ES6 Promises polyfill
 
-var asyncProxy = null; // instance of the asyncproxy
+let asyncProxy = null; // instance of the asyncproxy
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
@@ -54,7 +54,7 @@ var asyncProxy = null; // instance of the asyncproxy
  *                                         web worker initialized with 'openpgp.worker.js'
  * @return {Boolean} true if worker created successfully
  */
-function initWorker(path, options) {
+export function initWorker(path, options) {
   if (options && options.worker || typeof window !== 'undefined' && window.Worker) {
     options = options || {};
     options.config = config;
@@ -69,7 +69,7 @@ function initWorker(path, options) {
  * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
  * @return {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
  */
-function getWorker() {
+export function getWorker() {
   return asyncProxy;
 }
 
@@ -83,7 +83,7 @@ function getWorker() {
  * @return {Promise<String> or Promise<Packetlist>}            encrypted ASCII armored message, or Packetlist if params.packets is true
  * @static
  */
-function encryptMessage(keys, data, passwords, params) {
+export function encryptMessage(keys, data, passwords, params) {
 
   if (asyncProxy) {
     return asyncProxy.encryptMessage(keys, data, passwords, params);
@@ -129,7 +129,7 @@ function encryptMessage(keys, data, passwords, params) {
  * @return {Promise<Packetlist>}                               Binary string of key packets
  * @static
  */
-function encryptSessionKey(sessionKey, algo, keys, passwords) {
+export function encryptSessionKey(sessionKey, algo, keys, passwords) {
 
   if (asyncProxy) {
     return asyncProxy.encryptSessionKey(sessionKey, algo, keys, passwords);
@@ -151,7 +151,7 @@ function encryptSessionKey(sessionKey, algo, keys, passwords) {
  * @return {Promise<String>}   encrypted ASCII armored message
  * @static
  */
-function signAndEncryptMessage(publicKeys, privateKey, text) {
+export function signAndEncryptMessage(publicKeys, privateKey, text) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
@@ -181,7 +181,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  *                                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg, params) {
+export function decryptMessage(privateKey, msg, params) {
   if (asyncProxy) {
     return asyncProxy.decryptMessage(privateKey, msg, params);
   }
@@ -216,7 +216,7 @@ function decryptMessage(privateKey, msg, params) {
  *                                              or null if no key packets found
  * @static
  */
-function decryptSessionKey(privateKey, msg) {
+export function decryptSessionKey(privateKey, msg) {
   if (asyncProxy) {
     return asyncProxy.decryptSessionKey(privateKey, msg);
   }
@@ -238,7 +238,7 @@ function decryptSessionKey(privateKey, msg) {
  *                              with verified signatures or null if no literal data found
  * @static
  */
-function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
+export function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
@@ -267,7 +267,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
  * @return {Promise<String>}    ASCII armored message
  * @static
  */
-function signClearMessage(privateKeys, text) {
+export function signClearMessage(privateKeys, text) {
   if (!privateKeys.length) {
     privateKeys = [privateKeys];
   }
@@ -292,7 +292,7 @@ function signClearMessage(privateKeys, text) {
  *                                       cleartext with status of verified signatures
  * @static
  */
-function verifyClearSignedMessage(publicKeys, msg) {
+export function verifyClearSignedMessage(publicKeys, msg) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
@@ -325,7 +325,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
  * @return {Promise<Object>} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
  */
-function generateKeyPair(options) {
+export function generateKeyPair(options) {
   // use web worker if web crypto apis are not supported
   if (!util.getWebCrypto() && asyncProxy) {
     return asyncProxy.generateKeyPair(options);
@@ -389,15 +389,3 @@ function onError(message, error) {
   // rethrow new high level error for api users
   throw new Error(message);
 }
-
-exports.initWorker = initWorker;
-exports.getWorker = getWorker;
-exports.encryptMessage = encryptMessage;
-exports.encryptSessionKey = encryptSessionKey;
-exports.signAndEncryptMessage = signAndEncryptMessage;
-exports.decryptMessage = decryptMessage;
-exports.decryptSessionKey = decryptSessionKey;
-exports.decryptAndVerifyMessage = decryptAndVerifyMessage;
-exports.signClearMessage = signClearMessage;
-exports.verifyClearSignedMessage = verifyClearSignedMessage;
-exports.generateKeyPair = generateKeyPair;

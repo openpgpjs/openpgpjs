@@ -25,7 +25,7 @@
 'use strict';
 
 import config from '../config';
-import keyModule from '../key.js';
+import * as keyModule from '../key.js';
 import util from '../util.js';
 
 export default function LocalStore(prefix) {

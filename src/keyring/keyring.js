@@ -25,7 +25,7 @@
 
 'use strict';
 
-import keyModule from '../key.js';
+import * as keyModule from '../key.js';
 import LocalStore from './localstore.js';
 
 /**

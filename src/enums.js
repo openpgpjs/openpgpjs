@@ -4,7 +4,7 @@
  * @module enums
  */
 
-module.exports = {
+export default {
 
   /** A string to key specifier type
    * @enum {Integer}

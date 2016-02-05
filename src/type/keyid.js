@@ -30,12 +30,10 @@
 
 import util from '../util.js';
 
-module.exports = Keyid;
-
 /**
  * @constructor
  */
-function Keyid() {
+export default function Keyid() {
   this.bytes = '';
 }
 
@@ -63,17 +61,17 @@ Keyid.prototype.isNull = function() {
   return this.bytes === '';
 };
 
-module.exports.mapToHex = function (keyId) {
+Keyid.mapToHex = function (keyId) {
   return keyId.toHex();
 };
 
-module.exports.fromClone = function (clone) {
+Keyid.fromClone = function (clone) {
   var keyid = new Keyid();
   keyid.bytes = clone.bytes;
   return keyid;
 };
 
-module.exports.fromId = function (hex) {
+Keyid.fromId = function (hex) {
   var keyid = new Keyid();
   keyid.read(util.hex2bin(hex));
   return keyid;

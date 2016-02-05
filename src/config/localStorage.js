@@ -5,12 +5,10 @@
 
 'use strict';
 
-module.exports = LocalStorage;
-
 /**
  * @constructor
  */
-function LocalStorage() {}
+export default function LocalStorage() {}
 
 /**
  * Reads the config out of the HTML5 local storage

@@ -402,7 +402,7 @@ function armor(messagetype, body, partindex, parttotal) {
   return result.join('');
 }
 
-module.exports = {
+export default {
   encode: armor,
   decode: dearmor
 };
