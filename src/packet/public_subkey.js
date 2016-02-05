@@ -23,16 +23,14 @@
 
 'use strict';
 
-module.exports = PublicSubkey;
-
-var publicKey = require('./public_key.js'),
-  enums = require('../enums.js');
+import publicKey from './public_key.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  * @extends module:packet/public_key
  */
-function PublicSubkey() {
+export default function PublicSubkey() {
   publicKey.call(this);
   this.tag = enums.packet.publicSubkey;
 }

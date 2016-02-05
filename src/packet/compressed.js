@@ -31,18 +31,16 @@
 
 'use strict';
 
-module.exports = Compressed;
-
-var enums = require('../enums.js'),
-  util = require('../util.js'),
-  Zlib = require('../compression/zlib.min.js'),
-  RawInflate = require('../compression/rawinflate.min.js'),
-  RawDeflate = require('../compression/rawdeflate.min.js');
+import enums from '../enums.js';
+import util from '../util.js';
+import Zlib from '../compression/zlib.min.js';
+import RawInflate from '../compression/rawinflate.min.js';
+import RawDeflate from '../compression/rawdeflate.min.js';
 
 /**
  * @constructor
  */
-function Compressed() {
+export default function Compressed() {
   /**
    * Packet type
    * @type {module:enums.packet}

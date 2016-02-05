@@ -27,15 +27,13 @@
 
 'use strict';
 
-module.exports = Literal;
-
-var util = require('../util.js'),
-  enums = require('../enums.js');
+import util from '../util.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Literal() {
+export default function Literal() {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
   this.date = new Date();

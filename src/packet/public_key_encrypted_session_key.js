@@ -39,18 +39,16 @@
 
 'use strict';
 
-module.exports = PublicKeyEncryptedSessionKey;
-
-var type_keyid = require('../type/keyid.js'),
-  util = require('../util.js'),
-  type_mpi = require('../type/mpi.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto');
+import type_keyid from '../type/keyid.js';
+import util from '../util.js';
+import type_mpi from '../type/mpi.js';
+import enums from '../enums.js';
+import crypto from '../crypto';
 
 /**
  * @constructor
  */
-function PublicKeyEncryptedSessionKey() {
+export default function PublicKeyEncryptedSessionKey() {
   this.tag = enums.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
 

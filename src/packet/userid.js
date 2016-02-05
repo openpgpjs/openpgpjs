@@ -30,15 +30,13 @@
 
 'use strict';
 
-module.exports = Userid;
-
-var util = require('../util.js'),
-  enums = require('../enums.js');
+import util from '../util.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Userid() {
+export default function Userid() {
   this.tag = enums.packet.userid;
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>

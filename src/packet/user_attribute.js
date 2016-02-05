@@ -38,16 +38,14 @@
 
 'use strict';
 
-var util = require('../util.js'),
-  packet = require('./packet.js'),
-  enums = require('../enums.js');
-
-module.exports = UserAttribute;
+import util from '../util.js';
+import packet from './packet.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function UserAttribute() {
+export default function UserAttribute() {
   this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }

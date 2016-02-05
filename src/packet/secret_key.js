@@ -33,20 +33,18 @@
 
 'use strict';
 
-module.exports = SecretKey;
-
-var publicKey = require('./public_key.js'),
-  enums = require('../enums.js'),
-  util = require('../util.js'),
-  crypto = require('../crypto'),
-  type_mpi = require('../type/mpi.js'),
-  type_s2k = require('../type/s2k.js');
+import publicKey from './public_key.js';
+import enums from '../enums.js';
+import util from '../util.js';
+import crypto from '../crypto';
+import type_mpi from '../type/mpi.js';
+import type_s2k from '../type/s2k.js';
 
 /**
  * @constructor
  * @extends module:packet/public_key
  */
-function SecretKey() {
+export default function SecretKey() {
   publicKey.call(this);
   this.tag = enums.packet.secretKey;
   // encrypted secret-key data

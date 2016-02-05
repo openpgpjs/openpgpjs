@@ -38,17 +38,15 @@
 
 'use strict';
 
-var util = require('../util.js'),
-  type_s2k = require('../type/s2k.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto');
-
-module.exports = SymEncryptedSessionKey;
+import util from '../util.js';
+import type_s2k from '../type/s2k.js';
+import enums from '../enums.js';
+import crypto from '../crypto';
 
 /**
  * @constructor
  */
-function SymEncryptedSessionKey() {
+export default function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
   this.version = 4;
   this.sessionKey = null;

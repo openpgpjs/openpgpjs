@@ -30,16 +30,14 @@
 
 'use strict';
 
-module.exports = SymmetricallyEncrypted;
-
-var crypto = require('../crypto'),
-  enums = require('../enums.js'),
-  config = require('../config');
+import crypto from '../crypto';
+import enums from '../enums.js';
+import config from '../config';
 
 /**
  * @constructor
  */
-function SymmetricallyEncrypted() {
+export default function SymmetricallyEncrypted() {
   this.tag = enums.packet.symmetricallyEncrypted;
   this.encrypted = null;
   /** Decrypted packets contained within.

@@ -31,19 +31,17 @@
  * @module packet/signature
  */
 
-module.exports = Signature;
-
-var util = require('../util.js'),
-  packet = require('./packet.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto'),
-  type_mpi = require('../type/mpi.js'),
-  type_keyid = require('../type/keyid.js');
+import util from '../util.js';
+import packet from './packet.js';
+import enums from '../enums.js';
+import crypto from '../crypto';
+import type_mpi from '../type/mpi.js';
+import type_keyid from '../type/keyid.js';
 
 /**
  * @constructor
  */
-function Signature() {
+export default function Signature() {
   this.tag = enums.packet.signature;
   this.version = 4;
   this.signatureType = null;

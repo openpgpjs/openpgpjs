@@ -31,14 +31,12 @@
 
 'use strict';
 
-module.exports = Marker;
-
-var enums = require('../enums.js');
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Marker() {
+export default function Marker() {
   this.tag = enums.packet.marker;
 }
 

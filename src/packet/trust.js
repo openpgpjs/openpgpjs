@@ -5,14 +5,12 @@
 
 'use strict';
 
-module.exports = Trust;
-
-var enums = require('../enums.js');
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Trust() {
+export default function Trust() {
   this.tag = enums.packet.trust;
 }
 

@@ -23,9 +23,9 @@
 
 'use strict';
 
-var util = require('../util.js');
+import util from '../util.js';
 
-module.exports = {
+export default {
   readSimpleLength: function(bytes) {
     var len = 0,
       offset,

@@ -11,17 +11,15 @@
 
 'use strict';
 
-module.exports = Packetlist;
-
-var util = require('../util'),
-  packetParser = require('./packet.js'),
-  packets = require('./all_packets.js'),
-  enums = require('../enums.js');
+import util from '../util';
+import packetParser from './packet.js';
+import * as packets from './all_packets.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Packetlist() {
+export default function Packetlist() {
   /** The number of packets contained within the list.
    * @readonly
    * @type {Integer} */
@@ -193,7 +191,7 @@ Packetlist.prototype.concat = function (packetlist) {
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */
-module.exports.fromStructuredClone = function(packetlistClone) {
+Packetlist.fromStructuredClone = function(packetlistClone) {
   var packetlist = new Packetlist();
   for (var i = 0; i < packetlistClone.length; i++) {
     packetlist.push(packets.fromStructuredClone(packetlistClone[i]));

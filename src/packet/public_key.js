@@ -32,18 +32,16 @@
 
 'use strict';
 
-module.exports = PublicKey;
-
-var util = require('../util.js'),
-  type_mpi = require('../type/mpi.js'),
-  type_keyid = require('../type/keyid.js'),
-  enums = require('../enums.js'),
-  crypto = require('../crypto');
+import util from '../util.js';
+import type_mpi from '../type/mpi.js';
+import type_keyid from '../type/keyid.js';
+import enums from '../enums.js';
+import crypto from '../crypto';
 
 /**
  * @constructor
  */
-function PublicKey() {
+export default function PublicKey() {
   this.tag = enums.packet.publicKey;
   this.version = 4;
   /** Key creation date.

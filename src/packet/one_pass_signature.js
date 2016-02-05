@@ -31,16 +31,14 @@
 
 'use strict';
 
-module.exports = OnePassSignature;
-
-var util = require('../util.js'),
-  enums = require('../enums.js'),
-  type_keyid = require('../type/keyid.js');
+import util from '../util.js';
+import enums from '../enums.js';
+import type_keyid from '../type/keyid.js';
 
 /**
  * @constructor
  */
-function OnePassSignature() {
+export default function OnePassSignature() {
   this.tag = enums.packet.onePassSignature; // The packet type
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in {@link http://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.

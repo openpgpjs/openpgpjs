@@ -23,16 +23,14 @@
 
 'use strict';
 
-module.exports = SecretSubkey;
-
-var secretKey = require('./secret_key.js'),
-  enums = require('../enums.js');
+import secretKey from './secret_key.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  * @extends module:packet/secret_key
  */
-function SecretSubkey() {
+export default function SecretSubkey() {
   secretKey.call(this);
   this.tag = enums.packet.secretSubkey;
 }

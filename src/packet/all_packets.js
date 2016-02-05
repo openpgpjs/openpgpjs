@@ -1,74 +1,70 @@
-'use strict';
-
 /**
  * @requires enums
  * @module packet
  */
-var enums = require('../enums.js');
+import enums from '../enums.js';
 
-// This is pretty ugly, but browserify needs to have the requires explicitly written.
+/** @see module:packet/compressed */
+export { default as Compressed } from './compressed.js';
+/** @see module:packet/sym_encrypted_integrity_protected */
+export { default as SymEncryptedIntegrityProtected } from './sym_encrypted_integrity_protected.js';
+/** @see module:packet/public_key_encrypted_session_key */
+export { default as PublicKeyEncryptedSessionKey } from './public_key_encrypted_session_key.js';
+/** @see module:packet/sym_encrypted_session_key */
+export { default as SymEncryptedSessionKey } from './sym_encrypted_session_key.js';
+/** @see module:packet/literal */
+export { default as Literal } from './literal.js';
+/** @see module:packet/public_key */
+export { default as PublicKey } from './public_key.js';
+/** @see module:packet/symmetrically_encrypted */
+export { default as SymmetricallyEncrypted } from './symmetrically_encrypted.js';
+/** @see module:packet/marker */
+export { default as Marker } from './marker.js';
+/** @see module:packet/public_subkey */
+export { default as PublicSubkey } from './public_subkey.js';
+/** @see module:packet/user_attribute */
+export { default as UserAttribute } from './user_attribute.js';
+/** @see module:packet/one_pass_signature */
+export { default as OnePassSignature } from './one_pass_signature.js';
+/** @see module:packet/secret_key */
+export { default as SecretKey } from './secret_key.js';
+/** @see module:packet/userid */
+export { default as Userid } from './userid.js';
+/** @see module:packet/secret_subkey */
+export { default as SecretSubkey } from './secret_subkey.js';
+/** @see module:packet/signature */
+export { default as Signature } from './signature.js';
+/** @see module:packet/trust */
+export { default as Trust } from './trust.js';
 
-module.exports = {
-  /** @see module:packet/compressed */
-  Compressed: require('./compressed.js'),
-  /** @see module:packet/sym_encrypted_integrity_protected */
-  SymEncryptedIntegrityProtected: require('./sym_encrypted_integrity_protected.js'),
-  /** @see module:packet/public_key_encrypted_session_key */
-  PublicKeyEncryptedSessionKey: require('./public_key_encrypted_session_key.js'),
-  /** @see module:packet/sym_encrypted_session_key */
-  SymEncryptedSessionKey: require('./sym_encrypted_session_key.js'),
-  /** @see module:packet/literal */
-  Literal: require('./literal.js'),
-  /** @see module:packet/public_key */
-  PublicKey: require('./public_key.js'),
-  /** @see module:packet/symmetrically_encrypted */
-  SymmetricallyEncrypted: require('./symmetrically_encrypted.js'),
-  /** @see module:packet/marker */
-  Marker: require('./marker.js'),
-  /** @see module:packet/public_subkey */
-  PublicSubkey: require('./public_subkey.js'),
-  /** @see module:packet/user_attribute */
-  UserAttribute: require('./user_attribute.js'),
-  /** @see module:packet/one_pass_signature */
-  OnePassSignature: require('./one_pass_signature.js'),
-  /** @see module:packet/secret_key */
-  SecretKey: require('./secret_key.js'),
-  /** @see module:packet/userid */
-  Userid: require('./userid.js'),
-  /** @see module:packet/secret_subkey */
-  SecretSubkey: require('./secret_subkey.js'),
-  /** @see module:packet/signature */
-  Signature: require('./signature.js'),
-  /** @see module:packet/trust */
-  Trust: require('./trust.js'),
-  /**
-   * Allocate a new packet
-   * @param {String} tag property name from {@link module:enums.packet}
-   * @returns {Object} new packet object with type based on tag
-   */
-  newPacketFromTag: function (tag) {
-    return new this[packetClassFromTagName(tag)]();
-  },
-  /**
-   * Allocate a new packet from structured packet clone
-   * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
-   * @param {Object} packetClone packet clone
-   * @returns {Object} new packet object with data from packet clone
-   */
-  fromStructuredClone: function(packetClone) {
-    var tagName = enums.read(enums.packet, packetClone.tag);
-    var packet = this.newPacketFromTag(tagName);
-    for (var attr in packetClone) {
-      if (packetClone.hasOwnProperty(attr)) {
-        packet[attr] = packetClone[attr];
-      }
+/**
+ * Allocate a new packet
+ * @param {String} tag property name from {@link module:enums.packet}
+ * @returns {Object} new packet object with type based on tag
+ */
+export function newPacketFromTag(tag) {
+  return new this[packetClassFromTagName(tag)]();
+}
+
+/**
+ * Allocate a new packet from structured packet clone
+ * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * @param {Object} packetClone packet clone
+ * @returns {Object} new packet object with data from packet clone
+ */
+export function fromStructuredClone(packetClone) {
+  var tagName = enums.read(enums.packet, packetClone.tag);
+  var packet = newPacketFromTag(tagName);
+  for (var attr in packetClone) {
+    if (packetClone.hasOwnProperty(attr)) {
+      packet[attr] = packetClone[attr];
     }
-    if (packet.postCloneTypeFix) {
-      packet.postCloneTypeFix();
-    }
-    return packet;
   }
-};
+  if (packet.postCloneTypeFix) {
+    packet.postCloneTypeFix();
+  }
+  return packet;
+}
 
 /**
  * Convert tag name to class name

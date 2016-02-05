@@ -34,19 +34,17 @@
 
 'use strict';
 
-module.exports = SymEncryptedIntegrityProtected;
-
-var util = require('../util.js'),
-  crypto = require('../crypto'),
-  enums = require('../enums.js'),
-  asmCrypto = require('asmcrypto-lite'),
-  nodeCrypto = util.getNodeCrypto(),
-  Buffer = util.getNodeBuffer();
+import util from '../util.js';
+import crypto from '../crypto';
+import enums from '../enums.js';
+import asmCrypto from 'asmcrypto-lite';
+const nodeCrypto = util.getNodeCrypto();
+const Buffer = util.getNodeBuffer();
 
 /**
  * @constructor
  */
-function SymEncryptedIntegrityProtected() {
+export default function SymEncryptedIntegrityProtected() {
   this.tag = enums.packet.symEncryptedIntegrityProtected;
   /** The encrypted payload. */
   this.encrypted = null; // string
