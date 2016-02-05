@@ -31,11 +31,11 @@
 
 'use strict';
 
-module.exports = S2K;
+import enums from '../enums.js';
+import util from '../util.js';
+import crypto from '../crypto';
 
-var enums = require('../enums.js'),
-  util = require('../util.js'),
-  crypto = require('../crypto');
+module.exports = S2K;
 
 /**
  * @constructor

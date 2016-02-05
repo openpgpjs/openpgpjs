@@ -36,10 +36,10 @@
 
 'use strict';
 
-module.exports = MPI;
+import BigInteger from '../crypto/public_key/jsbn.js';
+import util from '../util.js';
 
-var BigInteger = require('../crypto/public_key/jsbn.js'),
-  util = require('../util.js');
+module.exports = MPI;
 
 /**
  * @constructor

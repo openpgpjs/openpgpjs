@@ -28,9 +28,9 @@
 
 'use strict';
 
-module.exports = Keyid;
+import util from '../util.js';
 
-var util = require('../util.js');
+module.exports = Keyid;
 
 /**
  * @constructor
