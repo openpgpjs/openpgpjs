@@ -2,7 +2,11 @@
  * @requires enums
  * @module packet
  */
+
+'use strict';
+
 import enums from '../enums.js';
+import * as packets from './all_packets.js'; // re-import module to parse packets from tag
 
 /** @see module:packet/compressed */
 export { default as Compressed } from './compressed.js';
@@ -43,7 +47,7 @@ export { default as Trust } from './trust.js';
  * @returns {Object} new packet object with type based on tag
  */
 export function newPacketFromTag(tag) {
-  return new this[packetClassFromTagName(tag)]();
+  return new packets[packetClassFromTagName(tag)]();
 }
 
 /**
