@@ -26,10 +26,10 @@
 
 'use strict';
 
-var crypto = require('../crypto'),
-  packet = require('../packet'),
-  key = require('../key.js'),
-  type_keyid = require('../type/keyid.js');
+import crypto from '../crypto';
+import packet from '../packet';
+import key from '../key.js';
+import type_keyid from '../type/keyid.js';
 
 var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
     RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
@@ -42,7 +42,7 @@ var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
  * @param {Object} [options.worker=Object] alternative to path parameter:
  *                                         web worker initialized with 'openpgp.worker.js'
  */
-function AsyncProxy(path, options) {
+export default function AsyncProxy(path, options) {
   if (options && options.worker) {
     this.worker = options.worker;
   } else {
@@ -435,5 +435,3 @@ AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
 
   return promise;
 };
-
-module.exports = AsyncProxy;
