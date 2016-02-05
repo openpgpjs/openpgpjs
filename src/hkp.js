@@ -23,7 +23,7 @@
  * @module hkp/hkp
  */
 
-import config from '../config';
+import config from './config';
 
 /**
  * Initialize the HKP client and configure it with the key server url and fetch function.
