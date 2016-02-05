@@ -24,9 +24,9 @@
 
 'use strict';
 
-var base64 = require('./base64.js'),
-  enums = require('../enums.js'),
-  config = require('../config');
+import base64 from './base64.js';
+import enums from '../enums.js';
+import config from '../config';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.

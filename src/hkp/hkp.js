@@ -22,9 +22,8 @@
  *   in order to lookup and upload keys on standard public key servers.
  * @module hkp/hkp
  */
-module.exports = HKP;
 
-var config = require('../config');
+import config from '../config';
 
 /**
  * Initialize the HKP client and configure it with the key server url and fetch function.
@@ -32,7 +31,7 @@ var config = require('../config');
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
  *   the protocol to use e.g. https://pgp.mit.edu
  */
-function HKP(keyServerBaseUrl) {
+export default function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl ? keyServerBaseUrl : config.keyserver;
   this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
