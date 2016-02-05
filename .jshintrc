@@ -19,7 +19,6 @@
     "importScripts": true,
     "process": true,
     "Event": true,
-    "self": true,
     "describe": true,
     "it": true,
     "sinon": true,
