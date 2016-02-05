@@ -4,5 +4,9 @@
  * @see module:keyring/keyring
  * @module keyring
  */
-module.exports = require('./keyring.js');
-module.exports.localstore = require('./localstore.js');
+import Keyring from './keyring.js';
+
+import localstore from './localstore.js';
+Keyring.localstore = localstore;
+
+export default Keyring;

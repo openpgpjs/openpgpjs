@@ -25,9 +25,8 @@
 
 'use strict';
 
-var keyModule = require('../key.js');
-
-module.exports = Keyring;
+import keyModule from '../key.js';
+import LocalStore from './localstore.js';
 
 /**
  * Initialization routine for the keyring. This method reads the
@@ -35,8 +34,8 @@ module.exports = Keyring;
  * @constructor
  * @param {class} [storeHandler] class implementing load() and store() methods
  */
-function Keyring(storeHandler) {
-  this.storeHandler = storeHandler || new (require('./localstore.js'))();
+export default function Keyring(storeHandler) {
+  this.storeHandler = storeHandler || new LocalStore();
   this.publicKeys = new KeyArray(this.storeHandler.loadPublic());
   this.privateKeys = new KeyArray(this.storeHandler.loadPrivate());
 }

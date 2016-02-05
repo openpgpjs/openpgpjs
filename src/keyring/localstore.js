@@ -24,13 +24,11 @@
 
 'use strict';
 
-module.exports = LocalStore;
+import config from '../config';
+import keyModule from '../key.js';
+import util from '../util.js';
 
-var config = require('../config'),
-  keyModule = require('../key.js'),
-  util = require('../util.js');
-
-function LocalStore(prefix) {
+export default function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
   this.publicKeysItem = prefix + this.publicKeysItem;
   this.privateKeysItem = prefix + this.privateKeysItem;
