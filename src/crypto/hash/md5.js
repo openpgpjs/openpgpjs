@@ -19,17 +19,17 @@
 
 'use strict';
 
-var util = require('../../util.js');
+import util from '../../util.js';
 
 /**
  * MD5 hash
  * @param {String} entree string to hash
  */
-module.exports = function (entree) {
+export default function(entree) {
   var hex = md5(util.Uint8Array2str(entree));
   var bin = util.str2Uint8Array(util.hex2bin(hex));
   return bin;
-};
+}
 
 function md5cycle(x, k) {
   var a = x[0],

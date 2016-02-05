@@ -8,13 +8,14 @@
 
 'use strict';
 
-var sha = require('./sha.js'),
-  asmCrypto = require('asmcrypto-lite'),
-  Rusha = require('rusha'),
-  rusha = new Rusha(),
-  md5 = require('./md5.js'),
-  ripemd = require('./ripe-md.js'),
-  util = require('../../util.js'),
+import sha from './sha.js';
+import asmCrypto from 'asmcrypto-lite';
+import Rusha from 'rusha';
+import md5 from './md5.js';
+import ripemd from './ripe-md.js';
+import util from '../../util.js';
+
+const rusha = new Rusha(),
   nodeCrypto = util.getNodeCrypto(),
   Buffer = util.getNodeBuffer();
 

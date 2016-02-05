@@ -28,7 +28,7 @@
  * @module crypto/hash/ripe-md
  */
 
-var util = require('../../util.js');
+import util from '../../util.js';
 
 var RMDsize = 160;
 var X = [];
@@ -289,7 +289,7 @@ function RMD(message) {
 }
 
 
-function RMDstring(message) {
+export default function RMDstring(message) {
   var hashcode = RMD(util.Uint8Array2str(message));
   var retString = "";
 
@@ -299,5 +299,3 @@ function RMDstring(message) {
 
   return util.str2Uint8Array(retString);
 }
-
-module.exports = RMDstring;
