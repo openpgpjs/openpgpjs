@@ -25,7 +25,7 @@
 
 'use strict';
 
-import TypeMPI from '../type/mpi.js';
+import type_mpi from '../type/mpi.js';
 import util from '../util.js';
 const nodeCrypto = util.detectNode() && require('crypto');
 
@@ -112,7 +112,7 @@ export default {
         randomBits.charCodeAt(0)) +
         randomBits.substring(1);
     }
-    var mpi = new TypeMPI();
+    var mpi = new type_mpi();
     mpi.fromBytes(randomBits);
     return mpi.toBigInteger();
   },

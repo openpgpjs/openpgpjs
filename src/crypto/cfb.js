@@ -51,7 +51,7 @@ export default {
     var FR = new Uint8Array(block_size);
     var FRE = new Uint8Array(block_size);
 
-    var new_prefix = new Uint8Array(prefixrandom.length+2);
+    var new_prefix = new Uint8Array(prefixrandom.length + 2);
     new_prefix.set(prefixrandom);
     new_prefix[prefixrandom.length] = prefixrandom[block_size-2];
     new_prefix[prefixrandom.length+1] = prefixrandom[block_size-1];
