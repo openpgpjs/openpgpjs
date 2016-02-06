@@ -21,7 +21,7 @@ module.exports = function(grunt) {
     'src/keyring/**/*.js',
     'src/packet/**/*.jss',
     'src/type/**/*.js',
-    'src/worker/async_proxy.js',
+    'src/worker/**/*.js',
     'src/*.js',
   ]; // add more over time ... goal should be 100% coverage
 

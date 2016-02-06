@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-window = {}; // to make UMD bundles work
+this.window = {}; // to make UMD bundles work
 
 // Mozilla bind polyfill because phantomjs is stupid
 if (!Function.prototype.bind) {
@@ -46,7 +46,7 @@ var MAX_SIZE_RANDOM_BUFFER = 60000;
 
 window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
-self.onmessage = function (event) {
+this.onmessage = function (event) {
   var data = null,
       err = null,
       msg = event.data,
