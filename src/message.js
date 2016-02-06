@@ -87,19 +87,11 @@ Message.prototype.getSigningKeyIds = function() {
 /**
  * Decrypt the message
  * @param {module:key~Key|String} privateKey private key with decrypted secret data, password or session key
- * @param {String} sessionKeyAlgorithm if privateKey is a session key, this must be set to the session key algorithm (i.e. 'aes256').
- *                              Do not set if privateKey is not a session key.
  * @return {Array<module:message~Message>} new message with decrypted content
  */
-Message.prototype.decrypt = function(privateKey, sessionKeyAlgorithm) {
-  var keyObj;
-  if(sessionKeyAlgorithm) {
-    keyObj = {key: privateKey, algo: sessionKeyAlgorithm};
-  }
-  else {
-    keyObj = this.decryptSessionKey(privateKey);
-  }
-  if(keyObj) {
+Message.prototype.decrypt = function(privateKey) {
+  var keyObj = this.decryptSessionKey(privateKey);
+  if (keyObj) {
     var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
     if (symEncryptedPacketlist.length !== 0) {
       var symEncryptedPacket = symEncryptedPacketlist[0];
@@ -166,7 +158,7 @@ Message.prototype.decryptSessionKey = function(privateKey) {
 
 /**
  * Get literal data that is the body of the message
- * @return {(String|null)} literal body of the message as string
+ * @return {(Uint8Array|null)} literal body of the message as Uint8Array
  */
 Message.prototype.getLiteralData = function() {
   var literal = this.packets.findPacket(enums.packet.literal);
