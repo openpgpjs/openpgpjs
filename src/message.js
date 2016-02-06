@@ -86,11 +86,13 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message
- * @param {module:key~Key|String} privateKey private key with decrypted secret data, password or session key
+ * @param {module:key~Key} privateKey   private key with decrypted secret data
+ * @param {String} sessionKey           session key as a binary string
+ * @param {String} password             password used to decrypt
  * @return {Array<module:message~Message>} new message with decrypted content
  */
-Message.prototype.decrypt = function(privateKey) {
-  var keyObj = this.decryptSessionKey(privateKey);
+Message.prototype.decrypt = function(privateKey, sessionKey, password) {
+  var keyObj = this.decryptSessionKey(privateKey, sessionKey, password);
   if (!keyObj) {
     // nothing to decrypt return unmodified message
     return this;
@@ -108,18 +110,20 @@ Message.prototype.decrypt = function(privateKey) {
 
 /**
  * Decrypt session key
- * @param {module:key~Key|String} privateKey private key with decrypted secret data or password
+ * @param {module:key~Key} privateKey   private key with decrypted secret data
+ * @param {String} sessionKey           session key as a binary string
+ * @param {String} password             password used to decrypt
  * @return {Object} object with sessionKey, algo
  */
-Message.prototype.decryptSessionKey = function(privateKey) {
+Message.prototype.decryptSessionKey = function(privateKey, sessionKey, password) {
   var keyPacket;
-  if (String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string') {
+  if (sessionKey || password) {
     var symEncryptedSessionKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
     var symLength = symEncryptedSessionKeyPacketlist.length;
     for (var i = 0; i < symLength; i++) {
       keyPacket = symEncryptedSessionKeyPacketlist[i];
       try {
-        keyPacket.decrypt(privateKey);
+        keyPacket.decrypt(sessionKey || password);
         break;
       }
       catch(err) {
@@ -132,7 +136,7 @@ Message.prototype.decryptSessionKey = function(privateKey) {
       throw new Error('No symmetrically encrypted session key packet found.');
     }
 
-  } else {
+  } else if (privateKey) {
     var encryptionKeyIds = this.getEncryptionKeyIds();
     if (!encryptionKeyIds.length) {
       // nothing to decrypt
@@ -150,6 +154,9 @@ Message.prototype.decryptSessionKey = function(privateKey) {
         break;
       }
     }
+
+  } else {
+    throw new Error('No key or password specified.');
   }
 
   if (keyPacket) {
