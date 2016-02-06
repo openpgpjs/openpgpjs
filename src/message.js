@@ -91,16 +91,18 @@ Message.prototype.getSigningKeyIds = function() {
  */
 Message.prototype.decrypt = function(privateKey) {
   var keyObj = this.decryptSessionKey(privateKey);
-  if (keyObj) {
-    var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
-    if (symEncryptedPacketlist.length !== 0) {
-      var symEncryptedPacket = symEncryptedPacketlist[0];
-      symEncryptedPacket.decrypt(keyObj.algo, keyObj.key);
-      var resultMsg = new Message(symEncryptedPacket.packets);
-      // remove packets after decryption
-      symEncryptedPacket.packets = new packet.List();
-      return resultMsg;
-    }
+  if (!keyObj) {
+    // nothing to decrypt return unmodified message
+    return this;
+  }
+  var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
+  if (symEncryptedPacketlist.length !== 0) {
+    var symEncryptedPacket = symEncryptedPacketlist[0];
+    symEncryptedPacket.decrypt(keyObj.algo, keyObj.key);
+    var resultMsg = new Message(symEncryptedPacket.packets);
+    // remove packets after decryption
+    symEncryptedPacket.packets = new packet.List();
+    return resultMsg;
   }
 };
 
@@ -111,7 +113,7 @@ Message.prototype.decrypt = function(privateKey) {
  */
 Message.prototype.decryptSessionKey = function(privateKey) {
   var keyPacket;
-  if(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string') {
+  if (String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string') {
     var symEncryptedSessionKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
     var symLength = symEncryptedSessionKeyPacketlist.length;
     for (var i = 0; i < symLength; i++) {
@@ -121,21 +123,20 @@ Message.prototype.decryptSessionKey = function(privateKey) {
         break;
       }
       catch(err) {
-        if(i === (symLength-1)) {
+        if (i === (symLength - 1)) {
           throw err;
         }
       }
     }
-
-    if(!keyPacket) {
+    if (!keyPacket) {
       throw new Error('No symmetrically encrypted session key packet found.');
     }
-  }
-  else {
+
+  } else {
     var encryptionKeyIds = this.getEncryptionKeyIds();
     if (!encryptionKeyIds.length) {
-      // nothing to decrypt return unmodified message
-      return this;
+      // nothing to decrypt
+      return;
     }
     var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
     if (!privateKeyPacket.isDecrypted) {
@@ -152,7 +153,7 @@ Message.prototype.decryptSessionKey = function(privateKey) {
   }
 
   if (keyPacket) {
-    return {key: keyPacket.sessionKey, algo: keyPacket.sessionKeyAlgorithm};
+    return { key:keyPacket.sessionKey, algo:keyPacket.sessionKeyAlgorithm };
   }
 };
 
@@ -197,13 +198,11 @@ Message.prototype.encrypt = function(keys, passwords) {
 
   /** Choose symAlgo */
   var symAlgo;
-  if(keys) {
+  if (keys) {
     symAlgo = keyModule.getPreferredSymAlgo(keys);
-  }
-  else if(passwords) {
+  } else if (passwords) {
     symAlgo = config.encryption_cipher;
-  }
-  else {
+  } else {
     throw new Error('No keys or passwords');
   }
 
@@ -237,15 +236,15 @@ Message.prototype.encrypt = function(keys, passwords) {
 export function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
 
   /** Convert to arrays if necessary */
-  if(keys && !Array.prototype.isPrototypeOf(keys)) {
+  if (keys && !Array.prototype.isPrototypeOf(keys)) {
     keys = [keys];
   }
-  if(passwords && !Array.prototype.isPrototypeOf(passwords)) {
+  if (passwords && !Array.prototype.isPrototypeOf(passwords)) {
     passwords = [passwords];
   }
 
   var packetlist = new packet.List();
-  if(keys) {
+  if (keys) {
     keys.forEach(function(key) {
       var encryptionKeyPacket = key.getEncryptionKeyPacket();
       if (encryptionKeyPacket) {
@@ -261,7 +260,7 @@ export function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
       }
     });
   }
-  if(passwords) {
+  if (passwords) {
     passwords.forEach(function(password) {
       var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
       symEncryptedSessionKeyPacket.sessionKey = sessionKey;
@@ -433,7 +432,7 @@ export function fromText(text, filename) {
   var literalDataPacket = new packet.Literal();
   // text will be converted to UTF8
   literalDataPacket.setText(text);
-  if(filename !== undefined) {
+  if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }
   var literalDataPacketlist = new packet.List();
@@ -449,7 +448,7 @@ export function fromText(text, filename) {
  * @static
  */
 export function fromBinary(bytes, filename) {
-  if(!Uint8Array.prototype.isPrototypeOf(bytes)) {
+  if (!Uint8Array.prototype.isPrototypeOf(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
@@ -458,7 +457,7 @@ export function fromBinary(bytes, filename) {
     literalDataPacket.setFilename(filename);
   }
   literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
-  if(filename !== undefined) {
+  if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }
   var literalDataPacketlist = new packet.List();
