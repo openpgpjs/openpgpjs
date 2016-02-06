@@ -240,19 +240,19 @@ Message.prototype.encrypt = function(keys, passwords) {
  * @param  {(Array<String>|String)} password(s) for message encryption
  * @return {Array<module:message~Message>} new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, keys, passwords) {
+export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
 
   /** Convert to arrays if necessary */
-  if (keys && !Array.prototype.isPrototypeOf(keys)) {
-    keys = [keys];
+  if (publicKeys && !Array.prototype.isPrototypeOf(publicKeys)) {
+    publicKeys = [publicKeys];
   }
   if (passwords && !Array.prototype.isPrototypeOf(passwords)) {
     passwords = [passwords];
   }
 
   var packetlist = new packet.List();
-  if (keys) {
-    keys.forEach(function(key) {
+  if (publicKeys) {
+    publicKeys.forEach(function(key) {
       var encryptionKeyPacket = key.getEncryptionKeyPacket();
       if (encryptionKeyPacket) {
         var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
