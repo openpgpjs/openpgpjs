@@ -46,7 +46,7 @@ export default function Literal() {
  * will be normalized to \r\n and by default text is converted to UTF8
  * @param {String} text Any native javascript string
  */
-Literal.prototype.setText = function (text) {
+Literal.prototype.setText = function(text) {
   // normalize EOL to \r\n
   text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
   // encode UTF8
@@ -58,7 +58,7 @@ Literal.prototype.setText = function (text) {
  * with normalized end of line to \n
  * @return {String} literal data as text
  */
-Literal.prototype.getText = function () {
+Literal.prototype.getText = function() {
   // decode UTF8
   var text = util.decode_utf8(util.Uint8Array2str(this.data));
   // normalize EOL to \n
@@ -70,7 +70,7 @@ Literal.prototype.getText = function () {
  * @param {Uint8Array} bytes The string of bytes
  * @param {utf8|binary|text} format The format of the string of bytes
  */
-Literal.prototype.setBytes = function (bytes, format) {
+Literal.prototype.setBytes = function(bytes, format) {
   this.format = format;
   this.data = bytes;
 };
@@ -80,7 +80,7 @@ Literal.prototype.setBytes = function (bytes, format) {
  * Get the byte sequence representing the literal packet data
  * @returns {Uint8Array} A sequence of bytes
  */
-Literal.prototype.getBytes = function () {
+Literal.prototype.getBytes = function() {
   return this.data;
 };
 
@@ -89,7 +89,7 @@ Literal.prototype.getBytes = function () {
  * Sets the filename of the literal packet data
  * @param {String} filename Any native javascript string
  */
-Literal.prototype.setFilename = function (filename) {
+Literal.prototype.setFilename = function(filename) {
   this.filename = filename;
 };
 
@@ -109,8 +109,7 @@ Literal.prototype.getFilename = function() {
  * @param {Uint8Array} input Payload of a tag 11 packet
  * @return {module:packet/literal} object representation
  */
-Literal.prototype.read = function (bytes) {
-
+Literal.prototype.read = function(bytes) {
   // - A one-octet field that describes how the data is formatted.
   var format = enums.read(enums.literal, bytes[0]);
 
@@ -129,7 +128,7 @@ Literal.prototype.read = function (bytes) {
  *
  * @return {Uint8Array} Uint8Array representation of the packet
  */
-Literal.prototype.write = function () {
+Literal.prototype.write = function() {
   var filename = util.str2Uint8Array(util.encode_utf8(this.filename));
   var filename_length = new Uint8Array([filename.length]);
 
