@@ -83,12 +83,12 @@ export function getWorker() {
  *                                    { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
-export function generateKeyPair({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
   userIds = userIds.map(id => id.name + ' <' + id.email + '>'); // format user ids for internal use
   const options = { userIds, passphrase, numBits, unlocked };
 
   if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.generateKeyPair(options);
+    return asyncProxy.generateKey(options);
   }
 
   return key.generate(options).then(newKey => ({
@@ -106,7 +106,7 @@ export function generateKeyPair({ userIds=[], passphrase, numBits=2048, unlocked
     }
     // fall back to js keygen in a worker
     console.log('Error generating keypair using native WebCrypto... falling back back to js!');
-    return asyncProxy.generateKeyPair(options);
+    return asyncProxy.generateKey(options);
 
   }).catch(onError.bind(null, 'Error generating keypair!'));
 }
