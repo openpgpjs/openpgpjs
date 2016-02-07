@@ -1,5 +1,5 @@
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
+// OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2016 Tankred Hase
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -272,7 +272,9 @@ export function encryptSessionKey({ sessionKey, algo, publicKeys, passwords }) {
   }
 
   return execute(() => ({
+
     data: messageLib.encryptSessionKey(sessionKey, algo, publicKeys, passwords).packets.write()
+
   }), 'Error encrypting session key!');
 }
 
