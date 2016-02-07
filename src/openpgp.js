@@ -203,11 +203,11 @@ export function decrypt({ message, privateKey, publickeys, sessionKey, password,
  * @return {Promise<String>}             ASCII armored message
  * @static
  */
-export function signCleartext({ data, privateKeys }) {
+export function sign({ data, privateKeys }) {
   privateKeys = privateKeys.length ? privateKeys : [privateKeys];
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.signCleartext({ data, privateKeys });
+    return asyncProxy.sign({ data, privateKeys });
   }
 
   return execute(() => {
@@ -229,11 +229,11 @@ export function signCleartext({ data, privateKeys }) {
  *                                        { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
-export function verifyCleartext({ message, publicKeys }) {
+export function verify({ message, publicKeys }) {
   publicKeys = publicKeys.length ? publicKeys : [publicKeys];
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.verifyCleartext({ message, publicKeys });
+    return asyncProxy.verify({ message, publicKeys });
   }
 
   return execute(() => {
