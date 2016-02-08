@@ -29,6 +29,8 @@
     "afterEach": true,
     "escape": true,
     "unescape": true,
-    "postMessage": true
+    "postMessage": true,
+    "resolves": true,
+    "rejects": true
   }
 }
