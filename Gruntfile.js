@@ -222,7 +222,18 @@ module.exports = function(grunt) {
           statusCheckAttempts: 200
         }
       },
-    }
+    },
+
+    watch: {
+      src: {
+        files: ['src/**/*.js'],
+        tasks: ['browserify:openpgp']
+      },
+      test: {
+        files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
+        tasks: ['browserify:unittests']
+      }
+    },
   });
 
   // Load the plugin(s)
@@ -239,6 +250,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
     if (!version) {
