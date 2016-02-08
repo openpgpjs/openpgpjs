@@ -52,6 +52,7 @@ self.onmessage = function (event) {
   var data = null,
       err = null,
       msg = event.data,
+      opt = msg.options || {},
       correct = false;
 
   switch (msg.event) {
@@ -68,14 +69,41 @@ self.onmessage = function (event) {
       window.openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
 
-    case 'encrypt-message':
-      if(msg.keys) {
-        msg.keys = msg.keys.map(packetlistCloneToKey);
+    case 'generate-key':
+      window.openpgp.generateKey(opt).then(data => {
+        data.key = data.key.toPacketlist();
+        response({ event:'method-return', data });
+      }).catch(e => {
+        response({ event:'method-return', err:e.message });
+      });
+      break;
+
+    case 'encrypt':
+      if(opt.publicKeys) {
+        opt.publicKeys = opt.publicKeys.map(packetlistCloneToKey);
       }
-      window.openpgp.encryptMessage(msg.keys, msg.data, msg.passwords, msg.params).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
+      if(opt.privateKeys) {
+        opt.privateKeys = opt.privateKeys.map(packetlistCloneToKey);
+      }
+      window.openpgp.encrypt(opt).then(data => {
+        response({ event:'method-return', data });
+      }).catch(e => {
+        response({ event:'method-return', err:e.message });
+      });
+      break;
+
+    case 'decrypt':
+      if(opt.publicKeys) {
+        opt.publicKeys = opt.publicKeys.map(packetlistCloneToKey);
+      }
+      if(opt.privateKey) {
+        opt.privateKey = packetlistCloneToKey(opt.privateKey);
+      }
+      opt.message = packetlistCloneToMessage(opt.message.packets);
+      window.openpgp.decrypt(opt).then(data => {
+        response({ event:'method-return', data });
+      }).catch(e => {
+        response({ event:'method-return', err:e.message });
       });
       break;
 
@@ -90,51 +118,12 @@ self.onmessage = function (event) {
       });
       break;
 
-    case 'sign-and-encrypt-message':
-      if (!msg.publicKeys.length) {
-        msg.publicKeys = [msg.publicKeys];
-      }
-      msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
-      msg.privateKey = packetlistCloneToKey(msg.privateKey);
-      window.openpgp.signAndEncryptMessage(msg.publicKeys, msg.privateKey, msg.text).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'decrypt-message':
-      if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(msg.privateKey))) {
-        msg.privateKey = packetlistCloneToKey(msg.privateKey);
-      }
-      msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptMessage(msg.privateKey, msg.message, msg.params).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
     case 'decrypt-session-key':
       if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string')) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
       }
       msg.message = packetlistCloneToMessage(msg.message.packets);
       window.openpgp.decryptSessionKey(msg.privateKey, msg.message).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'decrypt-and-verify-message':
-      msg.privateKey = packetlistCloneToKey(msg.privateKey);
-      if (!msg.publicKeys.length) {
-        msg.publicKeys = [msg.publicKeys];
-      }
-      msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
-      msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptAndVerifyMessage(msg.privateKey, msg.publicKeys, msg.message).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
@@ -158,15 +147,6 @@ self.onmessage = function (event) {
       var packetlist = window.openpgp.packet.List.fromStructuredClone(msg.message.packets);
       msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist);
       window.openpgp.verifyClearSignedMessage(msg.publicKeys, msg.message).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'generate-key':
-      window.openpgp.generateKey(msg.options).then(function(data) {
-        data.key = data.key.toPacketlist();
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});

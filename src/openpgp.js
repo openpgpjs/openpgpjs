@@ -53,7 +53,7 @@ export function initWorker({ path='openpgp.worker.js', worker } = {}) {
   if (worker || typeof window !== 'undefined' && window.Worker) {
     asyncProxy = new AsyncProxy({ path, worker, config });
   } else {
-    throw new Error('Initializing web worker failed!');
+    throw new Error('Initializing web worker failed');
   }
 }
 
@@ -109,13 +109,13 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     // js fallback already tried
     if (config.debug) { console.error(err); }
     if (!util.getWebCrypto()) {
-      throw new Error('Error generating keypair using js fallback!');
+      throw new Error('Error generating keypair using js fallback');
     }
     // fall back to js keygen in a worker
-    if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js!'); }
+    if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js'); }
     return asyncProxy.generateKey(options);
 
-  }).catch(onError.bind(null, 'Error generating keypair!'));
+  }).catch(onError.bind(null, 'Error generating keypair'));
 }
 
 
@@ -139,8 +139,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @static
  */
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, packets }) {
-  publicKeys = toArray(publicKeys);
-  privateKeys = toArray(privateKeys);
+  checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.encrypt({ data, publicKeys, privateKeys, passwords, filename, packets });
@@ -160,7 +159,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, pa
       return getAsciiArmored(msg);
     }
 
-  }, 'Error encrypting message!');
+  }, 'Error encrypting message');
 }
 
 /**
@@ -168,7 +167,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, pa
  *   Either a private key, a session key or a password must be specified.
  * @param {Message} message             the message object with the encrypted data
  * @param {Key} privateKey              (optional) private key with decrypted secret key data or session key
- * @param {Key|Array<Key>} publickeys   (optional) array of publickeys or single key, to verify signatures
+ * @param {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
  * @param {String} sessionKey           (optional) session key as a binary string
  * @param {String} password             (optional) single password to decrypt the message
  * @param {String} format               (optional) return data format either as 'utf8' or 'binary'
@@ -176,23 +175,23 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, pa
  *                                        { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
-export function decrypt({ message, privateKey, publickeys, sessionKey, password, format='utf8' }) {
-  publickeys = toArray(publickeys);
+export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8' }) {
+  checkMessage(message); publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.decrypt({ message, privateKey, publickeys, sessionKey, password, format });
+    return asyncProxy.decrypt({ message, privateKey, publicKeys, sessionKey, password, format });
   }
 
   return execute(() => {
 
     message = message.decrypt(privateKey, sessionKey, password);
     const result = parseMessage(message, format);
-    if (publickeys && result.data) { // verify only if publickeys are specified
-      result.signatures = message.verify(publickeys);
+    if (publicKeys && result.data) { // verify only if publicKeys are specified
+      result.signatures = message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error decrypting message!');
+  }, 'Error decrypting message');
 }
 
 
@@ -211,10 +210,8 @@ export function decrypt({ message, privateKey, publickeys, sessionKey, password,
  * @static
  */
 export function sign({ data, privateKeys }) {
+  checkString(data);
   privateKeys = toArray(privateKeys);
-  if (!util.isString(data)) {
-    throw new Error('Only cleartext data of type String supported!');
-  }
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.sign({ data, privateKeys });
@@ -228,7 +225,7 @@ export function sign({ data, privateKeys }) {
       data: cleartextMessage.armor()
     };
 
-  }, 'Error signing cleartext message!');
+  }, 'Error signing cleartext message');
 }
 
 /**
@@ -240,10 +237,8 @@ export function sign({ data, privateKeys }) {
  * @static
  */
 export function verify({ message, publicKeys }) {
+  checkCleartextMessage(message);
   publicKeys = toArray(publicKeys);
-  if (!(message instanceof cleartext.CleartextMessage)) {
-    throw new Error('Parameter [message] needs to be of type CleartextMessage.');
-  }
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.verify({ message, publicKeys });
@@ -254,7 +249,7 @@ export function verify({ message, publicKeys }) {
     data: message.getText(),
     signatures: message.verify(publicKeys)
 
-  }), 'Error verifying cleartext signed message!');
+  }), 'Error verifying cleartext signed message');
 }
 
 
@@ -283,7 +278,7 @@ export function encryptSessionKey({ sessionKey, algo, publicKeys, passwords }) {
 
     data: messageLib.encryptSessionKey(sessionKey, algo, publicKeys, passwords).packets.write()
 
-  }), 'Error encrypting session key!');
+  }), 'Error encrypting session key');
 }
 
 /**
@@ -303,7 +298,7 @@ export function decryptSessionKey({ message, privateKey, sessionKey, password })
     return asyncProxy.decryptSessionKey({ message, privateKey, sessionKey, password });
   }
 
-  return execute(() => message.decryptSessionKey(privateKey, sessionKey, password), 'Error decrypting session key!');
+  return execute(() => message.decryptSessionKey(privateKey, sessionKey, password), 'Error decrypting session key');
 }
 
 
@@ -315,6 +310,30 @@ export function decryptSessionKey({ message, privateKey, sessionKey, password })
 
 
 /**
+ * Input validation
+ */
+function checkString(data, name) {
+  if (!util.isString(data)) {
+    throw new Error('Parameter [' + (name || 'data') + '] must be of type String');
+  }
+}
+function checkData(data, name) {
+  if (!util.isUint8Array(data) && !util.isString(data)) {
+    throw new Error('Parameter [' + (name || 'data') + '] must be of type String or Uint8Array');
+  }
+}
+function checkMessage(message) {
+  if (!messageLib.Message.prototype.isPrototypeOf(message)) {
+    throw new Error('Parameter [message] needs to be of type Message');
+  }
+}
+function checkCleartextMessage(message) {
+  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
+    throw new Error('Parameter [message] needs to be of type CleartextMessage');
+  }
+}
+
+/**
  * Format user ids for internal use.
  */
 function formatUserIds(options) {
@@ -324,7 +343,7 @@ function formatUserIds(options) {
   options.userIds = toArray(options.userIds); // normalize to array
   options.userIds = options.userIds.map(id => {
     if (util.isString(id) && !util.isUserId(id)) {
-      throw new Error('Invalid user id format!');
+      throw new Error('Invalid user id format');
     }
     if (util.isUserId(id)) {
       return id; // user id is already in correct format... no conversion necessary
@@ -333,7 +352,7 @@ function formatUserIds(options) {
     id.name = id.name || '';
     id.email = id.email || '';
     if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
-      throw new Error('Invalid user id format!');
+      throw new Error('Invalid user id format');
     }
     return id.name + ' <' + id.email + '>';
   });
@@ -364,7 +383,7 @@ function createMessage(data, filename) {
   } else if (util.isString(data)) {
     msg = messageLib.fromText(data, filename);
   } else {
-    throw new Error('Data must be of type String or Uint8Array!');
+    throw new Error('Data must be of type String or Uint8Array');
   }
   return msg;
 }
@@ -411,7 +430,7 @@ function parseMessage(message, format) {
       filename: message.getFilename()
     };
   } else {
-    throw new Error('Invalid format!');
+    throw new Error('Invalid format');
   }
 }
 
@@ -438,5 +457,5 @@ function onError(message, error) {
   // log the stack trace
   if (config.debug) { console.error(error.stack); }
   // rethrow new high level error for api users
-  throw new Error(message);
+  throw new Error(message + ': ' + error.message);
 }

@@ -145,20 +145,37 @@ AsyncProxy.prototype.generateKey = function(options) {
   });
 };
 
-AsyncProxy.prototype.encrypt = function({ data, publicKeys, privateKeys, passwords, filename, packets }) {
+AsyncProxy.prototype.encrypt = function(options) {
   return this.execute(() => {
-    if(publicKeys) {
-      publicKeys = publicKeys.length ? publicKeys : [publicKeys];
-      publicKeys = publicKeys.map(key => key.toPacketlist());
+    if(options.publicKeys) {
+      options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
     }
-    if(privateKeys) {
-      privateKeys = privateKeys.length ? privateKeys : [privateKeys];
-      privateKeys = privateKeys.map(key => key.toPacketlist());
+    if(options.privateKeys) {
+      options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
     }
-    this.worker.postMessage({
-      event:'encrypt',
-      options: { data, publicKeys, privateKeys, passwords, filename, packets }
-    });
+    this.worker.postMessage({ event:'encrypt', options });
+  });
+};
+
+AsyncProxy.prototype.decrypt = function(options) {
+  return new Promise((resolve, reject) => {
+    if(options.publicKeys) {
+      options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
+    }
+    if(options.privateKey) {
+      options.privateKey = options.privateKey.toPacketlist();
+    }
+    this.worker.postMessage({ event:'decrypt', options });
+
+    this.tasks.push({ resolve: data => {
+      if (data.signatures) {
+        data.signatures = data.signatures.map(sig => {
+          sig.keyid = type_keyid.fromClone(sig.keyid);
+          return sig;
+        });
+      }
+      resolve(data);
+    }, reject });
   });
 };
 
@@ -169,36 +186,6 @@ AsyncProxy.prototype.encryptSessionKey = function({ sessionKey, algo, keys, pass
       keys = keys.map(key => key.toPacketlist());
     }
     this.worker.postMessage({ event:'encrypt-session-key', sessionKey, algo, keys, passwords });
-  });
-};
-
-AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text) {
-  var self = this;
-
-  return self.execute(function() {
-    if (!publicKeys.length) {
-      publicKeys = [publicKeys];
-    }
-    publicKeys = publicKeys.map(function(key) {
-      return key.toPacketlist();
-    });
-    privateKey = privateKey.toPacketlist();
-    self.worker.postMessage({
-      event: 'sign-and-encrypt-message',
-      publicKeys: publicKeys,
-      privateKey: privateKey,
-      text: text
-    });
-  });
-};
-
-AsyncProxy.prototype.decryptMessage = function({ message, privateKey, format }) {
-  return this.execute(() => {
-    if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(privateKey))) {
-      privateKey = privateKey.toPacketlist();
-    }
-
-    this.worker.postMessage({ event:'decrypt-message', message, privateKey, format });
   });
 };
 
@@ -216,36 +203,6 @@ AsyncProxy.prototype.decryptSessionKey = function(privateKey, message) {
       message: message
     });
   });
-};
-
-AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, message) {
-  var self = this;
-
-  var promise = new Promise(function(resolve, reject) {
-    privateKey = privateKey.toPacketlist();
-    if (!publicKeys.length) {
-      publicKeys = [publicKeys];
-    }
-    publicKeys = publicKeys.map(function(key) {
-      return key.toPacketlist();
-    });
-    self.worker.postMessage({
-      event: 'decrypt-and-verify-message',
-      privateKey: privateKey,
-      publicKeys: publicKeys,
-      message: message
-    });
-
-    self.tasks.push({ resolve:function(data) {
-      data.signatures = data.signatures.map(function(sig) {
-        sig.keyid = type_keyid.fromClone(sig.keyid);
-        return sig;
-      });
-      resolve(data);
-    }, reject:reject });
-  });
-
-  return promise;
 };
 
 AsyncProxy.prototype.signClearMessage = function(privateKeys, text) {
