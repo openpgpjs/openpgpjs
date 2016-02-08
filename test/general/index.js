@@ -1,5 +1,6 @@
 describe('General', function () {
   require('./util.js');
+  require('./openpgp.js');
   require('./basic.js');
   require('./armor.js');
   require('./key.js');

@@ -31,58 +31,49 @@ import packet from '../packet';
 import * as key from '../key.js';
 import type_keyid from '../type/keyid.js';
 
-var INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
+const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
     RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
 
 /**
  * Initializes a new proxy and loads the web worker
  * @constructor
- * @param {String} path The path to the worker or 'openpgp.worker.js' by default
- * @param {Object} [options.config=Object] config The worker configuration
- * @param {Object} [options.worker=Object] alternative to path parameter:
- *                                         web worker initialized with 'openpgp.worker.js'
+ * @param {String} path     The path to the worker or 'openpgp.worker.js' by default
+ * @param {Object} config   config The worker configuration
+ * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
+ * @return {Promise}
  */
-export default function AsyncProxy(path, options) {
-  if (options && options.worker) {
-    this.worker = options.worker;
-  } else {
-    this.worker = new Worker(path || 'openpgp.worker.js');
-  }
+export default function AsyncProxy({ path='openpgp.worker.js', worker, config } = {}) {
+  this.worker = worker || new Worker(path);
   this.worker.onmessage = this.onMessage.bind(this);
-  this.worker.onerror = function(e) {
+  this.worker.onerror = e => {
     throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
   };
   this.seedRandom(INITIAL_RANDOM_SEED);
   // FIFO
   this.tasks = [];
-  if (options && options.config) {
-    this.worker.postMessage({event: 'configure', config: options.config});
+  if (config) {
+    this.worker.postMessage({ event:'configure', config });
   }
 }
 
 /**
  * Command pattern that wraps synchronous code into a promise
- * @param  {Object}   self    The current this
  * @param  {function} cmd     The synchronous function with a return value
  *                            to be wrapped in a promise
  * @return {Promise}          The promise wrapped around cmd
  */
 AsyncProxy.prototype.execute = function(cmd) {
-  var self = this;
-
-  var promise = new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     cmd();
-    self.tasks.push({ resolve:resolve, reject:reject });
+    this.tasks.push({ resolve, reject });
   });
-
-  return promise;
 };
 
 /**
  * Message handling
  */
 AsyncProxy.prototype.onMessage = function(event) {
-  var msg = event.data;
+  const msg = event.data;
   switch (msg.event) {
     case 'method-return':
       if (msg.err) {
@@ -106,8 +97,8 @@ AsyncProxy.prototype.onMessage = function(event) {
  * @param  {Integer} size Number of bytes to send
  */
 AsyncProxy.prototype.seedRandom = function(size) {
-  var buf = this.getRandomBuffer(size);
-  this.worker.postMessage({event: 'seed-random', buf: buf});
+  const buf = this.getRandomBuffer(size);
+  this.worker.postMessage({ event:'seed-random', buf });
 };
 
 /**
@@ -119,7 +110,7 @@ AsyncProxy.prototype.getRandomBuffer = function(size) {
   if (!size) {
     return null;
   }
-  var buf = new Uint8Array(size);
+  const buf = new Uint8Array(size);
   crypto.random.getRandomValues(buf);
   return buf;
 };
@@ -131,71 +122,56 @@ AsyncProxy.prototype.terminate = function() {
   this.worker.terminate();
 };
 
-/**
- * Encrypts message text/data with keys or passwords
- * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the message
- * @param  {Uint8Array} data                                   message as Uint8Array
- * @param  {(Array<String>|String)} passwords                  passwords for the message
- * @param  {Object} params                                     parameter object with optional properties binary {Boolean},
- *                                                             filename {String}, and packets {Boolean}
- */
-AsyncProxy.prototype.encryptMessage = function(keys, data, passwords, params) {
-  var self = this;
 
-  return self.execute(function() {
-    if(keys) {
-      if (!Array.prototype.isPrototypeOf(keys)) {
-        keys = [keys];
-      }
-      keys = keys.map(function(key) {
-        return key.toPacketlist();
-      });
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+//   Proxy functions. See the corresponding code in the openpgp module for the documentation.   //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+AsyncProxy.prototype.generateKey = function(options) {
+  return new Promise((resolve, reject) => {
+    this.worker.postMessage({
+      event: 'generate-key',
+      options: options
+    });
+
+    this.tasks.push({ resolve: data => {
+      const packetlist = packet.List.fromStructuredClone(data.key);
+      data.key = new key.Key(packetlist);
+      resolve(data);
+    }, reject });
+  });
+};
+
+AsyncProxy.prototype.encrypt = function({ data, publicKeys, privateKeys, passwords, filename, packets }) {
+  return this.execute(() => {
+    if(publicKeys) {
+      publicKeys = publicKeys.length ? publicKeys : [publicKeys];
+      publicKeys = publicKeys.map(key => key.toPacketlist());
     }
-    self.worker.postMessage({
-      event: 'encrypt-message',
-      keys: keys,
-      data: data,
-      passwords: passwords,
-      params: params
+    if(privateKeys) {
+      privateKeys = privateKeys.length ? privateKeys : [privateKeys];
+      privateKeys = privateKeys.map(key => key.toPacketlist());
+    }
+    this.worker.postMessage({
+      event:'encrypt',
+      options: { data, publicKeys, privateKeys, passwords, filename, packets }
     });
   });
 };
 
-/**
- * Encrypts session key with keys or passwords
- * @param  {Uint8Array} sessionKey                             sessionKey as Uint8Array
- * @param  {String} algo                                       algorithm of sessionKey
- * @param  {(Array<module:key~Key>|module:key~Key)} keys       array of keys or single key, used to encrypt the key
- * @param  {(Array<String>|String)} passwords                  passwords for the message
- */
-AsyncProxy.prototype.encryptSessionKey = function(sessionKey, algo, keys, passwords) {
-  var self = this;
-
-  return self.execute(function() {
+AsyncProxy.prototype.encryptSessionKey = function({ sessionKey, algo, keys, passwords }) {
+  return this.execute(() => {
     if(keys) {
-      if (!Array.prototype.isPrototypeOf(keys)) {
-        keys = [keys];
-      }
-      keys = keys.map(function(key) {
-        return key.toPacketlist();
-      });
+      keys = keys.length ? keys : [keys];
+      keys = keys.map(key => key.toPacketlist());
     }
-    self.worker.postMessage({
-      event: 'encrypt-session-key',
-      sessionKey: sessionKey,
-      algo: algo,
-      keys: keys,
-      passwords: passwords
-    });
+    this.worker.postMessage({ event:'encrypt-session-key', sessionKey, algo, keys, passwords });
   });
 };
 
-/**
- * Signs message text and encrypts it
- * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
- * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
- * @param  {Uint8Array} text       message as Uint8Array
- */
 AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text) {
   var self = this;
 
@@ -216,36 +192,16 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
   });
 };
 
-/**
- * Decrypts message
- * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
- * @param  {module:message~Message} msg         the message object with the encrypted data
- * @param  {Object} params                      parameter object with optional properties binary {Boolean}
- *                                              and sessionKeyAlgorithm {String} which must only be set when privateKey is a session key
- */
-AsyncProxy.prototype.decryptMessage = function(privateKey, message, params) {
-  var self = this;
-
-  return self.execute(function() {
+AsyncProxy.prototype.decryptMessage = function({ message, privateKey, format }) {
+  return this.execute(() => {
     if(!(String.prototype.isPrototypeOf(privateKey) || typeof privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(privateKey))) {
       privateKey = privateKey.toPacketlist();
     }
 
-    self.worker.postMessage({
-      event: 'decrypt-message',
-      privateKey: privateKey,
-      message: message,
-      params: params
-    });
+    this.worker.postMessage({ event:'decrypt-message', message, privateKey, format });
   });
 };
 
-/**
- * @param  {module:key~Key|String} privateKey   private key with decrypted secret key data or string password
- * @param  {module:message~Message} msg         the message object with the encrypted session key packets
- * @return {Promise<Object|null>}               decrypted session key and algorithm in object form
- *                                              or null if no key packets found
- */
 AsyncProxy.prototype.decryptSessionKey = function(privateKey, message) {
   var self = this;
 
@@ -262,12 +218,6 @@ AsyncProxy.prototype.decryptSessionKey = function(privateKey, message) {
   });
 };
 
-/**
- * Decrypts message and verifies signatures
- * @param  {module:key~Key}     privateKey private key with decrypted secret key data
- * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key to verify signatures
- * @param  {module:message~Message} message    the message object with signed and encrypted data
- */
 AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, message) {
   var self = this;
 
@@ -298,11 +248,6 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
   return promise;
 };
 
-/**
- * Signs a cleartext message
- * @param  {(Array<module:key~Key>|module:key~Key)}  privateKeys array of keys or single key, with decrypted secret key data to sign cleartext
- * @param  {Uint8Array} text        cleartext
- */
 AsyncProxy.prototype.signClearMessage = function(privateKeys, text) {
   var self = this;
 
@@ -321,11 +266,6 @@ AsyncProxy.prototype.signClearMessage = function(privateKeys, text) {
   });
 };
 
-/**
- * Verifies signatures of cleartext signed message
- * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
- * @param  {module:cleartext~CleartextMessage} message    cleartext message object with signatures
- */
 AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message) {
   var self = this;
 
@@ -354,39 +294,6 @@ AsyncProxy.prototype.verifyClearSignedMessage = function(publicKeys, message) {
   return promise;
 };
 
-/**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys.
- * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} keyType    to indicate what type of key to make.
- *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} numBits    number of bits for the key creation. (should be 1024+, generally)
- * @param {String}  userId     assumes already in form of "User Name <username@email.com>"
- * @param {String}  passphrase The passphrase used to encrypt the resulting private key
- */
-AsyncProxy.prototype.generateKeyPair = function(options) {
-  var self = this;
-
-  var promise = new Promise(function(resolve, reject) {
-    self.worker.postMessage({
-      event: 'generate-key-pair',
-      options: options
-    });
-
-    self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data.key);
-      data.key = new key.Key(packetlist);
-      resolve(data);
-    }, reject:reject });
-  });
-
-  return promise;
-};
-
-/**
- * Decrypts secret part of all secret key packets of key.
- * @param  {module:key~Key}     privateKey private key with encrypted secret key data
- * @param  {String} password    password to unlock the key
- */
 AsyncProxy.prototype.decryptKey = function(privateKey, password) {
   var self = this;
 
@@ -408,12 +315,6 @@ AsyncProxy.prototype.decryptKey = function(privateKey, password) {
   return promise;
 };
 
-/**
- * Decrypts secret part of key packets matching array of keyids.
- * @param  {module:key~Key}     privateKey private key with encrypted secret key data
- * @param  {Array<module:type/keyid>} keyIds
- * @param  {String} password    password to unlock the key
- */
 AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
   var self = this;
 

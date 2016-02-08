@@ -924,7 +924,7 @@ export function readArmored(armoredText) {
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
- * @param {String|Array<String>}  options.userId     assumes already in form of "User Name <username@email.com>"
+ * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
                                                      If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
@@ -943,8 +943,8 @@ export function generate(options) {
   if (!options.passphrase) {
     options.unlocked = true;
   }
-  if (String.prototype.isPrototypeOf(options.userId) || typeof options.userId === 'string') {
-    options.userId = [options.userId];
+  if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+    options.userIds = [options.userIds];
   }
 
   // generate
@@ -975,7 +975,7 @@ export function generate(options) {
 
     packetlist.push(secretKeyPacket);
 
-    options.userId.forEach(function(userId, index) {
+    options.userIds.forEach(function(userId, index) {
 
       userIdPacket = new packet.Userid();
       userIdPacket.read(util.str2Uint8Array(userId));

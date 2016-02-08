@@ -42,7 +42,7 @@ es6Promise.polyfill(); // load ES6 Promises polyfill
 //////////////////////////
 
 
-let asyncProxy = null; // instance of the asyncproxy
+let asyncProxy; // instance of the asyncproxy
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
@@ -65,6 +65,13 @@ export function getWorker() {
   return asyncProxy;
 }
 
+/**
+ * Cleanup the current instance of the web worker.
+ */
+export function destroyWorker() {
+  asyncProxy = undefined;
+}
+
 
 ////////////////////////////
 //                        //
@@ -84,8 +91,8 @@ export function getWorker() {
  * @static
  */
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
-  userIds = userIds.map(id => id.name + ' <' + id.email + '>'); // format user ids for internal use
   const options = { userIds, passphrase, numBits, unlocked };
+  formatUserIds(options);
 
   if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.generateKey(options);
@@ -100,12 +107,12 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
   })).catch(err => {
 
     // js fallback already tried
-    console.error(err);
+    if (config.debug) { console.error(err); }
     if (!util.getWebCrypto()) {
       throw new Error('Error generating keypair using js fallback!');
     }
     // fall back to js keygen in a worker
-    console.log('Error generating keypair using native WebCrypto... falling back back to js!');
+    if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js!'); }
     return asyncProxy.generateKey(options);
 
   }).catch(onError.bind(null, 'Error generating keypair!'));
@@ -132,8 +139,8 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @static
  */
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, packets }) {
-  publicKeys = publicKeys ? (publicKeys.length ? publicKeys : [publicKeys]) : undefined; // normalize key objects to arrays
-  privateKeys = privateKeys ? (privateKeys.length ? privateKeys : [privateKeys]) : undefined;
+  publicKeys = toArray(publicKeys);
+  privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.encrypt({ data, publicKeys, privateKeys, passwords, filename, packets });
@@ -170,7 +177,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, pa
  * @static
  */
 export function decrypt({ message, privateKey, publickeys, sessionKey, password, format='utf8' }) {
-  publickeys = publickeys ? (publickeys.length ? publickeys : [publickeys]) : undefined; // normalize key objects to arrays
+  publickeys = toArray(publickeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.decrypt({ message, privateKey, publickeys, sessionKey, password, format });
@@ -204,7 +211,10 @@ export function decrypt({ message, privateKey, publickeys, sessionKey, password,
  * @static
  */
 export function sign({ data, privateKeys }) {
-  privateKeys = privateKeys.length ? privateKeys : [privateKeys];
+  privateKeys = toArray(privateKeys);
+  if (!util.isString(data)) {
+    throw new Error('Only cleartext data of type String supported!');
+  }
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.sign({ data, privateKeys });
@@ -230,23 +240,21 @@ export function sign({ data, privateKeys }) {
  * @static
  */
 export function verify({ message, publicKeys }) {
-  publicKeys = publicKeys.length ? publicKeys : [publicKeys];
+  publicKeys = toArray(publicKeys);
+  if (!(message instanceof cleartext.CleartextMessage)) {
+    throw new Error('Parameter [message] needs to be of type CleartextMessage.');
+  }
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.verify({ message, publicKeys });
   }
 
-  return execute(() => {
+  return execute(() => ({
 
-    if (!(message instanceof cleartext.CleartextMessage)) {
-      throw new Error('Parameter [message] needs to be of type CleartextMessage.');
-    }
-    return {
-      data: message.getText(),
-      signatures: message.verify(publicKeys)
-    };
+    data: message.getText(),
+    signatures: message.verify(publicKeys)
 
-  }, 'Error verifying cleartext signed message!');
+  }), 'Error verifying cleartext signed message!');
 }
 
 
@@ -307,6 +315,43 @@ export function decryptSessionKey({ message, privateKey, sessionKey, password })
 
 
 /**
+ * Format user ids for internal use.
+ */
+function formatUserIds(options) {
+  if (!options.userIds) {
+    return;
+  }
+  options.userIds = toArray(options.userIds); // normalize to array
+  options.userIds = options.userIds.map(id => {
+    if (util.isString(id) && !util.isUserId(id)) {
+      throw new Error('Invalid user id format!');
+    }
+    if (util.isUserId(id)) {
+      return id; // user id is already in correct format... no conversion necessary
+    }
+    // name and email address can be empty but must be of type the correct type
+    id.name = id.name || '';
+    id.email = id.email || '';
+    if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
+      throw new Error('Invalid user id format!');
+    }
+    return id.name + ' <' + id.email + '>';
+  });
+}
+
+/**
+ * Normalize parameter to an array if it is not undefined.
+ * @param  {Object} param              the parameter to be normalized
+ * @return {Array<Object>|undefined}   the resulting array or undefined
+ */
+function toArray(param) {
+  if (param && !util.isArray(param)) {
+    param = [param];
+  }
+  return param;
+}
+
+/**
  * Creates a message obejct either from a Uint8Array or a string.
  * @param  {String|Uint8Array} data   the payload for the message
  * @param  {String} filename          the literal data packet's filename
@@ -314,9 +359,9 @@ export function decryptSessionKey({ message, privateKey, sessionKey, password })
  */
 function createMessage(data, filename) {
   let msg;
-  if (data instanceof Uint8Array) {
+  if (util.isUint8Array(data)) {
     msg = messageLib.fromBinary(data, filename);
-  } else if (typeof data === 'string') {
+  } else if (util.isString(data)) {
     msg = messageLib.fromText(data, filename);
   } else {
     throw new Error('Data must be of type String or Uint8Array!');
@@ -391,9 +436,7 @@ function execute(cmd, message) {
  */
 function onError(message, error) {
   // log the stack trace
-  if (config.debug) {
-    console.error(error.stack);
-  }
+  if (config.debug) { console.error(error.stack); }
   // rethrow new high level error for api users
   throw new Error(message);
 }

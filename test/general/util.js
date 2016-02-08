@@ -7,10 +7,6 @@ var chai = require('chai'),
 
 describe('Util unit tests', function() {
 
-  beforeEach(function() {});
-
-  afterEach(function() {});
-
   describe('isString', function() {
     it('should return true for type "string"', function() {
       var data = 'foo';

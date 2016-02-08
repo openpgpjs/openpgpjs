@@ -15,7 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-this.window = {}; // to make UMD bundles work
+/* globals self: true */
+
+self.window = {}; // to make UMD bundles work
 
 // Mozilla bind polyfill because phantomjs is stupid
 if (!Function.prototype.bind) {
@@ -46,7 +48,7 @@ var MAX_SIZE_RANDOM_BUFFER = 60000;
 
 window.openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
-this.onmessage = function (event) {
+self.onmessage = function (event) {
   var data = null,
       err = null,
       msg = event.data,
@@ -58,12 +60,14 @@ this.onmessage = function (event) {
         window.openpgp.config[i] = msg.config[i];
       }
       break;
+
     case 'seed-random':
       if (!(msg.buf instanceof Uint8Array)) {
         msg.buf = new Uint8Array(msg.buf);
       }
       window.openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
+
     case 'encrypt-message':
       if(msg.keys) {
         msg.keys = msg.keys.map(packetlistCloneToKey);
@@ -74,6 +78,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'encrypt-session-key':
       if(msg.keys) {
         msg.keys = msg.keys.map(packetlistCloneToKey);
@@ -84,6 +89,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'sign-and-encrypt-message':
       if (!msg.publicKeys.length) {
         msg.publicKeys = [msg.publicKeys];
@@ -96,6 +102,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'decrypt-message':
       if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string' || Uint8Array.prototype.isPrototypeOf(msg.privateKey))) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
@@ -107,6 +114,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'decrypt-session-key':
       if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string')) {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
@@ -118,6 +126,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'decrypt-and-verify-message':
       msg.privateKey = packetlistCloneToKey(msg.privateKey);
       if (!msg.publicKeys.length) {
@@ -131,6 +140,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'sign-clear-message':
       msg.privateKeys = msg.privateKeys.map(packetlistCloneToKey);
       window.openpgp.signClearMessage(msg.privateKeys, msg.text).then(function(data) {
@@ -139,6 +149,7 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'verify-clear-signed-message':
       if (!msg.publicKeys.length) {
         msg.publicKeys = [msg.publicKeys];
@@ -152,14 +163,16 @@ this.onmessage = function (event) {
         response({event: 'method-return', err: e.message});
       });
       break;
-    case 'generate-key-pair':
-      window.openpgp.generateKeyPair(msg.options).then(function(data) {
+
+    case 'generate-key':
+      window.openpgp.generateKey(msg.options).then(function(data) {
         data.key = data.key.toPacketlist();
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
       });
       break;
+
     case 'decrypt-key':
       try {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
@@ -174,6 +187,7 @@ this.onmessage = function (event) {
       }
       response({event: 'method-return', data: data, err: err});
       break;
+
     case 'decrypt-key-packet':
       try {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
@@ -189,6 +203,7 @@ this.onmessage = function (event) {
       }
       response({event: 'method-return', data: data, err: err});
       break;
+
     default:
       throw new Error('Unknown Worker Event.');
   }

@@ -223,11 +223,10 @@ module.exports = function(grunt) {
         }
       },
     },
-
     watch: {
       src: {
         files: ['src/**/*.js'],
-        tasks: ['browserify:openpgp']
+        tasks: ['browserify:openpgp', 'browserify:worker']
       },
       test: {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
