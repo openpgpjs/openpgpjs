@@ -26,6 +26,34 @@
 import config from './config';
 
 export default {
+
+  isString: function(data) {
+    return typeof data === 'string' || String.prototype.isPrototypeOf(data);
+  },
+
+  isArray: function(data) {
+    return Array.prototype.isPrototypeOf(data);
+  },
+
+  isUint8Array: function(data) {
+    return Uint8Array.prototype.isPrototypeOf(data);
+  },
+
+  isEmailAddress: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(data);
+  },
+
+  isUserId: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    return / </.test(data) && />$/.test(data);
+  },
+
   readNumber: function (bytes) {
     var n = 0;
 

@@ -243,10 +243,10 @@ Message.prototype.encrypt = function(keys, passwords) {
 export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
 
   /** Convert to arrays if necessary */
-  if (publicKeys && !Array.prototype.isPrototypeOf(publicKeys)) {
+  if (publicKeys && !util.isArray(publicKeys)) {
     publicKeys = [publicKeys];
   }
-  if (passwords && !Array.prototype.isPrototypeOf(passwords)) {
+  if (passwords && !util.isArray(passwords)) {
     passwords = [passwords];
   }
 
@@ -455,7 +455,7 @@ export function fromText(text, filename) {
  * @static
  */
 export function fromBinary(bytes, filename) {
-  if (!Uint8Array.prototype.isPrototypeOf(bytes)) {
+  if (!util.isUint8Array(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
