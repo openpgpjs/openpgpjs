@@ -362,7 +362,8 @@ function parseMessage(message, format) {
     };
   } else if (format === 'utf8') {
     return {
-      data: message.getText()
+      data: message.getText(),
+      filename: message.getFilename()
     };
   } else {
     throw new Error('Invalid format!');
