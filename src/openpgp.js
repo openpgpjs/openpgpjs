@@ -52,8 +52,7 @@ let asyncProxy; // instance of the asyncproxy
 export function initWorker({ path='openpgp.worker.js', worker } = {}) {
   if (worker || typeof window !== 'undefined' && window.Worker) {
     asyncProxy = new AsyncProxy({ path, worker, config });
-  } else {
-    throw new Error('Initializing web worker failed');
+    return true;
   }
 }
 
