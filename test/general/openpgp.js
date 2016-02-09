@@ -247,7 +247,7 @@ describe('OpenPGP.js public api tests', function() {
       });
     });
 
-    it('should work in JS (use native)', function(done) {
+    it('should work in with native crypto', function(done) {
       openpgp.config.useNative = true;
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
@@ -337,10 +337,6 @@ describe('OpenPGP.js public api tests', function() {
 
     var privateKey, publicKey;
 
-    before(function() {
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    });
-
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
       expect(publicKey.keys).to.have.length(1);
@@ -348,10 +344,6 @@ describe('OpenPGP.js public api tests', function() {
       privateKey = openpgp.key.readArmored(priv_key);
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
-    });
-
-    after(function() {
-      openpgp.destroyWorker(); // cleanup worker in case of failure
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -362,10 +354,7 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
     });
 
-    function testHelper(encOpt, decOpt, dontUnlock) {
-      if (!dontUnlock) {
-        expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
-      }
+    function testHelper(encOpt, decOpt) {
       return openpgp.encrypt(encOpt).then(function(encrypted) {
         expect(encrypted.data).to.exist;
         var msg = openpgp.message.readArmored(encrypted.data);
@@ -376,108 +365,130 @@ describe('OpenPGP.js public api tests', function() {
       });
     }
 
-    it('Calling decrypt with not decrypted key leads to exception', function (done) {
-      var encOpt = {
-        data: plaintext,
-        publicKeys: publicKey.keys,
-      };
-      var decOpt = {
-        privateKey: privateKey.keys[0]
-      };
-      testHelper(encOpt, decOpt, true).catch(function(error) {
-        expect(error.message).to.match(/not decrypted/);
-        done();
+    describe('without Worker', tests);
+    describe('with Worker', function() {
+      before(function() {
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      });
+
+      tests();
+
+      after(function() {
+        openpgp.destroyWorker(); // cleanup worker in case of failure
       });
     });
 
-    it('should encrypt then decrypt with pgp key pair', function(done) {
-      var encOpt = {
-        data: plaintext,
-        publicKeys: publicKey.keys,
-      };
-      var decOpt = {
-        privateKey: privateKey.keys[0]
-      };
-      testHelper(encOpt, decOpt).then(function(decrypted) {
-        expect(decrypted.data).to.equal(plaintext);
-        expect(decrypted.signatures).to.not.exist;
-        done();
+    function tests() {
+      it('Calling decrypt with not decrypted key leads to exception', function (done) {
+        var encOpt = {
+          data: plaintext,
+          publicKeys: publicKey.keys,
+        };
+        var decOpt = {
+          privateKey: privateKey.keys[0]
+        };
+        testHelper(encOpt, decOpt).catch(function(error) {
+          expect(error.message).to.match(/not decrypted/);
+          done();
+        });
       });
-    });
 
-    it('should encrypt/sign and decrypt/verify with pgp key pair', function(done) {
-      var encOpt = {
-        data: plaintext,
-        publicKeys: publicKey.keys,
-        privateKeys: privateKey.keys
-      };
-      var decOpt = {
-        privateKey: privateKey.keys[0],
-        publicKeys: publicKey.keys
-      };
-      testHelper(encOpt, decOpt).then(function(decrypted) {
-        expect(decrypted.data).to.equal(plaintext);
-        expect(decrypted.signatures[0].valid).to.be.true;
-        done();
+      describe('with unlocked key', function() {
+        beforeEach(function() {
+          expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
+        });
+
+        it('should encrypt then decrypt with pgp key pair', function(done) {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0]
+          };
+          testHelper(encOpt, decOpt).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.not.exist;
+            done();
+          });
+        });
+
+        it('should encrypt/sign and decrypt/verify with pgp key pair', function(done) {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: publicKey.keys
+          };
+          testHelper(encOpt, decOpt).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            done();
+          });
+        });
+
+        it('should fail to verify with wrong public pgp key', function(done) {
+          var wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+            'Version: OpenPGP.js v0.9.0\r\n' +
+            'Comment: Hoodiecrow - https://hoodiecrow.com\r\n' +
+            '\r\n' +
+            'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5\r\n' +
+            'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg\r\n' +
+            'VXNlciA8d2hpdGVvdXQudGVzdEB0LW9ubGluZS5kZT7CXAQQAQgAEAUCUlhM\r\n' +
+            'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq\r\n' +
+            'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1\r\n' +
+            '=6XMW\r\n' +
+            '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+          };
+          testHelper(encOpt, decOpt).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.null;
+            done();
+          });
+        });
       });
-    });
 
-    it('should fail to verify with wrong public pgp key', function(done) {
-      var wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
-        'Version: OpenPGP.js v0.9.0\r\n' +
-        'Comment: Hoodiecrow - https://hoodiecrow.com\r\n' +
-        '\r\n' +
-        'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5\r\n' +
-        'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg\r\n' +
-        'VXNlciA8d2hpdGVvdXQudGVzdEB0LW9ubGluZS5kZT7CXAQQAQgAEAUCUlhM\r\n' +
-        'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq\r\n' +
-        'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1\r\n' +
-        '=6XMW\r\n' +
-        '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
-
-      var encOpt = {
-        data: plaintext,
-        publicKeys: publicKey.keys,
-        privateKeys: privateKey.keys
-      };
-      var decOpt = {
-        privateKey: privateKey.keys[0],
-        publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
-      };
-      testHelper(encOpt, decOpt).then(function(decrypted) {
-        expect(decrypted.data).to.equal(plaintext);
-        expect(decrypted.signatures[0].valid).to.be.null;
-        done();
+      it('should encrypt and decrypt with one password', function(done) {
+        var encOpt = {
+          data: plaintext,
+          passwords: password1
+        };
+        var decOpt = {
+          password: password1
+        };
+        testHelper(encOpt, decOpt).then(function(decrypted) {
+          expect(decrypted.data).to.equal(plaintext);
+          done();
+        });
       });
-    });
 
-    it('should encrypt and decrypt with one password', function(done) {
-      var encOpt = {
-        data: plaintext,
-        passwords: password1
-      };
-      var decOpt = {
-        password: password1
-      };
-      testHelper(encOpt, decOpt).then(function(decrypted) {
-        expect(decrypted.data).to.equal(plaintext);
-        done();
+      it('should encrypt and decrypt with two password2', function(done) {
+        var encOpt = {
+          data: plaintext,
+          passwords: [password1, password2]
+        };
+        var decOpt = {
+          password: password2
+        };
+        testHelper(encOpt, decOpt).then(function(decrypted) {
+          expect(decrypted.data).to.equal(plaintext);
+          done();
+        });
       });
-    });
+    }
 
-    it('should encrypt and decrypt with two password2', function(done) {
-      var encOpt = {
-        data: plaintext,
-        passwords: [password1, password2]
-      };
-      var decOpt = {
-        password: password2
-      };
-      testHelper(encOpt, decOpt).then(function(decrypted) {
-        expect(decrypted.data).to.equal(plaintext);
-        done();
-      });
-    });
   });
 
 });
