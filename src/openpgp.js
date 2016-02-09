@@ -70,11 +70,11 @@ export function destroyWorker() {
 }
 
 
-////////////////////////////
-//                        //
-//   Keypair generation   //
-//                        //
-////////////////////////////
+//////////////////////
+//                  //
+//   Key handling   //
+//                  //
+//////////////////////
 
 
 /**
@@ -113,6 +113,29 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     return asyncProxy.delegate('generateKey', options);
 
   }).catch(onError.bind(null, 'Error generating keypair'));
+}
+
+/**
+ * Unlock a private key with your passphrase.
+ * @param {Key} privateKey      the private key that is to be decrypted
+ * @param {String} passphrase   the user's passphrase chosen during key generation
+ * @return {Key}                the unlocked private key
+ */
+export function decryptKey({ privateKey, passphrase }) {
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
+  }
+
+  return execute(() => {
+
+    if (!privateKey.decrypt(passphrase)) {
+      throw new Error('Invalid passphrase');
+    }
+    return {
+      key: privateKey
+    };
+
+  }, 'Error decrypting private key');
 }
 
 
