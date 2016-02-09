@@ -26,8 +26,6 @@
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
 import * as key from './key.js';
-import armorLib from './encoding/armor.js';
-import enums from './enums.js';
 import config from './config/config.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
@@ -154,7 +152,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 
     if(armor) {
       return {
-        data: armorLib.encode(enums.armor.message, message.packets.write())
+        data: message.armor()
       };
     }
 
@@ -207,25 +205,33 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 /**
  * Signs a cleartext message
- * @param {String} data                  cleartext input to be signed
- * @param {Key|Array<Key>} privateKeys   array of keys or single key with decrypted secret key data to sign cleartext
- * @return {Promise<String>}             ASCII armored message
+ * @param {String} data                         cleartext input to be signed
+ * @param {Key|Array<Key>} privateKeys          array of keys or single key with decrypted secret key data to sign cleartext
+ * @param {Boolean} armor                       (optional) if the return value should be ascii armored or the message object
+ * @return {Promise<String|CleartextMessage>}   ASCII armored message or the message of type CleartextMessage
  * @static
  */
-export function sign({ data, privateKeys }) {
+export function sign({ data, privateKeys, armor=true }) {
   checkString(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', { data, privateKeys });
+    return asyncProxy.delegate('sign', { data, privateKeys, armor });
   }
 
   return execute(() => {
 
     const cleartextMessage = new cleartext.CleartextMessage(data);
     cleartextMessage.sign(privateKeys);
+
+    if(armor) {
+      return {
+        data: cleartextMessage.armor()
+      };
+    }
+
     return {
-      data: cleartextMessage.armor()
+      message: cleartextMessage
     };
 
   }, 'Error signing cleartext message');

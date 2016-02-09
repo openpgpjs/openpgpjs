@@ -30,6 +30,7 @@ import crypto from '../crypto';
 import packet from '../packet';
 import * as key from '../key.js';
 import * as message from '../message.js';
+import * as cleartext from '../cleartext.js';
 import type_keyid from '../type/keyid.js';
 
 const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
@@ -137,7 +138,7 @@ AsyncProxy.prototype.delegate = function(method, options) {
     this.worker.postMessage({ event:method, options:clonePackets(options) });
 
     // remember to handle parsing cloned packets from worker
-    this.tasks.push({ resolve: data => resolve(parseClonedPackets(data)), reject });
+    this.tasks.push({ resolve: data => resolve(parseClonedPackets(data, method)), reject });
   });
 };
 
@@ -154,11 +155,13 @@ function clonePackets(options) {
   return options;
 }
 
-function parseClonedPackets(data) {
+function parseClonedPackets(data, method) {
   if (data.key) {
     data.key = packetlistCloneToKey(data.key);
   }
-  if (data.message) {
+  if (data.message && method === 'sign') { // sign supports only CleartextMessage
+    data.message = packetlistCloneToCleartextMessage(data.message);
+  } else if (data.message) {
     data.message = packetlistCloneToMessage(data.message);
   }
   if (data.signatures) {
@@ -175,6 +178,11 @@ function packetlistCloneToKey(clone) {
 function packetlistCloneToMessage(clone) {
   const packetlist = packet.List.fromStructuredClone(clone.packets);
   return new message.Message(packetlist);
+}
+
+function packetlistCloneToCleartextMessage(clone) {
+  var packetlist = packet.List.fromStructuredClone(clone.packets);
+  return new cleartext.CleartextMessage(clone.text, packetlist);
 }
 
 function packetlistCloneToSignature(clone) {
