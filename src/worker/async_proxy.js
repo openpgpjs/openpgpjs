@@ -15,24 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires crypto
- * @requires enums
- * @requires packet
- * @requires type_keyid
- * @requires key
- * @module async_proxy
- */
-
 'use strict';
 
 import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
-import * as key from '../key.js';
-import * as message from '../message.js';
-import * as cleartext from '../cleartext.js';
-import type_keyid from '../type/keyid.js';
 
 const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
     RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
@@ -58,19 +45,6 @@ export default function AsyncProxy({ path='openpgp.worker.js', worker, config } 
     this.worker.postMessage({ event:'configure', config });
   }
 }
-
-/**
- * Command pattern that wraps synchronous code into a promise
- * @param  {function} cmd     The synchronous function with a return value
- *                            to be wrapped in a promise
- * @return {Promise}          The promise wrapped around cmd
- */
-AsyncProxy.prototype.execute = function(cmd) {
-  return new Promise((resolve, reject) => {
-    cmd();
-    this.tasks.push({ resolve, reject });
-  });
-};
 
 /**
  * Message handling
@@ -125,111 +99,18 @@ AsyncProxy.prototype.terminate = function() {
   this.worker.terminate();
 };
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                              //
-//   Proxy functions. See the corresponding code in the openpgp module for the documentation.   //
-//                                                                                              //
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+/**
+ * Generic proxy function that handles all commands from the public api.
+ * @param  {String} method    the public api function to be delegated to the worker thread
+ * @param  {Object} options   the api function's options
+ * @return {Promise}          see the corresponding public api functions for their return types
+ */
 AsyncProxy.prototype.delegate = function(method, options) {
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.worker.postMessage({ event:method, options:clonePackets(options) }, util.getTransferables.call(util, options));
+    this.worker.postMessage({ event:method, options:packet.clone.clonePackets(options) }, util.getTransferables.call(util, options));
 
     // remember to handle parsing cloned packets from worker
-    this.tasks.push({ resolve: data => resolve(parseClonedPackets(data, method)), reject });
+    this.tasks.push({ resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject });
   });
-};
-
-function clonePackets(options) {
-  if(options.publicKeys) {
-    options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
-  }
-  if(options.privateKeys) {
-    options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
-  }
-  if(options.privateKey) {
-    options.privateKey = options.privateKey.toPacketlist();
-  }
-  return options;
-}
-
-function parseClonedPackets(data, method) {
-  if (data.key) {
-    data.key = packetlistCloneToKey(data.key);
-  }
-  if (data.message && method === 'sign') { // sign supports only CleartextMessage
-    data.message = packetlistCloneToCleartextMessage(data.message);
-  } else if (data.message) {
-    data.message = packetlistCloneToMessage(data.message);
-  }
-  if (data.signatures) {
-    data.signatures = data.signatures.map(packetlistCloneToSignature);
-  }
-  return data;
-}
-
-function packetlistCloneToKey(clone) {
-  const packetlist = packet.List.fromStructuredClone(clone);
-  return new key.Key(packetlist);
-}
-
-function packetlistCloneToMessage(clone) {
-  const packetlist = packet.List.fromStructuredClone(clone.packets);
-  return new message.Message(packetlist);
-}
-
-function packetlistCloneToCleartextMessage(clone) {
-  var packetlist = packet.List.fromStructuredClone(clone.packets);
-  return new cleartext.CleartextMessage(clone.text, packetlist);
-}
-
-function packetlistCloneToSignature(clone) {
-  clone.keyid = type_keyid.fromClone(clone.keyid);
-  return clone;
-}
-
-AsyncProxy.prototype.decryptKey = function(privateKey, password) {
-  var self = this;
-
-  var promise = new Promise(function(resolve, reject) {
-    privateKey = privateKey.toPacketlist();
-    self.worker.postMessage({
-      event: 'decrypt-key',
-      privateKey: privateKey,
-      password: password
-    });
-
-    self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
-      resolve(data);
-    }, reject:reject });
-  });
-
-  return promise;
-};
-
-AsyncProxy.prototype.decryptKeyPacket = function(privateKey, keyIds, password) {
-  var self = this;
-
-  var promise = new Promise(function(resolve, reject) {
-    privateKey = privateKey.toPacketlist();
-    self.worker.postMessage({
-      event: 'decrypt-key-packet',
-      privateKey: privateKey,
-      keyIds: keyIds,
-      password: password
-    });
-
-    self.tasks.push({ resolve:function(data) {
-      var packetlist = packet.List.fromStructuredClone(data);
-      data = new key.Key(packetlist);
-      resolve(data);
-    }, reject:reject });
-  });
-
-  return promise;
 };
