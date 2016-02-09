@@ -26,7 +26,7 @@
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
 import * as key from './key.js';
-import armor from './encoding/armor.js';
+import armorLib from './encoding/armor.js';
 import enums from './enums.js';
 import config from './config/config.js';
 import util from './util';
@@ -133,30 +133,34 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @param {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
  * @param {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
  * @param {String} filename                  (optional) a filename for the literal data packet
- * @param {Boolean} packets                  (optional) if the return value should be a Packetlist
- * @return {Promise<String|Packetlist>}      encrypted ASCII armored message, or Packetlist if 'packets' is true
+ * @param {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
+ * @return {Promise<String|Message>}         encrypted ASCII armored message, or Message if 'armor' is true
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, packets }) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, packets });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
   return execute(() => {
 
-    let msg = createMessage(data, filename);
+    let message = createMessage(data, filename);
     if (privateKeys) { // sign the message only if private keys are specified
-      msg = msg.sign(privateKeys);
+      message = message.sign(privateKeys);
     }
-    msg = msg.encrypt(publicKeys, passwords);
+    message = message.encrypt(publicKeys, passwords);
 
-    if(packets) {
-      return getPackets(msg);
-    } else {
-      return getAsciiArmored(msg);
+    if(armor) {
+      return {
+        data: armorLib.encode(enums.armor.message, message.packets.write())
+      };
     }
+
+    return {
+      message: message
+    };
 
   }, 'Error encrypting message');
 }
@@ -385,30 +389,6 @@ function createMessage(data, filename) {
     throw new Error('Data must be of type String or Uint8Array');
   }
   return msg;
-}
-
-/**
- * Get the Packetlist from a message object.
- * @param  {Message} message   the message object
- * @return {Object}        an object contating keys and data
- */
-function getPackets(message) {
-  const dataIndex = message.packets.indexOfTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected)[0];
-  return {
-    keys: message.packets.slice(0, dataIndex).write(),
-    data: message.packets.slice(dataIndex, message.packets.length).write()
-  };
-}
-
-/**
- * Get the ascii armored message.
- * @param  {Message} message   the message object
- * @return {Object}            an object containt data
- */
-function getAsciiArmored(message) {
-  return {
-    data: armor.encode(enums.armor.message, message.packets.write())
-  };
 }
 
 /**

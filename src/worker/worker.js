@@ -131,8 +131,7 @@ function parseClonedPackets(options, method) {
   if(options.privateKey) {
     options.privateKey = packetlistCloneToKey(options.privateKey);
   }
-  // parse message depending on method
-  if (options.message && method === 'verify') {
+  if (options.message && method === 'verify') { // verify supports only CleartextMessage
     options.message = packetlistCloneToCleartextMessage(options.message);
   } else if (options.message) {
     options.message = packetlistCloneToMessage(options.message);
@@ -140,19 +139,19 @@ function parseClonedPackets(options, method) {
   return options;
 }
 
-function packetlistCloneToKey(packetlistClone) {
-  var packetlist = window.openpgp.packet.List.fromStructuredClone(packetlistClone);
+function packetlistCloneToKey(clone) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(clone);
   return new window.openpgp.key.Key(packetlist);
 }
 
-function packetlistCloneToMessage(message) {
-  var packetlist = window.openpgp.packet.List.fromStructuredClone(message.packets);
+function packetlistCloneToMessage(clone) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(clone.packets);
   return new window.openpgp.message.Message(packetlist);
 }
 
-function packetlistCloneToCleartextMessage(message) {
-  var packetlist = window.openpgp.packet.List.fromStructuredClone(message.packets);
-  return new window.openpgp.cleartext.CleartextMessage(message.text, packetlist);
+function packetlistCloneToCleartextMessage(clone) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(clone.packets);
+  return new window.openpgp.cleartext.CleartextMessage(clone.text, packetlist);
 }
 
 function clonePackets(data) {

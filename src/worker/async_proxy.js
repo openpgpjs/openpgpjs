@@ -29,6 +29,7 @@
 import crypto from '../crypto';
 import packet from '../packet';
 import * as key from '../key.js';
+import * as message from '../message.js';
 import type_keyid from '../type/keyid.js';
 
 const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
@@ -154,17 +155,31 @@ function clonePackets(options) {
 }
 
 function parseClonedPackets(data) {
-  if (data.key) { // parse cloned generated key
-    const packetlist = packet.List.fromStructuredClone(data.key);
-    data.key = new key.Key(packetlist);
+  if (data.key) {
+    data.key = packetlistCloneToKey(data.key);
   }
-  if (data.signatures) { // parse cloned signatures
-    data.signatures = data.signatures.map(sig => {
-      sig.keyid = type_keyid.fromClone(sig.keyid);
-      return sig;
-    });
+  if (data.message) {
+    data.message = packetlistCloneToMessage(data.message);
+  }
+  if (data.signatures) {
+    data.signatures = data.signatures.map(packetlistCloneToSignature);
   }
   return data;
+}
+
+function packetlistCloneToKey(clone) {
+  const packetlist = packet.List.fromStructuredClone(clone);
+  return new key.Key(packetlist);
+}
+
+function packetlistCloneToMessage(clone) {
+  const packetlist = packet.List.fromStructuredClone(clone.packets);
+  return new message.Message(packetlist);
+}
+
+function packetlistCloneToSignature(clone) {
+  clone.keyid = type_keyid.fromClone(clone.keyid);
+  return clone;
 }
 
 AsyncProxy.prototype.decryptKey = function(privateKey, password) {
