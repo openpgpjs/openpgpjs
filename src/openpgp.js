@@ -155,7 +155,6 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
         data: message.armor()
       };
     }
-
     return {
       message: message
     };
@@ -229,7 +228,6 @@ export function sign({ data, privateKeys, armor=true }) {
         data: cleartextMessage.armor()
       };
     }
-
     return {
       message: cleartextMessage
     };
