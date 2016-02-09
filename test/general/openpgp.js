@@ -335,7 +335,7 @@ describe('OpenPGP.js public api tests', function() {
     var password1 = 'I am a password';
     var password2 = 'I am another password';
 
-    var privateKey, publicKey;
+    var privateKey, publicKey, zeroCopyVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -344,6 +344,11 @@ describe('OpenPGP.js public api tests', function() {
       privateKey = openpgp.key.readArmored(priv_key);
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
+      zeroCopyVal = openpgp.config.zeroCopy;
+    });
+
+    afterEach(function() {
+      openpgp.config.zeroCopy = zeroCopyVal;
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -605,6 +610,30 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
+            done();
+          });
+        });
+
+        it('should encrypt and decrypt with binary data and transferable objects', function(done) {
+          openpgp.config.zeroCopy = true; // activate transferable objects
+          var encOpt = {
+            data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
+            passwords: [password1, password2],
+            armor: false
+          };
+          var decOpt = {
+            sessionKey: password2,
+            format: 'binary'
+          };
+          openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = encrypted.message;
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            if (openpgp.getWorker()) {
+              expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
+            }
+            expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
+            openpgp.config.zeroCopy = false;
             done();
           });
         });

@@ -26,6 +26,7 @@
 
 'use strict';
 
+import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
 import * as key from '../key.js';
@@ -100,7 +101,7 @@ AsyncProxy.prototype.onMessage = function(event) {
  */
 AsyncProxy.prototype.seedRandom = function(size) {
   const buf = this.getRandomBuffer(size);
-  this.worker.postMessage({ event:'seed-random', buf });
+  this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables.call(util, buf));
 };
 
 /**
@@ -135,7 +136,7 @@ AsyncProxy.prototype.terminate = function() {
 AsyncProxy.prototype.delegate = function(method, options) {
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.worker.postMessage({ event:method, options:clonePackets(options) });
+    this.worker.postMessage({ event:method, options:clonePackets(options) }, util.getTransferables.call(util, options));
 
     // remember to handle parsing cloned packets from worker
     this.tasks.push({ resolve: data => resolve(parseClonedPackets(data, method)), reject });

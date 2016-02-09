@@ -163,7 +163,7 @@ function clonePackets(data) {
 
 function response(event) {
   if (window.openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
-    postMessage({event: 'request-seed'});
+    self.postMessage({event: 'request-seed'});
   }
-  postMessage(event);
+  self.postMessage(event, window.openpgp.util.getTransferables.call(window.openpgp.util, event.data));
 }

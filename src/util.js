@@ -54,6 +54,35 @@ export default {
     return / </.test(data) && />$/.test(data);
   },
 
+  /**
+   * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
+   *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
+   * @param  {Object} options       the options object to be passed to the web worker
+   * @return {Array<ArrayBuffer>}   an array of binary data to be passed
+   */
+  getTransferables: function(obj) {
+    if (config.zeroCopy && Object.prototype.isPrototypeOf(obj)) {
+      const transferables = [];
+      this.collectBuffers(obj, transferables);
+      return transferables;
+    }
+  },
+
+  collectBuffers: function(obj, collection) {
+    if (!obj) {
+      return;
+    }
+    if (this.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
+      collection.push(obj.buffer);
+      return;
+    }
+    if (Object.prototype.isPrototypeOf(obj)) {
+      for (let key in obj) { // recursively search all children
+        this.collectBuffers(obj[key], collection);
+      }
+    }
+  },
+
   readNumber: function (bytes) {
     var n = 0;
 
