@@ -1,6 +1,6 @@
 'use strict';
 
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var chai = require('chai'),
   expect = chai.expect;
@@ -8,111 +8,6 @@ var chai = require('chai'),
 describe('Basic', function() {
 
   describe("Key generation/encryption/decryption", function() {
-    var testHelper = function(passphrase, userid, message, done) {
-      var opt = {numBits: 512, userId: userid, passphrase: passphrase};
-      var privKey;
-      var pubKey;
-
-      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-
-      openpgp.generateKeyPair(opt).then(function(key) {
-
-        expect(key).to.exist;
-        expect(key.key).to.exist;
-        expect(key.privateKeyArmored).to.exist;
-        expect(key.publicKeyArmored).to.exist;
-
-        var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
-        var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
-
-        expect(privKeys).to.exist;
-        expect(privKeys.err).to.not.exist;
-        expect(privKeys.keys).to.have.length(1);
-
-        privKey = privKeys.keys[0];
-        pubKey = publicKeys.keys[0];
-
-        expect(privKey).to.exist;
-        expect(pubKey).to.exist;
-
-        var success = privKey.decrypt(passphrase);
-        expect(success).to.be.true;
-
-        return openpgp.signAndEncryptMessage([pubKey], privKey, message);
-
-      }).then(function(encrypted) {
-
-        expect(encrypted).to.exist;
-        var msg = openpgp.message.readArmored(encrypted);
-        expect(msg).to.exist;
-        var keyids = msg.getEncryptionKeyIds();
-        expect(keyids).to.exist;
-
-        return openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
-
-      }).then(function(decrypted) {
-        expect(decrypted).to.exist;
-        expect(decrypted.signatures[0].valid).to.be.true;
-        expect(decrypted.text).to.equal(message);
-
-        done();
-      });
-    };
-
-    it('ASCII Text', function (done) {
-      testHelper('password', 'Test McTestington <test@example.com>', 'hello world', done);
-    });
-    it('Unicode Text', function (done) {
-      testHelper('●●●●', '♔♔♔♔ <test@example.com>', 'łäóć', done);
-    });
-
-    it('should fail to verify signature for wrong public key', function (done) {
-      var userid = 'Test McTestington <test@example.com>';
-      var passphrase = 'password';
-      var message = 'hello world';
-      var privKey;
-      var pubKey;
-      var msg;
-
-      var opt = {numBits: 512, userId: userid, passphrase: passphrase};
-      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-
-      openpgp.generateKeyPair(opt).then(function(key) {
-
-        var privKeys = openpgp.key.readArmored(key.privateKeyArmored);
-        var publicKeys = openpgp.key.readArmored(key.publicKeyArmored);
-
-        privKey = privKeys.keys[0];
-        pubKey = publicKeys.keys[0];
-
-        var success = privKey.decrypt(passphrase);
-        expect(success).to.be.true;
-
-        return openpgp.signAndEncryptMessage([pubKey], privKey, message);
-
-      }).then(function(encrypted) {
-
-        msg = openpgp.message.readArmored(encrypted);
-        expect(msg).to.exist;
-
-        return openpgp.generateKeyPair(opt);
-
-      }).then(function(anotherKey) {
-
-        var anotherPubKey = openpgp.key.readArmored(anotherKey.publicKeyArmored).keys[0];
-
-        return openpgp.decryptAndVerifyMessage(privKey, [anotherPubKey], msg);
-
-      }).then(function(decrypted) {
-
-        expect(decrypted).to.exist;
-        expect(decrypted.signatures[0].valid).to.be.null;
-        expect(decrypted.text).to.equal(message);
-        done();
-
-      });
-    });
-
     it.skip('Performance test', function (done) {
       // init test data
       function randomString(length, chars) {
@@ -122,7 +17,7 @@ describe('Basic', function() {
         }
         return result;
       }
-      var message = 'HI there';//randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      var message = randomString(1024*1024*3, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
       var userid = 'Test McTestington <test@example.com>';
       var passphrase = 'password';
@@ -165,12 +60,10 @@ describe('Basic', function() {
         return openpgp.decryptAndVerifyMessage(privKey, [pubKey], msg);
 
       }).then(function(decrypted) {
-
         expect(decrypted).to.exist;
         expect(decrypted.signatures[0].valid).to.be.true;
         expect(decrypted.text).to.equal(message);
         done();
-        
       });
     });
   });
