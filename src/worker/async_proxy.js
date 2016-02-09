@@ -130,54 +130,42 @@ AsyncProxy.prototype.terminate = function() {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-AsyncProxy.prototype.generateKey = function(options) {
+AsyncProxy.prototype.delegate = function(method, options) {
   return new Promise((resolve, reject) => {
-    this.worker.postMessage({
-      event: 'generate-key',
-      options: options
+    // clone packets (for web worker structured cloning algorithm)
+    this.worker.postMessage({ event:method, options:clonePackets(options) });
+
+    // remember to handle parsing cloned packets from worker
+    this.tasks.push({ resolve: data => resolve(parseClonedPackets(data)), reject });
+  });
+};
+
+function clonePackets(options) {
+  if(options.publicKeys) {
+    options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
+  }
+  if(options.privateKeys) {
+    options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
+  }
+  if(options.privateKey) {
+    options.privateKey = options.privateKey.toPacketlist();
+  }
+  return options;
+}
+
+function parseClonedPackets(data) {
+  if (data.key) { // parse cloned generated key
+    const packetlist = packet.List.fromStructuredClone(data.key);
+    data.key = new key.Key(packetlist);
+  }
+  if (data.signatures) { // parse cloned signatures
+    data.signatures = data.signatures.map(sig => {
+      sig.keyid = type_keyid.fromClone(sig.keyid);
+      return sig;
     });
-
-    this.tasks.push({ resolve: data => {
-      const packetlist = packet.List.fromStructuredClone(data.key);
-      data.key = new key.Key(packetlist);
-      resolve(data);
-    }, reject });
-  });
-};
-
-AsyncProxy.prototype.encrypt = function(options) {
-  return this.execute(() => {
-    if(options.publicKeys) {
-      options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
-    }
-    if(options.privateKeys) {
-      options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
-    }
-    this.worker.postMessage({ event:'encrypt', options });
-  });
-};
-
-AsyncProxy.prototype.decrypt = function(options) {
-  return new Promise((resolve, reject) => {
-    if(options.publicKeys) {
-      options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
-    }
-    if(options.privateKey) {
-      options.privateKey = options.privateKey.toPacketlist();
-    }
-    this.worker.postMessage({ event:'decrypt', options });
-
-    this.tasks.push({ resolve: data => {
-      if (data.signatures) {
-        data.signatures = data.signatures.map(sig => {
-          sig.keyid = type_keyid.fromClone(sig.keyid);
-          return sig;
-        });
-      }
-      resolve(data);
-    }, reject });
-  });
-};
+  }
+  return data;
+}
 
 AsyncProxy.prototype.encryptSessionKey = function({ sessionKey, algo, keys, passwords }) {
   return this.execute(() => {

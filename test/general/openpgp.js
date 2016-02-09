@@ -175,7 +175,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.initWorker({
         worker: workerStub
       });
-      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'generateKey');
+      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
       getWebCryptoStub.returns();
 
       openpgp.generateKey();
@@ -190,7 +190,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.initWorker({
         worker: workerStub
       });
-      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'generateKey').returns(resolves('proxy_key'));
+      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate').returns(resolves('proxy_key'));
       getWebCryptoStub.returns({});
       keyGenStub.returns(rejects(new Error('Native webcrypto keygen failed on purpose :)')));
 

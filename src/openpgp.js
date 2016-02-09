@@ -94,7 +94,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
   formatUserIds(options);
 
   if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.generateKey(options);
+    return asyncProxy.delegate('generateKey', options);
   }
 
   return key.generate(options).then(newKey => ({
@@ -112,7 +112,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     }
     // fall back to js keygen in a worker
     if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js'); }
-    return asyncProxy.generateKey(options);
+    return asyncProxy.delegate('generateKey', options);
 
   }).catch(onError.bind(null, 'Error generating keypair'));
 }
@@ -141,7 +141,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, pa
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.encrypt({ data, publicKeys, privateKeys, passwords, filename, packets });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, packets });
   }
 
   return execute(() => {
@@ -178,7 +178,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
   checkMessage(message); publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.decrypt({ message, privateKey, publicKeys, sessionKey, password, format });
+    return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format });
   }
 
   return execute(() => {
