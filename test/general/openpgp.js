@@ -365,7 +365,11 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       });
 
-      tests();
+      if (openpgp.getWorker()) {
+        tests();
+      } else {
+        it.skip('No Web Worker support --> skipping tests.');
+      }
 
       after(function() {
         openpgp.destroyWorker(); // cleanup worker in case of failure
