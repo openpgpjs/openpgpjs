@@ -57,7 +57,7 @@ export default {
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
-   * @param  {Object} options       the options object to be passed to the web worker
+   * @param  {Object} obj           the options object to be passed to the web worker
    * @return {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
