@@ -50,7 +50,7 @@ var MAX_SIZE_RANDOM_BUFFER = 60000;
 openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
 
 self.onmessage = function (event) {
-  var msg = event.data,
+  var msg = event.data || {},
       options = msg.options || {};
 
   switch (msg.event) {
@@ -67,14 +67,11 @@ self.onmessage = function (event) {
       openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
 
-    case 'generateKey':
-    case 'decryptKey':
-    case 'encrypt':
-    case 'decrypt':
-    case 'sign':
-    case 'verify':
-    case 'encryptSessionKey':
-    case 'decryptSessionKey':
+    default:
+      if (typeof openpgp[msg.event] !== 'function') {
+        throw new Error('Unknown Worker Event');
+      }
+
       // parse cloned packets
       openpgp[msg.event](openpgp.packet.clone.parseClonedPackets(options, msg.event)).then(function(data) {
         // clone packets (for web worker structured cloning algorithm)
@@ -82,10 +79,6 @@ self.onmessage = function (event) {
       }).catch(function(e) {
         response({ event:'method-return', err:e.message });
       });
-      break;
-
-    default:
-      throw new Error('Unknown Worker Event.');
   }
 };
 
