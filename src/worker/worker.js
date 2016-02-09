@@ -69,64 +69,6 @@ self.onmessage = function (event) {
       window.openpgp.crypto.random.randomBuffer.set(msg.buf);
       break;
 
-    case 'generateKey':
-    case 'encrypt':
-    case 'decrypt':
-      // parse cloned packets
-      window.openpgp[msg.event](parseClonedPackets(opt)).then(function(data) {
-        // clone packets (for web worker structured cloning algorithm)
-        response({ event:'method-return', data:clonePackets(data) });
-      }).catch(function(e) {
-        response({ event:'method-return', err:e.message });
-      });
-      break;
-
-    case 'encrypt-session-key':
-      if(msg.keys) {
-        msg.keys = msg.keys.map(packetlistCloneToKey);
-      }
-      window.openpgp.encryptSessionKey(msg.sessionKey, msg.algo, msg.keys, msg.passwords).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'decrypt-session-key':
-      if(!(String.prototype.isPrototypeOf(msg.privateKey) || typeof msg.privateKey === 'string')) {
-        msg.privateKey = packetlistCloneToKey(msg.privateKey);
-      }
-      msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptSessionKey(msg.privateKey, msg.message).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'sign-clear-message':
-      msg.privateKeys = msg.privateKeys.map(packetlistCloneToKey);
-      window.openpgp.signClearMessage(msg.privateKeys, msg.text).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
-    case 'verify-clear-signed-message':
-      if (!msg.publicKeys.length) {
-        msg.publicKeys = [msg.publicKeys];
-      }
-      msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
-      var packetlist = window.openpgp.packet.List.fromStructuredClone(msg.message.packets);
-      msg.message = new window.openpgp.cleartext.CleartextMessage(msg.message.text, packetlist);
-      window.openpgp.verifyClearSignedMessage(msg.publicKeys, msg.message).then(function(data) {
-        response({event: 'method-return', data: data});
-      }).catch(function(e) {
-        response({event: 'method-return', err: e.message});
-      });
-      break;
-
     case 'decrypt-key':
       try {
         msg.privateKey = packetlistCloneToKey(msg.privateKey);
@@ -158,12 +100,28 @@ self.onmessage = function (event) {
       response({event: 'method-return', data: data, err: err});
       break;
 
+    case 'generateKey':
+    case 'encrypt':
+    case 'decrypt':
+    case 'sign':
+    case 'verify':
+    case 'encryptSessionKey':
+    case 'decryptSessionKey':
+      // parse cloned packets
+      window.openpgp[msg.event](parseClonedPackets(opt, msg.event)).then(function(data) {
+        // clone packets (for web worker structured cloning algorithm)
+        response({ event:'method-return', data:clonePackets(data) });
+      }).catch(function(e) {
+        response({ event:'method-return', err:e.message });
+      });
+      break;
+
     default:
       throw new Error('Unknown Worker Event.');
   }
 };
 
-function parseClonedPackets(options) {
+function parseClonedPackets(options, method) {
   if(options.publicKeys) {
     options.publicKeys = options.publicKeys.map(packetlistCloneToKey);
   }
@@ -173,10 +131,28 @@ function parseClonedPackets(options) {
   if(options.privateKey) {
     options.privateKey = packetlistCloneToKey(options.privateKey);
   }
-  if (options.message) {
-    options.message = packetlistCloneToMessage(options.message.packets);
+  // parse message depending on method
+  if (options.message && method === 'verify') {
+    options.message = packetlistCloneToCleartextMessage(options.message);
+  } else if (options.message) {
+    options.message = packetlistCloneToMessage(options.message);
   }
   return options;
+}
+
+function packetlistCloneToKey(packetlistClone) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(packetlistClone);
+  return new window.openpgp.key.Key(packetlist);
+}
+
+function packetlistCloneToMessage(message) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(message.packets);
+  return new window.openpgp.message.Message(packetlist);
+}
+
+function packetlistCloneToCleartextMessage(message) {
+  var packetlist = window.openpgp.packet.List.fromStructuredClone(message.packets);
+  return new window.openpgp.cleartext.CleartextMessage(message.text, packetlist);
 }
 
 function clonePackets(data) {
@@ -191,14 +167,4 @@ function response(event) {
     postMessage({event: 'request-seed'});
   }
   postMessage(event);
-}
-
-function packetlistCloneToKey(packetlistClone) {
-  var packetlist = window.openpgp.packet.List.fromStructuredClone(packetlistClone);
-  return new window.openpgp.key.Key(packetlist);
-}
-
-function packetlistCloneToMessage(packetlistClone) {
-  var packetlist = window.openpgp.packet.List.fromStructuredClone(packetlistClone);
-  return new window.openpgp.message.Message(packetlist);
 }

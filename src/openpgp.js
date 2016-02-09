@@ -213,7 +213,7 @@ export function sign({ data, privateKeys }) {
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.sign({ data, privateKeys });
+    return asyncProxy.delegate('sign', { data, privateKeys });
   }
 
   return execute(() => {
@@ -240,7 +240,7 @@ export function verify({ message, publicKeys }) {
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.verify({ message, publicKeys });
+    return asyncProxy.delegate('verify', { message, publicKeys });
   }
 
   return execute(() => ({
@@ -270,7 +270,7 @@ export function verify({ message, publicKeys }) {
  */
 export function encryptSessionKey({ sessionKey, algo, publicKeys, passwords }) {
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.encryptSessionKey({ sessionKey, algo, publicKeys, passwords });
+    return asyncProxy.delegate('encryptSessionKey', { sessionKey, algo, publicKeys, passwords });
   }
 
   return execute(() => ({
@@ -294,7 +294,7 @@ export function encryptSessionKey({ sessionKey, algo, publicKeys, passwords }) {
  */
 export function decryptSessionKey({ message, privateKey, sessionKey, password }) {
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.decryptSessionKey({ message, privateKey, sessionKey, password });
+    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, sessionKey, password });
   }
 
   return execute(() => message.decryptSessionKey(privateKey, sessionKey, password), 'Error decrypting session key');
