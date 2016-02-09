@@ -7,8 +7,8 @@
 };
 
 describe('Unit Tests', function () {
-  require('./general');
   require('./crypto');
+  require('./general');
   if (typeof window !== 'undefined') {
     require('./worker');
   }

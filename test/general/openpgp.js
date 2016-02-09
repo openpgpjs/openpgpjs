@@ -360,21 +360,22 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     describe('without Worker', tests);
-    describe('with Worker', function() {
-      before(function() {
-        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      });
 
-      if (openpgp.getWorker()) {
+    if (typeof window !== 'undefined' && window.Worker) {
+      describe('with Worker', function() {
+        before(function() {
+          openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        });
+
         tests();
-      } else {
-        it.skip('No Web Worker support --> skipping tests.');
-      }
 
-      after(function() {
-        openpgp.destroyWorker(); // cleanup worker in case of failure
+        after(function() {
+          openpgp.destroyWorker(); // cleanup worker in case of failure
+        });
       });
-    });
+    } else {
+      describe.skip('with Worker (No Web Worker support --> skipping tests)', tests);
+    }
 
     function tests() {
       it('Calling decrypt with not decrypted key leads to exception', function (done) {
