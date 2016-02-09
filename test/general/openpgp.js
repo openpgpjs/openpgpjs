@@ -633,7 +633,6 @@ describe('OpenPGP.js public api tests', function() {
               expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
             }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
-            openpgp.config.zeroCopy = false;
             done();
           });
         });
