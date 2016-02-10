@@ -79,12 +79,12 @@ export function destroyWorker() {
 
 /**
  * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
- * @param {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
- * @param {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
- * @param {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
- * @return {Promise<Object>}        The generated key object in the form:
- *                                    { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
+ * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @return {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
@@ -117,9 +117,9 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 
 /**
  * Unlock a private key with your passphrase.
- * @param {Key} privateKey      the private key that is to be decrypted
- * @param {String} passphrase   the user's passphrase chosen during key generation
- * @return {Key}                the unlocked private key
+ * @param  {Key} privateKey      the private key that is to be decrypted
+ * @param  {String} passphrase   the user's passphrase chosen during key generation
+ * @return {Key}                 the unlocked private key
  */
 export function decryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
@@ -149,13 +149,13 @@ export function decryptKey({ privateKey, passphrase }) {
 /**
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
- * @param {String|Uint8Array} data           text/data to be encrypted as JavaScript binary string or Uint8Array
- * @param {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
- * @param {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
- * @param {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
- * @param {String} filename                  (optional) a filename for the literal data packet
- * @param {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
- * @return {Promise<String|Message>}         encrypted ASCII armored message, or Message if 'armor' is true
+ * @param  {String|Uint8Array} data           text/data to be encrypted as JavaScript binary string or Uint8Array
+ * @param  {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
+ * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
+ * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
+ * @param  {String} filename                  (optional) a filename for the literal data packet
+ * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
+ * @return {Promise<String|Message>}          encrypted ASCII armored message, or Message if 'armor' is true
  * @static
  */
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
@@ -188,14 +188,14 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 /**
  * Decrypts a message with the user's private key, a session key or a password. Either a private key,
  *   a session key or a password must be specified.
- * @param {Message} message             the message object with the encrypted data
- * @param {Key} privateKey              (optional) private key with decrypted secret key data or session key
- * @param {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
- * @param {Object} sessionKey           (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param {String} password             (optional) single password to decrypt the message
- * @param {String} format               (optional) return data format either as 'utf8' or 'binary'
- * @return {Promise<Object>}            decrypted and verified message in the form:
- *                                        { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
+ * @param  {Message} message             the message object with the encrypted data
+ * @param  {Key} privateKey              (optional) private key with decrypted secret key data or session key
+ * @param  {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
+ * @param  {Object} sessionKey           (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {String} password             (optional) single password to decrypt the message
+ * @param  {String} format               (optional) return data format either as 'utf8' or 'binary'
+ * @return {Promise<Object>}             decrypted and verified message in the form:
+ *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
 export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8' }) {
@@ -227,9 +227,9 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 /**
  * Signs a cleartext message.
- * @param {String} data                         cleartext input to be signed
- * @param {Key|Array<Key>} privateKeys          array of keys or single key with decrypted secret key data to sign cleartext
- * @param {Boolean} armor                       (optional) if the return value should be ascii armored or the message object
+ * @param  {String} data                        cleartext input to be signed
+ * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
+ * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @return {Promise<String|CleartextMessage>}   ASCII armored message or the message of type CleartextMessage
  * @static
  */
@@ -260,10 +260,10 @@ export function sign({ data, privateKeys, armor=true }) {
 
 /**
  * Verifies signatures of cleartext signed message
- * @param {Key|Array<Key>} publicKeys   array of publicKeys or single key, to verify signatures
- * @param {CleartextMessage} message    cleartext message object with signatures
- * @return {Promise<Object>}            cleartext with status of verified signatures in the form of:
- *                                        { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ * @param  {Key|Array<Key>} publicKeys   array of publicKeys or single key, to verify signatures
+ * @param  {CleartextMessage} message    cleartext message object with signatures
+ * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
+ *                                         { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
 export function verify({ message, publicKeys }) {
@@ -293,11 +293,11 @@ export function verify({ message, publicKeys }) {
 /**
  * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
  *   or passwords must be specified.
- * @param {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
- * @param {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
- * @param {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
- * @param {String|Array<String>} passwords   (optional) passwords for the message
- * @return {Promise<Message>}                the encrypted session key packets contained in a message object
+ * @param  {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
+ * @param  {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
+ * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
+ * @param  {String|Array<String>} passwords   (optional) passwords for the message
+ * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @static
  */
 export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
@@ -317,12 +317,12 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
 /**
  * Decrypt a symmetric session key with a private key or password. Either a private key or
  *   a password must be specified.
- * @param {Message} message              a message object containing the encrypted session key packets
- * @param {Key} privateKey               (optional) private key with decrypted secret key data
- * @param {String} password              (optional) a single password to decrypt the session key
- * @return {Promise<Object|undefined>}   decrypted session key and algorithm in object form:
- *                                         { data:Uint8Array, algorithm:String }
- *                                         or 'undefined' if no key packets found
+ * @param  {Message} message              a message object containing the encrypted session key packets
+ * @param  {Key} privateKey               (optional) private key with decrypted secret key data
+ * @param  {String} password              (optional) a single password to decrypt the session key
+ * @return {Promise<Object|undefined>}    decrypted session key and algorithm in object form:
+ *                                          { data:Uint8Array, algorithm:String }
+ *                                          or 'undefined' if no key packets found
  * @static
  */
 export function decryptSessionKey({ message, privateKey, password }) {
@@ -451,9 +451,9 @@ function parseMessage(message, format) {
 
 /**
  * Command pattern that wraps synchronous code into a promise.
- * @param {function} cmd    The synchronous function with a return value
- *                            to be wrapped in a promise
- * @param {String} message   A human readable error Message
+ * @param  {function} cmd     The synchronous function with a return value
+ *                              to be wrapped in a promise
+ * @param  {String} message   A human readable error Message
  * @return {Promise}          The promise wrapped around cmd
  */
 function execute(cmd, message) {
