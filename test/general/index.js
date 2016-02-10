@@ -6,7 +6,6 @@ describe('General', function () {
   require('./signature.js');
   require('./key.js');
   require('./openpgp.js');
-  require('./basic.js');
   require('./hkp.js');
 });
 
