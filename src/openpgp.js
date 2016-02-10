@@ -88,8 +88,7 @@ export function destroyWorker() {
  * @static
  */
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
-  const options = { userIds, passphrase, numBits, unlocked };
-  formatUserIds(options);
+  const options = formatUserIds({ userIds, passphrase, numBits, unlocked });
 
   if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
@@ -155,7 +154,7 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
  * @param  {String} filename                  (optional) a filename for the literal data packet
  * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
- * @return {Promise<String|Message>}          encrypted ASCII armored message, or Message if 'armor' is true
+ * @return {Promise<String|Message>}          encrypted ASCII armored message, or the full Message object if 'armor' is false
  * @static
  */
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
@@ -377,7 +376,7 @@ function checkCleartextMessage(message) {
  */
 function formatUserIds(options) {
   if (!options.userIds) {
-    return;
+    return options;
   }
   options.userIds = toArray(options.userIds); // normalize to array
   options.userIds = options.userIds.map(id => {
@@ -387,7 +386,7 @@ function formatUserIds(options) {
     if (util.isUserId(id)) {
       return id; // user id is already in correct format... no conversion necessary
     }
-    // name and email address can be empty but must be of type the correct type
+    // name and email address can be empty but must be of the correct type
     id.name = id.name || '';
     id.email = id.email || '';
     if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
@@ -395,6 +394,7 @@ function formatUserIds(options) {
     }
     return id.name + ' <' + id.email + '>';
   });
+  return options;
 }
 
 /**
