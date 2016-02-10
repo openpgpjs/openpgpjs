@@ -116,7 +116,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  *
  * @param {module:enums.symmetric} sessionKeyAlgorithm
  *            The selected symmetric encryption algorithm to be used
- * @param {String} key The key of cipher blocksize length to be used
+ * @param {Uint8Array} key The key of cipher blocksize length to be used
  * @return {String} The decrypted data of this packet
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {

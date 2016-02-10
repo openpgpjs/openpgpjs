@@ -147,8 +147,8 @@ export function decryptKey({ privateKey, passphrase }) {
 
 
 /**
- * Encrypts message text/data with keys or passwords. Either public keys or passwords must be specified.
- *   If private keys are specified those will be used to sign the message.
+ * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
+ *   must be specified. If private keys are specified, those will be used to sign the message.
  * @param {String|Uint8Array} data           text/data to be encrypted as JavaScript binary string or Uint8Array
  * @param {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
  * @param {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
@@ -186,12 +186,12 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 }
 
 /**
- * Decrypts a message with the user's private key, a session key or a password.
- *   Either a private key, a session key or a password must be specified.
+ * Decrypts a message with the user's private key, a session key or a password. Either a private key,
+ *   a session key or a password must be specified.
  * @param {Message} message             the message object with the encrypted data
  * @param {Key} privateKey              (optional) private key with decrypted secret key data or session key
  * @param {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
- * @param {String} sessionKey           (optional) session key as a binary string
+ * @param {Object} sessionKey           (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param {String} password             (optional) single password to decrypt the message
  * @param {String} format               (optional) return data format either as 'utf8' or 'binary'
  * @return {Promise<Object>}            decrypted and verified message in the form:
@@ -226,7 +226,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 
 /**
- * Signs a cleartext message
+ * Signs a cleartext message.
  * @param {String} data                         cleartext input to be signed
  * @param {Key|Array<Key>} privateKeys          array of keys or single key with decrypted secret key data to sign cleartext
  * @param {Boolean} armor                       (optional) if the return value should be ascii armored or the message object
@@ -291,44 +291,48 @@ export function verify({ message, publicKeys }) {
 
 
 /**
- * Encrypts session key with public keys or passwords. Either public keys or password must be specified.
- * @param {String} sessionKey                session key as a binary string
- * @param {String} algo                      algorithm of sessionKey
+ * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
+ *   or passwords must be specified.
+ * @param {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
+ * @param {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
  * @param {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param {String|Array<String>} passwords   (optional) passwords for the message
- * @return {Promise<Message>}                Message object containing encrypted key packets
+ * @return {Promise<Message>}                the encrypted session key packets contained in a message object
  * @static
  */
-export function encryptSessionKey({ sessionKey, algo, publicKeys, passwords }) {
+export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
+  checkbinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
+
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { sessionKey, algo, publicKeys, passwords });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
   }
 
   return execute(() => ({
 
-    data: messageLib.encryptSessionKey(sessionKey, algo, publicKeys, passwords).packets.write()
+    message: messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
 
   }), 'Error encrypting session key');
 }
 
 /**
- * Decrypts session key with a private key, a session key or password.
- *   Either a private key, session key or a password must be specified.
- * @param {Message} message         the message object with the encrypted session key packets
- * @param {Key} privateKey          (optional) private key with decrypted secret key data
- * @param {String} sessionKey       (optional) session key as a binary string
- * @param {String} password         (optional) a single password to decrypt the session key
- * @return {Promise<Object|null>}   decrypted session key and algorithm in object form:
- *                                    { key:String, algo:String }
- *                                    or null if no key packets found
+ * Decrypt a symmetric session key with a private key or password. Either a private key or
+ *   a password must be specified.
+ * @param {Message} message              a message object containing the encrypted session key packets
+ * @param {Key} privateKey               (optional) private key with decrypted secret key data
+ * @param {String} password              (optional) a single password to decrypt the session key
+ * @return {Promise<Object|undefined>}   decrypted session key and algorithm in object form:
+ *                                         { data:Uint8Array, algorithm:String }
+ *                                         or 'undefined' if no key packets found
  * @static
  */
-export function decryptSessionKey({ message, privateKey, sessionKey, password }) {
+export function decryptSessionKey({ message, privateKey, password }) {
+  checkMessage(message);
+
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, sessionKey, password });
+    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, password });
   }
 
-  return execute(() => message.decryptSessionKey(privateKey, sessionKey, password), 'Error decrypting session key');
+  return execute(() => message.decryptSessionKey(privateKey, password), 'Error decrypting session key');
 }
 
 
@@ -345,6 +349,11 @@ export function decryptSessionKey({ message, privateKey, sessionKey, password })
 function checkString(data, name) {
   if (!util.isString(data)) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type String');
+  }
+}
+function checkbinary(data, name) {
+  if (!util.isUint8Array(data)) {
+    throw new Error('Parameter [' + (name || 'data') + '] must be of type Uint8Array');
   }
 }
 function checkData(data, name) {

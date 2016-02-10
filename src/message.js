@@ -85,22 +85,21 @@ Message.prototype.getSigningKeyIds = function() {
 };
 
 /**
- * Decrypt the message
- * @param {module:key~Key} privateKey   private key with decrypted secret data
- * @param {String} sessionKey           session key as a binary string
- * @param {String} password             password used to decrypt
- * @return {Array<module:message~Message>} new message with decrypted content
+ * Decrypt the message. Either a private key, a session key, or a password must be specified.
+ * @param  {Key} privateKey      (optional) private key with decrypted secret data
+ * @param  {Object} sessionKey   (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {String} password     (optional) password used to decrypt
+ * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey, sessionKey, password) {
-  var keyObj = this.decryptSessionKey(privateKey, sessionKey, password);
-  if (!keyObj) {
-    // nothing to decrypt return unmodified message
-    return this;
+  var keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
+  if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
+    throw new Error('Invalid session key for decryption.');
   }
   var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
   if (symEncryptedPacketlist.length !== 0) {
     var symEncryptedPacket = symEncryptedPacketlist[0];
-    symEncryptedPacket.decrypt(keyObj.algo, keyObj.key);
+    symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
     var resultMsg = new Message(symEncryptedPacket.packets);
     // remove packets after decryption
     symEncryptedPacket.packets = new packet.List();
@@ -109,21 +108,22 @@ Message.prototype.decrypt = function(privateKey, sessionKey, password) {
 };
 
 /**
- * Decrypt session key
- * @param {module:key~Key} privateKey   private key with decrypted secret data
- * @param {String} sessionKey           session key as a binary string
- * @param {String} password             password used to decrypt
- * @return {Object} object with sessionKey, algo
+ * Decrypt an encrypted session key either with a private key or a password.
+ * @param  {Key} privateKey    (optional) private key with decrypted secret data
+ * @param  {String} password   (optional) password used to decrypt
+ * @return {Object}            object with sessionKey, algorithm in the form:
+ *                               { data:Uint8Array, algorithm:String }
  */
-Message.prototype.decryptSessionKey = function(privateKey, sessionKey, password) {
+Message.prototype.decryptSessionKey = function(privateKey, password) {
   var keyPacket;
-  if (sessionKey || password) {
+
+  if (password) {
     var symEncryptedSessionKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
     var symLength = symEncryptedSessionKeyPacketlist.length;
     for (var i = 0; i < symLength; i++) {
       keyPacket = symEncryptedSessionKeyPacketlist[i];
       try {
-        keyPacket.decrypt(sessionKey || password);
+        keyPacket.decrypt(password);
         break;
       }
       catch(err) {
@@ -160,7 +160,10 @@ Message.prototype.decryptSessionKey = function(privateKey, sessionKey, password)
   }
 
   if (keyPacket) {
-    return { key:keyPacket.sessionKey, algo:keyPacket.sessionKeyAlgorithm };
+    return {
+      data: keyPacket.sessionKey,
+      algorithm: keyPacket.sessionKeyAlgorithm
+    };
   }
 };
 
@@ -196,14 +199,12 @@ Message.prototype.getText = function() {
 };
 
 /**
- * Encrypt the message
- * @param  {(Array<module:key~Key>|module:key~Key)} public key(s) for message encryption
- * @param  {(Array<String>|String)} password(s) for message encryption
- * @return {Array<module:message~Message>} new message with encrypted content
+ * Encrypt the message either with public keys, passwords, or both at once.
+ * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
+ * @param  {Array<String>} passwords   (optional) password(s) for message encryption
+ * @return {Message}                   new message with encrypted content
  */
 Message.prototype.encrypt = function(keys, passwords) {
-
-  /** Choose symAlgo */
   var symAlgo;
   if (keys) {
     symAlgo = keyModule.getPreferredSymAlgo(keys);
@@ -214,7 +215,6 @@ Message.prototype.encrypt = function(keys, passwords) {
   }
 
   var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
-
   var msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
   var packetlist = msg.packets;
 
@@ -229,28 +229,21 @@ Message.prototype.encrypt = function(keys, passwords) {
   packetlist.push(symEncryptedPacket);
   // remove packets after encryption
   symEncryptedPacket.packets = new packet.List();
+
   return msg;
 };
 
 /**
- * Encrypt a session key
- * @param  {String} session key for encryption
- * @param  {String} session key algorithm
- * @param  {(Array<module:key~Key>|module:key~Key)} public key(s) for message encryption
- * @param  {(Array<String>|String)} password(s) for message encryption
- * @return {Array<module:message~Message>} new message with encrypted content
+ * Encrypt a session key either with public keys, passwords, or both at once.
+ * @param  {Uint8Array} sessionKey     session key for encryption
+ * @param  {String} symAlgo            session key algorithm
+ * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
+ * @param  {Array<String>} passwords   (optional) for message encryption
+ * @return {Message}                   new message with encrypted content
  */
 export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
-
-  /** Convert to arrays if necessary */
-  if (publicKeys && !util.isArray(publicKeys)) {
-    publicKeys = [publicKeys];
-  }
-  if (passwords && !util.isArray(passwords)) {
-    passwords = [passwords];
-  }
-
   var packetlist = new packet.List();
+
   if (publicKeys) {
     publicKeys.forEach(function(key) {
       var encryptionKeyPacket = key.getEncryptionKeyPacket();
@@ -267,6 +260,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
       }
     });
   }
+
   if (passwords) {
     passwords.forEach(function(password) {
       var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();

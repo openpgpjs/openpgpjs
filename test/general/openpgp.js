@@ -418,6 +418,94 @@ describe('OpenPGP.js public api tests', function() {
         });
       });
 
+      describe('encryptSessionKey, decryptSessionKey', function() {
+        var sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
+
+        beforeEach(function() {
+          expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
+        });
+
+        it('should encrypt with public key', function(done) {
+          openpgp.encryptSessionKey({
+            data: sk,
+            algorithm: 'aes128',
+            publicKeys: publicKey.keys
+          }).then(function(encrypted) {
+            return openpgp.decryptSessionKey({
+              message: encrypted.message,
+              privateKey: privateKey.keys[0]
+            });
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.deep.equal(sk);
+            done();
+          });
+        });
+
+        it('should encrypt with password', function(done) {
+          openpgp.encryptSessionKey({
+            data: sk,
+            algorithm: 'aes128',
+            passwords: password1
+          }).then(function(encrypted) {
+            return openpgp.decryptSessionKey({
+              message: encrypted.message,
+              password: password1
+            });
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.deep.equal(sk);
+            done();
+          });
+        });
+
+        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with pgp key pair', function(done) {
+          var msgAsciiArmored;
+          openpgp.encrypt({
+            data: plaintext,
+            publicKeys: publicKey.keys
+          }).then(function(encrypted) {
+            msgAsciiArmored = encrypted.data;
+            return openpgp.decryptSessionKey({
+              message: openpgp.message.readArmored(msgAsciiArmored),
+              privateKey: privateKey.keys[0]
+            });
+
+          }).then(function(decryptedSessionKey) {
+            return openpgp.decrypt({
+              sessionKey: decryptedSessionKey,
+              message: openpgp.message.readArmored(msgAsciiArmored)
+            });
+
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            done();
+          });
+        });
+
+        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with password', function(done) {
+          var msgAsciiArmored;
+          openpgp.encrypt({
+            data: plaintext,
+            passwords: password1
+          }).then(function(encrypted) {
+            msgAsciiArmored = encrypted.data;
+            return openpgp.decryptSessionKey({
+              message: openpgp.message.readArmored(msgAsciiArmored),
+              password: password1
+            });
+
+          }).then(function(decryptedSessionKey) {
+            return openpgp.decrypt({
+              sessionKey: decryptedSessionKey,
+              message: openpgp.message.readArmored(msgAsciiArmored)
+            });
+
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            done();
+          });
+        });
+      });
+
       describe('with pgp key pair', function() {
         var wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
           'Version: OpenPGP.js v0.9.0\r\n' +
@@ -607,50 +695,15 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt and decrypt with one session key', function(done) {
-          var encOpt = {
-            data: plaintext,
-            passwords: password1
-          };
-          var decOpt = {
-            sessionKey: password1
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
-          });
-        });
-
-        it('should encrypt and decrypt with two session keys and not ascii armor', function(done) {
-          var encOpt = {
-            data: plaintext,
-            passwords: [password1, password2],
-            armor: false
-          };
-          var decOpt = {
-            sessionKey: password2
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = encrypted.message;
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
-          });
-        });
-
         it('should encrypt and decrypt with binary data and transferable objects', function(done) {
           openpgp.config.zeroCopy = true; // activate transferable objects
           var encOpt = {
             data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
-            passwords: [password1, password2],
+            passwords: password1,
             armor: false
           };
           var decOpt = {
-            sessionKey: password2,
+            password: password1,
             format: 'binary'
           };
           openpgp.encrypt(encOpt).then(function(encrypted) {
