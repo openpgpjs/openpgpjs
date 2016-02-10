@@ -144,4 +144,40 @@ describe('Util unit tests', function() {
     });
   });
 
+  describe('getTransferables', function() {
+    var zeroCopyVal,
+      buf1 = new Uint8Array(1),
+      buf2 = new Uint8Array(1),
+      obj = {
+        data1: buf1,
+        data2: buf1,
+        data3: {
+          data4: buf2
+        }
+      };
+
+    beforeEach(function() {
+      zeroCopyVal = openpgp.config.zeroCopy;
+      openpgp.config.zeroCopy = true;
+    });
+
+    afterEach(function() {
+      openpgp.config.zeroCopy = zeroCopyVal;
+    });
+
+    it('should return undefined when zeroCopy is false', function() {
+      openpgp.config.zeroCopy = false;
+      expect(openpgp.util.getTransferables(obj)).to.be.undefined;
+    });
+    it('should return undefined for no input', function() {
+      expect(openpgp.util.getTransferables()).to.be.undefined;
+    });
+    it('should return undefined for an empty oject', function() {
+      expect(openpgp.util.getTransferables({})).to.be.undefined;
+    });
+    it('should return two buffers', function() {
+      expect(openpgp.util.getTransferables(obj)).to.deep.equal([buf1.buffer, buf2.buffer]);
+    });
+  });
+
 });

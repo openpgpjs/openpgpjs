@@ -64,7 +64,7 @@ export default {
     if (config.zeroCopy && Object.prototype.isPrototypeOf(obj)) {
       const transferables = [];
       this.collectBuffers(obj, transferables);
-      return transferables;
+      return transferables.length ? transferables : undefined;
     }
   },
 
