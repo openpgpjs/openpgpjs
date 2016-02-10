@@ -254,6 +254,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
         pkESKeyPacket.encrypt(encryptionKeyPacket);
+        delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
         packetlist.push(pkESKeyPacket);
       } else {
         throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
@@ -267,6 +268,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
       symEncryptedSessionKeyPacket.sessionKey = sessionKey;
       symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
       symEncryptedSessionKeyPacket.encrypt(password);
+      delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
       packetlist.push(symEncryptedSessionKeyPacket);
     });
   }
