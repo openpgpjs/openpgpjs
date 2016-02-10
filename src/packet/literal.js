@@ -60,7 +60,7 @@ Literal.prototype.setText = function(text) {
  */
 Literal.prototype.getText = function() {
   // decode UTF8
-  var text = this.format === 'utf8' ? util.decode_utf8(util.Uint8Array2str(this.data)) : util.Uint8Array2str(this.data);
+  var text = util.decode_utf8(util.Uint8Array2str(this.data));
   // normalize EOL to \n
   return text.replace(/\r\n/g, '\n');
 };
