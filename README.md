@@ -8,11 +8,11 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Platform support
 
-* OpenPGP.js supports node.js v0.12+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
+* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in any environments. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
 
 * The api uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in our build. So no action required on your part!
 
-* For the OpenPGP HTTP Key Server (HKP) client the new [fetch api](http://caniuse.com/#feat=fetch) is used. There is a polyfill for both [browsers](https://github.com/github/fetch) and [node.js](https://github.com/bitinn/node-fetch) runtimes. These are not bundled in the library however and you must add these yourself. See the unit tests for examples of how to integrate them.
+* For the OpenPGP HTTP Key Server (HKP) client the new [fetch api](http://caniuse.com/#feat=fetch) is used. There is a polyfill for both [browsers](https://github.com/github/fetch) and [node.js](https://github.com/bitinn/node-fetch) runtimes. The node module is included as a dependency if you install via npm, but we do not include the browser polyfill in our build. So you'll need to include it in your app if you intend to use the HKP client.
 
 
 ### Performance
@@ -44,22 +44,22 @@ Here are some examples of how to use the v2.x api. If you're upgrading from v1.x
 #### Set up
 
 ```js
-import openpgp from 'openpgp.js'; // use as ES6, CommonJS, AMD module or via window.openpgp
+var openpgp = require('openpgp'); // use as ES6, CommonJS, AMD module or via window.openpgp
 
-openpgp.initWorker({ path:'openpgp.worker.js' }) // the relative Web Worker path
+openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 ```
 
 #### Encrypt and decrypt *String* data with a password
 
 ```js
-let options, encrypted;
+var options, encrypted;
 
 options = {
     data: 'Hello, World!',      // input as String
     passwords: ['secret stuff'] // multiple passwords possible
 };
 
-openpgp.encrypt(options).then(armored => {
+openpgp.encrypt(options).then(function(armored) {
     encrypted = armored; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 });
 ```
@@ -70,7 +70,7 @@ options = {
     password: 'secret stuff'                         // decrypt with password
 };
 
-openpgp.decrypt(options).then(plaintext => {
+openpgp.decrypt(options).then(function(plaintext) {
     // return 'Hello, World!'
 });
 ```
@@ -78,10 +78,10 @@ openpgp.decrypt(options).then(plaintext => {
 #### Encrypt and decrypt *Uint8Array* data with PGP keys
 
 ```js
-let options, encrypted;
+var options, encrypted;
 
-const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-const privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
 
 options = {
     data: new Uint8Array([0x01, 0x01, 0x01]),           // input as Uint8Array
@@ -90,7 +90,7 @@ options = {
     armor: false                                        // don't ASCII armor
 };
 
-openpgp.encrypt(options).then(message => {
+openpgp.encrypt(options).then(function(message) {
     encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
 });
 ```
@@ -103,7 +103,7 @@ options = {
     format: 'binary'                                      // output as Uint8Array
 };
 
-openpgp.decrypt(options).then(plaintext => {
+openpgp.decrypt(options).then(function(plaintext) {
     // return Uint8Array([0x01, 0x01, 0x01])
 });
 ```
@@ -111,40 +111,40 @@ openpgp.decrypt(options).then(plaintext => {
 #### Generate new key pair
 
 ```js
-let options = {
+var options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
     numBits: 4096,                                            // RSA key size
     passphrase: 'super long and hard to guess secret'         // protects the private key
 };
 
-openpgp.generateKey(options).then(key => {
-    let privkey = key.privateKeyArmored;
-    let pubkey = key.publicKeyArmored;
+openpgp.generateKey(options).then(function(key) {
+    var privkey = key.privateKeyArmored;
+    var pubkey = key.publicKeyArmored;
 });
 ```
 
 #### Lookup public key on HKP server
 
 ```js
-let hkp = new openpgp.HKP('https://pgp.mit.edu');
+var hkp = new openpgp.HKP('https://pgp.mit.edu');
 
-let options = {
+var options = {
     query: 'alice@example.com'
 };
 
-hkp.lookup(options).then(key => {
-    let pubkey = openpgp.key.readArmored(key);
+hkp.lookup(options).then(function(key) {
+    var pubkey = openpgp.key.readArmored(key);
 });
 ```
 
 #### Upload public key to HKP server
 
 ```js
-let hkp = new openpgp.HKP('https://pgp.mit.edu');
+var hkp = new openpgp.HKP('https://pgp.mit.edu');
 
-const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
 
-hkp.upload(pubkey).then(() => { ... });
+hkp.upload(pubkey).then(function() { ... });
 ```
 
 ### Documentation
