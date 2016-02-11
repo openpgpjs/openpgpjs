@@ -398,9 +398,9 @@ export function readArmored(armoredText) {
 }
 
 /**
- * reads an OpenPGP binary string message and returns a message object
- * @param {Uint8Array} binary message
- * @return {module:message~Message} new message object
+ * reads an OpenPGP message as byte array and returns a message object
+ * @param {Uint8Array} input   binary message
+ * @return {Message}           new message object
  * @static
  */
 export function read(input) {

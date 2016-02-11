@@ -42,66 +42,74 @@ Or just fetch a minified build under [dist](https://github.com/openpgpjs/openpgp
 Here are some examples of how to use the v2.x api. If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Set up
+
 ```js
 import openpgp from 'openpgp.js'; // use as ES6, CommonJS, AMD module or via window.openpgp
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // the relative Web Worker path
 ```
 
-#### Encrypt with password
+#### Encrypt and decrypt *String* data with a password
+
 ```js
-let options = {
+let options, encrypted;
+
+options = {
     data: 'Hello, World!',      // input as String
     passwords: ['secret stuff'] // multiple passwords possible
 };
 
-openpgp.encrypt(options).then(ciphertext => { ... });
+openpgp.encrypt(options).then(armored => {
+    encrypted = armored; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+});
 ```
 
-#### Decrypt with password
 ```js
-const ciphertext = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
-
-let options = {
-    message: openpgp.message.readArmored(ciphertext), // the encrypted message
-    password: 'secret stuff',                         // single password
-    format : 'utf8'                                   // output as String
+options = {
+    message: openpgp.message.readArmored(encrypted), // parse armored message
+    password: 'secret stuff'                         // decrypt with password
 };
 
-openpgp.decrypt(options).then(plaintext => { ... })
+openpgp.decrypt(options).then(plaintext => {
+    // return 'Hello, World!'
+});
 ```
 
-#### Encrypt with PGP keys
+#### Encrypt and decrypt *Uint8Array* data with PGP keys
+
 ```js
+let options, encrypted;
+
 const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
 const privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
 
-let options = {
-    data: new Uint8Array([0x01, 0x01, 0x01]),          // input as Uint8Array
-    publicKeys: openpgp.key.readArmored(pubkey).keys,  // for encryption
-    privateKeys: openpgp.key.readArmored(privkey).keys // for signing (optional)
+options = {
+    data: new Uint8Array([0x01, 0x01, 0x01]),           // input as Uint8Array
+    publicKeys: openpgp.key.readArmored(pubkey).keys,   // for encryption
+    privateKeys: openpgp.key.readArmored(privkey).keys, // for signing (optional)
+    armor: false                                        // don't ASCII armor
 };
 
-openpgp.encrypt(options).then(ciphertext => { ... });
+openpgp.encrypt(options).then(message => {
+    encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
+});
 ```
 
-#### Decrypt with PGP keys
 ```js
-const ciphertext = '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----';
-const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-const privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
-
-let options = {
-    message: openpgp.message.readArmored(ciphertext),     // the encrypted message
+options = {
+    message: openpgp.message.read(encrypted),             // parse encrypted bytes
     publicKeys: openpgp.key.readArmored(pubkey).keys,     // for verification (optional)
     privateKey: openpgp.key.readArmored(privkey).keys[0], // for decryption
     format: 'binary'                                      // output as Uint8Array
 };
 
-openpgp.decrypt(options).then(plaintext => { ... });
+openpgp.decrypt(options).then(plaintext => {
+    // return Uint8Array([0x01, 0x01, 0x01])
+});
 ```
 
 #### Generate new key pair
+
 ```js
 let options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
@@ -116,6 +124,7 @@ openpgp.generateKey(options).then(key => {
 ```
 
 #### Lookup public key on HKP server
+
 ```js
 let hkp = new openpgp.HKP('https://pgp.mit.edu');
 
@@ -129,6 +138,7 @@ hkp.lookup(options).then(key => {
 ```
 
 #### Upload public key to HKP server
+
 ```js
 let hkp = new openpgp.HKP('https://pgp.mit.edu');
 
