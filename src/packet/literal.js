@@ -65,6 +65,7 @@ Literal.prototype.getText = function () {
   return text.replace(/\r\n/g, '\n');
 };
 
+
 /**
  * Set the packet data to value represented by the provided string of bytes.
  * @param {String} bytes The string of bytes

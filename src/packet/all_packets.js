@@ -7,6 +7,8 @@ var enums = require('../enums.js');
 // This is pretty ugly, but browserify needs to have the requires explicitly written.
 
 module.exports = {
+  /** @see module:packet/packet */
+  Packet: require('./packet.js'),
   /** @see module:packet/compressed */
   Compressed: require('./compressed.js'),
   /** @see module:packet/sym_encrypted_integrity_protected */
