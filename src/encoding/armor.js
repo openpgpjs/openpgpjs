@@ -22,9 +22,11 @@
  * @module encoding/armor
  */
 
-var base64 = require('./base64.js'),
-  enums = require('../enums.js'),
-  config = require('../config');
+'use strict';
+
+import base64 from './base64.js';
+import enums from '../enums.js';
+import config from '../config';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
@@ -115,10 +117,8 @@ function addheader() {
  */
 function getCheckSum(data) {
   var c = createcrc24(data);
-  var str = "" + String.fromCharCode(c >> 16) +
-    String.fromCharCode((c >> 8) & 0xFF) +
-    String.fromCharCode(c & 0xFF);
-  return base64.encode(str);
+  var bytes = new Uint8Array([c >> 16, (c >> 8) & 0xFF, c & 0xFF]);
+  return base64.encode(bytes);
 }
 
 /**
@@ -131,7 +131,7 @@ function getCheckSum(data) {
 function verifyCheckSum(data, checksum) {
   var c = getCheckSum(data);
   var d = checksum;
-  return c[0] == d[0] && c[1] == d[1] && c[2] == d[2] && c[3] == d[3];
+  return c[0] === d[0] && c[1] === d[1] && c[2] === d[2] && c[3] === d[3];
 }
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
@@ -178,27 +178,27 @@ function createcrc24(input) {
   var index = 0;
 
   while ((input.length - index) > 16) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 1)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 2)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 3)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 4)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 5)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 6)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 7)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 8)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 9)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 10)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 11)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 12)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 13)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 14)) & 0xff];
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index + 15)) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 1]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 2]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 3]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 4]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 5]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 6]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 7]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 8]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 9]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 10]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 11]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 12]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 13]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 14]) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index + 15]) & 0xff];
     index += 16;
   }
 
   for (var j = index; j < input.length; j++) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input.charCodeAt(index++)) & 0xff];
+    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index++]) & 0xff];
   }
   return crc & 0xffffff;
 }
@@ -293,11 +293,11 @@ function dearmor(text) {
 
   var result, checksum, msg;
 
-  if (text.search(reSplit) != splittext[0].length) {
+  if (text.search(reSplit) !== splittext[0].length) {
     indexBase = 0;
   }
 
-  if (type != 2) {
+  if (type !== 2) {
     msg = splitHeaders(splittext[indexBase]);
     var msg_sum = splitChecksum(msg.body);
 
@@ -402,7 +402,7 @@ function armor(messagetype, body, partindex, parttotal) {
   return result.join('');
 }
 
-module.exports = {
+export default {
   encode: armor,
   decode: dearmor
 };

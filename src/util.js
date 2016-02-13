@@ -23,24 +23,81 @@
 
 'use strict';
 
-var config = require('./config');
+import config from './config';
 
-module.exports = {
+export default {
+
+  isString: function(data) {
+    return typeof data === 'string' || String.prototype.isPrototypeOf(data);
+  },
+
+  isArray: function(data) {
+    return Array.prototype.isPrototypeOf(data);
+  },
+
+  isUint8Array: function(data) {
+    return Uint8Array.prototype.isPrototypeOf(data);
+  },
+
+  isEmailAddress: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(data);
+  },
+
+  isUserId: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    return / </.test(data) && />$/.test(data);
+  },
+
+  /**
+   * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
+   *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
+   * @param  {Object} obj           the options object to be passed to the web worker
+   * @return {Array<ArrayBuffer>}   an array of binary data to be passed
+   */
+  getTransferables: function(obj) {
+    if (config.zeroCopy && Object.prototype.isPrototypeOf(obj)) {
+      const transferables = [];
+      this.collectBuffers(obj, transferables);
+      return transferables.length ? transferables : undefined;
+    }
+  },
+
+  collectBuffers: function(obj, collection) {
+    if (!obj) {
+      return;
+    }
+    if (this.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
+      collection.push(obj.buffer);
+      return;
+    }
+    if (Object.prototype.isPrototypeOf(obj)) {
+      for (let key in obj) { // recursively search all children
+        this.collectBuffers(obj[key], collection);
+      }
+    }
+  },
+
   readNumber: function (bytes) {
     var n = 0;
 
     for (var i = 0; i < bytes.length; i++) {
       n <<= 8;
-      n += bytes.charCodeAt(i);
+      n += bytes[i];
     }
 
     return n;
   },
 
   writeNumber: function (n, bytes) {
-    var b = '';
+    var b = new Uint8Array(bytes);
     for (var i = 0; i < bytes; i++) {
-      b += String.fromCharCode((n >> (8 * (bytes - i - 1))) & 0xFF);
+      b[i] = (n >> (8 * (bytes - i - 1))) & 0xFF;
     }
 
     return b;
@@ -69,11 +126,14 @@ module.exports = {
     var i = 0;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push(" " + h);
       i++;
-      if (i % 32 === 0)
+      if (i % 32 === 0) {
         r.push("\n           ");
+      }
     }
     return r.join('');
   },
@@ -84,15 +144,18 @@ module.exports = {
    * @return {String} String containing the hexadecimal values
    */
   hexstrdump: function (str) {
-    if (str === null)
+    if (str === null) {
       return "";
+    }
     var r = [];
     var e = str.length;
     var c = 0;
     var h;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push("" + h);
     }
     return r.join('');
@@ -105,8 +168,9 @@ module.exports = {
    */
   hex2bin: function (hex) {
     var str = '';
-    for (var i = 0; i < hex.length; i += 2)
+    for (var i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
     return str;
   },
 
@@ -122,7 +186,9 @@ module.exports = {
     var h;
     while (c < e) {
       h = str[c++].toString(16);
-      while (h.length < 2) h = "0" + h;
+      while (h.length < 2) {
+        h = "0" + h;
+      }
       r.push("" + h);
     }
     return r.join('');
@@ -187,6 +253,10 @@ module.exports = {
    * @return {Uint8Array} The array of (binary) integers
    */
   str2Uint8Array: function (str) {
+    if(typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
+      throw new Error('str2Uint8Array: Data must be in the form of a string');
+    }
+
     var result = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i++) {
       result[i] = str.charCodeAt(i);
@@ -202,6 +272,10 @@ module.exports = {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
+    if(!Uint8Array.prototype.isPrototypeOf(bin)) {
+      throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
+    }
+
     var result = [];
     for (var i = 0; i < bin.length; i++) {
       result[i] = String.fromCharCode(bin[i]);
@@ -210,9 +284,75 @@ module.exports = {
   },
 
   /**
-   * Calculates a 16bit sum of a string by adding each character
+   * Concat Uint8arrays
+   * @function module:util.concatUint8Array
+   * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
+   * @return {Uint8array} Concatenated array
+   */
+  concatUint8Array: function (arrays) {
+    var totalLength = 0;
+    arrays.forEach(function (element) {
+      if(!Uint8Array.prototype.isPrototypeOf(element)) {
+        throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
+      }
+
+      totalLength += element.length;
+    });
+
+    var result = new Uint8Array(totalLength);
+    var pos = 0;
+    arrays.forEach(function (element) {
+      result.set(element,pos);
+      pos += element.length;
+    });
+
+    return result;
+  },
+
+  /**
+   * Deep copy Uint8Array
+   * @function module:util.copyUint8Array
+   * @param {Uint8Array} Array to copy
+   * @return {Uint8Array} new Uint8Array
+   */
+  copyUint8Array: function (array) {
+    if(!Uint8Array.prototype.isPrototypeOf(array)) {
+      throw new Error('Data must be in the form of a Uint8Array');
+    }
+
+    var copy = new Uint8Array(array.length);
+    copy.set(array);
+    return copy;
+  },
+
+  /**
+   * Check Uint8Array equality
+   * @function module:util.equalsUint8Array
+   * @param {Uint8Array} first array
+   * @param {Uint8Array} second array
+   * @return {Boolean} equality
+   */
+  equalsUint8Array: function (array1, array2) {
+    if(!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
+      throw new Error('Data must be in the form of a Uint8Array');
+    }
+
+    if(array1.length !== array2.length) {
+      return false;
+    }
+
+    for(var i = 0; i < array1.length; i++) {
+      if(array1[i] !== array2[i]) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  /**
+   * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
-   * @param {String} text String to create a sum of
+   * @param {Uint8Array} Uint8Array to create a sum of
    * @return {Integer} An integer containing the sum of all character
    * codes % 65535
    */
@@ -224,7 +364,7 @@ module.exports = {
       }
     };
     for (var i = 0; i < text.length; i++) {
-      checksum.add(text.charCodeAt(i));
+      checksum.add(text[i]);
     }
     return checksum.s;
   },
@@ -257,8 +397,9 @@ module.exports = {
 
   getLeftNBits: function (string, bitcount) {
     var rest = bitcount % 8;
-    if (rest === 0)
+    if (rest === 0) {
       return string.substring(0, bitcount / 8);
+    }
     var bytes = (bitcount - rest) / 8 + 1;
     var result = string.substring(0, bytes);
     return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
@@ -272,17 +413,18 @@ module.exports = {
    * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
-    var temp = util.str2bin(value);
+    var temp = this.str2bin(value);
     if (bitcount % 8 !== 0) {
       for (var i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
-        if (i > 0)
+        if (i > 0) {
           temp[i] |= (temp[i - 1] << (8 - (bitcount % 8))) & 0xFF;
+        }
       }
     } else {
       return value;
     }
-    return util.bin2str(temp);
+    return this.bin2str(temp);
   },
 
   /**
@@ -311,12 +453,11 @@ module.exports = {
 
   /**
    * Get native Web Cryptography api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useWebCrypto
-   * @return {Object} The SubtleCrypto api or 'undefined'
+   * the api when available. But it can also be deactivated with config.useNative
+   * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (config.useWebCrypto === false) {
-      // make web crypto optional
+    if (!config.useNative) {
       return;
     }
 
@@ -328,5 +469,73 @@ module.exports = {
         return window.msCrypto.subtle;
       }
     }
+  },
+
+  /**
+   * Wraps a generic synchronous function in an ES6 Promise.
+   * @param  {Function} fn  The function to be wrapped
+   * @return {Function}     The function wrapped in a Promise
+   */
+  promisify: function(fn) {
+    return function() {
+      var args = arguments;
+      return new Promise(function(resolve) {
+        var result = fn.apply(null, args);
+        resolve(result);
+      });
+    };
+  },
+
+  /**
+   * Converts an IE11 web crypro api result to a promise.
+   *   This is required since IE11 implements an old version of the
+   *   Web Crypto specification that does not use promises.
+   * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call
+   * @param  {String} errmsg   An error message for a specific operation
+   * @return {Promise}         The resulting Promise
+   */
+  promisifyIE11Op: function(cryptoOp, errmsg) {
+    return new Promise(function(resolve, reject) {
+      cryptoOp.onerror = function () {
+        reject(new Error(errmsg));
+      };
+      cryptoOp.oncomplete = function (e) {
+        resolve(e.target.result);
+      };
+    });
+  },
+
+  /**
+   * Detect Node.js runtime.
+   */
+  detectNode: function() {
+    return typeof window === 'undefined';
+  },
+
+  /**
+   * Get native Node.js crypto api. The default configuration is to use
+   * the api when available. But it can also be deactivated with config.useNative
+   * @return {Object}   The crypto module or 'undefined'
+   */
+  getNodeCrypto: function() {
+    if (!this.detectNode() || !config.useNative) {
+      return;
+    }
+
+    return require('crypto');
+  },
+
+  /**
+   * Get native Node.js Buffer constructor. This should be used since
+   * Buffer is not available under browserify.
+   * @return {Function}   The Buffer constructor or 'undefined'
+   */
+  getNodeBuffer: function() {
+    if (!this.detectNode()) {
+      return;
+    }
+
+    return require('buffer').Buffer;
   }
+
 };

@@ -2,6 +2,29 @@
 
 module.exports = function(grunt) {
 
+  var lintFiles = [
+    'src/config/**/*.js',
+    'src/crypto/cipher/aes.js',
+    'src/crypto/cipher/blowfish.js',
+    'src/crypto/cipher/cast5.js',
+    'src/crypto/cipher/des.js',
+    'src/crypto/cipher/index.js',
+    'src/crypto/hash/index.js',
+    'src/crypto/hash/md5.js',
+    'src/crypto/public_key/dsa.js',
+    'src/crypto/public_key/elgamal.js',
+    'src/crypto/public_key/index.js',
+    'src/crypto/public_key/rsa.js',
+    'src/crypto/*.js',
+    'src/encoding/**/*.js',
+    'src/hkp/**/*.js',
+    'src/keyring/**/*.js',
+    'src/packet/**/*.jss',
+    'src/type/**/*.js',
+    'src/worker/**/*.js',
+    'src/*.js',
+  ]; // add more over time ... goal should be 100% coverage
+
   var version = grunt.option('release');
   var fs = require('fs');
   var browser_capabilities;
@@ -22,7 +45,13 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          transform: [
+            ["babelify", {
+              ignore: ['*.min.js'],
+              presets: ["es2015"]
+            }]
+          ]
         }
       },
       openpgp_debug: {
@@ -34,7 +63,13 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage', 'node-fetch' ]
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          transform: [
+            ["babelify", {
+              ignore: ['*.min.js'],
+              presets: ["es2015"]
+            }]
+          ]
         }
       },
       worker: {
@@ -52,7 +87,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'crypto', 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
+          external: [ 'crypto', 'buffer' , 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
         }
       }
     },
@@ -105,19 +140,19 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      src: ['src/**/*.js'],
+      src: lintFiles,
       build: ['Gruntfile.js', '*.json'],
       options: {
         jshintrc: '.jshintrc'
       }
     },
     jscs: {
-      src: ['src/**/*.js'],
+      src: lintFiles,
       build: ['Gruntfile.js'],
       options: {
         config: ".jscsrc",
-        esnext: false, // If you use ES6 http://jscs.info/overview.html#esnext
-        verbose: true, // If you need output with rule names http://jscs.info/overview.html#verbose
+        esnext: true,
+        verbose: true,
       }
     },
     jsdoc: {
@@ -187,7 +222,17 @@ module.exports = function(grunt) {
           statusCheckAttempts: 200
         }
       },
-    }
+    },
+    watch: {
+      src: {
+        files: ['src/**/*.js'],
+        tasks: ['browserify:openpgp', 'browserify:worker']
+      },
+      test: {
+        files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
+        tasks: ['browserify:unittests']
+      }
+    },
   });
 
   // Load the plugin(s)
@@ -204,6 +249,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
     if (!version) {
@@ -237,16 +283,12 @@ module.exports = function(grunt) {
     fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
 
-  grunt.registerTask('default', 'Build OpenPGP.js', function() {
-    grunt.task.run(['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
-    //TODO jshint is not run because of too many discovered issues, once these are addressed it should autorun
-    grunt.log.ok('Before Submitting a Pull Request please also run `grunt jshint`.');
-  });
-
+  // Build tasks
+  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
   grunt.registerTask('documentation', ['jsdoc']);
-
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint:build', 'jscs:build', 'copy:zlib', 'mochaTest']);
+  grunt.registerTask('test', ['jshint', 'jscs', 'copy:zlib', 'mochaTest']);
   grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
+
 };

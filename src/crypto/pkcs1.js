@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -24,6 +24,13 @@
  * @requires util
  * @module crypto/pkcs1
  */
+
+'use strict';
+
+import random from './random.js';
+import util from '../util.js';
+import BigInteger from './public_key/jsbn.js';
+import hash from './hash';
 
 /**
  * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
@@ -47,12 +54,6 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
     0x00, 0x04, 0x1C
 ];
 
-var crypto = require('./crypto.js'),
-  random = require('./random.js'),
-  util = require('../util.js'),
-  BigInteger = require('./public_key/jsbn.js'),
-  hash = require('./hash');
-
 /**
  * Create padding with secure random data
  * @private
@@ -72,7 +73,7 @@ function getPkcs1Padding(length) {
 }
 
 
-module.exports = {
+export default {
   eme: {
     /**
      * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
@@ -135,7 +136,7 @@ module.exports = {
     encode: function(algo, M, emLen) {
       var i;
       // Apply the hash function to the message M to produce a hash value H
-      var H = hash.digest(algo, M);
+      var H = util.Uint8Array2str(hash.digest(algo, util.str2Uint8Array(M)));
       if (H.length !== hash.getHashByteLength(algo)) {
         throw new Error('Invalid hash length');
       }

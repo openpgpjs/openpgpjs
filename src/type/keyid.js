@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -26,15 +26,14 @@
  * @module type/keyid
  */
 
-module.exports = Keyid;
+'use strict';
 
-var util = require('../util.js');
+import util from '../util.js';
 
 /**
  * @constructor
  */
-function Keyid() {
-
+export default function Keyid() {
   this.bytes = '';
 }
 
@@ -43,11 +42,11 @@ function Keyid() {
  * @param {String} input Input to read the key id from
  */
 Keyid.prototype.read = function(bytes) {
-  this.bytes = bytes.substr(0, 8);
+  this.bytes = util.Uint8Array2str(bytes.subarray(0, 8));
 };
 
 Keyid.prototype.write = function() {
-  return this.bytes;
+  return util.str2Uint8Array(this.bytes);
 };
 
 Keyid.prototype.toHex = function() {
@@ -55,24 +54,24 @@ Keyid.prototype.toHex = function() {
 };
 
 Keyid.prototype.equals = function(keyid) {
-  return this.bytes == keyid.bytes;
+  return this.bytes === keyid.bytes;
 };
 
 Keyid.prototype.isNull = function() {
   return this.bytes === '';
 };
 
-module.exports.mapToHex = function (keyId) {
+Keyid.mapToHex = function (keyId) {
   return keyId.toHex();
 };
 
-module.exports.fromClone = function (clone) {
+Keyid.fromClone = function (clone) {
   var keyid = new Keyid();
   keyid.bytes = clone.bytes;
   return keyid;
 };
 
-module.exports.fromId = function (hex) {
+Keyid.fromId = function (hex) {
   var keyid = new Keyid();
   keyid.read(util.hex2bin(hex));
   return keyid;

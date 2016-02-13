@@ -81,14 +81,14 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
   //create the 16 or 48 subkeys we will need
   var m = 0,
-    i, j, temp, temp2, right1, right2, left, right, looping;
+    i, j, temp, right1, right2, left, right, looping;
   var cbcleft, cbcleft2, cbcright, cbcright2;
   var endloop, loopinc;
   var len = message.length;
-  var chunk = 0;
+
   //set up the loops for single and triple des
-  var iterations = keys.length == 32 ? 3 : 9; //single or triple des
-  if (iterations == 3) {
+  var iterations = keys.length === 32 ? 3 : 9; //single or triple des
+  if (iterations === 3) {
     looping = encrypt ? new Array(0, 32, 2) : new Array(30, -2, -2);
   } else {
     looping = encrypt ? new Array(0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array(94, 62, -2, 32, 64, 2, 30, -2, -2);
@@ -102,24 +102,22 @@ function des(keys, message, encrypt, mode, iv, padding) {
   }
 
   //store the result here
-  var result = "";
-  var tempresult = "";
+  var result = new Uint8Array(len);
+  var k = 0;
 
-  if (mode == 1) { //CBC mode
-    cbcleft = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
-    cbcright = (iv.charCodeAt(m++) << 24) | (iv.charCodeAt(m++) << 16) | (iv.charCodeAt(m++) << 8) | iv.charCodeAt(m++);
+  if (mode === 1) { //CBC mode
+    cbcleft = (iv[m++] << 24) | (iv[m++] << 16) | (iv[m++] << 8) | iv[m++];
+    cbcright = (iv[m++] << 24) | (iv[m++] << 16) | (iv[m++] << 8) | iv[m++];
     m = 0;
   }
 
   //loop through each 64 bit chunk of the message
   while (m < len) {
-    left = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) | message
-      .charCodeAt(m++);
-    right = (message.charCodeAt(m++) << 24) | (message.charCodeAt(m++) << 16) | (message.charCodeAt(m++) << 8) |
-      message.charCodeAt(m++);
+    left = (message[m++] << 24) | (message[m++] << 16) | (message[m++] << 8) | message[m++];
+    right = (message[m++] << 24) | (message[m++] << 16) | (message[m++] << 8) | message[m++];
 
     //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {
+    if (mode === 1) {
       if (encrypt) {
         left ^= cbcleft;
         right ^= cbcright;
@@ -156,7 +154,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
       endloop = looping[j + 1];
       loopinc = looping[j + 2];
       //now go through and perform the encryption or decryption
-      for (i = looping[j]; i != endloop; i += loopinc) { //for efficiency
+      for (i = looping[j]; i !== endloop; i += loopinc) { //for efficiency
         right1 = right ^ keys[i];
         right2 = ((right >>> 4) | (right << 28)) ^ keys[i + 1];
         //the result is attained by passing these bytes through the S selection functions
@@ -193,7 +191,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
     left ^= (temp << 4);
 
     //for Cipher Block Chaining mode, xor the message with the previous result
-    if (mode == 1) {
+    if (mode === 1) {
       if (encrypt) {
         cbcleft = left;
         cbcright = right;
@@ -202,19 +200,16 @@ function des(keys, message, encrypt, mode, iv, padding) {
         right ^= cbcright2;
       }
     }
-    tempresult += String.fromCharCode((left >>> 24), ((left >>> 16) & 0xff), ((left >>> 8) & 0xff), (left & 0xff), (
-      right >>> 24), ((right >>> 16) & 0xff), ((right >>> 8) & 0xff), (right & 0xff));
 
-    chunk += 8;
-    if (chunk == 512) {
-      result += tempresult;
-      tempresult = "";
-      chunk = 0;
-    }
+    result[k++] = (left >>> 24);
+    result[k++] = ((left >>> 16) & 0xff);
+    result[k++] = ((left >>> 8) & 0xff);
+    result[k++] = (left & 0xff);
+    result[k++] = (right >>> 24);
+    result[k++] = ((right >>> 16) & 0xff);
+    result[k++] = ((right >>> 8) & 0xff);
+    result[k++] = (right & 0xff);
   } //for every 8 characters, or 64 bits in the message
-
-  //return the result as an array
-  result += tempresult;
 
   //only remove padding if decrypting - note that you need to use the same padding option for both encrypt and decrypt
   if (!encrypt) {
@@ -272,8 +267,8 @@ function des_createKeys(key) {
     temp;
 
   for (var j = 0; j < iterations; j++) { //either 1 or 3 iterations
-    var left = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
-    var right = (key.charCodeAt(m++) << 24) | (key.charCodeAt(m++) << 16) | (key.charCodeAt(m++) << 8) | key.charCodeAt(m++);
+    var left = (key[m++] << 24) | (key[m++] << 16) | (key[m++] << 8) | key[m++];
+    var right = (key[m++] << 24) | (key[m++] << 16) | (key[m++] << 8) | key[m++];
 
     temp = ((left >>> 4) ^ right) & 0x0f0f0f0f;
     right ^= temp;
@@ -338,31 +333,56 @@ function des_createKeys(key) {
 
 function des_addPadding(message, padding) {
   var padLength = 8 - (message.length % 8);
-  if ((padding == 2) && (padLength < 8)) { //pad the message with spaces
-    message += "        ".substr(0, padLength);
-  } else if (padding == 1) { //PKCS7 padding
-    message += String.fromCharCode(padLength, padLength, padLength, padLength, padLength, padLength, padLength,
-      padLength).substr(0, padLength);
+
+  var pad;
+  if (padding === 2 && (padLength < 8)) { //pad the message with spaces
+    pad = " ".charCodeAt(0);
+  } else if (padding === 1) { //PKCS7 padding
+    pad = padLength;
   } else if (!padding && (padLength < 8)) { //pad the message out with null bytes
-    message += "\0\0\0\0\0\0\0\0".substr(0, padLength);
+    pad = 0;
+  } else if (padLength === 8) {
+    return message;
   }
-  return message;
+  else {
+    throw new Error('des: invalid padding');
+  }
+
+  var paddedMessage = new Uint8Array(message.length + padLength);
+  for(var i = 0; i < message.length; i++) {
+    paddedMessage[i] = message[i];
+  }
+  for(var j = 0; j < padLength; j++) {
+    paddedMessage[message.length + j] = pad;
+  }
+
+  return paddedMessage;
 }
 
 function des_removePadding(message, padding) {
-  if (padding == 2) { // space padded
-    message = message.replace(/ *$/g, "");
-  } else if (padding == 1) { // PKCS7
-    var padCount = message.charCodeAt(message.length - 1);
-    message = message.substr(0, message.length - padCount);
+  var padLength = null;
+  var pad;
+  if (padding === 2) { // space padded
+    pad = " ".charCodeAt(0);
+  } else if (padding === 1) { // PKCS7
+    padLength = message[message.length - 1];
   } else if (!padding) { // null padding
-    message = message.replace(/\0*$/g, "");
+    pad = 0;
   }
-  return message;
+  else {
+    throw new Error('des: invalid padding');
+  }
+
+  if(!padLength) {
+    padLength = 1;
+    while(message[message.length - padLength] === pad) {
+      padLength++;
+    }
+    padLength--;
+  }
+
+  return message.subarray(0, message.length - padLength);
 }
-
-
-var util = require('../../util.js');
 
 // added by Recurity Labs
 
@@ -370,15 +390,15 @@ function Des(key) {
   this.key = [];
 
   for (var i = 0; i < 3; i++) {
-    this.key.push(key.substr(i * 8, 8));
+    this.key.push(new Uint8Array(key.subarray(i * 8, (i * 8) + 8)));
   }
 
   this.encrypt = function(block) {
-    return util.str2bin(des(des_createKeys(this.key[2]),
+    return des(des_createKeys(this.key[2]),
       des(des_createKeys(this.key[1]),
       des(des_createKeys(this.key[0]),
-      util.bin2str(block), true, 0, null, null),
-      false, 0, null, null), true, 0, null, null));
+      block, true, 0, null, null),
+      false, 0, null, null), true, 0, null, null);
   };
 }
 
@@ -393,16 +413,16 @@ function OriginalDes(key) {
 
   this.encrypt = function(block, padding) {
     var keys = des_createKeys(this.key);
-    return util.str2bin(des(keys, util.bin2str(block), true, 0, null, padding));
+    return des(keys, block, true, 0, null, padding);
   };
 
   this.decrypt = function(block, padding) {
     var keys = des_createKeys(this.key);
-    return util.str2bin(des(keys, util.bin2str(block), false, 0, null, padding));
+    return des(keys, block, false, 0, null, padding);
   };
 }
 
-module.exports = {
+export default {
   /** @static */
   des: Des,
   /** @static */

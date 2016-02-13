@@ -25,10 +25,10 @@
 
 'use strict';
 
-var config = require('./config'),
-  packet = require('./packet'),
-  enums = require('./enums.js'),
-  armor = require('./encoding/armor.js');
+import config from './config';
+import packet from './packet';
+import enums from './enums.js';
+import armor from './encoding/armor.js';
 
 /**
  * @class
@@ -39,7 +39,7 @@ var config = require('./config'),
  *                                 if message not yet signed
  */
 
-function CleartextMessage(text, packetlist) {
+export function CleartextMessage(text, packetlist) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(text, packetlist);
   }
@@ -78,7 +78,9 @@ CleartextMessage.prototype.sign = function(privateKeys) {
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    if (!signingKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
@@ -147,7 +149,7 @@ CleartextMessage.prototype.armor = function() {
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
-function readArmored(armoredText) {
+export function readArmored(armoredText) {
   var input = armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -167,11 +169,11 @@ function readArmored(armoredText) {
  */
 function verifyHeaders(headers, packetlist) {
   var checkHashAlgos = function(hashAlgos) {
+    function check(algo) {
+      return packetlist[i].hashAlgorithm === algo;
+    }
     for (var i = 0; i < packetlist.length; i++) {
-      if (packetlist[i].tag === enums.packet.signature &&
-          !hashAlgos.some(function(algo) {
-            return packetlist[i].hashAlgorithm === algo;
-          })) {
+      if (packetlist[i].tag === enums.packet.signature && !hashAlgos.some(check)) {
         return false;
       }
     }
@@ -179,8 +181,8 @@ function verifyHeaders(headers, packetlist) {
   };
   var oneHeader = null;
   var hashAlgos = [];
-  for (var i = 0; i < headers.length; i++) {
-    oneHeader = headers[i].match(/Hash: (.+)/); // get header value
+  headers.forEach(function(header) {
+    oneHeader = header.match(/Hash: (.+)/); // get header value
     if (oneHeader) {
       oneHeader = oneHeader[1].replace(/\s/g, '');  // remove whitespace
       oneHeader = oneHeader.split(',');
@@ -196,13 +198,10 @@ function verifyHeaders(headers, packetlist) {
     } else {
       throw new Error('Only "Hash" header allowed in cleartext signed message');
     }
-  }
+  });
   if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
     throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
   } else if (!checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }
-
-exports.CleartextMessage = CleartextMessage;
-exports.readArmored = readArmored;

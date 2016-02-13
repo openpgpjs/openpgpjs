@@ -1,4 +1,6 @@
-// Modified by Recurity Labs GmbH 
+// Modified by ProtonTech AG
+
+// Modified by Recurity Labs GmbH
 
 // modified version of http://www.hanewin.net/encrypt/PGdecode.js:
 
@@ -6,10 +8,10 @@
  * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de
  * version 2.0, check www.haneWIN.de for the latest version
 
- * This software is provided as-is, without express or implied warranty.  
+ * This software is provided as-is, without express or implied warranty.
  * Permission to use, copy, modify, distribute or sell this software, with or
  * without fee, for any purpose and by any individual or organization, is hereby
- * granted, provided that the above copyright notice and this paragraph appear 
+ * granted, provided that the above copyright notice and this paragraph appear
  * in all copies. Distribution as a part of an application or binary must
  * include the above copyright notice in the documentation and/or other
  * materials provided with the application or distribution.
@@ -17,32 +19,30 @@
 
 /**
  * @requires crypto/cipher
- * @requires util
  * @module crypto/cfb
  */
 
 'use strict';
 
-var util = require('../util.js'),
-  cipher = require('./cipher');
+import cipher from './cipher';
 
-module.exports = {
+export default {
 
   /**
-   * This function encrypts a given with the specified prefixrandom 
+   * This function encrypts a given with the specified prefixrandom
    * using the specified blockcipher to encrypt a message
-   * @param {String} prefixrandom random bytes of block_size length provided 
-   *  as a string to be used in prefixing the data
+   * @param {Uint8Array} prefixrandom random bytes of block_size length
+   *  to be used in prefixing the data
    * @param {String} cipherfn the algorithm cipher class to encrypt
    *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {String} plaintext data to be encrypted provided as a string
-   * @param {String} key binary string representation of key to be used to encrypt the plaintext.
+   * @param {Uint8Array} plaintext data to be encrypted
+   * @param {Uint8Array} key key to be used to encrypt the plaintext.
    * This will be passed to the cipherfn
    * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the 
-   *  "old" style with a resync. Encryption within an 
+   *  IV should be used or not. The encrypteddatapacket uses the
+   *  "old" style with a resync. Encryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @return {String} a string with the encrypted data
+   * @return {Uint8Array} encrypted data
    */
   encrypt: function(prefixrandom, cipherfn, plaintext, key, resync) {
     cipherfn = new cipher[cipherfn](key);
@@ -51,7 +51,12 @@ module.exports = {
     var FR = new Uint8Array(block_size);
     var FRE = new Uint8Array(block_size);
 
-    prefixrandom = prefixrandom + prefixrandom.charAt(block_size - 2) + prefixrandom.charAt(block_size - 1);
+    var new_prefix = new Uint8Array(prefixrandom.length + 2);
+    new_prefix.set(prefixrandom);
+    new_prefix[prefixrandom.length] = prefixrandom[block_size-2];
+    new_prefix[prefixrandom.length+1] = prefixrandom[block_size-1];
+    prefixrandom = new_prefix;
+
     var ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
     var i, n, begin;
     var offset = resync ? 0 : 2;
@@ -68,7 +73,7 @@ module.exports = {
     //     the plaintext to produce C[1] through C[BS], the first BS octets
     //     of ciphertext.
     for (i = 0; i < block_size; i++) {
-      ciphertext[i] = FRE[i] ^ prefixrandom.charCodeAt(i);
+      ciphertext[i] = FRE[i] ^ prefixrandom[i];
     }
 
     // 4.  FR is loaded with C[1] through C[BS].
@@ -81,8 +86,8 @@ module.exports = {
     // 6.  The left two octets of FRE get xored with the next two octets of
     //     data that were prefixed to the plaintext.  This produces C[BS+1]
     //     and C[BS+2], the next two octets of ciphertext.
-    ciphertext[block_size] = FRE[0] ^ prefixrandom.charCodeAt(block_size);
-    ciphertext[block_size + 1] = FRE[1] ^ prefixrandom.charCodeAt(block_size + 1);
+    ciphertext[block_size] = FRE[0] ^ prefixrandom[block_size];
+    ciphertext[block_size + 1] = FRE[1] ^ prefixrandom[block_size + 1];
 
     if (resync) {
       // 7.  (The resync step) FR is loaded with C[3] through C[BS+2].
@@ -98,7 +103,7 @@ module.exports = {
     //     data.  This produces C[BS+3] through C[BS+(BS+2)], the next BS
     //     octets of ciphertext.
     for (i = 0; i < block_size; i++) {
-      ciphertext[block_size + 2 + i] = FRE[i + offset] ^ plaintext.charCodeAt(i);
+      ciphertext[block_size + 2 + i] = FRE[i + offset] ^ plaintext[i];
     }
     for (n = block_size; n < plaintext.length + offset; n += block_size) {
       // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
@@ -113,22 +118,22 @@ module.exports = {
       // the next BS octets of ciphertext.  These are loaded into FR, and
       // the process is repeated until the plaintext is used up.
       for (i = 0; i < block_size; i++) {
-        ciphertext[block_size + begin + i] = FRE[i] ^ plaintext.charCodeAt(n + i - offset);
+        ciphertext[block_size + begin + i] = FRE[i] ^ plaintext[n + i - offset];
       }
     }
 
     ciphertext = ciphertext.subarray(0, plaintext.length + 2 + block_size);
-    return util.Uint8Array2str(ciphertext);
+    return ciphertext;
   },
 
   /**
    * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
    * @param {String} cipherfn.encrypt Cipher function to use,
    *  @see module:crypto/cipher.
-   * @param {String} key binary string representation of key to be used to check the mdc
+   * @param {Uint8Array} key Uint8Array representation of key to be used to check the mdc
    * This will be passed to the cipherfn
-   * @param {String} ciphertext The encrypted data
-   * @return {String} plaintext Data of D(ciphertext) with blocksize length +2
+   * @param {Uint8Array} ciphertext The encrypted data
+   * @return {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
    */
   mdc: function(cipherfn, key, ciphertext) {
     cipherfn = new cipher[cipherfn](key);
@@ -146,29 +151,31 @@ module.exports = {
 
     iblock = cipherfn.encrypt(iblock);
     for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext.charCodeAt(i);
+      ablock[i] = ciphertext[i];
       iblock[i] ^= ablock[i];
     }
 
     ablock = cipherfn.encrypt(ablock);
 
-    return util.bin2str(iblock) +
-      String.fromCharCode(ablock[0] ^ ciphertext.charCodeAt(block_size)) +
-      String.fromCharCode(ablock[1] ^ ciphertext.charCodeAt(block_size + 1));
+    var result = new Uint8Array(iblock.length + 2);
+    result.set(iblock);
+    result[iblock.length] = ablock[0] ^ ciphertext[block_size];
+    result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
+    return result;
   },
   /**
    * This function decrypts a given plaintext using the specified
    * blockcipher to decrypt a message
    * @param {String} cipherfn the algorithm cipher class to decrypt
    *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {String} key binary string representation of key to be used to decrypt the ciphertext.
+   * @param {Uint8Array} key Uint8Array representation of key to be used to decrypt the ciphertext.
    * This will be passed to the cipherfn
-   * @param {String} ciphertext to be decrypted provided as a string
+   * @param {Uint8Array} ciphertext to be decrypted
    * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the 
-   *  "old" style with a resync. Decryption within an 
+   *  IV should be used or not. The encrypteddatapacket uses the
+   *  "old" style with a resync. Decryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @return {String} a string with the plaintext data
+   * @return {Uint8Array} the plaintext data
    */
 
   decrypt: function(cipherfn, key, ciphertext, resync) {
@@ -177,8 +184,9 @@ module.exports = {
 
     var iblock = new Uint8Array(block_size);
     var ablock = new Uint8Array(block_size);
-    var i, n = '';
-    var text = [];
+
+    var i, j, n;
+    var text = new Uint8Array(ciphertext.length - block_size);
 
     // initialisation vector
     for (i = 0; i < block_size; i++) {
@@ -187,15 +195,15 @@ module.exports = {
 
     iblock = cipherfn.encrypt(iblock);
     for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext.charCodeAt(i);
+      ablock[i] = ciphertext[i];
       iblock[i] ^= ablock[i];
     }
 
     ablock = cipherfn.encrypt(ablock);
 
     // test check octets
-    if (iblock[block_size - 2] != (ablock[0] ^ ciphertext.charCodeAt(block_size)) ||
-        iblock[block_size - 1] != (ablock[1] ^ ciphertext.charCodeAt(block_size + 1))) {
+    if (iblock[block_size - 2] !== (ablock[0] ^ ciphertext[block_size]) ||
+        iblock[block_size - 1] !== (ablock[1] ^ ciphertext[block_size + 1])) {
       throw new Error('CFB decrypt: invalid key');
     }
 
@@ -206,35 +214,42 @@ module.exports = {
 
      */
 
+    j = 0;
     if (resync) {
       for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext.charCodeAt(i + 2);
+        iblock[i] = ciphertext[i + 2];
       }
       for (n = block_size + 2; n < ciphertext.length; n += block_size) {
         ablock = cipherfn.encrypt(iblock);
 
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
+          iblock[i] = ciphertext[n + i];
+          if(j < text.length) {
+            text[j] = ablock[i] ^ iblock[i];
+            j++;
+          }
         }
       }
     } else {
       for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext.charCodeAt(i);
+        iblock[i] = ciphertext[i];
       }
       for (n = block_size; n < ciphertext.length; n += block_size) {
         ablock = cipherfn.encrypt(iblock);
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext.charCodeAt(n + i);
-          text.push(String.fromCharCode(ablock[i] ^ iblock[i]));
+          iblock[i] = ciphertext[n + i];
+          if(j < text.length) {
+            text[j] = ablock[i] ^ iblock[i];
+            j++;
+          }
         }
       }
     }
-    if (!resync)
-    {
-      text.splice(0, 2);
-    }
-    text.splice(ciphertext.length - block_size - 2);
+
+    n = resync ? 0 : 2;
+
+    text = text.subarray(n, ciphertext.length - block_size - 2 + n);
+
     return text;
   },
 
@@ -242,21 +257,29 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var blocki = '';
-    var blockc = '';
+    var blocki = new Uint8Array(block_size);
+    var blockc = new Uint8Array(block_size);
     var pos = 0;
-    var cyphertext = '';
-    var tempBlock = '';
-    blockc = iv.substring(0, block_size);
-    while (plaintext.length > block_size * pos) {
-      var encblock = cipherfn.encrypt(util.str2bin(blockc));
-      blocki = plaintext.substring((pos * block_size), (pos * block_size) + block_size);
-      for (var i = 0; i < blocki.length; i++) {
-        tempBlock += String.fromCharCode(blocki.charCodeAt(i) ^ encblock[i]);
+    var cyphertext = new Uint8Array(plaintext.length);
+    var i, j = 0;
+
+    if (iv === null) {
+      for (i = 0; i < block_size; i++) {
+        blockc[i] = 0;
       }
-      blockc = tempBlock;
-      tempBlock = '';
-      cyphertext += blockc;
+    }
+    else {
+      for (i = 0; i < block_size; i++) {
+        blockc[i] = iv[i];
+      }
+    }
+    while (plaintext.length > block_size * pos) {
+      var encblock = cipherfn.encrypt(blockc);
+      blocki = plaintext.subarray((pos * block_size), (pos * block_size) + block_size);
+      for (i = 0; i < blocki.length; i++) {
+        blockc[i] = blocki[i] ^ encblock[i];
+        cyphertext[j++] = blockc[i];
+      }
       pos++;
     }
     return cyphertext;
@@ -266,22 +289,26 @@ module.exports = {
     cipherfn = new cipher[cipherfn](key);
     var block_size = cipherfn.blockSize;
 
-    var blockp = '';
+    var blockp;
     var pos = 0;
-    var plaintext = '';
+    var plaintext = new Uint8Array(ciphertext.length);
     var offset = 0;
-    var i;
-    if (iv === null)
+    var i, j = 0;
+
+    if (iv === null) {
+      blockp = new Uint8Array(block_size);
       for (i = 0; i < block_size; i++) {
-        blockp += String.fromCharCode(0);
+        blockp[i] = 0;
       }
-    else
-      blockp = iv.substring(0, block_size);
+    }
+    else {
+      blockp = iv.subarray(0, block_size);
+    }
     while (ciphertext.length > (block_size * pos)) {
-      var decblock = cipherfn.encrypt(util.str2bin(blockp));
-      blockp = ciphertext.substring((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
+      var decblock = cipherfn.encrypt(blockp);
+      blockp = ciphertext.subarray((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
       for (i = 0; i < blockp.length; i++) {
-        plaintext += String.fromCharCode(blockp.charCodeAt(i) ^ decblock[i]);
+        plaintext[j++] = blockp[i] ^ decblock[i];
       }
       pos++;
     }

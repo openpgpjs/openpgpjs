@@ -2,4 +2,7 @@
  * @see module:config/config
  * @module config
  */
-module.exports = require('./config.js');
+
+'use strict';
+
+export { default } from './config.js';

@@ -1,5 +1,5 @@
-/* Modified by Recurity Labs GmbH 
- * 
+/* Modified by Recurity Labs GmbH
+ *
  * Originally written by nklein software (nklein.com)
  */
 
@@ -7,7 +7,9 @@
  *  @module crypto/cipher/blowfish
  */
 
-/* 
+'use strict';
+
+/*
  * Javascript implementation based on Bruce Schneier's reference implementation.
  *
  *
@@ -391,26 +393,15 @@ Blowfish.prototype.init = function(key) {
   }
 };
 
-var util = require('../../util.js');
-
 // added by Recurity Labs
 
-function BFencrypt(block, key) {
-  var bf = new Blowfish();
-  bf.init(util.str2bin(key));
-  return bf.encrypt_block(block);
-}
-
-function BF(key) {
+export default function BF(key) {
   this.bf = new Blowfish();
-  this.bf.init(util.str2bin(key));
+  this.bf.init(key);
 
   this.encrypt = function(block) {
     return this.bf.encrypt_block(block);
   };
 }
-
-
-module.exports = BF;
-module.exports.keySize = BF.prototype.keySize = 16;
-module.exports.blockSize = BF.prototype.blockSize = 16;
+BF.keySize = BF.prototype.keySize = 16;
+BF.blockSize = BF.prototype.blockSize = 16;

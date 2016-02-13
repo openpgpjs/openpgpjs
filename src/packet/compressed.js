@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -29,18 +29,18 @@
  * @module packet/compressed
  */
 
-module.exports = Compressed;
+'use strict';
 
-var enums = require('../enums.js'),
-  util = require('../util.js'),
-  Zlib = require('../compression/zlib.min.js'),
-  RawInflate = require('../compression/rawinflate.min.js'),
-  RawDeflate = require('../compression/rawdeflate.min.js');
+import enums from '../enums.js';
+import util from '../util.js';
+import Zlib from '../compression/zlib.min.js';
+import RawInflate from '../compression/rawinflate.min.js';
+import RawDeflate from '../compression/rawdeflate.min.js';
 
 /**
  * @constructor
  */
-function Compressed() {
+export default function Compressed() {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -70,10 +70,10 @@ function Compressed() {
  */
 Compressed.prototype.read = function (bytes) {
   // One octet that gives the algorithm used to compress the packet.
-  this.algorithm = enums.read(enums.compression, bytes.charCodeAt(0));
+  this.algorithm = enums.read(enums.compression, bytes[0]);
 
   // Compressed data, which makes up the remainder of the packet.
-  this.compressed = bytes.substr(1);
+  this.compressed = bytes.subarray(1, bytes.length);
 
   this.decompress();
 };
@@ -85,10 +85,11 @@ Compressed.prototype.read = function (bytes) {
  * @return {String} binary compressed packet
  */
 Compressed.prototype.write = function () {
-  if (this.compressed === null)
+  if (this.compressed === null) {
     this.compress();
+  }
 
-  return String.fromCharCode(enums.write(enums.compression, this.algorithm)) + this.compressed;
+  return util.concatUint8Array(new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed);
 };
 
 
@@ -97,7 +98,7 @@ Compressed.prototype.write = function () {
  * read by read_packet
  */
 Compressed.prototype.decompress = function () {
-  var decompressed;
+  var decompressed, inflate;
 
   switch (this.algorithm) {
     case 'uncompressed':
@@ -105,13 +106,13 @@ Compressed.prototype.decompress = function () {
       break;
 
     case 'zip':
-      var inflate = new RawInflate.Zlib.RawInflate(util.str2Uint8Array(this.compressed));
-      decompressed = util.Uint8Array2str(inflate.decompress());
+      inflate = new RawInflate.Zlib.RawInflate(this.compressed);
+      decompressed = inflate.decompress();
       break;
 
     case 'zlib':
-      var inflate = new Zlib.Zlib.Inflate(util.str2Uint8Array(this.compressed));
-      decompressed = util.Uint8Array2str(inflate.decompress());
+      inflate = new Zlib.Zlib.Inflate(this.compressed);
+      decompressed = inflate.decompress();
       break;
 
     case 'bzip2':
@@ -141,14 +142,14 @@ Compressed.prototype.compress = function () {
 
     case 'zip':
       // - ZIP [RFC1951]
-      deflate = new RawDeflate.Zlib.RawDeflate(util.str2Uint8Array(uncompressed));
-      this.compressed = util.Uint8Array2str(deflate.compress());
+      deflate = new RawDeflate.Zlib.RawDeflate(uncompressed);
+      this.compressed = deflate.compress();
       break;
 
     case 'zlib':
       // - ZLIB [RFC1950]
-      deflate = new Zlib.Zlib.Deflate(util.str2Uint8Array(uncompressed));
-      this.compressed = util.Uint8Array2str(deflate.compress());
+      deflate = new Zlib.Zlib.Deflate(uncompressed);
+      this.compressed = deflate.compress();
       break;
 
     case 'bzip2':

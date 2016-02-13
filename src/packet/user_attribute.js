@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -36,46 +36,46 @@
  * @module packet/user_attribute
  */
 
-var util = require('../util.js'),
-  packet = require('./packet.js'),
-  enums = require('../enums.js');
+'use strict';
 
-module.exports = UserAttribute;
+import util from '../util.js';
+import packet from './packet.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function UserAttribute() {
+export default function UserAttribute() {
   this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }
 
 /**
  * parsing function for a user attribute packet (tag 17).
- * @param {String} input payload of a tag 17 packet
+ * @param {Uint8Array} input payload of a tag 17 packet
  */
 UserAttribute.prototype.read = function(bytes) {
   var i = 0;
   while (i < bytes.length) {
-    var len = packet.readSimpleLength(bytes.substr(i));
+    var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
     i += len.offset;
 
-    this.attributes.push(bytes.substr(i, len.len));
+    this.attributes.push(util.Uint8Array2str(bytes.subarray(i, i + len.len)));
     i += len.len;
   }
 };
 
 /**
- * Creates a string representation of the user attribute packet
- * @return {String} string representation
+ * Creates a binary representation of the user attribute packet
+ * @return {Uint8Array} string representation
  */
 UserAttribute.prototype.write = function() {
-  var result = '';
+  var arr = [];
   for (var i = 0; i < this.attributes.length; i++) {
-    result += packet.writeSimpleLength(this.attributes[i].length);
-    result += this.attributes[i];
+    arr.push(packet.writeSimpleLength(this.attributes[i].length));
+    arr.push(util.str2Uint8Array(this.attributes[i]));
   }
-  return result;
+  return util.concatUint8Array(arr);
 };
 
 /**

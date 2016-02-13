@@ -29,26 +29,24 @@
  * @module config/config
  */
 
-var enums = require('../enums.js');
+'use strict';
 
-module.exports = {
+import enums from '../enums.js';
+
+export default {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
-  // use integrity protection for symmetric encryption
-  integrity_protect: true,
-  // fail on decrypt if message is not integrity protected
-  ignore_mdc_error: false,
+  integrity_protect: true, // use integrity protection for symmetric encryption
+  ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
   rsa_blinding: true,
-  useWebCrypto: true,
-
+  useNative: true, // use native node.js crypto and Web Crypto apis (if available)
+  zeroCopy: false, // use transferable objects between the Web Worker and main thread
+  debug: false,
   show_version: true,
   show_comment: true,
   versionstring: "OpenPGP.js VERSION",
   commentstring: "http://openpgpjs.org",
-
   keyserver: "https://keyserver.ubuntu.com",
-  node_store: './openpgp.store',
-
-  debug: false
+  node_store: './openpgp.store'
 };

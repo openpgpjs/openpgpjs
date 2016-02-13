@@ -1,14 +1,18 @@
-var enums = require('../enums.js');
+'use strict';
 
-module.exports = {
-  /**
-   * @name module:packet.List
-   * @see module:packet/packetlist
-   */
-  List: require('./packetlist.js')
+import * as packets from './all_packets.js';
+import * as clone from './clone.js';
+import List from './packetlist.js';
+
+const mod = {
+  /** @see module:packet/packetlist */
+  List: List,
+  /** @see module:packet/clone */
+  clone: clone
 };
 
-var packets = require('./all_packets.js');
+for (let i in packets) {
+  mod[i] = packets[i];
+}
 
-for (var i in packets)
-  module.exports[i] = packets[i];
+export default mod;

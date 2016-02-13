@@ -3,13 +3,12 @@
  * @module config/localStorage
  */
 
-module.exports = LocalStorage;
+'use strict';
 
 /**
  * @constructor
  */
-function LocalStorage() {
-}
+export default function LocalStorage() {}
 
 /**
  * Reads the config out of the HTML5 local storage
@@ -22,8 +21,9 @@ LocalStorage.prototype.read = function () {
   if (cf === null) {
     this.config = this.default_config;
     this.write();
-  } else
+  } else {
     this.config = cf;
+  }
 };
 
 /**

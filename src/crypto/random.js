@@ -1,44 +1,44 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 // The GPG4Browsers crypto interface
 
 /**
  * @requires type/mpi
+ * @requires util
  * @module crypto/random
  */
 
-var type_mpi = require('../type/mpi.js');
-var nodeCrypto = null;
+'use strict';
 
-if (typeof window === 'undefined') {
-  nodeCrypto = require('crypto');
-}
+import type_mpi from '../type/mpi.js';
+import util from '../util.js';
+const nodeCrypto = util.detectNode() && require('crypto');
 
-module.exports = {
+export default {
   /**
-   * Retrieve secure random byte string of the specified length
+   * Retrieve secure random byte array of the specified length
    * @param {Integer} length Length in bytes to generate
-   * @return {String} Random byte string
+   * @return {Uint8Array} Random byte array
    */
   getRandomBytes: function(length) {
-    var result = '';
+    var result = new Uint8Array(length);
     for (var i = 0; i < length; i++) {
-      result += String.fromCharCode(this.getSecureRandomOctet());
+      result[i] = this.getSecureRandomOctet();
     }
     return result;
   },
@@ -104,7 +104,7 @@ module.exports = {
     }
     var numBytes = Math.floor((bits + 7) / 8);
 
-    var randomBits = this.getRandomBytes(numBytes);
+    var randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
     if (bits % 8 > 0) {
 
       randomBits = String.fromCharCode(

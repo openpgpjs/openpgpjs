@@ -1,16 +1,16 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,19 +25,19 @@
  * @module packet/literal
  */
 
-module.exports = Literal;
+'use strict';
 
-var util = require('../util.js'),
-  enums = require('../enums.js');
+import util from '../util.js';
+import enums from '../enums.js';
 
 /**
  * @constructor
  */
-function Literal() {
+export default function Literal() {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
-  this.data = ''; // literal data representation as native JavaScript string or bytes
   this.date = new Date();
+  this.data = new Uint8Array(0); // literal data representation
   this.filename = 'msg.txt';
 }
 
@@ -46,11 +46,11 @@ function Literal() {
  * will be normalized to \r\n and by default text is converted to UTF8
  * @param {String} text Any native javascript string
  */
-Literal.prototype.setText = function (text) {
+Literal.prototype.setText = function(text) {
   // normalize EOL to \r\n
   text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
   // encode UTF8
-  this.data = this.format == 'utf8' ? util.encode_utf8(text) : text;
+  this.data = this.format === 'utf8' ? util.str2Uint8Array(util.encode_utf8(text)) : util.str2Uint8Array(text);
 };
 
 /**
@@ -58,19 +58,19 @@ Literal.prototype.setText = function (text) {
  * with normalized end of line to \n
  * @return {String} literal data as text
  */
-Literal.prototype.getText = function () {
+Literal.prototype.getText = function() {
   // decode UTF8
-  var text = util.decode_utf8(this.data);
+  var text = util.decode_utf8(util.Uint8Array2str(this.data));
   // normalize EOL to \n
   return text.replace(/\r\n/g, '\n');
 };
 
 /**
  * Set the packet data to value represented by the provided string of bytes.
- * @param {String} bytes The string of bytes
+ * @param {Uint8Array} bytes The string of bytes
  * @param {utf8|binary|text} format The format of the string of bytes
  */
-Literal.prototype.setBytes = function (bytes, format) {
+Literal.prototype.setBytes = function(bytes, format) {
   this.format = format;
   this.data = bytes;
 };
@@ -78,9 +78,9 @@ Literal.prototype.setBytes = function (bytes, format) {
 
 /**
  * Get the byte sequence representing the literal packet data
- * @returns {String} A sequence of bytes
+ * @returns {Uint8Array} A sequence of bytes
  */
-Literal.prototype.getBytes = function () {
+Literal.prototype.getBytes = function() {
   return this.data;
 };
 
@@ -89,14 +89,14 @@ Literal.prototype.getBytes = function () {
  * Sets the filename of the literal packet data
  * @param {String} filename Any native javascript string
  */
-Literal.prototype.setFilename = function (filename) {
+Literal.prototype.setFilename = function(filename) {
   this.filename = filename;
 };
 
 
 /**
  * Get the filename of the literal packet data
- * @returns {String} filename 
+ * @returns {String} filename
  */
 Literal.prototype.getFilename = function() {
   return this.filename;
@@ -106,25 +106,19 @@ Literal.prototype.getFilename = function() {
 /**
  * Parsing function for a literal data packet (tag 11).
  *
- * @param {String} input Payload of a tag 11 packet
- * @param {Integer} position
- *            Position to start reading from the input string
- * @param {Integer} len
- *            Length of the packet or the remaining length of
- *            input at position
+ * @param {Uint8Array} input Payload of a tag 11 packet
  * @return {module:packet/literal} object representation
  */
-Literal.prototype.read = function (bytes) {
+Literal.prototype.read = function(bytes) {
   // - A one-octet field that describes how the data is formatted.
+  var format = enums.read(enums.literal, bytes[0]);
 
-  var format = enums.read(enums.literal, bytes.charCodeAt(0));
+  var filename_len = bytes[1];
+  this.filename = util.decode_utf8(util.Uint8Array2str(bytes.subarray(2, 2 + filename_len)));
 
-  var filename_len = bytes.charCodeAt(1);
-  this.filename = util.decode_utf8(bytes.substr(2, filename_len));
+  this.date = util.readDate(bytes.subarray(2 + filename_len, 2 + filename_len + 4));
 
-  this.date = util.readDate(bytes.substr(2 + filename_len, 4));
-
-  var data = bytes.substring(6 + filename_len);
+  var data = bytes.subarray(6 + filename_len, bytes.length);
 
   this.setBytes(data, format);
 };
@@ -132,19 +126,15 @@ Literal.prototype.read = function (bytes) {
 /**
  * Creates a string representation of the packet
  *
- * @param {String} data The data to be inserted as body
- * @return {String} string-representation of the packet
+ * @return {Uint8Array} Uint8Array representation of the packet
  */
-Literal.prototype.write = function () {
-  var filename = util.encode_utf8(this.filename);
+Literal.prototype.write = function() {
+  var filename = util.str2Uint8Array(util.encode_utf8(this.filename));
+  var filename_length = new Uint8Array([filename.length]);
 
+  var format = new Uint8Array([enums.write(enums.literal, this.format)]);
+  var date = util.writeDate(this.date);
   var data = this.getBytes();
 
-  var result = '';
-  result += String.fromCharCode(enums.write(enums.literal, this.format));
-  result += String.fromCharCode(filename.length);
-  result += filename;
-  result += util.writeDate(this.date);
-  result += data;
-  return result;
+  return util.concatUint8Array([format, filename_length, filename, date, data]);
 };

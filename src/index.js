@@ -1,78 +1,113 @@
 'use strict';
 
-module.exports = require('./openpgp.js');
+/**
+ * Export high level api as default.
+ * Usage:
+ *
+ *   import openpgp from 'openpgp.js'
+ *   openpgp.encryptMessage(keys, text)
+ */
+import * as openpgp from './openpgp';
+export default openpgp;
+
+/**
+ * Export each high level api function seperately.
+ * Usage:
+ *
+ *   import { encryptMessage } from 'openpgp.js'
+ *   encryptMessage(keys, text)
+ */
+export * from './openpgp';
+
 /**
  * @see module:key
  * @name module:openpgp.key
  */
-module.exports.key = require('./key.js');
+import * as keyMod from './key';
+export const key = keyMod;
+
 /**
  * @see module:message
  * @name module:openpgp.message
  */
-module.exports.message = require('./message.js');
+import * as messageMod from './message';
+export const message = messageMod;
+
 /**
  * @see module:cleartext
  * @name module:openpgp.cleartext
  */
-module.exports.cleartext = require('./cleartext.js');
+import * as cleartextMod from './cleartext';
+export const cleartext = cleartextMod;
+
 /**
  * @see module:util
  * @name module:openpgp.util
  */
-module.exports.util = require('./util.js');
+export { default as util } from './util';
+
 /**
  * @see module:packet
  * @name module:openpgp.packet
  */
-module.exports.packet = require('./packet');
+export { default as packet } from './packet';
+
 /**
  * @see module:type/mpi
  * @name module:openpgp.MPI
  */
-module.exports.MPI = require('./type/mpi.js');
+export { default as MPI } from './type/mpi';
+
 /**
  * @see module:type/s2k
  * @name module:openpgp.S2K
  */
-module.exports.S2K = require('./type/s2k.js');
+export { default as S2K } from './type/s2k';
+
 /**
  * @see module:type/keyid
  * @name module:openpgp.Keyid
  */
-module.exports.Keyid = require('./type/keyid.js');
+export { default as Keyid } from './type/keyid';
+
 /**
  * @see module:encoding/armor
  * @name module:openpgp.armor
  */
-module.exports.armor = require('./encoding/armor.js');
+export { default as armor } from './encoding/armor';
+
 /**
  * @see module:enums
  * @name module:openpgp.enums
  */
-module.exports.enums = require('./enums.js');
+export { default as enums } from './enums';
+
 /**
  * @see module:config/config
  * @name module:openpgp.config
  */
-module.exports.config = require('./config/config.js');
+export { default as config } from './config/config';
+
 /**
  * @see module:crypto
  * @name module:openpgp.crypto
  */
-module.exports.crypto = require('./crypto');
+export { default as crypto } from './crypto';
+
 /**
  * @see module:keyring
  * @name module:openpgp.Keyring
  */
-module.exports.Keyring = require('./keyring');
+export { default as Keyring } from './keyring';
+
 /**
  * @see module:worker/async_proxy
  * @name module:openpgp.AsyncProxy
  */
-module.exports.AsyncProxy = require('./worker/async_proxy.js');
+export { default as AsyncProxy } from './worker/async_proxy';
+
 /**
  * @see module:hkp
  * @name module:openpgp.HKP
  */
-module.exports.HKP = require('./hkp');
+export { default as HKP } from './hkp';

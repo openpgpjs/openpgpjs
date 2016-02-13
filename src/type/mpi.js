@@ -1,23 +1,23 @@
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 3.0 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 // Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
 // octet scalar: MPI: [a,b,c,d,e,f]
-// - MPI size: (a << 8) | b 
+// - MPI size: (a << 8) | b
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
@@ -34,15 +34,15 @@
  * @module type/mpi
  */
 
-module.exports = MPI;
+'use strict';
 
-var BigInteger = require('../crypto/public_key/jsbn.js'),
-  util = require('../util.js');
+import BigInteger from '../crypto/public_key/jsbn.js';
+import util from '../util.js';
 
 /**
  * @constructor
  */
-function MPI() {
+export default function MPI() {
   /** An implementation dependent integer */
   this.data = null;
 }
@@ -53,7 +53,12 @@ function MPI() {
  * @return {Integer} Length of data read
  */
 MPI.prototype.read = function (bytes) {
-  var bits = (bytes.charCodeAt(0) << 8) | bytes.charCodeAt(1);
+
+  if(typeof bytes === 'string' || String.prototype.isPrototypeOf(bytes)) {
+    bytes = util.str2Uint8Array(bytes);
+  }
+
+  var bits = (bytes[0] << 8) | bytes[1];
 
   // Additional rules:
   //
@@ -67,7 +72,7 @@ MPI.prototype.read = function (bytes) {
   //      specified above is not applicable in JavaScript
   var bytelen = Math.ceil(bits / 8);
 
-  var raw = bytes.substr(2, bytelen);
+  var raw = util.Uint8Array2str(bytes.subarray(2, 2 + bytelen));
   this.fromBytes(raw);
 
   return 2 + bytelen;
@@ -78,7 +83,8 @@ MPI.prototype.fromBytes = function (bytes) {
 };
 
 MPI.prototype.toBytes = function () {
-  return this.write().substr(2);
+  var bytes = util.Uint8Array2str(this.write());
+  return bytes.substr(2);
 };
 
 MPI.prototype.byteLength = function () {
@@ -86,11 +92,11 @@ MPI.prototype.byteLength = function () {
 };
 
 /**
- * Converts the mpi object to a string as specified in {@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
- * @return {String} mpi Byte representation
+ * Converts the mpi object to a bytes as specified in {@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
+ * @return {Uint8Aray} mpi Byte representation
  */
 MPI.prototype.write = function () {
-  return this.data.toMPI();
+  return util.str2Uint8Array(this.data.toMPI());
 };
 
 MPI.prototype.toBigInteger = function () {
@@ -101,7 +107,7 @@ MPI.prototype.fromBigInteger = function (bn) {
   this.data = bn.clone();
 };
 
-module.exports.fromClone = function (clone) {
+MPI.fromClone = function (clone) {
   clone.data.copyTo = BigInteger.prototype.copyTo;
   var bn = new BigInteger();
   clone.data.copyTo(bn);

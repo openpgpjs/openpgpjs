@@ -25,12 +25,14 @@
  * @module crypto/crypto
  */
 
-var random = require('./random.js'),
-  cipher = require('./cipher'),
-  publicKey = require('./public_key'),
-  type_mpi = require('../type/mpi.js');
+'use strict';
 
-module.exports = {
+import random from './random.js';
+import cipher from './cipher';
+import publicKey from './public_key';
+import type_mpi from '../type/mpi.js';
+
+export default {
   /**
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
@@ -212,7 +214,7 @@ module.exports = {
   /**
    * generate random byte prefix as string for the specified algorithm
    * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
-   * @return {String} Random bytes with length equal to the block
+   * @return {Uint8Array} Random bytes with length equal to the block
    * size of the cipher
    */
   getPrefixRandom: function(algo) {
@@ -222,7 +224,7 @@ module.exports = {
   /**
    * Generating a session key for the specified symmetric algorithm
    * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
-   * @return {String} Random bytes as a string to be used as a key
+   * @return {Uint8Array} Random bytes as a string to be used as a key
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);

@@ -15,16 +15,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @fileoverview This class implements a client for the OpenPGP HTTP Keyserver Protocol (HKP)
+ * in order to lookup and upload keys on standard public key servers.
+ */
+
 'use strict';
 
-/**
- * This class implements a client for the OpenPGP HTTP Keyserver Protocol (HKP)
- *   in order to lookup and upload keys on standard public key servers.
- * @module hkp/hkp
- */
-module.exports = HKP;
-
-var config = require('../config');
+import config from './config';
 
 /**
  * Initialize the HKP client and configure it with the key server url and fetch function.
@@ -32,7 +30,7 @@ var config = require('../config');
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
  *   the protocol to use e.g. https://pgp.mit.edu
  */
-function HKP(keyServerBaseUrl) {
+export default function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl ? keyServerBaseUrl : config.keyserver;
   this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
