@@ -16,6 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires message
+ * @requires cleartext
+ * @requires key
+ * @requires config
+ * @requires util
+ * @module openpgp
+ */
+
+/**
  * @fileoverview The openpgp base module should provide all of the functionality
  * to consume the openpgp.js library. All additional classes are documented
  * for extending and developing on top of the base library.
