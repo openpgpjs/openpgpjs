@@ -8,7 +8,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Platform support
 
-* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in any environments. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
+* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in any environment. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
 
 * The api uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in our build. So no action required on your part!
 
@@ -21,7 +21,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 * If the user's browser supports [native WebCrypto](http://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` api, this will be used. Under node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used. This can be deactivated by setting `openpgp.config.useNative = false`.
 
-* For environments that don't provide native crypto, the library falls back to [asm.js](http://caniuse.com/#feat=asmjs) implementations of AES-CFB, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://www.npmjs.com/package/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
+* For environments that don't provide native crypto, the library falls back to [asm.js](http://caniuse.com/#feat=asmjs) implementations of AES-CFB, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://github.com/openpgpjs/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
 
 
 ### Getting started
