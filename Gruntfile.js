@@ -125,8 +125,9 @@ module.exports = function(grunt) {
         }
       },
       options: {
-        banner: '/*! OpenPGPjs.org  this is LGPL licensed code, see LICENSE/our website for more information.- v<%= pkg.version %> - ' +
-          '<%= grunt.template.today("yyyy-mm-dd") %> */'
+        banner: '/*! OpenPGP.js v<%= pkg.version %> - ' +
+          '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
+          'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
       }
     },
     jsbeautifier: {
