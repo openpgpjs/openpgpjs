@@ -8,7 +8,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Platform support
 
-* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in any environment. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
+* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in most environments. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
 
 * The api uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in our build. So no action required on your part!
 
@@ -44,7 +44,7 @@ Here are some examples of how to use the v2.x api. If you're upgrading from v1.x
 #### Set up
 
 ```js
-var openpgp = require('openpgp'); // use as ES6, CommonJS, AMD module or via window.openpgp
+var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 ```
