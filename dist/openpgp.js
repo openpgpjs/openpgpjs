@@ -3874,8 +3874,8 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.0.0",
-  commentstring: "http://openpgpjs.org",
+  versionstring: "OpenPGP.js v2.0.1",
+  commentstring: "https://openpgpjs.com",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
 };
@@ -15155,7 +15155,7 @@ function Literal() {
  */
 Literal.prototype.setText = function (text) {
   // normalize EOL to \r\n
-  text = text.replace(/\r/g, '').replace(/\n/g, '\r\n');
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
   // encode UTF8
   this.data = this.format === 'utf8' ? _util2.default.str2Uint8Array(_util2.default.encode_utf8(text)) : _util2.default.str2Uint8Array(text);
 };
