@@ -2,7 +2,6 @@ build/
 .DS_Store
 node_modules/
 npm*
-src/compression/
 test/lib/
 dist/
 dist/*.tgz
