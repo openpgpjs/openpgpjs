@@ -46,7 +46,7 @@ export default {
   show_version: true,
   show_comment: true,
   versionstring: "OpenPGP.js VERSION",
-  commentstring: "https://openpgpjs.com",
+  commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
 };
