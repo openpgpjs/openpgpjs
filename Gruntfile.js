@@ -202,6 +202,13 @@ module.exports = function(grunt) {
     connect: {
       dev: {
         options: {
+          port: 3001,
+          base: '.',
+          keepalive: true
+        }
+      },
+      test: {
+        options: {
           port: 3000,
           base: '.'
         }
@@ -288,8 +295,8 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint', 'jscs', 'copy:zlib', 'mochaTest']);
-  grunt.registerTask('coverage', ['copy:zlib', 'mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest']);
+  grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
+  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
 
 };
