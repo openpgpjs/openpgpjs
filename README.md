@@ -59,8 +59,8 @@ options = {
     passwords: ['secret stuff'] // multiple passwords possible
 };
 
-openpgp.encrypt(options).then(function(armored) {
-    encrypted = armored; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+openpgp.encrypt(options).then(function(ciphertext) {
+    encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 });
 ```
 
@@ -71,7 +71,7 @@ options = {
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
-    // return 'Hello, World!'
+    return plaintext.data; // 'Hello, World!'
 });
 ```
 
@@ -90,8 +90,8 @@ options = {
     armor: false                                        // don't ASCII armor
 };
 
-openpgp.encrypt(options).then(function(message) {
-    encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
+openpgp.encrypt(options).then(function(ciphertext) {
+    encrypted = ciphertext.message.packets.write(); // get raw encrypted packets as Uint8Array
 });
 ```
 
@@ -104,7 +104,7 @@ options = {
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
-    // return Uint8Array([0x01, 0x01, 0x01])
+    return plaintext.data // Uint8Array([0x01, 0x01, 0x01])
 });
 ```
 
