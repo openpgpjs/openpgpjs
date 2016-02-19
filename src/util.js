@@ -116,8 +116,6 @@ export default {
     return this.writeNumber(numeric, 4);
   },
 
-  emailRegEx: /^[+a-zA-Z0-9_.-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,6}$/,
-
   hexdump: function (str) {
     var r = [];
     var e = str.length;
