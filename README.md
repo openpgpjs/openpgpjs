@@ -118,8 +118,8 @@ var options = {
 };
 
 openpgp.generateKey(options).then(function(key) {
-    var privkey = key.privateKeyArmored;
-    var pubkey = key.publicKeyArmored;
+    var privkey = key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
+    var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 });
 ```
 
