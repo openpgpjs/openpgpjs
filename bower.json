@@ -7,9 +7,7 @@
     "OpenPGP Development Team <list@openpgpjs.org> (https://github.com/openpgpjs/openpgpjs/graphs/contributors)"
   ],
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
-  "main": [
-    "dist/openpgp.js"
-  ],
+  "main": "dist/openpgp.js",
   "moduleType": [
     "amd",
     "es6",
