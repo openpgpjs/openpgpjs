@@ -39,7 +39,7 @@ Or just fetch a minified build under [dist](https://github.com/openpgpjs/openpgp
 
 ### Examples
 
-Here are some examples of how to use the v2.x api. If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use the v2.x api. For more elaborate examples and working code, please check out the [public api unit tests](https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js). If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Set up
 
