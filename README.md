@@ -167,10 +167,6 @@ To create your own build of the library, just run the following command after cl
 
     npm install && npm test
 
-### Mailing List
-
-You can [sign up](http://list.openpgpjs.org/) for our mailing list and ask for help there.  We've recently worked on getting our [archive up and running](http://www.mail-archive.com/list@openpgpjs.org/).
-
 ### How do I get involved?
 
 You want to help, great! Go ahead and fork our repo, make your changes and send us a pull request.
