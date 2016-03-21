@@ -8,6 +8,7 @@
 import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';
+import * as gcm from './gcm';
 import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
@@ -21,6 +22,8 @@ const mod = {
   hash: hash,
   /** @see module:crypto/cfb */
   cfb: cfb,
+  /** @see module:crypto/aes-gcm */
+  gcm: gcm,
   /** @see module:crypto/public_key */
   publicKey: publicKey,
   /** @see module:crypto/signature */

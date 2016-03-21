@@ -169,17 +169,16 @@ export function decryptKey({ privateKey, passphrase }) {
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
-  if (asyncProxy) { // use web worker if available
+  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
-  return execute(() => {
+  let message = createMessage(data, filename);
+  if (privateKeys) { // sign the message only if private keys are specified
+    message = message.sign(privateKeys);
+  }
 
-    let message = createMessage(data, filename);
-    if (privateKeys) { // sign the message only if private keys are specified
-      message = message.sign(privateKeys);
-    }
-    message = message.encrypt(publicKeys, passwords);
+  return message.encrypt(publicKeys, passwords).then(message => {
 
     if(armor) {
       return {
@@ -190,7 +189,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
       message: message
     };
 
-  }, 'Error encrypting message');
+  }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
 /**
@@ -209,20 +208,19 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8' }) {
   checkMessage(message); publicKeys = toArray(publicKeys);
 
-  if (asyncProxy) { // use web worker if available
+  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format });
   }
 
-  return execute(() => {
+  return message.decrypt(privateKey, sessionKey, password).then(message => {
 
-    message = message.decrypt(privateKey, sessionKey, password);
     const result = parseMessage(message, format);
     if (publicKeys && result.data) { // verify only if publicKeys are specified
       result.signatures = message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error decrypting message');
+  }).catch(onError.bind(null, 'Error decrypting message'));
 }
 
 

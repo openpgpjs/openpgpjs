@@ -96,15 +96,23 @@ Message.prototype.decrypt = function(privateKey, sessionKey, password) {
   if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
     throw new Error('Invalid session key for decryption.');
   }
-  var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
+
+  var symEncryptedPacketlist = this.packets.filterByTag(
+    enums.packet.symmetricallyEncrypted,
+    enums.packet.symEncryptedIntegrityProtected,
+    enums.packet.symEncryptedAEADProtected
+  );
+
   if (symEncryptedPacketlist.length !== 0) {
     var symEncryptedPacket = symEncryptedPacketlist[0];
-    symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
-    var resultMsg = new Message(symEncryptedPacket.packets);
-    // remove packets after decryption
-    symEncryptedPacket.packets = new packet.List();
-    return resultMsg;
+    return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(() => {
+      var resultMsg = new Message(symEncryptedPacket.packets);
+      // remove packets after decryption
+      symEncryptedPacket.packets = new packet.List();
+      return resultMsg;
+    });
   }
+  return Promise.resolve();
 };
 
 /**
@@ -219,18 +227,21 @@ Message.prototype.encrypt = function(keys, passwords) {
   var packetlist = msg.packets;
 
   var symEncryptedPacket;
-  if (config.integrity_protect) {
+  if (config.aead_protect) {
+    symEncryptedPacket = new packet.SymEncryptedAEADProtected();
+  } else if (config.integrity_protect) {
     symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
     symEncryptedPacket = new packet.SymmetricallyEncrypted();
   }
   symEncryptedPacket.packets = this.packets;
-  symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
-  packetlist.push(symEncryptedPacket);
-  // remove packets after encryption
-  symEncryptedPacket.packets = new packet.List();
 
-  return msg;
+  return symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey).then(() => {
+    packetlist.push(symEncryptedPacket);
+    // remove packets after encryption
+    symEncryptedPacket.packets = new packet.List();
+    return msg;
+  });
 };
 
 /**

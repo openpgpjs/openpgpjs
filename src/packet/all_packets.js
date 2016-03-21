@@ -12,6 +12,8 @@ import * as packets from './all_packets.js'; // re-import module to parse packet
 export { default as Compressed } from './compressed.js';
 /** @see module:packet/sym_encrypted_integrity_protected */
 export { default as SymEncryptedIntegrityProtected } from './sym_encrypted_integrity_protected.js';
+/** @see module:packet/sym_encrypted_aead_protected */
+export { default as SymEncryptedAEADProtected } from './sym_encrypted_aead_protected.js';
 /** @see module:packet/public_key_encrypted_session_key */
 export { default as PublicKeyEncryptedSessionKey } from './public_key_encrypted_session_key.js';
 /** @see module:packet/sym_encrypted_session_key */
