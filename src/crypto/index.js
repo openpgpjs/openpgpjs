@@ -22,7 +22,7 @@ const mod = {
   hash: hash,
   /** @see module:crypto/cfb */
   cfb: cfb,
-  /** @see module:crypto/aes-gcm */
+  /** @see module:crypto/gcm */
   gcm: gcm,
   /** @see module:crypto/public_key */
   publicKey: publicKey,
