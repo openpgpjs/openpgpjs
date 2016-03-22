@@ -121,6 +121,29 @@ describe("Packet", function() {
     done();
   });
 
+  it('Sym. encrypted AEAD protected packet', function(done) {
+    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
+        algo = 'aes256';
+
+    var literal = new openpgp.packet.Literal(),
+        enc = new openpgp.packet.SymEncryptedAEADProtected(),
+        msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setText('Hello world!');
+    enc.packets.push(literal);
+
+    var msg2 = new openpgp.packet.List();
+
+    enc.encrypt(algo, key).then(function() {
+      msg2.read(msg.write());
+      return msg2[0].decrypt(algo, key);
+    }).then(function() {
+      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+      done();
+    });
+  });
+
   it('Sym encrypted session key with a compressed packet', function(done) {
     var msg =
         '-----BEGIN PGP MESSAGE-----\n' +

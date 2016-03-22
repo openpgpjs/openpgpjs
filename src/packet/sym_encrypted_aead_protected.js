@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted AEAD Protected Data Packet <br/>
- * <br/>
+ * Implementation of the Symmetrically Encrypted Authenticated Encryption with Additional Data (AEAD) Protected Data Packet
  * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}: AEAD Protected Data Packet
  */
 
@@ -27,7 +26,8 @@ import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';
 
-const IV_LEN = crypto.gcm.ivLength;
+const VERSION = 1; // A one-octet version number of the data packet.
+const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
 
 /**
  * @constructor
@@ -36,31 +36,52 @@ export default function SymEncryptedAEADProtected() {
   this.tag = enums.packet.symEncryptedAEADProtected;
   this.iv = null;
   this.encrypted = null;
-  /** Decrypted packets contained within.
-   * @type {module:packet/packetlist} */
   this.packets =  null;
 }
 
+/**
+ * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
+ */
 SymEncryptedAEADProtected.prototype.read = function (bytes) {
-  this.iv = bytes.subarray(0, IV_LEN);
-  this.encrypted = bytes.subarray(IV_LEN, bytes.length);
+  let offset = 0;
+  if (bytes[offset] !== VERSION) { // The only currently defined value is 1.
+    throw new Error('Invalid packet version.');
+  }
+  offset++;
+  this.iv = bytes.subarray(offset, IV_LEN + offset);
+  offset += IV_LEN;
+  this.encrypted = bytes.subarray(offset, bytes.length);
 };
 
+/**
+ * Write the encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
+ * @return {Uint8Array} The encrypted payload
+ */
 SymEncryptedAEADProtected.prototype.write = function () {
-  return util.concatUint8Array([this.iv, this.encrypted]);
+  return util.concatUint8Array([new Uint8Array([VERSION]), this.iv, this.encrypted]);
 };
 
+/**
+ * Decrypt the encrypted payload.
+ * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
+ * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @return {Promise<undefined>}           Nothing is returned
+ */
 SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   return crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv).then(decrypted => {
     this.packets.read(decrypted);
   });
 };
 
+/**
+ * Encrypt the packet list payload.
+ * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
+ * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @return {Promise<undefined>}           Nothing is returned
+ */
 SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
-  var data = this.packets.write();
-  this.iv = crypto.random.getRandomValues(new Uint8Array(IV_LEN));
-
-  return crypto.gcm.encrypt(sessionKeyAlgorithm, data, key, this.iv).then(encrypted => {
+  this.iv = crypto.random.getRandomValues(new Uint8Array(IV_LEN)); // generate new random IV
+  return crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv).then(encrypted => {
     this.encrypted = encrypted;
   });
 };
