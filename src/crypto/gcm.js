@@ -23,12 +23,14 @@
 'use strict';
 
 import util from '../util.js';
+import config from '../config';
 import asmCrypto from 'asmcrypto-lite';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 export const ivLength = 12;
+const ALGO = 'AES-GCM';
 
 /**
  * Encrypt plaintext input.
@@ -40,26 +42,18 @@ export const ivLength = 12;
  */
 export function encrypt(cipher, plaintext, key, iv) {
   if (cipher.substr(0,3) !== 'aes') {
-    return Promise.reject(new Error('Invalid cipher for GCM mode'));
+    return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  if (webCrypto) { // native WebCrypto api
-    const keyOptions = {
-      name: 'AES-GCM'
-    },
-    encryptOptions = {
-      name: 'AES-GCM',
-      iv: iv
-    };
-    return webCrypto.importKey('raw', key, keyOptions, false, ['encrypt']).then(keyObj => {
-      return webCrypto.encrypt(encryptOptions, keyObj, plaintext);
-    }).then(ciphertext => {
-      return new Uint8Array(ciphertext);
-    });
+  const keySize = cipher.substr(3,3);
+  if (webCrypto && config.useNative && keySize !== '192') { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt'])
+      .then(keyObj => webCrypto.encrypt({ name: ALGO, iv }, keyObj, plaintext))
+      .then(ciphertext => new Uint8Array(ciphertext));
 
-  } else if(nodeCrypto) { // native node crypto library
-    let cipherObj = new nodeCrypto.createCipheriv('aes-' + cipher.substr(3,3) + '-gcm', new Buffer(key), new Buffer(iv));
-    let encrypted = Buffer.concat([cipherObj.update(new Buffer(plaintext)), cipherObj.final()]);
+  } else if (nodeCrypto && config.useNative) { // Node crypto library
+    const en = new nodeCrypto.createCipheriv('aes-' + keySize + '-gcm', new Buffer(key), new Buffer(iv));
+    const encrypted = Buffer.concat([en.update(new Buffer(plaintext)), en.final()]);
     return Promise.resolve(new Uint8Array(encrypted));
 
   } else { // asm.js fallback
@@ -77,26 +71,18 @@ export function encrypt(cipher, plaintext, key, iv) {
  */
 export function decrypt(cipher, ciphertext, key, iv) {
   if (cipher.substr(0,3) !== 'aes') {
-    return Promise.reject(new Error('Invalid cipher for GCM mode'));
+    return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  if (webCrypto) { // native WebCrypto api
-    const keyOptions = {
-      name: 'AES-GCM'
-    },
-    decryptOptions = {
-      name: 'AES-GCM',
-      iv: iv
-    };
-    return webCrypto.importKey('raw', key, keyOptions, false, ['decrypt']).then(keyObj => {
-      return webCrypto.decrypt(decryptOptions, keyObj, ciphertext);
-    }).then(plaintext => {
-      return new Uint8Array(plaintext);
-    });
+  const keySize = cipher.substr(3,3);
+  if (webCrypto && config.useNative && keySize !== '192') { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webCrypto.importKey('raw', key, { name: ALGO }, false, ['decrypt'])
+      .then(keyObj => webCrypto.decrypt({ name: ALGO, iv }, keyObj, ciphertext))
+      .then(plaintext => new Uint8Array(plaintext));
 
-  } else if(nodeCrypto) { // native node crypto library
-    let decipherObj = new nodeCrypto.createDecipheriv('aes-' + cipher.substr(3,3) + '-gcm', new Buffer(key), new Buffer(iv));
-    let decrypted = Buffer.concat([decipherObj.update(new Buffer(ciphertext)), decipherObj.final()]);
+  } else if (nodeCrypto && config.useNative) { // Node crypto library
+    let de = new nodeCrypto.createDecipheriv('aes-' + keySize + '-gcm', new Buffer(key), new Buffer(iv));
+    let decrypted = Buffer.concat([de.update(new Buffer(ciphertext)), de.final()]);
     return Promise.resolve(new Uint8Array(decrypted));
 
   } else { // asm.js fallback
