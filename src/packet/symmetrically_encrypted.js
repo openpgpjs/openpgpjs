@@ -73,11 +73,14 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
     throw new Error('Decryption failed due to missing MDC in combination with modern cipher.');
   }
   this.packets.read(decrypted);
+
+  return Promise.resolve();
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
   var data = this.packets.write();
 
-  this.encrypted = crypto.cfb.encrypt(
-    crypto.getPrefixRandom(algo), algo, data, key, true);
+  this.encrypted = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, data, key, true);
+
+  return Promise.resolve();
 };

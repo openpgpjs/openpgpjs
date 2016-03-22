@@ -108,6 +108,8 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false)
       .subarray(0, prefix.length + tohash.length);
   }
+
+  return Promise.resolve();
 };
 
 /**
@@ -153,4 +155,6 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   } else {
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
   }
+
+  return Promise.resolve();
 };
