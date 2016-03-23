@@ -107,8 +107,7 @@ Message.prototype.decrypt = function(privateKey, sessionKey, password) {
     var symEncryptedPacket = symEncryptedPacketlist[0];
     return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(() => {
       var resultMsg = new Message(symEncryptedPacket.packets);
-      // remove packets after decryption
-      symEncryptedPacket.packets = new packet.List();
+      symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
       return resultMsg;
     });
   }
@@ -224,7 +223,6 @@ Message.prototype.encrypt = function(keys, passwords) {
 
   var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
   var msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
-  var packetlist = msg.packets;
 
   var symEncryptedPacket;
   if (config.aead_protect) {
@@ -237,9 +235,8 @@ Message.prototype.encrypt = function(keys, passwords) {
   symEncryptedPacket.packets = this.packets;
 
   return symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey).then(() => {
-    packetlist.push(symEncryptedPacket);
-    // remove packets after encryption
-    symEncryptedPacket.packets = new packet.List();
+    msg.packets.push(symEncryptedPacket);
+    symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
     return msg;
   });
 };

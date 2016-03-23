@@ -422,7 +422,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zeroCopyVal;
+    var privateKey, publicKey, zeroCopyVal, useNativeVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -432,10 +432,12 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
       zeroCopyVal = openpgp.config.zeroCopy;
+      useNativeVal = openpgp.config.useNative;
     });
 
     afterEach(function() {
       openpgp.config.zeroCopy = zeroCopyVal;
+      openpgp.config.useNative = useNativeVal;
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -876,6 +878,7 @@ describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt and decrypt with binary data and transferable objects', function(done) {
           openpgp.config.zeroCopy = true; // activate transferable objects
+          openpgp.config.useNative = false; // use asm.js fallback with web worker, not native crypto
           var encOpt = {
             data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
             passwords: password1,

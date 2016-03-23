@@ -304,12 +304,13 @@ describe("Signature", function() {
     var msg = openpgp.message.readArmored(msg_arm1);
 
     priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
-    msg = msg.decrypt(priv_key_gnupg_ext);
-    var verified = msg.verify([pub_key]);
-    expect(verified).to.exist;
-    expect(verified).to.have.length(1);
-    expect(verified[0].valid).to.be.true;
-    done();
+    msg.decrypt(priv_key_gnupg_ext).then(function(msg) {
+      var verified = msg.verify([pub_key]);
+      expect(verified).to.exist;
+      expect(verified).to.have.length(1);
+      expect(verified[0].valid).to.be.true;
+      done();
+    });
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', function(done) {

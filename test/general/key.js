@@ -659,10 +659,14 @@ var pgp_desktop_priv =
   it('Generated key is not unlocked by default', function(done) {
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
     if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
-      var msg = openpgp.message.fromText('hello').encrypt([key.key]);
-      msg = msg.decrypt.bind(msg, key.key);
-      expect(msg).to.throw('Private key is not decrypted.');
+    var key;
+    openpgp.generateKey(opt).then(function(newKey) {
+      key = newKey;
+      return openpgp.message.fromText('hello').encrypt([key.key]);
+    }).then(function(msg) {
+      return msg.decrypt(key.key);
+    }).catch(function(err) {
+      expect(err.message).to.equal('Private key is not decrypted.');
       done();
     });
   });
