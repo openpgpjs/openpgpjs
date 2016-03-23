@@ -339,25 +339,6 @@ describe('OpenPGP.js public api tests', function() {
       expect(proxyGenStub.calledOnce).to.be.true;
       expect(keyGenStub.calledOnce).to.be.false;
     });
-
-    it('should delegate to async proxy after web crypto failure', function(done) {
-      var workerStub = {
-        postMessage: function() {}
-      };
-      openpgp.initWorker({
-        worker: workerStub
-      });
-      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate').returns(resolves('proxy_key'));
-      getWebCryptoAllStub.returns({});
-      keyGenStub.returns(rejects(new Error('Native webcrypto keygen failed on purpose :)')));
-
-      openpgp.generateKey().then(function(newKey) {
-        expect(keyGenStub.calledOnce).to.be.true;
-        expect(proxyGenStub.calledOnce).to.be.true;
-        expect(newKey).to.equal('proxy_key');
-        done();
-      });
-    });
   });
 
   describe('generateKey - integration tests', function() {

@@ -109,18 +109,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     privateKeyArmored: newKey.armor(),
     publicKeyArmored: newKey.toPublic().armor()
 
-  })).catch(err => {
-
-    // js fallback already tried
-    if (config.debug) { console.error(err); }
-    if (!util.getWebCryptoAll()) {
-      throw new Error('Error generating keypair using js fallback');
-    }
-    // fall back to js keygen in a worker
-    if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js'); }
-    return asyncProxy.delegate('generateKey', options);
-
-  }).catch(onError.bind(null, 'Error generating keypair'));
+  })).catch(onError.bind(null, 'Error generating keypair'));
 }
 
 /**
@@ -173,14 +162,15 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
-  return new Promise(resolve => {
+  return new Promise(resolve => resolve()).then(() => {
+
     let message = createMessage(data, filename);
     if (privateKeys) { // sign the message only if private keys are specified
       message = message.sign(privateKeys);
     }
-    resolve(message);
+    return message.encrypt(publicKeys, passwords);
 
-  }).then(message => message.encrypt(publicKeys, passwords)).then(message => {
+  }).then(message => {
 
     if(armor) {
       return {
