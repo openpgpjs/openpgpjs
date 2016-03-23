@@ -450,11 +450,27 @@ export default {
   },
 
   /**
-   * Get native Web Cryptography api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * Get native Web Cryptography api, only the current versioon of the spec.
+   * The default configuration is to use the api when available. But it can
+   * be deactivated with config.useNative
    * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
+    if (!config.useNative) {
+      return;
+    }
+
+    return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
+  },
+
+  /**
+   * Get native Web Cryptography api for all browsers, including legacy
+   * implementations of the spec e.g IE11 and Safari 8/9. The default
+   * configuration is to use the api when available. But it can be deactivated
+   * with config.useNative
+   * @return {Object}   The SubtleCrypto api or 'undefined'
+   */
+  getWebCryptoAll: function() {
     if (!config.useNative) {
       return;
     }

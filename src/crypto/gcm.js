@@ -25,7 +25,7 @@
 import util from '../util.js';
 import config from '../config';
 import asmCrypto from 'asmcrypto-lite';
-const webCrypto = typeof window !== 'undefined' && window.crypto && window.crypto.subtle; // no GCM support in IE11, Safari 9
+const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 

@@ -184,7 +184,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    var keyGenStub, keyObjStub, getWebCryptoStub;
+    var keyGenStub, keyObjStub, getWebCryptoAllStub;
 
     beforeEach(function() {
       keyObjStub = {
@@ -201,13 +201,13 @@ describe('OpenPGP.js public api tests', function() {
       };
       keyGenStub = sinon.stub(openpgp.key, 'generate');
       keyGenStub.returns(resolves(keyObjStub));
-      getWebCryptoStub = sinon.stub(openpgp.util, 'getWebCrypto');
+      getWebCryptoAllStub = sinon.stub(openpgp.util, 'getWebCryptoAll');
     });
 
     afterEach(function() {
       keyGenStub.restore();
       openpgp.destroyWorker();
-      getWebCryptoStub.restore();
+      getWebCryptoAllStub.restore();
     });
 
     it('should fail for invalid user name', function() {
@@ -333,7 +333,7 @@ describe('OpenPGP.js public api tests', function() {
         worker: workerStub
       });
       var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
-      getWebCryptoStub.returns();
+      getWebCryptoAllStub.returns();
 
       openpgp.generateKey();
       expect(proxyGenStub.calledOnce).to.be.true;
@@ -348,7 +348,7 @@ describe('OpenPGP.js public api tests', function() {
         worker: workerStub
       });
       var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate').returns(resolves('proxy_key'));
-      getWebCryptoStub.returns({});
+      getWebCryptoAllStub.returns({});
       keyGenStub.returns(rejects(new Error('Native webcrypto keygen failed on purpose :)')));
 
       openpgp.generateKey().then(function(newKey) {
@@ -410,7 +410,7 @@ describe('OpenPGP.js public api tests', function() {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
       };
-      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+      if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
       openpgp.generateKey(opt).then(function(newKey) {
         expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
@@ -461,6 +461,9 @@ describe('OpenPGP.js public api tests', function() {
       it('Configuration', function(done){
         openpgp.config.show_version = false;
         openpgp.config.commentstring = 'different';
+        if (openpgp.getWorker()) { // init again to trigger config event
+          openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        }
         openpgp.encrypt({ publicKeys:publicKey.keys, data:plaintext }).then(function(encrypted) {
           expect(encrypted.data).to.exist;
           expect(encrypted.data).not.to.match(/^Version:/);

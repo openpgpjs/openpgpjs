@@ -136,7 +136,7 @@ export default function RSA() {
   // Generate a new random private key B bits long, using public expt E
 
   function generate(B, E) {
-    var webCrypto = util.getWebCrypto();
+    var webCrypto = util.getWebCryptoAll();
 
     //
     // Native RSA keygen using Web Crypto

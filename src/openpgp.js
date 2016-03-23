@@ -99,7 +99,7 @@ export function destroyWorker() {
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
   const options = formatUserIds({ userIds, passphrase, numBits, unlocked });
 
-  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
+  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
 
@@ -113,7 +113,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 
     // js fallback already tried
     if (config.debug) { console.error(err); }
-    if (!util.getWebCrypto()) {
+    if (!util.getWebCryptoAll()) {
       throw new Error('Error generating keypair using js fallback');
     }
     // fall back to js keygen in a worker
