@@ -98,18 +98,18 @@ function webDecrypt(ct, key, iv) {
 }
 
 function nodeEncrypt(pt, key, iv) {
-  pt = new Buffer(pt.buffer);
-  key = new Buffer(key.buffer);
-  iv = new Buffer(iv.buffer);
+  pt = new Buffer(pt);
+  key = new Buffer(key);
+  iv = new Buffer(iv);
   const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
   const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
   return Promise.resolve(new Uint8Array(ct));
 }
 
 function nodeDecrypt(ct, key, iv) {
-  ct = new Buffer(ct.buffer);
-  key = new Buffer(key.buffer);
-  iv = new Buffer(iv.buffer);
+  ct = new Buffer(ct);
+  key = new Buffer(key);
+  iv = new Buffer(iv);
   const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
   de.setAuthTag(ct.slice(ct.length - TAG_LEN, ct.length)); // read auth tag at end of ciphertext
   const pt = Buffer.concat([de.update(ct.slice(0, ct.length - TAG_LEN)), de.final()]);
