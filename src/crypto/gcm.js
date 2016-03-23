@@ -46,24 +46,17 @@ export function encrypt(cipher, plaintext, key, iv) {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  const keySize = key.length * 8;
-  if (webCrypto && config.useNative && keySize !== 192) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt'])
-      .then(keyObj => webCrypto.encrypt({ name: ALGO, iv }, keyObj, plaintext))
-      .then(ciphertext => new Uint8Array(ciphertext));
-
+  if (webCrypto && config.useNative && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webEncrypt(plaintext, key, iv);
   } else if (nodeCrypto && config.useNative) { // Node crypto library
-    const en = new nodeCrypto.createCipheriv('aes-' + keySize + '-gcm', new Buffer(key.buffer), new Buffer(iv.buffer));
-    const encrypted = Buffer.concat([en.update(new Buffer(plaintext.buffer)), en.final()]);
-    return Promise.resolve(new Uint8Array(Buffer.concat([encrypted, en.getAuthTag()])));
-
+    return nodeEncrypt(plaintext, key, iv) ;
   } else { // asm.js fallback
     return Promise.resolve(asmCrypto.AES_GCM.encrypt(plaintext, key, iv));
   }
 }
 
 /**
- * Decrypt ciphertext input
+ * Decrypt ciphertext input.
  * @param  {String}     cipher       The symmetric cipher algorithm to use e.g. 'aes128'
  * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
  * @param  {Uint8Array} key          The encryption key
@@ -75,20 +68,50 @@ export function decrypt(cipher, ciphertext, key, iv) {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  const keySize = key.length * 8;
-  if (webCrypto && config.useNative && keySize !== 192) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    return webCrypto.importKey('raw', key, { name: ALGO }, false, ['decrypt'])
-      .then(keyObj => webCrypto.decrypt({ name: ALGO, iv }, keyObj, ciphertext))
-      .then(plaintext => new Uint8Array(plaintext));
-
+  if (webCrypto && config.useNative && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webDecrypt(ciphertext, key, iv);
   } else if (nodeCrypto && config.useNative) { // Node crypto library
-    const ctBuf = new Buffer(ciphertext.buffer);
-    const de = new nodeCrypto.createDecipheriv('aes-' + keySize + '-gcm', new Buffer(key.buffer), new Buffer(iv.buffer));
-    de.setAuthTag(ctBuf.slice(ctBuf.length - TAG_LEN, ctBuf.length));
-    const encrypted = ctBuf.slice(0, ctBuf.length - TAG_LEN);
-    return Promise.resolve(new Uint8Array(Buffer.concat([de.update(encrypted), de.final()])));
-
+    return nodeDecrypt(ciphertext, key, iv);
   } else { // asm.js fallback
     return Promise.resolve(asmCrypto.AES_GCM.decrypt(ciphertext, key, iv));
   }
+}
+
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+function webEncrypt(pt, key, iv) {
+  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt'])
+    .then(keyObj => webCrypto.encrypt({ name: ALGO, iv }, keyObj, pt))
+    .then(ct => new Uint8Array(ct));
+}
+
+function webDecrypt(ct, key, iv) {
+  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['decrypt'])
+    .then(keyObj => webCrypto.decrypt({ name: ALGO, iv }, keyObj, ct))
+    .then(pt => new Uint8Array(pt));
+}
+
+function nodeEncrypt(pt, key, iv) {
+  pt = new Buffer(pt.buffer);
+  key = new Buffer(key.buffer);
+  iv = new Buffer(iv.buffer);
+  const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
+  const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
+  return Promise.resolve(new Uint8Array(ct));
+}
+
+function nodeDecrypt(ct, key, iv) {
+  ct = new Buffer(ct.buffer);
+  key = new Buffer(key.buffer);
+  iv = new Buffer(iv.buffer);
+  const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
+  de.setAuthTag(ct.slice(ct.length - TAG_LEN, ct.length)); // read auth tag at end of ciphertext
+  const pt = Buffer.concat([de.update(ct.slice(0, ct.length - TAG_LEN)), de.final()]);
+  return Promise.resolve(new Uint8Array(pt));
 }
