@@ -173,12 +173,14 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
-  let message = createMessage(data, filename);
-  if (privateKeys) { // sign the message only if private keys are specified
-    message = message.sign(privateKeys);
-  }
+  return new Promise(resolve => {
+    let message = createMessage(data, filename);
+    if (privateKeys) { // sign the message only if private keys are specified
+      message = message.sign(privateKeys);
+    }
+    resolve(message);
 
-  return message.encrypt(publicKeys, passwords).then(message => {
+  }).then(message => message.encrypt(publicKeys, passwords)).then(message => {
 
     if(armor) {
       return {
