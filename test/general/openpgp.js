@@ -451,6 +451,7 @@ describe('OpenPGP.js public api tests', function() {
     describe('without Worker', tests);
 
     tryWorker('with Worker', tests, function() {
+      openpgp.config.useNative = false;
       openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     }, function() {
       openpgp.destroyWorker(); // cleanup worker in case of failure
@@ -878,7 +879,6 @@ describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt and decrypt with binary data and transferable objects', function(done) {
           openpgp.config.zeroCopy = true; // activate transferable objects
-          openpgp.config.useNative = false; // use asm.js fallback with web worker, not native crypto
           var encOpt = {
             data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
             passwords: password1,
