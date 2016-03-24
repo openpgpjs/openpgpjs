@@ -145,7 +145,7 @@ describe('Util unit tests', function() {
   });
 
   describe('getTransferables', function() {
-    var zeroCopyVal,
+    var zero_copyVal,
       buf1 = new Uint8Array(1),
       buf2 = new Uint8Array(1),
       obj = {
@@ -157,16 +157,16 @@ describe('Util unit tests', function() {
       };
 
     beforeEach(function() {
-      zeroCopyVal = openpgp.config.zeroCopy;
-      openpgp.config.zeroCopy = true;
+      zero_copyVal = openpgp.config.zero_copy;
+      openpgp.config.zero_copy = true;
     });
 
     afterEach(function() {
-      openpgp.config.zeroCopy = zeroCopyVal;
+      openpgp.config.zero_copy = zero_copyVal;
     });
 
-    it('should return undefined when zeroCopy is false', function() {
-      openpgp.config.zeroCopy = false;
+    it('should return undefined when zero_copy is false', function() {
+      openpgp.config.zero_copy = false;
       expect(openpgp.util.getTransferables(obj)).to.be.undefined;
     });
     it('should return undefined for no input', function() {

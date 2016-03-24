@@ -328,26 +328,26 @@ describe('API functional testing', function() {
     });
 
     describe('Symmetric AES-GCM (native)', function() {
-      var useNativeVal;
+      var use_nativeVal;
       beforeEach(function() {
-        useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = true;
+        use_nativeVal = openpgp.config.use_native;
+        openpgp.config.use_native = true;
       });
       afterEach(function() {
-        openpgp.config.useNative = useNativeVal;
+        openpgp.config.use_native = use_nativeVal;
       });
 
       testAESGCM("12345678901234567890123456789012345678901234567890");
     });
 
     describe('Symmetric AES-GCM (asm.js fallback)', function() {
-      var useNativeVal;
+      var use_nativeVal;
       beforeEach(function() {
-        useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = false;
+        use_nativeVal = openpgp.config.use_native;
+        openpgp.config.use_native = false;
       });
       afterEach(function() {
-        openpgp.config.useNative = useNativeVal;
+        openpgp.config.use_native = use_nativeVal;
       });
 
       testAESGCM("12345678901234567890123456789012345678901234567890");

@@ -95,7 +95,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
 
-    if(nodeCrypto) { // Node crypto library. Only loaded if config.useNative === true
+    if(nodeCrypto) { // Node crypto library. Only loaded if config.use_native === true
       var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
@@ -127,7 +127,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {  // AES optimizations. Native code for node, asmCrypto for browser.
     var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
 
-    if(nodeCrypto) { // Node crypto library. Only loaded if config.useNative === true
+    if(nodeCrypto) { // Node crypto library. Only loaded if config.use_native === true
       var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
         new Buffer(key), new Buffer(new Uint8Array(blockSize)));
       decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));

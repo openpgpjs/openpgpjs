@@ -342,19 +342,19 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - integration tests', function() {
-    var useNativeVal;
+    var use_nativeVal;
 
     beforeEach(function() {
-      useNativeVal = openpgp.config.useNative;
+      use_nativeVal = openpgp.config.use_native;
     });
 
     afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
+      openpgp.config.use_native = use_nativeVal;
       openpgp.destroyWorker();
     });
 
     it('should work in JS (without worker)', function(done) {
-      openpgp.config.useNative = false;
+      openpgp.config.use_native = false;
       openpgp.destroyWorker();
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
@@ -370,7 +370,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work in JS (with worker)', function(done) {
-      openpgp.config.useNative = false;
+      openpgp.config.use_native = false;
       openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
@@ -386,7 +386,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work in with native crypto', function(done) {
-      openpgp.config.useNative = true;
+      openpgp.config.use_native = true;
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
@@ -403,7 +403,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zeroCopyVal, useNativeVal, aead_protectVal;
+    var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -412,14 +412,14 @@ describe('OpenPGP.js public api tests', function() {
       privateKey = openpgp.key.readArmored(priv_key);
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
-      zeroCopyVal = openpgp.config.zeroCopy;
-      useNativeVal = openpgp.config.useNative;
+      zero_copyVal = openpgp.config.zero_copy;
+      use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
     });
 
     afterEach(function() {
-      openpgp.config.zeroCopy = zeroCopyVal;
-      openpgp.config.useNative = useNativeVal;
+      openpgp.config.zero_copy = zero_copyVal;
+      openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
     });
 
@@ -434,7 +434,7 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('CFB mode (asm.js)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.useNative = false;
+        openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
       }
     });
@@ -445,7 +445,7 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       },
       beforeEach: function() {
-        openpgp.config.useNative = false;
+        openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
       },
       after: function() {
@@ -453,18 +453,10 @@ describe('OpenPGP.js public api tests', function() {
       }
     });
 
-    tryTests('GCM mode (asm.js)', tests, {
-      if: true,
-      beforeEach: function() {
-        openpgp.config.useNative = false;
-        openpgp.config.aead_protect = true;
-      }
-    });
-
     tryTests('GCM mode (native)', tests, {
       if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
       beforeEach: function() {
-        openpgp.config.useNative = true;
+        openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
       }
     });
@@ -893,7 +885,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should encrypt and decrypt with binary data and transferable objects', function(done) {
-          openpgp.config.zeroCopy = true; // activate transferable objects
+          openpgp.config.zero_copy = true; // activate transferable objects
           var encOpt = {
             data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
             passwords: password1,

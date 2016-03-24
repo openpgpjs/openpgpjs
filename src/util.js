@@ -61,7 +61,7 @@ export default {
    * @return {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
-    if (config.zeroCopy && Object.prototype.isPrototypeOf(obj)) {
+    if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       const transferables = [];
       this.collectBuffers(obj, transferables);
       return transferables.length ? transferables : undefined;
@@ -452,11 +452,11 @@ export default {
   /**
    * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
-   * be deactivated with config.useNative
+   * be deactivated with config.use_native
    * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (!config.useNative) {
+    if (!config.use_native) {
       return;
     }
 
@@ -467,11 +467,11 @@ export default {
    * Get native Web Cryptography api for all browsers, including legacy
    * implementations of the spec e.g IE11 and Safari 8/9. The default
    * configuration is to use the api when available. But it can be deactivated
-   * with config.useNative
+   * with config.use_native
    * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCryptoAll: function() {
-    if (!config.useNative) {
+    if (!config.use_native) {
       return;
     }
 
@@ -528,11 +528,11 @@ export default {
 
   /**
    * Get native Node.js crypto api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * the api when available. But it can also be deactivated with config.use_native
    * @return {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!this.detectNode() || !config.useNative) {
+    if (!this.detectNode() || !config.use_native) {
       return;
     }
 
