@@ -462,7 +462,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('GCM mode (native)', tests, {
-      if: openpgp.util.getWebCrypto(),
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
       beforeEach: function() {
         openpgp.config.useNative = true;
         openpgp.config.aead_protect = true;
