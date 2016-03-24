@@ -1,4 +1,4 @@
-/* globals tryWorker: true */
+/* globals tryTests: true */
 
 'use strict';
 
@@ -403,7 +403,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zeroCopyVal, useNativeVal;
+    var privateKey, publicKey, zeroCopyVal, useNativeVal, aead_protectVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -414,11 +414,13 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.err).to.not.exist;
       zeroCopyVal = openpgp.config.zeroCopy;
       useNativeVal = openpgp.config.useNative;
+      aead_protectVal = openpgp.config.aead_protect;
     });
 
     afterEach(function() {
       openpgp.config.zeroCopy = zeroCopyVal;
       openpgp.config.useNative = useNativeVal;
+      openpgp.config.aead_protect = aead_protectVal;
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -429,13 +431,42 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
     });
 
-    describe('without Worker', tests);
+    tryTests('CFB mode (asm.js)', tests, {
+      if: true,
+      beforeEach: function() {
+        openpgp.config.useNative = false;
+        openpgp.config.aead_protect = false;
+      }
+    });
 
-    tryWorker('with Worker', tests, function() {
-      openpgp.config.useNative = false;
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    }, function() {
-      openpgp.destroyWorker(); // cleanup worker in case of failure
+    tryTests('CFB mode (asm.js, worker)', tests, {
+      if: typeof window !== 'undefined' && window.Worker,
+      before: function() {
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      },
+      beforeEach: function() {
+        openpgp.config.useNative = false;
+        openpgp.config.aead_protect = false;
+      },
+      after: function() {
+        openpgp.destroyWorker();
+      }
+    });
+
+    tryTests('GCM mode (asm.js)', tests, {
+      if: true,
+      beforeEach: function() {
+        openpgp.config.useNative = false;
+        openpgp.config.aead_protect = true;
+      }
+    });
+
+    tryTests('GCM mode (native)', tests, {
+      if: openpgp.util.getWebCrypto(),
+      beforeEach: function() {
+        openpgp.config.useNative = true;
+        openpgp.config.aead_protect = true;
+      }
     });
 
     function tests() {
