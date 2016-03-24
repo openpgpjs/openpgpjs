@@ -933,7 +933,7 @@ export function readArmored(armoredText) {
  */
 export function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
-  return new Promise(resolve => resolve()).then(() => {
+  return Promise.resolve().then(() => {
     options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Only RSA Encrypt or Sign supported');

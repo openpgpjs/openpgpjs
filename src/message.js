@@ -92,7 +92,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey, sessionKey, password) {
-  return new Promise(resolve => resolve()).then(() => {
+  return Promise.resolve().then(() => {
     const keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
     if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
       throw new Error('Invalid session key for decryption.');
@@ -216,7 +216,7 @@ Message.prototype.getText = function() {
  */
 Message.prototype.encrypt = function(keys, passwords) {
   let symAlgo, msg, symEncryptedPacket;
-  return new Promise(resolve => resolve()).then(() => {
+  return Promise.resolve().then(() => {
     if (keys) {
       symAlgo = keyModule.getPreferredSymAlgo(keys);
     } else if (passwords) {
