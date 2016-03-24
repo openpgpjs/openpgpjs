@@ -34,6 +34,7 @@ const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
  */
 export default function SymEncryptedAEADProtected() {
   this.tag = enums.packet.symEncryptedAEADProtected;
+  this.version = VERSION;
   this.iv = null;
   this.encrypted = null;
   this.packets =  null;
@@ -58,7 +59,7 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
  * @return {Uint8Array} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
-  return util.concatUint8Array([new Uint8Array([VERSION]), this.iv, this.encrypted]);
+  return util.concatUint8Array([new Uint8Array([this.version]), this.iv, this.encrypted]);
 };
 
 /**
