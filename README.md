@@ -21,7 +21,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 * If the user's browser supports [native WebCrypto](http://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` api, this will be used. Under node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used. This can be deactivated by setting `openpgp.config.use_native = false`.
 
-* The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ford-openpgp-format-00) for authenticated encryption using native AES-GCM provided by WebCrypto/Node. This makes symmetric encryption about 30x faster on supported platforms (with hardware acceleration). Since the specification has not been finalized and other OpenPGP implementations like GnuPG have not adopted it yet, the feature is currently hidden behind a flag. You can activate it by setting `openpgp.config.aead_protect = true`.
+* The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ford-openpgp-format-00) for authenticated encryption using native AES-GCM. This makes symmetric encryption about 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. You can activate it by setting `openpgp.config.aead_protect = true`.
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](http://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://github.com/openpgpjs/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
 
@@ -49,7 +49,7 @@ Here are some examples of how to use the v2.x api. For more elaborate examples a
 var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
-openpgp.config.aead_protect = true // activate native AES-GCM ([see Performance](https://github.com/openpgpjs/openpgpjs#performance))
+openpgp.config.aead_protect = true // activate fast AES-GCM mode (experimental)
 ```
 
 #### Encrypt and decrypt *String* data with a password
