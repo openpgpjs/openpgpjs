@@ -987,8 +987,8 @@ export function generate(options) {
       signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
       signaturePacket.preferredSymmetricAlgorithms = [];
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
       signaturePacket.preferredHashAlgorithms = [];

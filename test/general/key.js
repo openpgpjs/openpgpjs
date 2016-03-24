@@ -599,13 +599,13 @@ var pgp_desktop_priv =
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
-  it('getPreferredSymAlgo() - two key - AES192', function() {
+  it('getPreferredSymAlgo() - two key - AES128', function() {
     var keys = openpgp.key.readArmored(twoKeys).keys;
     var key1 = keys[0];
     var key2 = keys[1];
-    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = [6,8,3];
+    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = [6,7,3];
     var prefAlgo = openpgp.key.getPreferredSymAlgo([key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes192);
+    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
   it('getPreferredSymAlgo() - two key - one without pref', function() {
@@ -626,7 +626,7 @@ var pgp_desktop_priv =
       expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_communication).to.equal(keyFlags.encrypt_communication);
       expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       var sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes192, sym.aes128, sym.cast5, sym.tripledes]);
+      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
       var hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha1, hash.sha512]);
       var compr = openpgp.enums.compression;
