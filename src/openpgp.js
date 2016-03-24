@@ -158,7 +158,7 @@ export function decryptKey({ privateKey, passphrase }) {
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
-  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
+  if (!useAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
@@ -200,7 +200,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8' }) {
   checkMessage(message); publicKeys = toArray(publicKeys);
 
-  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
+  if (!useAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format });
   }
 
@@ -472,4 +472,13 @@ function onError(message, error) {
   if (config.debug) { console.error(error.stack); }
   // rethrow new high level error for api users
   throw new Error(message + ': ' + error.message);
+}
+
+/**
+ * Check for AES-GCM support and configuration by the user. Note that only browsers that
+ * implement the current WebCrypto specification support AES-GCM.
+ * @return {Boolean}   If authenticated encryption should be used
+ */
+function useAEAD() {
+  return util.getWebCrypto() && config.aead_protect;
 }

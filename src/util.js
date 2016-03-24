@@ -450,7 +450,7 @@ export default {
   },
 
   /**
-   * Get native Web Cryptography api, only the current versioon of the spec.
+   * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
    * be deactivated with config.useNative
    * @return {Object}   The SubtleCrypto api or 'undefined'
