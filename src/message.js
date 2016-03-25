@@ -92,19 +92,29 @@ Message.prototype.getSigningKeyIds = function() {
  * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = function(privateKey, sessionKey, password) {
-  var keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
-  if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
-    throw new Error('Invalid session key for decryption.');
-  }
-  var symEncryptedPacketlist = this.packets.filterByTag(enums.packet.symmetricallyEncrypted, enums.packet.symEncryptedIntegrityProtected);
-  if (symEncryptedPacketlist.length !== 0) {
-    var symEncryptedPacket = symEncryptedPacketlist[0];
-    symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
-    var resultMsg = new Message(symEncryptedPacket.packets);
-    // remove packets after decryption
-    symEncryptedPacket.packets = new packet.List();
-    return resultMsg;
-  }
+  return Promise.resolve().then(() => {
+    const keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
+    if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
+      throw new Error('Invalid session key for decryption.');
+    }
+
+    const symEncryptedPacketlist = this.packets.filterByTag(
+      enums.packet.symmetricallyEncrypted,
+      enums.packet.symEncryptedIntegrityProtected,
+      enums.packet.symEncryptedAEADProtected
+    );
+
+    if (symEncryptedPacketlist.length === 0) {
+      return;
+    }
+
+    const symEncryptedPacket = symEncryptedPacketlist[0];
+    return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(() => {
+      const resultMsg = new Message(symEncryptedPacket.packets);
+      symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
+      return resultMsg;
+    });
+  });
 };
 
 /**
@@ -205,32 +215,35 @@ Message.prototype.getText = function() {
  * @return {Message}                   new message with encrypted content
  */
 Message.prototype.encrypt = function(keys, passwords) {
-  var symAlgo;
-  if (keys) {
-    symAlgo = keyModule.getPreferredSymAlgo(keys);
-  } else if (passwords) {
-    symAlgo = config.encryption_cipher;
-  } else {
-    throw new Error('No keys or passwords');
-  }
+  let symAlgo, msg, symEncryptedPacket;
+  return Promise.resolve().then(() => {
+    if (keys) {
+      symAlgo = keyModule.getPreferredSymAlgo(keys);
+    } else if (passwords) {
+      symAlgo = config.encryption_cipher;
+    } else {
+      throw new Error('No keys or passwords');
+    }
 
-  var sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
-  var msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
-  var packetlist = msg.packets;
+    let sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
+    msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
 
-  var symEncryptedPacket;
-  if (config.integrity_protect) {
-    symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
-  } else {
-    symEncryptedPacket = new packet.SymmetricallyEncrypted();
-  }
-  symEncryptedPacket.packets = this.packets;
-  symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
-  packetlist.push(symEncryptedPacket);
-  // remove packets after encryption
-  symEncryptedPacket.packets = new packet.List();
+    if (config.aead_protect) {
+      symEncryptedPacket = new packet.SymEncryptedAEADProtected();
+    } else if (config.integrity_protect) {
+      symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
+    } else {
+      symEncryptedPacket = new packet.SymmetricallyEncrypted();
+    }
+    symEncryptedPacket.packets = this.packets;
 
-  return msg;
+    return symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
+
+  }).then(() => {
+    msg.packets.push(symEncryptedPacket);
+    symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
+    return msg;
+  });
 };
 
 /**

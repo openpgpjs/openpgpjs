@@ -121,6 +121,29 @@ describe("Packet", function() {
     done();
   });
 
+  it('Sym. encrypted AEAD protected packet', function(done) {
+    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
+        algo = 'aes256';
+
+    var literal = new openpgp.packet.Literal(),
+        enc = new openpgp.packet.SymEncryptedAEADProtected(),
+        msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setText('Hello world!');
+    enc.packets.push(literal);
+
+    var msg2 = new openpgp.packet.List();
+
+    enc.encrypt(algo, key).then(function() {
+      msg2.read(msg.write());
+      return msg2[0].decrypt(algo, key);
+    }).then(function() {
+      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+      done();
+    });
+  });
+
   it('Sym encrypted session key with a compressed packet', function(done) {
     var msg =
         '-----BEGIN PGP MESSAGE-----\n' +
@@ -150,7 +173,7 @@ describe("Packet", function() {
 
   it('Public key encrypted symmetric key packet', function(done) {
     var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCrypto() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     rsa.generate(keySize, "10001").then(function(mpiGen) {
 
@@ -414,7 +437,7 @@ describe("Packet", function() {
     key.push(new openpgp.packet.SecretKey());
 
     var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCrypto() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     rsa.generate(keySize, "10001").then(function(mipGen) {
       var mpi = [mipGen.n, mipGen.ee, mipGen.d, mipGen.p, mipGen.q, mipGen.u];
@@ -443,7 +466,7 @@ describe("Packet", function() {
     var key = new openpgp.packet.SecretKey();
 
     var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCrypto() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     rsa.generate(keySize, "10001").then(function(mpiGen) {
         var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];

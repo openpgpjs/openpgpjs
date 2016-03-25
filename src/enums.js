@@ -94,7 +94,8 @@ export default {
     publicSubkey: 14,
     userAttribute: 17,
     symEncryptedIntegrityProtected: 18,
-    modificationDetectionCode: 19
+    modificationDetectionCode: 19,
+    symEncryptedAEADProtected: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
   },
 
   /** Data types in the literal packet

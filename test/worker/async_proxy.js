@@ -1,4 +1,4 @@
-/* globals tryWorker: true */
+/* globals tryTests: true */
 
 'use strict';
 
@@ -35,11 +35,15 @@ var pub_key =
 var plaintext = 'short message\nnext line\n한국어/조선말';
 var pubKey;
 
-tryWorker('Async Proxy', tests, function() {
-  openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-  pubKey = openpgp.key.readArmored(pub_key).keys[0];
-}, function() {
-  openpgp.destroyWorker();
+tryTests('Async Proxy', tests, {
+  if: typeof window !== 'undefined' && window.Worker,
+  before: function() {
+    openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    pubKey = openpgp.key.readArmored(pub_key).keys[0];
+  },
+  after: function() {
+    openpgp.destroyWorker();
+  }
 });
 
 function tests() {

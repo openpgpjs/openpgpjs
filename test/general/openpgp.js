@@ -1,4 +1,4 @@
-/* globals tryWorker: true */
+/* globals tryTests: true */
 
 'use strict';
 
@@ -184,7 +184,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    var keyGenStub, keyObjStub, getWebCryptoStub;
+    var keyGenStub, keyObjStub, getWebCryptoAllStub;
 
     beforeEach(function() {
       keyObjStub = {
@@ -201,13 +201,13 @@ describe('OpenPGP.js public api tests', function() {
       };
       keyGenStub = sinon.stub(openpgp.key, 'generate');
       keyGenStub.returns(resolves(keyObjStub));
-      getWebCryptoStub = sinon.stub(openpgp.util, 'getWebCrypto');
+      getWebCryptoAllStub = sinon.stub(openpgp.util, 'getWebCryptoAll');
     });
 
     afterEach(function() {
       keyGenStub.restore();
       openpgp.destroyWorker();
-      getWebCryptoStub.restore();
+      getWebCryptoAllStub.restore();
     });
 
     it('should fail for invalid user name', function() {
@@ -333,47 +333,28 @@ describe('OpenPGP.js public api tests', function() {
         worker: workerStub
       });
       var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
-      getWebCryptoStub.returns();
+      getWebCryptoAllStub.returns();
 
       openpgp.generateKey();
       expect(proxyGenStub.calledOnce).to.be.true;
       expect(keyGenStub.calledOnce).to.be.false;
     });
-
-    it('should delegate to async proxy after web crypto failure', function(done) {
-      var workerStub = {
-        postMessage: function() {}
-      };
-      openpgp.initWorker({
-        worker: workerStub
-      });
-      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate').returns(resolves('proxy_key'));
-      getWebCryptoStub.returns({});
-      keyGenStub.returns(rejects(new Error('Native webcrypto keygen failed on purpose :)')));
-
-      openpgp.generateKey().then(function(newKey) {
-        expect(keyGenStub.calledOnce).to.be.true;
-        expect(proxyGenStub.calledOnce).to.be.true;
-        expect(newKey).to.equal('proxy_key');
-        done();
-      });
-    });
   });
 
   describe('generateKey - integration tests', function() {
-    var useNativeVal;
+    var use_nativeVal;
 
     beforeEach(function() {
-      useNativeVal = openpgp.config.useNative;
+      use_nativeVal = openpgp.config.use_native;
     });
 
     afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
+      openpgp.config.use_native = use_nativeVal;
       openpgp.destroyWorker();
     });
 
     it('should work in JS (without worker)', function(done) {
-      openpgp.config.useNative = false;
+      openpgp.config.use_native = false;
       openpgp.destroyWorker();
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
@@ -389,7 +370,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work in JS (with worker)', function(done) {
-      openpgp.config.useNative = false;
+      openpgp.config.use_native = false;
       openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
@@ -405,12 +386,12 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work in with native crypto', function(done) {
-      openpgp.config.useNative = true;
+      openpgp.config.use_native = true;
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
       };
-      if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+      if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
       openpgp.generateKey(opt).then(function(newKey) {
         expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
@@ -422,7 +403,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zeroCopyVal;
+    var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -431,11 +412,15 @@ describe('OpenPGP.js public api tests', function() {
       privateKey = openpgp.key.readArmored(priv_key);
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
-      zeroCopyVal = openpgp.config.zeroCopy;
+      zero_copyVal = openpgp.config.zero_copy;
+      use_nativeVal = openpgp.config.use_native;
+      aead_protectVal = openpgp.config.aead_protect;
     });
 
     afterEach(function() {
-      openpgp.config.zeroCopy = zeroCopyVal;
+      openpgp.config.zero_copy = zero_copyVal;
+      openpgp.config.use_native = use_nativeVal;
+      openpgp.config.aead_protect = aead_protectVal;
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -446,18 +431,43 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
     });
 
-    describe('without Worker', tests);
+    tryTests('CFB mode (asm.js)', tests, {
+      if: true,
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = false;
+      }
+    });
 
-    tryWorker('with Worker', tests, function() {
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    }, function() {
-      openpgp.destroyWorker(); // cleanup worker in case of failure
+    tryTests('CFB mode (asm.js, worker)', tests, {
+      if: typeof window !== 'undefined' && window.Worker,
+      before: function() {
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      },
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = false;
+      },
+      after: function() {
+        openpgp.destroyWorker();
+      }
+    });
+
+    tryTests('GCM mode (native)', tests, {
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = true;
+      }
     });
 
     function tests() {
       it('Configuration', function(done){
         openpgp.config.show_version = false;
         openpgp.config.commentstring = 'different';
+        if (openpgp.getWorker()) { // init again to trigger config event
+          openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        }
         openpgp.encrypt({ publicKeys:publicKey.keys, data:plaintext }).then(function(encrypted) {
           expect(encrypted.data).to.exist;
           expect(encrypted.data).not.to.match(/^Version:/);
@@ -875,7 +885,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should encrypt and decrypt with binary data and transferable objects', function(done) {
-          openpgp.config.zeroCopy = true; // activate transferable objects
+          openpgp.config.zero_copy = true; // activate transferable objects
           var encOpt = {
             data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
             passwords: password1,

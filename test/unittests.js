@@ -6,17 +6,19 @@
   return new Promise(function(res, rej) { rej(val); });
 };
 
-(typeof window !== 'undefined' ? window : global).tryWorker = function(name, tests, beforeFn, afterFn) {
-  if (typeof window !== 'undefined' && window.Worker) {
+(typeof window !== 'undefined' ? window : global).tryTests = function(name, tests, options) {
+  if (options.if) {
     describe(name, function() {
-      before(beforeFn);
+      if (options.before) { before(options.before); }
+      if (options.beforeEach) { beforeEach(options.beforeEach); }
 
       tests();
 
-      after(afterFn);
+      if (options.afterEach) { afterEach(options.afterEach); }
+      if (options.after) { after(options.after); }
     });
   } else {
-    describe.skip(name + ' (No Web Worker support --> skipping tests)', tests);
+    describe.skip(name + ' (no support --> skipping tests)', tests);
   }
 };
 

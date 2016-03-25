@@ -1,6 +1,6 @@
 'use strict';
 
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var chai = require('chai'),
 	expect = chai.expect;
@@ -80,7 +80,7 @@ describe('API functional testing', function() {
                   0x51,0xe0,0x22,0xf0,0xff,0xa7,0x42,0xd4,0xde,0x0b,0x47,0x8f,0x2b,
                   0xf5,0x4d,0x04,0x32,0x91,0x89,0x4b,0x0e,0x05,0x8d,0x70,0xf9,0xbb,
                   0xe7,0xd6,0x76,0xea,0x0e,0x1a,0x90,0x30,0xf5,0x98,0x01,0xc5,0x73])];
-  
+
   var DSApubMPIstrs = [
     new Uint8Array([0x08,0x00,0xa8,0x85,0x5c,0x28,0x05,0x94,0x03,0xbe,0x07,0x6c,0x13,0x3e,0x65,
                   0xfb,0xb5,0xe1,0x99,0x7c,0xfa,0x84,0xe3,0xac,0x47,0xa5,0xc4,0x46,0xd8,0x5f,
@@ -143,7 +143,7 @@ describe('API functional testing', function() {
     new Uint8Array([0x01,0x00,0x9b,0x58,0xa8,0xf4,0x04,0xb1,0xd5,0x14,0x09,0xe1,0xe1,0xa1,0x8a,
                   0x0b,0xa3,0xc3,0xa3,0x66,0xaa,0x27,0x99,0x50,0x1c,0x4d,0xba,0x24,0xee,0xdf,
                   0xdf,0xb8,0x8e,0x8e])];
-            
+
   var ElgamalpubMPIstrs = [
     new Uint8Array([0x08,0x00,0xea,0xcc,0xbe,0xe2,0xe4,0x5a,0x51,0x18,0x93,0xa1,0x12,0x2f,0x00,
                   0x99,0x42,0xd8,0x5c,0x1c,0x2f,0xb6,0x3c,0xd9,0x94,0x61,0xb4,0x55,0x8d,0x4e,
@@ -200,13 +200,13 @@ describe('API functional testing', function() {
     RSAsecMPIs[i] = new openpgp.MPI();
     RSAsecMPIs[i].read(RSAsecMPIstrs[i]);
   }
-    
+
   var DSAsecMPIs = [];
   for (i = 0; i < 1; i++) {
     DSAsecMPIs[i] = new openpgp.MPI();
     DSAsecMPIs[i].read(DSAsecMPIstrs[i]);
   }
-    
+
   var DSApubMPIs = [];
   for (i = 0; i < 4; i++) {
     DSApubMPIs[i] = new openpgp.MPI();
@@ -217,7 +217,7 @@ describe('API functional testing', function() {
     ElgamalsecMPIs[i] = new openpgp.MPI();
     ElgamalsecMPIs[i].read(ElgamalsecMPIstrs[i]);
   }
-    
+
   var ElgamalpubMPIs = [];
   for (i = 0; i < 3; i++) {
     ElgamalpubMPIs[i] = new openpgp.MPI();
@@ -287,6 +287,25 @@ describe('API functional testing', function() {
       });
     }
 
+    function testAESGCM(plaintext) {
+      symmAlgos.forEach(function(algo) {
+        if(algo.substr(0,3) === 'aes') {
+          it(algo, function(done) {
+            var key = openpgp.crypto.generateSessionKey(algo);
+            var iv = openpgp.crypto.random.getRandomValues(new Uint8Array(openpgp.crypto.gcm.ivLength));
+
+            openpgp.crypto.gcm.encrypt(algo, util.str2Uint8Array(plaintext), key, iv).then(function(ciphertext) {
+              return openpgp.crypto.gcm.decrypt(algo, ciphertext, key, iv);
+            }).then(function(decrypted) {
+              var decryptedStr = util.Uint8Array2str(decrypted);
+              expect(decryptedStr).to.equal(plaintext);
+              done();
+            });
+          });
+        }
+      });
+    }
+
     it("Symmetric with OpenPGP CFB resync", function () {
       testCFB("hello", true);
       testCFB("1234567", true);
@@ -301,11 +320,37 @@ describe('API functional testing', function() {
       testCFB("12345678901234567890123456789012345678901234567890", false);
     });
 
-    it("asmCrypto AES without OpenPGP CFB resync", function () {
-      testCFB("hello");
-      testCFB("1234567");
-      testCFB("foobarfoobar1234567890");
-      testCFB("12345678901234567890123456789012345678901234567890");
+    it.skip("asmCrypto AES without OpenPGP CFB resync", function () {
+      testAESCFB("hello");
+      testAESCFB("1234567");
+      testAESCFB("foobarfoobar1234567890");
+      testAESCFB("12345678901234567890123456789012345678901234567890");
+    });
+
+    describe('Symmetric AES-GCM (native)', function() {
+      var use_nativeVal;
+      beforeEach(function() {
+        use_nativeVal = openpgp.config.use_native;
+        openpgp.config.use_native = true;
+      });
+      afterEach(function() {
+        openpgp.config.use_native = use_nativeVal;
+      });
+
+      testAESGCM("12345678901234567890123456789012345678901234567890");
+    });
+
+    describe('Symmetric AES-GCM (asm.js fallback)', function() {
+      var use_nativeVal;
+      beforeEach(function() {
+        use_nativeVal = openpgp.config.use_native;
+        openpgp.config.use_native = false;
+      });
+      afterEach(function() {
+        openpgp.config.use_native = use_nativeVal;
+      });
+
+      testAESGCM("12345678901234567890123456789012345678901234567890");
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function (done) {

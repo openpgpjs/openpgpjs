@@ -99,7 +99,7 @@ export function destroyWorker() {
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
   const options = formatUserIds({ userIds, passphrase, numBits, unlocked });
 
-  if (!util.getWebCrypto() && asyncProxy) { // use web worker if web crypto apis are not supported
+  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
 
@@ -109,18 +109,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     privateKeyArmored: newKey.armor(),
     publicKeyArmored: newKey.toPublic().armor()
 
-  })).catch(err => {
-
-    // js fallback already tried
-    if (config.debug) { console.error(err); }
-    if (!util.getWebCrypto()) {
-      throw new Error('Error generating keypair using js fallback');
-    }
-    // fall back to js keygen in a worker
-    if (config.debug) { console.log('Error generating keypair using native WebCrypto... falling back back to js'); }
-    return asyncProxy.delegate('generateKey', options);
-
-  }).catch(onError.bind(null, 'Error generating keypair'));
+  })).catch(onError.bind(null, 'Error generating keypair'));
 }
 
 /**
@@ -169,17 +158,19 @@ export function decryptKey({ privateKey, passphrase }) {
 export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
-  if (asyncProxy) { // use web worker if available
+  if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
   }
 
-  return execute(() => {
+  return Promise.resolve().then(() => {
 
     let message = createMessage(data, filename);
     if (privateKeys) { // sign the message only if private keys are specified
       message = message.sign(privateKeys);
     }
-    message = message.encrypt(publicKeys, passwords);
+    return message.encrypt(publicKeys, passwords);
+
+  }).then(message => {
 
     if(armor) {
       return {
@@ -190,7 +181,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
       message: message
     };
 
-  }, 'Error encrypting message');
+  }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
 /**
@@ -209,20 +200,19 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
 export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8' }) {
   checkMessage(message); publicKeys = toArray(publicKeys);
 
-  if (asyncProxy) { // use web worker if available
+  if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format });
   }
 
-  return execute(() => {
+  return message.decrypt(privateKey, sessionKey, password).then(message => {
 
-    message = message.decrypt(privateKey, sessionKey, password);
     const result = parseMessage(message, format);
     if (publicKeys && result.data) { // verify only if publicKeys are specified
       result.signatures = message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error decrypting message');
+  }).catch(onError.bind(null, 'Error decrypting message'));
 }
 
 
@@ -482,4 +472,13 @@ function onError(message, error) {
   if (config.debug) { console.error(error.stack); }
   // rethrow new high level error for api users
   throw new Error(message + ': ' + error.message);
+}
+
+/**
+ * Check for AES-GCM support and configuration by the user. Only browsers that
+ * implement the current WebCrypto specification support native AES-GCM.
+ * @return {Boolean}   If authenticated encryption should be used
+ */
+function nativeAEAD() {
+  return util.getWebCrypto() && config.aead_protect;
 }

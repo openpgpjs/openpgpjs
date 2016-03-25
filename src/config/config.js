@@ -37,11 +37,12 @@ export default {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
+  aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption
   integrity_protect: true, // use integrity protection for symmetric encryption
   ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
   rsa_blinding: true,
-  useNative: true, // use native node.js crypto and Web Crypto apis (if available)
-  zeroCopy: false, // use transferable objects between the Web Worker and main thread
+  use_native: true, // use native node.js crypto and Web Crypto apis (if available)
+  zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
   show_version: true,
   show_comment: true,

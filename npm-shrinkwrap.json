@@ -3,9 +3,9 @@
   "version": "2.1.0",
   "dependencies": {
     "asmcrypto-lite": {
-      "version": "1.0.1",
+      "version": "1.1.0",
       "from": "asmcrypto-lite@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/asmcrypto-lite/-/asmcrypto-lite-1.0.1.tgz"
+      "resolved": "https://registry.npmjs.org/asmcrypto-lite/-/asmcrypto-lite-1.1.0.tgz"
     },
     "babel-preset-es2015": {
       "version": "6.5.0",

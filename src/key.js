@@ -933,24 +933,21 @@ export function readArmored(armoredText) {
  */
 export function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
+  return Promise.resolve().then(() => {
+    options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Only RSA Encrypt or Sign supported');
+    }
 
-  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-  // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
-    throw new Error('Only RSA Encrypt or Sign supported');
-  }
-  // Key without passphrase is unlocked by definition
-  if (!options.passphrase) {
-    options.unlocked = true;
-  }
-  if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
-    options.userIds = [options.userIds];
-  }
+    if (!options.passphrase) { // Key without passphrase is unlocked by definition
+      options.unlocked = true;
+    }
+    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+      options.userIds = [options.userIds];
+    }
 
-  // generate
-  var genSecretKey = generateSecretKey();
-  var genSecretSubkey = generateSecretSubkey();
-  return Promise.all([genSecretKey, genSecretSubkey]).then(wrapKeyObject);
+    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(wrapKeyObject);
+  });
 
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
@@ -990,8 +987,8 @@ export function generate(options) {
       signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
       signaturePacket.preferredSymmetricAlgorithms = [];
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
       signaturePacket.preferredHashAlgorithms = [];

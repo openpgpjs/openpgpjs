@@ -599,13 +599,13 @@ var pgp_desktop_priv =
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
-  it('getPreferredSymAlgo() - two key - AES192', function() {
+  it('getPreferredSymAlgo() - two key - AES128', function() {
     var keys = openpgp.key.readArmored(twoKeys).keys;
     var key1 = keys[0];
     var key2 = keys[1];
-    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = [6,8,3];
+    key2.getPrimaryUser().selfCertificate.preferredSymmetricAlgorithms = [6,7,3];
     var prefAlgo = openpgp.key.getPreferredSymAlgo([key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes192);
+    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
   it('getPreferredSymAlgo() - two key - one without pref', function() {
@@ -626,7 +626,7 @@ var pgp_desktop_priv =
       expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_communication).to.equal(keyFlags.encrypt_communication);
       expect(key.subKeys[0].bindingSignature.keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       var sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes192, sym.aes128, sym.cast5, sym.tripledes]);
+      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
       var hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha1, hash.sha512]);
       var compr = openpgp.enums.compression;
@@ -634,7 +634,7 @@ var pgp_desktop_priv =
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
     };
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
-    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     openpgp.generateKey(opt).then(function(key) {
       testPref(key.key);
       testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
@@ -658,11 +658,15 @@ var pgp_desktop_priv =
 
   it('Generated key is not unlocked by default', function(done) {
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
-    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
-      var msg = openpgp.message.fromText('hello').encrypt([key.key]);
-      msg = msg.decrypt.bind(msg, key.key);
-      expect(msg).to.throw('Private key is not decrypted.');
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    var key;
+    openpgp.generateKey(opt).then(function(newKey) {
+      key = newKey;
+      return openpgp.message.fromText('hello').encrypt([key.key]);
+    }).then(function(msg) {
+      return msg.decrypt(key.key);
+    }).catch(function(err) {
+      expect(err.message).to.equal('Private key is not decrypted.');
       done();
     });
   });
@@ -670,7 +674,7 @@ var pgp_desktop_priv =
   it('Generate key - single userid', function(done) {
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: '123'};
-    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -683,7 +687,7 @@ var pgp_desktop_priv =
     var userId1 = 'test <a@b.com>';
     var userId2 = 'test <b@c.com>';
     var opt = {numBits: 512, userIds: [userId1, userId2], passphrase: '123'};
-    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(2);
