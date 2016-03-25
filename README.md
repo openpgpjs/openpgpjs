@@ -49,6 +49,7 @@ Here are some examples of how to use the v2.x api. For more elaborate examples a
 var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
+
 openpgp.config.aead_protect = true // activate fast AES-GCM mode (experimental)
 ```
 
