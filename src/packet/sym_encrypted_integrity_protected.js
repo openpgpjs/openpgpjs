@@ -41,11 +41,14 @@ import asmCrypto from 'asmcrypto-lite';
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
+const VERSION = 1; // A one-octet version number of the data packet.
+
 /**
  * @constructor
  */
 export default function SymEncryptedIntegrityProtected() {
   this.tag = enums.packet.symEncryptedIntegrityProtected;
+  this.version = VERSION;
   /** The encrypted payload. */
   this.encrypted = null; // string
   /**
@@ -60,9 +63,7 @@ export default function SymEncryptedIntegrityProtected() {
 
 SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
   // - A one-octet version number. The only currently defined value is 1.
-  var version = bytes[0];
-
-  if (version !== 1) {
+  if (bytes[0] !== VERSION) {
     throw new Error('Invalid packet version.');
   }
 
@@ -73,82 +74,57 @@ SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
-  // 1 = Version
-  return util.concatUint8Array([new Uint8Array([1]), this.encrypted]);
+  return util.concatUint8Array([new Uint8Array([VERSION]), this.encrypted]);
 };
 
+/**
+ * Encrypt the payload in the packet.
+ * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+ * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @return {Promise}
+ */
 SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
-  var bytes = this.packets.write();
+  const bytes = this.packets.write();
+  const prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
+  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+  const prefix = util.concatUint8Array([prefixrandom, repeat]);
+  const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  var prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
-  var repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  var prefix = util.concatUint8Array([prefixrandom, repeat]);
-
-  // Modification detection code packet.
-  var mdc = new Uint8Array([0xD3, 0x14]);
-
-  // This could probably be cleaned up to use less memory
-  var tohash = util.concatUint8Array([bytes, mdc]);
-  var hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
+  let tohash = util.concatUint8Array([bytes, mdc]);
+  const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
   tohash = util.concatUint8Array([tohash, hash]);
 
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
-
-    if(nodeCrypto) { // Node crypto library. Only loaded if config.use_native === true
-      var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
-        new Buffer(key), new Buffer(new Uint8Array(blockSize)));
-      this.encrypted = new Uint8Array(cipherObj.update(new Buffer(util.concatUint8Array([prefix, tohash]))));
-
-    } else { // asm.js fallback
-      this.encrypted = asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, tohash]), key);
-    }
-
+    this.encrypted = aesEncrypt(sessionKeyAlgorithm, prefix, tohash, key);
   } else {
-    this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false)
-      .subarray(0, prefix.length + tohash.length);
+    this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
+    this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
   }
 
   return Promise.resolve();
 };
 
 /**
- * Decrypts the encrypted data contained in this object read_packet must
- * have been called before
- *
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *            The selected symmetric encryption algorithm to be used
- * @param {Uint8Array} key The key of cipher blocksize length to be used
- * @return {String} The decrypted data of this packet
+ * Decrypts the encrypted data contained in the packet.
+ * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+ * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @return {Promise}
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted;
-
+  let decrypted;
   if(sessionKeyAlgorithm.substr(0,3) === 'aes') {  // AES optimizations. Native code for node, asmCrypto for browser.
-    var blockSize = crypto.cipher[sessionKeyAlgorithm].blockSize;
-
-    if(nodeCrypto) { // Node crypto library. Only loaded if config.use_native === true
-      var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3,3) + '-cfb',
-        new Buffer(key), new Buffer(new Uint8Array(blockSize)));
-      decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
-
-    } else { // asm.js fallback
-      decrypted = asmCrypto.AES_CFB.decrypt(this.encrypted, key);
-    }
-
-    // Remove random prefix
-    decrypted = decrypted.subarray(blockSize + 2, decrypted.length);
-
+    decrypted = aesDecrypt(sessionKeyAlgorithm, this.encrypted, key);
   } else {
     decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, false);
   }
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  this.hash = util.Uint8Array2str(crypto.hash.sha1(util.concatUint8Array([crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted),
-    decrypted.subarray(0, decrypted.length - 20)])));
-
-  var mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
+  const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted);
+  const bytes = decrypted.subarray(0, decrypted.length - 20);
+  const tohash = util.concatUint8Array([prefix, bytes]);
+  this.hash = util.Uint8Array2str(crypto.hash.sha1(tohash));
+  const mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
@@ -158,3 +134,46 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 
   return Promise.resolve();
 };
+
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+function aesEncrypt(algo, prefix, pt, key) {
+  if(nodeCrypto) { // Node crypto library.
+    return nodeEncrypt(algo, prefix, pt, key);
+  } else { // asm.js fallback
+    return asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
+  }
+}
+
+function aesDecrypt(algo, ct, key) {
+  let pt;
+  if(nodeCrypto) { // Node crypto library.
+    pt = nodeDecrypt(algo, ct, key);
+  } else { // asm.js fallback
+    pt = asmCrypto.AES_CFB.decrypt(ct, key);
+  }
+  return pt.subarray(crypto.cipher[algo].blockSize + 2, pt.length); // Remove random prefix
+}
+
+function nodeEncrypt(algo, prefix, pt, key) {
+  key = new Buffer(key);
+  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
+  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
+  const ct = cipherObj.update(new Buffer(util.concatUint8Array([prefix, pt])));
+  return new Uint8Array(ct);
+}
+
+function nodeDecrypt(algo, ct, key) {
+  ct = new Buffer(ct);
+  key = new Buffer(key);
+  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
+  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
+  const pt = decipherObj.update(ct);
+  return new Uint8Array(pt);
+}
