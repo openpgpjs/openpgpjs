@@ -1,5 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/*! asmCrypto Lite v1.0.1, (c) 2013 Artem S Vybornov, opensource.org/licenses/MIT */
+/*! asmCrypto Lite v1.1.0, (c) 2013 Artem S Vybornov, opensource.org/licenses/MIT */
 (function ( exports, global ) {
 
 function IllegalStateError () { var err = Error.apply( this, arguments ); this.message = err.message, this.stack = err.stack; }
@@ -1411,6 +1411,531 @@ AES_CFB_Decrypt_prototype.reset = AES_reset;
 AES_CFB_Decrypt_prototype.process = AES_Decrypt_process;
 AES_CFB_Decrypt_prototype.finish = AES_Decrypt_finish;
 
+/**
+ * Counter Mode (CTR)
+ */
+
+function AES_CTR ( options ) {
+    this.nonce = null,
+    this.counter = 0,
+    this.counterSize = 0;
+
+    AES.call( this, options );
+
+    this.mode = 'CTR';
+}
+
+function AES_CTR_Crypt ( options ) {
+    AES_CTR.call( this, options );
+}
+
+function AES_CTR_set_options ( nonce, counter, size ) {
+    if ( size !== undefined ) {
+        if ( size < 8 || size > 48 )
+            throw new IllegalArgumentError("illegal counter size");
+
+        this.counterSize = size;
+
+        var mask = Math.pow( 2, size ) - 1;
+        this.asm.set_mask( 0, 0, (mask / 0x100000000)|0, mask|0 );
+    }
+    else {
+        this.counterSize = size = 48;
+        this.asm.set_mask( 0, 0, 0xffff, 0xffffffff );
+    }
+
+    if ( nonce !== undefined ) {
+        if ( is_buffer(nonce) || is_bytes(nonce) ) {
+            nonce = new Uint8Array(nonce);
+        }
+        else if ( is_string(nonce) ) {
+            nonce = string_to_bytes(nonce);
+        }
+        else {
+            throw new TypeError("unexpected nonce type");
+        }
+
+        var len = nonce.length;
+        if ( !len || len > 16 )
+            throw new IllegalArgumentError("illegal nonce size");
+
+        this.nonce = nonce;
+
+        var view = new DataView( new ArrayBuffer(16) );
+        new Uint8Array(view.buffer).set(nonce);
+
+        this.asm.set_nonce( view.getUint32(0), view.getUint32(4), view.getUint32(8), view.getUint32(12) );
+    }
+    else {
+        throw new Error("nonce is required");
+    }
+
+    if ( counter !== undefined ) {
+        if ( !is_number(counter) )
+            throw new TypeError("unexpected counter type");
+
+        if ( counter < 0 || counter >= Math.pow( 2, size ) )
+            throw new IllegalArgumentError("illegal counter value");
+
+        this.counter = counter;
+
+        this.asm.set_counter( 0, 0, (counter / 0x100000000)|0, counter|0 );
+    }
+    else {
+        this.counter = counter = 0;
+    }
+}
+
+function AES_CTR_reset ( options ) {
+    options = options || {};
+
+    AES_reset.call( this, options );
+
+    AES_CTR_set_options.call( this, options.nonce, options.counter, options.counterSize );
+
+    return this;
+}
+
+var AES_CTR_prototype = AES_CTR.prototype;
+AES_CTR_prototype.BLOCK_SIZE = 16;
+AES_CTR_prototype.reset = AES_CTR_reset;
+AES_CTR_prototype.encrypt = AES_Encrypt_finish;
+AES_CTR_prototype.decrypt = AES_Encrypt_finish;
+
+var AES_CTR_Crypt_prototype = AES_CTR_Crypt.prototype;
+AES_CTR_Crypt_prototype.BLOCK_SIZE = 16;
+AES_CTR_Crypt_prototype.reset = AES_CTR_reset;
+AES_CTR_Crypt_prototype.process = AES_Encrypt_process;
+AES_CTR_Crypt_prototype.finish = AES_Encrypt_finish;
+
+/**
+ * Galois/Counter mode
+ */
+
+var _AES_GCM_data_maxLength = 68719476704;  // 2^36 - 2^5
+
+function _gcm_mac_process ( data ) {
+    var heap = this.heap,
+        asm  = this.asm,
+        dpos = 0,
+        dlen = data.length || 0,
+        wlen = 0;
+
+    while ( dlen > 0 ) {
+        wlen = _heap_write( heap, 0, data, dpos, dlen );
+        dpos += wlen;
+        dlen -= wlen;
+
+        while ( wlen & 15 ) heap[ wlen++ ] = 0;
+
+        asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA, wlen );
+    }
+}
+
+function AES_GCM ( options ) {
+    this.nonce      = null;
+    this.adata      = null;
+    this.iv         = null;
+    this.counter    = 1;
+    this.tagSize    = 16;
+
+    AES.call( this, options );
+
+    this.mode       = 'GCM';
+}
+
+function AES_GCM_Encrypt ( options ) {
+    AES_GCM.call( this, options );
+}
+
+function AES_GCM_Decrypt ( options ) {
+    AES_GCM.call( this, options );
+}
+
+function AES_GCM_reset ( options ) {
+    options = options || {};
+
+    AES_reset.call( this, options );
+
+    var asm = this.asm,
+        heap = this.heap;
+
+    asm.gcm_init();
+
+    var tagSize = options.tagSize;
+    if ( tagSize !== undefined ) {
+        if ( !is_number(tagSize) )
+            throw new TypeError("tagSize must be a number");
+
+        if ( tagSize < 4 || tagSize > 16 )
+            throw new IllegalArgumentError("illegal tagSize value");
+
+        this.tagSize = tagSize;
+    }
+    else {
+        this.tagSize = 16;
+    }
+
+    var nonce = options.nonce;
+    if ( nonce !== undefined ) {
+        if ( is_bytes(nonce) || is_buffer(nonce) ) {
+            nonce = new Uint8Array(nonce);
+        }
+        else if ( is_string(nonce) ) {
+            nonce = string_to_bytes(nonce);
+        }
+        else {
+            throw new TypeError("unexpected nonce type");
+        }
+
+        this.nonce = nonce;
+
+        var noncelen = nonce.length || 0,
+            noncebuf = new Uint8Array(16);
+        if ( noncelen !== 12 ) {
+            _gcm_mac_process.call( this, nonce );
+
+            heap[0] = heap[1] = heap[2] = heap[3] = heap[4] = heap[5] = heap[6] = heap[7] = heap[8] = heap[9] = heap[10] = 0,
+            heap[11] = noncelen>>>29,
+            heap[12] = noncelen>>>21&255,
+            heap[13] = noncelen>>>13&255,
+            heap[14] = noncelen>>>5&255,
+            heap[15] = noncelen<<3&255;
+            asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA, 16 );
+
+            asm.get_iv( AES_asm.HEAP_DATA );
+            asm.set_iv();
+
+            noncebuf.set( heap.subarray( 0, 16 ) );
+        }
+        else {
+            noncebuf.set(nonce);
+            noncebuf[15] = 1;
+        }
+
+        var nonceview = new DataView( noncebuf.buffer );
+        this.gamma0 = nonceview.getUint32(12);
+
+        asm.set_nonce( nonceview.getUint32(0), nonceview.getUint32(4), nonceview.getUint32(8), 0 );
+        asm.set_mask( 0, 0, 0, 0xffffffff );
+    }
+    else {
+        throw new Error("nonce is required");
+    }
+
+    var adata = options.adata;
+    if ( adata !== undefined && adata !== null ) {
+        if ( is_bytes(adata) || is_buffer(adata) ) {
+            adata = new Uint8Array(adata);
+        }
+        else if ( is_string(adata) ) {
+            adata = string_to_bytes(adata);
+        }
+        else {
+            throw new TypeError("unexpected adata type");
+        }
+
+        if ( adata.length > _AES_GCM_data_maxLength )
+            throw new IllegalArgumentError("illegal adata length");
+
+        if ( adata.length ) {
+            this.adata = adata;
+            _gcm_mac_process.call( this, adata );
+        }
+        else {
+            this.adata = null;
+        }
+    }
+    else {
+        this.adata = null;
+    }
+
+    var counter = options.counter;
+    if ( counter !== undefined ) {
+        if ( !is_number(counter) )
+            throw new TypeError("counter must be a number");
+
+        if ( counter < 1 || counter > 0xffffffff )
+            throw new RangeError("counter must be a positive 32-bit integer");
+
+        this.counter = counter;
+        asm.set_counter( 0, 0, 0, this.gamma0+counter|0 );
+    }
+    else {
+        this.counter = 1;
+        asm.set_counter( 0, 0, 0, this.gamma0+1|0 );
+    }
+
+    var iv = options.iv;
+    if ( iv !== undefined ) {
+        if ( !is_number(counter) )
+            throw new TypeError("counter must be a number");
+
+        this.iv = iv;
+
+        AES_set_iv.call( this, iv );
+    }
+
+    return this;
+}
+
+function AES_GCM_Encrypt_process ( data ) {
+    if ( is_string(data) )
+        data = string_to_bytes(data);
+
+    if ( is_buffer(data) )
+        data = new Uint8Array(data);
+
+    if ( !is_bytes(data) )
+        throw new TypeError("data isn't of expected type");
+
+    var dpos = 0,
+        dlen = data.length || 0,
+        asm = this.asm,
+        heap = this.heap,
+        counter = this.counter,
+        pos = this.pos,
+        len = this.len,
+        rpos = 0,
+        rlen = ( len + dlen ) & -16,
+        wlen = 0;
+
+    if ( ((counter-1)<<4) + len + dlen > _AES_GCM_data_maxLength )
+        throw new RangeError("counter overflow");
+
+    var result = new Uint8Array(rlen);
+
+    while ( dlen > 0 ) {
+        wlen = _heap_write( heap, pos+len, data, dpos, dlen );
+        len  += wlen;
+        dpos += wlen;
+        dlen -= wlen;
+
+        wlen = asm.cipher( AES_asm.ENC.CTR, AES_asm.HEAP_DATA + pos, len );
+        wlen = asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA + pos, wlen );
+
+        if ( wlen ) result.set( heap.subarray( pos, pos + wlen ), rpos );
+        counter += (wlen>>>4);
+        rpos += wlen;
+
+        if ( wlen < len ) {
+            pos += wlen;
+            len -= wlen;
+        } else {
+            pos = 0;
+            len = 0;
+        }
+    }
+
+    this.result = result;
+    this.counter = counter;
+    this.pos = pos;
+    this.len = len;
+
+    return this;
+}
+
+function AES_GCM_Encrypt_finish () {
+    var asm = this.asm,
+        heap = this.heap,
+        counter = this.counter,
+        tagSize = this.tagSize,
+        adata = this.adata,
+        pos = this.pos,
+        len = this.len;
+
+    var result = new Uint8Array( len + tagSize );
+
+    asm.cipher( AES_asm.ENC.CTR, AES_asm.HEAP_DATA + pos, (len + 15) & -16 );
+    if ( len ) result.set( heap.subarray( pos, pos + len ) );
+
+    for ( var i = len; i & 15; i++ ) heap[ pos + i ] = 0;
+    asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA + pos, i );
+
+    var alen = ( adata !== null ) ? adata.length : 0,
+        clen = ( (counter-1) << 4) + len;
+    heap[0] = heap[1] = heap[2] = 0,
+    heap[3] = alen>>>29,
+    heap[4] = alen>>>21,
+    heap[5] = alen>>>13&255,
+    heap[6] = alen>>>5&255,
+    heap[7] = alen<<3&255,
+    heap[8] = heap[9] = heap[10] = 0,
+    heap[11] = clen>>>29,
+    heap[12] = clen>>>21&255,
+    heap[13] = clen>>>13&255,
+    heap[14] = clen>>>5&255,
+    heap[15] = clen<<3&255;
+    asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA, 16 );
+    asm.get_iv( AES_asm.HEAP_DATA );
+
+    asm.set_counter( 0, 0, 0, this.gamma0 );
+    asm.cipher( AES_asm.ENC.CTR, AES_asm.HEAP_DATA, 16 );
+    result.set( heap.subarray( 0, tagSize ), len );
+
+    this.result = result;
+    this.counter = 1;
+    this.pos = 0;
+    this.len = 0;
+
+    return this;
+}
+
+function AES_GCM_encrypt ( data ) {
+    var result1 = AES_GCM_Encrypt_process.call( this, data ).result,
+        result2 = AES_GCM_Encrypt_finish.call(this).result;
+
+    var result = new Uint8Array( result1.length + result2.length );
+    if ( result1.length ) result.set( result1 );
+    if ( result2.length ) result.set( result2, result1.length );
+    this.result = result;
+
+    return this;
+}
+
+function AES_GCM_Decrypt_process ( data ) {
+    if ( is_string(data) )
+        data = string_to_bytes(data);
+
+    if ( is_buffer(data) )
+        data = new Uint8Array(data);
+
+    if ( !is_bytes(data) )
+        throw new TypeError("data isn't of expected type");
+
+    var dpos = 0,
+        dlen = data.length || 0,
+        asm = this.asm,
+        heap = this.heap,
+        counter = this.counter,
+        tagSize = this.tagSize,
+        pos = this.pos,
+        len = this.len,
+        rpos = 0,
+        rlen = len + dlen > tagSize ? ( len + dlen - tagSize ) & -16 : 0,
+        tlen = len + dlen - rlen,
+        wlen = 0;
+
+    if ( ((counter-1)<<4) + len + dlen > _AES_GCM_data_maxLength )
+        throw new RangeError("counter overflow");
+
+    var result = new Uint8Array(rlen);
+
+    while ( dlen > tlen ) {
+        wlen = _heap_write( heap, pos+len, data, dpos, dlen-tlen );
+        len  += wlen;
+        dpos += wlen;
+        dlen -= wlen;
+
+        wlen = asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA + pos, wlen );
+        wlen = asm.cipher( AES_asm.DEC.CTR, AES_asm.HEAP_DATA + pos, wlen );
+
+        if ( wlen ) result.set( heap.subarray( pos, pos+wlen ), rpos );
+        counter += (wlen>>>4);
+        rpos += wlen;
+
+        pos = 0;
+        len = 0;
+    }
+
+    if ( dlen > 0 ) {
+        len += _heap_write( heap, 0, data, dpos, dlen );
+    }
+
+    this.result = result;
+    this.counter = counter;
+    this.pos = pos;
+    this.len = len;
+
+    return this;
+}
+
+function AES_GCM_Decrypt_finish () {
+    var asm = this.asm,
+        heap = this.heap,
+        tagSize = this.tagSize,
+        adata = this.adata,
+        counter = this.counter,
+        pos = this.pos,
+        len = this.len,
+        rlen = len - tagSize,
+        wlen = 0;
+
+    if ( len < tagSize )
+        throw new IllegalStateError("authentication tag not found");
+
+    var result = new Uint8Array(rlen),
+        atag = new Uint8Array( heap.subarray( pos+rlen, pos+len ) );
+
+    for ( var i = rlen; i & 15; i++ ) heap[ pos + i ] = 0;
+
+    wlen = asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA + pos, i );
+    wlen = asm.cipher( AES_asm.DEC.CTR, AES_asm.HEAP_DATA + pos, i );
+    if ( rlen ) result.set( heap.subarray( pos, pos+rlen ) );
+
+    var alen = ( adata !== null ) ? adata.length : 0,
+        clen = ( (counter-1) << 4) + len - tagSize;
+    heap[0] = heap[1] = heap[2] = 0,
+    heap[3] = alen>>>29,
+    heap[4] = alen>>>21,
+    heap[5] = alen>>>13&255,
+    heap[6] = alen>>>5&255,
+    heap[7] = alen<<3&255,
+    heap[8] = heap[9] = heap[10] = 0,
+    heap[11] = clen>>>29,
+    heap[12] = clen>>>21&255,
+    heap[13] = clen>>>13&255,
+    heap[14] = clen>>>5&255,
+    heap[15] = clen<<3&255;
+    asm.mac( AES_asm.MAC.GCM, AES_asm.HEAP_DATA, 16 );
+    asm.get_iv( AES_asm.HEAP_DATA );
+
+    asm.set_counter( 0, 0, 0, this.gamma0 );
+    asm.cipher( AES_asm.ENC.CTR, AES_asm.HEAP_DATA, 16 );
+
+    var acheck = 0;
+    for ( var i = 0; i < tagSize; ++i ) acheck |= atag[i] ^ heap[i];
+    if ( acheck )
+        throw new SecurityError("data integrity check failed");
+
+    this.result = result;
+    this.counter = 1;
+    this.pos = 0;
+    this.len = 0;
+
+    return this;
+}
+
+function AES_GCM_decrypt ( data ) {
+    var result1 = AES_GCM_Decrypt_process.call( this, data ).result,
+        result2 = AES_GCM_Decrypt_finish.call( this ).result;
+
+    var result = new Uint8Array( result1.length + result2.length );
+    if ( result1.length ) result.set( result1 );
+    if ( result2.length ) result.set( result2, result1.length );
+    this.result = result;
+
+    return this;
+}
+
+var AES_GCM_prototype = AES_GCM.prototype;
+AES_GCM_prototype.BLOCK_SIZE = 16;
+AES_GCM_prototype.reset = AES_GCM_reset;
+AES_GCM_prototype.encrypt = AES_GCM_encrypt;
+AES_GCM_prototype.decrypt = AES_GCM_decrypt;
+
+var AES_GCM_Encrypt_prototype = AES_GCM_Encrypt.prototype;
+AES_GCM_Encrypt_prototype.BLOCK_SIZE = 16;
+AES_GCM_Encrypt_prototype.reset = AES_GCM_reset;
+AES_GCM_Encrypt_prototype.process = AES_GCM_Encrypt_process;
+AES_GCM_Encrypt_prototype.finish = AES_GCM_Encrypt_finish;
+
+var AES_GCM_Decrypt_prototype = AES_GCM_Decrypt.prototype;
+AES_GCM_Decrypt_prototype.BLOCK_SIZE = 16;
+AES_GCM_Decrypt_prototype.reset = AES_GCM_reset;
+AES_GCM_Decrypt_prototype.process = AES_GCM_Decrypt_process;
+AES_GCM_Decrypt_prototype.finish = AES_GCM_Decrypt_finish;
+
 // shared asm.js module and heap
 var _AES_heap_instance = new Uint8Array(0x100000),
     _AES_asm_instance  = AES_asm( global, null, _AES_heap_instance.buffer );
@@ -1437,6 +1962,31 @@ exports.AES_CFB.decrypt = AES_CFB_decrypt_bytes;
 
 exports.AES_CFB.Encrypt = AES_CFB_Encrypt;
 exports.AES_CFB.Decrypt = AES_CFB_Decrypt;
+
+/**
+ * AES-GCM exports
+ */
+
+function AES_GCM_encrypt_bytes ( data, key, nonce, adata, tagSize ) {
+    if ( data === undefined ) throw new SyntaxError("data required");
+    if ( key === undefined ) throw new SyntaxError("key required");
+    if ( nonce === undefined ) throw new SyntaxError("nonce required");
+    return new AES_GCM( { heap: _AES_heap_instance, asm: _AES_asm_instance, key: key, nonce: nonce, adata: adata, tagSize: tagSize } ).encrypt(data).result;
+}
+
+function AES_GCM_decrypt_bytes ( data, key, nonce, adata, tagSize ) {
+    if ( data === undefined ) throw new SyntaxError("data required");
+    if ( key === undefined ) throw new SyntaxError("key required");
+    if ( nonce === undefined ) throw new SyntaxError("nonce required");
+    return new AES_GCM( { heap: _AES_heap_instance, asm: _AES_asm_instance, key: key, nonce: nonce, adata: adata, tagSize: tagSize } ).decrypt(data).result;
+}
+
+exports.AES_GCM = AES_GCM;
+exports.AES_GCM.encrypt = AES_GCM_encrypt_bytes;
+exports.AES_GCM.decrypt = AES_GCM_decrypt_bytes;
+
+exports.AES_GCM.Encrypt = AES_GCM_Encrypt;
+exports.AES_GCM.Decrypt = AES_GCM_Decrypt;
 
 function hash_reset () {
     this.result = null;
@@ -4084,7 +4634,7 @@ function verifyHeaders(headers, packetlist) {
   }
 }
 
-},{"./config":10,"./encoding/armor.js":32,"./enums.js":34,"./packet":46}],6:[function(require,module,exports){
+},{"./config":10,"./encoding/armor.js":33,"./enums.js":35,"./packet":47}],6:[function(require,module,exports){
 /** @license zlib.js 2012 - imaya [ https://github.com/imaya/zlib.js ] The MIT License */(function() {'use strict';var n=void 0,u=!0,aa=this;function ba(e,d){var c=e.split("."),f=aa;!(c[0]in f)&&f.execScript&&f.execScript("var "+c[0]);for(var a;c.length&&(a=c.shift());)!c.length&&d!==n?f[a]=d:f=f[a]?f[a]:f[a]={}};var C="undefined"!==typeof Uint8Array&&"undefined"!==typeof Uint16Array&&"undefined"!==typeof Uint32Array&&"undefined"!==typeof DataView;function K(e,d){this.index="number"===typeof d?d:0;this.d=0;this.buffer=e instanceof(C?Uint8Array:Array)?e:new (C?Uint8Array:Array)(32768);if(2*this.buffer.length<=this.index)throw Error("invalid index");this.buffer.length<=this.index&&ca(this)}function ca(e){var d=e.buffer,c,f=d.length,a=new (C?Uint8Array:Array)(f<<1);if(C)a.set(d);else for(c=0;c<f;++c)a[c]=d[c];return e.buffer=a}
 K.prototype.a=function(e,d,c){var f=this.buffer,a=this.index,b=this.d,k=f[a],m;c&&1<d&&(e=8<d?(L[e&255]<<24|L[e>>>8&255]<<16|L[e>>>16&255]<<8|L[e>>>24&255])>>32-d:L[e]>>8-d);if(8>d+b)k=k<<d|e,b+=d;else for(m=0;m<d;++m)k=k<<1|e>>d-m-1&1,8===++b&&(b=0,f[a++]=L[k],k=0,a===f.length&&(f=ca(this)));f[a]=k;this.buffer=f;this.d=b;this.index=a};K.prototype.finish=function(){var e=this.buffer,d=this.index,c;0<this.d&&(e[d]<<=8-this.d,e[d]=L[e[d]],d++);C?c=e.subarray(0,d):(e.length=d,c=e);return c};
 var ga=new (C?Uint8Array:Array)(256),M;for(M=0;256>M;++M){for(var R=M,S=R,ha=7,R=R>>>1;R;R>>>=1)S<<=1,S|=R&1,--ha;ga[M]=(S<<ha&255)>>>0}var L=ga;function ja(e){this.buffer=new (C?Uint16Array:Array)(2*e);this.length=0}ja.prototype.getParent=function(e){return 2*((e-2)/4|0)};ja.prototype.push=function(e,d){var c,f,a=this.buffer,b;c=this.length;a[this.length++]=d;for(a[this.length++]=e;0<c;)if(f=this.getParent(c),a[c]>a[f])b=a[c],a[c]=a[f],a[f]=b,b=a[c+1],a[c+1]=a[f+1],a[f+1]=b,c=f;else break;return this.length};
@@ -4214,21 +4764,22 @@ exports.default = {
   prefer_hash_algorithm: _enums2.default.hash.sha256,
   encryption_cipher: _enums2.default.symmetric.aes256,
   compression: _enums2.default.compression.zip,
+  aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption
   integrity_protect: true, // use integrity protection for symmetric encryption
   ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
   rsa_blinding: true,
-  useNative: true, // use native node.js crypto and Web Crypto apis (if available)
-  zeroCopy: false, // use transferable objects between the Web Worker and main thread
+  use_native: true, // use native node.js crypto and Web Crypto apis (if available)
+  zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.1.0",
+  versionstring: "OpenPGP.js v2.2.0",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
 };
 
-},{"../enums.js":34}],10:[function(require,module,exports){
+},{"../enums.js":35}],10:[function(require,module,exports){
 /**
  * @see module:config/config
  * @module config
@@ -6410,7 +6961,152 @@ exports.default = {
   }
 };
 
-},{"../type/mpi.js":65,"./cipher":16,"./public_key":27,"./random.js":30}],19:[function(require,module,exports){
+},{"../type/mpi.js":67,"./cipher":16,"./public_key":28,"./random.js":31}],19:[function(require,module,exports){
+// OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2016 Tankred Hase
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview This module wraps native AES-GCM en/decryption for both
+ * the WebCrypto api as well as node.js' crypto api.
+ */
+
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ivLength = undefined;
+exports.encrypt = encrypt;
+exports.decrypt = decrypt;
+
+var _util = require('../util.js');
+
+var _util2 = _interopRequireDefault(_util);
+
+var _config = require('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
+var _asmcryptoLite = require('asmcrypto-lite');
+
+var _asmcryptoLite2 = _interopRequireDefault(_asmcryptoLite);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var webCrypto = _util2.default.getWebCrypto(); // no GCM support in IE11, Safari 9
+var nodeCrypto = _util2.default.getNodeCrypto();
+var Buffer = _util2.default.getNodeBuffer();
+
+var ivLength = exports.ivLength = 12; // size of the IV in bytes
+var TAG_LEN = 16; // size of the tag in bytes
+var ALGO = 'AES-GCM';
+
+/**
+ * Encrypt plaintext input.
+ * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
+ * @param  {Uint8Array} key         The encryption key
+ * @param  {Uint8Array} iv          The initialization vector (12 bytes)
+ * @return {Promise<Uint8Array>}    The ciphertext output
+ */
+function encrypt(cipher, plaintext, key, iv) {
+  if (cipher.substr(0, 3) !== 'aes') {
+    return Promise.reject(new Error('GCM mode supports only AES cipher'));
+  }
+
+  if (webCrypto && _config2.default.use_native && key.length !== 24) {
+    // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webEncrypt(plaintext, key, iv);
+  } else if (nodeCrypto && _config2.default.use_native) {
+    // Node crypto library
+    return nodeEncrypt(plaintext, key, iv);
+  } else {
+    // asm.js fallback
+    return Promise.resolve(_asmcryptoLite2.default.AES_GCM.encrypt(plaintext, key, iv));
+  }
+}
+
+/**
+ * Decrypt ciphertext input.
+ * @param  {String}     cipher       The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
+ * @param  {Uint8Array} key          The encryption key
+ * @param  {Uint8Array} iv           The initialization vector (12 bytes)
+ * @return {Promise<Uint8Array>}     The plaintext output
+ */
+function decrypt(cipher, ciphertext, key, iv) {
+  if (cipher.substr(0, 3) !== 'aes') {
+    return Promise.reject(new Error('GCM mode supports only AES cipher'));
+  }
+
+  if (webCrypto && _config2.default.use_native && key.length !== 24) {
+    // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    return webDecrypt(ciphertext, key, iv);
+  } else if (nodeCrypto && _config2.default.use_native) {
+    // Node crypto library
+    return nodeDecrypt(ciphertext, key, iv);
+  } else {
+    // asm.js fallback
+    return Promise.resolve(_asmcryptoLite2.default.AES_GCM.decrypt(ciphertext, key, iv));
+  }
+}
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+function webEncrypt(pt, key, iv) {
+  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']).then(function (keyObj) {
+    return webCrypto.encrypt({ name: ALGO, iv: iv }, keyObj, pt);
+  }).then(function (ct) {
+    return new Uint8Array(ct);
+  });
+}
+
+function webDecrypt(ct, key, iv) {
+  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['decrypt']).then(function (keyObj) {
+    return webCrypto.decrypt({ name: ALGO, iv: iv }, keyObj, ct);
+  }).then(function (pt) {
+    return new Uint8Array(pt);
+  });
+}
+
+function nodeEncrypt(pt, key, iv) {
+  pt = new Buffer(pt);
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  var en = new nodeCrypto.createCipheriv('aes-' + key.length * 8 + '-gcm', key, iv);
+  var ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
+  return Promise.resolve(new Uint8Array(ct));
+}
+
+function nodeDecrypt(ct, key, iv) {
+  ct = new Buffer(ct);
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  var de = new nodeCrypto.createDecipheriv('aes-' + key.length * 8 + '-gcm', key, iv);
+  de.setAuthTag(ct.slice(ct.length - TAG_LEN, ct.length)); // read auth tag at end of ciphertext
+  var pt = Buffer.concat([de.update(ct.slice(0, ct.length - TAG_LEN)), de.final()]);
+  return Promise.resolve(new Uint8Array(pt));
+}
+
+},{"../config":10,"../util.js":69,"asmcrypto-lite":1}],20:[function(require,module,exports){
 /**
  * @requires crypto/hash/sha
  * @requires crypto/hash/md5
@@ -6576,7 +7272,7 @@ exports.default = {
   }
 };
 
-},{"../../util.js":67,"./md5.js":20,"./ripe-md.js":21,"./sha.js":22,"asmcrypto-lite":1,"rusha":4}],20:[function(require,module,exports){
+},{"../../util.js":69,"./md5.js":21,"./ripe-md.js":22,"./sha.js":23,"asmcrypto-lite":1,"rusha":4}],21:[function(require,module,exports){
 /**
  * A fast MD5 JavaScript implementation
  * Copyright (c) 2012 Joseph Myers
@@ -6802,7 +7498,7 @@ function add32(a, b) {
   return a + b & 0xFFFFFFFF;
 }
 
-},{"../../util.js":67}],21:[function(require,module,exports){
+},{"../../util.js":69}],22:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7077,7 +7773,7 @@ function RMDstring(message) {
   return _util2.default.str2Uint8Array(retString);
 }
 
-},{"../../util.js":67}],22:[function(require,module,exports){
+},{"../../util.js":69}],23:[function(require,module,exports){
 /**
  * @preserve A JavaScript implementation of the SHA family of hashes, as
  * defined in FIPS PUB 180-2 as well as the corresponding HMAC implementation
@@ -8411,7 +9107,7 @@ exports.default = {
   }
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * @see module:crypto/crypto
  * @module crypto
@@ -8435,6 +9131,10 @@ var _cfb = require('./cfb');
 
 var _cfb2 = _interopRequireDefault(_cfb);
 
+var _gcm = require('./gcm');
+
+var gcm = _interopRequireWildcard(_gcm);
+
 var _public_key = require('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
@@ -8455,6 +9155,8 @@ var _crypto = require('./crypto.js');
 
 var _crypto2 = _interopRequireDefault(_crypto);
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var mod = {
@@ -8464,6 +9166,8 @@ var mod = {
   hash: _hash2.default,
   /** @see module:crypto/cfb */
   cfb: _cfb2.default,
+  /** @see module:crypto/gcm */
+  gcm: gcm,
   /** @see module:crypto/public_key */
   publicKey: _public_key2.default,
   /** @see module:crypto/signature */
@@ -8480,7 +9184,7 @@ for (var i in _crypto2.default) {
 
 exports.default = mod;
 
-},{"./cfb":11,"./cipher":16,"./crypto.js":18,"./hash":19,"./pkcs1":24,"./public_key":27,"./random":30,"./signature":31}],24:[function(require,module,exports){
+},{"./cfb":11,"./cipher":16,"./crypto.js":18,"./gcm":19,"./hash":20,"./pkcs1":25,"./public_key":28,"./random":31,"./signature":32}],25:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -8652,7 +9356,7 @@ exports.default = {
   }
 };
 
-},{"../util.js":67,"./hash":19,"./public_key/jsbn.js":28,"./random.js":30}],25:[function(require,module,exports){
+},{"../util.js":69,"./hash":20,"./public_key/jsbn.js":29,"./random.js":31}],26:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -8795,7 +9499,7 @@ function DSA() {
   this.verify = verify;
 }
 
-},{"../../config":10,"../../util.js":67,"../hash":19,"../random.js":30,"./jsbn.js":28}],26:[function(require,module,exports){
+},{"../../config":10,"../../util.js":69,"../hash":20,"../random.js":31,"./jsbn.js":29}],27:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -8868,7 +9572,7 @@ function Elgamal() {
   this.decrypt = decrypt;
 }
 
-},{"../../util.js":67,"../random.js":30,"./jsbn.js":28}],27:[function(require,module,exports){
+},{"../../util.js":69,"../random.js":31,"./jsbn.js":29}],28:[function(require,module,exports){
 /**
  * @requires crypto/public_key/dsa
  * @requires crypto/public_key/elgamal
@@ -8906,7 +9610,7 @@ exports.default = {
 };
 /** @see module:crypto/public_key/dsa */
 
-},{"./dsa.js":25,"./elgamal.js":26,"./rsa.js":29}],28:[function(require,module,exports){
+},{"./dsa.js":26,"./elgamal.js":27,"./rsa.js":30}],29:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10592,7 +11296,7 @@ BigInteger.prototype.toMPI = bnToMPI;
 // JSBN-specific extension
 BigInteger.prototype.square = bnSquare;
 
-},{"../../util.js":67}],29:[function(require,module,exports){
+},{"../../util.js":69}],30:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -10749,7 +11453,7 @@ function RSA() {
   // Generate a new random private key B bits long, using public expt E
 
   function generate(B, E) {
-    var webCrypto = _util2.default.getWebCrypto();
+    var webCrypto = _util2.default.getWebCryptoAll();
 
     //
     // Native RSA keygen using Web Crypto
@@ -10880,7 +11584,7 @@ function RSA() {
   this.keyObject = KeyObject;
 }
 
-},{"../../config":10,"../../util.js":67,"../random.js":30,"./jsbn.js":28}],30:[function(require,module,exports){
+},{"../../config":10,"../../util.js":69,"../random.js":31,"./jsbn.js":29}],31:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -10988,6 +11692,7 @@ exports.default = {
     } else {
       throw new Error('No secure random number generator available.');
     }
+    return buf;
   },
 
   /**
@@ -11087,7 +11792,7 @@ RandomBuffer.prototype.get = function (buf) {
   }
 };
 
-},{"../type/mpi.js":65,"../util.js":67,"crypto":"crypto"}],31:[function(require,module,exports){
+},{"../type/mpi.js":67,"../util.js":69,"crypto":"crypto"}],32:[function(require,module,exports){
 /**
  * @requires util
  * @requires crypto/hash
@@ -11216,7 +11921,7 @@ exports.default = {
   }
 };
 
-},{"../util":67,"./pkcs1.js":24,"./public_key":27}],32:[function(require,module,exports){
+},{"../util":69,"./pkcs1.js":25,"./public_key":28}],33:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -11597,7 +12302,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":10,"../enums.js":34,"./base64.js":33}],33:[function(require,module,exports){
+},{"../config":10,"../enums.js":35,"./base64.js":34}],34:[function(require,module,exports){
 /* OpenPGP radix-64/base64 string encoding/decoding
  * Copyright 2005 Herbert Hanewinkel, www.haneWIN.de
  * version 1.0, check www.haneWIN.de for the latest version
@@ -11715,7 +12420,7 @@ exports.default = {
   decode: r2s
 };
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 'use strict';
 
 /**
@@ -11815,7 +12520,8 @@ exports.default = {
     publicSubkey: 14,
     userAttribute: 17,
     symEncryptedIntegrityProtected: 18,
-    modificationDetectionCode: 19
+    modificationDetectionCode: 19,
+    symEncryptedAEADProtected: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
   },
 
   /** Data types in the literal packet
@@ -12045,7 +12751,7 @@ exports.default = {
 
 };
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015 Tankred Hase
 //
@@ -12141,7 +12847,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
   });
 };
 
-},{"./config":10,"node-fetch":"node-fetch"}],36:[function(require,module,exports){
+},{"./config":10,"node-fetch":"node-fetch"}],37:[function(require,module,exports){
 'use strict';
 
 /**
@@ -12336,7 +13042,7 @@ var cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":5,"./config/config":9,"./crypto":23,"./encoding/armor":32,"./enums":34,"./hkp":35,"./key":37,"./keyring":38,"./message":41,"./openpgp":42,"./packet":46,"./type/keyid":64,"./type/mpi":65,"./type/s2k":66,"./util":67,"./worker/async_proxy":68}],37:[function(require,module,exports){
+},{"./cleartext":5,"./config/config":9,"./crypto":24,"./encoding/armor":33,"./enums":35,"./hkp":36,"./key":38,"./keyring":39,"./message":42,"./openpgp":43,"./packet":47,"./type/keyid":66,"./type/mpi":67,"./type/s2k":68,"./util":69,"./worker/async_proxy":70}],38:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13252,24 +13958,23 @@ function readArmored(armoredText) {
  */
 function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
+  return Promise.resolve().then(function () {
+    options.keyType = options.keyType || _enums2.default.publicKey.rsa_encrypt_sign;
+    if (options.keyType !== _enums2.default.publicKey.rsa_encrypt_sign) {
+      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Only RSA Encrypt or Sign supported');
+    }
 
-  options.keyType = options.keyType || _enums2.default.publicKey.rsa_encrypt_sign;
-  // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-  if (options.keyType !== _enums2.default.publicKey.rsa_encrypt_sign) {
-    throw new Error('Only RSA Encrypt or Sign supported');
-  }
-  // Key without passphrase is unlocked by definition
-  if (!options.passphrase) {
-    options.unlocked = true;
-  }
-  if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
-    options.userIds = [options.userIds];
-  }
+    if (!options.passphrase) {
+      // Key without passphrase is unlocked by definition
+      options.unlocked = true;
+    }
+    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+      options.userIds = [options.userIds];
+    }
 
-  // generate
-  var genSecretKey = generateSecretKey();
-  var genSecretSubkey = generateSecretSubkey();
-  return Promise.all([genSecretKey, genSecretSubkey]).then(wrapKeyObject);
+    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(wrapKeyObject);
+  });
 
   function generateSecretKey() {
     secretKeyPacket = new _packet2.default.SecretKey();
@@ -13309,8 +14014,8 @@ function generate(options) {
       signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
       signaturePacket.preferredSymmetricAlgorithms = [];
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes256);
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes128);
+      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
       signaturePacket.preferredHashAlgorithms = [];
@@ -13387,7 +14092,7 @@ function getPreferredSymAlgo(keys) {
   return prefAlgo.algo;
 }
 
-},{"./config":10,"./encoding/armor.js":32,"./enums.js":34,"./packet":46,"./util":67}],38:[function(require,module,exports){
+},{"./config":10,"./encoding/armor.js":33,"./enums.js":35,"./packet":47,"./util":69}],39:[function(require,module,exports){
 'use strict';
 
 /**
@@ -13413,7 +14118,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":39,"./localstore.js":40}],39:[function(require,module,exports){
+},{"./keyring.js":40,"./localstore.js":41}],40:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13650,7 +14355,7 @@ KeyArray.prototype.removeForId = function (keyId) {
   return null;
 };
 
-},{"../key.js":37,"./localstore.js":40}],40:[function(require,module,exports){
+},{"../key.js":38,"./localstore.js":41}],41:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13778,7 +14483,7 @@ function storeKeys(storage, itemname, keys) {
   }
 }
 
-},{"../config":10,"../key.js":37,"../util.js":67,"node-localstorage":"node-localstorage"}],41:[function(require,module,exports){
+},{"../config":10,"../key.js":38,"../util.js":69,"node-localstorage":"node-localstorage"}],42:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -13908,19 +14613,27 @@ Message.prototype.getSigningKeyIds = function () {
  * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = function (privateKey, sessionKey, password) {
-  var keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
-  if (!keyObj || !_util2.default.isUint8Array(keyObj.data) || !_util2.default.isString(keyObj.algorithm)) {
-    throw new Error('Invalid session key for decryption.');
-  }
-  var symEncryptedPacketlist = this.packets.filterByTag(_enums2.default.packet.symmetricallyEncrypted, _enums2.default.packet.symEncryptedIntegrityProtected);
-  if (symEncryptedPacketlist.length !== 0) {
+  var _this = this;
+
+  return Promise.resolve().then(function () {
+    var keyObj = sessionKey || _this.decryptSessionKey(privateKey, password);
+    if (!keyObj || !_util2.default.isUint8Array(keyObj.data) || !_util2.default.isString(keyObj.algorithm)) {
+      throw new Error('Invalid session key for decryption.');
+    }
+
+    var symEncryptedPacketlist = _this.packets.filterByTag(_enums2.default.packet.symmetricallyEncrypted, _enums2.default.packet.symEncryptedIntegrityProtected, _enums2.default.packet.symEncryptedAEADProtected);
+
+    if (symEncryptedPacketlist.length === 0) {
+      return;
+    }
+
     var symEncryptedPacket = symEncryptedPacketlist[0];
-    symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
-    var resultMsg = new Message(symEncryptedPacket.packets);
-    // remove packets after decryption
-    symEncryptedPacket.packets = new _packet2.default.List();
-    return resultMsg;
-  }
+    return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(function () {
+      var resultMsg = new Message(symEncryptedPacket.packets);
+      symEncryptedPacket.packets = new _packet2.default.List(); // remove packets after decryption
+      return resultMsg;
+    });
+  });
 };
 
 /**
@@ -14018,32 +14731,38 @@ Message.prototype.getText = function () {
  * @return {Message}                   new message with encrypted content
  */
 Message.prototype.encrypt = function (keys, passwords) {
-  var symAlgo;
-  if (keys) {
-    symAlgo = keyModule.getPreferredSymAlgo(keys);
-  } else if (passwords) {
-    symAlgo = _config2.default.encryption_cipher;
-  } else {
-    throw new Error('No keys or passwords');
-  }
+  var _this2 = this;
 
-  var sessionKey = _crypto2.default.generateSessionKey(_enums2.default.read(_enums2.default.symmetric, symAlgo));
-  var msg = encryptSessionKey(sessionKey, _enums2.default.read(_enums2.default.symmetric, symAlgo), keys, passwords);
-  var packetlist = msg.packets;
+  var symAlgo = undefined,
+      msg = undefined,
+      symEncryptedPacket = undefined;
+  return Promise.resolve().then(function () {
+    if (keys) {
+      symAlgo = keyModule.getPreferredSymAlgo(keys);
+    } else if (passwords) {
+      symAlgo = _config2.default.encryption_cipher;
+    } else {
+      throw new Error('No keys or passwords');
+    }
 
-  var symEncryptedPacket;
-  if (_config2.default.integrity_protect) {
-    symEncryptedPacket = new _packet2.default.SymEncryptedIntegrityProtected();
-  } else {
-    symEncryptedPacket = new _packet2.default.SymmetricallyEncrypted();
-  }
-  symEncryptedPacket.packets = this.packets;
-  symEncryptedPacket.encrypt(_enums2.default.read(_enums2.default.symmetric, symAlgo), sessionKey);
-  packetlist.push(symEncryptedPacket);
-  // remove packets after encryption
-  symEncryptedPacket.packets = new _packet2.default.List();
+    var sessionKey = _crypto2.default.generateSessionKey(_enums2.default.read(_enums2.default.symmetric, symAlgo));
+    msg = encryptSessionKey(sessionKey, _enums2.default.read(_enums2.default.symmetric, symAlgo), keys, passwords);
 
-  return msg;
+    if (_config2.default.aead_protect) {
+      symEncryptedPacket = new _packet2.default.SymEncryptedAEADProtected();
+    } else if (_config2.default.integrity_protect) {
+      symEncryptedPacket = new _packet2.default.SymEncryptedIntegrityProtected();
+    } else {
+      symEncryptedPacket = new _packet2.default.SymmetricallyEncrypted();
+    }
+    symEncryptedPacket.packets = _this2.packets;
+
+    return symEncryptedPacket.encrypt(_enums2.default.read(_enums2.default.symmetric, symAlgo), sessionKey);
+  }).then(function () {
+    msg.packets.push(symEncryptedPacket);
+    symEncryptedPacket.packets = new _packet2.default.List(); // remove packets after encryption
+    return msg;
+  });
 };
 
 /**
@@ -14280,7 +14999,7 @@ function fromBinary(bytes, filename) {
   return new Message(literalDataPacketlist);
 }
 
-},{"./config":10,"./crypto":23,"./encoding/armor.js":32,"./enums.js":34,"./key.js":37,"./packet":46,"./util.js":67}],42:[function(require,module,exports){
+},{"./config":10,"./crypto":24,"./encoding/armor.js":33,"./enums.js":35,"./key.js":38,"./packet":47,"./util.js":69}],43:[function(require,module,exports){
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2016 Tankred Hase
 //
@@ -14434,7 +15153,7 @@ function generateKey() {
 
   var options = formatUserIds({ userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked });
 
-  if (!_util2.default.getWebCrypto() && asyncProxy) {
+  if (!_util2.default.getWebCryptoAll() && asyncProxy) {
     // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
@@ -14447,20 +15166,6 @@ function generateKey() {
       publicKeyArmored: newKey.toPublic().armor()
 
     };
-  }).catch(function (err) {
-
-    // js fallback already tried
-    if (_config2.default.debug) {
-      console.error(err);
-    }
-    if (!_util2.default.getWebCrypto()) {
-      throw new Error('Error generating keypair using js fallback');
-    }
-    // fall back to js keygen in a worker
-    if (_config2.default.debug) {
-      console.log('Error generating keypair using native WebCrypto... falling back back to js');
-    }
-    return asyncProxy.delegate('generateKey', options);
   }).catch(onError.bind(null, 'Error generating keypair'));
 }
 
@@ -14519,19 +15224,20 @@ function encrypt(_ref4) {
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
-  if (asyncProxy) {
-    // use web worker if available
+  if (!nativeAEAD() && asyncProxy) {
+    // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data: data, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, filename: filename, armor: armor });
   }
 
-  return execute(function () {
+  return Promise.resolve().then(function () {
 
     var message = createMessage(data, filename);
     if (privateKeys) {
       // sign the message only if private keys are specified
       message = message.sign(privateKeys);
     }
-    message = message.encrypt(publicKeys, passwords);
+    return message.encrypt(publicKeys, passwords);
+  }).then(function (message) {
 
     if (armor) {
       return {
@@ -14541,7 +15247,7 @@ function encrypt(_ref4) {
     return {
       message: message
     };
-  }, 'Error encrypting message');
+  }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
 /**
@@ -14568,21 +15274,20 @@ function decrypt(_ref5) {
 
   checkMessage(message);publicKeys = toArray(publicKeys);
 
-  if (asyncProxy) {
-    // use web worker if available
+  if (!nativeAEAD() && asyncProxy) {
+    // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('decrypt', { message: message, privateKey: privateKey, publicKeys: publicKeys, sessionKey: sessionKey, password: password, format: format });
   }
 
-  return execute(function () {
+  return message.decrypt(privateKey, sessionKey, password).then(function (message) {
 
-    message = message.decrypt(privateKey, sessionKey, password);
     var result = parseMessage(message, format);
     if (publicKeys && result.data) {
       // verify only if publicKeys are specified
       result.signatures = message.verify(publicKeys);
     }
     return result;
-  }, 'Error decrypting message');
+  }).catch(onError.bind(null, 'Error decrypting message'));
 }
 
 //////////////////////////////////////////
@@ -14868,7 +15573,16 @@ function onError(message, error) {
   throw new Error(message + ': ' + error.message);
 }
 
-},{"./cleartext.js":5,"./config/config.js":9,"./key.js":37,"./message.js":41,"./util":67,"./worker/async_proxy.js":68,"es6-promise":2}],43:[function(require,module,exports){
+/**
+ * Check for AES-GCM support and configuration by the user. Only browsers that
+ * implement the current WebCrypto specification support native AES-GCM.
+ * @return {Boolean}   If authenticated encryption should be used
+ */
+function nativeAEAD() {
+  return _util2.default.getWebCrypto() && _config2.default.aead_protect;
+}
+
+},{"./cleartext.js":5,"./config/config.js":9,"./key.js":38,"./message.js":42,"./util":69,"./worker/async_proxy.js":70,"es6-promise":2}],44:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet
@@ -14879,7 +15593,7 @@ function onError(message, error) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Trust = exports.Signature = exports.SecretSubkey = exports.Userid = exports.SecretKey = exports.OnePassSignature = exports.UserAttribute = exports.PublicSubkey = exports.Marker = exports.SymmetricallyEncrypted = exports.PublicKey = exports.Literal = exports.SymEncryptedSessionKey = exports.PublicKeyEncryptedSessionKey = exports.SymEncryptedIntegrityProtected = exports.Compressed = undefined;
+exports.Trust = exports.Signature = exports.SecretSubkey = exports.Userid = exports.SecretKey = exports.OnePassSignature = exports.UserAttribute = exports.PublicSubkey = exports.Marker = exports.SymmetricallyEncrypted = exports.PublicKey = exports.Literal = exports.SymEncryptedSessionKey = exports.PublicKeyEncryptedSessionKey = exports.SymEncryptedAEADProtected = exports.SymEncryptedIntegrityProtected = exports.Compressed = undefined;
 
 var _compressed = require('./compressed.js');
 
@@ -14896,6 +15610,15 @@ Object.defineProperty(exports, 'SymEncryptedIntegrityProtected', {
   enumerable: true,
   get: function get() {
     return _interopRequireDefault(_sym_encrypted_integrity_protected).default;
+  }
+});
+
+var _sym_encrypted_aead_protected = require('./sym_encrypted_aead_protected.js');
+
+Object.defineProperty(exports, 'SymEncryptedAEADProtected', {
+  enumerable: true,
+  get: function get() {
+    return _interopRequireDefault(_sym_encrypted_aead_protected).default;
   }
 });
 
@@ -15077,7 +15800,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":34,"./all_packets.js":43,"./compressed.js":45,"./literal.js":47,"./marker.js":48,"./one_pass_signature.js":49,"./public_key.js":52,"./public_key_encrypted_session_key.js":53,"./public_subkey.js":54,"./secret_key.js":55,"./secret_subkey.js":56,"./signature.js":57,"./sym_encrypted_integrity_protected.js":58,"./sym_encrypted_session_key.js":59,"./symmetrically_encrypted.js":60,"./trust.js":61,"./user_attribute.js":62,"./userid.js":63}],44:[function(require,module,exports){
+},{"../enums.js":35,"./all_packets.js":44,"./compressed.js":46,"./literal.js":48,"./marker.js":49,"./one_pass_signature.js":50,"./public_key.js":53,"./public_key_encrypted_session_key.js":54,"./public_subkey.js":55,"./secret_key.js":56,"./secret_subkey.js":57,"./signature.js":58,"./sym_encrypted_aead_protected.js":59,"./sym_encrypted_integrity_protected.js":60,"./sym_encrypted_session_key.js":61,"./symmetrically_encrypted.js":62,"./trust.js":63,"./user_attribute.js":64,"./userid.js":65}],45:[function(require,module,exports){
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015 Tankred Hase
 //
@@ -15221,7 +15944,7 @@ function packetlistCloneToSignature(clone) {
   return clone;
 }
 
-},{"../cleartext.js":5,"../key.js":37,"../message.js":41,"../type/keyid.js":64,"./packetlist.js":51}],45:[function(require,module,exports){
+},{"../cleartext.js":5,"../key.js":38,"../message.js":42,"../type/keyid.js":66,"./packetlist.js":52}],46:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15404,7 +16127,7 @@ Compressed.prototype.compress = function () {
   }
 };
 
-},{"../compression/rawdeflate.min.js":6,"../compression/rawinflate.min.js":7,"../compression/zlib.min.js":8,"../enums.js":34,"../util.js":67}],46:[function(require,module,exports){
+},{"../compression/rawdeflate.min.js":6,"../compression/rawinflate.min.js":7,"../compression/zlib.min.js":8,"../enums.js":35,"../util.js":69}],47:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15440,7 +16163,7 @@ for (var i in packets) {
 
 exports.default = mod;
 
-},{"./all_packets.js":43,"./clone.js":44,"./packetlist.js":51}],47:[function(require,module,exports){
+},{"./all_packets.js":44,"./clone.js":45,"./packetlist.js":52}],48:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15590,7 +16313,7 @@ Literal.prototype.write = function () {
   return _util2.default.concatUint8Array([format, filename_length, filename, date, data]);
 };
 
-},{"../enums.js":34,"../util.js":67}],48:[function(require,module,exports){
+},{"../enums.js":35,"../util.js":69}],49:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15663,7 +16386,7 @@ Marker.prototype.read = function (bytes) {
   return false;
 };
 
-},{"../enums.js":34}],49:[function(require,module,exports){
+},{"../enums.js":35}],50:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15782,7 +16505,7 @@ OnePassSignature.prototype.postCloneTypeFix = function () {
   this.signingKeyId = _keyid2.default.fromClone(this.signingKeyId);
 };
 
-},{"../enums.js":34,"../type/keyid.js":64,"../util.js":67}],50:[function(require,module,exports){
+},{"../enums.js":35,"../type/keyid.js":66,"../util.js":69}],51:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -16042,7 +16765,7 @@ exports.default = {
   }
 };
 
-},{"../util.js":67}],51:[function(require,module,exports){
+},{"../util.js":69}],52:[function(require,module,exports){
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
@@ -16273,7 +16996,7 @@ Packetlist.fromStructuredClone = function (packetlistClone) {
   return packetlist;
 };
 
-},{"../enums.js":34,"../util":67,"./all_packets.js":43,"./packet.js":50}],52:[function(require,module,exports){
+},{"../enums.js":35,"../util":69,"./all_packets.js":44,"./packet.js":51}],53:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -16520,7 +17243,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
   }
 };
 
-},{"../crypto":23,"../enums.js":34,"../type/keyid.js":64,"../type/mpi.js":65,"../util.js":67}],53:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../type/keyid.js":66,"../type/mpi.js":67,"../util.js":69}],54:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -16710,7 +17433,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
   }
 };
 
-},{"../crypto":23,"../enums.js":34,"../type/keyid.js":64,"../type/mpi.js":65,"../util.js":67}],54:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../type/keyid.js":66,"../type/mpi.js":67,"../util.js":69}],55:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -16763,7 +17486,7 @@ function PublicSubkey() {
 PublicSubkey.prototype = new _public_key2.default();
 PublicSubkey.prototype.constructor = PublicSubkey;
 
-},{"../enums.js":34,"./public_key.js":52}],55:[function(require,module,exports){
+},{"../enums.js":35,"./public_key.js":53}],56:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17072,7 +17795,7 @@ SecretKey.prototype.clearPrivateMPIs = function () {
   this.isDecrypted = false;
 };
 
-},{"../crypto":23,"../enums.js":34,"../type/mpi.js":65,"../type/s2k.js":66,"../util.js":67,"./public_key.js":52}],56:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../type/mpi.js":67,"../type/s2k.js":68,"../util.js":69,"./public_key.js":53}],57:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17125,7 +17848,7 @@ function SecretSubkey() {
 SecretSubkey.prototype = new _secret_key2.default();
 SecretSubkey.prototype.constructor = SecretSubkey;
 
-},{"../enums.js":34,"./secret_key.js":55}],57:[function(require,module,exports){
+},{"../enums.js":35,"./secret_key.js":56}],58:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17796,7 +18519,117 @@ Signature.prototype.postCloneTypeFix = function () {
   this.issuerKeyId = _keyid2.default.fromClone(this.issuerKeyId);
 };
 
-},{"../crypto":23,"../enums.js":34,"../type/keyid.js":64,"../type/mpi.js":65,"../util.js":67,"./packet.js":50}],58:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../type/keyid.js":66,"../type/mpi.js":67,"../util.js":69,"./packet.js":51}],59:[function(require,module,exports){
+// OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2016 Tankred Hase
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * Implementation of the Symmetrically Encrypted Authenticated Encryption with Additional Data (AEAD) Protected Data Packet
+ * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}: AEAD Protected Data Packet
+ */
+
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = SymEncryptedAEADProtected;
+
+var _util = require('../util.js');
+
+var _util2 = _interopRequireDefault(_util);
+
+var _crypto = require('../crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _enums = require('../enums.js');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var VERSION = 1; // A one-octet version number of the data packet.
+var IV_LEN = _crypto2.default.gcm.ivLength; // currently only AES-GCM is supported
+
+/**
+ * @constructor
+ */
+function SymEncryptedAEADProtected() {
+  this.tag = _enums2.default.packet.symEncryptedAEADProtected;
+  this.version = VERSION;
+  this.iv = null;
+  this.encrypted = null;
+  this.packets = null;
+}
+
+/**
+ * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
+ */
+SymEncryptedAEADProtected.prototype.read = function (bytes) {
+  var offset = 0;
+  if (bytes[offset] !== VERSION) {
+    // The only currently defined value is 1.
+    throw new Error('Invalid packet version.');
+  }
+  offset++;
+  this.iv = bytes.subarray(offset, IV_LEN + offset);
+  offset += IV_LEN;
+  this.encrypted = bytes.subarray(offset, bytes.length);
+};
+
+/**
+ * Write the encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
+ * @return {Uint8Array} The encrypted payload
+ */
+SymEncryptedAEADProtected.prototype.write = function () {
+  return _util2.default.concatUint8Array([new Uint8Array([this.version]), this.iv, this.encrypted]);
+};
+
+/**
+ * Decrypt the encrypted payload.
+ * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
+ * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @return {Promise<undefined>}           Nothing is returned
+ */
+SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
+  var _this = this;
+
+  return _crypto2.default.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv).then(function (decrypted) {
+    _this.packets.read(decrypted);
+  });
+};
+
+/**
+ * Encrypt the packet list payload.
+ * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
+ * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @return {Promise<undefined>}           Nothing is returned
+ */
+SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
+  var _this2 = this;
+
+  this.iv = _crypto2.default.random.getRandomValues(new Uint8Array(IV_LEN)); // generate new random IV
+  return _crypto2.default.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv).then(function (encrypted) {
+    _this2.encrypted = encrypted;
+  });
+};
+
+},{"../crypto":24,"../enums.js":35,"../util.js":69}],60:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -17859,11 +18692,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var nodeCrypto = _util2.default.getNodeCrypto();
 var Buffer = _util2.default.getNodeBuffer();
 
+var VERSION = 1; // A one-octet version number of the data packet.
+
 /**
  * @constructor
  */
 function SymEncryptedIntegrityProtected() {
   this.tag = _enums2.default.packet.symEncryptedIntegrityProtected;
+  this.version = VERSION;
   /** The encrypted payload. */
   this.encrypted = null; // string
   /**
@@ -17878,9 +18714,7 @@ function SymEncryptedIntegrityProtected() {
 
 SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
   // - A one-octet version number. The only currently defined value is 1.
-  var version = bytes[0];
-
-  if (version !== 1) {
+  if (bytes[0] !== VERSION) {
     throw new Error('Invalid packet version.');
   }
 
@@ -17891,77 +18725,58 @@ SymEncryptedIntegrityProtected.prototype.read = function (bytes) {
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
-  // 1 = Version
-  return _util2.default.concatUint8Array([new Uint8Array([1]), this.encrypted]);
+  return _util2.default.concatUint8Array([new Uint8Array([VERSION]), this.encrypted]);
 };
 
+/**
+ * Encrypt the payload in the packet.
+ * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+ * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @return {Promise}
+ */
 SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
   var bytes = this.packets.write();
-
   var prefixrandom = _crypto2.default.getPrefixRandom(sessionKeyAlgorithm);
   var repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   var prefix = _util2.default.concatUint8Array([prefixrandom, repeat]);
+  var mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  // Modification detection code packet.
-  var mdc = new Uint8Array([0xD3, 0x14]);
-
-  // This could probably be cleaned up to use less memory
   var tohash = _util2.default.concatUint8Array([bytes, mdc]);
   var hash = _crypto2.default.hash.sha1(_util2.default.concatUint8Array([prefix, tohash]));
   tohash = _util2.default.concatUint8Array([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') {
     // AES optimizations. Native code for node, asmCrypto for browser.
-    var blockSize = _crypto2.default.cipher[sessionKeyAlgorithm].blockSize;
-
-    if (nodeCrypto) {
-      // Node crypto library. Only loaded if config.useNative === true
-      var cipherObj = new nodeCrypto.createCipheriv('aes-' + sessionKeyAlgorithm.substr(3, 3) + '-cfb', new Buffer(key), new Buffer(new Uint8Array(blockSize)));
-      this.encrypted = new Uint8Array(cipherObj.update(new Buffer(_util2.default.concatUint8Array([prefix, tohash]))));
-    } else {
-      // asm.js fallback
-      this.encrypted = _asmcryptoLite2.default.AES_CFB.encrypt(_util2.default.concatUint8Array([prefix, tohash]), key);
-    }
+    this.encrypted = aesEncrypt(sessionKeyAlgorithm, prefix, tohash, key);
   } else {
-    this.encrypted = _crypto2.default.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false).subarray(0, prefix.length + tohash.length);
+    this.encrypted = _crypto2.default.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
+    this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
   }
+
+  return Promise.resolve();
 };
 
 /**
- * Decrypts the encrypted data contained in this object read_packet must
- * have been called before
- *
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *            The selected symmetric encryption algorithm to be used
- * @param {Uint8Array} key The key of cipher blocksize length to be used
- * @return {String} The decrypted data of this packet
+ * Decrypts the encrypted data contained in the packet.
+ * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+ * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @return {Promise}
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted;
-
+  var decrypted = undefined;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') {
     // AES optimizations. Native code for node, asmCrypto for browser.
-    var blockSize = _crypto2.default.cipher[sessionKeyAlgorithm].blockSize;
-
-    if (nodeCrypto) {
-      // Node crypto library. Only loaded if config.useNative === true
-      var decipherObj = new nodeCrypto.createDecipheriv('aes-' + sessionKeyAlgorithm.substr(3, 3) + '-cfb', new Buffer(key), new Buffer(new Uint8Array(blockSize)));
-      decrypted = new Uint8Array(decipherObj.update(new Buffer(this.encrypted)));
-    } else {
-      // asm.js fallback
-      decrypted = _asmcryptoLite2.default.AES_CFB.decrypt(this.encrypted, key);
-    }
-
-    // Remove random prefix
-    decrypted = decrypted.subarray(blockSize + 2, decrypted.length);
+    decrypted = aesDecrypt(sessionKeyAlgorithm, this.encrypted, key);
   } else {
     decrypted = _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, false);
   }
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  this.hash = _util2.default.Uint8Array2str(_crypto2.default.hash.sha1(_util2.default.concatUint8Array([_crypto2.default.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted), decrypted.subarray(0, decrypted.length - 20)])));
-
+  var prefix = _crypto2.default.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted);
+  var bytes = decrypted.subarray(0, decrypted.length - 20);
+  var tohash = _util2.default.concatUint8Array([prefix, bytes]);
+  this.hash = _util2.default.Uint8Array2str(_crypto2.default.hash.sha1(tohash));
   var mdc = _util2.default.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
   if (this.hash !== mdc) {
@@ -17969,9 +18784,56 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   } else {
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
   }
+
+  return Promise.resolve();
 };
 
-},{"../crypto":23,"../enums.js":34,"../util.js":67,"asmcrypto-lite":1}],59:[function(require,module,exports){
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+function aesEncrypt(algo, prefix, pt, key) {
+  if (nodeCrypto) {
+    // Node crypto library.
+    return nodeEncrypt(algo, prefix, pt, key);
+  } else {
+    // asm.js fallback
+    return _asmcryptoLite2.default.AES_CFB.encrypt(_util2.default.concatUint8Array([prefix, pt]), key);
+  }
+}
+
+function aesDecrypt(algo, ct, key) {
+  var pt = undefined;
+  if (nodeCrypto) {
+    // Node crypto library.
+    pt = nodeDecrypt(algo, ct, key);
+  } else {
+    // asm.js fallback
+    pt = _asmcryptoLite2.default.AES_CFB.decrypt(ct, key);
+  }
+  return pt.subarray(_crypto2.default.cipher[algo].blockSize + 2, pt.length); // Remove random prefix
+}
+
+function nodeEncrypt(algo, prefix, pt, key) {
+  key = new Buffer(key);
+  var iv = new Buffer(new Uint8Array(_crypto2.default.cipher[algo].blockSize));
+  var cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  var ct = cipherObj.update(new Buffer(_util2.default.concatUint8Array([prefix, pt])));
+  return new Uint8Array(ct);
+}
+
+function nodeDecrypt(algo, ct, key) {
+  ct = new Buffer(ct);
+  key = new Buffer(key);
+  var iv = new Buffer(new Uint8Array(_crypto2.default.cipher[algo].blockSize));
+  var decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  var pt = decipherObj.update(ct);
+  return new Uint8Array(pt);
+}
+
+},{"../crypto":24,"../enums.js":35,"../util.js":69,"asmcrypto-lite":1}],61:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18140,7 +19002,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
   this.s2k = _s2k2.default.fromClone(this.s2k);
 };
 
-},{"../crypto":23,"../enums.js":34,"../type/s2k.js":66,"../util.js":67}],60:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../type/s2k.js":68,"../util.js":69}],62:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18228,15 +19090,19 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
     throw new Error('Decryption failed due to missing MDC in combination with modern cipher.');
   }
   this.packets.read(decrypted);
+
+  return Promise.resolve();
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
   var data = this.packets.write();
 
   this.encrypted = _crypto2.default.cfb.encrypt(_crypto2.default.getPrefixRandom(algo), algo, data, key, true);
+
+  return Promise.resolve();
 };
 
-},{"../config":10,"../crypto":23,"../enums.js":34}],61:[function(require,module,exports){
+},{"../config":10,"../crypto":24,"../enums.js":35}],63:[function(require,module,exports){
 /**
  * @requires enums
  * @module packet/trust
@@ -18269,7 +19135,7 @@ function Trust() {
  */
 Trust.prototype.read = function () {};
 
-},{"../enums.js":34}],62:[function(require,module,exports){
+},{"../enums.js":35}],64:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18379,7 +19245,7 @@ UserAttribute.prototype.equals = function (usrAttr) {
   });
 };
 
-},{"../enums.js":34,"../util.js":67,"./packet.js":50}],63:[function(require,module,exports){
+},{"../enums.js":35,"../util.js":69,"./packet.js":51}],65:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18455,7 +19321,7 @@ Userid.prototype.write = function () {
   return _util2.default.str2Uint8Array(_util2.default.encode_utf8(this.userid));
 };
 
-},{"../enums.js":34,"../util.js":67}],64:[function(require,module,exports){
+},{"../enums.js":35,"../util.js":69}],66:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18544,7 +19410,7 @@ Keyid.fromId = function (hex) {
   return keyid;
 };
 
-},{"../util.js":67}],65:[function(require,module,exports){
+},{"../util.js":69}],67:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18675,7 +19541,7 @@ MPI.fromClone = function (clone) {
   return mpi;
 };
 
-},{"../crypto/public_key/jsbn.js":28,"../util.js":67}],66:[function(require,module,exports){
+},{"../crypto/public_key/jsbn.js":29,"../util.js":69}],68:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18899,7 +19765,7 @@ S2K.fromClone = function (clone) {
   return s2k;
 };
 
-},{"../crypto":23,"../enums.js":34,"../util.js":67}],67:[function(require,module,exports){
+},{"../crypto":24,"../enums.js":35,"../util.js":69}],69:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -18972,7 +19838,7 @@ exports.default = {
    * @return {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function getTransferables(obj) {
-    if (_config2.default.zeroCopy && Object.prototype.isPrototypeOf(obj)) {
+    if (_config2.default.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       var transferables = [];
       this.collectBuffers(obj, transferables);
       return transferables.length ? transferables : undefined;
@@ -19027,8 +19893,6 @@ exports.default = {
 
     return this.writeNumber(numeric, 4);
   },
-
-  emailRegEx: /^[+a-zA-Z0-9_.-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,6}$/,
 
   hexdump: function hexdump(str) {
     var r = [];
@@ -19362,12 +20226,28 @@ exports.default = {
   },
 
   /**
-   * Get native Web Cryptography api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * Get native Web Cryptography api, only the current version of the spec.
+   * The default configuration is to use the api when available. But it can
+   * be deactivated with config.use_native
    * @return {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function getWebCrypto() {
-    if (!_config2.default.useNative) {
+    if (!_config2.default.use_native) {
+      return;
+    }
+
+    return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
+  },
+
+  /**
+   * Get native Web Cryptography api for all browsers, including legacy
+   * implementations of the spec e.g IE11 and Safari 8/9. The default
+   * configuration is to use the api when available. But it can be deactivated
+   * with config.use_native
+   * @return {Object}   The SubtleCrypto api or 'undefined'
+   */
+  getWebCryptoAll: function getWebCryptoAll() {
+    if (!_config2.default.use_native) {
       return;
     }
 
@@ -19424,11 +20304,11 @@ exports.default = {
 
   /**
    * Get native Node.js crypto api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * the api when available. But it can also be deactivated with config.use_native
    * @return {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function getNodeCrypto() {
-    if (!this.detectNode() || !_config2.default.useNative) {
+    if (!this.detectNode() || !_config2.default.use_native) {
       return;
     }
 
@@ -19450,7 +20330,7 @@ exports.default = {
 
 };
 
-},{"./config":10,"buffer":"buffer","crypto":"crypto"}],68:[function(require,module,exports){
+},{"./config":10,"buffer":"buffer","crypto":"crypto"}],70:[function(require,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -19595,5 +20475,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
   });
 };
 
-},{"../crypto":23,"../packet":46,"../util.js":67}]},{},[36])(36)
+},{"../crypto":24,"../packet":47,"../util.js":69}]},{},[37])(37)
 });
