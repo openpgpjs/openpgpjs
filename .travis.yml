@@ -20,9 +20,9 @@ matrix:
     - node_js: "4"
       env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 42'
     - node_js: "4"
-      env: OPENPGPJSTEST='end2end-6' BROWSER='internet explorer 11'
-    - node_js: "4"
       env: OPENPGPJSTEST='end2end-9' BROWSER='safari 9'
+    - node_js: "4"
+      env: OPENPGPJSTEST='end2end-6' BROWSER='internet explorer 11'
     - node_js: "4"
       env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - node_js: "4"
@@ -48,6 +48,7 @@ matrix:
     - env: OPENPGPJSTEST='end2end-2' BROWSER='firefox beta'
     - env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 38'
     - env: OPENPGPJSTEST='end2end-5' BROWSER='chrome beta'
+    - env: OPENPGPJSTEST='end2end-6' BROWSER='internet explorer 11'
     - env: OPENPGPJSTEST='end2end-7' BROWSER='microsoft edge 20.10240'
     - env: OPENPGPJSTEST='end2end-8' BROWSER='safari 8'
     - env: OPENPGPJSTEST='end2end-10' BROWSER='android 4.4'
