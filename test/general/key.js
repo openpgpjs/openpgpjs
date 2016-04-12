@@ -426,6 +426,13 @@ var pgp_desktop_priv =
     done();
   });
 
+  it('Create new key ID with fromId()', function() {
+    var pubKeyV4 = openpgp.key.readArmored(twoKeys).keys[0];
+    var keyId = pubKeyV4.primaryKey.getKeyId();
+    var newKeyId = keyId.constructor.fromId(keyId.toHex());
+    expect(newKeyId.toHex()).to.equal(keyId.toHex());
+  });
+
   it('Testing key method getSubkeyPackets', function(done) {
     var pubKeys = openpgp.key.readArmored(pub_sig_test);
 

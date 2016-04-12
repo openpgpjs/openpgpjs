@@ -39,7 +39,7 @@ export default function Keyid() {
 
 /**
  * Parsing method for a key id
- * @param {String} input Input to read the key id from
+ * @param {Uint8Array} input Input to read the key id from
  */
 Keyid.prototype.read = function(bytes) {
   this.bytes = util.Uint8Array2str(bytes.subarray(0, 8));
@@ -73,6 +73,6 @@ Keyid.fromClone = function (clone) {
 
 Keyid.fromId = function (hex) {
   var keyid = new Keyid();
-  keyid.read(util.hex2bin(hex));
+  keyid.read(util.str2Uint8Array(util.hex2bin(hex)));
   return keyid;
 };
