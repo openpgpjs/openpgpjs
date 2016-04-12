@@ -4773,7 +4773,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.2.0",
+  versionstring: "OpenPGP.js v2.2.1",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -19372,7 +19372,7 @@ function Keyid() {
 
 /**
  * Parsing method for a key id
- * @param {String} input Input to read the key id from
+ * @param {Uint8Array} input Input to read the key id from
  */
 Keyid.prototype.read = function (bytes) {
   this.bytes = _util2.default.Uint8Array2str(bytes.subarray(0, 8));
@@ -19406,7 +19406,7 @@ Keyid.fromClone = function (clone) {
 
 Keyid.fromId = function (hex) {
   var keyid = new Keyid();
-  keyid.read(_util2.default.hex2bin(hex));
+  keyid.read(_util2.default.str2Uint8Array(_util2.default.hex2bin(hex)));
   return keyid;
 };
 
