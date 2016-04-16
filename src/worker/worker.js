@@ -24,25 +24,17 @@ var MAX_SIZE_RANDOM_BUFFER = 60000;
 
 var openpgp;
 
-function importOpenPGP(url) {
-  importScripts(url || 'openpgp.js');
-  openpgp = window.openpgp;
-  openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
-}
-
-if (location.protocol !== 'blob:') {
-  importOpenPGP();
-}
-
 self.onmessage = function (event) {
   var msg = event.data || {},
       options = msg.options || {};
 
   switch (msg.event) {
     case 'openpgp-url':
-      if (!window.openpgp) {
+      if (!window.openpgp && msg.url) {
         var onmessage = self.onmessage;
-        importOpenPGP(msg.url);
+        importScripts(msg.url);
+        openpgp = window.openpgp;
+        openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER);
         self.onmessage = onmessage;
       }
       break;

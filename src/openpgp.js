@@ -54,11 +54,12 @@ let asyncProxy; // instance of the asyncproxy
 /**
  * Set the path for the web worker script and create an instance of the async proxy
  * @param {String} path     relative path to the worker scripts, default: 'openpgp.worker.js'
+ * @param {String} pgpPath  relative path to OpenPGP.js, default: 'openpgp.js'
  * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  */
-export function initWorker({ path='openpgp.worker.js', worker } = {}) {
+export function initWorker({ path='openpgp.worker.js', pgpPath='openpgp.js', worker } = {}) {
   if (worker || typeof window !== 'undefined' && window.Worker) {
-    asyncProxy = new AsyncProxy({ path, worker, config });
+    asyncProxy = new AsyncProxy({ path, pgpPath, worker, config });
     return true;
   }
 }
