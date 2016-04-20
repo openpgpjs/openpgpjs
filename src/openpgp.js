@@ -75,21 +75,23 @@ function getWorker() {
  * Encrypts message text with keys
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
+ * @param  {String} filename   (optional) The filename of the encrypted data
  * @return {Promise<String>}      encrypted ASCII armored message
  * @static
  */
-function encryptMessage(keys, text) {
+function encryptMessage(keys, text, format, filename) {
   if (!keys.length) {
     keys = [keys];
   }
 
   if (asyncProxy) {
-    return asyncProxy.encryptMessage(keys, text);
+    return asyncProxy.encryptMessage(keys, text, format, filename);
   }
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = createMessage(text, format, filename);
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
@@ -102,21 +104,23 @@ function encryptMessage(keys, text) {
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
+ * @param  {String} filename   (optional) The filename of the encrypted data
  * @return {Promise<String>}   encrypted ASCII armored message
  * @static
  */
-function signAndEncryptMessage(publicKeys, privateKey, text) {
+function signAndEncryptMessage(publicKeys, privateKey, text, format, filename) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
   if (asyncProxy) {
-    return asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text);
+    return asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text, format, filename);
   }
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = createMessage(text, format, filename);
     msg = msg.sign([privateKey]);
     msg = msg.encrypt(publicKeys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
@@ -129,18 +133,19 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * Decrypts message
  * @param  {module:key~Key}                privateKey private key with decrypted secret key data
  * @param  {module:message~Message} msg    the message object with the encrypted data
+ * @param  {String} format                 (optional) The input format either 'utf8' or 'binary'.
  * @return {Promise<(String|null)>}        decrypted message as as native JavaScript string
  *                              or null if no literal data found
  * @static
  */
-function decryptMessage(privateKey, msg) {
+function decryptMessage(privateKey, msg, format) {
   if (asyncProxy) {
-    return asyncProxy.decryptMessage(privateKey, msg);
+    return asyncProxy.decryptMessage(privateKey, msg, format);
   }
 
   return execute(function() {
     msg = msg.decrypt(privateKey);
-    return msg.getText();
+    return format ? parseMessage(msg, format) : parseMessage(msg).text;
 
   }, 'Error decrypting message!');
 }
@@ -150,24 +155,25 @@ function decryptMessage(privateKey, msg) {
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, to verify signatures
  * @param  {module:message~Message} msg    the message object with signed and encrypted data
+ * @param  {String} format                 (optional) The input format either 'utf8' or 'binary'.
  * @return {Promise<{text: String, signatures: Array<{keyid: module:type/keyid, valid: Boolean}>}>}
  *                              decrypted message as as native JavaScript string
  *                              with verified signatures or null if no literal data found
  * @static
  */
-function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
+function decryptAndVerifyMessage(privateKey, publicKeys, msg, format) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
 
   if (asyncProxy) {
-    return asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg);
+    return asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg, format);
   }
 
   return execute(function() {
     var result = {};
     msg = msg.decrypt(privateKey);
-    result.text = msg.getText();
+    result = parseMessage(msg, format);
     if (result.text) {
       result.signatures = msg.verify(publicKeys);
       return result;
@@ -303,6 +309,29 @@ function onError(message, error) {
   console.error(error.stack);
   // rethrow new high level error for api users
   throw new Error(message);
+}
+
+function createMessage(data, format, filename) {
+  var msg;
+  if (format === 'binary') {
+    msg = message.fromBinary(data, filename);
+  } else {
+    msg = message.fromText(data); // default to 'utf8' text
+  }
+  return msg;
+}
+
+function parseMessage(msg, format) {
+  if (format === 'binary') {
+    return {
+      text: msg.getLiteralData(),
+      filename: msg.getFilename()
+    };
+  } else {
+    return {
+      text: msg.getText() // default to 'utf8' text
+    };
+  }
 }
 
 exports.initWorker = initWorker;

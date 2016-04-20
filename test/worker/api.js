@@ -333,6 +333,42 @@ describe('High level API', function() {
 
   });
 
+
+  describe('Sign and Encrypt binary data', function() {
+
+    var pt = 'binary_string';
+    var format = 'binary';
+    var filename = 'foo.txt';
+
+    before(function() {
+      privKeyRSA.decrypt('hello world');
+    });
+
+    it('Encrypt/Decrypt binary data with filename', function (done) {
+      openpgp.encryptMessage([pubKeyRSA], pt, format, filename).then(function(encrypted) {
+        var msg = openpgp.message.readArmored(encrypted);
+        return openpgp.decryptMessage(privKeyRSA, msg, format);
+      }).then(function(decrypted) {
+        expect(decrypted.text).to.equal(pt);
+        expect(decrypted.filename).to.equal(filename);
+        done();
+      });
+    });
+
+    it('EncryptAndSign/DecryptAndVerify binary data with filename', function (done) {
+      openpgp.signAndEncryptMessage([pubKeyRSA], privKeyRSA, pt, format, filename).then(function(encrypted) {
+        var msg = openpgp.message.readArmored(encrypted);
+        return openpgp.decryptAndVerifyMessage(privKeyRSA, [pubKeyRSA], msg, format);
+      }).then(function(decrypted) {
+        expect(decrypted.text).to.equal(pt);
+        expect(decrypted.filename).to.equal(filename);
+        expect(decrypted.signatures[0].valid).to.be.true;
+        done();
+      });
+    });
+
+  });
+
   describe('Signing', function() {
 
     before(function() {

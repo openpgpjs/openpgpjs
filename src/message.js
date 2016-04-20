@@ -128,6 +128,15 @@ Message.prototype.getLiteralData = function() {
 };
 
 /**
+ * Get filename from literal data packet
+ * @return {(String|null)} filename of literal data packet as string
+ */
+Message.prototype.getFilename = function() {
+  var literal = this.packets.findPacket(enums.packet.literal);
+  return literal && literal.getFilename() || null;
+};
+
+/**
  * Get literal data as text
  * @return {(String|null)} literal body of the message interpreted as text
  */

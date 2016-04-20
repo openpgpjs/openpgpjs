@@ -133,8 +133,10 @@ AsyncProxy.prototype.terminate = function() {
  * Encrypts message text with keys
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
  * @param  {String} text message as native JavaScript string
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
+ * @param  {String} filename   (optional) The filename of the encrypted data
  */
-AsyncProxy.prototype.encryptMessage = function(keys, text) {
+AsyncProxy.prototype.encryptMessage = function(keys, text, format, filename) {
   var self = this;
 
   return self.execute(function() {
@@ -147,7 +149,9 @@ AsyncProxy.prototype.encryptMessage = function(keys, text) {
     self.worker.postMessage({
       event: 'encrypt-message',
       keys: keys,
-      text: text
+      text: text,
+      format: format,
+      filename: filename
     });
   });
 };
@@ -157,8 +161,10 @@ AsyncProxy.prototype.encryptMessage = function(keys, text) {
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key, used to encrypt the message
  * @param  {module:key~Key}    privateKey private key with decrypted secret key data for signing
  * @param  {String} text       message as native JavaScript string
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
+ * @param  {String} filename   (optional) The filename of the encrypted data
  */
-AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text) {
+AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, text, format, filename) {
   var self = this;
 
   return self.execute(function() {
@@ -173,7 +179,9 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
       event: 'sign-and-encrypt-message',
       publicKeys: publicKeys,
       privateKey: privateKey,
-      text: text
+      text: text,
+      format: format,
+      filename: filename
     });
   });
 };
@@ -182,8 +190,9 @@ AsyncProxy.prototype.signAndEncryptMessage = function(publicKeys, privateKey, te
  * Decrypts message
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {module:message~Message} message    the message object with the encrypted data
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
  */
-AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
+AsyncProxy.prototype.decryptMessage = function(privateKey, message, format) {
   var self = this;
 
   return self.execute(function() {
@@ -191,7 +200,8 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
     self.worker.postMessage({
       event: 'decrypt-message',
       privateKey: privateKey,
-      message: message
+      message: message,
+      format: format
     });
   });
 };
@@ -201,8 +211,9 @@ AsyncProxy.prototype.decryptMessage = function(privateKey, message) {
  * @param  {module:key~Key}     privateKey private key with decrypted secret key data
  * @param  {(Array<module:key~Key>|module:key~Key)}  publicKeys array of keys or single key to verify signatures
  * @param  {module:message~Message} message    the message object with signed and encrypted data
+ * @param  {String} format     (optional) The input format either 'utf8' or 'binary'.
  */
-AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, message) {
+AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, message, format) {
   var self = this;
 
   var promise = new Promise(function(resolve, reject) {
@@ -217,7 +228,8 @@ AsyncProxy.prototype.decryptAndVerifyMessage = function(privateKey, publicKeys, 
       event: 'decrypt-and-verify-message',
       privateKey: privateKey,
       publicKeys: publicKeys,
-      message: message
+      message: message,
+      format: format
     });
 
     self.tasks.push({ resolve:function(data) {
