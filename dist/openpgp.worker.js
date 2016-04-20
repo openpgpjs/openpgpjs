@@ -70,7 +70,7 @@ self.onmessage = function (event) {
         msg.keys = [msg.keys];
       }
       msg.keys = msg.keys.map(packetlistCloneToKey);
-      window.openpgp.encryptMessage(msg.keys, msg.text).then(function(data) {
+      window.openpgp.encryptMessage(msg.keys, msg.text, msg.format, msg.filename).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
@@ -82,7 +82,7 @@ self.onmessage = function (event) {
       }
       msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
       msg.privateKey = packetlistCloneToKey(msg.privateKey);
-      window.openpgp.signAndEncryptMessage(msg.publicKeys, msg.privateKey, msg.text).then(function(data) {
+      window.openpgp.signAndEncryptMessage(msg.publicKeys, msg.privateKey, msg.text, msg.format, msg.filename).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
@@ -91,7 +91,7 @@ self.onmessage = function (event) {
     case 'decrypt-message':
       msg.privateKey = packetlistCloneToKey(msg.privateKey);
       msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptMessage(msg.privateKey, msg.message).then(function(data) {
+      window.openpgp.decryptMessage(msg.privateKey, msg.message, msg.format).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
@@ -104,7 +104,7 @@ self.onmessage = function (event) {
       }
       msg.publicKeys = msg.publicKeys.map(packetlistCloneToKey);
       msg.message = packetlistCloneToMessage(msg.message.packets);
-      window.openpgp.decryptAndVerifyMessage(msg.privateKey, msg.publicKeys, msg.message).then(function(data) {
+      window.openpgp.decryptAndVerifyMessage(msg.privateKey, msg.publicKeys, msg.message, msg.format).then(function(data) {
         response({event: 'method-return', data: data});
       }).catch(function(e) {
         response({event: 'method-return', err: e.message});
