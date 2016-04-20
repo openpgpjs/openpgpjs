@@ -1,4 +1,4 @@
-OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs) [![Test Coverage](https://codeclimate.com/github/openpgpjs/openpgpjs/badges/coverage.svg)](https://codeclimate.com/github/openpgpjs/openpgpjs/coverage) [![Code Climate](https://codeclimate.com/github/openpgpjs/openpgpjs/badges/gpa.svg)](https://codeclimate.com/github/openpgpjs/openpgpjs)
+OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs)
 ==========
 
 [OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
