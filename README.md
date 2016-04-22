@@ -50,48 +50,18 @@ var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via win
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 
-openpgp.config.aead_protect = true // activate fast AES-GCM mode (experimental)
+openpgp.config.aead_protect = true // activate fast AES-GCM mode (not yet OpenPGP standard)
 ```
 
-#### Encrypt and decrypt *String* data with a password
+#### Encrypt and decrypt *Uint8Array* data with a password
 
 ```js
 var options, encrypted;
 
 options = {
-    data: 'Hello, World!',      // input as String
-    passwords: ['secret stuff'] // multiple passwords possible
-};
-
-openpgp.encrypt(options).then(function(ciphertext) {
-    encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-});
-```
-
-```js
-options = {
-    message: openpgp.message.readArmored(encrypted), // parse armored message
-    password: 'secret stuff'                         // decrypt with password
-};
-
-openpgp.decrypt(options).then(function(plaintext) {
-    return plaintext.data; // 'Hello, World!'
-});
-```
-
-#### Encrypt and decrypt *Uint8Array* data with PGP keys
-
-```js
-var options, encrypted;
-
-var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
-
-options = {
-    data: new Uint8Array([0x01, 0x01, 0x01]),           // input as Uint8Array
-    publicKeys: openpgp.key.readArmored(pubkey).keys,   // for encryption
-    privateKeys: openpgp.key.readArmored(privkey).keys, // for signing (optional)
-    armor: false                                        // don't ASCII armor
+    data: new Uint8Array([0x01, 0x01, 0x01]), // input as Uint8Array (or String)
+    passwords: ['secret stuff'],              // multiple passwords possible
+    armor: false                              // don't ASCII armor (for Uint8Array output)
 };
 
 openpgp.encrypt(options).then(function(ciphertext) {
@@ -101,14 +71,44 @@ openpgp.encrypt(options).then(function(ciphertext) {
 
 ```js
 options = {
-    message: openpgp.message.read(encrypted),             // parse encrypted bytes
-    publicKeys: openpgp.key.readArmored(pubkey).keys,     // for verification (optional)
-    privateKey: openpgp.key.readArmored(privkey).keys[0], // for decryption
-    format: 'binary'                                      // output as Uint8Array
+    message: openpgp.message.read(encrypted), // parse encrypted bytes
+    password: 'secret stuff'                  // decrypt with password
+    format: 'binary'                          // output as Uint8Array
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
     return plaintext.data // Uint8Array([0x01, 0x01, 0x01])
+});
+```
+
+#### Encrypt and decrypt *String* data with PGP keys
+
+```js
+var options, encrypted;
+
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+
+options = {
+    data: 'Hello, World!',                              // input as String (or Uint8Array)
+    publicKeys: openpgp.key.readArmored(pubkey).keys,   // for encryption
+    privateKeys: openpgp.key.readArmored(privkey).keys, // for signing (optional)
+};
+
+openpgp.encrypt(options).then(function(ciphertext) {
+    encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+});
+```
+
+```js
+options = {
+    message: openpgp.message.readArmored(encrypted),      // parse armored message
+    publicKeys: openpgp.key.readArmored(pubkey).keys,     // for verification (optional)
+    privateKey: openpgp.key.readArmored(privkey).keys[0], // for decryption
+};
+
+openpgp.decrypt(options).then(function(plaintext) {
+    return plaintext.data; // 'Hello, World!'
 });
 ```
 
