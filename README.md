@@ -8,7 +8,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Platform support
 
-* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in most environments. We support node.js v0.8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
+* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in most environments. We support node.js v0.12+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
 
 * The api uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in our build. So no action required on your part!
 
@@ -72,7 +72,7 @@ openpgp.encrypt(options).then(function(ciphertext) {
 ```js
 options = {
     message: openpgp.message.read(encrypted), // parse encrypted bytes
-    password: 'secret stuff'                  // decrypt with password
+    password: 'secret stuff',                 // decrypt with password
     format: 'binary'                          // output as Uint8Array
 };
 
@@ -90,9 +90,9 @@ var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----'
 var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
 
 options = {
-    data: 'Hello, World!',                              // input as String (or Uint8Array)
-    publicKeys: openpgp.key.readArmored(pubkey).keys,   // for encryption
-    privateKeys: openpgp.key.readArmored(privkey).keys, // for signing (optional)
+    data: 'Hello, World!',                             // input as String (or Uint8Array)
+    publicKeys: openpgp.key.readArmored(pubkey).keys,  // for encryption
+    privateKeys: openpgp.key.readArmored(privkey).keys // for signing (optional)
 };
 
 openpgp.encrypt(options).then(function(ciphertext) {
@@ -102,9 +102,9 @@ openpgp.encrypt(options).then(function(ciphertext) {
 
 ```js
 options = {
-    message: openpgp.message.readArmored(encrypted),      // parse armored message
-    publicKeys: openpgp.key.readArmored(pubkey).keys,     // for verification (optional)
-    privateKey: openpgp.key.readArmored(privkey).keys[0], // for decryption
+    message: openpgp.message.readArmored(encrypted),     // parse armored message
+    publicKeys: openpgp.key.readArmored(pubkey).keys,    // for verification (optional)
+    privateKey: openpgp.key.readArmored(privkey).keys[0] // for decryption
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
