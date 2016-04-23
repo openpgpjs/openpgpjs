@@ -4773,7 +4773,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.2.1",
+  versionstring: "OpenPGP.js v2.2.2",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
