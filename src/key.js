@@ -374,16 +374,11 @@ Key.prototype.encrypt = function(passphrase) {
   if (this.isPrivate()) {
     var keys = this.getAllKeyPackets();
     for (var i = 0; i < keys.length; i++) {
-      try {
-        keys[i].encrypt(passphrase);
-      } catch (e) {
-        return false;
-      }
+      keys[i].encrypt(passphrase);
     }
   } else {
     throw new Error("Nothing to encrypt in a public key");
   }
-  return true;
 };
 
 /**
