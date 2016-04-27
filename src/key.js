@@ -368,7 +368,6 @@ Key.prototype.getEncryptionKeyPacket = function() {
 /**
  * Encrypts all secret key and subkey packets
  * @param  {String} passphrase
- * @return {Boolean} true if all key and subkey packets encrypted successfully
  */
 Key.prototype.encrypt = function(passphrase) {
   if (this.isPrivate()) {
@@ -376,8 +375,6 @@ Key.prototype.encrypt = function(passphrase) {
     for (var i = 0; i < keys.length; i++) {
       keys[i].encrypt(passphrase);
     }
-  } else {
-    throw new Error("Nothing to encrypt in a public key");
   }
 };
 

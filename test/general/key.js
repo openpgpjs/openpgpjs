@@ -717,7 +717,7 @@ var pgp_desktop_priv =
       expect(armor1).to.equal(armor2);
       expect(key.decrypt('passphrase')).to.be.true;
       expect(key.primaryKey.isDecrypted).to.be.true;
-      expect(key.encrypt('new_passphrase')).to.be.true;
+      key.encrypt('new_passphrase');
       expect(key.primaryKey.isDecrypted).to.be.false;
       expect(key.decrypt('passphrase')).to.be.false;
       expect(key.primaryKey.isDecrypted).to.be.false;
