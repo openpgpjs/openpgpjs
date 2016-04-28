@@ -199,7 +199,6 @@ SecretKey.prototype.encrypt = function (passphrase) {
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
 
   this.encrypted = util.concatUint8Array(arr);
-  this.isDecrypted = false;
 };
 
 function produceEncryptionKey(s2k, passphrase, algorithm) {
