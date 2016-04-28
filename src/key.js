@@ -370,11 +370,13 @@ Key.prototype.getEncryptionKeyPacket = function() {
  * @param  {String} passphrase
  */
 Key.prototype.encrypt = function(passphrase) {
-  if (this.isPrivate()) {
-    var keys = this.getAllKeyPackets();
-    for (var i = 0; i < keys.length; i++) {
-      keys[i].encrypt(passphrase);
-    }
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to encrypt in a public key");
+  }
+
+  var keys = this.getAllKeyPackets();
+  for (var i = 0; i < keys.length; i++) {
+    keys[i].encrypt(passphrase);
   }
 };
 
