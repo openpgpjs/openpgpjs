@@ -4773,7 +4773,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.2.2",
+  versionstring: "OpenPGP.js v2.3.0",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -13423,6 +13423,22 @@ Key.prototype.getEncryptionKeyPacket = function () {
 };
 
 /**
+ * Encrypts all secret key and subkey packets
+ * @param  {String} passphrase
+ */
+Key.prototype.encrypt = function (passphrase) {
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to encrypt in a public key");
+  }
+
+  var keys = this.getAllKeyPackets();
+  for (var i = 0; i < keys.length; i++) {
+    keys[i].encrypt(passphrase);
+    keys[i].clearPrivateMPIs();
+  }
+};
+
+/**
  * Decrypts all secret key and subkey packets
  * @param  {String} passphrase
  * @return {Boolean} true if all key and subkey packets decrypted successfully
@@ -14013,12 +14029,14 @@ function generate(options) {
       signaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
       signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
       signaturePacket.preferredSymmetricAlgorithms = [];
+      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes256);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes128);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
       signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
       signaturePacket.preferredHashAlgorithms = [];
+      // prefer fast asm.js implementations (SHA-256, SHA-1)
       signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha256);
       signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
       signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha512);
