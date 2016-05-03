@@ -706,5 +706,28 @@ var pgp_desktop_priv =
     }).catch(done);
   });
 
+  it('Encrypt key with new passphrase', function(done) {
+    var userId = 'test <a@b.com>';
+    var opt = {numBits: 512, userIds: userId, passphrase: 'passphrase'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      var armor1 = key.armor();
+      var armor2 = key.armor();
+      expect(armor1).to.equal(armor2);
+      expect(key.decrypt('passphrase')).to.be.true;
+      expect(key.primaryKey.isDecrypted).to.be.true;
+      key.encrypt('new_passphrase');
+      expect(key.primaryKey.isDecrypted).to.be.false;
+      expect(key.decrypt('passphrase')).to.be.false;
+      expect(key.primaryKey.isDecrypted).to.be.false;
+      expect(key.decrypt('new_passphrase')).to.be.true;
+      expect(key.primaryKey.isDecrypted).to.be.true;
+      var armor3 = key.armor();
+      expect(armor3).to.not.equal(armor1);
+      done();
+    }).catch(done);
+  });
+
 });
 

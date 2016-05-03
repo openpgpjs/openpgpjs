@@ -366,6 +366,22 @@ Key.prototype.getEncryptionKeyPacket = function() {
 };
 
 /**
+ * Encrypts all secret key and subkey packets
+ * @param  {String} passphrase
+ */
+Key.prototype.encrypt = function(passphrase) {
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to encrypt in a public key");
+  }
+
+  var keys = this.getAllKeyPackets();
+  for (var i = 0; i < keys.length; i++) {
+    keys[i].encrypt(passphrase);
+    keys[i].clearPrivateMPIs();
+  }
+};
+
+/**
  * Decrypts all secret key and subkey packets
  * @param  {String} passphrase
  * @return {Boolean} true if all key and subkey packets decrypted successfully
