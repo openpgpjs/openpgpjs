@@ -909,6 +909,7 @@ function readArmored(armoredText) {
  * @param {String|Array<String>}  options.userId     assumes already in form of "User Name <username@email.com>"
                                                      If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Number}  options.keyExpirationTime The number of seconds after the key creation time that the key expires
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @return {module:key~Key}
  * @static
@@ -970,6 +971,10 @@ function generate(options) {
       signaturePacket.publicKeyAlgorithm = options.keyType;
       signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
       signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+      if (options.keyExpirationTime) {
+        signaturePacket.keyExpirationTime = options.keyExpirationTime;
+        signaturePacket.keyNeverExpires = false;
+      }
       signaturePacket.preferredSymmetricAlgorithms = [];
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
       signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
@@ -1005,6 +1010,10 @@ function generate(options) {
     subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
     subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    if (options.keyExpirationTime) {
+      subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+      subkeySignaturePacket.keyNeverExpires = false;
+    }
     subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
     packetlist.push(secretSubkeyPacket);

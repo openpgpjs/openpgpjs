@@ -840,5 +840,16 @@ var pgp_desktop_priv =
     }).catch(done);
   });
 
+  it('Generate key - set expiration time', function(done) {
+    var oneYear = 365 * 24 * 60 * 60;
+    var opt = {numBits: 512, userId: 'test', passphrase: '123', keyExpirationTime: oneYear};
+    if (openpgp.util.getWebCrypto()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKeyPair(opt).then(function(key) {
+      expect(key.key.users[0].selfCertifications[0].keyExpirationTime).to.equal(oneYear);
+      expect(key.key.subKeys[0].bindingSignature.keyExpirationTime).to.equal(oneYear);
+      done();
+    });
+  });
+
 });
 
