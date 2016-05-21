@@ -334,6 +334,7 @@ Message.prototype.sign = function(privateKeys) {
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
+    signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
