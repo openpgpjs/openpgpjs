@@ -77,7 +77,8 @@ function seedRandom(buffer) {
  */
 function delegate(method, options) {
   if (typeof openpgp[method] !== 'function') {
-    throw new Error('Unknown Worker Event');
+    response({ event:'method-return', err:'Unknown Worker Event' });
+    return;
   }
   // parse cloned packets
   options = openpgp.packet.clone.parseClonedPackets(options, method);
