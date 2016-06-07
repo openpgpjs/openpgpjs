@@ -4773,7 +4773,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.3.0",
+  versionstring: "OpenPGP.js v2.3.1",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -16842,12 +16842,14 @@ Packetlist.prototype.read = function (bytes) {
     var parsed = _packet2.default.read(bytes, i, bytes.length - i);
     i = parsed.offset;
 
-    var tag = _enums2.default.read(_enums2.default.packet, parsed.tag);
-    var packet = packets.newPacketFromTag(tag);
-
-    this.push(packet);
-
-    packet.read(parsed.packet);
+    try {
+      var tag = _enums2.default.read(_enums2.default.packet, parsed.tag);
+      var packet = packets.newPacketFromTag(tag);
+      this.push(packet);
+      packet.read(parsed.packet);
+    } catch (e) {
+      this.pop(); // drop unsupported packet
+    }
   }
 };
 
@@ -16881,6 +16883,22 @@ Packetlist.prototype.push = function (packet) {
 
   this[this.length] = packet;
   this.length++;
+};
+
+/**
+ * Remove a packet from the list and return it.
+ * @return {Object}   The packet that was removed
+ */
+Packetlist.prototype.pop = function () {
+  if (this.length === 0) {
+    return;
+  }
+
+  var packet = this[this.length - 1];
+  delete this[this.length - 1];
+  this.length--;
+
+  return packet;
 };
 
 /**
