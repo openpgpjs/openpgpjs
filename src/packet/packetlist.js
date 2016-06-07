@@ -34,12 +34,14 @@ Packetlist.prototype.read = function (bytes) {
     var parsed = packetParser.read(bytes, i, bytes.length - i);
     i = parsed.offset;
 
-    var tag = enums.read(enums.packet, parsed.tag);
-    var packet = packets.newPacketFromTag(tag);
-
-    this.push(packet);
-
-    packet.read(parsed.packet);
+    try {
+      var tag = enums.read(enums.packet, parsed.tag);
+      var packet = packets.newPacketFromTag(tag);
+      this.push(packet);
+      packet.read(parsed.packet);
+    } catch(e) {
+      this.pop(); // drop unsupported packet
+    }
   }
 };
 
@@ -71,6 +73,22 @@ Packetlist.prototype.push = function (packet) {
 
   this[this.length] = packet;
   this.length++;
+};
+
+/**
+ * Remove a packet from the list and return it.
+ * @return {Object}   The packet that was removed
+ */
+Packetlist.prototype.pop = function() {
+  if (this.length === 0) {
+    return;
+  }
+
+  var packet = this[this.length - 1];
+  delete this[this.length - 1];
+  this.length--;
+
+  return packet;
 };
 
 /**
