@@ -31,4 +31,4 @@ git push
 git push --tag
 
 # publish to npm
-npm publish --tag old-version
+npm publish #--tag old-version
