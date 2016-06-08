@@ -36,13 +36,17 @@ Packetlist.prototype.read = function (bytes) {
     var parsed = packetParser.read(bytes, i, bytes.length - i);
     i = parsed.offset;
 
+    var pushed = false;
     try {
       var tag = enums.read(enums.packet, parsed.tag);
       var packet = packets.newPacketFromTag(tag);
       this.push(packet);
+      pushed = true;
       packet.read(parsed.packet);
     } catch(e) {
-      this.pop(); // drop unsupported packet
+      if (pushed) {
+        this.pop(); // drop unsupported packet
+      }
     }
   }
 };
