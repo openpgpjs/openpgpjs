@@ -47,7 +47,6 @@ tryTests('Async Proxy', tests, {
 });
 
 function tests() {
-
   describe('Error handling', function() {
     it('Depleted random buffer in worker gives error', function (done) {
       var wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js' });
@@ -60,5 +59,4 @@ function tests() {
       });
     });
   });
-
 }

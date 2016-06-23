@@ -460,7 +460,12 @@ export default {
       return;
     }
 
-    return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
+    var self = (typeof window === 'undefined') ? self : window;
+    if (typeof self === 'undefined') {
+      return;
+    }
+
+    return self.crypto && self.crypto.subtle;
   },
 
   /**
@@ -475,13 +480,15 @@ export default {
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      if (window.crypto) {
-        return window.crypto.subtle || window.crypto.webkitSubtle;
-      }
-      if (window.msCrypto) {
-        return window.msCrypto.subtle;
-      }
+    var self = (typeof window === 'undefined') ? self : window;
+    if (typeof self === 'undefined') {
+      return;
+    }
+
+    if (typeof self.crypto !== 'undefined') {
+      return self.crypto.subtle || self.crypto.webkitSubtle;
+    } else if (typeof self.msCrypto !== 'undefined') {
+      return self.msCrypto.subtle;
     }
   },
 
