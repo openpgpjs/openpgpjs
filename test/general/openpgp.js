@@ -385,8 +385,25 @@ describe('OpenPGP.js public api tests', function() {
       });
     });
 
-    it('should work in with native crypto', function(done) {
+    it('should work in with native crypto (without worker)', function(done) {
       openpgp.config.use_native = true;
+      var opt = {
+        userIds: [{ name: 'Test User', email: 'text@example.com' }],
+        numBits: 512
+      };
+      if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+      openpgp.generateKey(opt).then(function(newKey) {
+        expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
+        expect(newKey.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
+        expect(newKey.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
+        done();
+      });
+    });
+
+    it('should work in with native crypto (with worker)', function(done) {
+      openpgp.config.use_native = true;
+      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       var opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
