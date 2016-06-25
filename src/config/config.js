@@ -42,7 +42,7 @@ export default {
   ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
   rsa_blinding: true,
   use_native: true, // use native node.js crypto and Web Crypto apis (if available)
-  zero_copy: false, // use transferable objects between the Web Worker and main thread
+  zero_copy: true, // use transferable objects between the Web Worker and main thread
   debug: false,
   show_version: true,
   show_comment: true,
