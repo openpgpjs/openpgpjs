@@ -151,9 +151,7 @@ module.exports = function(grunt) {
       src: lintFiles,
       build: ['Gruntfile.js'],
       options: {
-        config: ".jscsrc",
-        esnext: true,
-        verbose: true,
+        config: ".jscsrc"
       }
     },
     jsdoc: {
