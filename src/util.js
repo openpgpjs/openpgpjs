@@ -21,6 +21,8 @@
  * @module util
  */
 
+/* globals self: true */
+
 'use strict';
 
 import config from './config';
@@ -449,6 +451,16 @@ export default {
     return "unknown";
   },
 
+  getGlobal: function() {
+    if (typeof window !== 'undefined') {
+      return window;
+    } else if (typeof self !== 'undefined') {
+      return self;
+    } else if (typeof global !== 'undefined') {
+      return global;
+    }
+  },
+
   /**
    * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
@@ -460,12 +472,12 @@ export default {
       return;
     }
 
-    var self = (typeof window === 'undefined') ? self : window;
-    if (typeof self === 'undefined') {
+    var _self = this.getGlobal();
+    if (typeof _self === 'undefined') {
       return;
     }
 
-    return self.crypto && self.crypto.subtle;
+    return _self.crypto && _self.crypto.subtle;
   },
 
   /**
@@ -480,15 +492,15 @@ export default {
       return;
     }
 
-    var self = (typeof window === 'undefined') ? self : window;
-    if (typeof self === 'undefined') {
+    var _self = this.getGlobal();
+    if (typeof _self === 'undefined') {
       return;
     }
 
-    if (typeof self.crypto !== 'undefined') {
-      return self.crypto.subtle || self.crypto.webkitSubtle;
-    } else if (typeof self.msCrypto !== 'undefined') {
-      return self.msCrypto.subtle;
+    if (typeof _self.crypto !== 'undefined') {
+      return _self.crypto.subtle || _self.crypto.webkitSubtle;
+    } else if (typeof _self.msCrypto !== 'undefined') {
+      return _self.msCrypto.subtle;
     }
   },
 
