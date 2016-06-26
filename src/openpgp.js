@@ -99,7 +99,7 @@ export function destroyWorker() {
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
   const options = formatUserIds({ userIds, passphrase, numBits, unlocked });
 
-  if (asyncProxy) { // use web worker when available
+  if (!util.getWebCryptoPrefixed() && asyncProxy) { // use web worker when available, but not legacy browsers
     return asyncProxy.delegate('generateKey', options);
   }
 

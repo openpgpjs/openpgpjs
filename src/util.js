@@ -452,10 +452,10 @@ export default {
   },
 
   getGlobal: function() {
-    if (typeof window !== 'undefined') {
-      return window;
-    } else if (typeof self !== 'undefined') {
+    if (typeof self !== 'undefined') {
       return self;
+    } else if (typeof window !== 'undefined') {
+      return window;
     } else if (typeof global !== 'undefined') {
       return global;
     }
@@ -478,6 +478,30 @@ export default {
     }
 
     return _self.crypto && _self.crypto.subtle;
+  },
+
+  /**
+   * Get native Web Cryptography api for old browsers only, including legacy
+   * implementations of the spec e.g IE11 and Safari 8/9. The default
+   * configuration is to use the api when available. But it can be deactivated
+   * with config.use_native
+   * @return {Object}   The SubtleCrypto api or 'undefined'
+   */
+  getWebCryptoPrefixed: function() {
+    if (!config.use_native) {
+      return;
+    }
+
+    var _self = this.getGlobal();
+    if (typeof _self === 'undefined') {
+      return;
+    }
+
+    if (typeof _self.crypto !== 'undefined') {
+      return _self.crypto.webkitSubtle;
+    } else if (typeof _self.msCrypto !== 'undefined') {
+      return _self.msCrypto.subtle;
+    }
   },
 
   /**
