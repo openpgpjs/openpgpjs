@@ -473,7 +473,7 @@ export default {
     }
 
     var _self = this.getGlobal();
-    if (typeof _self === 'undefined') {
+    if (!_self) {
       return;
     }
 
@@ -481,7 +481,7 @@ export default {
   },
 
   /**
-   * Get native Web Cryptography api for old browsers only, including legacy
+   * Get native Web Cryptography api for old browsers only, for legacy
    * implementations of the spec e.g IE11 and Safari 8/9. The default
    * configuration is to use the api when available. But it can be deactivated
    * with config.use_native
@@ -493,14 +493,18 @@ export default {
     }
 
     var _self = this.getGlobal();
-    if (typeof _self === 'undefined') {
+    if (!_self) {
       return;
     }
 
-    if (typeof _self.crypto !== 'undefined') {
-      return _self.crypto.webkitSubtle;
-    } else if (typeof _self.msCrypto !== 'undefined') {
+    if (_self.crypto && _self.crypto.subtle) {
+      return; // standard api is available
+    }
+
+    if (_self.msCrypto) {
       return _self.msCrypto.subtle;
+    } else if (_self.crypto) {
+      return _self.crypto.webkitSubtle;
     }
   },
 
@@ -517,13 +521,13 @@ export default {
     }
 
     var _self = this.getGlobal();
-    if (typeof _self === 'undefined') {
+    if (!_self) {
       return;
     }
 
-    if (typeof _self.crypto !== 'undefined') {
+    if (_self.crypto) {
       return _self.crypto.subtle || _self.crypto.webkitSubtle;
-    } else if (typeof _self.msCrypto !== 'undefined') {
+    } else if (_self.msCrypto) {
       return _self.msCrypto.subtle;
     }
   },
