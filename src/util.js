@@ -503,7 +503,7 @@ export default {
 
     if (_self.msCrypto) {
       return _self.msCrypto.subtle;
-    } else if (_self.crypto) {
+    } else if (_self.crypto && _self.crypto.webkitSubtle) {
       return _self.crypto.webkitSubtle;
     }
   },
