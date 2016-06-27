@@ -453,9 +453,24 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
     });
 
+    it('Configuration', function(done){
+      openpgp.config.show_version = false;
+      openpgp.config.commentstring = 'different';
+      if (openpgp.getWorker()) { // init again to trigger config event
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      }
+      openpgp.encrypt({ publicKeys:publicKey.keys, data:plaintext }).then(function(encrypted) {
+        expect(encrypted.data).to.exist;
+        expect(encrypted.data).not.to.match(/^Version:/);
+        expect(encrypted.data).to.match(/Comment: different/);
+        done();
+      });
+      openpgp.destroyWorker();
+    });
+
     tryTests('CFB mode (asm.js)', tests, {
       if: true,
-      beforeEach: function() {
+      before: function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
       }
@@ -464,12 +479,9 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('CFB mode (asm.js, worker)', tests, {
       if: typeof window !== 'undefined' && window.Worker,
       before: function() {
-        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      },
-      beforeEach: function() {
-
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       },
       after: function() {
         openpgp.destroyWorker();
@@ -478,27 +490,25 @@ describe('OpenPGP.js public api tests', function() {
 
     tryTests('GCM mode (native)', tests, {
       if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
-      beforeEach: function() {
+      before: function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
       }
     });
 
-    function tests() {
-      it('Configuration', function(done){
-        openpgp.config.show_version = false;
-        openpgp.config.commentstring = 'different';
-        if (openpgp.getWorker()) { // init again to trigger config event
-          openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-        }
-        openpgp.encrypt({ publicKeys:publicKey.keys, data:plaintext }).then(function(encrypted) {
-          expect(encrypted.data).to.exist;
-          expect(encrypted.data).not.to.match(/^Version:/);
-          expect(encrypted.data).to.match(/Comment: different/);
-          done();
-        });
-      });
+    tryTests('GCM mode (native, worker)', tests, {
+      if: typeof window !== 'undefined' && window.Worker && openpgp.util.getWebCrypto(),
+      before: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = true;
+        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      },
+      after: function() {
+        openpgp.destroyWorker();
+      }
+    });
 
+    function tests() {
       it('Calling decrypt with not decrypted key leads to exception', function (done) {
         var encOpt = {
           data: plaintext,
