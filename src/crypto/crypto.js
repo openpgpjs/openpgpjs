@@ -144,6 +144,10 @@ export default {
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
         return 1;
+      case 'ecdsa':
+        // Algorithm-Specific Fields for ECDSA secret keys:
+        //   - MPI of an integer representing the secret key.
+        return 1;
       default:
         throw new Error('Unknown algorithm');
     }
@@ -174,6 +178,12 @@ export default {
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
         return 4;
+
+        //   Algorithm-Specific Fields for ECDSA public keys:
+        //       - OID of curve;
+        //       - MPI of EC point representing public key.
+      case 'ecdsa':
+        return 2;
 
       default:
         throw new Error('Unknown algorithm.');

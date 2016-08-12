@@ -615,10 +615,10 @@ Signature.prototype.verify = function (key, data) {
   if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
     mpicount = 1;
   }
-  //    Algorithm-Specific Fields for DSA signatures:
+  //    Algorithm-Specific Fields for DSA and ECDSA signatures:
   //      - MPI of DSA value r.
   //      - MPI of DSA value s.
-  else if (publicKeyAlgorithm === 17) {
+  else if (publicKeyAlgorithm === 17 || publicKeyAlgorithm === 19) {
     mpicount = 2;
   }
 
