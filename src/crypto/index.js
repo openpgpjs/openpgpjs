@@ -13,6 +13,7 @@ import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
 import pkcs1 from './pkcs1';
+import pkcs5 from './pkcs5.js';
 import crypto from './crypto.js';
 import rfc3394 from './rfc3394.js';
 
@@ -33,6 +34,8 @@ const mod = {
   random: random,
   /** @see module:crypto/pkcs1 */
   pkcs1: pkcs1,
+  /** @see module:crypto/pkcs5 */
+  pkcs5: pkcs5,
   /** @see module:crypto/rfc3394 */
   rfc3394: rfc3394,
 };
