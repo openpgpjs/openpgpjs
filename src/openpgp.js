@@ -98,8 +98,8 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, curve=null } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, curve });
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, curve=null, material=null } = {}) {
+  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, curve, material });
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
@@ -453,6 +453,9 @@ function checkCleartextOrMessage(message) {
 function formatUserIds(options) {
   if (!options.curve) {
     delete options.curve;
+  }
+  if (!options.material) {
+    delete options.material;
   }
   if (!options.userIds) {
     return options;
