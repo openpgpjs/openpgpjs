@@ -26,7 +26,8 @@ export default {
     rsa_encrypt: 2,
     rsa_sign: 3,
     elgamal: 16,
-    dsa: 17
+    dsa: 17,
+    ecdsa: 19
   },
 
   /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

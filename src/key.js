@@ -337,7 +337,8 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.dsa) ||
           keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
-          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign) ||
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.ecdsa)) &&
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
