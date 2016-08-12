@@ -1139,7 +1139,11 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits, options.curve);
+    var material;
+    if (typeof(options.material) !== "undefined") {
+      material = options.material.key;
+    }
+    return secretKeyPacket.generate(options.numBits, options.curve, material);
   }
 
   function generateSecretSubkey() {
@@ -1148,8 +1152,12 @@ export function generate(options) {
     if (subkeyType === enums.publicKey.ecdsa) {
       subkeyType = enums.publicKey.ecdh;
     }
+    var material;
+    if (typeof(options.material) !== "undefined") {
+      material = options.material.subkey;
+    }
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, subkeyType);
-    return secretSubkeyPacket.generate(options.numBits, options.curve);
+    return secretSubkeyPacket.generate(options.numBits, options.curve, material);
   }
 }
 
