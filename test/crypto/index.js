@@ -3,5 +3,6 @@ describe('Crypto', function () {
   require('./hash');
   require('./random.js');
   require('./crypto.js');
+  require('./pkcs5.js');
   require('./rfc3394.js');
 });
