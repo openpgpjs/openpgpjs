@@ -26,8 +26,10 @@
 'use strict';
 
 import {get, generate} from './curves.js';
+import ecdsa from './ecdsa.js';
 
 module.exports = {
+  ecdsa: ecdsa,
   get: get,
   generate: generate
 };
