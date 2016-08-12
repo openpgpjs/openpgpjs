@@ -97,10 +97,15 @@ function get(oid_or_name) {
   throw new Error('Not valid curve');
 }
 
-function generate(curve) {
+function generate(curve, material) {
   return new Promise(function (resolve) {
     curve = get(curve);
-    var keyPair = curve.genKeyPair();
+    var keyPair;
+    if (typeof(material) !== "undefined") {
+      keyPair = curve.keyFromPrivate(material);
+    } else {
+      keyPair = curve.genKeyPair();
+    }
     resolve({
       oid: curve.oid,
       R: new BigInteger(keyPair.getPublic()),
