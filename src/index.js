@@ -78,6 +78,12 @@ export { default as S2K } from './type/s2k';
 export { default as Keyid } from './type/keyid';
 
 /**
+ * @see module:type/ecdh_symkey
+ * @name module:openpgp.EcdhSymmetricKey
+ */
+export { default as EcdhSymmetricKey } from './type/ecdh_symkey';
+
+/**
  * @see module:type/oid
  * @name module:openpgp.Oid
  */
