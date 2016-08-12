@@ -951,8 +951,12 @@ export function readArmored(armoredText) {
 export function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
   return Promise.resolve().then(() => {
+    if (options.curve) {
+      options.keyType = enums.publicKey.ecdsa;
+    }
     options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+    if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
+        options.keyType !== enums.publicKey.ecdsa) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Only RSA Encrypt or Sign supported');
     }
 
@@ -969,13 +973,17 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits);
+    return secretKeyPacket.generate(options.numBits, options.curve);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretSubkeyPacket.generate(options.numBits);
+    var subkeyType = options.keyType;
+    if (subkeyType === enums.publicKey.ecdsa) {
+      subkeyType = enums.publicKey.ecdh;
+    }
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, subkeyType);
+    return secretSubkeyPacket.generate(options.numBits, options.curve);
   }
 
   function wrapKeyObject() {
