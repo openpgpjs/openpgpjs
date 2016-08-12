@@ -71,6 +71,12 @@ export { default as S2K } from './type/s2k';
 export { default as Keyid } from './type/keyid';
 
 /**
+ * @see module:type/oid
+ * @name module:openpgp.Oid
+ */
+export { default as Oid } from './type/oid';
+
+/**
  * @see module:encoding/armor
  * @name module:openpgp.armor
  */
