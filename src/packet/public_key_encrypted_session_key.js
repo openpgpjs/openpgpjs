@@ -31,6 +31,7 @@
  * decrypt the message.
  * @requires crypto
  * @requires enums
+ * @requires type/ecdh_symkey
  * @requires type/keyid
  * @requires type/mpi
  * @requires util
@@ -41,6 +42,7 @@
 
 import type_keyid from '../type/keyid.js';
 import util from '../util.js';
+import type_ecdh_symkey from '../type/ecdh_symkey.js';
 import type_mpi from '../type/mpi.js';
 import enums from '../enums.js';
 import crypto from '../crypto';
@@ -88,6 +90,9 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
       case 'elgamal':
         return 2;
 
+      case 'ecdh':
+        return 2;
+
       default:
         throw new Error("Invalid algorithm.");
     }
@@ -96,7 +101,12 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.encrypted = [];
 
   for (var j = 0; j < integerCount; j++) {
-    var mpi = new type_mpi();
+    var mpi;
+    if (this.publicKeyAlgorithm === 'ecdh' && j === 1) {
+      mpi = new type_ecdh_symkey();
+    } else {
+      mpi = new type_mpi();
+    }
     i += mpi.read(bytes.subarray(i, bytes.length));
     this.encrypted.push(mpi);
   }
@@ -126,15 +136,21 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
   var checksum = util.calc_checksum(this.sessionKey);
   data += util.Uint8Array2str(util.writeNumber(checksum, 2));
 
-  var mpi = new type_mpi();
-  mpi.fromBytes(crypto.pkcs1.eme.encode(
-    data,
-    key.mpi[0].byteLength()));
+  var mpi;
+  if (this.publicKeyAlgorithm === 'ecdh') {
+    mpi = util.str2Uint8Array(crypto.pkcs5.addPadding(data));
+  } else {
+    mpi = new type_mpi();
+    mpi.fromBytes(crypto.pkcs1.eme.encode(
+      data,
+      key.mpi[0].byteLength()));
+  }
 
   this.encrypted = crypto.publicKeyEncrypt(
     this.publicKeyAlgorithm,
     key.mpi,
-    mpi);
+    mpi,
+    key.fingerprint);
 };
 
 /**
@@ -149,11 +165,18 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
   var result = crypto.publicKeyDecrypt(
     this.publicKeyAlgorithm,
     key.mpi,
-    this.encrypted).toBytes();
+    this.encrypted,
+    key.fingerprint).toBytes();
 
-  var checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
-
-  var decoded = crypto.pkcs1.eme.decode(result);
+  var checksum;
+  var decoded;
+  if (this.publicKeyAlgorithm === 'ecdh') {
+    decoded = crypto.pkcs5.removePadding(result);
+    checksum = util.readNumber(util.str2Uint8Array(decoded.substr(decoded.length - 2)));
+  } else {
+    decoded = crypto.pkcs1.eme.decode(result);
+    checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
+  }
 
   key = util.str2Uint8Array(decoded.substring(1, decoded.length - 2));
 
