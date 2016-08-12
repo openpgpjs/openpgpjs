@@ -38,6 +38,7 @@
     "babelify": "^7.2.0",
     "browserify-derequire": "^0.9.4",
     "chai": "~3.5.0",
+    "elliptic": "^6.3.1",
     "es6-promise": "^3.1.2",
     "grunt": "~0.4.5",
     "grunt-browserify": "~5.0.0",
