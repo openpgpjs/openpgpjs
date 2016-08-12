@@ -273,10 +273,10 @@ SecretKey.prototype.decrypt = function (passphrase) {
   return true;
 };
 
-SecretKey.prototype.generate = function (bits) {
+SecretKey.prototype.generate = function (bits, curve) {
   var self = this;
 
-  return crypto.generateMpi(self.algorithm, bits).then(function(mpi) {
+  return crypto.generateMpi(self.algorithm, bits, curve).then(function(mpi) {
     self.mpi = mpi;
     self.isDecrypted = true;
   });
