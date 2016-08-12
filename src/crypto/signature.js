@@ -56,6 +56,15 @@ export default {
         m = data;
         var dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
         return dopublic.compareTo(s1) === 0;
+      case 19:
+        // ECDSA
+        const ecdsa = publicKey.elliptic.ecdsa;
+        const curve = publickey_MPIs[0];
+        const r = msg_MPIs[0].toBigInteger();
+        const s = msg_MPIs[1].toBigInteger();
+        m = data;
+        const gw = publickey_MPIs[1].toBigInteger();
+        return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, gw);
       default:
         throw new Error('Invalid signature algorithm.');
     }
@@ -107,6 +116,16 @@ export default {
       case 16:
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
+
+      case 19:
+        // ECDSA
+        const ecdsa = publicKey.elliptic.ecdsa;
+        const curve = keyIntegers[0];
+        const w = keyIntegers[2].toBigInteger();
+        m = data;
+        const signature = ecdsa.sign(curve.oid, hash_algo, m, w);
+        return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
+
       default:
         throw new Error('Invalid signature algorithm.');
     }
