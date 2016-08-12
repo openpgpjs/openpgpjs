@@ -15,6 +15,7 @@ module.exports = function(grunt) {
     'src/crypto/public_key/elgamal.js',
     'src/crypto/public_key/index.js',
     'src/crypto/public_key/rsa.js',
+    'src/crypto/public_key/elliptic/*.js',
     'src/crypto/*.js',
     'src/encoding/**/*.js',
     'src/hkp/**/*.js',
