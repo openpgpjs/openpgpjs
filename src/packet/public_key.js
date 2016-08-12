@@ -26,6 +26,7 @@
  * @requires enums
  * @requires type/keyid
  * @requires type/mpi
+ * @requires type/oid
  * @requires util
  * @module packet/public_key
  */
@@ -35,6 +36,7 @@
 import util from '../util.js';
 import type_mpi from '../type/mpi.js';
 import type_keyid from '../type/keyid.js';
+import type_oid from '../type/oid.js';
 import enums from '../enums.js';
 import crypto from '../crypto';
 
@@ -100,8 +102,11 @@ PublicKey.prototype.read = function (bytes) {
     var p = 0;
 
     for (var i = 0; i < mpicount && p < bmpi.length; i++) {
-
-      this.mpi[i] = new type_mpi();
+      if (this.algorithm === 'ecdsa' && i === 0) {
+        this.mpi[i] = new type_oid();
+      } else {
+        this.mpi[i] = new type_mpi();
+      }
 
       p += this.mpi[i].read(bmpi.subarray(p, bmpi.length));
 
