@@ -24,6 +24,7 @@
  * major versions.  Consequently, this section is complex.
  * @requires crypto
  * @requires enums
+ * @requires type/kdf_params
  * @requires type/keyid
  * @requires type/mpi
  * @requires type/oid
@@ -35,6 +36,7 @@
 
 import util from '../util.js';
 import type_mpi from '../type/mpi.js';
+import type_kdf_params from '../type/kdf_params.js';
 import type_keyid from '../type/keyid.js';
 import type_oid from '../type/oid.js';
 import enums from '../enums.js';
@@ -102,8 +104,10 @@ PublicKey.prototype.read = function (bytes) {
     var p = 0;
 
     for (var i = 0; i < mpicount && p < bmpi.length; i++) {
-      if (this.algorithm === 'ecdsa' && i === 0) {
+      if ((this.algorithm === 'ecdsa' || this.algorithm === 'ecdh') && i === 0) {
         this.mpi[i] = new type_oid();
+      } else if (this.algorithm === 'ecdh' && i === 2) {
+        this.mpi[i] = new type_kdf_params();
       } else {
         this.mpi[i] = new type_mpi();
       }
