@@ -22,7 +22,9 @@
  * @requires crypto/public_key
  * @requires crypto/random
  * @requires type/ecdh_symkey
+ * @requires type/kdf_params
  * @requires type/mpi
+ * @requires type/oid
  * @module crypto/crypto
  */
 
@@ -32,7 +34,9 @@ import random from './random.js';
 import cipher from './cipher';
 import publicKey from './public_key';
 import type_ecdh_symkey from '../type/ecdh_symkey.js';
+import type_kdf_params from '../type/kdf_params.js';
 import type_mpi from '../type/mpi.js';
+import type_oid from '../type/oid.js';
 
 function BigInteger2mpi(bn) {
   var mpi = new type_mpi();
@@ -224,7 +228,7 @@ export default {
     }
   },
 
-  generateMpi: function(algo, bits) {
+  generateMpi: function(algo, bits, curve) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -241,6 +245,26 @@ export default {
           output.push(keyObject.u);
           return mapResult(output);
         });
+
+      case 'ecdsa':
+        return publicKey.elliptic.generate(curve).then(function (key) {
+          return [
+            new type_oid(key.oid),
+            BigInteger2mpi(key.R),
+            BigInteger2mpi(key.r)
+          ];
+        });
+
+      case 'ecdh':
+        return publicKey.elliptic.generate(curve).then(function (key) {
+          return [
+            new type_oid(key.oid),
+            BigInteger2mpi(key.R),
+            new type_kdf_params(key.hash, key.cipher),
+            BigInteger2mpi(key.r)
+          ];
+        });
+
       default:
         throw new Error('Unsupported algorithm for key generation.');
     }
