@@ -321,6 +321,9 @@ Message.prototype.sign = function(privateKeys) {
     }
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+    if (i === privateKeys.length - 1) {
+      onePassSig.flags = 1;
+    }
     packetlist.push(onePassSig);
   }
 
