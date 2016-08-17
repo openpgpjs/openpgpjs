@@ -2947,7 +2947,7 @@ return exports;
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
  * @license   Licensed under MIT license
  *            See https://raw.githubusercontent.com/jakearchibald/es6-promise/master/LICENSE
- * @version   3.1.2
+ * @version   3.2.1
  */
 
 (function() {
@@ -3005,7 +3005,7 @@ return exports;
     var lib$es6$promise$asap$$browserWindow = (typeof window !== 'undefined') ? window : undefined;
     var lib$es6$promise$asap$$browserGlobal = lib$es6$promise$asap$$browserWindow || {};
     var lib$es6$promise$asap$$BrowserMutationObserver = lib$es6$promise$asap$$browserGlobal.MutationObserver || lib$es6$promise$asap$$browserGlobal.WebKitMutationObserver;
-    var lib$es6$promise$asap$$isNode = typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+    var lib$es6$promise$asap$$isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
 
     // test for web worker but not in IE10
     var lib$es6$promise$asap$$isWorker = typeof Uint8ClampedArray !== 'undefined' &&
@@ -3095,19 +3095,19 @@ return exports;
     }
     function lib$es6$promise$then$$then(onFulfillment, onRejection) {
       var parent = this;
-      var state = parent._state;
-
-      if (state === lib$es6$promise$$internal$$FULFILLED && !onFulfillment || state === lib$es6$promise$$internal$$REJECTED && !onRejection) {
-        return this;
-      }
 
       var child = new this.constructor(lib$es6$promise$$internal$$noop);
-      var result = parent._result;
+
+      if (child[lib$es6$promise$$internal$$PROMISE_ID] === undefined) {
+        lib$es6$promise$$internal$$makePromise(child);
+      }
+
+      var state = parent._state;
 
       if (state) {
         var callback = arguments[state - 1];
         lib$es6$promise$asap$$asap(function(){
-          lib$es6$promise$$internal$$invokeCallback(state, child, callback, result);
+          lib$es6$promise$$internal$$invokeCallback(state, child, callback, parent._result);
         });
       } else {
         lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection);
@@ -3129,6 +3129,7 @@ return exports;
       return promise;
     }
     var lib$es6$promise$promise$resolve$$default = lib$es6$promise$promise$resolve$$resolve;
+    var lib$es6$promise$$internal$$PROMISE_ID = Math.random().toString(36).substring(16);
 
     function lib$es6$promise$$internal$$noop() {}
 
@@ -3359,6 +3360,18 @@ return exports;
       }
     }
 
+    var lib$es6$promise$$internal$$id = 0;
+    function lib$es6$promise$$internal$$nextId() {
+      return lib$es6$promise$$internal$$id++;
+    }
+
+    function lib$es6$promise$$internal$$makePromise(promise) {
+      promise[lib$es6$promise$$internal$$PROMISE_ID] = lib$es6$promise$$internal$$id++;
+      promise._state = undefined;
+      promise._result = undefined;
+      promise._subscribers = [];
+    }
+
     function lib$es6$promise$promise$all$$all(entries) {
       return new lib$es6$promise$enumerator$$default(this, entries).promise;
     }
@@ -3367,28 +3380,18 @@ return exports;
       /*jshint validthis:true */
       var Constructor = this;
 
-      var promise = new Constructor(lib$es6$promise$$internal$$noop);
-
       if (!lib$es6$promise$utils$$isArray(entries)) {
-        lib$es6$promise$$internal$$reject(promise, new TypeError('You must pass an array to race.'));
-        return promise;
+        return new Constructor(function(resolve, reject) {
+          reject(new TypeError('You must pass an array to race.'));
+        });
+      } else {
+        return new Constructor(function(resolve, reject) {
+          var length = entries.length;
+          for (var i = 0; i < length; i++) {
+            Constructor.resolve(entries[i]).then(resolve, reject);
+          }
+        });
       }
-
-      var length = entries.length;
-
-      function onFulfillment(value) {
-        lib$es6$promise$$internal$$resolve(promise, value);
-      }
-
-      function onRejection(reason) {
-        lib$es6$promise$$internal$$reject(promise, reason);
-      }
-
-      for (var i = 0; promise._state === lib$es6$promise$$internal$$PENDING && i < length; i++) {
-        lib$es6$promise$$internal$$subscribe(Constructor.resolve(entries[i]), undefined, onFulfillment, onRejection);
-      }
-
-      return promise;
     }
     var lib$es6$promise$promise$race$$default = lib$es6$promise$promise$race$$race;
     function lib$es6$promise$promise$reject$$reject(reason) {
@@ -3400,7 +3403,6 @@ return exports;
     }
     var lib$es6$promise$promise$reject$$default = lib$es6$promise$promise$reject$$reject;
 
-    var lib$es6$promise$promise$$counter = 0;
 
     function lib$es6$promise$promise$$needsResolver() {
       throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
@@ -3515,9 +3517,8 @@ return exports;
       @constructor
     */
     function lib$es6$promise$promise$$Promise(resolver) {
-      this._id = lib$es6$promise$promise$$counter++;
-      this._state = undefined;
-      this._result = undefined;
+      this[lib$es6$promise$$internal$$PROMISE_ID] = lib$es6$promise$$internal$$nextId();
+      this._result = this._state = undefined;
       this._subscribers = [];
 
       if (lib$es6$promise$$internal$$noop !== resolver) {
@@ -3768,7 +3769,11 @@ return exports;
       this._instanceConstructor = Constructor;
       this.promise = new Constructor(lib$es6$promise$$internal$$noop);
 
-      if (Array.isArray(input)) {
+      if (!this.promise[lib$es6$promise$$internal$$PROMISE_ID]) {
+        lib$es6$promise$$internal$$makePromise(this.promise);
+      }
+
+      if (lib$es6$promise$utils$$isArray(input)) {
         this._input     = input;
         this.length     = input.length;
         this._remaining = input.length;
@@ -3785,13 +3790,13 @@ return exports;
           }
         }
       } else {
-        lib$es6$promise$$internal$$reject(this.promise, this._validationError());
+        lib$es6$promise$$internal$$reject(this.promise, lib$es6$promise$enumerator$$validationError());
       }
     }
 
-    lib$es6$promise$enumerator$$Enumerator.prototype._validationError = function() {
+    function lib$es6$promise$enumerator$$validationError() {
       return new Error('Array Methods must be provided an Array');
-    };
+    }
 
     lib$es6$promise$enumerator$$Enumerator.prototype._enumerate = function() {
       var length  = this.length;
@@ -3902,12 +3907,40 @@ return exports;
 // shim for using process in browser
 
 var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+(function () {
+  try {
+    cachedSetTimeout = setTimeout;
+  } catch (e) {
+    cachedSetTimeout = function () {
+      throw new Error('setTimeout is not defined');
+    }
+  }
+  try {
+    cachedClearTimeout = clearTimeout;
+  } catch (e) {
+    cachedClearTimeout = function () {
+      throw new Error('clearTimeout is not defined');
+    }
+  }
+} ())
 var queue = [];
 var draining = false;
 var currentQueue;
 var queueIndex = -1;
 
 function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
     draining = false;
     if (currentQueue.length) {
         queue = currentQueue.concat(queue);
@@ -3923,7 +3956,7 @@ function drainQueue() {
     if (draining) {
         return;
     }
-    var timeout = setTimeout(cleanUpNextTick);
+    var timeout = cachedSetTimeout(cleanUpNextTick);
     draining = true;
 
     var len = queue.length;
@@ -3940,7 +3973,7 @@ function drainQueue() {
     }
     currentQueue = null;
     draining = false;
-    clearTimeout(timeout);
+    cachedClearTimeout(timeout);
 }
 
 process.nextTick = function (fun) {
@@ -3952,7 +3985,7 @@ process.nextTick = function (fun) {
     }
     queue.push(new Item(fun, args));
     if (queue.length === 1 && !draining) {
-        setTimeout(drainQueue, 0);
+        cachedSetTimeout(drainQueue, 0);
     }
 };
 
@@ -4773,7 +4806,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.3.2",
+  versionstring: "OpenPGP.js v2.3.3",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -12865,21 +12898,15 @@ exports.HKP = exports.AsyncProxy = exports.Keyring = exports.crypto = exports.co
 
 var _openpgp = require('./openpgp');
 
-var _loop = function _loop(_key3) {
-  if (_key3 === "default") return 'continue';
-  Object.defineProperty(exports, _key3, {
+Object.keys(_openpgp).forEach(function (key) {
+  if (key === "default") return;
+  Object.defineProperty(exports, key, {
     enumerable: true,
     get: function get() {
-      return _openpgp[_key3];
+      return _openpgp[key];
     }
   });
-};
-
-for (var _key3 in _openpgp) {
-  var _ret = _loop(_key3);
-
-  if (_ret === 'continue') continue;
-}
+});
 
 var _util = require('./util');
 
@@ -12991,9 +13018,9 @@ Object.defineProperty(exports, 'HKP', {
 
 var openpgp = _interopRequireWildcard(_openpgp);
 
-var _key2 = require('./key');
+var _key = require('./key');
 
-var keyMod = _interopRequireWildcard(_key2);
+var keyMod = _interopRequireWildcard(_key);
 
 var _message = require('./message');
 
@@ -14751,9 +14778,9 @@ Message.prototype.getText = function () {
 Message.prototype.encrypt = function (keys, passwords) {
   var _this2 = this;
 
-  var symAlgo = undefined,
-      msg = undefined,
-      symEncryptedPacket = undefined;
+  var symAlgo = void 0,
+      msg = void 0,
+      symEncryptedPacket = void 0;
   return Promise.resolve().then(function () {
     if (keys) {
       symAlgo = keyModule.getPreferredSymAlgo(keys);
@@ -14857,6 +14884,9 @@ Message.prototype.sign = function (privateKeys) {
     }
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+    if (i === privateKeys.length - 1) {
+      onePassSig.flags = 1;
+    }
     packetlist.push(onePassSig);
   }
 
@@ -15107,7 +15137,7 @@ _es6Promise2.default.polyfill(); // load ES6 Promises polyfill
 //                      //
 //////////////////////////
 
-var asyncProxy = undefined; // instance of the asyncproxy
+var asyncProxy = void 0; // instance of the asyncproxy
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
@@ -15528,7 +15558,7 @@ function toArray(param) {
  * @return {Message}                  a message object
  */
 function createMessage(data, filename) {
-  var msg = undefined;
+  var msg = void 0;
   if (_util2.default.isUint8Array(data)) {
     msg = messageLib.fromBinary(data, filename);
   } else if (_util2.default.isString(data)) {
@@ -16664,10 +16694,10 @@ exports.default = {
       // new format header
       tag = input[mypos] & 0x3F; // bit 5-0
     } else {
-        // old format header
-        tag = (input[mypos] & 0x3F) >> 2; // bit 5-2
-        packet_length_type = input[mypos] & 0x03; // bit 1-0
-      }
+      // old format header
+      tag = (input[mypos] & 0x3F) >> 2; // bit 5-2
+      packet_length_type = input[mypos] & 0x03; // bit 1-0
+    }
 
     // header octet parsing done
     mypos++;
@@ -16718,49 +16748,49 @@ exports.default = {
           _util2.default.print_debug("1 byte length:" + packet_length);
           // 4.2.2.2. Two-Octet Lengths
         } else if (input[mypos] >= 192 && input[mypos] < 224) {
-            packet_length = (input[mypos++] - 192 << 8) + input[mypos++] + 192;
-            _util2.default.print_debug("2 byte length:" + packet_length);
-            // 4.2.2.4. Partial Body Lengths
-          } else if (input[mypos] > 223 && input[mypos] < 255) {
-              packet_length = 1 << (input[mypos++] & 0x1F);
-              _util2.default.print_debug("4 byte length:" + packet_length);
-              // EEEK, we're reading the full data here...
-              var mypos2 = mypos + packet_length;
-              bodydata = [input.subarray(mypos, mypos + packet_length)];
-              var tmplen;
-              while (true) {
-                if (input[mypos2] < 192) {
-                  tmplen = input[mypos2++];
-                  packet_length += tmplen;
-                  bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
-                  mypos2 += tmplen;
-                  break;
-                } else if (input[mypos2] >= 192 && input[mypos2] < 224) {
-                  tmplen = (input[mypos2++] - 192 << 8) + input[mypos2++] + 192;
-                  packet_length += tmplen;
-                  bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
-                  mypos2 += tmplen;
-                  break;
-                } else if (input[mypos2] > 223 && input[mypos2] < 255) {
-                  tmplen = 1 << (input[mypos2++] & 0x1F);
-                  packet_length += tmplen;
-                  bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
-                  mypos2 += tmplen;
-                } else {
-                  mypos2++;
-                  tmplen = input[mypos2++] << 24 | input[mypos2++] << 16 | input[mypos2++] << 8 | input[mypos2++];
-                  bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
-                  packet_length += tmplen;
-                  mypos2 += tmplen;
-                  break;
-                }
-              }
-              real_packet_length = mypos2 - mypos;
-              // 4.2.2.3. Five-Octet Lengths
+          packet_length = (input[mypos++] - 192 << 8) + input[mypos++] + 192;
+          _util2.default.print_debug("2 byte length:" + packet_length);
+          // 4.2.2.4. Partial Body Lengths
+        } else if (input[mypos] > 223 && input[mypos] < 255) {
+          packet_length = 1 << (input[mypos++] & 0x1F);
+          _util2.default.print_debug("4 byte length:" + packet_length);
+          // EEEK, we're reading the full data here...
+          var mypos2 = mypos + packet_length;
+          bodydata = [input.subarray(mypos, mypos + packet_length)];
+          var tmplen;
+          while (true) {
+            if (input[mypos2] < 192) {
+              tmplen = input[mypos2++];
+              packet_length += tmplen;
+              bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
+              mypos2 += tmplen;
+              break;
+            } else if (input[mypos2] >= 192 && input[mypos2] < 224) {
+              tmplen = (input[mypos2++] - 192 << 8) + input[mypos2++] + 192;
+              packet_length += tmplen;
+              bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
+              mypos2 += tmplen;
+              break;
+            } else if (input[mypos2] > 223 && input[mypos2] < 255) {
+              tmplen = 1 << (input[mypos2++] & 0x1F);
+              packet_length += tmplen;
+              bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
+              mypos2 += tmplen;
             } else {
-                mypos++;
-                packet_length = input[mypos++] << 24 | input[mypos++] << 16 | input[mypos++] << 8 | input[mypos++];
-              }
+              mypos2++;
+              tmplen = input[mypos2++] << 24 | input[mypos2++] << 16 | input[mypos2++] << 8 | input[mypos2++];
+              bodydata.push(input.subarray(mypos2, mypos2 + tmplen));
+              packet_length += tmplen;
+              mypos2 += tmplen;
+              break;
+            }
+          }
+          real_packet_length = mypos2 - mypos;
+          // 4.2.2.3. Five-Octet Lengths
+        } else {
+          mypos++;
+          packet_length = input[mypos++] << 24 | input[mypos++] << 16 | input[mypos++] << 8 | input[mypos++];
+        }
       }
 
     // if there was'nt a partial body length: use the specified
@@ -18012,86 +18042,96 @@ function Signature() {
  * @return {module:packet/signature} object representation
  */
 Signature.prototype.read = function (bytes) {
+  var _this = this;
+
   var i = 0;
   this.version = bytes[i++];
   // switch on version (3 and 4)
-  switch (this.version) {
-    case 3:
-      // One-octet length of following hashed material. MUST be 5.
-      if (bytes[i++] !== 5) {
-        _util2.default.print_debug("packet/signature.js\n" + 'invalid One-octet length of following hashed material.' + 'MUST be 5. @:' + (i - 1));
-      }
+  var sigpos;
+  var sigDataLength;
 
-      var sigpos = i;
-      // One-octet signature type.
-      this.signatureType = bytes[i++];
-
-      // Four-octet creation time.
-      this.created = _util2.default.readDate(bytes.subarray(i, i + 4));
-      i += 4;
-
-      // storing data appended to data which gets verified
-      this.signatureData = bytes.subarray(sigpos, i);
-
-      // Eight-octet Key ID of signer.
-      this.issuerKeyId.read(bytes.subarray(i, i + 8));
-      i += 8;
-
-      // One-octet public-key algorithm.
-      this.publicKeyAlgorithm = bytes[i++];
-
-      // One-octet hash algorithm.
-      this.hashAlgorithm = bytes[i++];
-      break;
-    case 4:
-      this.signatureType = bytes[i++];
-      this.publicKeyAlgorithm = bytes[i++];
-      this.hashAlgorithm = bytes[i++];
-
-      var subpackets = function subpackets(bytes) {
-        // Two-octet scalar octet count for following subpacket data.
-        var subpacket_length = _util2.default.readNumber(bytes.subarray(0, 2));
-
-        var i = 2;
-
-        // subpacket data set (zero or more subpackets)
-        while (i < 2 + subpacket_length) {
-
-          var len = _packet2.default.readSimpleLength(bytes.subarray(i, bytes.length));
-          i += len.offset;
-
-          this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-          i += len.len;
+  (function () {
+    switch (_this.version) {
+      case 3:
+        // One-octet length of following hashed material. MUST be 5.
+        if (bytes[i++] !== 5) {
+          _util2.default.print_debug("packet/signature.js\n" + 'invalid One-octet length of following hashed material.' + 'MUST be 5. @:' + (i - 1));
         }
 
-        return i;
-      };
+        sigpos = i;
+        // One-octet signature type.
 
-      // hashed subpackets
+        _this.signatureType = bytes[i++];
+
+        // Four-octet creation time.
+        _this.created = _util2.default.readDate(bytes.subarray(i, i + 4));
+        i += 4;
+
+        // storing data appended to data which gets verified
+        _this.signatureData = bytes.subarray(sigpos, i);
+
+        // Eight-octet Key ID of signer.
+        _this.issuerKeyId.read(bytes.subarray(i, i + 8));
+        i += 8;
+
+        // One-octet public-key algorithm.
+        _this.publicKeyAlgorithm = bytes[i++];
+
+        // One-octet hash algorithm.
+        _this.hashAlgorithm = bytes[i++];
+        break;
+      case 4:
+        _this.signatureType = bytes[i++];
+        _this.publicKeyAlgorithm = bytes[i++];
+        _this.hashAlgorithm = bytes[i++];
+
+        var subpackets = function subpackets(bytes) {
+          // Two-octet scalar octet count for following subpacket data.
+          var subpacket_length = _util2.default.readNumber(bytes.subarray(0, 2));
+
+          var i = 2;
+
+          // subpacket data set (zero or more subpackets)
+          while (i < 2 + subpacket_length) {
+
+            var len = _packet2.default.readSimpleLength(bytes.subarray(i, bytes.length));
+            i += len.offset;
+
+            this.read_sub_packet(bytes.subarray(i, i + len.len));
+
+            i += len.len;
+          }
+
+          return i;
+        };
+
+        // hashed subpackets
 
 
-      i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
+        i += subpackets.call(_this, bytes.subarray(i, bytes.length), true);
 
-      // A V4 signature hashes the packet body
-      // starting from its first field, the version number, through the end
-      // of the hashed subpacket data.  Thus, the fields hashed are the
-      // signature version, the signature type, the public-key algorithm, the
-      // hash algorithm, the hashed subpacket length, and the hashed
-      // subpacket body.
-      this.signatureData = bytes.subarray(0, i);
-      var sigDataLength = i;
+        // A V4 signature hashes the packet body
+        // starting from its first field, the version number, through the end
+        // of the hashed subpacket data.  Thus, the fields hashed are the
+        // signature version, the signature type, the public-key algorithm, the
+        // hash algorithm, the hashed subpacket length, and the hashed
+        // subpacket body.
+        _this.signatureData = bytes.subarray(0, i);
+        sigDataLength = i;
 
-      // unhashed subpackets
-      i += subpackets.call(this, bytes.subarray(i, bytes.length), false);
-      this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
+        // unhashed subpackets
 
-      break;
-    default:
-      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
-  }
+        i += subpackets.call(_this, bytes.subarray(i, bytes.length), false);
+        _this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
-  // Two-octet field holding left 16 bits of signed hash value.
+        break;
+      default:
+        throw new Error('Version ' + _this.version + ' of the signature is unsupported.');
+    }
+
+    // Two-octet field holding left 16 bits of signed hash value.
+  })();
+
   this.signedHashValue = bytes.subarray(i, i + 2);
   i += 2;
 
@@ -18803,7 +18843,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  * @return {Promise}
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted = undefined;
+  var decrypted = void 0;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') {
     // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, this.encrypted, key);
@@ -18845,7 +18885,7 @@ function aesEncrypt(algo, prefix, pt, key) {
 }
 
 function aesDecrypt(algo, ct, key) {
-  var pt = undefined;
+  var pt = void 0;
   if (nodeCrypto) {
     // Node crypto library.
     pt = nodeDecrypt(algo, ct, key);
@@ -19691,8 +19731,8 @@ S2K.prototype.read = function (bytes) {
           this.type = gnuExtType;
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
-            throw new Error("Unknown s2k gnu protection mode.");
-          }
+          throw new Error("Unknown s2k gnu protection mode.");
+        }
       } else {
         throw new Error("Unknown s2k type.");
       }
