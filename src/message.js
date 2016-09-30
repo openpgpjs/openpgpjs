@@ -306,7 +306,7 @@ Message.prototype.sign = function(privateKeys) {
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat === enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
-  var i, signingKeyPacket;
+  var i,signingKeyPacket,signingKeyPackets = [];
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -325,12 +325,14 @@ Message.prototype.sign = function(privateKeys) {
       onePassSig.flags = 1;
     }
     packetlist.push(onePassSig);
+    signingKeyPackets.push(signingKeyPacket);
   }
 
   packetlist.push(literalDataPacket);
 
   for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new packet.Signature();
+    signingKeyPacket = signingKeyPackets[i];
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;

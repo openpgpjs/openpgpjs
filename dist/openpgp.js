@@ -5055,7 +5055,7 @@ exports.default = {
      *  [...] Unlike the Symmetrically Encrypted Data Packet, no
      *  special CFB resynchronization is done after encrypting this prefix
      *  data.  See "OpenPGP CFB Mode" below for more details.
-      */
+       */
 
     j = 0;
     if (resync) {
@@ -14869,7 +14869,9 @@ Message.prototype.sign = function (privateKeys) {
 
   var literalFormat = _enums2.default.write(_enums2.default.literal, literalDataPacket.format);
   var signatureType = literalFormat === _enums2.default.literal.binary ? _enums2.default.signature.binary : _enums2.default.signature.text;
-  var i, signingKeyPacket;
+  var i,
+      signingKeyPacket,
+      signingKeyPackets = [];
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -14888,12 +14890,14 @@ Message.prototype.sign = function (privateKeys) {
       onePassSig.flags = 1;
     }
     packetlist.push(onePassSig);
+    signingKeyPackets.push(signingKeyPacket);
   }
 
   packetlist.push(literalDataPacket);
 
   for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new _packet2.default.Signature();
+    signingKeyPacket = signingKeyPackets[i];
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
