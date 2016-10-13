@@ -79,7 +79,7 @@ HKP.prototype.search = function (options) {
       for (var n in values) {
         result[keyID].uids.push(values[n].split(":")[1]);
       }
-    };
+    }
     return result;
   });
 };
