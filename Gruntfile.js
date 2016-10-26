@@ -79,11 +79,6 @@ module.exports = function(grunt) {
           'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
         }
       },
-      worker_min: {
-        files: {
-          'dist/openpgp.worker.min.js': [ './src/worker/worker.js' ]
-        }
-      },
       unittests: {
         files: {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
@@ -110,12 +105,20 @@ module.exports = function(grunt) {
           to: 'OpenPGP.js v<%= pkg.version %>'
         }]
       },
+      openpgp_min: {
+        src: ['dist/openpgp.min.js'],
+        dest: ['dist/openpgp.min.js'],
+        replacements: [{
+          from: "openpgp.worker.js",
+          to: "openpgp.worker.min.js"
+        }]
+      },
       worker_min: {
         src: ['dist/openpgp.worker.min.js'],
         dest: ['dist/openpgp.worker.min.js'],
         replacements: [{
-          from: "importScripts('openpgp.js')",
-          to: "importScripts('openpgp.min.js')"
+          from: "openpgp.js",
+          to: "openpgp.min.js"
         }]
       }
     },
@@ -123,7 +126,7 @@ module.exports = function(grunt) {
       openpgp: {
         files: {
           'dist/openpgp.min.js' : [ 'dist/openpgp.js' ],
-          'dist/openpgp.worker.min.js' : [ 'dist/openpgp.worker.min.js' ]
+          'dist/openpgp.worker.min.js' : [ 'dist/openpgp.worker.js' ]
         }
       },
       options: {
@@ -292,7 +295,9 @@ module.exports = function(grunt) {
   }
 
   // Build tasks
-  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'replace', 'uglify']);
+  grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
+  grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
+  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
   grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest']);

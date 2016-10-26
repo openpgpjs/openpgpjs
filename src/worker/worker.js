@@ -44,7 +44,7 @@ self.onmessage = function(event) {
       break;
 
     default:
-      delegate(msg.event, msg.options || {});
+      delegate(msg.id, msg.event, msg.options || {});
   }
 };
 
@@ -75,18 +75,18 @@ function seedRandom(buffer) {
  * @param  {String} method    The public api function to be delegated to the worker thread
  * @param  {Object} options   The api function's options
  */
-function delegate(method, options) {
+function delegate(id, method, options) {
   if (typeof openpgp[method] !== 'function') {
-    response({ event:'method-return', err:'Unknown Worker Event' });
+    response({ id:id, event:'method-return', err:'Unknown Worker Event' });
     return;
   }
   // parse cloned packets
   options = openpgp.packet.clone.parseClonedPackets(options, method);
   openpgp[method](options).then(function(data) {
     // clone packets (for web worker structured cloning algorithm)
-    response({ event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
+    response({ id:id, event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
   }).catch(function(e) {
-    response({ event:'method-return', err:e.message });
+    response({ id:id, event:'method-return', err:e.message });
   });
 }
 

@@ -39,12 +39,23 @@ export default function AsyncProxy({ path='openpgp.worker.js', worker, config } 
     throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
   };
   this.seedRandom(INITIAL_RANDOM_SEED);
-  // FIFO
-  this.tasks = [];
+
   if (config) {
     this.worker.postMessage({ event:'configure', config });
   }
+
+  // Cannot rely on task order being maintained, use object keyed by request ID to track tasks
+  this.tasks = {};
+  this.currentID = 0;
 }
+
+/**
+ * Get new request ID
+ * @return {integer}          New unique request ID
+*/
+AsyncProxy.prototype.getID = function() {
+  return this.currentID++;
+};
 
 /**
  * Message handling
@@ -55,11 +66,12 @@ AsyncProxy.prototype.onMessage = function(event) {
     case 'method-return':
       if (msg.err) {
         // fail
-        this.tasks.shift().reject(new Error(msg.err));
+        this.tasks[msg.id].reject(new Error(msg.err));
       } else {
         // success
-        this.tasks.shift().resolve(msg.data);
+        this.tasks[msg.id].resolve(msg.data);
       }
+      delete this.tasks[msg.id];
       break;
     case 'request-seed':
       this.seedRandom(RANDOM_SEED_REQUEST);
@@ -106,11 +118,13 @@ AsyncProxy.prototype.terminate = function() {
  * @return {Promise}          see the corresponding public api functions for their return types
  */
 AsyncProxy.prototype.delegate = function(method, options) {
+  const id = this.getID();
+
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.worker.postMessage({ event:method, options:packet.clone.clonePackets(options) }, util.getTransferables.call(util, options));
+    this.worker.postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables.call(util, options));
 
     // remember to handle parsing cloned packets from worker
-    this.tasks.push({ resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject });
+    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject };
   });
 };
