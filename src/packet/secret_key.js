@@ -269,6 +269,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
   }
   this.mpi = this.mpi.concat(parsedMPI);
   this.isDecrypted = true;
+  this.encrypted = null;
   return true;
 };
 
