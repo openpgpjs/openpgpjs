@@ -358,7 +358,7 @@ Key.prototype.getEncryptionKeyPacket = function() {
   }
   // if no valid subkey for encryption, evaluate primary key
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser &&
+  if (primaryUser && primaryUser.selfCertificate && !primaryUser.selfCertificate.isExpired &&
       isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
