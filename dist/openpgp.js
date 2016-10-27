@@ -4806,7 +4806,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.3.4",
+  versionstring: "OpenPGP.js v2.3.5",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -17842,6 +17842,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
   }
   this.mpi = this.mpi.concat(parsedMPI);
   this.isDecrypted = true;
+  this.encrypted = null;
   return true;
 };
 
@@ -20475,12 +20476,23 @@ function AsyncProxy() {
     throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
   };
   this.seedRandom(INITIAL_RANDOM_SEED);
-  // FIFO
-  this.tasks = [];
+
   if (config) {
     this.worker.postMessage({ event: 'configure', config: config });
   }
+
+  // Cannot rely on task order being maintained, use object keyed by request ID to track tasks
+  this.tasks = {};
+  this.currentID = 0;
 }
+
+/**
+ * Get new request ID
+ * @return {integer}          New unique request ID
+*/
+AsyncProxy.prototype.getID = function () {
+  return this.currentID++;
+};
 
 /**
  * Message handling
@@ -20491,11 +20503,12 @@ AsyncProxy.prototype.onMessage = function (event) {
     case 'method-return':
       if (msg.err) {
         // fail
-        this.tasks.shift().reject(new Error(msg.err));
+        this.tasks[msg.id].reject(new Error(msg.err));
       } else {
         // success
-        this.tasks.shift().resolve(msg.data);
+        this.tasks[msg.id].resolve(msg.data);
       }
+      delete this.tasks[msg.id];
       break;
     case 'request-seed':
       this.seedRandom(RANDOM_SEED_REQUEST);
@@ -20544,14 +20557,16 @@ AsyncProxy.prototype.terminate = function () {
 AsyncProxy.prototype.delegate = function (method, options) {
   var _this = this;
 
+  var id = this.getID();
+
   return new Promise(function (_resolve, reject) {
     // clone packets (for web worker structured cloning algorithm)
-    _this.worker.postMessage({ event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables.call(_util2.default, options));
+    _this.worker.postMessage({ id: id, event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables.call(_util2.default, options));
 
     // remember to handle parsing cloned packets from worker
-    _this.tasks.push({ resolve: function resolve(data) {
+    _this.tasks[id] = { resolve: function resolve(data) {
         return _resolve(_packet2.default.clone.parseClonedPackets(data, method));
-      }, reject: reject });
+      }, reject: reject };
   });
 };
 
