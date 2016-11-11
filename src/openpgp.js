@@ -244,6 +244,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
  * @param {Integer} options.numBits    number of bits for the key creation. (should be 1024+, generally)
  * @param {String}  options.userId     assumes already in form of "User Name <username@email.com>"
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Number}  options.keyExpirationTime The number of seconds after the key creation time that the key expires
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @return {Promise<Object>} {key: module:key~Key, privateKeyArmored: String, publicKeyArmored: String}
  * @static
