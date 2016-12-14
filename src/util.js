@@ -51,7 +51,7 @@ export default {
     if (!this.isString(data)) {
       return false;
     }
-    return / </.test(data) && />$/.test(data);
+    return /</.test(data) && />$/.test(data);
   },
 
   /**
