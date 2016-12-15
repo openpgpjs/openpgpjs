@@ -391,7 +391,11 @@ function formatUserIds(options) {
     if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
       throw new Error('Invalid user id format');
     }
-    return id.name + ' <' + id.email + '>';
+    id.name = id.name.trim();
+    if (id.name.length > 0) {
+      id.name += ' ';
+    }
+    return id.name + '<' + id.email + '>';
   });
   return options;
 }
