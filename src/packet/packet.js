@@ -97,9 +97,9 @@ export default {
     if (length < 256) {
       return new Uint8Array([0x80 | (tag_type << 2), length]);
     } else if (length < 65536) {
-      return util.concatUint8Array([0x80 | (tag_type << 2) | 1, util.writeNumber(length, 2)]);
+      return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 1]), util.writeNumber(length, 2)]);
     } else {
-      return util.concatUint8Array([0x80 | (tag_type << 2) | 2, util.writeNumber(length, 4)]);
+      return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 2]), util.writeNumber(length, 4)]);
     }
   },
 
