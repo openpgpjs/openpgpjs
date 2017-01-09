@@ -151,6 +151,69 @@ var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----'
 hkp.upload(pubkey).then(function() { ... });
 ```
 
+#### Sign and verify cleartext messages
+
+```js
+var options, cleartext, validity;
+
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+```
+
+```js
+options = {
+    data: 'Hello, World!',                             // input as String (or Uint8Array)
+    privateKeys: openpgp.key.readArmored(privkey).keys // for signing
+};
+
+openpgp.sign(options).then(function(signed) {
+    cleartext = signed.data; // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
+});
+```
+
+```js
+options = {
+    message: openpgp.cleartext.readArmored(cleartext), // parse armored message
+    publicKeys: openpgp.key.readArmored(pubkey).keys   // for verification
+};
+
+openpgp.verify(options).then(function(verified) {
+	validity = verified.signatures[0].valid; // true
+	if (validity) {
+		console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+	}
+});
+```
+
+#### Create and verify *detached* signatures for binary data
+
+```js
+var content, detachedSig, validity;
+
+var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+```
+
+```js
+content = 'Hello, World!';                               // input as String
+var privateKeys = openpgp.key.readArmored(privkey).keys; // for signing
+var bytes = openpgp.util.str2Uint8Array(content);        // convert text to binary
+var message = openpgp.message.fromBinary(bytes);
+var signedMessage = message.sign(privateKeys);
+var signature = signedMessage.packets.filterByTag(openpgp.enums.packet.signature);
+var armoredMessage = openpgp.armor.encode(openpgp.enums.armor.message, signature.write());
+armoredMessage = armoredMessage.replace('-----BEGIN PGP MESSAGE-----\r\n', '-----BEGIN PGP SIGNATURE-----\r\n');
+armoredMessage = armoredMessage.replace('-----END PGP MESSAGE-----\r\n', '-----END PGP SIGNATURE-----\r\n');
+detachedSig = armoredMessage; // '-----BEGIN PGP SIGNATURE ... END PGP SIGNATURE-----'
+```
+
+```js
+var publicKeys = openpgp.key.readArmored(pubkey).keys; // for verifying signatures
+var msg = openpgp.message.readSignedContent(content, detachedSig);
+var result = msg.verify(publicKeys);
+validity = result[0].valid; // true
+```
+
 ### Documentation
 
 A jsdoc build of our code comments is available at [doc/index.html](http://openpgpjs.org/openpgpjs/doc/index.html). Public calls should generally be made through the OpenPGP object [doc/openpgp.html](http://openpgpjs.org/openpgpjs/doc/module-openpgp.html).
