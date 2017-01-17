@@ -170,7 +170,9 @@ function withCompression(tests) {
     });
   });
 
-  Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]).forEach(function (compAlgo) {
+  var compAlgos = Object.keys(openpgp.enums.compression).map(function(k) { return openpgp.enums.compression[k]; });
+
+  compAlgos.forEach(function (compAlgo) {
     if (compAlgo == openpgp.enums.compression.uncompressed) {
       return;
     }
