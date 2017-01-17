@@ -165,9 +165,10 @@ var password2 = 'I am another password';
 
 function withCompression(tests) {
   describe('compression disabled', function() {
-    tests({}, function(decrypted) {
-      expect(decrypted.decompressionAlgo).to.not.exist;
-    });
+    tests(
+      function(encOptions) { return encOptions; },
+      function(decrypted) { expect(decrypted.decompressionAlgo).to.not.exist; }
+    );
   });
 
   var compAlgos = Object.keys(openpgp.enums.compression).map(function(k) { return openpgp.enums.compression[k]; });
@@ -190,9 +191,10 @@ function withCompression(tests) {
         openpgp.config.compression = compAlgo;
       });
 
-      tests({ compress: true }, function(decrypted) {
-        expect(decrypted.decompressionAlgo).to.equal(compAlgoName);
-      });
+      tests(
+        function(encOptions) { encOptions.compress = true; return encOptions; },
+        function(decrypted) { expect(decrypted.decompressionAlgo).to.equal(compAlgoName); }
+      );
     });
   });
 }
@@ -591,13 +593,13 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        withCompression(function (encOptions, verifyDecrypted) {
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
           it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with pgp key pair', function(done) {
             var msgAsciiArmored;
-            openpgp.encrypt(Object.assign({
+            openpgp.encrypt(modifyEncOptions({
               data: plaintext,
               publicKeys: publicKey.keys
-            }, encOptions)).then(function(encrypted) {
+            })).then(function(encrypted) {
               msgAsciiArmored = encrypted.data;
               return openpgp.decryptSessionKey({
                 message: openpgp.message.readArmored(msgAsciiArmored),
@@ -619,10 +621,10 @@ describe('OpenPGP.js public api tests', function() {
 
           it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with password', function(done) {
             var msgAsciiArmored;
-            openpgp.encrypt(Object.assign({
+            openpgp.encrypt(modifyEncOptions({
               data: plaintext,
               passwords: password1
-            }, encOptions)).then(function(encrypted) {
+            })).then(function(encrypted) {
               msgAsciiArmored = encrypted.data;
               return openpgp.decryptSessionKey({
                 message: openpgp.message.readArmored(msgAsciiArmored),
@@ -661,12 +663,12 @@ describe('OpenPGP.js public api tests', function() {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
         });
 
-        withCompression(function (encOptions, verifyDecrypted) {
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
           it('should encrypt then decrypt', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
-            }, encOptions);
+            });
             var decOpt = {
               privateKey: privateKey.keys[0]
             };
@@ -683,11 +685,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt/sign and decrypt/verify', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
-            }, encOptions);
+            });
             var decOpt = {
               privateKey: privateKey.keys[0],
               publicKeys: publicKey.keys
@@ -705,11 +707,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to verify decrypted data with wrong public pgp key', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
-            }, encOptions);
+            });
             var decOpt = {
               privateKey: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
@@ -788,16 +790,16 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
-        withCompression(function (encOptions, verifyDecrypted) {
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
           it('round trip test', function (done) {
             var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
             var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
-            openpgp.encrypt(Object.assign({
+            openpgp.encrypt(modifyEncOptions({
               publicKeys: pubKeyDE,
               privateKeys: privKeyDE,
               data: plaintext
-            }, encOptions)).then(function(encrypted) {
+            })).then(function(encrypted) {
               return openpgp.decrypt({
                 privateKey: privKeyDE,
                 publicKeys: pubKeyDE,
@@ -880,12 +882,12 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('AES encrypt, decrypt', function() {
-        withCompression(function (encOptions, verifyDecrypted) {
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
           it('should encrypt and decrypt with one password', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               passwords: password1
-            }, encOptions);
+            });
             var decOpt = {
               password: password1
             };
@@ -900,10 +902,10 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt with two passwords', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               passwords: [password1, password2]
-            }, encOptions);
+            });
             var decOpt = {
               password: password2
             };
@@ -918,11 +920,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt with password and not ascii armor', function(done) {
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: plaintext,
               passwords: password1,
               armor: false
-            }, encOptions);
+            });
             var decOpt = {
               password: password1
             };
@@ -938,11 +940,11 @@ describe('OpenPGP.js public api tests', function() {
 
           it('should encrypt and decrypt with binary data and transferable objects', function(done) {
             openpgp.config.zero_copy = true; // activate transferable objects
-            var encOpt = Object.assign({
+            var encOpt = modifyEncOptions({
               data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
               passwords: password1,
               armor: false
-            }, encOptions);
+            });
             var decOpt = {
               password: password1,
               format: 'binary'
