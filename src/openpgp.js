@@ -37,6 +37,7 @@ import * as cleartext from './cleartext.js';
 import * as key from './key.js';
 import config from './config/config.js';
 import util from './util';
+import enums from './enums.js';
 import AsyncProxy from './worker/async_proxy.js';
 import es6Promise from 'es6-promise';
 es6Promise.polyfill(); // load ES6 Promises polyfill
@@ -151,11 +152,12 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
  * @param  {String} filename                  (optional) a filename for the literal data packet
+ * @param  {Boolean} compress                 (optional) if the message should be compressed before encryption
  * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
  * @return {Promise<String|Message>}          encrypted ASCII armored message, or the full Message object if 'armor' is false
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true }) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, filename, compress, armor=true }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -167,6 +169,9 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
     let message = createMessage(data, filename);
     if (privateKeys) { // sign the message only if private keys are specified
       message = message.sign(privateKeys);
+    }
+    if (compress) { // compress the message only if compress is specified
+      message = message.compress(config.compression);
     }
     return message.encrypt(publicKeys, passwords);
 
@@ -209,6 +214,10 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
     const result = parseMessage(message, format);
     if (publicKeys && result.data) { // verify only if publicKeys are specified
       result.signatures = message.verify(publicKeys);
+    }
+    var compressedPacket = message.packets.findPacket(enums.packet.compressed);
+    if (compressedPacket) {
+      result.decompressionAlgo = compressedPacket.algorithm;
     }
     return result;
 
