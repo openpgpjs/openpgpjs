@@ -178,7 +178,7 @@ function withCompression(tests) {
     }
 
     var compAlgoName = openpgp.enums.read(openpgp.enums.compression, compAlgo);
-    var groupName = `compression enabled - ${compAlgoName}`;
+    var groupName = 'compression enabled - ' + compAlgoName;
 
     if (compAlgo == openpgp.enums.compression.bzip2) { // Compression algorithm BZip2 [BZ2] is yet to be implemented.
       describe.skip(groupName + ' (not implemented --> skipping tests)', tests);
