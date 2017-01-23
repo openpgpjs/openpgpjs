@@ -189,7 +189,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   }
   i = 0;
 
-  while (rlength <= numBytes) {
+  while (rlength < numBytes) {
     var result = round(prefix.subarray(0,i), this);
     arr.push(result);
     rlength += result.length;
