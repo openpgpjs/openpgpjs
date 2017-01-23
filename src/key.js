@@ -944,6 +944,7 @@ export function readArmored(armoredText) {
                                                      If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
+ * @param {Integer}  options.encryptCount iteration octet count for encrypting the resulting private key (default 65536)
  * @return {module:key~Key}
  * @static
  */
@@ -980,8 +981,9 @@ export function generate(options) {
   function wrapKeyObject() {
     // set passphrase protection
     if (options.passphrase) {
-      secretKeyPacket.encrypt(options.passphrase);
-      secretSubkeyPacket.encrypt(options.passphrase);
+      var encryptOptions = {count: options.encryptCount};
+      secretKeyPacket.encrypt(options.passphrase, encryptOptions);
+      secretSubkeyPacket.encrypt(options.passphrase, encryptOptions);
     }
 
     packetlist = new packet.List();
