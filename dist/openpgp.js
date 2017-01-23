@@ -13443,7 +13443,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
   }
   // if no valid subkey for encryption, evaluate primary key
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+  if (primaryUser && primaryUser.selfCertificate && !primaryUser.selfCertificate.isExpired && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
   return null;
@@ -14908,6 +14908,22 @@ Message.prototype.sign = function (privateKeys) {
 };
 
 /**
+ * Compresses the message (the literal and -if signed- signature data packets of the message)
+ * @param  {module:enums.compression}   algo     compression algorithm to be used
+ * @return {module:message~Message}     new message with compressed content
+ */
+Message.prototype.compress = function (algo) {
+  var compressed = new _packet2.default.Compressed();
+  compressed.packets = this.packets;
+  compressed.algorithm = _enums2.default.read(_enums2.default.compression, algo);
+
+  var packetList = new _packet2.default.List();
+  packetList.push(compressed);
+
+  return new Message(packetList);
+};
+
+/**
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
@@ -15117,6 +15133,10 @@ var _util = _dereq_('./util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _enums = _dereq_('./enums.js');
+
+var _enums2 = _interopRequireDefault(_enums);
+
 var _async_proxy = _dereq_('./worker/async_proxy.js');
 
 var _async_proxy2 = _interopRequireDefault(_async_proxy);
@@ -15257,6 +15277,7 @@ function decryptKey(_ref3) {
  * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
  * @param  {String} filename                  (optional) a filename for the literal data packet
+ * @param  {Boolean} compress                 (optional) if the message should be compressed before encryption
  * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
  * @return {Promise<String|Message>}          encrypted ASCII armored message, or the full Message object if 'armor' is false
  * @static
@@ -15267,6 +15288,7 @@ function encrypt(_ref4) {
   var privateKeys = _ref4.privateKeys;
   var passwords = _ref4.passwords;
   var filename = _ref4.filename;
+  var compress = _ref4.compress;
   var _ref4$armor = _ref4.armor;
   var armor = _ref4$armor === undefined ? true : _ref4$armor;
 
@@ -15283,6 +15305,10 @@ function encrypt(_ref4) {
     if (privateKeys) {
       // sign the message only if private keys are specified
       message = message.sign(privateKeys);
+    }
+    if (compress) {
+      // compress the message only if compress is specified
+      message = message.compress(_config2.default.compression);
     }
     return message.encrypt(publicKeys, passwords);
   }).then(function (message) {
@@ -15333,6 +15359,10 @@ function decrypt(_ref5) {
     if (publicKeys && result.data) {
       // verify only if publicKeys are specified
       result.signatures = message.verify(publicKeys);
+    }
+    var compressedPacket = message.packets.findPacket(_enums2.default.packet.compressed);
+    if (compressedPacket) {
+      result.decompressionAlgo = compressedPacket.algorithm;
     }
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
@@ -15534,7 +15564,11 @@ function formatUserIds(options) {
     if (!_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email)) {
       throw new Error('Invalid user id format');
     }
-    return id.name + ' <' + id.email + '>';
+    id.name = id.name.trim();
+    if (id.name.length > 0) {
+      id.name += ' ';
+    }
+    return id.name + '<' + id.email + '>';
   });
   return options;
 }
@@ -15630,7 +15664,7 @@ function nativeAEAD() {
   return _util2.default.getWebCrypto() && _config2.default.aead_protect;
 }
 
-},{"./cleartext.js":5,"./config/config.js":9,"./key.js":38,"./message.js":42,"./util":69,"./worker/async_proxy.js":70,"es6-promise":2}],44:[function(_dereq_,module,exports){
+},{"./cleartext.js":5,"./config/config.js":9,"./enums.js":35,"./key.js":38,"./message.js":42,"./util":69,"./worker/async_proxy.js":70,"es6-promise":2}],44:[function(_dereq_,module,exports){
 /**
  * @requires enums
  * @module packet
@@ -16103,7 +16137,7 @@ Compressed.prototype.write = function () {
     this.compress();
   }
 
-  return _util2.default.concatUint8Array(new Uint8Array([_enums2.default.write(_enums2.default.compression, this.algorithm)]), this.compressed);
+  return _util2.default.concatUint8Array([new Uint8Array([_enums2.default.write(_enums2.default.compression, this.algorithm)]), this.compressed]);
 };
 
 /**
@@ -16660,9 +16694,9 @@ exports.default = {
     if (length < 256) {
       return new Uint8Array([0x80 | tag_type << 2, length]);
     } else if (length < 65536) {
-      return _util2.default.concatUint8Array([0x80 | tag_type << 2 | 1, _util2.default.writeNumber(length, 2)]);
+      return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 1]), _util2.default.writeNumber(length, 2)]);
     } else {
-      return _util2.default.concatUint8Array([0x80 | tag_type << 2 | 2, _util2.default.writeNumber(length, 4)]);
+      return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 2]), _util2.default.writeNumber(length, 4)]);
     }
   },
 
@@ -19908,7 +19942,7 @@ exports.default = {
     if (!this.isString(data)) {
       return false;
     }
-    return (/ </.test(data) && />$/.test(data)
+    return (/</.test(data) && />$/.test(data)
     );
   },
 

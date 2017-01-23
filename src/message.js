@@ -345,6 +345,22 @@ Message.prototype.sign = function(privateKeys) {
 };
 
 /**
+ * Compresses the message (the literal and -if signed- signature data packets of the message)
+ * @param  {module:enums.compression}   algo     compression algorithm to be used
+ * @return {module:message~Message}     new message with compressed content
+ */
+Message.prototype.compress = function(algo) {
+  var compressed = new packet.Compressed();
+  compressed.packets = this.packets;
+  compressed.algorithm = enums.read(enums.compression, algo);
+
+  var packetList = new packet.List();
+  packetList.push(compressed);
+
+  return new Message(packetList);
+};
+
+/**
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature

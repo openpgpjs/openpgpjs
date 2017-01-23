@@ -163,6 +163,42 @@ var plaintext = 'short message\nnext line\n한국어/조선말';
 var password1 = 'I am a password';
 var password2 = 'I am another password';
 
+function withCompression(tests) {
+  describe('compression disabled', function() {
+    tests(
+      function(encOptions) { return encOptions; },
+      function(decrypted) { expect(decrypted.decompressionAlgo).to.not.exist; }
+    );
+  });
+
+  var compAlgos = Object.keys(openpgp.enums.compression).map(function(k) { return openpgp.enums.compression[k]; });
+
+  compAlgos.forEach(function (compAlgo) {
+    if (compAlgo == openpgp.enums.compression.uncompressed) {
+      return;
+    }
+
+    var compAlgoName = openpgp.enums.read(openpgp.enums.compression, compAlgo);
+    var groupName = 'compression enabled - ' + compAlgoName;
+
+    if (compAlgo == openpgp.enums.compression.bzip2) { // Compression algorithm BZip2 [BZ2] is yet to be implemented.
+      describe.skip(groupName + ' (not implemented --> skipping tests)', tests);
+      return;
+    }
+
+    describe(groupName, function() {
+      beforeEach(function() {
+        openpgp.config.compression = compAlgo;
+      });
+
+      tests(
+        function(encOptions) { encOptions.compress = true; return encOptions; },
+        function(decrypted) { expect(decrypted.decompressionAlgo).to.equal(compAlgoName); }
+      );
+    });
+  });
+}
+
 describe('OpenPGP.js public api tests', function() {
 
   describe('initWorker, getWorker, destroyWorker - unit tests', function() {
@@ -403,7 +439,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal;
+    var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal, compressionVal;
 
     beforeEach(function() {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -415,12 +451,14 @@ describe('OpenPGP.js public api tests', function() {
       zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
+      compressionVal = openpgp.config.compression;
     });
 
     afterEach(function() {
       openpgp.config.zero_copy = zero_copyVal;
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.compression = compressionVal;
     });
 
     it('Decrypting key with wrong passphrase returns false', function () {
@@ -555,51 +593,55 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with pgp key pair', function(done) {
-          var msgAsciiArmored;
-          openpgp.encrypt({
-            data: plaintext,
-            publicKeys: publicKey.keys
-          }).then(function(encrypted) {
-            msgAsciiArmored = encrypted.data;
-            return openpgp.decryptSessionKey({
-              message: openpgp.message.readArmored(msgAsciiArmored),
-              privateKey: privateKey.keys[0]
-            });
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
+          it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with pgp key pair', function(done) {
+            var msgAsciiArmored;
+            openpgp.encrypt(modifyEncOptions({
+              data: plaintext,
+              publicKeys: publicKey.keys
+            })).then(function(encrypted) {
+              msgAsciiArmored = encrypted.data;
+              return openpgp.decryptSessionKey({
+                message: openpgp.message.readArmored(msgAsciiArmored),
+                privateKey: privateKey.keys[0]
+              });
 
-          }).then(function(decryptedSessionKey) {
-            return openpgp.decrypt({
-              sessionKey: decryptedSessionKey,
-              message: openpgp.message.readArmored(msgAsciiArmored)
-            });
+            }).then(function(decryptedSessionKey) {
+              return openpgp.decrypt({
+                sessionKey: decryptedSessionKey,
+                message: openpgp.message.readArmored(msgAsciiArmored)
+              });
 
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with password', function(done) {
-          var msgAsciiArmored;
-          openpgp.encrypt({
-            data: plaintext,
-            passwords: password1
-          }).then(function(encrypted) {
-            msgAsciiArmored = encrypted.data;
-            return openpgp.decryptSessionKey({
-              message: openpgp.message.readArmored(msgAsciiArmored),
-              password: password1
+          it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with password', function(done) {
+            var msgAsciiArmored;
+            openpgp.encrypt(modifyEncOptions({
+              data: plaintext,
+              passwords: password1
+            })).then(function(encrypted) {
+              msgAsciiArmored = encrypted.data;
+              return openpgp.decryptSessionKey({
+                message: openpgp.message.readArmored(msgAsciiArmored),
+                password: password1
+              });
+
+            }).then(function(decryptedSessionKey) {
+              return openpgp.decrypt({
+                sessionKey: decryptedSessionKey,
+                message: openpgp.message.readArmored(msgAsciiArmored)
+              });
+
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
             });
-
-          }).then(function(decryptedSessionKey) {
-            return openpgp.decrypt({
-              sessionKey: decryptedSessionKey,
-              message: openpgp.message.readArmored(msgAsciiArmored)
-            });
-
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
           });
         });
       });
@@ -621,64 +663,69 @@ describe('OpenPGP.js public api tests', function() {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
         });
 
-        it('should encrypt then decrypt', function(done) {
-          var encOpt = {
-            data: plaintext,
-            publicKeys: publicKey.keys,
-          };
-          var decOpt = {
-            privateKey: privateKey.keys[0]
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures).to.not.exist;
-            done();
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
+          it('should encrypt then decrypt', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              publicKeys: publicKey.keys,
+            });
+            var decOpt = {
+              privateKey: privateKey.keys[0]
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+              decOpt.message = openpgp.message.readArmored(encrypted.data);
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures).to.not.exist;
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('should encrypt/sign and decrypt/verify', function(done) {
-          var encOpt = {
-            data: plaintext,
-            publicKeys: publicKey.keys,
-            privateKeys: privateKey.keys
-          };
-          var decOpt = {
-            privateKey: privateKey.keys[0],
-            publicKeys: publicKey.keys
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures[0].valid).to.be.true;
-            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
-            done();
+          it('should encrypt/sign and decrypt/verify', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              publicKeys: publicKey.keys,
+              privateKeys: privateKey.keys
+            });
+            var decOpt = {
+              privateKey: privateKey.keys[0],
+              publicKeys: publicKey.keys
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = openpgp.message.readArmored(encrypted.data);
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures[0].valid).to.be.true;
+              expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('should fail to verify decrypted data with wrong public pgp key', function(done) {
-          var encOpt = {
-            data: plaintext,
-            publicKeys: publicKey.keys,
-            privateKeys: privateKey.keys
-          };
-          var decOpt = {
-            privateKey: privateKey.keys[0],
-            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures[0].valid).to.be.null;
-            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
-            done();
+          it('should fail to verify decrypted data with wrong public pgp key', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              publicKeys: publicKey.keys,
+              privateKeys: privateKey.keys
+            });
+            var decOpt = {
+              privateKey: privateKey.keys[0],
+              publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = openpgp.message.readArmored(encrypted.data);
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures[0].valid).to.be.null;
+              expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
         });
 
@@ -743,24 +790,27 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
-        it('round trip test', function (done) {
-          var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
-          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
-          openpgp.encrypt({
-            publicKeys: pubKeyDE,
-            privateKeys: privKeyDE,
-            data: plaintext
-          }).then(function(encrypted) {
-            return openpgp.decrypt({
-              privateKey: privKeyDE,
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
+          it('round trip test', function (done) {
+            var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            privKeyDE.decrypt(passphrase);
+            openpgp.encrypt(modifyEncOptions({
               publicKeys: pubKeyDE,
-              message: openpgp.message.readArmored(encrypted.data)
+              privateKeys: privKeyDE,
+              data: plaintext
+            })).then(function(encrypted) {
+              return openpgp.decrypt({
+                privateKey: privKeyDE,
+                publicKeys: pubKeyDE,
+                message: openpgp.message.readArmored(encrypted.data)
+              });
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.exist;
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
             });
-          }).then(function(encrypted) {
-            expect(encrypted.data).to.exist;
-            expect(encrypted.data).to.equal(plaintext);
-            done();
           });
         });
       });
@@ -832,78 +882,84 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('AES encrypt, decrypt', function() {
-        it('should encrypt and decrypt with one password', function(done) {
-          var encOpt = {
-            data: plaintext,
-            passwords: password1
-          };
-          var decOpt = {
-            password: password1
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
+        withCompression(function (modifyEncOptions, verifyDecrypted) {
+          it('should encrypt and decrypt with one password', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              passwords: password1
+            });
+            var decOpt = {
+              password: password1
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = openpgp.message.readArmored(encrypted.data);
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('should encrypt and decrypt with two passwords', function(done) {
-          var encOpt = {
-            data: plaintext,
-            passwords: [password1, password2]
-          };
-          var decOpt = {
-            password: password2
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
+          it('should encrypt and decrypt with two passwords', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              passwords: [password1, password2]
+            });
+            var decOpt = {
+              password: password2
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = openpgp.message.readArmored(encrypted.data);
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('should encrypt and decrypt with password and not ascii armor', function(done) {
-          var encOpt = {
-            data: plaintext,
-            passwords: password1,
-            armor: false
-          };
-          var decOpt = {
-            password: password1
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = encrypted.message;
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            done();
+          it('should encrypt and decrypt with password and not ascii armor', function(done) {
+            var encOpt = modifyEncOptions({
+              data: plaintext,
+              passwords: password1,
+              armor: false
+            });
+            var decOpt = {
+              password: password1
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = encrypted.message;
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
-        });
 
-        it('should encrypt and decrypt with binary data and transferable objects', function(done) {
-          openpgp.config.zero_copy = true; // activate transferable objects
-          var encOpt = {
-            data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
-            passwords: password1,
-            armor: false
-          };
-          var decOpt = {
-            password: password1,
-            format: 'binary'
-          };
-          openpgp.encrypt(encOpt).then(function(encrypted) {
-            decOpt.message = encrypted.message;
-            return openpgp.decrypt(decOpt);
-          }).then(function(decrypted) {
-            if (openpgp.getWorker()) {
-              expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
-            }
-            expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
-            done();
+          it('should encrypt and decrypt with binary data and transferable objects', function(done) {
+            openpgp.config.zero_copy = true; // activate transferable objects
+            var encOpt = modifyEncOptions({
+              data: new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]),
+              passwords: password1,
+              armor: false
+            });
+            var decOpt = {
+              password: password1,
+              format: 'binary'
+            };
+            openpgp.encrypt(encOpt).then(function(encrypted) {
+              decOpt.message = encrypted.message;
+              return openpgp.decrypt(decOpt);
+            }).then(function(decrypted) {
+              if (openpgp.getWorker()) {
+                expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
+              }
+              expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
+              verifyDecrypted(decrypted);
+              done();
+            });
           });
         });
       });
