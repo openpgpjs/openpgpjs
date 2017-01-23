@@ -337,7 +337,8 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.dsa) ||
           keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
-          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign) ||
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.ecdsa)) &&
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
@@ -950,8 +951,12 @@ export function readArmored(armoredText) {
 export function generate(options) {
   var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
   return Promise.resolve().then(() => {
+    if (options.curve) {
+      options.keyType = enums.publicKey.ecdsa;
+    }
     options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+    if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
+        options.keyType !== enums.publicKey.ecdsa) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Only RSA Encrypt or Sign supported');
     }
 
@@ -968,13 +973,25 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits);
+    var material;
+    if (typeof(options.material) !== "undefined") {
+      material = options.material.key;
+    }
+    return secretKeyPacket.generate(options.numBits, options.curve, material);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretSubkeyPacket.generate(options.numBits);
+    var subkeyType = options.keyType;
+    if (subkeyType === enums.publicKey.ecdsa) {
+      subkeyType = enums.publicKey.ecdh;
+    }
+    var material;
+    if (typeof(options.material) !== "undefined") {
+      material = options.material.subkey;
+    }
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, subkeyType);
+    return secretSubkeyPacket.generate(options.numBits, options.curve, material);
   }
 
   function wrapKeyObject() {

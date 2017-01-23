@@ -21,7 +21,10 @@
  * @requires crypto/cipher
  * @requires crypto/public_key
  * @requires crypto/random
+ * @requires type/ecdh_symkey
+ * @requires type/kdf_params
  * @requires type/mpi
+ * @requires type/oid
  * @module crypto/crypto
  */
 
@@ -30,7 +33,20 @@
 import random from './random.js';
 import cipher from './cipher';
 import publicKey from './public_key';
+import type_ecdh_symkey from '../type/ecdh_symkey.js';
+import type_kdf_params from '../type/kdf_params.js';
 import type_mpi from '../type/mpi.js';
+import type_oid from '../type/oid.js';
+
+function BigInteger2mpi(bn) {
+  var mpi = new type_mpi();
+  mpi.fromBigInteger(bn);
+  return mpi;
+}
+
+function mapResult(result) {
+  return result.map(BigInteger2mpi);
+}
 
 export default {
   /**
@@ -42,7 +58,7 @@ export default {
    * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
    * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
    */
-  publicKeyEncrypt: function(algo, publicMPIs, data) {
+  publicKeyEncrypt: function(algo, publicMPIs, data, fingerprint) {
     var result = (function() {
       var m;
       switch (algo) {
@@ -52,7 +68,7 @@ export default {
           var n = publicMPIs[0].toBigInteger();
           var e = publicMPIs[1].toBigInteger();
           m = data.toBigInteger();
-          return [rsa.encrypt(m, e, n)];
+          return mapResult([rsa.encrypt(m, e, n)]);
 
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
@@ -60,18 +76,22 @@ export default {
           var g = publicMPIs[1].toBigInteger();
           var y = publicMPIs[2].toBigInteger();
           m = data.toBigInteger();
-          return elgamal.encrypt(m, g, p, y);
+          return mapResult(elgamal.encrypt(m, g, p, y));
+
+        case 'ecdh':
+          var ecdh = publicKey.elliptic.ecdh;
+          var curve = publicMPIs[0];
+          var kdf_params = publicMPIs[2];
+          var R = publicMPIs[1].toBigInteger();
+          var res = ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
+          return [BigInteger2mpi(res.V), new type_ecdh_symkey(res.C)];
 
         default:
           return [];
       }
     })();
 
-    return result.map(function(bn) {
-      var mpi = new type_mpi();
-      mpi.fromBigInteger(bn);
-      return mpi;
-    });
+    return result;
   },
 
   /**
@@ -86,7 +106,7 @@ export default {
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
-  publicKeyDecrypt: function(algo, keyIntegers, dataIntegers) {
+  publicKeyDecrypt: function(algo, keyIntegers, dataIntegers, fingerprint) {
     var p;
 
     var bn = (function() {
@@ -111,6 +131,16 @@ export default {
           var c2 = dataIntegers[1].toBigInteger();
           p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
+
+        case 'ecdh':
+          var ecdh = publicKey.elliptic.ecdh;
+          var curve = keyIntegers[0];
+          var kdf_params = keyIntegers[2];
+          var V = dataIntegers[0].toBigInteger();
+          var C = dataIntegers[1].data;
+          var r = keyIntegers[3].toBigInteger();
+          return ecdh.decrypt(curve.oid, kdf_params.cipher, kdf_params.hash, V, C, r, fingerprint);
+
         default:
           return null;
       }
@@ -144,6 +174,11 @@ export default {
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
         return 1;
+      case 'ecdh':
+      case 'ecdsa':
+        // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
+        //   - MPI of an integer representing the secret key.
+        return 1;
       default:
         throw new Error('Unknown algorithm');
     }
@@ -175,12 +210,25 @@ export default {
       case 'dsa':
         return 4;
 
+        //   Algorithm-Specific Fields for ECDSA public keys:
+        //       - OID of curve;
+        //       - MPI of EC point representing public key.
+      case 'ecdsa':
+        return 2;
+
+        //   Algorithm-Specific Fields for ECDH public keys:
+        //       - OID of curve;
+        //       - MPI of EC point representing public key.
+        //       - variable-length field containing KDF parameters.
+      case 'ecdh':
+        return 3;
+
       default:
         throw new Error('Unknown algorithm.');
     }
   },
 
-  generateMpi: function(algo, bits) {
+  generateMpi: function(algo, bits, curve, material) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -197,16 +245,28 @@ export default {
           output.push(keyObject.u);
           return mapResult(output);
         });
+
+      case 'ecdsa':
+        return publicKey.elliptic.generate(curve, material).then(function (key) {
+          return [
+            new type_oid(key.oid),
+            BigInteger2mpi(key.R),
+            BigInteger2mpi(key.r)
+          ];
+        });
+
+      case 'ecdh':
+        return publicKey.elliptic.generate(curve, material).then(function (key) {
+          return [
+            new type_oid(key.oid),
+            BigInteger2mpi(key.R),
+            new type_kdf_params(key.hash, key.cipher),
+            BigInteger2mpi(key.r)
+          ];
+        });
+
       default:
         throw new Error('Unsupported algorithm for key generation.');
-    }
-
-    function mapResult(result) {
-      return result.map(function(bn) {
-        var mpi = new type_mpi();
-        mpi.fromBigInteger(bn);
-        return mpi;
-      });
     }
   },
 
