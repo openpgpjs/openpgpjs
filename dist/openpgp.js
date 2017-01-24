@@ -13443,7 +13443,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
   }
   // if no valid subkey for encryption, evaluate primary key
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+  if (primaryUser && primaryUser.selfCertificate && !primaryUser.selfCertificate.isExpired && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
   return null;
@@ -13996,6 +13996,7 @@ function readArmored(armoredText) {
                                                      If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
+ * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
  * @return {module:key~Key}
  * @static
  */
@@ -14076,6 +14077,10 @@ function generate(options) {
       if (_config2.default.integrity_protect) {
         signaturePacket.features = [];
         signaturePacket.features.push(1); // Modification Detection
+      }
+      if (options.keyExpirationTime > 0) {
+        signaturePacket.keyExpirationTime = options.keyExpirationTime;
+        signaturePacket.keyNeverExpires = false;
       }
       signaturePacket.sign(secretKeyPacket, dataToSign);
 
@@ -15184,6 +15189,7 @@ function destroyWorker() {
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @return {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
@@ -15198,8 +15204,10 @@ function generateKey() {
   var numBits = _ref2$numBits === undefined ? 2048 : _ref2$numBits;
   var _ref2$unlocked = _ref2.unlocked;
   var unlocked = _ref2$unlocked === undefined ? false : _ref2$unlocked;
+  var _ref2$keyExpirationTi = _ref2.keyExpirationTime;
+  var keyExpirationTime = _ref2$keyExpirationTi === undefined ? 0 : _ref2$keyExpirationTi;
 
-  var options = formatUserIds({ userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked });
+  var options = formatUserIds({ userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked, keyExpirationTime: keyExpirationTime });
 
   if (!_util2.default.getWebCryptoAll() && asyncProxy) {
     // use web worker if web crypto apis are not supported
@@ -15534,7 +15542,11 @@ function formatUserIds(options) {
     if (!_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email)) {
       throw new Error('Invalid user id format');
     }
-    return id.name + ' <' + id.email + '>';
+    id.name = id.name.trim();
+    if (id.name.length > 0) {
+      id.name += ' ';
+    }
+    return id.name + '<' + id.email + '>';
   });
   return options;
 }
@@ -16660,9 +16672,9 @@ exports.default = {
     if (length < 256) {
       return new Uint8Array([0x80 | tag_type << 2, length]);
     } else if (length < 65536) {
-      return _util2.default.concatUint8Array([0x80 | tag_type << 2 | 1, _util2.default.writeNumber(length, 2)]);
+      return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 1]), _util2.default.writeNumber(length, 2)]);
     } else {
-      return _util2.default.concatUint8Array([0x80 | tag_type << 2 | 2, _util2.default.writeNumber(length, 4)]);
+      return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 2]), _util2.default.writeNumber(length, 4)]);
     }
   },
 
@@ -19827,7 +19839,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   }
   i = 0;
 
-  while (rlength <= numBytes) {
+  while (rlength < numBytes) {
     var result = round(prefix.subarray(0, i), this);
     arr.push(result);
     rlength += result.length;
@@ -19908,7 +19920,7 @@ exports.default = {
     if (!this.isString(data)) {
       return false;
     }
-    return (/ </.test(data) && />$/.test(data)
+    return (/</.test(data) && />$/.test(data)
     );
   },
 
