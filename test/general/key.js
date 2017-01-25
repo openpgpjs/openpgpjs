@@ -873,6 +873,23 @@ var pgp_desktop_priv =
       done();
     }).catch(done);
   });
+  it('Generate key - ensure keyExpirationTime works', function(done) {
+    var expect_delta = 365 * 24 * 60 * 60;
+    var userId = 'test <a@b.com>';
+    var opt = {numBits: 512, userIds: userId, passphrase: '123', keyExpirationTime: expect_delta};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+
+      const expiration = key.getExpirationTime();
+      expect(expiration).to.exist;
+
+      const actual_delta = (new Date(expiration) - new Date()) / 1000;
+      expect(Math.abs(actual_delta - expect_delta)).to.be.below(60);
+
+      done();
+    }).catch(done);
+  });
 
 });
 
