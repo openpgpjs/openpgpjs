@@ -92,12 +92,13 @@ export function destroyWorker() {
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @return {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked });
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0 } = {}) {
+  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, keyExpirationTime });
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
