@@ -897,6 +897,7 @@ SubKey.prototype.update = function(subKey, primaryKey) {
   }
 };
 
+
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
@@ -949,7 +950,7 @@ export function readArmored(armoredText) {
  * @static
  */
 export function generate(options) {
-  var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
+  var secretKeyPacket, secretSubkeyPacket;
   return Promise.resolve().then(() => {
     options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
@@ -963,7 +964,9 @@ export function generate(options) {
       options.userIds = [options.userIds];
     }
 
-    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(wrapKeyObject);
+    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(() => {
+      return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+    });
   });
 
   function generateSecretKey() {
@@ -977,85 +980,122 @@ export function generate(options) {
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
     return secretSubkeyPacket.generate(options.numBits);
   }
-
-  function wrapKeyObject() {
-    // set passphrase protection
-    if (options.passphrase) {
-      secretKeyPacket.encrypt(options.passphrase);
-      secretSubkeyPacket.encrypt(options.passphrase);
-    }
-
-    packetlist = new packet.List();
-
-    packetlist.push(secretKeyPacket);
-
-    options.userIds.forEach(function(userId, index) {
-
-      userIdPacket = new packet.Userid();
-      userIdPacket.read(util.str2Uint8Array(userId));
-
-      dataToSign = {};
-      dataToSign.userid = userIdPacket;
-      dataToSign.key = secretKeyPacket;
-      signaturePacket = new packet.Signature();
-      signaturePacket.signatureType = enums.signature.cert_generic;
-      signaturePacket.publicKeyAlgorithm = options.keyType;
-      signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-      signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-      signaturePacket.preferredSymmetricAlgorithms = [];
-      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-      signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-      signaturePacket.preferredHashAlgorithms = [];
-      // prefer fast asm.js implementations (SHA-256, SHA-1)
-      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-      signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-      signaturePacket.preferredCompressionAlgorithms = [];
-      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-      signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-      if (index === 0) {
-        signaturePacket.isPrimaryUserID = true;
-      }
-      if (config.integrity_protect) {
-        signaturePacket.features = [];
-        signaturePacket.features.push(1); // Modification Detection
-      }
-      if (options.keyExpirationTime > 0) {
-        signaturePacket.keyExpirationTime = options.keyExpirationTime;
-        signaturePacket.keyNeverExpires = false;
-      }
-      signaturePacket.sign(secretKeyPacket, dataToSign);
-
-      packetlist.push(userIdPacket);
-      packetlist.push(signaturePacket);
-
-    });
-
-    dataToSign = {};
-    dataToSign.key = secretKeyPacket;
-    dataToSign.bind = secretSubkeyPacket;
-    subkeySignaturePacket = new packet.Signature();
-    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-    subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-    subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-    subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
-
-    packetlist.push(secretSubkeyPacket);
-    packetlist.push(subkeySignaturePacket);
-
-    if (!options.unlocked) {
-      secretKeyPacket.clearPrivateMPIs();
-      secretSubkeyPacket.clearPrivateMPIs();
-    }
-
-    return new Key(packetlist);
-  }
 }
+
+/**
+ * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
+ * @param {module:key~Key} options.privateKey   The privateKey to reformat
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
+                                                     If array is used, the first userId is set as primary user Id
+ * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
+ * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
+ * @return {module:key~Key}
+ * @static
+ */
+export function reformatKey(options) {
+  var secretKeyPacket, secretSubkeyPacket;
+  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+    throw new Error('Only RSA Encrypt or Sign supported');
+  }
+
+  if (!options.passphrase) { // Key without passphrase is unlocked by definition
+    options.unlocked = true;
+  }
+  if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+    options.userIds = [options.userIds];
+  }
+  var packetlist = options.privateKey.toPacketlist();
+  for (var i = 0; i < packetlist.length; i++) {
+    if (packetlist[i].tag === enums.packet.secretKey) {
+      secretKeyPacket = packetlist[i];
+    } else if (packetlist[i].tag === enums.packet.secretSubkey) {
+      secretSubkeyPacket = packetlist[i];
+    }
+  }
+  return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+}
+
+function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
+  // set passphrase protection
+  if (options.passphrase) {
+    secretKeyPacket.encrypt(options.passphrase);
+    secretSubkeyPacket.encrypt(options.passphrase);
+  }
+
+  var packetlist = new packet.List();
+
+  packetlist.push(secretKeyPacket);
+
+  options.userIds.forEach(function(userId, index) {
+
+    var userIdPacket = new packet.Userid();
+    userIdPacket.read(util.str2Uint8Array(userId));
+
+    var dataToSign = {};
+    dataToSign.userid = userIdPacket;
+    dataToSign.key = secretKeyPacket;
+    var signaturePacket = new packet.Signature();
+    signaturePacket.signatureType = enums.signature.cert_generic;
+    signaturePacket.publicKeyAlgorithm = options.keyType;
+    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+    signaturePacket.preferredSymmetricAlgorithms = [];
+    // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    signaturePacket.preferredHashAlgorithms = [];
+    // prefer fast asm.js implementations (SHA-256, SHA-1)
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+    signaturePacket.preferredCompressionAlgorithms = [];
+    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+    if (index === 0) {
+      signaturePacket.isPrimaryUserID = true;
+    }
+    if (config.integrity_protect) {
+      signaturePacket.features = [];
+      signaturePacket.features.push(1); // Modification Detection
+    }
+    if (options.keyExpirationTime > 0) {
+      signaturePacket.keyExpirationTime = options.keyExpirationTime;
+      signaturePacket.keyNeverExpires = false;
+    }
+    signaturePacket.sign(secretKeyPacket, dataToSign);
+
+    packetlist.push(userIdPacket);
+    packetlist.push(signaturePacket);
+
+  });
+
+  var dataToSign = {};
+  dataToSign.key = secretKeyPacket;
+  dataToSign.bind = secretSubkeyPacket;
+  var subkeySignaturePacket = new packet.Signature();
+  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+  subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+  subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+
+  packetlist.push(secretSubkeyPacket);
+  packetlist.push(subkeySignaturePacket);
+
+  if (!options.unlocked) {
+    secretKeyPacket.clearPrivateMPIs();
+    secretSubkeyPacket.clearPrivateMPIs();
+  }
+
+  return new Key(packetlist);
+}
+
 
 /**
  * Returns the preferred symmetric algorithm for a set of keys
