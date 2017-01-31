@@ -890,6 +890,47 @@ var pgp_desktop_priv =
       done();
     }).catch(done);
   });
-
+  it('Reformat key without passphrase', function(done) {
+    var userId1 = 'test1 <a@b.com>';
+    var userId2 = 'test2 <b@a.com>';
+    var opt = {numBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(key) {
+      key = key.key
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId1);
+      expect(key.primaryKey.isDecrypted).to.be.true;
+      opt.privateKey = key;
+      opt.userIds = userId2;
+      openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key
+        expect(newKey.users.length).to.equal(1);
+        expect(newKey.users[0].userId.userid).to.equal(userId2);
+        expect(newKey.primaryKey.isDecrypted).to.be.true;
+        done();
+      }).catch(done);
+    }).catch(done);
+  });
+  it('Reformat and encrypt key', function(done) {
+    var userId1 = 'test1 <a@b.com>';
+    var userId2 = 'test2 <b@a.com>';
+    var opt = {numBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(key) {
+      key = key.key
+      opt.privateKey = key;
+      opt.userIds = userId2;
+      opt.passphrase = '123';
+      openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key
+        expect(newKey.users.length).to.equal(1);
+        expect(newKey.users[0].userId.userid).to.equal(userId2);
+        expect(newKey.primaryKey.isDecrypted).to.be.false;
+        newKey.decrypt('123');
+        expect(newKey.primaryKey.isDecrypted).to.be.true;
+        done();
+      }).catch(done);
+    }).catch(done);
+  });
 });
 
