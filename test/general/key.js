@@ -913,6 +913,28 @@ var pgp_desktop_priv =
   });
   it('Reformat and encrypt key', function(done) {
     var userId1 = 'test1 <a@b.com>';
+    var userId2 = 'test2 <b@c.com>';
+    var userId3 = 'test3 <c@d.com>';
+    var opt = {numBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(key) {
+      key = key.key
+      opt.privateKey = key;
+      opt.userIds = [userId2, userId3];
+      opt.passphrase = '123';
+      openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key
+        expect(newKey.users.length).to.equal(2);
+        expect(newKey.users[0].userId.userid).to.equal(userId2);
+        expect(newKey.primaryKey.isDecrypted).to.be.false;
+        newKey.decrypt('123');
+        expect(newKey.primaryKey.isDecrypted).to.be.true;
+        done();
+      }).catch(done);
+    }).catch(done);
+  });
+  it('Sign and encrypt with reformatted key', function(done) {
+    var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
     var opt = {numBits: 512, userIds: userId1};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -920,15 +942,15 @@ var pgp_desktop_priv =
       key = key.key
       opt.privateKey = key;
       opt.userIds = userId2;
-      opt.passphrase = '123';
       openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key
-        expect(newKey.users.length).to.equal(1);
-        expect(newKey.users[0].userId.userid).to.equal(userId2);
-        expect(newKey.primaryKey.isDecrypted).to.be.false;
-        newKey.decrypt('123');
-        expect(newKey.primaryKey.isDecrypted).to.be.true;
-        done();
+        openpgp.encrypt({data: 'hello', publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(function(encrypted) {
+          openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKey: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
+            expect(decrypted.data).to.equal('hello');
+            expect(decrypted.signatures[0].valid).to.be.true;
+            done();
+          }).catch(done);
+        }).catch(done);
       }).catch(done);
     }).catch(done);
   });
