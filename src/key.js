@@ -897,7 +897,6 @@ SubKey.prototype.update = function(subKey, primaryKey) {
   }
 };
 
-
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
@@ -984,7 +983,7 @@ export function generate(options) {
 
 /**
  * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
- * @param {module:key~Key} options.privateKey   The privateKey to reformat
+ * @param {module:key~Key} options.privateKey   The private key to reformat
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
  * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
                                                      If array is used, the first userId is set as primary user Id
@@ -1095,7 +1094,6 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
 
   return new Key(packetlist);
 }
-
 
 /**
  * Returns the preferred symmetric algorithm for a set of keys
