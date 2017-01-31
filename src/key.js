@@ -993,28 +993,31 @@ export function generate(options) {
  * @return {module:key~Key}
  * @static
  */
-export function reformatKey(options) {
+export function reformat(options) {
   var secretKeyPacket, secretSubkeyPacket;
-  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-    throw new Error('Only RSA Encrypt or Sign supported');
-  }
+  return Promise.resolve().then(() => {
 
-  if (!options.passphrase) { // Key without passphrase is unlocked by definition
-    options.unlocked = true;
-  }
-  if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
-    options.userIds = [options.userIds];
-  }
-  var packetlist = options.privateKey.toPacketlist();
-  for (var i = 0; i < packetlist.length; i++) {
-    if (packetlist[i].tag === enums.packet.secretKey) {
-      secretKeyPacket = packetlist[i];
-    } else if (packetlist[i].tag === enums.packet.secretSubkey) {
-      secretSubkeyPacket = packetlist[i];
+    options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Only RSA Encrypt or Sign supported');
     }
-  }
-  return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+
+    if (!options.passphrase) { // Key without passphrase is unlocked by definition
+      options.unlocked = true;
+    }
+    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+      options.userIds = [options.userIds];
+    }
+    var packetlist = options.privateKey.toPacketlist();
+    for (var i = 0; i < packetlist.length; i++) {
+      if (packetlist[i].tag === enums.packet.secretKey) {
+        secretKeyPacket = packetlist[i];
+      } else if (packetlist[i].tag === enums.packet.secretSubkey) {
+        secretSubkeyPacket = packetlist[i];
+      }
+    }
+    return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+  });
 }
 
 function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
