@@ -114,6 +114,33 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 }
 
 /**
+ * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
+ * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @return {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @static
+ */
+export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
+  const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
+
+  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
+    return asyncProxy.delegate('reformatKey', options);
+  }
+
+  return key.reformat(options).then(newKey => ({
+
+    key: newKey,
+    privateKeyArmored: newKey.armor(),
+    publicKeyArmored: newKey.toPublic().armor()
+
+  })).catch(onError.bind(null, 'Error reformatting keypair'));
+}
+
+/**
  * Unlock a private key with your passphrase.
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
