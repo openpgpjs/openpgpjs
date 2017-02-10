@@ -834,8 +834,9 @@ User.prototype.sign = function(primaryKey, privateKeys) {
  */
 User.prototype.verifyAllSignatures = function(primaryKey, keys) {
   var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
-  return this.selfCertifications.concat(this.otherCertifications).map(signaturePacket => {
-    var keyPacket = keys.find(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId)) || null;
+  var certificates = this.selfCertifications.concat(this.otherCertifications || []);
+  return certificates.map(signaturePacket => {
+    var keyPacket = keys.filter(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId))[0] || null;
     return {
       keyid: signaturePacket.issuerKeyId,
       valid: keyPacket && signaturePacket.verify(keyPacket.primaryKey, dataToVerify)
