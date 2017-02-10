@@ -34,7 +34,7 @@
 
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
-import * as key from './key.js';
+import * as keyLib from './key.js';
 import config from './config/config.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
@@ -104,7 +104,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return key.generate(options).then(newKey => ({
+  return keyLib.generate(options).then(newKey => ({
 
     key: newKey,
     privateKeyArmored: newKey.armor(),
@@ -361,6 +361,65 @@ export function decryptSessionKey({ message, privateKey, password }) {
 }
 
 
+/////////////////////////////////////////////
+//                                         //
+//   Public key signing and verification   //
+//                                         //
+/////////////////////////////////////////////
+
+
+/**
+ * Signs a paublic key.
+ * @param  {Key} publicKey                 public key to be signed
+ * @param  {Key|Array<Key>} privateKeys    array of keys or single key with decrypted secret key data to sign public key
+ * @return {Promise<String|Key>}           Public key object in form:
+ *                                           { publicKey:Key, publicKeyArmored:String }
+ * @static
+ */
+export function signPublicKey({ publicKey, privateKeys }) {
+  checkKey(publicKey, 'publicKey');
+  privateKeys = toArray(privateKeys);
+
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('signPublicKey', { publicKey, privateKeys });
+  }
+
+  return execute(() => {
+
+    const signedPublicKey = publicKey.sign(privateKeys);
+
+    return {
+      publicKey: signedPublicKey,
+      publicKeyArmored: signedPublicKey.armor()
+    };
+
+  }, 'Error signing public key');
+}
+
+/**
+ * Verifies public key
+ * @param  {Key} publicKey               public key object with signatures
+ * @param  {Key|Array<Key>} publicKeys   array of publicKeys or single key, to verify signatures
+ * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
+ *                                         { signatures: [{ keyid:String, valid:Boolean|null }] }
+ * @static
+ */
+export function verifyPublicKey({ publicKey, publicKeys }) {
+  checkKey(publicKey, 'publicKey');
+  publicKeys = toArray(publicKeys);
+
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('verifyPublicKey', { publicKey, publicKeys });
+  }
+
+  return execute(() => ({
+
+    signatures: publicKey.verify(publicKeys)
+
+  }), 'Error verifying signed public key');
+}
+
+
 //////////////////////////
 //                      //
 //   Helper functions   //
@@ -394,6 +453,11 @@ function checkMessage(message) {
 function checkCleartextMessage(message) {
   if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
     throw new Error('Parameter [message] needs to be of type CleartextMessage');
+  }
+}
+function checkKey(key, name) {
+  if (!keyLib.Key.prototype.isPrototypeOf(key)) {
+    throw new Error('Parameter [' + (name || 'key') + '] needs to be of type Key');
   }
 }
 
