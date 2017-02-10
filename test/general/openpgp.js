@@ -158,20 +158,6 @@ var priv_key_de =
   '=kyeP',
   '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-
-var wrong_pubkey = [
-  '-----BEGIN PGP PUBLIC KEY BLOCK-----',
-  'Version: OpenPGP.js v0.9.0',
-  'Comment: Hoodiecrow - https://hoodiecrow.com',
-  '',
-  'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5',
-  'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg',
-  'VXNlciA8d2hpdGVvdXQudGVzdEB0LW9ubGluZS5kZT7CXAQQAQgAEAUCUlhM',
-  'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq',
-  'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1',
-  '=6XMW',
-  '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-
 var passphrase = 'hello world';
 var plaintext = 'short message\nnext line\n한국어/조선말';
 var password1 = 'I am a password';
@@ -621,6 +607,18 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('AES / RSA encrypt, decrypt, sign, verify', function() {
+        var wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+          'Version: OpenPGP.js v0.9.0\r\n' +
+          'Comment: Hoodiecrow - https://hoodiecrow.com\r\n' +
+          '\r\n' +
+          'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5\r\n' +
+          'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg\r\n' +
+          'VXNlciA8d2hpdGVvdXQudGVzdEB0LW9ubGluZS5kZT7CXAQQAQgAEAUCUlhM\r\n' +
+          'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq\r\n' +
+          'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1\r\n' +
+          '=6XMW\r\n' +
+          '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
+
         beforeEach(function() {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
         });
@@ -907,48 +905,6 @@ describe('OpenPGP.js public api tests', function() {
               expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
             }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
-            done();
-          });
-        });
-      });
-      
-      describe('signPublicKey, verifyPublicKey', function() {
-        beforeEach(function() {
-          expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
-        });
-        
-        it('should sign and verify public key', function(done) {    
-          var signOpt = {
-            publicKey: openpgp.key.readArmored(pub_key_de).keys[0],
-            privateKeys: privateKey.keys
-          };
-          var verifyOpt = {
-            publicKeys: publicKey.keys
-          };
-          openpgp.signPublicKey(signOpt).then(function(signed) {
-            verifyOpt.publicKey = signed.publicKey;
-            return openpgp.verifyPublicKey(verifyOpt);
-          }).then(function(verified) {
-            expect(verified.signatures[0].valid).to.be.true;
-            expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
-            done();
-          });
-        });
-      
-        it('should sign and fail to verify public key with wrong public key', function(done) {
-          var signOpt = {
-            publicKey: openpgp.key.readArmored(pub_key_de).keys[0],
-            privateKeys: privateKey.keys
-          };
-          var verifyOpt = {
-            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
-          };
-          openpgp.signPublicKey(signOpt).then(function(signed) {
-            verifyOpt.publicKey = signed.publicKey;
-            return openpgp.verifyPublicKey(verifyOpt);
-          }).then(function(verified) {
-            expect(verified.signatures[0].valid).to.be.null;
-            expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
             done();
           });
         });

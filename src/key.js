@@ -507,7 +507,7 @@ function getExpirationTime(keyPacket, selfCertificate) {
 Key.prototype.getPrimaryUser = function() {
   var primUser = [];
   for (var i = 0; i < this.users.length; i++) {
-    if ((!this.users[i].userId && !this.users[i].userAttribute) || !this.users[i].selfCertifications) {
+    if (!this.users[i].userId || !this.users[i].selfCertifications) {
       continue;
     }
     for (var j = 0; j < this.users[i].selfCertifications.length; j++) {
