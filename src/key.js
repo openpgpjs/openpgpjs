@@ -507,11 +507,11 @@ function getExpirationTime(keyPacket, selfCertificate) {
 Key.prototype.getPrimaryUser = function() {
   var primUser = [];
   for (var i = 0; i < this.users.length; i++) {
-    if (!this.users[i].userId || !this.users[i].selfCertifications) {
+    if ((!this.users[i].userId && !this.users[i].userAttribute) || !this.users[i].selfCertifications) {
       continue;
     }
     for (var j = 0; j < this.users[i].selfCertifications.length; j++) {
-      primUser.push({user: this.users[i], selfCertificate: this.users[i].selfCertifications[j]});
+      primUser.push({index: i, user: this.users[i], selfCertificate: this.users[i].selfCertifications[j]});
     }
   }
   // sort by primary user flag and signature creation time
@@ -636,6 +636,86 @@ function mergeSignatures(source, dest, attr, checkFn) {
 // TODO
 Key.prototype.revoke = function() {
 
+};
+
+/**
+ * Signs the public key
+ * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
+ * @return {module:key~Key} new public key with new certificate signature
+ */
+Key.prototype.sign = function(privateKeys) {
+  var primaryUser, primaryKey, dataToSign, signingKeyPacket, signaturePacket, user, key;
+  if (this.isPrivate()) {
+    throw new Error('Only public key can be signed');
+  }
+  primaryUser = this.getPrimaryUser();
+  if (!primaryUser) {
+    throw new Error('Could not find primary user');
+  }
+  primaryKey = this.primaryKey;
+  dataToSign = {};
+  dataToSign.userid = primaryUser.user.userId || primaryUser.user.userAttribute;
+  dataToSign.key = primaryKey;
+  user = new User(primaryUser.user.userId || primaryUser.user.userAttribute);
+  user.otherCertifications = [];
+  privateKeys.forEach(function(privateKey) {
+    if (privateKey.isPublic()) {
+      throw new Error('Need private key for signing');
+    }
+    if (privateKey.primaryKey.getKeyId().equals(primaryKey.getKeyId())) {
+      throw new Error('No need to self signinig');
+    }
+    signingKeyPacket = privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid signing key packet');
+    }
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
+    signaturePacket = new packet.Signature();
+    // Most OpenPGP implementations use generic certification (0x10)
+    signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
+    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+    signaturePacket.hashAlgorithm = privateKey.getPreferredHashAlgorithm();
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
+    signaturePacket.sign(signingKeyPacket, dataToSign);
+    user.otherCertifications.push(signaturePacket);
+  });
+  user.update(primaryUser.user, this.primaryKey);
+  key = new Key(this.toPacketlist());
+  key.users[primaryUser.index] = user;
+  return key;
+};
+
+/**
+ * Verifies public key
+ * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ */
+Key.prototype.verify = function(keys) {
+  var primaryKey, primaryUser, user;
+  if (this.isPrivate()) {
+    throw new Error('Only public key can be verified');
+  }
+  primaryKey = this.primaryKey;
+  primaryUser = this.getPrimaryUser();
+  if (!primaryUser) {
+    throw new Error('Could not find primary user');
+  }
+  user = primaryUser.user;
+  if (!user.otherCertifications) {
+    return [];
+  }
+  return user.otherCertifications.map(function(signaturePacket) {
+    var keyPacket = keys.find(function(key) {
+      return key.getSigningKeyPacket(signaturePacket.issuerKeyId);
+    }) || null;
+    return {
+      keyid: signaturePacket.issuerKeyId,
+      valid: keyPacket && signaturePacket.verify(keyPacket.primaryKey, {userid: user.userId || user.userAttribute, key: primaryKey})
+    };
+  });
 };
 
 /**
