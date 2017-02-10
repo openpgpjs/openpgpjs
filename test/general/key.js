@@ -303,7 +303,7 @@ describe('Key', function() {
     '=MVfN',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var pgp_desktop_pub =
+  var pgp_desktop_pub =
     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
     'Version: Encryption Desktop 10.3.0 (Build 9307)',
     '',
@@ -342,7 +342,7 @@ var pgp_desktop_pub =
     '=dVeR',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var pgp_desktop_priv =
+  var pgp_desktop_priv =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
     'Version: Encryption Desktop 10.3.0 (Build 9307)',
     '',
@@ -535,6 +535,57 @@ var pgp_desktop_priv =
     expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('b8e4105cc9dedc77');
     done();
   });
+
+  var multi_uid_key =
+    ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+    'Version: GnuPG v1',
+    '',
+    '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',
+    'ljIYQms3pCv1ja6bLlNKpPII',
+    '=qxBI',
+    '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+
+  var wrong_key =
+    ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+    'Version: OpenPGP.js v0.9.0',
+    '',
+    'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5',
+    'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg',
+    'VXNlciA8d2hpdGVvdXQudGVzdEB0LW9ubGluZS5kZT7CXAQQAQgAEAUCUlhM',
+    'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq',
+    'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1',
+    '=6XMW',
+    '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
   it('Parsing armored text with two keys', function(done) {
     var pubKeys = openpgp.key.readArmored(twoKeys);
@@ -889,6 +940,80 @@ var pgp_desktop_priv =
 
       done();
     }).catch(done);
+  });
+
+  it('Sign and verify key - primary user', function(done) {
+    var key = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    privateKey.decrypt('hello world');
+    key = key.signPrimaryUser([privateKey]);
+    var signatures = key.verifyPrimaryUser([privateKey]);
+    expect(signatures.length).to.equal(2);
+    expect(signatures[0].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[0].valid).to.be.null;
+    expect(signatures[1].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[1].valid).to.be.true;
+    done();
+  });
+
+  it('Sign key and verify with wrong key - primary user', function(done) {
+    var key = openpgp.key.readArmored(pub_sig_test).keys[0];
+    var privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    var wrongKey = openpgp.key.readArmored(wrong_key).keys[0];
+    privateKey.decrypt('hello world');
+    key = key.signPrimaryUser([privateKey]);
+    var signatures = key.verifyPrimaryUser([wrongKey]);
+    expect(signatures.length).to.equal(2);
+    expect(signatures[0].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[0].valid).to.be.null;
+    expect(signatures[1].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[1].valid).to.be.null;
+    done();
+  });
+
+  it('Sign and verify key - all users', function(done) {
+    var key = openpgp.key.readArmored(multi_uid_key).keys[0];
+    var privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    privateKey.decrypt('hello world');
+    key = key.signAllUsers([privateKey]);
+    var signatures = key.verifyAllUsers([privateKey]);
+    expect(signatures.length).to.equal(4);
+    expect(signatures[0].userid).to.equal(key.users[0].userId.userid);
+    expect(signatures[0].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[0].valid).to.be.null;
+    expect(signatures[1].userid).to.equal(key.users[0].userId.userid);
+    expect(signatures[1].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[1].valid).to.be.true;
+    expect(signatures[2].userid).to.equal(key.users[1].userId.userid);
+    expect(signatures[2].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[2].valid).to.be.null;
+    expect(signatures[3].userid).to.equal(key.users[1].userId.userid);
+    expect(signatures[3].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[3].valid).to.be.true;
+    done();
+  });
+
+  it('Sign key and verify with wrong key - all users', function(done) {
+    var key = openpgp.key.readArmored(multi_uid_key).keys[0];
+    var privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    var wrongKey = openpgp.key.readArmored(wrong_key).keys[0];
+    privateKey.decrypt('hello world');
+    key = key.signAllUsers([privateKey]);
+    var signatures = key.verifyAllUsers([wrongKey]);
+    expect(signatures.length).to.equal(4);
+    expect(signatures[0].userid).to.equal(key.users[0].userId.userid);
+    expect(signatures[0].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[0].valid).to.be.null;
+    expect(signatures[1].userid).to.equal(key.users[0].userId.userid);
+    expect(signatures[1].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[1].valid).to.be.null;
+    expect(signatures[2].userid).to.equal(key.users[1].userId.userid);
+    expect(signatures[2].keyid.toHex()).to.equal(key.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[2].valid).to.be.null;
+    expect(signatures[3].userid).to.equal(key.users[1].userId.userid);
+    expect(signatures[3].keyid.toHex()).to.equal(privateKey.getSigningKeyPacket().getKeyId().toHex());
+    expect(signatures[3].valid).to.be.null;
+    done();
   });
   it('Reformat key without passphrase', function(done) {
     var userId1 = 'test1 <a@b.com>';
