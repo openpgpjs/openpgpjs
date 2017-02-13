@@ -187,9 +187,13 @@ Signature.prototype.write = function () {
   switch (this.version) {
     case 3:
       arr.push(new Uint8Array([3, 5])); // version, One-octet length of following hashed material.  MUST be 5
-      arr.push(this.signatureData);
+      arr.push(new Uint8Array([this.signatureType]));
+      arr.push(util.writeDate(this.created));
       arr.push(this.issuerKeyId.write());
-      arr.push(new Uint8Array([this.publicKeyAlgorithm, this.hashAlgorithm]));
+      arr.push(new Uint8Array([
+        enums.write(enums.publicKey, this.publicKeyAlgorithm),
+        enums.write(enums.hash, this.hashAlgorithm)
+      ]));
       break;
     case 4:
       arr.push(this.signatureData);
@@ -222,7 +226,17 @@ Signature.prototype.sign = function (key, data) {
 
   var trailer = this.calculateTrailer();
 
-  var toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+  var toHash = null
+
+  switch (this.version) {
+    case 3:
+      toHash = util.concatUint8Array([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
+      break;
+    case 4:
+      toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+      break;
+    default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+  }
 
   var hash = crypto.hash.digest(hashAlgorithm, toHash);
 
