@@ -4806,7 +4806,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.3.6",
+  versionstring: "OpenPGP.js v2.3.7",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -13103,6 +13103,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.Key = Key;
 exports.readArmored = readArmored;
 exports.generate = generate;
+exports.reformat = reformat;
 exports.getPreferredSymAlgo = getPreferredSymAlgo;
 
 var _packet = _dereq_('./packet');
@@ -14001,7 +14002,7 @@ function readArmored(armoredText) {
  * @static
  */
 function generate(options) {
-  var packetlist, secretKeyPacket, userIdPacket, dataToSign, signaturePacket, secretSubkeyPacket, subkeySignaturePacket;
+  var secretKeyPacket, secretSubkeyPacket;
   return Promise.resolve().then(function () {
     options.keyType = options.keyType || _enums2.default.publicKey.rsa_encrypt_sign;
     if (options.keyType !== _enums2.default.publicKey.rsa_encrypt_sign) {
@@ -14017,7 +14018,9 @@ function generate(options) {
       options.userIds = [options.userIds];
     }
 
-    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(wrapKeyObject);
+    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(function () {
+      return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+    });
   });
 
   function generateSecretKey() {
@@ -14031,83 +14034,124 @@ function generate(options) {
     secretSubkeyPacket.algorithm = _enums2.default.read(_enums2.default.publicKey, options.keyType);
     return secretSubkeyPacket.generate(options.numBits);
   }
+}
 
-  function wrapKeyObject() {
-    // set passphrase protection
-    if (options.passphrase) {
-      secretKeyPacket.encrypt(options.passphrase);
-      secretSubkeyPacket.encrypt(options.passphrase);
+/**
+ * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
+ * @param {module:key~Key} options.privateKey   The private key to reformat
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
+                                                     If array is used, the first userId is set as primary user Id
+ * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
+ * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
+ * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
+ * @return {module:key~Key}
+ * @static
+ */
+function reformat(options) {
+  var secretKeyPacket, secretSubkeyPacket;
+  return Promise.resolve().then(function () {
+
+    options.keyType = options.keyType || _enums2.default.publicKey.rsa_encrypt_sign;
+    if (options.keyType !== _enums2.default.publicKey.rsa_encrypt_sign) {
+      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Only RSA Encrypt or Sign supported');
     }
 
-    packetlist = new _packet2.default.List();
-
-    packetlist.push(secretKeyPacket);
-
-    options.userIds.forEach(function (userId, index) {
-
-      userIdPacket = new _packet2.default.Userid();
-      userIdPacket.read(_util2.default.str2Uint8Array(userId));
-
-      dataToSign = {};
-      dataToSign.userid = userIdPacket;
-      dataToSign.key = secretKeyPacket;
-      signaturePacket = new _packet2.default.Signature();
-      signaturePacket.signatureType = _enums2.default.signature.cert_generic;
-      signaturePacket.publicKeyAlgorithm = options.keyType;
-      signaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
-      signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
-      signaturePacket.preferredSymmetricAlgorithms = [];
-      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes256);
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes128);
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
-      signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
-      signaturePacket.preferredHashAlgorithms = [];
-      // prefer fast asm.js implementations (SHA-256, SHA-1)
-      signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha256);
-      signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
-      signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha512);
-      signaturePacket.preferredCompressionAlgorithms = [];
-      signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zlib);
-      signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zip);
-      if (index === 0) {
-        signaturePacket.isPrimaryUserID = true;
-      }
-      if (_config2.default.integrity_protect) {
-        signaturePacket.features = [];
-        signaturePacket.features.push(1); // Modification Detection
-      }
-      if (options.keyExpirationTime > 0) {
-        signaturePacket.keyExpirationTime = options.keyExpirationTime;
-        signaturePacket.keyNeverExpires = false;
-      }
-      signaturePacket.sign(secretKeyPacket, dataToSign);
-
-      packetlist.push(userIdPacket);
-      packetlist.push(signaturePacket);
-    });
-
-    dataToSign = {};
-    dataToSign.key = secretKeyPacket;
-    dataToSign.bind = secretSubkeyPacket;
-    subkeySignaturePacket = new _packet2.default.Signature();
-    subkeySignaturePacket.signatureType = _enums2.default.signature.subkey_binding;
-    subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-    subkeySignaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
-    subkeySignaturePacket.keyFlags = [_enums2.default.keyFlags.encrypt_communication | _enums2.default.keyFlags.encrypt_storage];
-    subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
-
-    packetlist.push(secretSubkeyPacket);
-    packetlist.push(subkeySignaturePacket);
-
-    if (!options.unlocked) {
-      secretKeyPacket.clearPrivateMPIs();
-      secretSubkeyPacket.clearPrivateMPIs();
+    if (!options.passphrase) {
+      // Key without passphrase is unlocked by definition
+      options.unlocked = true;
     }
+    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+      options.userIds = [options.userIds];
+    }
+    var packetlist = options.privateKey.toPacketlist();
+    for (var i = 0; i < packetlist.length; i++) {
+      if (packetlist[i].tag === _enums2.default.packet.secretKey) {
+        secretKeyPacket = packetlist[i];
+      } else if (packetlist[i].tag === _enums2.default.packet.secretSubkey) {
+        secretSubkeyPacket = packetlist[i];
+      }
+    }
+    return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+  });
+}
 
-    return new Key(packetlist);
+function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
+  // set passphrase protection
+  if (options.passphrase) {
+    secretKeyPacket.encrypt(options.passphrase);
+    secretSubkeyPacket.encrypt(options.passphrase);
   }
+
+  var packetlist = new _packet2.default.List();
+
+  packetlist.push(secretKeyPacket);
+
+  options.userIds.forEach(function (userId, index) {
+
+    var userIdPacket = new _packet2.default.Userid();
+    userIdPacket.read(_util2.default.str2Uint8Array(userId));
+
+    var dataToSign = {};
+    dataToSign.userid = userIdPacket;
+    dataToSign.key = secretKeyPacket;
+    var signaturePacket = new _packet2.default.Signature();
+    signaturePacket.signatureType = _enums2.default.signature.cert_generic;
+    signaturePacket.publicKeyAlgorithm = options.keyType;
+    signaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
+    signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
+    signaturePacket.preferredSymmetricAlgorithms = [];
+    // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes256);
+    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes128);
+    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
+    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
+    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
+    signaturePacket.preferredHashAlgorithms = [];
+    // prefer fast asm.js implementations (SHA-256, SHA-1)
+    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha256);
+    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
+    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha512);
+    signaturePacket.preferredCompressionAlgorithms = [];
+    signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zlib);
+    signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zip);
+    if (index === 0) {
+      signaturePacket.isPrimaryUserID = true;
+    }
+    if (_config2.default.integrity_protect) {
+      signaturePacket.features = [];
+      signaturePacket.features.push(1); // Modification Detection
+    }
+    if (options.keyExpirationTime > 0) {
+      signaturePacket.keyExpirationTime = options.keyExpirationTime;
+      signaturePacket.keyNeverExpires = false;
+    }
+    signaturePacket.sign(secretKeyPacket, dataToSign);
+
+    packetlist.push(userIdPacket);
+    packetlist.push(signaturePacket);
+  });
+
+  var dataToSign = {};
+  dataToSign.key = secretKeyPacket;
+  dataToSign.bind = secretSubkeyPacket;
+  var subkeySignaturePacket = new _packet2.default.Signature();
+  subkeySignaturePacket.signatureType = _enums2.default.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+  subkeySignaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
+  subkeySignaturePacket.keyFlags = [_enums2.default.keyFlags.encrypt_communication | _enums2.default.keyFlags.encrypt_storage];
+  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+
+  packetlist.push(secretSubkeyPacket);
+  packetlist.push(subkeySignaturePacket);
+
+  if (!options.unlocked) {
+    secretKeyPacket.clearPrivateMPIs();
+    secretSubkeyPacket.clearPrivateMPIs();
+  }
+
+  return new Key(packetlist);
 }
 
 /**
@@ -15094,6 +15138,7 @@ exports.initWorker = initWorker;
 exports.getWorker = getWorker;
 exports.destroyWorker = destroyWorker;
 exports.generateKey = generateKey;
+exports.reformatKey = reformatKey;
 exports.decryptKey = decryptKey;
 exports.encrypt = encrypt;
 exports.decrypt = decrypt;
@@ -15226,14 +15271,55 @@ function generateKey() {
 }
 
 /**
+ * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @return {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @static
+ */
+function reformatKey() {
+  var _ref3 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+  var privateKey = _ref3.privateKey;
+  var _ref3$userIds = _ref3.userIds;
+  var userIds = _ref3$userIds === undefined ? [] : _ref3$userIds;
+  var _ref3$passphrase = _ref3.passphrase;
+  var passphrase = _ref3$passphrase === undefined ? "" : _ref3$passphrase;
+  var _ref3$unlocked = _ref3.unlocked;
+  var unlocked = _ref3$unlocked === undefined ? false : _ref3$unlocked;
+  var _ref3$keyExpirationTi = _ref3.keyExpirationTime;
+  var keyExpirationTime = _ref3$keyExpirationTi === undefined ? 0 : _ref3$keyExpirationTi;
+
+  var options = formatUserIds({ privateKey: privateKey, userIds: userIds, passphrase: passphrase, unlocked: unlocked, keyExpirationTime: keyExpirationTime });
+
+  if (!_util2.default.getWebCryptoAll() && asyncProxy) {
+    // use web worker if web crypto apis are not supported
+    return asyncProxy.delegate('reformatKey', options);
+  }
+
+  return key.reformat(options).then(function (newKey) {
+    return {
+
+      key: newKey,
+      privateKeyArmored: newKey.armor(),
+      publicKeyArmored: newKey.toPublic().armor()
+
+    };
+  }).catch(onError.bind(null, 'Error reformatting keypair'));
+}
+
+/**
  * Unlock a private key with your passphrase.
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
  * @return {Key}                 the unlocked private key
  */
-function decryptKey(_ref3) {
-  var privateKey = _ref3.privateKey;
-  var passphrase = _ref3.passphrase;
+function decryptKey(_ref4) {
+  var privateKey = _ref4.privateKey;
+  var passphrase = _ref4.passphrase;
 
   if (asyncProxy) {
     // use web worker if available
@@ -15269,14 +15355,14 @@ function decryptKey(_ref3) {
  * @return {Promise<String|Message>}          encrypted ASCII armored message, or the full Message object if 'armor' is false
  * @static
  */
-function encrypt(_ref4) {
-  var data = _ref4.data;
-  var publicKeys = _ref4.publicKeys;
-  var privateKeys = _ref4.privateKeys;
-  var passwords = _ref4.passwords;
-  var filename = _ref4.filename;
-  var _ref4$armor = _ref4.armor;
-  var armor = _ref4$armor === undefined ? true : _ref4$armor;
+function encrypt(_ref5) {
+  var data = _ref5.data;
+  var publicKeys = _ref5.publicKeys;
+  var privateKeys = _ref5.privateKeys;
+  var passwords = _ref5.passwords;
+  var filename = _ref5.filename;
+  var _ref5$armor = _ref5.armor;
+  var armor = _ref5$armor === undefined ? true : _ref5$armor;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
@@ -15319,14 +15405,14 @@ function encrypt(_ref4) {
  *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
-function decrypt(_ref5) {
-  var message = _ref5.message;
-  var privateKey = _ref5.privateKey;
-  var publicKeys = _ref5.publicKeys;
-  var sessionKey = _ref5.sessionKey;
-  var password = _ref5.password;
-  var _ref5$format = _ref5.format;
-  var format = _ref5$format === undefined ? 'utf8' : _ref5$format;
+function decrypt(_ref6) {
+  var message = _ref6.message;
+  var privateKey = _ref6.privateKey;
+  var publicKeys = _ref6.publicKeys;
+  var sessionKey = _ref6.sessionKey;
+  var password = _ref6.password;
+  var _ref6$format = _ref6.format;
+  var format = _ref6$format === undefined ? 'utf8' : _ref6$format;
 
   checkMessage(message);publicKeys = toArray(publicKeys);
 
@@ -15360,11 +15446,11 @@ function decrypt(_ref5) {
  * @return {Promise<String|CleartextMessage>}   ASCII armored message or the message of type CleartextMessage
  * @static
  */
-function sign(_ref6) {
-  var data = _ref6.data;
-  var privateKeys = _ref6.privateKeys;
-  var _ref6$armor = _ref6.armor;
-  var armor = _ref6$armor === undefined ? true : _ref6$armor;
+function sign(_ref7) {
+  var data = _ref7.data;
+  var privateKeys = _ref7.privateKeys;
+  var _ref7$armor = _ref7.armor;
+  var armor = _ref7$armor === undefined ? true : _ref7$armor;
 
   checkString(data);
   privateKeys = toArray(privateKeys);
@@ -15398,9 +15484,9 @@ function sign(_ref6) {
  *                                         { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
-function verify(_ref7) {
-  var message = _ref7.message;
-  var publicKeys = _ref7.publicKeys;
+function verify(_ref8) {
+  var message = _ref8.message;
+  var publicKeys = _ref8.publicKeys;
 
   checkCleartextMessage(message);
   publicKeys = toArray(publicKeys);
@@ -15436,11 +15522,11 @@ function verify(_ref7) {
  * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @static
  */
-function encryptSessionKey(_ref8) {
-  var data = _ref8.data;
-  var algorithm = _ref8.algorithm;
-  var publicKeys = _ref8.publicKeys;
-  var passwords = _ref8.passwords;
+function encryptSessionKey(_ref9) {
+  var data = _ref9.data;
+  var algorithm = _ref9.algorithm;
+  var publicKeys = _ref9.publicKeys;
+  var passwords = _ref9.passwords;
 
   checkbinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
 
@@ -15469,10 +15555,10 @@ function encryptSessionKey(_ref8) {
  *                                          or 'undefined' if no key packets found
  * @static
  */
-function decryptSessionKey(_ref9) {
-  var message = _ref9.message;
-  var privateKey = _ref9.privateKey;
-  var password = _ref9.password;
+function decryptSessionKey(_ref10) {
+  var message = _ref10.message;
+  var privateKey = _ref10.privateKey;
+  var password = _ref10.password;
 
   checkMessage(message);
 
@@ -18156,9 +18242,10 @@ Signature.prototype.write = function () {
   switch (this.version) {
     case 3:
       arr.push(new Uint8Array([3, 5])); // version, One-octet length of following hashed material.  MUST be 5
-      arr.push(this.signatureData);
+      arr.push(new Uint8Array([this.signatureType]));
+      arr.push(_util2.default.writeDate(this.created));
       arr.push(this.issuerKeyId.write());
-      arr.push(new Uint8Array([this.publicKeyAlgorithm, this.hashAlgorithm]));
+      arr.push(new Uint8Array([_enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm), _enums2.default.write(_enums2.default.hash, this.hashAlgorithm)]));
       break;
     case 4:
       arr.push(this.signatureData);
@@ -18191,7 +18278,18 @@ Signature.prototype.sign = function (key, data) {
 
   var trailer = this.calculateTrailer();
 
-  var toHash = _util2.default.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+  var toHash = null;
+
+  switch (this.version) {
+    case 3:
+      toHash = _util2.default.concatUint8Array([this.toSign(signatureType, data), new Uint8Array([signatureType]), _util2.default.writeDate(this.created)]);
+      break;
+    case 4:
+      toHash = _util2.default.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+      break;
+    default:
+      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+  }
 
   var hash = _crypto2.default.hash.digest(hashAlgorithm, toHash);
 
