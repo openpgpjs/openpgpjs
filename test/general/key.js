@@ -881,10 +881,10 @@ var pgp_desktop_priv =
     openpgp.generateKey(opt).then(function(key) {
       key = key.key;
 
-      const expiration = key.getExpirationTime();
+      var expiration = key.getExpirationTime();
       expect(expiration).to.exist;
 
-      const actual_delta = (new Date(expiration) - new Date()) / 1000;
+      var actual_delta = (new Date(expiration) - new Date()) / 1000;
       expect(Math.abs(actual_delta - expect_delta)).to.be.below(60);
 
       done();
