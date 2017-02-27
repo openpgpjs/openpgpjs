@@ -4806,7 +4806,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.3.7",
+  versionstring: "OpenPGP.js v2.3.8",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -13444,7 +13444,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
   }
   // if no valid subkey for encryption, evaluate primary key
   var primaryUser = this.getPrimaryUser();
-  if (primaryUser && primaryUser.selfCertificate && !primaryUser.selfCertificate.isExpired && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+  if (primaryUser && primaryUser.selfCertificate && !primaryUser.selfCertificate.isExpired() && isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
     return this.primaryKey;
   }
   return null;
@@ -14109,10 +14109,10 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
     signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
     signaturePacket.preferredHashAlgorithms = [];
-    // prefer fast asm.js implementations (SHA-256, SHA-1)
+    // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
     signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
     signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha512);
+    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
     signaturePacket.preferredCompressionAlgorithms = [];
     signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zlib);
     signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zip);
