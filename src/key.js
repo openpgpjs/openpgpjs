@@ -802,8 +802,8 @@ User.prototype.sign = function(primaryKey, privateKeys) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    if (privateKey.primaryKey.getKeyId().equals(primaryKey.getKeyId())) {
-      throw new Error('Not implemented for  self signing');
+    if (privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint()) {
+      throw new Error('Not implemented for self signing');
     }
     signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket) {
