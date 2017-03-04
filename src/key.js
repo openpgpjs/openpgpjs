@@ -836,11 +836,12 @@ User.prototype.verifyAllSignatures = function(primaryKey, keys) {
   var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
   var certificates = this.selfCertifications.concat(this.otherCertifications || []);
   return certificates.map(signaturePacket => {
-    var keyPacket = keys.filter(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId))[0] || null;
-    return {
-      keyid: signaturePacket.issuerKeyId,
-      valid: keyPacket && signaturePacket.verify(keyPacket.primaryKey, dataToVerify)
-    };
+    var keyPackets = keys.filter(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId));
+    var valid = null;
+    if (keyPackets.length > 0) {
+      valid = keyPackets.some(keyPacket => signaturePacket.verify(keyPacket.primaryKey, dataToVerify));
+    }
+    return { keyid: signaturePacket.issuerKeyId, valid: valid };
   });
 };
 
