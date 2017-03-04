@@ -32,6 +32,7 @@ import enums from './enums.js';
 import armor from './encoding/armor.js';
 import config from './config';
 import crypto from './crypto';
+import signature from './signature.js';
 import * as keyModule from './key.js';
 
 /**
@@ -345,18 +346,80 @@ Message.prototype.sign = function(privateKeys) {
 };
 
 /**
+ * Create a detached signature for the message (the literal data packet of the message)
+ * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
+ * @return {module:signature~Signature}      new detached signature of message content
+ */
+Message.prototype.signDetached = function(privateKeys) {
+
+  var packetlist = new packet.List();
+
+  var literalDataPacket = this.packets.findPacket(enums.packet.literal);
+  if (!literalDataPacket) {
+    throw new Error('No literal data packet to sign.');
+  }
+
+  var literalFormat = enums.write(enums.literal, literalDataPacket.format);
+  var signatureType = literalFormat === enums.literal.binary ?
+                      enums.signature.binary : enums.signature.text;
+
+  for (var i = 0; i < privateKeys.length; i++) {
+    var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+    var signaturePacket = new packet.Signature();
+    signaturePacket.signatureType = signatureType;
+    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
+    signaturePacket.sign(signingKeyPacket, literalDataPacket);
+    packetlist.push(signaturePacket);
+  }
+
+  return new signature.Signature(packetlist);
+};
+
+
+/**
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Message.prototype.verify = function(keys) {
-  var result = [];
   var msg = this.unwrapCompressed();
   var literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
   var signatureList = msg.packets.filterByTag(enums.packet.signature);
+  return createVerificationObjects(signatureList, literalDataList, keys);
+};
+
+/**
+ * Verify detached message signature
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Signature}
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ */
+Message.prototype.verifyDetached = function(signature, keys) {
+  var msg = this.unwrapCompressed();
+  var literalDataList = msg.packets.filterByTag(enums.packet.literal);
+  if (literalDataList.length !== 1) {
+    throw new Error('Can only verify message with one literal data packet.');
+  }
+  var signatureList = signature.packets;
+  return createVerificationObjects(signatureList, literalDataList, keys);
+};
+
+/**
+ * Create list of objects containing signer's keyid and validity of signature
+ * @param {Array<module:packet/signature>} signatureList array of signature packets
+ * @param {Array<module:packet/literal>} literalDataList array of literal data packets
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ */
+function createVerificationObjects(signatureList, literalDataList, keys) {
+  var result = [];
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
@@ -377,7 +440,7 @@ Message.prototype.verify = function(keys) {
     result.push(verifiedSig);
   }
   return result;
-};
+}
 
 /**
  * Unwrap compressed message
