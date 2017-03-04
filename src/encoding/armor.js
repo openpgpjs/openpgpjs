@@ -62,10 +62,7 @@ function getType(text) {
     return enums.armor.multipart_last;
 
   } else
-  // BEGIN PGP SIGNATURE
-  // Used for detached signatures, OpenPGP/MIME signatures, and
-  // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
-  // for detached signatures.
+  // BEGIN PGP SIGNED MESSAGE
   if (/SIGNED MESSAGE/.test(header[1])) {
     return enums.armor.signed;
 
@@ -86,6 +83,14 @@ function getType(text) {
   // Used for armoring private keys.
   if (/PRIVATE KEY BLOCK/.test(header[1])) {
     return enums.armor.private_key;
+
+  } else
+  // BEGIN PGP SIGNATURE
+  // Used for detached signatures, OpenPGP/MIME signatures, and
+  // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
+  // for detached signatures.
+  if (/SIGNATURE/.test(header[1])) {
+    return enums.armor.signature;
   }
 }
 
@@ -396,6 +401,13 @@ function armor(messagetype, body, partindex, parttotal) {
       result.push(base64.encode(body));
       result.push("\r\n=" + getCheckSum(body) + "\r\n");
       result.push("-----END PGP PRIVATE KEY BLOCK-----\r\n");
+      break;
+    case enums.armor.signature:
+      result.push("-----BEGIN PGP SIGNATURE-----\r\n");
+      result.push(addheader());
+      result.push(base64.encode(body));
+      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("-----END PGP SIGNATURE-----\r\n");
       break;
   }
 
