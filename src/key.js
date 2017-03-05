@@ -511,7 +511,7 @@ Key.prototype.getPrimaryUser = function() {
       continue;
     }
     for (var j = 0; j < this.users[i].selfCertifications.length; j++) {
-      primUser.push({user: this.users[i], selfCertificate: this.users[i].selfCertifications[j]});
+      primUser.push({index: i, user: this.users[i], selfCertificate: this.users[i].selfCertifications[j]});
     }
   }
   // sort by primary user flag and signature creation time
@@ -639,6 +639,64 @@ Key.prototype.revoke = function() {
 };
 
 /**
+ * Signs primary user of key
+ * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
+ * @return {module:key~Key} new public key with new certificate signature
+ */
+Key.prototype.signPrimaryUser = function(privateKeys) {
+  var {index, user} = this.getPrimaryUser() || {};
+  if (!user) {
+    throw new Error('Could not find primary user');
+  }
+  user = user.sign(this.primaryKey, privateKeys);
+  var key = new Key(this.toPacketlist());
+  key.users[index] = user;
+  return key;
+};
+
+/**
+ * Signs all users of key
+ * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
+ * @return {module:key~Key} new public key with new certificate signature
+ */
+Key.prototype.signAllUsers = function(privateKeys) {
+  var users = this.users.map(user => user.sign(this.primaryKey, privateKeys));
+  var key = new Key(this.toPacketlist());
+  key.users = users;
+  return key;
+};
+
+/**
+ * Verifies primary user of key
+ * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ */
+Key.prototype.verifyPrimaryUser = function(keys) {
+  var {user} = this.getPrimaryUser() || {};
+  if (!user) {
+    throw new Error('Could not find primary user');
+  }
+  return user.verifyAllSignatures(this.primaryKey, keys);
+};
+
+/**
+ * Verifies all users of key
+ * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @return {Array<({userid: String, keyid: module:type/keyid, valid: Boolean})>} list of userid, signer's keyid and validity of signature
+ */
+Key.prototype.verifyAllUsers = function(keys) {
+  return this.users.reduce((signatures, user) => {
+    return signatures.concat(
+      user.verifyAllSignatures(this.primaryKey, keys).map(signature => ({
+        userid: user.userId.userid,
+        keyid: signature.keyid,
+        valid: signature.valid
+      }))
+    );
+  }, []);
+};
+
+/**
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
@@ -725,6 +783,66 @@ User.prototype.isValidSelfCertificate = function(primaryKey, selfCertificate) {
     return true;
   }
   return false;
+};
+
+/**
+ * Signs user
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
+ * @return {module:key~Key} new user with new certificate signatures
+ */
+User.prototype.sign = function(primaryKey, privateKeys) {
+  var user, dataToSign, signingKeyPacket, signaturePacket;
+  dataToSign = {};
+  dataToSign.key = primaryKey;
+  dataToSign.userid = this.userId || this.userAttribute;
+  user = new User(this.userId || this.userAttribute);
+  user.otherCertifications = [];
+  privateKeys.forEach(privateKey => {
+    if (privateKey.isPublic()) {
+      throw new Error('Need private key for signing');
+    }
+    if (privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint()) {
+      throw new Error('Not implemented for self signing');
+    }
+    signingKeyPacket = privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid signing key packet');
+    }
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
+    signaturePacket = new packet.Signature();
+    // Most OpenPGP implementations use generic certification (0x10)
+    signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
+    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+    signaturePacket.hashAlgorithm = privateKey.getPreferredHashAlgorithm();
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
+    signaturePacket.sign(signingKeyPacket, dataToSign);
+    user.otherCertifications.push(signaturePacket);
+  });
+  user.update(this, primaryKey);
+  return user;
+};
+
+/**
+ * Verifies all user signatures
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
+ * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ */
+User.prototype.verifyAllSignatures = function(primaryKey, keys) {
+  var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  var certificates = this.selfCertifications.concat(this.otherCertifications || []);
+  return certificates.map(signaturePacket => {
+    var keyPackets = keys.filter(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId));
+    var valid = null;
+    if (keyPackets.length > 0) {
+      valid = keyPackets.some(keyPacket => signaturePacket.verify(keyPacket.primaryKey, dataToVerify));
+    }
+    return { keyid: signaturePacket.issuerKeyId, valid: valid };
+  });
 };
 
 /**
