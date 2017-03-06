@@ -595,7 +595,7 @@ describe("Signature", function() {
     expect(pubKey.users[0].selfCertifications).to.eql(pubKey2.users[0].selfCertifications);
   });
 
-  it('Verify a detached signature', function() {
+  it('Verify a detached signature using readSignedContent', function() {
     var detachedSig = ['-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v1.4.13 (Darwin)',
       'Comment: GPGTools - https://gpgtools.org',
@@ -638,6 +638,30 @@ describe("Signature", function() {
 
     var msg = openpgp.message.readSignedContent(content, detachedSig);
     var result = msg.verify(publicKeys);
+    expect(result[0].valid).to.be.true;
+  });
+
+  it('Detached signature signing and verification cleartext', function () {
+    var msg = openpgp.message.fromText('hello');
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey2.decrypt('hello world');
+
+    var detachedSig = msg.signDetached([privKey2]);
+
+    var result = msg.verifyDetached(detachedSig, [pubKey2]);
+    expect(result[0].valid).to.be.true;
+  });
+
+  it('Detached signature signing and verification encrypted', function () {
+    var msg = openpgp.message.fromText('hello');
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey2.decrypt('hello world');
+    msg.encrypt({keys: [pubKey2] });
+
+    var detachedSig = msg.signDetached([privKey2]);
+    var result = msg.verifyDetached(detachedSig, [pubKey2]);
     expect(result[0].valid).to.be.true;
   });
 
