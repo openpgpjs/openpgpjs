@@ -38,6 +38,7 @@ import config from '../config';
  *         3 = PGP MESSAGE
  *         4 = PUBLIC KEY BLOCK
  *         5 = PRIVATE KEY BLOCK
+ *         6 = SIGNATURE
  */
 function getType(text) {
   var reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$\n/m;
