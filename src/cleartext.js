@@ -69,6 +69,15 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
+  this.signature = this.signDetached(privateKeys);
+};
+
+/**
+ * Sign the cleartext message
+ * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @return {module:signature~Signature}      new detached signature of message content
+ */
+CleartextMessage.prototype.signDetached = function(privateKeys) {
   var packetlist = new packet.List();
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
@@ -87,7 +96,7 @@ CleartextMessage.prototype.sign = function(privateKeys) {
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
-  this.signature = new sigModule.Signature(packetlist);
+  return new sigModule.Signature(packetlist);
 };
 
 /**
@@ -96,8 +105,17 @@ CleartextMessage.prototype.sign = function(privateKeys) {
  * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
 CleartextMessage.prototype.verify = function(keys) {
+  return this.verifyDetached(this.signature, keys);
+};
+
+/**
+ * Verify signatures of cleartext signed message
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
+ */
+CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   var result = [];
-  var signatureList = this.signature.packets;
+  var signatureList = signature.packets;
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
