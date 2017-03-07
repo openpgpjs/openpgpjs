@@ -32,7 +32,7 @@ import armor from './encoding/armor.js';
 
 /**
  * @class
- * @classdesc Class that represents an OpenPGP message.
+ * @classdesc Class that represents an OpenPGP signature.
  * Can be an encrypted message, signed message, compressed message or literal message
  * @param  {module:packet/packetlist} packetlist The packets that form this message
  * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}

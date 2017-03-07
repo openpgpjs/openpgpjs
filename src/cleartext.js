@@ -48,7 +48,7 @@ export function CleartextMessage(text, signature) {
   if (signature && !(signature instanceof sigModule.Signature)) {
     throw new Error('Invalid signature input');
   }
-  this.signature = signature || new sigModule.Signature([]);
+  this.signature = signature || new sigModule.Signature(new packet.List());
 }
 
 /**
