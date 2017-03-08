@@ -189,7 +189,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached });
   }
   var result = {};
   return Promise.resolve().then(() => {
@@ -237,7 +237,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
   checkMessage(message); publicKeys = toArray(publicKeys);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format });
+    return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format, signature });
   }
 
   return message.decrypt(privateKey, sessionKey, password).then(message => {
@@ -279,7 +279,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', { data, privateKeys, armor });
+    return asyncProxy.delegate('sign', { data, privateKeys, armor, detached });
   }
 
   var result = {};
@@ -322,7 +322,7 @@ export function verify({ message, publicKeys, signature=null }) {
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('verify', { message, publicKeys });
+    return asyncProxy.delegate('verify', { message, publicKeys, signature });
   }
 
   var result = {};
