@@ -60,11 +60,11 @@ export function clonePackets(options) {
     //could be either a Message or CleartextMessage object
     if (options.message instanceof message.Message) {
       options.message = options.message.packets;
-    } else {
+    } else if (options.message instanceof cleartext.CleartextMessage) {
       options.message.signature = options.message.signature.packets;
     }
   }
-  if (options.signature) {
+  if (options.signature && (options.signature instanceof signature.Signature)) {
     options.signature = options.signature.packets;
   }
   return options;
@@ -133,6 +133,10 @@ function packetlistCloneToSignatures(clone) {
 }
 
 function packetlistCloneToSignature(clone) {
+  if (typeof clone === "string") {
+    //signature is armored
+    return clone;
+  }
   var packetlist = Packetlist.fromStructuredClone(clone);
   return new signature.Signature(packetlist);
 }
