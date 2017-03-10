@@ -243,7 +243,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
   return message.decrypt(privateKey, sessionKey, password).then(message => {
 
     const result = parseMessage(message, format);
-    if (publicKeys && result.data) { // verify only if publicKeys are specified
+    if (result.data) { // verify
       if (signature) {
         //detached signature
         result.signatures = message.verifyDetached(signature, publicKeys);

@@ -431,12 +431,15 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
 
     var verifiedSig = {};
     if (keyPacket) {
+      //found a key packet that matches keyId of signature
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
     } else {
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = null;
     }
+    verifiedSig.signature = new sigModule.Signature([signatureList[i]]);
+
     result.push(verifiedSig);
   }
   return result;

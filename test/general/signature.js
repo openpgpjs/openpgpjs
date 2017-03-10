@@ -265,6 +265,7 @@ describe("Signature", function() {
     openpgp.decrypt({ privateKey: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -309,6 +310,7 @@ describe("Signature", function() {
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(verified[0].valid).to.be.true;
+      expect(verified[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -333,6 +335,7 @@ describe("Signature", function() {
     expect(verified).to.exist;
     expect(verified).to.have.length(1);
     expect(verified[0].valid).to.be.true;
+    expect(verified[0].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -356,6 +359,7 @@ describe("Signature", function() {
     expect(verified).to.exist;
     expect(verified).to.have.length(1);
     expect(verified[0].valid).to.be.true;
+    expect(verified[0].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -390,6 +394,7 @@ describe("Signature", function() {
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -426,6 +431,7 @@ describe("Signature", function() {
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
 
@@ -469,6 +475,8 @@ describe("Signature", function() {
     expect(verifiedSig).to.have.length(2);
     expect(verifiedSig[0].valid).to.be.true;
     expect(verifiedSig[1].valid).to.be.true;
+    expect(verifiedSig[0].signature.packets.length).to.equal(1);
+    expect(verifiedSig[1].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -513,6 +521,8 @@ describe("Signature", function() {
       expect(cleartextSig.signatures).to.have.length(2);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[1].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      expect(cleartextSig.signatures[1].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -533,6 +543,7 @@ describe("Signature", function() {
       expect(cleartextSig.data).to.equal(plaintext.replace(/\r/g,''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
 
