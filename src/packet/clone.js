@@ -67,9 +67,16 @@ export function clonePackets(options) {
   if (options.signature && (options.signature instanceof signature.Signature)) {
     options.signature = options.signature.packets;
   }
+  if (options.signatures) {
+    options.signatures = options.signatures.map(sig => verificationObjectToClone(sig));
+  }
   return options;
 }
 
+function verificationObjectToClone(verObject) {
+  verObject.signature = verObject.signature.packets;
+  return verObject;
+}
 
 //////////////////////////////
 //                          //
@@ -129,6 +136,7 @@ function packetlistCloneToCleartextMessage(clone) {
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
+  clone.signature = new signature.Signature(clone.signature);
   return clone;
 }
 

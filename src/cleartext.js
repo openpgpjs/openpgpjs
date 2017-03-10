@@ -136,6 +136,8 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = null;
     }
+    verifiedSig.signature = new sigModule.Signature([signatureList[i]]);
+
     result.push(verifiedSig);
   }
   return result;
