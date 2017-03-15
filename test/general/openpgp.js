@@ -637,7 +637,8 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures).to.not.exist;
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
@@ -659,6 +660,31 @@ describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures[0].valid).to.be.true;
             expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should encrypt/sign and decrypt/verify with detached signatures', function(done) {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: publicKey.keys
+          };
+          openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            decOpt.signature = openpgp.signature.readArmored(encrypted.signature);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -680,6 +706,31 @@ describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures[0].valid).to.be.null;
             expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should fail to verify decrypted data with wrong public pgp key with detached signatures', function(done) {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+          };
+          openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            decOpt.signature = openpgp.signature.readArmored(encrypted.signature);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.null;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -700,6 +751,29 @@ describe('OpenPGP.js public api tests', function() {
             expect(verified.data).to.equal(plaintext);
             expect(verified.signatures[0].valid).to.be.true;
             expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should sign and verify cleartext data with detached signatures', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+          var verifyOpt = {
+            publicKeys: publicKey.keys
+          };
+          openpgp.sign(signOpt).then(function(signed) {
+            verifyOpt.message = openpgp.cleartext.readArmored(signed.data);
+            verifyOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.verify(verifyOpt);
+          }).then(function(verified) {
+            expect(verified.data).to.equal(plaintext);
+            expect(verified.signatures[0].valid).to.be.true;
+            expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -719,6 +793,29 @@ describe('OpenPGP.js public api tests', function() {
             expect(verified.data).to.equal(plaintext);
             expect(verified.signatures[0].valid).to.be.null;
             expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should sign and fail to verify cleartext data with wrong public pgp key with detached signature', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+          var verifyOpt = {
+            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+          };
+          openpgp.sign(signOpt).then(function(signed) {
+            verifyOpt.message = openpgp.cleartext.readArmored(signed.data);
+            verifyOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.verify(verifyOpt);
+          }).then(function(verified) {
+            expect(verified.data).to.equal(plaintext);
+            expect(verified.signatures[0].valid).to.be.null;
+            expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -739,6 +836,30 @@ describe('OpenPGP.js public api tests', function() {
             expect(verified.data).to.equal(plaintext);
             expect(verified.signatures[0].valid).to.be.true;
             expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should sign and verify cleartext data and not armor with detached signatures', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            detached: true,
+            armor: false
+          };
+          var verifyOpt = {
+            publicKeys: publicKey.keys
+          };
+          openpgp.sign(signOpt).then(function(signed) {
+            verifyOpt.message = signed.message;
+            verifyOpt.signature = signed.signature;
+            return openpgp.verify(verifyOpt);
+          }).then(function(verified) {
+            expect(verified.data).to.equal(plaintext);
+            expect(verified.signatures[0].valid).to.be.true;
+            expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(verified.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -762,6 +883,9 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             expect(encrypted.data).to.exist;
             expect(encrypted.data).to.equal(plaintext);
+            expect(encrypted.signatures[0].valid).to.be.true;
+            expect(encrypted.signatures[0].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+            expect(encrypted.signatures[0].signature.packets.length).to.equal(1);
             done();
           });
         });
@@ -828,6 +952,7 @@ describe('OpenPGP.js public api tests', function() {
 
           openpgp.decrypt({ privateKey:privKey, message:message }).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello 3des\n');
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
@@ -847,6 +972,7 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
@@ -864,6 +990,7 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
@@ -882,6 +1009,7 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
@@ -905,6 +1033,7 @@ describe('OpenPGP.js public api tests', function() {
               expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
             }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
+            expect(decrypted.signatures.length).to.equal(0);
             done();
           });
         });
