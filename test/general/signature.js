@@ -674,7 +674,7 @@ describe("Signature", function() {
     var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey2.decrypt('hello world');
-    msg.encrypt({keys: [pubKey2] });
+    msg.encrypt([pubKey2]);
 
     var detachedSig = msg.signDetached([privKey2]);
 
@@ -684,7 +684,6 @@ describe("Signature", function() {
       var key = gen.key;
       var result = msg.verifyDetached(detachedSig, [pubKey2, key.toPublic()]);
       expect(result[0].valid).to.be.true;
-      expect(result[0].valid).to.be.false;
     });
   });
 
