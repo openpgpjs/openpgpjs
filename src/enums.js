@@ -297,7 +297,8 @@ export default {
     signed: 2,
     message: 3,
     public_key: 4,
-    private_key: 5
+    private_key: 5,
+    signature: 6
   },
 
   /** Asserts validity and converts from string/integer to integer. */

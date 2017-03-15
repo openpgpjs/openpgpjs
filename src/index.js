@@ -27,6 +27,13 @@ import * as keyMod from './key';
 export const key = keyMod;
 
 /**
+ * @see module:signature
+ * @name module:openpgp.signature
+ */
+import * as signatureMod from './signature';
+export const signature = signatureMod;
+
+/**
  * @see module:message
  * @name module:openpgp.message
  */

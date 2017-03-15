@@ -265,6 +265,7 @@ describe("Signature", function() {
     openpgp.decrypt({ privateKey: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -309,6 +310,7 @@ describe("Signature", function() {
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(verified[0].valid).to.be.true;
+      expect(verified[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -333,6 +335,7 @@ describe("Signature", function() {
     expect(verified).to.exist;
     expect(verified).to.have.length(1);
     expect(verified[0].valid).to.be.true;
+    expect(verified[0].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -356,6 +359,7 @@ describe("Signature", function() {
     expect(verified).to.exist;
     expect(verified).to.have.length(1);
     expect(verified[0].valid).to.be.true;
+    expect(verified[0].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -390,6 +394,7 @@ describe("Signature", function() {
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -426,6 +431,7 @@ describe("Signature", function() {
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
       expect(decrypted.signatures[0].valid).to.be.true;
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
 
@@ -469,6 +475,8 @@ describe("Signature", function() {
     expect(verifiedSig).to.have.length(2);
     expect(verifiedSig[0].valid).to.be.true;
     expect(verifiedSig[1].valid).to.be.true;
+    expect(verifiedSig[0].signature.packets.length).to.equal(1);
+    expect(verifiedSig[1].signature.packets.length).to.equal(1);
     done();
   });
 
@@ -513,6 +521,8 @@ describe("Signature", function() {
       expect(cleartextSig.signatures).to.have.length(2);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[1].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      expect(cleartextSig.signatures[1].signature.packets.length).to.equal(1);
       done();
     });
   });
@@ -533,6 +543,7 @@ describe("Signature", function() {
       expect(cleartextSig.data).to.equal(plaintext.replace(/\r/g,''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
       done();
     });
 
@@ -595,7 +606,7 @@ describe("Signature", function() {
     expect(pubKey.users[0].selfCertifications).to.eql(pubKey2.users[0].selfCertifications);
   });
 
-  it('Verify a detached signature', function() {
+  it('Verify a detached signature using readSignedContent', function() {
     var detachedSig = ['-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v1.4.13 (Darwin)',
       'Comment: GPGTools - https://gpgtools.org',
@@ -639,6 +650,42 @@ describe("Signature", function() {
     var msg = openpgp.message.readSignedContent(content, detachedSig);
     var result = msg.verify(publicKeys);
     expect(result[0].valid).to.be.true;
+  });
+
+  it('Detached signature signing and verification cleartext', function () {
+    var msg = openpgp.message.fromText('hello');
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey2.decrypt('hello world');
+
+    var opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(gen) {
+      var generatedKey = gen.key;
+      var detachedSig = msg.signDetached([generatedKey, privKey2]);
+      var result = msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);
+      expect(result[0].valid).to.be.true;
+      expect(result[1].valid).to.be.true;
+    });
+  });
+
+  it('Detached signature signing and verification encrypted', function () {
+    var msg = openpgp.message.fromText('hello');
+    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey2.decrypt('hello world');
+    msg.encrypt({keys: [pubKey2] });
+
+    var detachedSig = msg.signDetached([privKey2]);
+
+    var opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    openpgp.generateKey(opt).then(function(gen) {
+      var key = gen.key;
+      var result = msg.verifyDetached(detachedSig, [pubKey2, key.toPublic()]);
+      expect(result[0].valid).to.be.true;
+      expect(result[0].valid).to.be.false;
+    });
   });
 
   it('Sign message with key without password', function(done) {
