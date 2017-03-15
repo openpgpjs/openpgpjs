@@ -652,7 +652,7 @@ describe("Signature", function() {
     expect(result[0].valid).to.be.true;
   });
 
-  it('Detached signature signing and verification cleartext', function () {
+  it('Detached signature signing and verification', function () {
     var msg = openpgp.message.fromText('hello');
     var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -666,24 +666,6 @@ describe("Signature", function() {
       var result = msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);
       expect(result[0].valid).to.be.true;
       expect(result[1].valid).to.be.true;
-    });
-  });
-
-  it('Detached signature signing and verification encrypted', function () {
-    var msg = openpgp.message.fromText('hello');
-    var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
-    var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey2.decrypt('hello world');
-    msg.encrypt([pubKey2]);
-
-    var detachedSig = msg.signDetached([privKey2]);
-
-    var opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(gen) {
-      var key = gen.key;
-      var result = msg.verifyDetached(detachedSig, [pubKey2, key.toPublic()]);
-      expect(result[0].valid).to.be.true;
     });
   });
 
