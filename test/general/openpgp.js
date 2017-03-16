@@ -711,6 +711,27 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should successfully decrypt signed message without public keys to verify', function(done) {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+          };
+          openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.null;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
         it('should fail to verify decrypted data with wrong public pgp key with detached signatures', function(done) {
           var encOpt = {
             data: plaintext,
