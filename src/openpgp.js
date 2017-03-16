@@ -244,6 +244,9 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
     const result = parseMessage(message, format);
     if (result.data) { // verify
+      if (!publicKeys) {
+        publicKeys = [];
+      }
       if (signature) {
         //detached signature
         result.signatures = message.verifyDetached(signature, publicKeys);
