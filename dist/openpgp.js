@@ -4835,7 +4835,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.0",
+  versionstring: "OpenPGP.js v2.5.1",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15694,6 +15694,9 @@ function decrypt(_ref6) {
     var result = parseMessage(message, format);
     if (result.data) {
       // verify
+      if (!publicKeys) {
+        publicKeys = [];
+      }
       if (signature) {
         //detached signature
         result.signatures = message.verifyDetached(signature, publicKeys);
