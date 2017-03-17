@@ -55,7 +55,7 @@ Signature.prototype.armor = function() {
 /**
  * reads an OpenPGP armored signature and returns a signature object
  * @param {String} armoredText text to be parsed
- * @return {module:signature~Signature} new signature object
+ * @return {Signature} new signature object
  * @static
  */
 export function readArmored(armoredText) {
