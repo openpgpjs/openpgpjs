@@ -114,7 +114,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 }
 
 /**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * Reformats signature packets for a key and rewraps key object.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
@@ -272,6 +272,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
  * @param  {String} data                        cleartext input to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
+ * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
  * @return {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}

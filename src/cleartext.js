@@ -36,7 +36,7 @@ import * as sigModule from './signature.js';
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link http://tools.ietf.org/html/rfc4880#section-7}
  * @param  {String}     text       The cleartext of the signed message
- * @param  {module:Signature} signature       The detached signature or an empty signature if message not yet signed
+ * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
 export function CleartextMessage(text, signature) {
