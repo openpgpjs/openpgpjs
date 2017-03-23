@@ -708,7 +708,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           openpgp.sign(signOpt).then(function(signed) {
-            encOpt.signatureInput = openpgp.signature.readArmored(signed.signature);
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
             return openpgp.encrypt(encOpt);
           }).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -747,7 +747,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           openpgp.sign(signOpt).then(function(signed) {
-            encOpt.signatureInput = openpgp.signature.readArmored(signed.signature);
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
             return openpgp.encrypt(encOpt);
           }).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -783,7 +783,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           openpgp.sign(signOpt).then(function(signed) {
-            encOpt.signatureInput = openpgp.signature.readArmored(signed.signature);
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
             return openpgp.encrypt(encOpt);
           }).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -816,7 +816,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           openpgp.sign(signOpt).then(function(signed) {
-            encOpt.signatureInput = openpgp.signature.readArmored(signed.signature);
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
             return openpgp.encrypt(encOpt);
           }).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);

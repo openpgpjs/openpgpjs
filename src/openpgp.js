@@ -180,17 +180,17 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {String} filename                  (optional) a filename for the literal data packet
  * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
- * @param  {Signature} signatureInput         (optional) a detached signature to add to the encrypted message
+ * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
  * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
  *                                              {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true, detached=false, signatureInput=null }) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true, detached=false, signature=null }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached, signature });
   }
   var result = {};
   return Promise.resolve().then(() => {
@@ -199,16 +199,16 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
     if (!privateKeys) {
       privateKeys = [];
     }
-    if (privateKeys.length || signatureInput) { // sign the message only if private keys or signatureInput is specified
+    if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        var signature = message.signDetached(privateKeys, signatureInput);
+        var detachedSignature = message.signDetached(privateKeys, signature);
         if (armor) {
-          result.signature = signature.armor();
+          result.signature = detachedSignature.armor();
         } else {
-          result.signature = signature;
+          result.signature = detachedSignature;
         }
       } else {
-        message = message.sign(privateKeys, signatureInput);
+        message = message.sign(privateKeys, signature);
       }
     }
     return message.encrypt(publicKeys, passwords);
