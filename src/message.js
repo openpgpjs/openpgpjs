@@ -320,6 +320,9 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
         onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
         onePassSig.publicKeyAlgorithm = sigPacket.publicKeyAlgorithm;
         onePassSig.signingKeyId = sigPacket.issuerKeyId;
+        if (!privateKeys.length && i === 0) {
+          onePassSig.flags = 1;
+        }
         packetlist.push(onePassSig);
       }
     }
