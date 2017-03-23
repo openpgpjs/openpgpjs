@@ -724,9 +724,14 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', function(done) {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+
           var signOpt = {
             data: plaintext,
-            privateKeys: privateKey.keys[0],
+            privateKeys: privKeyDE,
             detached: true
           };
 
@@ -738,7 +743,7 @@ describe('OpenPGP.js public api tests', function() {
 
           var decOpt = {
             privateKey: privateKey.keys[0],
-            publicKeys: publicKey.keys
+            publicKeys: [publicKey.keys[0], pubKeyDE]
           };
 
           openpgp.sign(signOpt).then(function(signed) {
@@ -753,7 +758,7 @@ describe('OpenPGP.js public api tests', function() {
             expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             expect(decrypted.signatures[1].valid).to.be.true;
-            expect(decrypted.signatures[1].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
             expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
             done();
           });
