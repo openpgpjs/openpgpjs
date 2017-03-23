@@ -104,12 +104,12 @@ Message.prototype.decrypt = function(privateKey, sessionKey, password) {
       enums.packet.symEncryptedIntegrityProtected,
       enums.packet.symEncryptedAEADProtected
     );
+
     if (symEncryptedPacketlist.length === 0) {
       return;
     }
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
-
     return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(() => {
       const resultMsg = new Message(symEncryptedPacket.packets);
       symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
@@ -360,9 +360,11 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
   }
+
   if (signature) {
     packetlist.concat(existingSigPacketlist);
   }
+
   return new Message(packetlist);
 };
 

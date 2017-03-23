@@ -247,7 +247,6 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
   return message.decrypt(privateKey, sessionKey, password).then(message => {
 
     const result = parseMessage(message, format);
-
     if (result.data) { // verify
       if (!publicKeys) {
         publicKeys = [];
@@ -286,6 +285,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 export function sign({ data, privateKeys, armor=true, detached=false}) {
   checkString(data);
   privateKeys = toArray(privateKeys);
+
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', { data, privateKeys, armor, detached });
   }
