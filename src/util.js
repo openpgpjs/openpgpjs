@@ -274,9 +274,12 @@ export default {
       throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
 
-    var result = [];
-    for (var i = 0; i < bin.length; i++) {
-      result[i] = String.fromCharCode(bin[i]);
+    var result = [],
+      bs = 16384,
+      j = bin.length;
+
+    for (var i = 0; i < j; i += bs) {
+      result.push(String.fromCharCode.apply(String, bin.slice(i, i+bs < j ? i+bs : j)));
     }
     return result.join('');
   },
