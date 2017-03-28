@@ -689,6 +689,147 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt and decrypt/verify with detached signature input and detached flag set for encryption', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys[0],
+            detached: true
+          };
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            detached: true
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: publicKey.keys[0]
+          };
+
+          openpgp.sign(signOpt).then(function(signed) {
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.encrypt(encOpt);
+          }).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            decOpt.signature = openpgp.signature.readArmored(encrypted.signature);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', function(done) {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privKeyDE,
+            detached: true
+          };
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys[0]
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: [publicKey.keys[0], pubKeyDE]
+          };
+
+          openpgp.sign(signOpt).then(function(signed) {
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.encrypt(encOpt);
+          }).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            expect(decrypted.signatures[1].valid).to.be.true;
+            expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should fail to encrypt and decrypt/verify with detached signature input and detached flag set for encryption with wrong public key', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            detached: true
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+          };
+
+          openpgp.sign(signOpt).then(function(signed) {
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.encrypt(encOpt);
+          }).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            decOpt.signature = openpgp.signature.readArmored(encrypted.signature);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.null;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
+        it('should fail to encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption with wrong public key', function(done) {
+          var signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            detached: true
+          };
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
+          };
+
+          openpgp.sign(signOpt).then(function(signed) {
+            encOpt.signature = openpgp.signature.readArmored(signed.signature);
+            return openpgp.encrypt(encOpt);
+          }).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.null;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            done();
+          });
+        });
+
         it('should fail to verify decrypted data with wrong public pgp key', function(done) {
           var encOpt = {
             data: plaintext,

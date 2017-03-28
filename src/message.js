@@ -292,10 +292,11 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
- * @return {module:message~Message}      new message with signed content
+ * @param  {Array<module:key~Key>}        privateKey private keys with decrypted secret key data for signing
+ * @param  {Signature} signature          (optional) any existing detached signature to add to the message
+ * @return {module:message~Message}       new message with signed content
  */
-Message.prototype.sign = function(privateKeys) {
+Message.prototype.sign = function(privateKeys=[], signature=null) {
 
   var packetlist = new packet.List();
 
@@ -307,12 +308,30 @@ Message.prototype.sign = function(privateKeys) {
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat === enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
-  var i, signingKeyPacket;
+  var i, signingKeyPacket, existingSigPacketlist, onePassSig;
+
+  if (signature) {
+    existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+    if (existingSigPacketlist.length) {
+      for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
+        var sigPacket = existingSigPacketlist[i];
+        onePassSig = new packet.OnePassSignature();
+        onePassSig.type = signatureType;
+        onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
+        onePassSig.publicKeyAlgorithm = sigPacket.publicKeyAlgorithm;
+        onePassSig.signingKeyId = sigPacket.issuerKeyId;
+        if (!privateKeys.length && i === 0) {
+          onePassSig.flags = 1;
+        }
+        packetlist.push(onePassSig);
+      }
+    }
+  }
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
     }
-    var onePassSig = new packet.OnePassSignature();
+    onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
@@ -342,15 +361,20 @@ Message.prototype.sign = function(privateKeys) {
     packetlist.push(signaturePacket);
   }
 
+  if (signature) {
+    packetlist.concat(existingSigPacketlist);
+  }
+
   return new Message(packetlist);
 };
 
 /**
  * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
+ * @param  {Array<module:key~Key>}           privateKey private keys with decrypted secret key data for signing
+ * @param  {Signature} signature             (optional) any existing detached signature
  * @return {module:signature~Signature}      new detached signature of message content
  */
-Message.prototype.signDetached = function(privateKeys) {
+Message.prototype.signDetached = function(privateKeys=[], signature=null) {
 
   var packetlist = new packet.List();
 
@@ -374,6 +398,10 @@ Message.prototype.signDetached = function(privateKeys) {
     }
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
+  }
+  if (signature) {
+    var existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+    packetlist.concat(existingSigPacketlist);
   }
 
   return new sigModule.Signature(packetlist);
