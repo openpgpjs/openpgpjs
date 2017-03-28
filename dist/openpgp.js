@@ -4503,7 +4503,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link http://tools.ietf.org/html/rfc4880#section-7}
  * @param  {String}     text       The cleartext of the signed message
- * @param  {module:Signature} signature       The detached signature or an empty signature if message not yet signed
+ * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
 function CleartextMessage(text, signature) {
@@ -4835,7 +4835,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.1",
+  versionstring: "OpenPGP.js v2.5.2",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15095,10 +15095,14 @@ function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
- * @return {module:message~Message}      new message with signed content
+ * @param  {Array<module:key~Key>}        privateKey private keys with decrypted secret key data for signing
+ * @param  {Signature} signature          (optional) any existing detached signature to add to the message
+ * @return {module:message~Message}       new message with signed content
  */
-Message.prototype.sign = function (privateKeys) {
+Message.prototype.sign = function () {
+  var privateKeys = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+  var signature = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
 
   var packetlist = new _packet2.default.List();
 
@@ -15109,12 +15113,30 @@ Message.prototype.sign = function (privateKeys) {
 
   var literalFormat = _enums2.default.write(_enums2.default.literal, literalDataPacket.format);
   var signatureType = literalFormat === _enums2.default.literal.binary ? _enums2.default.signature.binary : _enums2.default.signature.text;
-  var i, signingKeyPacket;
+  var i, signingKeyPacket, existingSigPacketlist, onePassSig;
+
+  if (signature) {
+    existingSigPacketlist = signature.packets.filterByTag(_enums2.default.packet.signature);
+    if (existingSigPacketlist.length) {
+      for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
+        var sigPacket = existingSigPacketlist[i];
+        onePassSig = new _packet2.default.OnePassSignature();
+        onePassSig.type = signatureType;
+        onePassSig.hashAlgorithm = _config2.default.prefer_hash_algorithm;
+        onePassSig.publicKeyAlgorithm = sigPacket.publicKeyAlgorithm;
+        onePassSig.signingKeyId = sigPacket.issuerKeyId;
+        if (!privateKeys.length && i === 0) {
+          onePassSig.flags = 1;
+        }
+        packetlist.push(onePassSig);
+      }
+    }
+  }
   for (i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
     }
-    var onePassSig = new _packet2.default.OnePassSignature();
+    onePassSig = new _packet2.default.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hashg algo from key signature
     onePassSig.hashAlgorithm = _config2.default.prefer_hash_algorithm;
@@ -15144,15 +15166,23 @@ Message.prototype.sign = function (privateKeys) {
     packetlist.push(signaturePacket);
   }
 
+  if (signature) {
+    packetlist.concat(existingSigPacketlist);
+  }
+
   return new Message(packetlist);
 };
 
 /**
  * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>} privateKey private keys with decrypted secret key data for signing
+ * @param  {Array<module:key~Key>}           privateKey private keys with decrypted secret key data for signing
+ * @param  {Signature} signature             (optional) any existing detached signature
  * @return {module:signature~Signature}      new detached signature of message content
  */
-Message.prototype.signDetached = function (privateKeys) {
+Message.prototype.signDetached = function () {
+  var privateKeys = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+  var signature = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
 
   var packetlist = new _packet2.default.List();
 
@@ -15175,6 +15205,10 @@ Message.prototype.signDetached = function (privateKeys) {
     }
     signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
+  }
+  if (signature) {
+    var existingSigPacketlist = signature.packets.filterByTag(_enums2.default.packet.signature);
+    packetlist.concat(existingSigPacketlist);
   }
 
   return new sigModule.Signature(packetlist);
@@ -15525,7 +15559,7 @@ function generateKey() {
 }
 
 /**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * Reformats signature packets for a key and rewraps key object.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
@@ -15607,6 +15641,7 @@ function decryptKey(_ref4) {
  * @param  {String} filename                  (optional) a filename for the literal data packet
  * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
+ * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
  * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
  *                                              {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -15622,28 +15657,33 @@ function encrypt(_ref5) {
   var armor = _ref5$armor === undefined ? true : _ref5$armor;
   var _ref5$detached = _ref5.detached;
   var detached = _ref5$detached === undefined ? false : _ref5$detached;
+  var _ref5$signature = _ref5.signature;
+  var signature = _ref5$signature === undefined ? null : _ref5$signature;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) {
     // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data: data, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, filename: filename, armor: armor, detached: detached });
+    return asyncProxy.delegate('encrypt', { data: data, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, filename: filename, armor: armor, detached: detached, signature: signature });
   }
   var result = {};
   return Promise.resolve().then(function () {
 
     var message = createMessage(data, filename);
-    if (privateKeys) {
-      // sign the message only if private keys are specified
+    if (!privateKeys) {
+      privateKeys = [];
+    }
+    if (privateKeys.length || signature) {
+      // sign the message only if private keys or signature is specified
       if (detached) {
-        var signature = message.signDetached(privateKeys);
+        var detachedSignature = message.signDetached(privateKeys, signature);
         if (armor) {
-          result.signature = signature.armor();
+          result.signature = detachedSignature.armor();
         } else {
-          result.signature = signature;
+          result.signature = detachedSignature;
         }
       } else {
-        message = message.sign(privateKeys);
+        message = message.sign(privateKeys, signature);
       }
     }
     return message.encrypt(publicKeys, passwords);
@@ -15719,6 +15759,7 @@ function decrypt(_ref6) {
  * @param  {String} data                        cleartext input to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
+ * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
  * @return {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -19921,7 +19962,7 @@ Signature.prototype.armor = function () {
 /**
  * reads an OpenPGP armored signature and returns a signature object
  * @param {String} armoredText text to be parsed
- * @return {module:signature~Signature} new signature object
+ * @return {Signature} new signature object
  * @static
  */
 function readArmored(armoredText) {
@@ -20670,9 +20711,12 @@ exports.default = {
       throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
 
-    var result = [];
-    for (var i = 0; i < bin.length; i++) {
-      result[i] = String.fromCharCode(bin[i]);
+    var result = [],
+        bs = 16384,
+        j = bin.length;
+
+    for (var i = 0; i < j; i += bs) {
+      result.push(String.fromCharCode.apply(String, bin.subarray(i, i + bs < j ? i + bs : j)));
     }
     return result.join('');
   },
