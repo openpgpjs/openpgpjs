@@ -279,7 +279,7 @@ export default {
       j = bin.length;
 
     for (var i = 0; i < j; i += bs) {
-      result.push(String.fromCharCode.apply(String, bin.slice(i, i+bs < j ? i+bs : j)));
+      result.push(String.fromCharCode.apply(String, bin.subarray(i, i+bs < j ? i+bs : j)));
     }
     return result.join('');
   },
