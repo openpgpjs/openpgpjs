@@ -87,12 +87,16 @@ openpgp.decrypt(options).then(function(plaintext) {
 var options, encrypted;
 
 var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
+var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+
+var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
+privKeyObj.decrypt(passphrase);
 
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
     publicKeys: openpgp.key.readArmored(pubkey).keys,  // for encryption
-    privateKeys: openpgp.key.readArmored(privkey).keys // for signing (optional)
+    privateKeys: privKeyObj // for signing (optional)
 };
 
 openpgp.encrypt(options).then(function(ciphertext) {
@@ -104,7 +108,7 @@ openpgp.encrypt(options).then(function(ciphertext) {
 options = {
     message: openpgp.message.readArmored(encrypted),     // parse armored message
     publicKeys: openpgp.key.readArmored(pubkey).keys,    // for verification (optional)
-    privateKey: openpgp.key.readArmored(privkey).keys[0] // for decryption
+    privateKey: privKeyObj // for decryption
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
@@ -157,13 +161,17 @@ hkp.upload(pubkey).then(function() { ... });
 var options, cleartext, validity;
 
 var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
+var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+
+var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
+privKeyObj.decrypt(passphrase);
 ```
 
 ```js
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
-    privateKeys: openpgp.key.readArmored(privkey).keys // for signing
+    privateKeys: privKeyObj // for signing
 };
 
 openpgp.sign(options).then(function(signed) {
@@ -191,13 +199,16 @@ openpgp.verify(options).then(function(verified) {
 var options, cleartext, detachedSig, validity;
 
 var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----';
-```
+var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
+var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+
+var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
+privKeyObj.decrypt(passphrase);```
 
 ```js
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
-    privateKeys: openpgp.key.readArmored(privkey).keys, // for signing
+    privateKeys: privKeyObj, // for signing
     detached: true
 };
 
