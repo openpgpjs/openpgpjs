@@ -4835,7 +4835,7 @@ exports.default = {
   debug: false,
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.2",
+  versionstring: "OpenPGP.js v2.5.3",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15583,8 +15583,7 @@ function reformatKey() {
 
   var options = formatUserIds({ privateKey: privateKey, userIds: userIds, passphrase: passphrase, unlocked: unlocked, keyExpirationTime: keyExpirationTime });
 
-  if (!_util2.default.getWebCryptoAll() && asyncProxy) {
-    // use web worker if web crypto apis are not supported
+  if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
 
