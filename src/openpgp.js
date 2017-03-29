@@ -126,7 +126,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
   const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
 
-  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
+  if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
 
