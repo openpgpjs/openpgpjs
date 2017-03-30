@@ -87,6 +87,10 @@ describe('Util unit tests', function() {
       var data = 'test@example.com';
       expect(openpgp.util.isEmailAddress(data)).to.be.true;
     });
+    it('should return true for valid email address', function() {
+      var data = 'test@xn--wgv.xn--q9jyb4c';
+      expect(openpgp.util.isEmailAddress(data)).to.be.true;
+    });
     it('should return false for invalid email address', function() {
       var data = 'Test User <test@example.com>';
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
