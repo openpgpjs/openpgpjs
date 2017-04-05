@@ -15,6 +15,7 @@ import util from '../util';
 import packetParser from './packet.js';
 import * as packets from './all_packets.js';
 import enums from '../enums.js';
+import config from '../config';
 
 /**
  * @constructor
@@ -44,6 +45,9 @@ Packetlist.prototype.read = function (bytes) {
       pushed = true;
       packet.read(parsed.packet);
     } catch(e) {
+      if (!config.tolerant || parsed.tag == enums.packet.symmetricallyEncrypted || parsed.tag == enums.packet.literal || parsed.tag == enums.packet.compressed) {
+        throw e;
+      }
       if (pushed) {
         this.pop(); // drop unsupported packet
       }

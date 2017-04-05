@@ -44,6 +44,7 @@ export default {
   use_native: true, // use native node.js crypto and Web Crypto apis (if available)
   zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
+  tolerant: false, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
   versionstring: "OpenPGP.js VERSION",
