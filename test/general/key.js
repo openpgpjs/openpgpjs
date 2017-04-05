@@ -527,7 +527,8 @@ describe('Key', function() {
     '=Q/kB',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  it('Parsing armored text with RSA key and ECC subkey', function(done) {
+  it('Parsing armored text with RSA key and ECC subkey in tolerant mode', function(done) {
+    openpgp.config.tolerant = true;
     var pubKeys = openpgp.key.readArmored(rsa_ecc_pub);
     expect(pubKeys).to.exist;
     expect(pubKeys.err).to.not.exist;
@@ -535,6 +536,15 @@ describe('Key', function() {
     expect(pubKeys.keys[0].primaryKey.getKeyId().toHex()).to.equal('b8e4105cc9dedc77');
     done();
   });
+
+  it('Parsing armored text with RSA key and ECC subkey in non-tolerant mode', function(done) {
+    openpgp.config.tolerant = false;
+    var pubKeys = openpgp.key.readArmored(rsa_ecc_pub);
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.exist;
+    done();
+  });
+
 
   var multi_uid_key =
     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
