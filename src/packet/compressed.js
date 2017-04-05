@@ -120,7 +120,7 @@ Compressed.prototype.decompress = function () {
       throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
 
     default:
-      throw new Error("Compression algorithm unknown :" + this.alogrithm);
+      throw new Error("Compression algorithm unknown :" + this.algorithm);
   }
 
   this.packets.read(decompressed);
