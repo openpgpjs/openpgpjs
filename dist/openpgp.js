@@ -4833,9 +4833,10 @@ exports.default = {
   use_native: true, // use native node.js crypto and Web Crypto apis (if available)
   zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
+  tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.3",
+  versionstring: "OpenPGP.js v2.5.4",
   commentstring: "http://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -16606,7 +16607,7 @@ Compressed.prototype.decompress = function () {
       throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
 
     default:
-      throw new Error("Compression algorithm unknown :" + this.alogrithm);
+      throw new Error("Compression algorithm unknown :" + this.algorithm);
   }
 
   this.packets.read(decompressed);
@@ -17321,6 +17322,10 @@ var _enums = _dereq_('../enums.js');
 
 var _enums2 = _interopRequireDefault(_enums);
 
+var _config = _dereq_('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -17353,6 +17358,9 @@ Packetlist.prototype.read = function (bytes) {
       pushed = true;
       packet.read(parsed.packet);
     } catch (e) {
+      if (!_config2.default.tolerant || parsed.tag == _enums2.default.packet.symmetricallyEncrypted || parsed.tag == _enums2.default.packet.literal || parsed.tag == _enums2.default.packet.compressed) {
+        throw e;
+      }
       if (pushed) {
         this.pop(); // drop unsupported packet
       }
@@ -17539,7 +17547,7 @@ Packetlist.fromStructuredClone = function (packetlistClone) {
   return packetlist;
 };
 
-},{"../enums.js":35,"../util":70,"./all_packets.js":44,"./packet.js":51}],53:[function(_dereq_,module,exports){
+},{"../config":10,"../enums.js":35,"../util":70,"./all_packets.js":44,"./packet.js":51}],53:[function(_dereq_,module,exports){
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
