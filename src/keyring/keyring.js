@@ -32,7 +32,7 @@ import LocalStore from './localstore.js';
  * Initialization routine for the keyring. This method reads the
  * keyring from HTML5 local storage and initializes this instance.
  * @constructor
- * @param {class} [storeHandler] class implementing load() and store() methods
+ * @param {class} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 export default function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new LocalStore();
