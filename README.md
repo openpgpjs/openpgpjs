@@ -203,7 +203,8 @@ var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK---
 var passphrase = 'secret passphrase'; //what the privKey is encrypted with
 
 var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
-privKeyObj.decrypt(passphrase);```
+privKeyObj.decrypt(passphrase);
+```
 
 ```js
 options = {
@@ -217,6 +218,7 @@ openpgp.sign(options).then(function(signed) {
     detachedSig = signed.signature;
 });
 ```
+
 
 ```js
 options = {
