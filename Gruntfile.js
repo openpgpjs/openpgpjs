@@ -37,6 +37,10 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
+      options: grunt.option('watch') ? {
+            watch: true,
+            keepAlive: true,
+          } : {},
       openpgp: {
         files: {
           'dist/openpgp.js': [ './src/index.js' ]
@@ -244,6 +248,14 @@ module.exports = function(grunt) {
         tasks: ['browserify:unittests']
       }
     },
+    concurrent: {
+      all: {
+        tasks: ['browserify:openpgp', 'browserify:openpgp_debug', 'browserify:worker'],
+        options: {
+          logConcurrentOutput: true
+        }
+      }
+    }
   });
 
   // Load the plugin(s)
@@ -261,6 +273,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-concurrent');
 
   grunt.registerTask('set_version', function() {
     if (!version) {
