@@ -239,15 +239,14 @@ function verifyHeaders(headers) {
  * and an attribute "checksum" containing the checksum.
  */
 function splitChecksum(text) {
-  var reChecksumStart = /^=/m;
   var body = text;
   var checksum = "";
 
-  var matchResult = reChecksumStart.exec(text);
+  var lastEquals = text.lastIndexOf("=");
 
-  if (matchResult !== null) {
-    body = text.slice(0, matchResult.index);
-    checksum = text.slice(matchResult.index + 1);
+  if (lastEquals >= 0) {
+    body = text.slice(0, lastEquals);
+    checksum = text.slice(lastEquals + 1);
   }
 
   return { body: body, checksum: checksum };
