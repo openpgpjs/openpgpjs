@@ -13,7 +13,7 @@
     "gpg",
     "openpgp"
   ],
-  "main": "dist/openpgp.js",
+  "main": "dist/openpgp.min.js",
   "directories": {
     "lib": "src"
   },
