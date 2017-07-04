@@ -37,7 +37,7 @@ import * as sigModule from './signature.js';
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link http://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String}     text       The cleartext of the signed message
+ * @param  {String | Uint8Array}     data       The cleartext of the signed message
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
@@ -162,8 +162,12 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
  * @return {String} cleartext of message
  */
 CleartextMessage.prototype.getText = function() {
-  // normalize end of line to \n
-  return this.text.replace(/\r\n/g,"\n");
+  if (this.text) {
+    // normalize end of line to \n
+    return this.text.replace(/\r\n/g,"\n");
+  } else {
+    return util.Uint8Array2str(this.bytes);
+  }
 };
 
 /**
@@ -171,6 +175,11 @@ CleartextMessage.prototype.getText = function() {
  * @returns {Uint8Array} A sequence of bytes
  */
 CleartextMessage.prototype.getBytes = function() {
+  if (this.bytes) {
+    return this.bytes;
+  } else {
+    return util.str2Uint8Array(this.text.replace(/\r\n/g,"\n"));
+  }
   return this.bytes;
 };
 
@@ -200,7 +209,7 @@ CleartextMessage.prototype.armor = function() {
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
-export function readArmored(armoredText, isText=true) {
+export function readArmored(armoredText, bytes=false) {
   var input = armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -210,10 +219,10 @@ export function readArmored(armoredText, isText=true) {
   verifyHeaders(input.headers, packetlist);
   var signature = new sigModule.Signature(packetlist);
   var cleartext;
-  if (isText) {
-    cleartext = input.cleartext.replace(/\n$/, '').replace(/\n/g, "\r\n");
-  } else {
+  if (bytes) {
     cleartext = base64.decode(input.cleartext);
+  } else {
+    cleartext = input.cleartext.replace(/\n$/, '').replace(/\n/g, "\r\n");
   }
   var newMessage = new CleartextMessage(cleartext, signature);
   return newMessage;
