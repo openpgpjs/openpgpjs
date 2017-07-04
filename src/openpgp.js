@@ -273,7 +273,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 /**
  * Signs a cleartext message.
- * @param  {String} data                        cleartext input to be signed
+ * @param  {String | Uint8Array} data           cleartext input to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
@@ -283,7 +283,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
  * @static
  */
 export function sign({ data, privateKeys, armor=true, detached=false}) {
-  checkString(data);
+  checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
@@ -294,7 +294,6 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   return execute(() => {
 
     const cleartextMessage = new cleartext.CleartextMessage(data);
-
     if (detached) {
       var signature = cleartextMessage.signDetached(privateKeys);
       if (armor) {
@@ -335,7 +334,11 @@ export function verify({ message, publicKeys, signature=null }) {
 
   var result = {};
   return execute(() => {
-    result.data = message.getText();
+    if (message.text) {
+      result.data = message.getText();
+    } else {
+      result.data = message.getBytes();
+    }
 
     if (signature) {
       //detached signature

@@ -28,7 +28,9 @@
 import config from './config';
 import packet from './packet';
 import enums from './enums.js';
+import util from './util';
 import armor from './encoding/armor.js';
+import base64 from './encoding/base64.js';
 import * as sigModule from './signature.js';
 
 /**
@@ -39,12 +41,16 @@ import * as sigModule from './signature.js';
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
-export function CleartextMessage(text, signature) {
+export function CleartextMessage(data, signature) {
   if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(text, signature);
+    return new CleartextMessage(data, signature);
   }
-  // normalize EOL to canonical form <CR><LF>
-  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
+  if (util.isString(data)) {
+    // normalize EOL to canonical form <CR><LF>
+    this.text = data.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
+  } else {
+    this.bytes = data;
+  }
   if (signature && !(signature instanceof sigModule.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -80,7 +86,11 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 CleartextMessage.prototype.signDetached = function(privateKeys) {
   var packetlist = new packet.List();
   var literalDataPacket = new packet.Literal();
-  literalDataPacket.setText(this.text);
+  if (this.text) {
+    literalDataPacket.setText(this.text);
+  } else {
+    literalDataPacket.setBytes(this.bytes, enums.read(enums.literal, enums.literal.binary));
+  }
   for (var i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -118,7 +128,11 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   var signatureList = signature.packets;
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
-  literalDataPacket.setText(this.text);
+  if (this.text) {
+    literalDataPacket.setText(this.text);
+  } else {
+    literalDataPacket.setBytes(this.bytes, enums.read(enums.literal, enums.literal.binary));
+  }
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
@@ -144,12 +158,20 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
 };
 
 /**
- * Get cleartext
+ * Get cleartext as native JavaScript string
  * @return {String} cleartext of message
  */
 CleartextMessage.prototype.getText = function() {
   // normalize end of line to \n
   return this.text.replace(/\r\n/g,"\n");
+};
+
+/**
+ * Get cleartext as byte array
+ * @returns {Uint8Array} A sequence of bytes
+ */
+CleartextMessage.prototype.getBytes = function() {
+  return this.bytes;
 };
 
 /**
@@ -159,9 +181,14 @@ CleartextMessage.prototype.getText = function() {
 CleartextMessage.prototype.armor = function() {
   var body = {
     hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
-    text: this.text,
     data: this.signature.packets.write()
   };
+
+  if (this.text) {
+    body.text = this.text;
+  } else {
+    body.bytes = this.bytes;
+  }
   return armor.encode(enums.armor.signed, body);
 };
 
@@ -169,10 +196,11 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
+ * @param {bool} whether the decoded cleartext message should be returned as a string (alternative is a byte array)
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
-export function readArmored(armoredText) {
+export function readArmored(armoredText, isText=true) {
   var input = armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -181,7 +209,13 @@ export function readArmored(armoredText) {
   packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   var signature = new sigModule.Signature(packetlist);
-  var newMessage = new CleartextMessage(input.text, signature);
+  var cleartext;
+  if (isText) {
+    cleartext = input.cleartext.replace(/\n$/, '').replace(/\n/g, "\r\n");
+  } else {
+    cleartext = base64.decode(input.cleartext);
+  }
+  var newMessage = new CleartextMessage(cleartext, signature);
   return newMessage;
 }
 
