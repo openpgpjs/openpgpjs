@@ -4603,7 +4603,10 @@ CleartextMessage.prototype.verifyDetached = function (signature, keys) {
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = null;
     }
-    verifiedSig.signature = new sigModule.Signature([signatureList[i]]);
+
+    var packetlist = new _packet2.default.List();
+    packetlist.push(signatureList[i]);
+    verifiedSig.signature = new sigModule.Signature(packetlist);
 
     result.push(verifiedSig);
   }
@@ -4836,8 +4839,8 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.4",
-  commentstring: "http://openpgpjs.org",
+  versionstring: "OpenPGP.js v2.5.5",
+  commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
 };
@@ -12142,30 +12145,9 @@ var crc_table = [0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0
 
 function createcrc24(input) {
   var crc = 0xB704CE;
-  var index = 0;
 
-  while (input.length - index > 16) {
+  for (var index = 0; index < input.length; index++) {
     crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 1]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 2]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 3]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 4]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 5]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 6]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 7]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 8]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 9]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 10]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 11]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 12]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 13]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 14]) & 0xff];
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index + 15]) & 0xff];
-    index += 16;
-  }
-
-  for (var j = index; j < input.length; j++) {
-    crc = crc << 8 ^ crc_table[(crc >> 16 ^ input[index++]) & 0xff];
   }
   return crc & 0xffffff;
 }
@@ -12221,15 +12203,14 @@ function verifyHeaders(headers) {
  * and an attribute "checksum" containing the checksum.
  */
 function splitChecksum(text) {
-  var reChecksumStart = /^=/m;
   var body = text;
   var checksum = "";
 
-  var matchResult = reChecksumStart.exec(text);
+  var lastEquals = text.lastIndexOf("=");
 
-  if (matchResult !== null) {
-    body = text.slice(0, matchResult.index);
-    checksum = text.slice(matchResult.index + 1);
+  if (lastEquals >= 0) {
+    body = text.slice(0, lastEquals);
+    checksum = text.slice(lastEquals + 1);
   }
 
   return { body: body, checksum: checksum };
@@ -14449,7 +14430,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
  * Initialization routine for the keyring. This method reads the
  * keyring from HTML5 local storage and initializes this instance.
  * @constructor
- * @param {class} [storeHandler] class implementing load() and store() methods
+ * @param {class} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new _localstore2.default();
@@ -15273,7 +15254,10 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = null;
     }
-    verifiedSig.signature = new sigModule.Signature([signatureList[i]]);
+
+    var packetlist = new _packet2.default.List();
+    packetlist.push(signatureList[i]);
+    verifiedSig.signature = new sigModule.Signature(packetlist);
 
     result.push(verifiedSig);
   }
