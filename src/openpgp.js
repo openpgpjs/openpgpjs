@@ -294,6 +294,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   return execute(() => {
 
     const cleartextMessage = new cleartext.CleartextMessage(data);
+
     if (detached) {
       var signature = cleartextMessage.signDetached(privateKeys);
       if (armor) {

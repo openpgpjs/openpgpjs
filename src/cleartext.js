@@ -37,19 +37,19 @@ import * as sigModule from './signature.js';
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link http://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String | Uint8Array}     data       The cleartext of the signed message
+ * @param  {String | Uint8Array}     content       The cleartext of the signed message
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
-export function CleartextMessage(data, signature) {
+export function CleartextMessage(content, signature) {
   if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(data, signature);
+    return new CleartextMessage(content, signature);
   }
-  if (util.isString(data)) {
+  if (util.isString(content)) {
     // normalize EOL to canonical form <CR><LF>
-    this.text = data.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
+    this.text = content.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
   } else {
-    this.bytes = data;
+    this.bytes = content;
   }
   if (signature && !(signature instanceof sigModule.Signature)) {
     throw new Error('Invalid signature input');
@@ -180,7 +180,6 @@ CleartextMessage.prototype.getBytes = function() {
   } else {
     return util.str2Uint8Array(this.text.replace(/\r\n/g,"\n"));
   }
-  return this.bytes;
 };
 
 /**
@@ -205,7 +204,7 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @param {bool} whether the decoded cleartext message should be returned as a string (alternative is a byte array)
+ * @param {bool} whether the decoded cleartext message should be returned as a byte array (default is string)
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
@@ -218,13 +217,13 @@ export function readArmored(armoredText, bytes=false) {
   packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   var signature = new sigModule.Signature(packetlist);
-  var cleartext;
+  var content;
   if (bytes) {
-    cleartext = base64.decode(input.cleartext);
+    content = base64.decode(input.content);
   } else {
-    cleartext = input.cleartext.replace(/\n$/, '').replace(/\n/g, "\r\n");
+    content = input.content.replace(/\n$/, '').replace(/\n/g, "\r\n");
   }
-  var newMessage = new CleartextMessage(cleartext, signature);
+  var newMessage = new CleartextMessage(content, signature);
   return newMessage;
 }
 

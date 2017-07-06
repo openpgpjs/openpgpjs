@@ -300,7 +300,7 @@ function dearmor(text) {
     var sig_sum = splitChecksum(sig.body);
 
     result = {
-      cleartext: msg.body,
+      content: msg.body,
       data: base64.decode(sig_sum.body),
       headers: msg.headers,
       type: type
