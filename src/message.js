@@ -466,7 +466,10 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
       verifiedSig.keyid = signatureList[i].issuerKeyId;
       verifiedSig.valid = null;
     }
-    verifiedSig.signature = new sigModule.Signature([signatureList[i]]);
+
+    var packetlist = new packet.List();
+    packetlist.push(signatureList[i]);
+    verifiedSig.signature = new sigModule.Signature(packetlist);
 
     result.push(verifiedSig);
   }
