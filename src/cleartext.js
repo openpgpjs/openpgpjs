@@ -45,7 +45,6 @@ export function CleartextMessage(text, signature) {
   }
   // normalize EOL to canonical form <CR><LF>
   this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
-
   if (signature && !(signature instanceof sigModule.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -164,7 +163,6 @@ CleartextMessage.prototype.armor = function() {
     text: this.text,
     data: this.signature.packets.write()
   };
-
   return armor.encode(enums.armor.signed, body);
 };
 
