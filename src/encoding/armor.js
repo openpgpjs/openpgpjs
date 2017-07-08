@@ -300,7 +300,7 @@ function dearmor(text) {
     var sig_sum = splitChecksum(sig.body);
 
     result = {
-      content: msg.body,
+      text: msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
       data: base64.decode(sig_sum.body),
       headers: msg.headers,
       type: type
@@ -353,11 +353,7 @@ function armor(messagetype, body, partindex, parttotal) {
     case enums.armor.signed:
       result.push("\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n");
       result.push("Hash: " + body.hash + "\r\n\r\n");
-      if (body.text) {
-        result.push(body.text.replace(/\n-/g, "\n- -"));
-      } else {
-        result.push(base64.encode(body.bytes));
-      }
+      result.push(body.text.replace(/\n-/g, "\n- -"));
       result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader());
       result.push(base64.encode(body.data));
