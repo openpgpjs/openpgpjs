@@ -28,29 +28,24 @@
 import config from './config';
 import packet from './packet';
 import enums from './enums.js';
-import util from './util';
 import armor from './encoding/armor.js';
-import base64 from './encoding/base64.js';
 import * as sigModule from './signature.js';
 
 /**
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link http://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String | Uint8Array}     content       The cleartext of the signed message
+ * @param  {String}     text       The cleartext of the signed message
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
 
-export function CleartextMessage(content, signature) {
+export function CleartextMessage(text, signature) {
   if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(content, signature);
+    return new CleartextMessage(text, signature);
   }
-  if (util.isString(content)) {
-    // normalize EOL to canonical form <CR><LF>
-    this.text = content.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
-  } else {
-    this.bytes = content;
-  }
+  // normalize EOL to canonical form <CR><LF>
+  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
+
   if (signature && !(signature instanceof sigModule.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -73,9 +68,10 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
-  this.signature = this.signDetached(privateKeys);
+  return new CleartextMessage(this.text, this.signDetached(privateKeys));
 };
 
 /**
@@ -86,11 +82,7 @@ CleartextMessage.prototype.sign = function(privateKeys) {
 CleartextMessage.prototype.signDetached = function(privateKeys) {
   var packetlist = new packet.List();
   var literalDataPacket = new packet.Literal();
-  if (this.text) {
-    literalDataPacket.setText(this.text);
-  } else {
-    literalDataPacket.setBytes(this.bytes, enums.read(enums.literal, enums.literal.binary));
-  }
+  literalDataPacket.setText(this.text);
   for (var i = 0; i < privateKeys.length; i++) {
     if (privateKeys[i].isPublic()) {
       throw new Error('Need private key for signing');
@@ -128,11 +120,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   var signatureList = signature.packets;
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
-  if (this.text) {
-    literalDataPacket.setText(this.text);
-  } else {
-    literalDataPacket.setBytes(this.bytes, enums.read(enums.literal, enums.literal.binary));
-  }
+  literalDataPacket.setText(this.text);
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
@@ -158,28 +146,12 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
 };
 
 /**
- * Get cleartext as native JavaScript string
+ * Get cleartext
  * @return {String} cleartext of message
  */
 CleartextMessage.prototype.getText = function() {
-  if (this.text) {
-    // normalize end of line to \n
-    return this.text.replace(/\r\n/g,"\n");
-  } else {
-    return util.Uint8Array2str(this.bytes);
-  }
-};
-
-/**
- * Get cleartext as byte array
- * @returns {Uint8Array} A sequence of bytes
- */
-CleartextMessage.prototype.getBytes = function() {
-  if (this.bytes) {
-    return this.bytes;
-  } else {
-    return util.str2Uint8Array(this.text.replace(/\r\n/g,"\n"));
-  }
+  // normalize end of line to \n
+  return this.text.replace(/\r\n/g,"\n");
 };
 
 /**
@@ -189,14 +161,10 @@ CleartextMessage.prototype.getBytes = function() {
 CleartextMessage.prototype.armor = function() {
   var body = {
     hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
+    text: this.text,
     data: this.signature.packets.write()
   };
 
-  if (this.text) {
-    body.text = this.text;
-  } else {
-    body.bytes = this.bytes;
-  }
   return armor.encode(enums.armor.signed, body);
 };
 
@@ -204,11 +172,10 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @param {bool} whether the decoded cleartext message should be returned as a byte array (default is string)
  * @return {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
-export function readArmored(armoredText, bytes=false) {
+export function readArmored(armoredText) {
   var input = armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -217,13 +184,7 @@ export function readArmored(armoredText, bytes=false) {
   packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   var signature = new sigModule.Signature(packetlist);
-  var content;
-  if (bytes) {
-    content = base64.decode(input.content);
-  } else {
-    content = input.content.replace(/\n$/, '').replace(/\n/g, "\r\n");
-  }
-  var newMessage = new CleartextMessage(content, signature);
+  var newMessage = new CleartextMessage(input.text, signature);
   return newMessage;
 }
 

@@ -554,10 +554,11 @@ describe("Signature", function() {
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey.getSigningKeyPacket().decrypt('hello world');
+    console.log(pubKey.armor());
 
     openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
-
-      var csMsg = openpgp.cleartext.readArmored(signed.data, true);
+      console.log(signed.data);
+      var csMsg = openpgp.message.readArmored(signed.data);
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
     }).then(function(cleartextSig) {
@@ -578,7 +579,6 @@ describe("Signature", function() {
     privKey.getSigningKeyPacket().decrypt('hello world');
 
     openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
-
       var csMsg = signed.message;
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
