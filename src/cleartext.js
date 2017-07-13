@@ -67,9 +67,10 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
 CleartextMessage.prototype.sign = function(privateKeys) {
-  this.signature = this.signDetached(privateKeys);
+  return new CleartextMessage(this.text, this.signDetached(privateKeys));
 };
 
 /**
