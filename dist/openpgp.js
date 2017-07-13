@@ -4534,9 +4534,10 @@ CleartextMessage.prototype.getSigningKeyIds = function () {
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
 CleartextMessage.prototype.sign = function (privateKeys) {
-  this.signature = this.signDetached(privateKeys);
+  return new CleartextMessage(this.text, this.signDetached(privateKeys));
 };
 
 /**
@@ -4839,7 +4840,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.5",
+  versionstring: "OpenPGP.js v2.5.6",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15740,7 +15741,7 @@ function decrypt(_ref6) {
 
 /**
  * Signs a cleartext message.
- * @param  {String} data                        cleartext input to be signed
+ * @param  {String | Uint8Array} data           cleartext input to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
@@ -15757,7 +15758,7 @@ function sign(_ref7) {
   var _ref7$detached = _ref7.detached;
   var detached = _ref7$detached === undefined ? false : _ref7$detached;
 
-  checkString(data);
+  checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) {
@@ -15767,24 +15768,29 @@ function sign(_ref7) {
 
   var result = {};
   return execute(function () {
+    var message;
 
-    var cleartextMessage = new cleartext.CleartextMessage(data);
+    if (_util2.default.isString(data)) {
+      message = new cleartext.CleartextMessage(data);
+    } else {
+      message = messageLib.fromBinary(data);
+    }
 
     if (detached) {
-      var signature = cleartextMessage.signDetached(privateKeys);
+      var signature = message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
         result.signature = signature;
       }
     } else {
-      cleartextMessage.sign(privateKeys);
+      message = message.sign(privateKeys);
     }
 
     if (armor) {
-      result.data = cleartextMessage.armor();
+      result.data = message.armor();
     } else {
-      result.message = cleartextMessage;
+      result.message = message;
     }
     return result;
   }, 'Error signing cleartext message');
@@ -15805,7 +15811,7 @@ function verify(_ref8) {
   var _ref8$signature = _ref8.signature;
   var signature = _ref8$signature === undefined ? null : _ref8$signature;
 
-  checkCleartextMessage(message);
+  checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) {
@@ -15815,8 +15821,11 @@ function verify(_ref8) {
 
   var result = {};
   return execute(function () {
-    result.data = message.getText();
-
+    if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
+      result.data = message.getText();
+    } else {
+      result.data = message.getLiteralData();
+    }
     if (signature) {
       //detached signature
       result.signatures = message.verifyDetached(signature, publicKeys);
@@ -15849,7 +15858,7 @@ function encryptSessionKey(_ref9) {
   var publicKeys = _ref9.publicKeys;
   var passwords = _ref9.passwords;
 
-  checkbinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
+  checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
 
   if (asyncProxy) {
     // use web worker if available
@@ -15907,7 +15916,7 @@ function checkString(data, name) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type String');
   }
 }
-function checkbinary(data, name) {
+function checkBinary(data, name) {
   if (!_util2.default.isUint8Array(data)) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type Uint8Array');
   }
@@ -15922,9 +15931,9 @@ function checkMessage(message) {
     throw new Error('Parameter [message] needs to be of type Message');
   }
 }
-function checkCleartextMessage(message) {
-  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
-    throw new Error('Parameter [message] needs to be of type CleartextMessage');
+function checkCleartextOrMessage(message) {
+  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+    throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
 
