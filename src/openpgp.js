@@ -273,7 +273,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 /**
  * Signs a cleartext message.
- * @param  {String} data                        cleartext input to be signed
+ * @param  {String | Uint8Array} data           cleartext input to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
@@ -283,7 +283,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
  * @static
  */
 export function sign({ data, privateKeys, armor=true, detached=false}) {
-  checkString(data);
+  checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
@@ -292,24 +292,29 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
 
   var result = {};
   return execute(() => {
+    var message;
 
-    const cleartextMessage = new cleartext.CleartextMessage(data);
+    if (util.isString(data)) {
+      message = new cleartext.CleartextMessage(data);
+    } else {
+      message = messageLib.fromBinary(data);
+    }
 
     if (detached) {
-      var signature = cleartextMessage.signDetached(privateKeys);
+      var signature = message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
         result.signature = signature;
       }
     } else {
-      cleartextMessage.sign(privateKeys);
+      message = message.sign(privateKeys);
     }
 
     if (armor) {
-      result.data = cleartextMessage.armor();
+      result.data = message.armor();
     } else {
-      result.message = cleartextMessage;
+      result.message = message;
     }
     return result;
 
@@ -326,7 +331,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
  * @static
  */
 export function verify({ message, publicKeys, signature=null }) {
-  checkCleartextMessage(message);
+  checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
@@ -335,8 +340,11 @@ export function verify({ message, publicKeys, signature=null }) {
 
   var result = {};
   return execute(() => {
-    result.data = message.getText();
-
+    if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
+      result.data = message.getText();
+    } else {
+      result.data = message.getLiteralData();
+    }
     if (signature) {
       //detached signature
       result.signatures = message.verifyDetached(signature, publicKeys);
@@ -367,7 +375,7 @@ export function verify({ message, publicKeys, signature=null }) {
  * @static
  */
 export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
-  checkbinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
+  checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
@@ -417,7 +425,7 @@ function checkString(data, name) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type String');
   }
 }
-function checkbinary(data, name) {
+function checkBinary(data, name) {
   if (!util.isUint8Array(data)) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type Uint8Array');
   }
@@ -432,9 +440,9 @@ function checkMessage(message) {
     throw new Error('Parameter [message] needs to be of type Message');
   }
 }
-function checkCleartextMessage(message) {
-  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
-    throw new Error('Parameter [message] needs to be of type CleartextMessage');
+function checkCleartextOrMessage(message) {
+  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+    throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
 

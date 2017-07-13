@@ -226,7 +226,7 @@ Signature.prototype.sign = function (key, data) {
 
   var trailer = this.calculateTrailer();
 
-  var toHash = null
+  var toHash = null;
 
   switch (this.version) {
     case 3:

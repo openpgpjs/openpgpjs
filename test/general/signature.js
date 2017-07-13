@@ -527,7 +527,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same cleartext and valid signatures', function(done) {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', function(done) {
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -541,6 +541,50 @@ describe("Signature", function() {
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.data).to.equal(plaintext.replace(/\r/g,''));
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      done();
+    });
+
+  });
+
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function(done) {
+    var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey.getSigningKeyPacket().decrypt('hello world');
+    console.log(pubKey.armor());
+
+    openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
+      console.log(signed.data);
+      var csMsg = openpgp.message.readArmored(signed.data);
+      return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
+
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.data).to.deep.equal(plaintext);
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      done();
+    });
+
+  });
+
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function(done) {
+    var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
+    var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey.getSigningKeyPacket().decrypt('hello world');
+
+    openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
+      var csMsg = signed.message;
+      return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
+
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.data).to.deep.equal(plaintext);
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
