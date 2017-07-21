@@ -247,6 +247,9 @@ function splitChecksum(text) {
   if (lastEquals >= 0) {
     body = text.slice(0, lastEquals);
     checksum = text.slice(lastEquals + 1);
+    if (checksum.substr(0, 6) === '\n-----') {
+      checksum = ''; // missing armor checksum
+    }
   }
 
   return { body: body, checksum: checksum };
@@ -311,10 +314,9 @@ function dearmor(text) {
 
   checksum = checksum.substr(0, 4);
 
-  if (!verifyCheckSum(result.data, checksum)) {
-    throw new Error("Ascii armor integrity check on message failed: '" +
-      checksum +
-      "' should be '" +
+  if (!verifyCheckSum(result.data, checksum) && (checksum || config.checksum_required)) {
+    // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
+    throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
       getCheckSum(result.data) + "'");
   }
 
