@@ -246,10 +246,7 @@ function splitChecksum(text) {
 
   if (lastEquals >= 0) {
     body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1);
-    if (checksum.substr(0, 6) === '\n-----') {
-      checksum = ''; // missing armor checksum
-    }
+    checksum = text.slice(lastEquals + 1).trim().substr(0, 4);
   }
 
   return { body: body, checksum: checksum };
@@ -271,6 +268,7 @@ function dearmor(text) {
 
   var type = getType(text);
 
+  text = text.trim() + "\n";
   var splittext = text.split(reSplit);
 
   // IE has a bug in split with a re. If the pattern matches the beginning of the
@@ -311,8 +309,6 @@ function dearmor(text) {
 
     checksum = sig_sum.checksum;
   }
-
-  checksum = checksum.substr(0, 4);
 
   if (!verifyCheckSum(result.data, checksum) && (checksum || config.checksum_required)) {
     // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
