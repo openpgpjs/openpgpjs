@@ -191,8 +191,7 @@ function createcrc24(input) {
 /**
  * Splits a message into two parts, the headers and the body. This is an internal function
  * @param {String} text OpenPGP armored message part
- * @returns {(Boolean|Object)} Either false in case of an error
- * or an object with attribute "headers" containing the headers and
+ * @returns {Object} An object with attribute "headers" containing the headers
  * and an attribute "body" containing the body.
  */
 function splitHeaders(text) {
@@ -234,19 +233,19 @@ function verifyHeaders(headers) {
 /**
  * Splits a message into two parts, the body and the checksum. This is an internal function
  * @param {String} text OpenPGP armored message part
- * @returns {(Boolean|Object)} Either false in case of an error
- * or an object with attribute "body" containing the body
+ * @returns {Object} An object with attribute "body" containing the body
  * and an attribute "checksum" containing the checksum.
  */
 function splitChecksum(text) {
+  text = text.trim();
   var body = text;
   var checksum = "";
 
   var lastEquals = text.lastIndexOf("=");
 
-  if (lastEquals >= 0) {
+  if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
     body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1);
+    checksum = text.slice(lastEquals + 1).substr(0, 4);
   }
 
   return { body: body, checksum: checksum };
@@ -268,6 +267,7 @@ function dearmor(text) {
 
   var type = getType(text);
 
+  text = text.trim() + "\n";
   var splittext = text.split(reSplit);
 
   // IE has a bug in split with a re. If the pattern matches the beginning of the
@@ -309,12 +309,9 @@ function dearmor(text) {
     checksum = sig_sum.checksum;
   }
 
-  checksum = checksum.substr(0, 4);
-
-  if (!verifyCheckSum(result.data, checksum)) {
-    throw new Error("Ascii armor integrity check on message failed: '" +
-      checksum +
-      "' should be '" +
+  if (!verifyCheckSum(result.data, checksum) && (checksum || config.checksum_required)) {
+    // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
+    throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
       getCheckSum(result.data) + "'");
   }
 
