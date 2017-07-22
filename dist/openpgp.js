@@ -4833,6 +4833,7 @@ exports.default = {
   aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption
   integrity_protect: true, // use integrity protection for symmetric encryption
   ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
+  checksum_required: false, // do not throw error when armor is missing a checksum
   rsa_blinding: true,
   use_native: true, // use native node.js crypto and Web Crypto apis (if available)
   zero_copy: false, // use transferable objects between the Web Worker and main thread
@@ -4840,7 +4841,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.6",
+  versionstring: "OpenPGP.js v2.5.7",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -12156,8 +12157,7 @@ function createcrc24(input) {
 /**
  * Splits a message into two parts, the headers and the body. This is an internal function
  * @param {String} text OpenPGP armored message part
- * @returns {(Boolean|Object)} Either false in case of an error
- * or an object with attribute "headers" containing the headers and
+ * @returns {Object} An object with attribute "headers" containing the headers
  * and an attribute "body" containing the body.
  */
 function splitHeaders(text) {
@@ -12199,19 +12199,20 @@ function verifyHeaders(headers) {
 /**
  * Splits a message into two parts, the body and the checksum. This is an internal function
  * @param {String} text OpenPGP armored message part
- * @returns {(Boolean|Object)} Either false in case of an error
- * or an object with attribute "body" containing the body
+ * @returns {Object} An object with attribute "body" containing the body
  * and an attribute "checksum" containing the checksum.
  */
 function splitChecksum(text) {
+  text = text.trim();
   var body = text;
   var checksum = "";
 
   var lastEquals = text.lastIndexOf("=");
 
-  if (lastEquals >= 0) {
+  if (lastEquals >= 0 && lastEquals !== text.length - 1) {
+    // '=' as the last char means no checksum
     body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1);
+    checksum = text.slice(lastEquals + 1).substr(0, 4);
   }
 
   return { body: body, checksum: checksum };
@@ -12233,6 +12234,7 @@ function dearmor(text) {
 
   var type = getType(text);
 
+  text = text.trim() + "\n";
   var splittext = text.split(reSplit);
 
   // IE has a bug in split with a re. If the pattern matches the beginning of the
@@ -12274,9 +12276,8 @@ function dearmor(text) {
     checksum = sig_sum.checksum;
   }
 
-  checksum = checksum.substr(0, 4);
-
-  if (!verifyCheckSum(result.data, checksum)) {
+  if (!verifyCheckSum(result.data, checksum) && (checksum || _config2.default.checksum_required)) {
+    // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
     throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" + getCheckSum(result.data) + "'");
   }
 
