@@ -185,6 +185,12 @@ describe('Util unit tests', function() {
       var test = openpgp.util.decode_utf8.bind(null, {chameleon: true});
       expect(test).to.throw(Error, /Parameter "utf8" is not of type string/);
     });
+    it('util.readNumber should not overflow until full range of uint32', function () {
+      var ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
+      for(var i = 0; i < ints.length; i++) {
+        expect(openpgp.util.readNumber(openpgp.util.writeNumber(ints[i], 4))).to.equal(ints[i]);
+      }
+    });
   });
 
 });
