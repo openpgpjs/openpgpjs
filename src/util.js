@@ -85,12 +85,9 @@ export default {
 
   readNumber: function (bytes) {
     var n = 0;
-
     for (var i = 0; i < bytes.length; i++) {
-      n <<= 8;
-      n += bytes[i];
+      n += Math.pow(256, i) * bytes[bytes.length - 1 - i];
     }
-
     return n;
   },
 
