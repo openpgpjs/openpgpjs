@@ -15,7 +15,7 @@ import random from './random';
 import pkcs1 from './pkcs1';
 import pkcs5 from './pkcs5.js';
 import crypto from './crypto.js';
-import rfc3394 from './rfc3394.js';
+import aes_kw from './aes_kw.js';
 
 const mod = {
   /** @see module:crypto/cipher */
@@ -36,8 +36,8 @@ const mod = {
   pkcs1: pkcs1,
   /** @see module:crypto/pkcs5 */
   pkcs5: pkcs5,
-  /** @see module:crypto/rfc3394 */
-  rfc3394: rfc3394,
+  /** @see module:crypto/aes_kw */
+  aes_kw: aes_kw,
 };
 
 for (var i in crypto) {
