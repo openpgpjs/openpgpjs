@@ -1130,13 +1130,23 @@ export function readArmored(armoredText) {
 export function generate(options) {
   var secretKeyPacket, secretSubkeyPacket;
   return Promise.resolve().then(() => {
+
     if (options.curve) {
-      options.keyType = enums.publicKey.ecdsa;
+      options.keyType = options.keyType || enums.publicKey.ecdsa;
+      options.subkeyType = options.subkeyType || enums.publicKey.ecdh;
+    } else {
+      options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+      options.subkeyType = options.subkeyType || enums.publicKey.rsa_encrypt_sign;
     }
-    options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
         options.keyType !== enums.publicKey.ecdsa) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-      throw new Error('Only RSA Encrypt or Sign supported');
+      throw new Error('Unsupported key type');
+    }
+
+    if (options.subkeyType !== enums.publicKey.rsa_encrypt_sign &&
+        options.subkeyType !== enums.publicKey.ecdh) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Unsupported subkey type');
     }
 
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
@@ -1154,25 +1164,13 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    var material;
-    if (typeof(options.material) !== "undefined") {
-      material = options.material.key;
-    }
-    return secretKeyPacket.generate(options.numBits, options.curve, material);
+    return secretKeyPacket.generate(options.numBits, options.curve);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
-    var subkeyType = options.keyType;
-    if (subkeyType === enums.publicKey.ecdsa) {
-      subkeyType = enums.publicKey.ecdh;
-    }
-    var material;
-    if (typeof(options.material) !== "undefined") {
-      material = options.material.subkey;
-    }
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, subkeyType);
-    return secretSubkeyPacket.generate(options.numBits, options.curve, material);
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
+    return secretSubkeyPacket.generate(options.numBits, options.curve);
   }
 }
 
@@ -1211,8 +1209,10 @@ export function reformat(options) {
     for (var i = 0; i < packetlist.length; i++) {
       if (packetlist[i].tag === enums.packet.secretKey) {
         secretKeyPacket = packetlist[i];
+        options.keyType = secretKeyPacket.algorithm;
       } else if (packetlist[i].tag === enums.packet.secretSubkey) {
         secretSubkeyPacket = packetlist[i];
+        options.subkeyType = secretSubkeyPacket.algorithm;
       }
     }
     return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
