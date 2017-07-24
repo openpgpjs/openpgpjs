@@ -33,30 +33,6 @@ import BigInteger from '../jsbn.js';
 import enums from '../../../enums.js';
 import util from '../../../util.js';
 
-function Curve(name, {oid, hash, cipher}) {
-  this.curve = new EC(name);
-  this.name = name;
-  this.oid = oid;
-  this.hash = hash;
-  this.cipher = cipher;
-}
-
-Curve.prototype.keyFromPrivate = function (priv) {
-  return new KeyPair(this.curve, {priv: priv});
-};
-
-Curve.prototype.keyFromPublic = function (pub) {
-  return new KeyPair(this.curve, {pub: pub});
-};
-
-Curve.prototype.genKeyPair = function () {
-  var r = this.curve.genKeyPair();
-  return new KeyPair(this.curve, {
-    pub: r.getPublic().encode(),
-    priv: r.getPrivate().toArray()
-  });
-};
-
 const curves = {
   p256: {
     oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
@@ -84,6 +60,31 @@ const curves = {
   }
 };
 
+function Curve(name, {oid, hash, cipher}) {
+  this.curve = new EC(name);
+  this.name = name;
+  this.oid = oid;
+  this.hash = hash;
+  this.cipher = cipher;
+}
+
+Curve.prototype.keyFromPrivate = function (priv) {
+  return new KeyPair(this.curve, {priv: priv});
+};
+
+Curve.prototype.keyFromPublic = function (pub) {
+  return new KeyPair(this.curve, {pub: pub});
+};
+
+Curve.prototype.genKeyPair = function () {
+  var r = this.curve.genKeyPair();
+  return new KeyPair(this.curve, {
+    pub: r.getPublic().encode(),
+    priv: r.getPrivate().toArray()
+  });
+};
+
+
 function get(oid_or_name) {
   for (var name in curves) {
     if (curves[name].oid === oid_or_name || name === oid_or_name) {
@@ -97,15 +98,10 @@ function get(oid_or_name) {
   throw new Error('Not valid curve');
 }
 
-function generate(curve, material) {
+function generate(curve) {
   return new Promise(function (resolve) {
     curve = get(curve);
-    var keyPair;
-    if (typeof(material) !== "undefined") {
-      keyPair = curve.keyFromPrivate(material);
-    } else {
-      keyPair = curve.genKeyPair();
-    }
+    var keyPair = curve.genKeyPair();
     resolve({
       oid: curve.oid,
       R: new BigInteger(keyPair.getPublic()),

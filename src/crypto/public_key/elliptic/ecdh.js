@@ -20,7 +20,7 @@
 /**
  * @requires crypto/hash
  * @requires crypto/cipher
- * @requires crypto/rfc3394
+ * @requires crypto/aes_kw
  * @requires crypto/public_key/elliptic/curves
  * @requires crypto/public_key/jsbn
  * @requires type/oid
@@ -36,7 +36,7 @@ import BigInteger from '../jsbn.js';
 import curves from './curves.js';
 import cipher from '../../cipher';
 import hash from '../../hash';
-import rfc3394 from '../../rfc3394.js';
+import aes_kw from '../../aes_kw.js';
 import enums from '../../../enums.js';
 import util from '../../../util.js';
 import type_kdf_params from '../../../type/kdf_params.js';
@@ -92,7 +92,7 @@ function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
   R = curve.keyFromPublic(R.toByteArray());
   const S = v.derive(R);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  const C = rfc3394.wrap(Z, m);
+  const C = aes_kw.wrap(Z, m);
   return {
     V: new BigInteger(v.getPublic()),
     C: C
@@ -120,7 +120,7 @@ function decrypt(oid, cipher_algo, hash_algo, V, C, r, fingerprint) {
   r = curve.keyFromPrivate(r.toByteArray());
   const S = r.derive(V);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  return new BigInteger(rfc3394.unwrap(Z, C));
+  return new BigInteger(aes_kw.unwrap(Z, C));
 }
 
 module.exports = {
