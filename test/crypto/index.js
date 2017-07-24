@@ -5,5 +5,5 @@ describe('Crypto', function () {
   require('./crypto.js');
   require('./elliptic.js');
   require('./pkcs5.js');
-  require('./rfc3394.js');
+  require('./aes_kw.js');
 });
