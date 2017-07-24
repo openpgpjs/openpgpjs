@@ -98,8 +98,9 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, curve=null, material=null } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, curve, material });
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""} = {}) {
+  userIds = formatUserIds(userIds);
+  const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
@@ -125,7 +126,9 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @static
  */
 export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
+  userIds = formatUserIds(userIds);
+
+  const options = {privateKey, userIds, passphrase, unlocked, keyExpirationTime};
 
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -450,18 +453,12 @@ function checkCleartextOrMessage(message) {
 /**
  * Format user ids for internal use.
  */
-function formatUserIds(options) {
-  if (!options.curve) {
-    delete options.curve;
+function formatUserIds(userIds) {
+  if (!userIds) {
+    return userIds;
   }
-  if (!options.material) {
-    delete options.material;
-  }
-  if (!options.userIds) {
-    return options;
-  }
-  options.userIds = toArray(options.userIds); // normalize to array
-  options.userIds = options.userIds.map(id => {
+  userIds = toArray(userIds); // normalize to array
+  userIds = userIds.map(id => {
     if (util.isString(id) && !util.isUserId(id)) {
       throw new Error('Invalid user id format');
     }
@@ -480,7 +477,7 @@ function formatUserIds(options) {
     }
     return id.name + '<' + id.email + '>';
   });
-  return options;
+  return userIds;
 }
 
 /**
