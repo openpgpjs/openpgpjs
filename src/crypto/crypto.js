@@ -228,7 +228,7 @@ export default {
     }
   },
 
-  generateMpi: function(algo, bits, curve, material) {
+  generateMpi: function(algo, bits, curve) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -247,21 +247,21 @@ export default {
         });
 
       case 'ecdsa':
-        return publicKey.elliptic.generate(curve, material).then(function (key) {
+        return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return [
-            new type_oid(key.oid),
-            BigInteger2mpi(key.R),
-            BigInteger2mpi(key.r)
+            new type_oid(keyObject.oid),
+            BigInteger2mpi(keyObject.R),
+            BigInteger2mpi(keyObject.r)
           ];
         });
 
       case 'ecdh':
-        return publicKey.elliptic.generate(curve, material).then(function (key) {
+        return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return [
-            new type_oid(key.oid),
-            BigInteger2mpi(key.R),
-            new type_kdf_params(key.hash, key.cipher),
-            BigInteger2mpi(key.r)
+            new type_oid(keyObject.oid),
+            BigInteger2mpi(keyObject.R),
+            new type_kdf_params(keyObject.hash, keyObject.cipher),
+            BigInteger2mpi(keyObject.r)
           ];
         });
 
