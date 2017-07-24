@@ -51,8 +51,8 @@ describe('AES Key Wrap and Unwrap', function () {
       var input_bin = openpgp.util.hex2bin(input);
       var output = test[3].replace(/\s/g, "");
       var output_bin = openpgp.util.hex2bin(output);
-      expect(openpgp.util.hexidump(openpgp.crypto.rfc3394.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
-      expect(openpgp.util.hexidump(openpgp.crypto.rfc3394.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
+      expect(openpgp.util.hexidump(openpgp.crypto.aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
+      expect(openpgp.util.hexidump(openpgp.crypto.aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
       done();
     });
   });
