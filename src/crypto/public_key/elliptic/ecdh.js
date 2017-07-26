@@ -42,13 +42,6 @@ import util from '../../../util.js';
 import type_kdf_params from '../../../type/kdf_params.js';
 import type_oid from '../../../type/oid.js';
 
-function hex2Uint8Array(hex) {
-  var result = new Uint8Array(hex.length/2);
-  for (var k=0; k<hex.length/2; k++) {
-    result[k] = parseInt(hex.substr(2*k, 2), 16);
-  }
-  return result;
-}
 
 // Build Param for ECDH algorithm (RFC 6637)
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
@@ -72,6 +65,7 @@ function kdf(hash_algo, X, length, param) {
   ])).subarray(0, length);
 }
 
+
 /**
  * Encrypt and wrap a session key
  *
@@ -84,7 +78,7 @@ function kdf(hash_algo, X, length, param) {
  * @return {{V: BigInteger, C: Uint8Array}}  Returns ephemeral key and encoded session key
  */
 function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
-  fingerprint = hex2Uint8Array(fingerprint);
+  fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
@@ -112,7 +106,7 @@ function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
  * @return {Uint8Array}               Value derived from session
  */
 function decrypt(oid, cipher_algo, hash_algo, V, C, r, fingerprint) {
-  fingerprint = hex2Uint8Array(fingerprint);
+  fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
