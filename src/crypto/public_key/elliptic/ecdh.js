@@ -69,7 +69,7 @@ function kdf(hash_algo, X, length, param) {
 /**
  * Encrypt and wrap a session key
  *
- * @param  {String}      oid          Oid of the curve to use
+ * @param  {String}      oid          OID of the curve to use
  * @param  {Enums}       cipher_algo  Symmetric cipher to use
  * @param  {Enums}       hash_algo    Hash to use
  * @param  {Uint8Array}  m            Value derived from session key (RFC 6637)
@@ -96,7 +96,7 @@ function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
 /**
  * Decrypt and unwrap the value derived from session key
  *
- * @param  {String}      oid          Curve oid
+ * @param  {String}      oid          Curve OID
  * @param  {Enums}       cipher_algo  Symmetric cipher to use
  * @param  {Enums}       hash_algo    Hash algorithm to use
  * @param  {BigInteger}  V            Public part of ephemeral key

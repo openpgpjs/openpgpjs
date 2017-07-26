@@ -53,8 +53,8 @@ function createType(data, type) {
   }
 }
 
-function mapResult(result, types) {
-  for (var i=0; i < result.length; i++) {
+function constructParams(result, types) {
+  for (var i=0; i < types.length; i++) {
     result[i] = createType(result[i], types[i]);
   }
   return result;
@@ -81,7 +81,7 @@ export default {
           var n = publicParams[0].toBigInteger();
           var e = publicParams[1].toBigInteger();
           m = data.toBigInteger();
-          return mapResult([rsa.encrypt(m, e, n)], types);
+          return constructParams([rsa.encrypt(m, e, n)], types);
 
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
@@ -89,7 +89,7 @@ export default {
           var g = publicParams[1].toBigInteger();
           var y = publicParams[2].toBigInteger();
           m = data.toBigInteger();
-          return mapResult(elgamal.encrypt(m, g, p, y), types);
+          return constructParams(elgamal.encrypt(m, g, p, y), types);
 
         case 'ecdh':
           var ecdh = publicKey.elliptic.ecdh;
@@ -97,7 +97,7 @@ export default {
           var kdf_params = publicParams[2];
           var R = publicParams[1].toBigInteger();
           var res = ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
-          return mapResult([res.V, res.C], types);
+          return constructParams([res.V, res.C], types);
 
         default:
           return [];
@@ -258,7 +258,7 @@ export default {
 
       //    Algorithm-Specific Fields for ECDH encrypted session keys:
       //        - MPI containing the ephemeral key used to establish the shared secret
-      //        - EcdhSymmetricKey
+      //        - ECDHSymmetricKey
       case 'ecdh':
         return ['mpi', 'ecdh_symkey'];
 
@@ -280,17 +280,17 @@ export default {
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          return mapResult([keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u], types);
+          return constructParams([keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u], types);
         });
 
       case 'ecdsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return mapResult([keyObject.oid, keyObject.R, keyObject.r], types);
+          return constructParams([keyObject.oid, keyObject.R, keyObject.r], types);
         });
 
       case 'ecdh':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return mapResult([keyObject.oid, keyObject.R, [keyObject.hash, keyObject.cipher], keyObject.r], types);
+          return constructParams([keyObject.oid, keyObject.R, [keyObject.hash, keyObject.cipher], keyObject.r], types);
         });
 
       default:
@@ -316,5 +316,7 @@ export default {
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);
-  }
+  },
+
+  constructParams: constructParams
 };

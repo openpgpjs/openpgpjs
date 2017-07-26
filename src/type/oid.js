@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Wrapper to an Oid value<br/>
+ * Wrapper to an OID value<br/>
  * <br/>
  * An object identifier type from {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
  * @requires util
@@ -27,12 +27,12 @@
 
 import util from '../util.js';
 
-module.exports = Oid;
+module.exports = OID;
 
 /**
  * @constructor
  */
-function Oid(oid) {
+function OID(oid) {
   if (typeof oid === 'undefined') {
     oid = '';
   } else if (util.isArray(oid)) {
@@ -44,11 +44,11 @@ function Oid(oid) {
 }
 
 /**
- * Method to read an Oid object
- * @param  {Uint8Array}  input  Where to read the Oid from
+ * Method to read an OID object
+ * @param  {Uint8Array}  input  Where to read the OID from
  * @return {Number}             Number of read bytes
  */
-Oid.prototype.read = function (input) {
+OID.prototype.read = function (input) {
   if (input.length >= 1) {
     var length = input[0];
     if (input.length >= 1+length) {
@@ -60,10 +60,10 @@ Oid.prototype.read = function (input) {
 };
 
 /**
- * Serialize an Oid object
- * @return {Uint8Array} Array with the serialized value the Oid
+ * Serialize an OID object
+ * @return {Uint8Array} Array with the serialized value the OID
  */
-Oid.prototype.write = function () {
+OID.prototype.write = function () {
   return util.str2Uint8Array(
     String.fromCharCode(this.oid.length)+this.oid);
 };
