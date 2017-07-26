@@ -42,9 +42,15 @@ import util from '../util.js';
 /**
  * @constructor
  */
-export default function MPI() {
+export default function MPI(data) {
   /** An implementation dependent integer */
-  this.data = null;
+  if (data instanceof BigInteger) {
+    this.fromBigInteger(data);
+  } else if (typeof data === 'string') {
+    this.fromBytes(data);
+  } else {
+    this.data = null;
+  }
 }
 
 /**
