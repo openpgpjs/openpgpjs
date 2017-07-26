@@ -26,12 +26,12 @@
 
 import util from '../util.js';
 
-module.exports = EcdhSymmetricKey;
+module.exports = ECDHSymmetricKey;
 
 /**
  * @constructor
  */
-function EcdhSymmetricKey(data) {
+function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
   } else if (typeof data === 'string') {
@@ -43,11 +43,11 @@ function EcdhSymmetricKey(data) {
 }
 
 /**
- * Read an EcdhSymmetricKey from an Uint8Array
+ * Read an ECDHSymmetricKey from an Uint8Array
  * @param  {Uint8Array}  input  Where to read the encoded symmetric key from
  * @return {Number}             Number of read bytes
  */
-EcdhSymmetricKey.prototype.read = function (input) {
+ECDHSymmetricKey.prototype.read = function (input) {
   if (input.length >= 1)
   {
     var length = input[0];
@@ -61,10 +61,10 @@ EcdhSymmetricKey.prototype.read = function (input) {
 };
 
 /**
- * Write an EcdhSymmetricKey as an Uint8Array
+ * Write an ECDHSymmetricKey as an Uint8Array
  * @return  {Uint8Array}  An array containing the value
  */
-EcdhSymmetricKey.prototype.write = function () {
+ECDHSymmetricKey.prototype.write = function () {
   return util.concatUint8Array([
     new Uint8Array([this.data.length]),
     this.data]);

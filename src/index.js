@@ -79,21 +79,21 @@ export { default as Keyid } from './type/keyid';
 
 /**
  * @see module:type/ecdh_symkey
- * @name module:openpgp.EcdhSymmetricKey
+ * @name module:openpgp.ECDHSymmetricKey
  */
-export { default as EcdhSymmetricKey } from './type/ecdh_symkey';
+export { default as ECDHSymmetricKey } from './type/ecdh_symkey';
 
 /**
  * @see module:type/kdf_params
- * @name module:openpgp.KdfParams
+ * @name module:openpgp.KDFParams
  */
-export { default as KdfParams } from './type/kdf_params';
+export { default as KDFParams } from './type/kdf_params';
 
 /**
  * @see module:type/oid
- * @name module:openpgp.Oid
+ * @name module:openpgp.OID
  */
-export { default as Oid } from './type/oid';
+export { default as OID } from './type/oid';
 
 /**
  * @see module:encoding/armor
