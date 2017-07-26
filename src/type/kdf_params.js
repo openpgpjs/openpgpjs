@@ -26,26 +26,26 @@
 
 import enums from '../enums.js';
 
-module.exports = KdfParams;
+module.exports = KDFParams;
 
 /**
  * @constructor
  * @param  {enums.hash}       hash    Hash algorithm
  * @param  {enums.symmetric}  cipher  Symmetric algorithm
  */
-function KdfParams(hash, cipher) {
+function KDFParams(hash, cipher) {
   this.hash = hash || enums.hash.sha1;
   this.cipher = cipher || enums.symmetric.aes128;
 }
 
 /**
- * Read KdfParams from an Uint8Array
- * @param  {Uint8Array}  input  Where to read the KdfParams from
+ * Read KDFParams from an Uint8Array
+ * @param  {Uint8Array}  input  Where to read the KDFParams from
  * @return {Number}             Number of read bytes
  */
-KdfParams.prototype.read = function (input) {
+KDFParams.prototype.read = function (input) {
   if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
-    throw new Error('Cannot read KdfParams');
+    throw new Error('Cannot read KDFParams');
   }
   this.hash = input[2];
   this.cipher = input[3];
@@ -53,9 +53,9 @@ KdfParams.prototype.read = function (input) {
 };
 
 /**
- * Write KdfParams to an Uint8Array
- * @return  {Uint8Array}  Array with the KdfParams value
+ * Write KDFParams to an Uint8Array
+ * @return  {Uint8Array}  Array with the KDFParams value
  */
-KdfParams.prototype.write = function () {
+KDFParams.prototype.write = function () {
   return new Uint8Array([3, 1, this.hash, this.cipher]);
 };

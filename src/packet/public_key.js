@@ -93,24 +93,15 @@ PublicKey.prototype.read = function (bytes) {
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
 
-    var param_count = crypto.getPubKeyParamCount(this.algorithm);
-    this.params = [];
+    var types = crypto.getPubKeyParamTypes(this.algorithm);
+    this.params = crypto.constructParams(new Array(types.length), types);
 
-    var bmpi = bytes.subarray(pos, bytes.length);
+    var b = bytes.subarray(pos, bytes.length);
     var p = 0;
 
-    for (var i = 0; i < param_count && p < bmpi.length; i++) {
-      if ((this.algorithm === 'ecdsa' || this.algorithm === 'ecdh') && i === 0) {
-        this.params[i] = new type_oid();
-      } else if (this.algorithm === 'ecdh' && i === 2) {
-        this.params[i] = new type_kdf_params();
-      } else {
-        this.params[i] = new type_mpi();
-      }
-
-      p += this.params[i].read(bmpi.subarray(p, bmpi.length));
-
-      if (p > bmpi.length) {
+    for (var i = 0; i < types.length && p < b.length; i++) {
+      p += this.params[i].read(b.subarray(p, b.length));
+      if (p > b.length) {
         throw new Error('Error reading MPI @:' + p);
       }
     }

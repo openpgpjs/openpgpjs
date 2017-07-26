@@ -78,20 +78,11 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 
   var i = 10;
 
-  var integerCount = crypto.getEncSessionKeyParamCount(this.publicKeyAlgorithm);
+  var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  this.encrypted = crypto.constructParams(new Array(types.length), types);
 
-
-  this.encrypted = [];
-
-  for (var j = 0; j < integerCount; j++) {
-    var param;
-    if (this.publicKeyAlgorithm === 'ecdh' && j === 1) {
-      param = new type_ecdh_symkey();
-    } else {
-      param = new type_mpi();
-    }
-    i += param.read(bytes.subarray(i, bytes.length));
-    this.encrypted.push(param);
+  for (var j = 0; j < types.length; j++) {
+    i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
   }
 };
 
