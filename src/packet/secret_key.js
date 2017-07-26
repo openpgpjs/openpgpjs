@@ -89,7 +89,7 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
     return new Error("Hash mismatch.");
   }
 
-  var mpis = crypto.getPrivateMpiCount(algorithm);
+  var mpis = crypto.getPrivKeyParamCount(algorithm);
 
   var j = 0;
   var mpi = [];
@@ -104,7 +104,7 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
 
 function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
   var arr = [];
-  var discard = crypto.getPublicMpiCount(algorithm);
+  var discard = crypto.getPubKeyParamCount(algorithm);
 
   for (var i = discard; i < mpi.length; i++) {
     arr.push(mpi[i].write());
@@ -147,7 +147,7 @@ SecretKey.prototype.read = function (bytes) {
     if (parsedMPI instanceof Error) {
       throw parsedMPI;
     }
-    this.mpi = this.mpi.concat(parsedMPI);
+    this.params = this.params.concat(parsedMPI);
     this.isDecrypted = true;
   }
 
@@ -161,7 +161,7 @@ SecretKey.prototype.write = function () {
 
   if (!this.encrypted) {
     arr.push(new Uint8Array([0]));
-    arr.push(write_cleartext_mpi('mod', this.algorithm, this.mpi));
+    arr.push(write_cleartext_mpi('mod', this.algorithm, this.params));
   } else {
     arr.push(this.encrypted);
   }
@@ -188,7 +188,7 @@ SecretKey.prototype.encrypt = function (passphrase) {
 
   var s2k = new type_s2k(),
     symmetric = 'aes256',
-    cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
+    cleartext = write_cleartext_mpi('sha1', this.algorithm, this.params),
     key = produceEncryptionKey(s2k, passphrase, symmetric),
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
@@ -267,7 +267,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
   if (parsedMPI instanceof Error) {
     return false;
   }
-  this.mpi = this.mpi.concat(parsedMPI);
+  this.params = this.params.concat(parsedMPI);
   this.isDecrypted = true;
   this.encrypted = null;
   return true;
@@ -276,8 +276,8 @@ SecretKey.prototype.decrypt = function (passphrase) {
 SecretKey.prototype.generate = function (bits, curve) {
   var self = this;
 
-  return crypto.generateMpi(self.algorithm, bits, curve).then(function(mpi) {
-    self.mpi = mpi;
+  return crypto.generateParams(self.algorithm, bits, curve).then(function(params) {
+    self.params = params;
     self.isDecrypted = true;
   });
 };
@@ -285,10 +285,10 @@ SecretKey.prototype.generate = function (bits, curve) {
 /**
  * Clear private MPIs, return to initial state
  */
-SecretKey.prototype.clearPrivateMPIs = function () {
+SecretKey.prototype.clearPrivateParams = function () {
   if (!this.encrypted) {
     throw new Error('If secret key is not encrypted, clearing private MPIs is irreversible.');
   }
-  this.mpi = this.mpi.slice(0, crypto.getPublicMpiCount(this.algorithm));
+  this.params = this.params.slice(0, crypto.getPubKeyParamCount(this.algorithm));
   this.isDecrypted = false;
 };

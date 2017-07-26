@@ -380,7 +380,7 @@ Key.prototype.encrypt = function(passphrase) {
   var keys = this.getAllKeyPackets();
   for (var i = 0; i < keys.length; i++) {
     keys[i].encrypt(passphrase);
-    keys[i].clearPrivateMPIs();
+    keys[i].clearPrivateParams();
   }
 };
 
@@ -1279,8 +1279,8 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   packetlist.push(subkeySignaturePacket);
 
   if (!options.unlocked) {
-    secretKeyPacket.clearPrivateMPIs();
-    secretSubkeyPacket.clearPrivateMPIs();
+    secretKeyPacket.clearPrivateParams();
+    secretSubkeyPacket.clearPrivateParams();
   }
 
   return new Key(packetlist);
