@@ -169,6 +169,15 @@ export default {
     return str;
   },
 
+
+  hex2Uint8Array: function (hex) {
+    var result = new Uint8Array(hex.length/2);
+    for (var k=0; k<hex.length/2; k++) {
+      result[k] = parseInt(hex.substr(2*k, 2), 16);
+    }
+    return result;
+  },
+
   /**
    * Creating a hex string from an binary array of integers (0..255)
    * @param {String} str Array of bytes to convert
