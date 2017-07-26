@@ -38,14 +38,26 @@ import type_kdf_params from '../type/kdf_params.js';
 import type_mpi from '../type/mpi.js';
 import type_oid from '../type/oid.js';
 
-function BigInteger2mpi(bn) {
-  var mpi = new type_mpi();
-  mpi.fromBigInteger(bn);
-  return mpi;
+function createType(data, type) {
+  switch(type) {
+    case 'mpi':
+      return new type_mpi(data);
+    case 'oid':
+      return new type_oid(data);
+    case 'kdf':
+      return new type_kdf_params(data);
+    case 'ecdh_symkey':
+      return new type_ecdh_symkey(data);
+    default:
+      return null;
+  }
 }
 
-function mapResult(result) {
-  return result.map(BigInteger2mpi);
+function mapResult(result, types) {
+  for (var i=0; i < result.length; i++) {
+    result[i] = createType(result[i], types[i]);
+  }
+  return result;
 }
 
 export default {
@@ -53,38 +65,39 @@ export default {
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
+   * @param {Array<module:type/mpi>} publicParams Algorithm dependent multiprecision integers
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
    * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
    */
-  publicKeyEncrypt: function(algo, publicMPIs, data, fingerprint) {
+  publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
+    var types  = this.getEncSessionKeyParamTypes(algo);
     var result = (function() {
       var m;
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign':
           var rsa = new publicKey.rsa();
-          var n = publicMPIs[0].toBigInteger();
-          var e = publicMPIs[1].toBigInteger();
+          var n = publicParams[0].toBigInteger();
+          var e = publicParams[1].toBigInteger();
           m = data.toBigInteger();
-          return mapResult([rsa.encrypt(m, e, n)]);
+          return mapResult([rsa.encrypt(m, e, n)], types);
 
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
-          var p = publicMPIs[0].toBigInteger();
-          var g = publicMPIs[1].toBigInteger();
-          var y = publicMPIs[2].toBigInteger();
+          var p = publicParams[0].toBigInteger();
+          var g = publicParams[1].toBigInteger();
+          var y = publicParams[2].toBigInteger();
           m = data.toBigInteger();
-          return mapResult(elgamal.encrypt(m, g, p, y));
+          return mapResult(elgamal.encrypt(m, g, p, y), types);
 
         case 'ecdh':
           var ecdh = publicKey.elliptic.ecdh;
-          var curve = publicMPIs[0];
-          var kdf_params = publicMPIs[2];
-          var R = publicMPIs[1].toBigInteger();
+          var curve = publicParams[0];
+          var kdf_params = publicParams[2];
+          var R = publicParams[1].toBigInteger();
           var res = ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
-          return [BigInteger2mpi(res.V), new type_ecdh_symkey(res.C)];
+          return mapResult([res.V, res.C], types);
 
         default:
           return [];
@@ -98,7 +111,7 @@ export default {
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
+   * @param {Array<module:type/mpi>} publicParams Algorithm dependent multiprecision integers
    * of the public key part of the private key
    * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
    * of the private key used
@@ -146,8 +159,7 @@ export default {
       }
     })();
 
-    var result = new type_mpi();
-    result.fromBigInteger(bn);
+    var result = new type_mpi(bn);
     return result;
   },
 
@@ -155,7 +167,7 @@ export default {
    * @param {String} algo The public key algorithm
    * @return {Integer} The number of integers.
    */
-  getPrivateMpiCount: function(algo) {
+  getPrivKeyParamTypes: function(algo) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -165,27 +177,30 @@ export default {
         //   - MPI of RSA secret prime value p.
         //   - MPI of RSA secret prime value q (p < q).
         //   - MPI of u, the multiplicative inverse of p, mod q.
-        return 4;
+        return ['mpi', 'mpi', 'mpi', 'mpi'];
       case 'elgamal':
         // Algorithm-Specific Fields for Elgamal secret keys:
         //   - MPI of Elgamal secret exponent x.
-        return 1;
+        return ['mpi'];
       case 'dsa':
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
-        return 1;
+        return ['mpi'];
       case 'ecdh':
       case 'ecdsa':
         // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
         //   - MPI of an integer representing the secret key.
-        return 1;
+        return ['mpi'];
       default:
         throw new Error('Unknown algorithm');
     }
   },
 
-  getPublicMpiCount: function(algo) {
-    // - A series of multiprecision integers comprising the key material:
+  getPrivKeyParamCount: function(algo) {
+    return this.getPrivKeyParamTypes(algo).length;
+  },
+
+  getPubKeyParamTypes: function(algo) {
     //   Algorithm-Specific Fields for RSA public keys:
     //       - a multiprecision integer (MPI) of RSA public modulus n;
     //       - an MPI of RSA public encryption exponent e.
@@ -193,42 +208,71 @@ export default {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
-        return 2;
-
+        return ['mpi', 'mpi'];
         //   Algorithm-Specific Fields for Elgamal public keys:
         //     - MPI of Elgamal prime p;
         //     - MPI of Elgamal group generator g;
         //     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
       case 'elgamal':
-        return 3;
-
+        return ['mpi', 'mpi', 'mpi'];
         //   Algorithm-Specific Fields for DSA public keys:
         //       - MPI of DSA prime p;
         //       - MPI of DSA group order q (q is a prime divisor of p-1);
         //       - MPI of DSA group generator g;
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
-        return 4;
-
+        return ['mpi', 'mpi', 'mpi', 'mpi'];
         //   Algorithm-Specific Fields for ECDSA public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
       case 'ecdsa':
-        return 2;
-
+        return ['oid', 'mpi'];
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
         //       - variable-length field containing KDF parameters.
       case 'ecdh':
-        return 3;
+        return ['oid', 'mpi', 'kdf'];
+      default:
+        throw new Error('Unknown algorithm.');
+    }
+  },
+
+  getPubKeyParamCount: function(algo) {
+    return this.getPubKeyParamTypes(algo).length;
+  },
+
+  getEncSessionKeyParamTypes: function(algo) {
+    switch (algo) {
+      //    Algorithm-Specific Fields for RSA encrypted session keys:
+      //        - MPI of RSA encrypted value m**e mod n.
+      case 'rsa_encrypt':
+      case 'rsa_encrypt_sign':
+        return ['mpi'];
+
+      //    Algorithm-Specific Fields for Elgamal encrypted session keys:
+      //        - MPI of Elgamal value g**k mod p
+      //        - MPI of Elgamal value m * y**k mod p
+      case 'elgamal':
+        return ['mpi', 'mpi'];
+
+      //    Algorithm-Specific Fields for ECDH encrypted session keys:
+      //        - MPI containing the ephemeral key used to establish the shared secret
+      //        - EcdhSymmetricKey
+      case 'ecdh':
+        return ['mpi', 'ecdh_symkey'];
 
       default:
         throw new Error('Unknown algorithm.');
     }
   },
 
-  generateMpi: function(algo, bits, curve) {
+  getEncSessionKeyParamCount: function(algo) {
+    return this.getEncSessionKeyParamTypes(algo).length;
+  },
+
+  generateParams: function(algo, bits, curve) {
+    var types  = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -236,33 +280,17 @@ export default {
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          var output = [];
-          output.push(keyObject.n);
-          output.push(keyObject.ee);
-          output.push(keyObject.d);
-          output.push(keyObject.p);
-          output.push(keyObject.q);
-          output.push(keyObject.u);
-          return mapResult(output);
+          return mapResult([keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u], types);
         });
 
       case 'ecdsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return [
-            new type_oid(keyObject.oid),
-            BigInteger2mpi(keyObject.R),
-            BigInteger2mpi(keyObject.r)
-          ];
+          return mapResult([keyObject.oid, keyObject.R, keyObject.r], types);
         });
 
       case 'ecdh':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return [
-            new type_oid(keyObject.oid),
-            BigInteger2mpi(keyObject.R),
-            new type_kdf_params(keyObject.hash, keyObject.cipher),
-            BigInteger2mpi(keyObject.r)
-          ];
+          return mapResult([keyObject.oid, keyObject.R, [keyObject.hash, keyObject.cipher], keyObject.r], types);
         });
 
       default:

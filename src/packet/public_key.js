@@ -51,12 +51,8 @@ export default function PublicKey() {
   /** Key creation date.
    * @type {Date} */
   this.created = new Date();
-  /** A list of multiprecision integers
-   * @type {module:type/mpi} */
-  this.mpi = [];
-  /** Public key algorithm
-   * @type {module:enums.publicKey} */
-  this.algorithm = 'rsa_sign';
+  /* Algorithm specific params */
+  this.params = [];
   // time in days (V3 only)
   this.expirationTimeV3 = 0;
   /**
@@ -97,22 +93,22 @@ PublicKey.prototype.read = function (bytes) {
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
 
-    var mpicount = crypto.getPublicMpiCount(this.algorithm);
-    this.mpi = [];
+    var param_count = crypto.getPubKeyParamCount(this.algorithm);
+    this.params = [];
 
     var bmpi = bytes.subarray(pos, bytes.length);
     var p = 0;
 
-    for (var i = 0; i < mpicount && p < bmpi.length; i++) {
+    for (var i = 0; i < param_count && p < bmpi.length; i++) {
       if ((this.algorithm === 'ecdsa' || this.algorithm === 'ecdh') && i === 0) {
-        this.mpi[i] = new type_oid();
+        this.params[i] = new type_oid();
       } else if (this.algorithm === 'ecdh' && i === 2) {
-        this.mpi[i] = new type_kdf_params();
+        this.params[i] = new type_kdf_params();
       } else {
-        this.mpi[i] = new type_mpi();
+        this.params[i] = new type_mpi();
       }
 
-      p += this.mpi[i].read(bmpi.subarray(p, bmpi.length));
+      p += this.params[i].read(bmpi.subarray(p, bmpi.length));
 
       if (p > bmpi.length) {
         throw new Error('Error reading MPI @:' + p);
@@ -147,10 +143,10 @@ PublicKey.prototype.write = function () {
   }
   arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
 
-  var mpicount = crypto.getPublicMpiCount(this.algorithm);
+  var param_count = crypto.getPubKeyParamCount(this.algorithm);
 
-  for (var i = 0; i < mpicount; i++) {
-    arr.push(this.mpi[i].write());
+  for (var i = 0; i < param_count; i++) {
+    arr.push(this.params[i].write());
   }
 
   return util.concatUint8Array(arr);
@@ -183,7 +179,7 @@ PublicKey.prototype.getKeyId = function () {
   if (this.version === 4) {
     this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
   } else if (this.version === 3) {
-    var arr = this.mpi[0].write();
+    var arr = this.params[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
   }
   return this.keyid;
@@ -202,9 +198,9 @@ PublicKey.prototype.getFingerprint = function () {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
-    var mpicount = crypto.getPublicMpiCount(this.algorithm);
-    for (var i = 0; i < mpicount; i++) {
-      toHash += this.mpi[i].toBytes();
+    var param_count = crypto.getPubKeyParamCount(this.algorithm);
+    for (var i = 0; i < param_count; i++) {
+      toHash += this.params[i].toBytes();
     }
     this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
   }
@@ -217,15 +213,15 @@ PublicKey.prototype.getFingerprint = function () {
  * @return {int} Number of bits
  */
 PublicKey.prototype.getBitSize = function () {
-  return this.mpi[0].byteLength() * 8;
+  return this.params[0].byteLength() * 8;
 };
 
 /**
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {
-  for (var i = 0; i < this.mpi.length; i++) {
-    this.mpi[i] = type_mpi.fromClone(this.mpi[i]);
+  for (var i = 0; i < this.params.length; i++) {
+    this.params[i] = type_mpi.fromClone(this.params[i]);
   }
   if (this.keyid) {
     this.keyid = type_keyid.fromClone(this.keyid);

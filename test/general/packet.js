@@ -191,13 +191,13 @@ describe("Packet", function() {
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      enc.encrypt({ mpi: mpi });
+      enc.encrypt({ params: mpi });
 
       msg.push(enc);
 
       msg2.read(msg.write());
 
-      msg2[0].decrypt({ mpi: mpi });
+      msg2[0].decrypt({ params: mpi });
 
       expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
       expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
@@ -445,8 +445,8 @@ describe("Packet", function() {
         return mpi;
       });
 
-      key[0].mpi = mpi;
-
+      key[0].params = mpi;
+      key[0].algorithm = "rsa_sign";
       key[0].encrypt('hello');
 
       var raw = key.write();
@@ -455,7 +455,7 @@ describe("Packet", function() {
       key2.read(raw);
       key2[0].decrypt('hello');
 
-      expect(key[0].mpi.toString()).to.equal(key2[0].mpi.toString());
+      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
     });
   });
 
@@ -473,7 +473,8 @@ describe("Packet", function() {
           return mpi;
         });
 
-        key.mpi = mpi;
+        key.params = mpi;
+        key.algorithm = "rsa_sign";
 
         var signed = new openpgp.packet.List(),
             literal = new openpgp.packet.Literal(),
