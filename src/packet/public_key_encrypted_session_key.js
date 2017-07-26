@@ -55,10 +55,7 @@ export default function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
-  this.publicKeyAlgorithm = 'rsa_encrypt';
-
   this.sessionKey = null;
-  this.sessionKeyAlgorithm = 'aes256';
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
@@ -81,34 +78,20 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 
   var i = 10;
 
-  var integerCount = (function(algo) {
-    switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-        return 1;
+  var integerCount = crypto.getEncSessionKeyParamCount(this.publicKeyAlgorithm);
 
-      case 'elgamal':
-        return 2;
-
-      case 'ecdh':
-        return 2;
-
-      default:
-        throw new Error("Invalid algorithm.");
-    }
-  })(this.publicKeyAlgorithm);
 
   this.encrypted = [];
 
   for (var j = 0; j < integerCount; j++) {
-    var mpi;
+    var param;
     if (this.publicKeyAlgorithm === 'ecdh' && j === 1) {
-      mpi = new type_ecdh_symkey();
+      param = new type_ecdh_symkey();
     } else {
-      mpi = new type_mpi();
+      param = new type_mpi();
     }
-    i += mpi.read(bytes.subarray(i, bytes.length));
-    this.encrypted.push(mpi);
+    i += param.read(bytes.subarray(i, bytes.length));
+    this.encrypted.push(param);
   }
 };
 
@@ -136,20 +119,20 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
   var checksum = util.calc_checksum(this.sessionKey);
   data += util.Uint8Array2str(util.writeNumber(checksum, 2));
 
-  var mpi;
+  var param;
   if (this.publicKeyAlgorithm === 'ecdh') {
-    mpi = util.str2Uint8Array(crypto.pkcs5.addPadding(data));
+    param = util.str2Uint8Array(crypto.pkcs5.addPadding(data));
   } else {
-    mpi = new type_mpi();
-    mpi.fromBytes(crypto.pkcs1.eme.encode(
+    param = new type_mpi();
+    param.fromBytes(crypto.pkcs1.eme.encode(
       data,
-      key.mpi[0].byteLength()));
+      key.params[0].byteLength()));
   }
 
   this.encrypted = crypto.publicKeyEncrypt(
     this.publicKeyAlgorithm,
-    key.mpi,
-    mpi,
+    key.params,
+    param,
     key.fingerprint);
 };
 
@@ -164,7 +147,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
 PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
   var result = crypto.publicKeyDecrypt(
     this.publicKeyAlgorithm,
-    key.mpi,
+    key.params,
     this.encrypted,
     key.fingerprint).toBytes();
 
