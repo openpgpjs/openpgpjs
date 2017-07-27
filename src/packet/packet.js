@@ -20,7 +20,6 @@
  * @requires util
  * @module packet/packet
  */
-
 'use strict';
 
 import util from '../util.js';
@@ -71,6 +70,18 @@ export default {
     }
   },
 
+  writePartialLength: function(power) {
+    if (power < 0 || power > 30) {
+      throw new Error('Partial Length power must be between 1 and 30');
+    }
+    return new Uint8Array([224 + power]);
+  },
+
+  writeTag: function(tag_type) {
+    /* we're only generating v4 packet headers here */
+    return new Uint8Array([0xC0 | tag_type]);
+  },
+
   /**
    * Writes a packet header version 4 with the given tag_type and length to a
    * string
@@ -81,7 +92,7 @@ export default {
    */
   writeHeader: function(tag_type, length) {
     /* we're only generating v4 packet headers here */
-    return util.concatUint8Array([new Uint8Array([0xC0 | tag_type]), this.writeSimpleLength(length)]);
+    return util.concatUint8Array([this.writeTag(tag_type), this.writeSimpleLength(length)]);
   },
 
   /**

@@ -179,8 +179,9 @@ var crc_table = [
     0x57dd8538
 ];
 
-function createcrc24(input) {
-  var crc = 0xB704CE;
+function createcrc24(input, previous) {
+
+  var crc = typeof(previous) !== 'undefined' ? ~~previous : 0xb704ce;
 
   for (var index = 0; index < input.length; index++) {
     crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index]) & 0xff];
@@ -392,5 +393,7 @@ function armor(messagetype, body, partindex, parttotal) {
 
 export default {
   encode: armor,
-  decode: dearmor
+  decode: dearmor,
+  createcrc24: createcrc24,
+  addheader: addheader
 };

@@ -42,6 +42,8 @@ export { default as SecretSubkey } from './secret_subkey.js';
 export { default as Signature } from './signature.js';
 /** @see module:packet/trust */
 export { default as Trust } from './trust.js';
+/** @see module:packet/packet */
+export { default as packet } from './packet.js';
 
 /**
  * Allocate a new packet

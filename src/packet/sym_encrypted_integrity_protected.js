@@ -39,7 +39,6 @@ import crypto from '../crypto';
 import enums from '../enums.js';
 import asmCrypto from 'asmcrypto-lite';
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -162,17 +161,17 @@ function aesDecrypt(algo, ct, key) {
 }
 
 function nodeEncrypt(algo, prefix, pt, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
+  key = Buffer.from(key);
+  const iv = Buffer.from(new Uint8Array(crypto.cipher[algo].blockSize));
   const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
-  const ct = cipherObj.update(new Buffer(util.concatUint8Array([prefix, pt])));
+  const ct = cipherObj.update(Buffer.from(util.concatUint8Array([prefix, pt])));
   return new Uint8Array(ct);
 }
 
 function nodeDecrypt(algo, ct, key) {
-  ct = new Buffer(ct);
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
+  ct = Buffer.from(ct);
+  key = Buffer.from(key);
+  const iv = Buffer.from(new Uint8Array(crypto.cipher[algo].blockSize));
   const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
   const pt = decipherObj.update(ct);
   return new Uint8Array(pt);

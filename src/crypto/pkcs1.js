@@ -133,12 +133,16 @@ export default {
      * @param {Integer} emLen intended length in octets of the encoded message
      * @returns {String} encoded message
      */
-    encode: function(algo, M, emLen) {
-      var i;
-      // Apply the hash function to the message M to produce a hash value H
-      var H = util.Uint8Array2str(hash.digest(algo, util.str2Uint8Array(M)));
-      if (H.length !== hash.getHashByteLength(algo)) {
-        throw new Error('Invalid hash length');
+    encode: function(algo, M, emLen, hashed) {
+      var i, H;
+      if (hashed) {
+        H = M;
+      } else {
+        // Apply the hash function to the message M to produce a hash value H
+        H = util.Uint8Array2str(hash.digest(algo, util.str2Uint8Array(M)));
+        if (H.length !== hash.getHashByteLength(algo)) {
+          throw new Error('Invalid hash length');
+        }
       }
       // produce an ASN.1 DER value for the hash function used.
       // Let T be the full hash prefix

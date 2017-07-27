@@ -1,11 +1,11 @@
 'use strict';
 
-var message = require('./message.js'),
-  crypto = require('./crypto.js'),
-  packet = require('./packet.js');
+import MessageStream from './message';
+import CipherFeedbackStream from './cipher';
+import HeaderPacketStream from './header';
 
-module.exports = {
-  MessageStream: message.MessageStream,
-  CipherFeedbackStream: crypto.CipherFeedback,
-  HeaderPacketStream: packet.HeaderPacketStream
-}
+export {
+  MessageStream,
+  CipherFeedbackStream,
+  HeaderPacketStream
+};

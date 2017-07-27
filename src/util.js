@@ -282,6 +282,20 @@ export default {
   },
 
   /**
+   * Convert a Buffer to a Uint8Array
+   * @function module:util.buffer2Uint8Array
+   * @param {Buffer} buffer Buffer to convert
+   * @return {Uint8Array} The array of (binary) integers
+   */
+  buffer2Uint8Array: function(buffer) {
+    var arr = new Uint8Array(buffer.length);
+    for (var i = 0; i < buffer.length; i++) {
+      arr[i] = buffer[i];
+    }
+    return arr;
+  },
+
+  /**
    * Concat Uint8arrays
    * @function module:util.concatUint8Array
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
@@ -449,7 +463,6 @@ export default {
     return "unknown";
   },
 
-  inherits: require('util').inherits,
 
   /**
    * Get native Web Cryptography api, only the current version of the spec.
@@ -539,19 +552,6 @@ export default {
     }
 
     return require('crypto');
-  },
-
-  /**
-   * Get native Node.js Buffer constructor. This should be used since
-   * Buffer is not available under browserify.
-   * @return {Function}   The Buffer constructor or 'undefined'
-   */
-  getNodeBuffer: function() {
-    if (!this.detectNode()) {
-      return;
-    }
-
-    return require('buffer').Buffer;
   }
 
 };

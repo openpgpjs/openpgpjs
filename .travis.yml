@@ -9,12 +9,12 @@ addons:
 matrix:
   fast_finish: true
   include:
-    - node_js: "0.12"
-      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='0.12'
     - node_js: "4"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='4.2'
     - node_js: "5"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='5'
+    - node_js: "6"
+      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='6'
     - node_js: "4"
       env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 46'
     - node_js: "4"

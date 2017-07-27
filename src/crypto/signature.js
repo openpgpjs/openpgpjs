@@ -4,7 +4,6 @@
  * @requires crypto/pkcs1
  * @requires crypto/public_key
  * @module crypto/signature */
-
 'use strict';
 
 import util from '../util';
@@ -72,7 +71,7 @@ export default {
    * @param {Uint8Array} data Data to be signed
    * @return {Array<module:type/mpi>}
    */
-  sign: function(hash_algo, algo, keyIntegers, data) {
+  sign: function(hash_algo, algo, keyIntegers, data, hashed) {
 
     data = util.Uint8Array2str(data);
 
@@ -88,8 +87,13 @@ export default {
         var rsa = new publicKey.rsa();
         var d = keyIntegers[2].toBigInteger();
         var n = keyIntegers[0].toBigInteger();
-        m = pkcs1.emsa.encode(hash_algo,
-          data, keyIntegers[0].byteLength());
+        if (hashed) {
+          m = pkcs1.emsa.encode(hash_algo, data, keyIntegers[0].byteLength(), true);
+        } else {
+          m = pkcs1.emsa.encode(hash_algo,
+            data, keyIntegers[0].byteLength());
+        }
+
         return util.str2Uint8Array(rsa.sign(m, d, n).toMPI());
 
       case 17:

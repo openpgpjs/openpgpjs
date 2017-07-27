@@ -31,12 +31,16 @@
  * @module packet/signature
  */
 
+'use strict';
+
 import util from '../util.js';
 import packet from './packet.js';
 import enums from '../enums.js';
 import crypto from '../crypto';
 import type_mpi from '../type/mpi.js';
 import type_keyid from '../type/keyid.js';
+
+
 
 /**
  * @constructor
@@ -210,7 +214,7 @@ Signature.prototype.write = function () {
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  */
-Signature.prototype.sign = function (key, data) {
+Signature.prototype.sign = function (key, data, hashed) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -226,24 +230,33 @@ Signature.prototype.sign = function (key, data) {
 
   var trailer = this.calculateTrailer();
 
-  var toHash = null;
+  var hash, toHash = null;
 
-  switch (this.version) {
-    case 3:
-      toHash = util.concatUint8Array([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
-      break;
-    case 4:
-      toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
-      break;
-    default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+  if (hashed) {
+    // make sure we make a copy in case we need to use it again
+    hash = data.copy();
+    hash.update(util.Uint8Array2str(util.concatUint8Array([this.signatureData, trailer])));
+    hash = hash.digest();
+    toHash = hash;
+  } else {
+
+    switch (this.version) {
+      case 3:
+        toHash = util.concatUint8Array([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
+        break;
+      case 4:
+        toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+        break;
+      default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+    }
+
+    hash = crypto.hash.digest(hashAlgorithm, toHash);
   }
-
-  var hash = crypto.hash.digest(hashAlgorithm, toHash);
 
   this.signedHashValue = hash.subarray(0, 2);
 
   this.signature = crypto.signature.sign(hashAlgorithm,
-    publicKeyAlgorithm, key.mpi, toHash);
+    publicKeyAlgorithm, key.mpi, toHash, hashed);
 };
 
 /**

@@ -25,6 +25,7 @@
     "dist/openpgp.worker.min.js",
     "test/unittests.js",
     "test/general",
+    "test/stream",
     "test/crypto"
   ],
   "scripts": {
@@ -62,10 +63,7 @@
   },
   "dependencies": {
     "node-fetch": "^1.3.3",
-    "node-localstorage": "~1.3.0",
-    "zlibjs": "^0.2.0",
-    "buffer": "~3.0.2",
-    "readable-stream": "~1.0.33"
+    "node-localstorage": "~1.3.0"
   },
   "repository": {
     "type": "git",

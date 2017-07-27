@@ -27,7 +27,6 @@ import config from '../config';
 import asmCrypto from 'asmcrypto-lite';
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 export const ivLength = 12; // size of the IV in bytes
 const TAG_LEN = 16; // size of the tag in bytes
@@ -98,20 +97,20 @@ function webDecrypt(ct, key, iv) {
 }
 
 function nodeEncrypt(pt, key, iv) {
-  pt = new Buffer(pt);
-  key = new Buffer(key);
-  iv = new Buffer(iv);
+  pt = Buffer.from(pt);
+  key = Buffer.from(key);
+  iv = Buffer.from(iv);
   const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
-  const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
-  return Promise.resolve(new Uint8Array(ct));
+  const ct = Buffer.concat([Buffer.from(en.update(pt)), Buffer.from(en.final()), Buffer.from(en.getAuthTag())]); // append auth tag to ciphertext
+  return Promise.resolve(util.buffer2Uint8Array(ct));
 }
 
 function nodeDecrypt(ct, key, iv) {
-  ct = new Buffer(ct);
-  key = new Buffer(key);
-  iv = new Buffer(iv);
+  ct = Buffer.from(ct);
+  key = Buffer.from(key);
+  iv = Buffer.from(iv);
   const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
   de.setAuthTag(ct.slice(ct.length - TAG_LEN, ct.length)); // read auth tag at end of ciphertext
-  const pt = Buffer.concat([de.update(ct.slice(0, ct.length - TAG_LEN)), de.final()]);
-  return Promise.resolve(new Uint8Array(pt));
+  const pt = Buffer.concat([Buffer.from(de.update(ct.slice(0, ct.length - TAG_LEN))), Buffer.from(de.final())]);
+  return Promise.resolve(util.buffer2Uint8Array(pt));
 }

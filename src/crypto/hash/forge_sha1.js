@@ -5,9 +5,8 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
+import util from '../../util.js';
 
-var sha1 = module.exports = {};
-var util = require('./forge_util.js');
 
 // sha-1 padding bytes not initialized yet
 var _padding = null;
@@ -18,8 +17,8 @@ var _initialized = false;
  */
 function _init() {
   // create padding
-  _padding = String.fromCharCode(128);
-  _padding += util.fillString(String.fromCharCode(0x00), 64);
+  _padding = Buffer.alloc(65, 0x00);
+  _padding[0] = 128;
 
   // now initialized
   _initialized = true;
@@ -30,7 +29,7 @@ function _init() {
  *
  * @return a message digest object.
  */
-sha1.create = function() {
+function create() {
   // do initialization as necessary
   if(!_initialized) {
     _init();
@@ -40,7 +39,7 @@ sha1.create = function() {
   var _state = null;
 
   // input buffer
-  var _input = util.createBuffer();
+  var _input = Buffer.alloc(0)
 
   // used for word storage
   var _w = new Array(80);
@@ -64,7 +63,7 @@ sha1.create = function() {
   md.start = function() {
     md.messageLength = 0;
     md.messageLength64 = [0, 0];
-    _input = util.createBuffer();
+    _input = Buffer.alloc(0);
     _state = {
       h0: 0x67452301,
       h1: 0xEFCDAB89,
@@ -88,9 +87,7 @@ sha1.create = function() {
    * @return this digest object.
    */
   md.update = function(msg, encoding) {
-    if(encoding === 'utf8') {
-      msg = util.encodeUtf8(msg);
-    }
+    encoding = encoding === 'utf8' ? 'utf8' : 'binary';
 
     // update message length
     md.messageLength += msg.length;
@@ -98,15 +95,13 @@ sha1.create = function() {
     md.messageLength64[1] += msg.length >>> 0;
 
     // add bytes to input buffer
-    _input.putBytes(msg);
+    _input = Buffer.concat([_input, Buffer.from(msg, encoding)]);
 
     // process bytes
-    _update(_state, _w, _input);
+    var offset = _update(_state, _w, _input);
 
     // compact input buffer every 2K or if empty
-    if(_input.read > 2048 || _input.length() === 0) {
-      _input.compact();
-    }
+    _input = _input.slice(offset);
 
     return md;
   };
@@ -139,18 +134,21 @@ sha1.create = function() {
     // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
     // _padding starts with 1 byte with first bit is set in it which
     // is byte value 128, then there may be up to 63 other pad bytes
-    var padBytes = util.createBuffer();
-    padBytes.putBytes(_input.bytes());
-    // 64 - (remaining msg + 8 bytes msg length) mod 64
-    padBytes.putBytes(
-      _padding.substr(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)));
+    var padBytes = Buffer.concat([
+      _input,
+      // 64 - (remaining msg + 8 bytes msg length) mod 64
+      _padding.slice(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)),
+      Buffer.alloc(8)
+    ]);
+
 
     /* Now append length of the message. The length is appended in bits
     as a 64-bit number in big-endian order. Since we store the length in
     bytes, we must multiply the 64-bit length by 8 (or left shift by 3). */
-    padBytes.putInt32(
-      (md.messageLength64[0] << 3) | (md.messageLength64[0] >>> 28));
-    padBytes.putInt32(md.messageLength64[1] << 3);
+    var padLen = padBytes.length;
+    padBytes.writeInt32BE(
+      (md.messageLength64[0] << 3) | (md.messageLength64[0] >>> 28), padLen - 8);
+    padBytes.writeInt32BE(md.messageLength64[1] << 3, padLen - 4);
     var s2 = {
       h0: _state.h0,
       h1: _state.h1,
@@ -159,17 +157,17 @@ sha1.create = function() {
       h4: _state.h4
     };
     _update(s2, _w, padBytes);
-    var rval = util.createBuffer();
-    rval.putInt32(s2.h0);
-    rval.putInt32(s2.h1);
-    rval.putInt32(s2.h2);
-    rval.putInt32(s2.h3);
-    rval.putInt32(s2.h4);
-    return rval;
+    var rval = Buffer.alloc(20);
+    rval.writeInt32BE(s2.h0, 0);
+    rval.writeInt32BE(s2.h1, 4);
+    rval.writeInt32BE(s2.h2, 8);
+    rval.writeInt32BE(s2.h3, 12);
+    rval.writeInt32BE(s2.h4, 16);
+    return util.buffer2Uint8Array(rval);
   };
 
   return md;
-};
+}
 
 
 
@@ -183,7 +181,8 @@ sha1.create = function() {
 function _update(s, w, bytes) {
   // consume 512 bit (64 byte) chunks
   var t, a, b, c, d, e, f, i;
-  var len = bytes.length();
+  var len = bytes.length;
+  var offset = 0;
   while(len >= 64) {
     // the w array will be populated with sixteen 32-bit big-endian words
     // and then extended into 80 32-bit words according to SHA-1 algorithm
@@ -198,7 +197,8 @@ function _update(s, w, bytes) {
 
     // round 1
     for(i = 0; i < 16; ++i) {
-      t = bytes.getInt32();
+      t = bytes.readInt32BE(offset);
+      offset += 4;
       w[i] = t;
       f = d ^ (b & (c ^ d));
       t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
@@ -281,4 +281,7 @@ function _update(s, w, bytes) {
 
     len -= 64;
   }
+  return offset;
 }
+
+export default { create };

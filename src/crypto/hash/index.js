@@ -13,17 +13,18 @@ import asmCrypto from 'asmcrypto-lite';
 import Rusha from 'rusha';
 import md5 from './md5.js';
 import ripemd from './ripe-md.js';
+import forge_sha1 from './forge_sha1.js';
+import forge_sha256 from './forge_sha256.js';
 import util from '../../util.js';
 
 const rusha = new Rusha(),
-  nodeCrypto = util.getNodeCrypto(),
-  Buffer = util.getNodeBuffer();
+  nodeCrypto = util.getNodeCrypto();
 
 function node_hash(type) {
   return function (data) {
     var shasum = nodeCrypto.createHash(type);
-    shasum.update(new Buffer(data));
-    return new Uint8Array(shasum.digest());
+    shasum.update(Buffer.from(data));
+    return util.buffer2Uint8Array(shasum.digest());
   };
 }
 
