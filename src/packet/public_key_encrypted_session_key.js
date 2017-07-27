@@ -110,20 +110,17 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
   var checksum = util.calc_checksum(this.sessionKey);
   data += util.Uint8Array2str(util.writeNumber(checksum, 2));
 
-  var param;
+  var toEncrypt;
   if (this.publicKeyAlgorithm === 'ecdh') {
-    param = util.str2Uint8Array(crypto.pkcs5.addPadding(data));
+    toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
   } else {
-    param = new type_mpi();
-    param.fromBytes(crypto.pkcs1.eme.encode(
-      data,
-      key.params[0].byteLength()));
+    toEncrypt = new type_mpi(crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
   }
 
   this.encrypted = crypto.publicKeyEncrypt(
     this.publicKeyAlgorithm,
     key.params,
-    param,
+    toEncrypt,
     key.fingerprint);
 };
 
@@ -145,7 +142,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
   var checksum;
   var decoded;
   if (this.publicKeyAlgorithm === 'ecdh') {
-    decoded = crypto.pkcs5.removePadding(result);
+    decoded = crypto.pkcs5.decode(result);
     checksum = util.readNumber(util.str2Uint8Array(decoded.substr(decoded.length - 2)));
   } else {
     decoded = crypto.pkcs1.eme.decode(result);

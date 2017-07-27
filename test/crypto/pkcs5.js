@@ -16,7 +16,7 @@ describe('PKCS5 padding', function() {
   it('Add padding', function () {
     var s = '';
     while (s.length < 16) {
-      var r = pkcs5.addPadding(s);
+      var r = pkcs5.encode(s);
       // 0..7 -> 8, 8..15 -> 16
       var l = Math.ceil((s.length+1)/8)*8;
       var c = l - s.length;
@@ -30,12 +30,12 @@ describe('PKCS5 padding', function() {
     for (var k=1; k<=8; ++k) {
       var s = repeat(' ', 8-k);
       var r = s + repeat(String.fromCharCode(k), k);
-      var t = pkcs5.removePadding(r);
+      var t = pkcs5.decode(r);
       expect(t).to.equal(s);
     }
   });
   it('Invalid padding', function () {
-    expect(function () {pkcs5.removePadding(' ');}).to.throw(Error, /Invalid padding/);
-    expect(function () {pkcs5.removePadding('');}).to.throw(Error, /Invalid padding/);
+    expect(function () {pkcs5.decode(' ');}).to.throw(Error, /Invalid padding/);
+    expect(function () {pkcs5.decode('');}).to.throw(Error, /Invalid padding/);
   });
 });
