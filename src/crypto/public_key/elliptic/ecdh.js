@@ -86,7 +86,7 @@ function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
   R = curve.keyFromPublic(R.toByteArray());
   const S = v.derive(R);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  const C = aes_kw.wrap(Z, m);
+  const C = aes_kw.wrap(Z, m.toBytes());
   return {
     V: new BigInteger(v.getPublic()),
     C: C

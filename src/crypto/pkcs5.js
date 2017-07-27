@@ -18,26 +18,17 @@
 // Functions to add and remove PKCS5 padding
 
 /**
- * PKCS5 padding
- * @module crypto/pkcs5
- */
-
-function getPkcs5Padding(length) {
-  const c = 8 - (length % 8);
-  var result = [];
-  for (var i = 0; i < c; ++i) {
-    result.push(String.fromCharCode(c));
-  }
-  return result.join("");
-}
-
-/**
  * Add pkcs5 padding to a text.
  * @param  {String}  msg  Text to add padding
  * @return {String}       Text with padding added
  */
-function addPadding(msg) {
-  return msg + getPkcs5Padding(msg.length);
+function encode(msg) {
+  const c = 8 - (msg.length % 8);
+  var result = [];
+  for (var i = 0; i < c; ++i) {
+    result.push(String.fromCharCode(c));
+  }
+  return msg + result.join("");
 }
 
 /**
@@ -45,7 +36,7 @@ function addPadding(msg) {
  * @param  {String}  msg  Text to remove padding from
  * @return {String}       Text with padding removed
  */
-function removePadding(msg) {
+function decode(msg) {
   var len = msg.length;
   if (len > 0) {
     var c = msg.charCodeAt(len - 1);
@@ -57,6 +48,6 @@ function removePadding(msg) {
 }
 
 module.exports = {
-  addPadding: addPadding,
-  removePadding: removePadding
+  encode: encode,
+  decode: decode
 };
