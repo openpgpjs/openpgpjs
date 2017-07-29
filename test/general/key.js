@@ -527,7 +527,6 @@ describe('Key', function() {
     '=Q/kB',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-<<<<<<< HEAD
   var valid_binding_sig_among_many_expired_sigs_pub = [
     '-----BEGIN PGP PUBLIC KEY BLOCK-----',
     '',

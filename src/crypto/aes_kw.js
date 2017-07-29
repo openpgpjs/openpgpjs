@@ -15,8 +15,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of RFC 3394 Key Wrap & Key Unwrap funcions
+// Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
 
+import cipher from './cipher';
 import AES from 'aes';
 
 function createArrayBuffer(data) {
@@ -60,7 +61,7 @@ function pack() {
   return new Uint8Array(buffer);
 }
 
-function createCipher(key) {
+function formatKey(key) {
   var length = key.length;
   var buffer = createArrayBuffer(key);
   var view = new DataView(buffer);
@@ -68,12 +69,13 @@ function createCipher(key) {
   for (var i=0; i<length/4; ++i) {
     key[i] = view.getUint32(4*i);
   }
-  return new AES(key);
+  return key;
 }
 
 function wrap(key, data) {
+  key = pack(formatKey(key));
+  var aes =  new cipher["aes" + (key.length*8)](key);
   var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var aes = createCipher(key);
   var P = unpack(data);
   var A = IV;
   var R = P;
@@ -89,8 +91,10 @@ function wrap(key, data) {
       // B = A || R[i]
       B[2] = R[2*i];
       B[3] = R[2*i+1];
+      B = pack(B);
       // B = AES(K, B)
       B = aes.encrypt(B);
+      B = unpack(B);
       // A = MSB(64, B) ^ t
       A = B.subarray(0, 2);
       A[0] = A[0] ^ t[0];
@@ -104,8 +108,10 @@ function wrap(key, data) {
 }
 
 function unwrap(key, data) {
+  //key = pack(formatKey(key));
+  //var aes =  new cipher["aes" + (key.length*8)](key);
+  var aes = new AES(formatKey(key));
   var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var aes = createCipher(key);
   var C = unpack(data);
   var A = C.subarray(0, 2);
   var R = C.subarray(2);
@@ -122,7 +128,9 @@ function unwrap(key, data) {
       B[2] = R[2*i];
       B[3] = R[2*i+1];
       // B = AES-1(B)
+      //B = pack(B);
       B = aes.decrypt(B);
+      //B = unpack(B);
       // A = MSB(64, B)
       A = B.subarray(0, 2);
       // R[i] = LSB(64, B)
