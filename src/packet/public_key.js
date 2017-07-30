@@ -134,7 +134,7 @@ PublicKey.prototype.write = function () {
   }
   arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
 
-  var paramCount = crypto.getPubKeyParamCount(this.algorithm);
+  var paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
 
   for (var i = 0; i < paramCount; i++) {
     arr.push(this.params[i].write());
@@ -189,7 +189,7 @@ PublicKey.prototype.getFingerprint = function () {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
-    var paramCount = crypto.getPubKeyParamCount(this.algorithm);
+    var paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
     for (var i = 0; i < paramCount; i++) {
       toHash += this.params[i].toBytes();
     }
