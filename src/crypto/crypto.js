@@ -65,10 +65,9 @@ export default {
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicParams Algorithm dependent multiprecision integers
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} publicParams Algorithm dependent params
    * @param {module:type/mpi} data Data to be encrypted as MPI
-   * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
-   * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
+   * @return {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} encrypted session key parameters
    */
   publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
     var types  = this.getEncSessionKeyParamTypes(algo);
@@ -111,17 +110,13 @@ export default {
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicParams Algorithm dependent multiprecision integers
-   * of the public key part of the private key
-   * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
-   * of the private key used
-   * @param {module:type/mpi} data Data to be encrypted as MPI
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} keyIntegers Algorithm dependent params
+   * @param {String} fingerprint Recipient fingerprint
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
   publicKeyDecrypt: function(algo, keyIntegers, dataIntegers, fingerprint) {
     var p;
-
     var bn = (function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
@@ -163,9 +158,9 @@ export default {
     return result;
   },
 
-  /** Returns the number of integers comprising the private key of an algorithm
+  /** Returns the types comprising the private key of an algorithm
    * @param {String} algo The public key algorithm
-   * @return {Integer} The number of integers.
+   * @return {Array<String>} The array of types
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
@@ -196,10 +191,10 @@ export default {
     }
   },
 
-  getPrivKeyParamCount: function(algo) {
-    return this.getPrivKeyParamTypes(algo).length;
-  },
-
+  /** Returns the types comprising the public key of an algorithm
+   * @param {String} algo The public key algorithm
+   * @return {Array<String>} The array of types
+   */
   getPubKeyParamTypes: function(algo) {
     //   Algorithm-Specific Fields for RSA public keys:
     //       - a multiprecision integer (MPI) of RSA public modulus n;
@@ -230,7 +225,7 @@ export default {
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
-        //       - variable-length field containing KDF parameters.
+        //       - KDF: variable-length field containing KDF parameters.
       case 'ecdh':
         return ['oid', 'mpi', 'kdf'];
       default:
@@ -238,10 +233,10 @@ export default {
     }
   },
 
-  getPubKeyParamCount: function(algo) {
-    return this.getPubKeyParamTypes(algo).length;
-  },
-
+  /** Returns the types comprising the encrypted session key of an algorithm
+   * @param {String} algo The public key algorithm
+   * @return {Array<String>} The array of types
+   */
   getEncSessionKeyParamTypes: function(algo) {
     switch (algo) {
       //    Algorithm-Specific Fields for RSA encrypted session keys:
@@ -258,7 +253,7 @@ export default {
 
       //    Algorithm-Specific Fields for ECDH encrypted session keys:
       //        - MPI containing the ephemeral key used to establish the shared secret
-      //        - ECDHSymmetricKey
+      //        - ECDH Symmetric Key
       case 'ecdh':
         return ['mpi', 'ecdh_symkey'];
 
@@ -267,10 +262,10 @@ export default {
     }
   },
 
-  getEncSessionKeyParamCount: function(algo) {
-    return this.getEncSessionKeyParamTypes(algo).length;
-  },
-
+  /** Generate algorithm-specific key parameters
+   * @param {String} algo The public key algorithm
+   * @return {Array} The array of parameters
+   */
   generateParams: function(algo, bits, curve) {
     var types  = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {

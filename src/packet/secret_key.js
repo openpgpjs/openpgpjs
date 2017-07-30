@@ -103,7 +103,7 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
 
 function write_cleartext_params(hash_algorithm, algorithm, params) {
   var arr = [];
-  var numPublicParams = crypto.getPubKeyParamCount(algorithm);
+  var numPublicParams = crypto.getPubKeyParamTypes(algorithm).length;
 
   for (var i = numPublicParams; i < params.length; i++) {
     arr.push(params[i].write());
@@ -288,6 +288,6 @@ SecretKey.prototype.clearPrivateParams = function () {
   if (!this.encrypted) {
     throw new Error('If secret key is not encrypted, clearing private MPIs is irreversible.');
   }
-  this.params = this.params.slice(0, crypto.getPubKeyParamCount(this.algorithm));
+  this.params = this.params.slice(0, crypto.getPubKeyParamTypes(this.algorithm).length);
   this.isDecrypted = false;
 };
