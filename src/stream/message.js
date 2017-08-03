@@ -11,6 +11,7 @@ import ArmorStream from './armor';
 import Signature from './signature';
 import * as keyModule from '../key.js';
 import ChunkedStream from './chunked.js';
+import CompressionStream from './compression.js';
 import util from 'util';
 
 
@@ -40,8 +41,15 @@ export default function MessageStream(keys, opts) {
     this.hash.update(prefix);
   }
 
-  this.encryptedPacket = new ChunkedStream();
-  this.literalPacket = new ChunkedStream();
+  this.encryptedPacket = new ChunkedStream({
+    header: config.integrity_protect ?
+      Buffer.from(packet.packet.writeTag(enums.packet.symEncryptedIntegrityProtected), 'binary') :
+      Buffer.from(packet.packet.writeTag(enums.packet.symmetricallyEncrypted), 'binary')
+  });
+
+  this.literalPacket = new ChunkedStream({
+    header: Buffer.from(packet.packet.writeTag(enums.packet.literal), 'binary')
+  });
 
   this.cipher = new CipherFeedbackStream(opts);
   this.keys = keys;
@@ -58,9 +66,32 @@ export default function MessageStream(keys, opts) {
     self.push(data);
   });
 
-  this.literalPacket.on('data', function(data) {
-    self.cipher.write(data);
+  this.literalPacket.once('end', function() {
+    if (self.signature) {
+      var write = self.compressionPacket ? self.compressionPacket.write.bind(self.compressionPacket) : self.cipher.write.bind(self.cipher);
+      write(self.signature.signaturePackets());
+    }
   });
+
+  if (opts.compression) {
+    this.compressionPacket = new CompressionStream({ algorithm: enums.write(enums.compression, opts.compression === true ? 'zip' : opts.compression) });
+    this.compressionPacket.on('data', function(data) {
+      self.cipher.write(data);
+    });
+    this.dataPacket = this.compressionPacket;
+    this.literalPacket.on('data', function(data) {
+      self.compressionPacket.write(data);
+    });
+    this.literalPacket.on('end', function() {
+      self.compressionPacket.end();
+    });
+  } else {
+    this.literalPacket.on('data', function(data) {
+      self.cipher.write(data);
+    });
+    this.dataPacket = this.literalPacket;
+  }
+
 
   if (config.integrity_protect) {
     var _cipherwrite = this.cipher.write.bind(this.cipher);
@@ -83,7 +114,7 @@ export default function MessageStream(keys, opts) {
 
 util.inherits(MessageStream, HeaderPacketStream);
 
-MessageStream.prototype.encryptedPacketHeader = function() {
+MessageStream.prototype.literalPacketHeader = function() {
   return Buffer.concat([
     Buffer.from([enums.write(enums.literal, 'utf8'), this.filename.length]),
     Buffer.from(this.filename),
@@ -121,12 +152,9 @@ MessageStream.prototype.getHeader = function() {
 
   // write encryption-type packet header
   if (config.integrity_protect) {
-    this.push(Buffer.from(packet.packet.writeTag(enums.packet.symEncryptedIntegrityProtected), 'binary'));
     // integrity protection starts with a 1 after the length header, and the
     // length header is only written after some streaming is done
     this.encryptedPacket.write(Buffer.from([1]));
-  } else {
-    this.push(Buffer.from(packet.packet.writeTag(enums.packet.symmetricallyEncrypted), 'binary'));
   }
 
   // write the one-pass signature packet,
@@ -134,15 +162,13 @@ MessageStream.prototype.getHeader = function() {
   if (this.signature) {
     // some strange hack to add a marker packet so modification detection
     // doesn't fail
-    this.cipher.write(Buffer.concat([Buffer.from(packet.packet.writeHeader(enums.packet.marker, 3), 'binary'), Buffer.from('PGP','binary')]));
-    this.cipher.write(this.signature.onePassSignaturePackets());
+    var write = this.compressionPacket ? this.compressionPacket.write.bind(this.compressionPacket) : this.cipher.write.bind(this.cipher);
+    write(Buffer.concat([Buffer.from(packet.packet.writeHeader(enums.packet.marker, 3), 'binary'), Buffer.from('PGP','binary')]));
+    write(this.signature.onePassSignaturePackets());
   }
 
-  // write the literal packet header
-  this.cipher.write(Buffer.from(packet.packet.writeTag(enums.packet.literal), 'binary'));
-
   // write the encrypted packet header inside the literal packet content
-  this.literalPacket.write(this.encryptedPacketHeader());
+  this.literalPacket.write(this.literalPacketHeader());
 
 };
 
@@ -162,10 +188,7 @@ MessageStream.prototype._flush = function(cb) {
     cb();
   });
 
-  this.literalPacket.once('end', function() {
-    if (self.signature) {
-      self.cipher.write(self.signature.signaturePackets());
-    }
+  this.dataPacket.once('end', function() {
     if (config.integrity_protect) {
       var mdc_header = Buffer.from([0xD3, 0x14]);
       self.hash.update(mdc_header);
