@@ -27,6 +27,7 @@ import config from '../config';
 import asmCrypto from 'asmcrypto-lite';
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
+const Buffer = util.getNativeBuffer();
 
 export const ivLength = 12; // size of the IV in bytes
 const TAG_LEN = 16; // size of the tag in bytes

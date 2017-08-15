@@ -4,7 +4,9 @@ import enums from '../enums.js';
 import crypto from '../crypto';
 import config from '../config';
 import packet from '../packet';
+import _util from '../util';
 
+const Buffer = _util.getNativeBuffer();
 
 export default class Signature {
 

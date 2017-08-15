@@ -18,7 +18,8 @@ import forge_sha256 from './forge_sha256.js';
 import util from '../../util.js';
 
 const rusha = new Rusha(),
-  nodeCrypto = util.getNodeCrypto();
+  nodeCrypto = util.getNodeCrypto(),
+  Buffer = util.getNativeBuffer();
 
 function node_hash(type) {
   return function (data) {

@@ -4,6 +4,9 @@ import HeaderPacketStream from './header.js';
 import armor from '../encoding/armor.js';
 import base64 from '../encoding/base64.js';
 import util from 'util';
+import _util from '../util.js';
+
+const Buffer = _util.getNativeBuffer();
 
 const ARMOR_HEADER = '-----BEGIN PGP MESSAGE-----\r\n';
 const ARMOR_FOOTER = '\r\n-----END PGP MESSAGE-----\r\n';

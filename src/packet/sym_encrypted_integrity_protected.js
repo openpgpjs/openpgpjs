@@ -38,7 +38,8 @@ import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';
 import asmCrypto from 'asmcrypto-lite';
-const nodeCrypto = util.getNodeCrypto();
+const nodeCrypto = util.getNodeCrypto(),
+  Buffer = util.getNativeBuffer();
 
 const VERSION = 1; // A one-octet version number of the data packet.
 

@@ -2,6 +2,9 @@
 
 import { Transform } from 'stream';
 import util from 'util';
+import _util from '../util.js';
+
+const Buffer = _util.getNativeBuffer();
 
 export default CipherFeedbackStream;
 

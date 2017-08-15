@@ -552,6 +552,19 @@ export default {
     }
 
     return require('crypto');
+  },
+
+  /**
+   * Get native Node.js Buffer constructor or browserify buffer, whichever is
+   * appropriate for our needs.
+   * @return {Function}   The Buffer constructor or 'undefined'
+   */
+  getNativeBuffer: function() {
+    if (!this.detectNode()) {
+      return Buffer;
+    }
+
+    return require('buffer').Buffer;
   }
 
 };

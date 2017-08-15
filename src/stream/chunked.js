@@ -3,6 +3,9 @@
 import packet from '../packet';
 import HeaderPacketStream from './header.js';
 import util from 'util';
+import _util from '../util.js';
+
+const Buffer = _util.getNativeBuffer();
 
 export default function ChunkedStream(opts) {
   opts = opts || {};
