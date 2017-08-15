@@ -20,7 +20,7 @@ export default function ArmorStream(message_stream) {
   var push = message_stream.push.bind(message_stream);
   message_stream.push = this._push.bind(this);
   this.on('data', function(data) {
-    push(data);
+    push(Buffer.from(data));
   });
   this.on('end', function() {
     push(null);
