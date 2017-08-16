@@ -1,6 +1,6 @@
 'use strict';
 
-import _util from '../util';
+import _util from '../util.js';
 import HeaderPacketStream from './header';
 import CipherFeedbackStream from './cipher';
 import packet from '../packet';
@@ -114,6 +114,14 @@ export default function MessageStream(keys, opts) {
 }
 
 util.inherits(MessageStream, HeaderPacketStream);
+
+MessageStream.prototype.push = function(data, encoding) {
+  if (data) {
+    HeaderPacketStream.prototype.push.call(this, Buffer.from(data), encoding);
+  } else {
+    HeaderPacketStream.prototype.push.call(this, null);
+  }
+};
 
 MessageStream.prototype.literalPacketHeader = function() {
   return Buffer.concat([
