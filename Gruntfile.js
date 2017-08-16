@@ -52,8 +52,7 @@ module.exports = function(grunt) {
               ignore: ['*.min.js'],
               presets: ["es2015"]
             }]
-          ],
-          plugin: [ 'browserify-derequire' ]
+          ]
         }
       },
       openpgp_debug: {
@@ -71,8 +70,7 @@ module.exports = function(grunt) {
               ignore: ['*.min.js'],
               presets: ["es2015"]
             }]
-          ],
-          plugin: [ 'browserify-derequire' ]
+          ]
         }
       },
       worker: {
