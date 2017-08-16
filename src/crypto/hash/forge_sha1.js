@@ -5,8 +5,9 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-import util from '../../util.js';
+import _util from '../../util.js';
 
+const Buffer = _util.getNativeBuffer();
 
 // sha-1 padding bytes not initialized yet
 var _padding = null;
@@ -163,7 +164,7 @@ function create() {
     rval.writeInt32BE(s2.h2, 8);
     rval.writeInt32BE(s2.h3, 12);
     rval.writeInt32BE(s2.h4, 16);
-    return util.buffer2Uint8Array(rval);
+    return _util.buffer2Uint8Array(rval);
   };
 
   return md;

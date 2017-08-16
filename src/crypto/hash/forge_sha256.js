@@ -16,6 +16,8 @@
 import util from 'util';
 import _util from '../../util.js';
 
+const Buffer = _util.getNativeBuffer();
+
 // sha-256 padding bytes not initialized yet
 var _padding = null;
 var _initialized = false;
