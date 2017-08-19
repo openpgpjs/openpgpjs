@@ -224,7 +224,7 @@ function splitHeaders(text) {
  */
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
-    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+    if (!/^[^: ]+: .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
   }
