@@ -224,8 +224,11 @@ function splitHeaders(text) {
  */
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
-    if (!/^[^: ]+: .+$/.test(headers[i])) {
+    if (!/^[^:\s]+: .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
+    }
+    if (config.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+      console.log('Unknown header: ' + headers[i]);
     }
   }
 }
