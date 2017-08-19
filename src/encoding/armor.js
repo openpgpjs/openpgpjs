@@ -227,7 +227,7 @@ function verifyHeaders(headers) {
     if (!/^[^:\s]+: .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
-    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+    if (config.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
       console.log('Unknown header: ' + headers[i]);
     }
   }
