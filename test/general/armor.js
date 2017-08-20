@@ -104,7 +104,7 @@ describe("ASCII armor", function() {
     var msg = getArmor(['Hash:SHA256']);
     msg = openpgp.cleartext.readArmored.bind(null, msg);
     expect(msg).to.throw(Error, /Improperly formatted armor header/);
-    msg = getArmor(['<script>: SHA256']);
+    msg = getArmor(['Ha sh: SHA256']);
     msg = openpgp.cleartext.readArmored.bind(null, msg);
     expect(msg).to.throw(Error, /Improperly formatted armor header/);
     msg = getArmor(['Hash SHA256']);
