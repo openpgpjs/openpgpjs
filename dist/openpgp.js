@@ -4841,7 +4841,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.8",
+  versionstring: "OpenPGP.js v2.5.9",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -12190,8 +12190,11 @@ function splitHeaders(text) {
  */
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
-    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+    if (!/^[^:\s]+: .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
+    }
+    if (_config2.default.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+      console.log('Unknown header: ' + headers[i]);
     }
   }
 }
@@ -20576,12 +20579,9 @@ exports.default = {
 
   readNumber: function readNumber(bytes) {
     var n = 0;
-
     for (var i = 0; i < bytes.length; i++) {
-      n <<= 8;
-      n += bytes[i];
+      n += Math.pow(256, i) * bytes[bytes.length - 1 - i];
     }
-
     return n;
   },
 
