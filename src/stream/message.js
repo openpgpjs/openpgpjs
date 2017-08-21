@@ -182,11 +182,12 @@ MessageStream.prototype.getHeader = function() {
 };
 
 MessageStream.prototype._transform = function(chunk, encoding, callback) {
-  HeaderPacketStream.prototype._transform.call(this, chunk, encoding);
+  var data = Buffer.from(chunk, encoding);
+  HeaderPacketStream.prototype._transform.call(this, data);
   if (this.signature) {
-    this.signature.update(chunk);
+    this.signature.update(data);
   }
-  this.literalPacket.write(chunk);
+  this.literalPacket.write(data);
   callback();
 };
 

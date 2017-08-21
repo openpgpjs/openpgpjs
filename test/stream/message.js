@@ -101,10 +101,10 @@ describe('Encrypted message', function() {
       encrypted = encrypted.data;
       var encrypted_message = openpgp.message.readArmored(encrypted);
 
-      var stream_encrypted_buffer = new Uint8Array([]);
+      var stream_encrypted_buffer = Buffer.alloc(0);
       var message_stream = new openpgp.stream.MessageStream([pubKey], { armor: true, privateKeys: [privKey] });
       message_stream.on('data', function(encrypted_data) {
-        stream_encrypted_buffer = util.concatUint8Array([stream_encrypted_buffer, bto8(encrypted_data)]);
+        stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer, encrypted_data]);
       });
       message_stream.on('end', function() {
         var packetList = new openpgp.packet.List(),
@@ -116,7 +116,7 @@ describe('Encrypted message', function() {
         packetListReal.read(encrypted_message_data);
         encrypted_message_m = new openpgp.message.Message(packetListReal);
 
-        var stream_unarmor = openpgp.message.readArmored(Buffer.from(stream_encrypted_buffer).toString());
+        var stream_unarmor = openpgp.message.readArmored(stream_encrypted_buffer.toString());
         packetList.read(stream_unarmor.packets.write());
         encrypted_message_s = new openpgp.message.Message(packetList);
 
