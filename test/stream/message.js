@@ -100,7 +100,7 @@ describe('Encrypted message', function() {
     var chunks = plaintext.match(/.{1,200}/g);
 
     var stream_encrypted_buffer = Buffer.alloc(0);
-    var message_stream = new openpgp.stream.MessageStream([pubKey], { chunks: 200, armor: true, privateKeys: [privKey] });
+    var message_stream = new openpgp.stream.MessageStream([pubKey], { chunks: 1000, armor: true, privateKeys: [privKey] });
     message_stream.on('data', function(encrypted_data) {
       stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer, encrypted_data]);
     });

@@ -30,7 +30,6 @@ export default function MessageStream(keys, opts) {
   opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
   this.algo = opts.algo;
   opts.key = crypto.generateSessionKey(opts.algo);
-  console.log("Using algo: ", opts.algo);
   opts.cipherfn = crypto.cipher[opts.algo];
   opts.prefixrandom = Buffer.from(crypto.getPrefixRandom(opts.algo));
   opts.cipherType = 'binary';
@@ -57,7 +56,6 @@ export default function MessageStream(keys, opts) {
   });
 
   this.cipher = new CipherFeedbackStream(opts);
-  //this._cipher = nodeCrypto.createCipheriv('aes-256-cfb', opts.key, Buffer.alloc(this.cipher.blockSize));
   this.keys = keys;
 
   if (opts.armor) {
@@ -102,7 +100,6 @@ export default function MessageStream(keys, opts) {
   if (config.integrity_protect) {
     var _cipherwrite = this.cipher.write.bind(this.cipher);
     self._all = Buffer.from(prefix);
-    self.all = Buffer.alloc(0);
     this.cipher.write = function(data) {
       var chunk;
       if (Buffer.isBuffer(data)) {
@@ -113,10 +110,9 @@ export default function MessageStream(keys, opts) {
       if (!self.ended) {
         self.hash.update(chunk);
       }
-      self.all = Buffer.concat([self.all, chunk]);
-      //_cipherwrite(chunk);
+      _cipherwrite(chunk);
     };
-    var _cipherend = this.cipher.end.bind(this.cipher);
+    /*var _cipherend = this.cipher.end.bind(this.cipher);
     this.cipher.end = function() {
       var chunks = Math.floor(self.all.length / opts.chunks );
       var i;
@@ -126,7 +122,7 @@ export default function MessageStream(keys, opts) {
       i++;
       _cipherwrite(self.all.slice(i*chunks));
       _cipherend();
-    };
+    };*/
   }
 
   this.cipher.on('data', function(data) {
