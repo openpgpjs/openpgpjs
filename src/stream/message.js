@@ -33,7 +33,6 @@ export default function MessageStream(keys, opts) {
   opts.cipherfn = crypto.cipher[opts.algo];
   opts.prefixrandom = Buffer.from(crypto.getPrefixRandom(opts.algo));
   opts.cipherType = 'binary';
-  opts.chunks = opts.chunks || 1;
 
   let prefix;
   if (config.integrity_protect) {
@@ -99,25 +98,17 @@ export default function MessageStream(keys, opts) {
 
   if (config.integrity_protect) {
     var _cipherwrite = this.cipher.write.bind(this.cipher);
-    self._all = Buffer.from(prefix);
-    self.all = Buffer.alloc(0);
     this.cipher.write = function(data) {
       var chunk;
       if (Buffer.isBuffer(data)) {
-        chunk = Buffer.from(data);
+        chunk = data;
       } else {
         chunk = Buffer.from(data, 'binary');
       }
       if (!self.ended) {
         self.hash.update(chunk);
       }
-      //_cipherwrite(chunk);
-      self.all = Buffer.concat([self.all, chunk]);
-    };
-    var _cipherend = this.cipher.end.bind(this.cipher);
-    this.cipher.end = function() {
-      _cipherwrite(self.all);
-      _cipherend();
+      _cipherwrite(chunk);
     };
   }
 
