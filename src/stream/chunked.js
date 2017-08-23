@@ -25,7 +25,7 @@ ChunkedStream.prototype._transform = function(data, encoding, callback) {
   HeaderPacketStream.prototype._transform.call(this, data, encoding);
   this.queue = Buffer.concat([this.queue, data]);
   var len = this.queue.length;
-  if (len >= 512 || this.started) {
+  if (len >= 1024) {
     this.started = true;
     var chunkPower = len.toString(2).length - 1;
     if (chunkPower > 30) { chunkPower = 30; }
