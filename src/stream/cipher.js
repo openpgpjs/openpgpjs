@@ -32,13 +32,7 @@ function CipherFeedbackStream(opts) {
   this._previousChunk = Buffer.alloc(0);
 
   this._buffer = Buffer.alloc(0);
-  this._offset = 0;
 
-  this._length = 0;
-  this._returnlength = 0;
-  this.on('data', function(chunk) {
-    this._returnlength += chunk.length;
-  });
 }
 
 util.inherits(CipherFeedbackStream, Transform);
@@ -104,10 +98,10 @@ CipherFeedbackStream.prototype._encryptFirstBlock = function(chunk) {
   for (i = 0; i < block_size; i++) {
     ciphertext[block_size + 2 + i] = this.feedbackRegisterEncrypted[i + offset] ^ chunk[i];
   }
-  this._previousCiphertext = Buffer.from(ciphertext.slice(block_size + 2 - offset, 2*block_size + 2 - offset));
-  this._previousChunk = Buffer.from(chunk);
-  ciphertext = Buffer.from(ciphertext.slice(0, chunk.length + 2 + block_size - offset));
-  this.push(ciphertext);
+  this._previousCiphertext = ciphertext.slice(block_size + 2 - offset, 2*block_size + 2 - offset);
+  this._previousChunk = chunk;
+  ciphertext = ciphertext.slice(0, chunk.length + 2 + block_size - offset);
+  return ciphertext;
 };
 
 CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
@@ -116,17 +110,11 @@ CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
     block_size = this.blockSize,
     offset = this.resync ? 0 : 2,
     i, n, begin;
-  n = 0;
   for (n = 0; n < (chunkLength + offset); n += block_size) {
-    // if (true) {
     begin = n;
-    if ( this._eof && (n > 0) ) { console.log("N:" + n); }
     // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
     // an 8-octet block).
-    //this.feedbackRegister.fill(0);
     this._previousCiphertext.copy(this.feedbackRegister);
-    //this._previousCiphertext.slice(begin, begin + block_size).copy(this.feedbackRegister);
-    if (this._eof) { console.log('FR', this.feedbackRegister, begin, this._previousCiphertext); }
 
     // 11. FR is encrypted to produce FRE.
     this.feedbackRegisterEncrypted = this.cipher.encrypt(this.feedbackRegister);
@@ -143,19 +131,15 @@ CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
       }
       ciphertext[begin + i] = this.feedbackRegisterEncrypted[i] ^ byte;
     }
-    //this._previousCiphertext = ciphertext; //Buffer.from(ciphertext.slice(0, chunkLength));
-    this._previousCiphertext = Buffer.from(ciphertext.slice(0, block_size));
-    if (this._eof) { console.log('CT', ciphertext); }
+    this._previousCiphertext = ciphertext.slice(0, block_size);
   }
-  this._previousChunk = Buffer.from(chunk);
+  this._previousChunk = chunk;
   if (this._eof) {
-    ciphertext = Buffer.from(ciphertext.slice(0, chunkLength + offset));
-    this.push(ciphertext);
-    console.log('final - ' + ciphertext.length);
+    ciphertext = ciphertext.slice(0, chunkLength + offset);
   } else {
-    ciphertext = Buffer.from(ciphertext.slice(0, chunkLength));
-    this.push(ciphertext);
+    ciphertext = ciphertext.slice(0, chunkLength);
   }
+  return ciphertext;
 };
 
 CipherFeedbackStream.prototype.encryptBlock = function(chunk) {
@@ -171,35 +155,23 @@ CipherFeedbackStream.prototype.encryptBlock = function(chunk) {
 
 CipherFeedbackStream.prototype._transform = function(chunk, encoding, cb) {
   chunk = Buffer.from(chunk, encoding);
-  var block;
-  this._length += chunk.length;
+  var block, offset = 0;
   this._buffer = Buffer.concat([this._buffer, chunk]);
   if (this._buffer.length >= this.blockSize) {
-    while (this._buffer.length >= this.blockSize) {
-      block = Buffer.from(this._buffer.slice(0, this.blockSize));
-      this.encryptBlock(block);
-      this._buffer = this._buffer.slice(this.blockSize);
+    while (this._buffer.length >= offset + this.blockSize) {
+      block = this._buffer.slice(offset, offset + this.blockSize);
+      this.push(this.encryptBlock(block));
+      offset += this.blockSize;
     }
+    this._buffer = this._buffer.slice(offset);
   }
   this.emit('encrypted', chunk);
   cb();
 };
 
 CipherFeedbackStream.prototype._flush = function(cb) {
-  /*if (this._buffer.length === this.blockSize - 1) {
-    this._buffer = Buffer.concat([this._buffer, Buffer.from(packet.packet.writeHeader(enums.packet.marker, 0), 'binary')]);
-    var block = Buffer.from(this._buffer.slice(0, this.blockSize));
-    this.push(this.encryptBlock(block));
-    this._buffer = this._buffer.slice(this.blockSize);
-  }*/
   this._eof = true;
-  if (this._eof || this._buffer.length) {
-    this.encryptBlock(this._buffer);
-    console.log('{ entire length of ' + this._length + ',' + this._returnlength + ' }');
-    console.log('(remainder of ' + this._buffer.length + ')');
-  } else {
-    console.log('(no remainder)');
-  }
+  this.push(this.encryptBlock(this._buffer));
   this.emit('flushed', null);
   cb();
 };

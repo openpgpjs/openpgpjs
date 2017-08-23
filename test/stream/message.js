@@ -3,7 +3,6 @@
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var chai = require('chai'),
-  fs = require('fs'),
   expect = chai.expect;
 
 
@@ -11,7 +10,7 @@ var randomString = function(n) {
   return new Array(n).join().replace(/(.|$)/g, function(){ return ((Math.random()*36)|0).toString(36); });
 };
 
-describe.only('Encrypted message', function() {
+describe('Encrypted message', function() {
   var pub_key =
      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -84,73 +83,62 @@ describe.only('Encrypted message', function() {
   var privKey = privKeys.keys[0];
   privKey.decrypt('hello world');
 
-  var baseAmt = 1602;
-  [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(function(amt) {
-    amt += baseAmt;
-    it('should work for ' + amt + ' without streaming', function(done) {
-      var plaintext = randomString(amt);
-      openpgp.encrypt({ publicKeys: [pubKey], privateKeys: privKey, data: plaintext}).then(function(encrypted){
-        encrypted = encrypted.data;
-        var encrypted_message = openpgp.message.readArmored(encrypted);
-        openpgp.decrypt({ privateKey: privKey, publicKeys: [pubKey], message: encrypted_message }).then(function() {
-          done();
-        }).catch(done);
-      }).catch(done);
-    });
+  describe('encrypt with every byte number', function() {
+    var baseAmt = 1603;
+    Array.from(new Array(16), function(x, amt) {
+      amt += baseAmt;
+      it("should decrypt " + amt + " bytes to the same content that was encrypted and have the same signature", function(done) {
 
-    it("should decrypt " + amt + " bytes to the same content that was encrypted and have the same signature", function(done) {
-      this.timeout(120000);
+        var plaintext = randomString(amt);
+        var chunks = plaintext.match(/.{1,200}/g);
 
-      var plaintext = randomString(amt);
-      var chunks = plaintext.match(/.{1,200}/g);
+        var stream_encrypted_buffer = Buffer.alloc(0);
+        var message_stream = new openpgp.stream.MessageStream([pubKey], { chunks: 1000, armor: true, privateKeys: [privKey] });
+        message_stream.on('data', function(encrypted_data) {
+          stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer, encrypted_data]);
+        });
+        message_stream.on('end', function() {
+          openpgp.encrypt({ publicKeys: [pubKey], privateKeys: privKey, data: plaintext}).then(function(encrypted){
+            encrypted = encrypted.data;
+            var encrypted_message = openpgp.message.readArmored(encrypted);
+            var packetList = new openpgp.packet.List(),
+              packetListReal = new openpgp.packet.List(),
+              encrypted_message_data = encrypted_message.packets.write(),
+              encrypted_message_s, encrypted_message_m,
+              decrypted_message_s, decrypted_message_m;
 
-      var stream_encrypted_buffer = Buffer.alloc(0);
-      var message_stream = new openpgp.stream.MessageStream([pubKey], { chunks: 1000, armor: true, privateKeys: [privKey] });
-      message_stream.on('data', function(encrypted_data) {
-        stream_encrypted_buffer = Buffer.concat([stream_encrypted_buffer, encrypted_data]);
-      });
-      message_stream.on('end', function() {
-        openpgp.encrypt({ publicKeys: [pubKey], privateKeys: privKey, data: plaintext}).then(function(encrypted){
-          encrypted = encrypted.data;
-          var encrypted_message = openpgp.message.readArmored(encrypted);
-          var packetList = new openpgp.packet.List(),
-            packetListReal = new openpgp.packet.List(),
-            encrypted_message_data = encrypted_message.packets.write(),
-            encrypted_message_s, encrypted_message_m,
-            decrypted_message_s, decrypted_message_m;
+            packetListReal.read(encrypted_message_data);
+            encrypted_message_m = new openpgp.message.Message(packetListReal);
 
-          packetListReal.read(encrypted_message_data);
-          encrypted_message_m = new openpgp.message.Message(packetListReal);
+            var stream_unarmor = openpgp.message.readArmored(stream_encrypted_buffer.toString());
+            packetList.read(stream_unarmor.packets.write());
+            encrypted_message_s = new openpgp.message.Message(packetList);
 
-          fs.writeFileSync('/Users/kelly/w/openpgpjs/qq.asc', stream_encrypted_buffer);
-          var stream_unarmor = openpgp.message.readArmored(stream_encrypted_buffer.toString());
-          packetList.read(stream_unarmor.packets.write());
-          encrypted_message_s = new openpgp.message.Message(packetList);
-
-          var signatures;
-          openpgp.decrypt({ privateKey: privKey, publicKeys: [pubKey], message: encrypted_message_m }).then(function(decrypted){
-            decrypted_message_m = decrypted.data;
-            signatures = decrypted.signatures;
-            return openpgp.decrypt({ privateKey: privKey, publicKeys: [pubKey], message: encrypted_message_s });
-          }).then(function(decrypted){
-            decrypted_message_s = decrypted.data;
-            //expect(decrypted.signatures[0].valid).to.equal(true);
-            //expect(decrypted.signatures[0].keyid.bytes).to.equal(signatures[0].keyid.bytes);
-            expect(decrypted_message_s.length).to.equal(decrypted_message_m.length);
-            expect(decrypted_message_s).to.equal(decrypted_message_m);
-            done();
+            var signatures;
+            openpgp.decrypt({ privateKey: privKey, publicKeys: [pubKey], message: encrypted_message_m }).then(function(decrypted){
+              decrypted_message_m = decrypted.data;
+              signatures = decrypted.signatures;
+              return openpgp.decrypt({ privateKey: privKey, publicKeys: [pubKey], message: encrypted_message_s });
+            }).then(function(decrypted){
+              decrypted_message_s = decrypted.data;
+              //expect(decrypted.signatures[0].valid).to.equal(true);
+              //expect(decrypted.signatures[0].keyid.bytes).to.equal(signatures[0].keyid.bytes);
+              expect(decrypted_message_s.length).to.equal(decrypted_message_m.length);
+              expect(decrypted_message_s).to.equal(decrypted_message_m);
+              done();
+            }).catch(function(err) {
+              done(err);
+            });
           }).catch(function(err) {
             done(err);
           });
-        }).catch(function(err) {
-          done(err);
         });
-      });
 
-      chunks.forEach(function(chunk) {
-        message_stream.write(chunk);
+        chunks.forEach(function(chunk) {
+          message_stream.write(chunk);
+        });
+        message_stream.end();
       });
-      message_stream.end();
     });
   });
 
