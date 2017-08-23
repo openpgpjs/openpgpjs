@@ -100,6 +100,7 @@ export default function MessageStream(keys, opts) {
   if (config.integrity_protect) {
     var _cipherwrite = this.cipher.write.bind(this.cipher);
     self._all = Buffer.from(prefix);
+    self.all = Buffer.alloc(0);
     this.cipher.write = function(data) {
       var chunk;
       if (Buffer.isBuffer(data)) {
@@ -110,19 +111,14 @@ export default function MessageStream(keys, opts) {
       if (!self.ended) {
         self.hash.update(chunk);
       }
-      _cipherwrite(chunk);
+      //_cipherwrite(chunk);
+      self.all = Buffer.concat([self.all, chunk]);
     };
-    /*var _cipherend = this.cipher.end.bind(this.cipher);
+    var _cipherend = this.cipher.end.bind(this.cipher);
     this.cipher.end = function() {
-      var chunks = Math.floor(self.all.length / opts.chunks );
-      var i;
-      for(i = 0; i < chunks - 1; i++) {
-        _cipherwrite(self.all.slice(i*chunks, (i+1)*chunks));
-      }
-      i++;
-      _cipherwrite(self.all.slice(i*chunks));
+      _cipherwrite(self.all);
       _cipherend();
-    };*/
+    };
   }
 
   this.cipher.on('data', function(data) {
@@ -189,7 +185,7 @@ MessageStream.prototype.getHeader = function() {
     // some strange hack to add a marker packet so modification detection
     // doesn't fail
     var write = this.compressionPacket ? this.compressionPacket.write.bind(this.compressionPacket) : this.cipher.write.bind(this.cipher);
-    write(Buffer.from(packet.packet.writeHeader(enums.packet.marker, 0), 'binary'));
+    //write(Buffer.from(packet.packet.writeHeader(enums.packet.marker, 0), 'binary'));
     write(this.signature.onePassSignaturePackets());
   }
 

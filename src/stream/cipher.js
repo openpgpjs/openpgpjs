@@ -3,6 +3,8 @@
 import { Transform } from 'stream';
 import util from 'util';
 import _util from '../util.js';
+//import packet from '../packet';
+//import enums from '../enums';
 
 const Buffer = _util.getNativeBuffer();
 
@@ -32,6 +34,11 @@ function CipherFeedbackStream(opts) {
   this._buffer = Buffer.alloc(0);
   this._offset = 0;
 
+  this._length = 0;
+  this._returnlength = 0;
+  this.on('data', function(chunk) {
+    this._returnlength += chunk.length;
+  });
 }
 
 util.inherits(CipherFeedbackStream, Transform);
@@ -100,7 +107,7 @@ CipherFeedbackStream.prototype._encryptFirstBlock = function(chunk) {
   this._previousCiphertext = Buffer.from(ciphertext.slice(block_size + 2 - offset, 2*block_size + 2 - offset));
   this._previousChunk = Buffer.from(chunk);
   ciphertext = Buffer.from(ciphertext.slice(0, chunk.length + 2 + block_size - offset));
-  return ciphertext;
+  this.push(ciphertext);
 };
 
 CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
@@ -109,11 +116,17 @@ CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
     block_size = this.blockSize,
     offset = this.resync ? 0 : 2,
     i, n, begin;
+  n = 0;
   for (n = 0; n < (chunkLength + offset); n += block_size) {
+    // if (true) {
     begin = n;
+    if ( this._eof && (n > 0) ) { console.log("N:" + n); }
     // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
     // an 8-octet block).
+    //this.feedbackRegister.fill(0);
     this._previousCiphertext.copy(this.feedbackRegister);
+    //this._previousCiphertext.slice(begin, begin + block_size).copy(this.feedbackRegister);
+    if (this._eof) { console.log('FR', this.feedbackRegister, begin, this._previousCiphertext); }
 
     // 11. FR is encrypted to produce FRE.
     this.feedbackRegisterEncrypted = this.cipher.encrypt(this.feedbackRegister);
@@ -130,15 +143,19 @@ CipherFeedbackStream.prototype._encryptBlock = function(chunk) {
       }
       ciphertext[begin + i] = this.feedbackRegisterEncrypted[i] ^ byte;
     }
-    this._previousCiphertext = Buffer.from(ciphertext.slice(0, chunkLength));
+    //this._previousCiphertext = ciphertext; //Buffer.from(ciphertext.slice(0, chunkLength));
+    this._previousCiphertext = Buffer.from(ciphertext.slice(0, block_size));
+    if (this._eof) { console.log('CT', ciphertext); }
   }
   this._previousChunk = Buffer.from(chunk);
   if (this._eof) {
     ciphertext = Buffer.from(ciphertext.slice(0, chunkLength + offset));
+    this.push(ciphertext);
+    console.log('final - ' + ciphertext.length);
   } else {
     ciphertext = Buffer.from(ciphertext.slice(0, chunkLength));
+    this.push(ciphertext);
   }
-  return ciphertext;
 };
 
 CipherFeedbackStream.prototype.encryptBlock = function(chunk) {
@@ -155,11 +172,12 @@ CipherFeedbackStream.prototype.encryptBlock = function(chunk) {
 CipherFeedbackStream.prototype._transform = function(chunk, encoding, cb) {
   chunk = Buffer.from(chunk, encoding);
   var block;
+  this._length += chunk.length;
   this._buffer = Buffer.concat([this._buffer, chunk]);
   if (this._buffer.length >= this.blockSize) {
     while (this._buffer.length >= this.blockSize) {
       block = Buffer.from(this._buffer.slice(0, this.blockSize));
-      this.push(this.encryptBlock(block));
+      this.encryptBlock(block);
       this._buffer = this._buffer.slice(this.blockSize);
     }
   }
@@ -168,9 +186,19 @@ CipherFeedbackStream.prototype._transform = function(chunk, encoding, cb) {
 };
 
 CipherFeedbackStream.prototype._flush = function(cb) {
+  /*if (this._buffer.length === this.blockSize - 1) {
+    this._buffer = Buffer.concat([this._buffer, Buffer.from(packet.packet.writeHeader(enums.packet.marker, 0), 'binary')]);
+    var block = Buffer.from(this._buffer.slice(0, this.blockSize));
+    this.push(this.encryptBlock(block));
+    this._buffer = this._buffer.slice(this.blockSize);
+  }*/
   this._eof = true;
-  if (this._buffer.length) {
-    this.push(this.encryptBlock(this._buffer));
+  if (this._eof || this._buffer.length) {
+    this.encryptBlock(this._buffer);
+    console.log('{ entire length of ' + this._length + ',' + this._returnlength + ' }');
+    console.log('(remainder of ' + this._buffer.length + ')');
+  } else {
+    console.log('(no remainder)');
   }
   this.emit('flushed', null);
   cb();
