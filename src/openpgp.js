@@ -38,12 +38,12 @@ import * as key from './key.js';
 import config from './config/config.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
-import stream from './stream';
+import * as stream from './stream';
 import es6Promise from 'es6-promise';
 es6Promise.polyfill(); // load ES6 Promises polyfill
 
 
-export default stream;
+export default { stream };
 
 //////////////////////////
 //                      //
@@ -189,8 +189,17 @@ export function decryptKey({ privateKey, passphrase }) {
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true, detached=false, signature=null }) {
-  checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
+export function encrypt({ data, publicKeys, privateKeys, passwords, filename, compression, armor=true, detached=false, signature=null }) {
+  publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
+
+  if (data === undefined || util.isReadableStream(data)) {
+    var messageStream = new stream.MessageStream({ publicKeys, privateKeys, passwords, filename, armor, detached, signature, compression });
+    if (data) {
+      data.pipe(messageStream);
+    }
+    return messageStream;
+  }
+  checkData(data);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached, signature });
@@ -434,8 +443,8 @@ function checkBinary(data, name) {
   }
 }
 function checkData(data, name) {
-  if (!util.isUint8Array(data) && !util.isString(data)) {
-    throw new Error('Parameter [' + (name || 'data') + '] must be of type String or Uint8Array');
+  if (!util.isUint8Array(data) && !util.isString(data) && !util.isReadableStream(data)) {
+    throw new Error('Parameter [' + (name || 'data') + '] must be of type String, Uint8Array, or Readable Stream');
   }
 }
 function checkMessage(message) {

@@ -39,6 +39,10 @@ export default {
     return Uint8Array.prototype.isPrototypeOf(data);
   },
 
+  isReadableStream: function(data) {
+    return data && typeof data === 'object' && typeof data.pipe === 'function' && data.readable !== false && typeof data._read === 'function' && typeof data._readableState === 'object';
+  },
+
   isEmailAddress: function(data) {
     if (!this.isString(data)) {
       return false;

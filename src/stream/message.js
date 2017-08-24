@@ -17,29 +17,27 @@ import nodeCrypto from 'crypto';
 
 const Buffer = _util.getNativeBuffer();
 
-export default function MessageStream(keys, opts) {
+export default function MessageStream({ publicKeys, privateKeys, passwords, filename, armor=true, compression='zip', detached=false, signature=null }) {
 
   var self = this;
 
-  opts = opts || {};
-  HeaderPacketStream.call(this, opts);
+  HeaderPacketStream.call(this, { publicKeys, privateKeys, passwords, filename, armor, detached, signature });
 
-  this.filename = _util.encode_utf8(opts.filename || '');
-  this.privateKeys = opts.privateKeys;
-  this.passwords = opts.passwords;
-  opts.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-  this.algo = opts.algo;
-  opts.key = crypto.generateSessionKey(opts.algo);
-  opts.cipherfn = crypto.cipher[opts.algo];
-  opts.prefixrandom = Buffer.from(crypto.getPrefixRandom(opts.algo));
-  opts.cipherType = 'binary';
+  this.filename = _util.encode_utf8(filename || '');
+  this.privateKeys = privateKeys;
+  this.passwords = passwords;
+  this.algo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(publicKeys));
+  const sessionKey = crypto.generateSessionKey(this.algo);
 
-  let prefix;
+  const cipherfn = crypto.cipher[this.algo];
+  const prefixrandom = Buffer.from(crypto.getPrefixRandom(this.algo));
+  const cipherType = 'binary';
+  let resync;
+
   if (config.integrity_protect) {
-    var prefixrandom = opts.prefixrandom;
     const repeat = Buffer.from([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-    prefix = Buffer.concat([prefixrandom, repeat]);
-    opts.resync = false;
+    const prefix = Buffer.concat([prefixrandom, repeat]);
+    resync = false;
     this.hash = nodeCrypto.createHash('sha1');
     this.hash.update(prefix);
   }
@@ -54,15 +52,15 @@ export default function MessageStream(keys, opts) {
     header: Buffer.from(packet.packet.writeTag(enums.packet.literal), 'binary')
   });
 
-  this.cipher = new CipherFeedbackStream(opts);
-  this.keys = keys;
+  this.cipher = new CipherFeedbackStream({ prefixrandom, cipherType, cipherfn, sessionKey, resync });
+  this.keys = publicKeys;
 
-  if (opts.armor) {
+  if (armor) {
     this.armor = new ArmorStream(this);
   }
 
-  if (opts.privateKeys) {
-    this.signature = new Signature(opts.privateKeys);
+  if (privateKeys) {
+    this.signature = new Signature(privateKeys);
   }
 
   this.encryptedPacket.on('data', function(data) {
@@ -76,8 +74,8 @@ export default function MessageStream(keys, opts) {
     }
   });
 
-  if (opts.compression) {
-    this.compressionPacket = new CompressionStream({ algorithm: enums.write(enums.compression, opts.compression === true ? 'zip' : opts.compression) });
+  if (compression) {
+    this.compressionPacket = new CompressionStream({ algorithm: enums.write(enums.compression, compression === true ? 'zip' : compression) });
     this.compressionPacket.on('data', function(data) {
       self.cipher.write(Buffer.from(data));
     });
@@ -118,6 +116,18 @@ export default function MessageStream(keys, opts) {
 }
 
 util.inherits(MessageStream, HeaderPacketStream);
+
+// If this is treated like a Promise, trigger a catch callback
+MessageStream.prototype.then = function() {
+  var error = new Error('Streaming encryption does not support promises');
+  return Promise.reject(error);
+};
+
+// If attempting to catch the error, show them data must be provided
+MessageStream.prototype.catch = function(callback) {
+  var error = new Error('Parameter [data] must not be undefined');
+  callback(error);
+};
 
 MessageStream.prototype.push = function(data, encoding) {
   if (data) {

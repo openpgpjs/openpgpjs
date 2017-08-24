@@ -4,8 +4,7 @@ var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp :
 
 var enums = openpgp.enums,
   crypto = openpgp.crypto,
-  util = openpgp.util,
-  config = openpgp.config;
+  util = openpgp.util;
 
 
 var chai = require('chai'),
@@ -21,183 +20,104 @@ var bto8 = function(buffer) {
 };
 
 describe('CFB Stream', function() {
-
-  it('should work when calling write once', function(done) {
-    var opts = {};
+  var opts, plaintext;
+  beforeEach(function() {
+    opts = {};
     opts.algo = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts.key = crypto.generateSessionKey(opts.algo);
+    opts.sessionKey = crypto.generateSessionKey(opts.algo);
     opts.cipherfn = crypto.cipher[opts.algo];
     opts.prefixrandom = crypto.getPrefixRandom(opts.algo);
+    opts.resync = true;
 
-    var plaintext_a = 'This is the end,';
-    var plaintext_b = 'my only friend,';
-    var plaintext_c = 'the end.';
-
-    var encrypted_data = new Uint8Array([]);
-    var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-    cs.on('data', function(d) {
-      encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
-    });
-
-    cs.on('end', function(d) {
-      var decrypted = util.bin2str(crypto.cfb.decrypt(opts.algo, opts.key,
-                                         encrypted_data, true));
-      expect(decrypted).equal(plaintext_a+plaintext_b+plaintext_c);
-      expect(encrypted_data.length).equal(cs.blockSize + (plaintext_a+plaintext_b+plaintext_c).length + 2);
-      cs = undefined;
-      done();
-    });
-    cs.write(plaintext_a+plaintext_b);
-    cs.end(plaintext_c);
-
+    plaintext = [
+      'This is the end,',
+      'my only friend,',
+      'the end.'
+    ];
   });
 
-  it('should decrypt when calling write multiple times', function(done) {
-    var opts = {};
-    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts['key'] = crypto.generateSessionKey(opts['algo']);
-    opts['cipherfn'] = crypto.cipher[opts['algo']];
-    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-
-    var plaintext_a = 'This is the end,';
-    var plaintext_b = 'my only friend,';
-    var plaintext_c = 'the end.';
+  function cipher(done) {
 
     var encrypted_data = new Uint8Array([]);
     var cs = new openpgp.stream.CipherFeedbackStream(opts);
 
     cs.on('data', function(d) {
       encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
+    }).on('end', function() {
+      var decrypted = Buffer.from(crypto.cfb.decrypt(opts.algo, opts.sessionKey, encrypted_data, opts.resync), 'binary').toString('binary');
+      done(encrypted_data, decrypted);
     });
 
-    cs.on('end', function(d) {
-      var decrypted = util.bin2str(crypto.cfb.decrypt(opts['algo'], opts['key'],
-                                         encrypted_data, true));
-      expect(decrypted).equal(plaintext_a+plaintext_b+plaintext_c);
-      expect(encrypted_data.length).equal(cs.blockSize + (plaintext_a+plaintext_b+plaintext_c).length + 2);
+    return cs;
+  }
+
+  it('works when calling write once', function(done) {
+    var text = plaintext.join('');
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(decrypted).equal(text);
+      expect(encrypted_data.length).equal(cs.blockSize + text.length + 2);
       done();
     });
-    cs.write(plaintext_a);
-    cs.write(plaintext_b);
-    cs.end(plaintext_c);
-
+    cs.write(plaintext[0]+plaintext[1]);
+    cs.end(plaintext[2]);
   });
 
-  it("should decrypt when calling write and end with null", function(done) {
-    var opts = {};
-    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts['key'] = crypto.generateSessionKey(opts['algo']);
-    opts['cipherfn'] = crypto.cipher[opts['algo']];
-    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-
-    var plaintext_a = "This is the end,";
-    var plaintext_b = "my only friend,";
-    var plaintext_c = "the end.";
-
-    var encrypted_data = new Uint8Array([]);
-    var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-    cs.on('data', function(d) {
-      encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
-    });
-
-    cs.on('end', function(d) {
-      var decrypted = util.bin2str(crypto.cfb.decrypt(opts['algo'], opts['key'],
-                                         encrypted_data, true));
-      expect(decrypted).equal(plaintext_a+plaintext_b+plaintext_c);
-      expect(encrypted_data.length).equal(cs.blockSize + (plaintext_a+plaintext_b+plaintext_c).length + 2);
+  it('decrypts when calling write multiple times', function(done) {
+    var text = plaintext.join('');
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(decrypted).equal(text);
+      expect(encrypted_data.length).equal(cs.blockSize + text.length + 2);
       done();
     });
-    cs.write(plaintext_a+plaintext_b+plaintext_c);
+    cs.write(plaintext[0]);
+    cs.write(plaintext[1]);
+    cs.end(plaintext[2]);
+  });
+
+  it('decrypts when calling write and end with null', function(done) {
+    var text = plaintext.join('');
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(decrypted).equal(text);
+      expect(encrypted_data.length).equal(cs.blockSize + text.length + 2);
+      done();
+    });
+    cs.write(text);
     cs.end();
-
   });
 
-  it("should work on UTF-8 characters", function(done) {
-    var opts = {};
-    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts['key'] = crypto.generateSessionKey(opts['algo']);
-    opts['cipherfn'] = crypto.cipher[opts['algo']];
-    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-
-    var plaintext_a = "实事求是。";
-    var encrypted_data = new Uint8Array([]);
-    var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-    cs.on('data', function(d) {
-      encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
-    });
-
-    cs.on('end', function(d) {
-      var decrypted = util.bin2str(crypto.cfb.decrypt(opts['algo'], opts['key'],
-                                         encrypted_data, true));
-      expect(util.decode_utf8(decrypted)).equal(plaintext_a);
-      expect(encrypted_data.length).equal(cs.blockSize + (Buffer.from(plaintext_a)).length + 2);
+  it('works on UTF-8 characters', function(done) {
+    var text = "实事求是。";
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(util.decode_utf8(decrypted)).equal(text);
+      expect(encrypted_data.length).equal(cs.blockSize + (Buffer.from(text)).length + 2);
       done();
     });
-    cs.write(plaintext_a);
+    cs.write(text);
     cs.end();
-
   });
 
-  it("should work on byte buffers", function(done) {
-    var opts = {};
-    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts['key'] = crypto.generateSessionKey(opts['algo']);
-    opts['cipherfn'] = crypto.cipher[opts['algo']];
-    opts['cipherType'] = 'binary';
-    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-
-    var buffer_a = Buffer.from([0x81, 0x02, 0xcc, 0x86, 0x92, 0xA9]);
-    var encrypted_data = new Uint8Array([]);
-    var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-    cs.on('data', function(d) {
-      encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
-    });
-
-    cs.on('end', function(d) {
-      var decrypted = Buffer.from(crypto.cfb.decrypt(opts['algo'], opts['key'],
-                                         encrypted_data, true));
-      expect(decrypted.equals(buffer_a)).to.equal(true);
-      expect(encrypted_data.length).equal(cs.blockSize + (buffer_a.length + 2));
+  it('works on byte buffers', function(done) {
+    opts.cipherType = 'binary';
+    var buffer = Buffer.from([0x81, 0x02, 0xcc, 0x86, 0x92, 0xA9]);
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(Buffer.from(decrypted, 'binary').equals(buffer)).to.equal(true);
+      expect(encrypted_data.length).equal(cs.blockSize + (buffer.length + 2));
       done();
     });
-    cs.write(buffer_a);
+    cs.write(buffer);
     cs.end();
-
   });
 
-  it("should work with resync set to false", function(done) {
-    var opts = {};
-    opts['algo'] = enums.read(enums.symmetric, enums.symmetric.aes256);
-    opts['key'] = crypto.generateSessionKey(opts['algo']);
-    opts['cipherfn'] = crypto.cipher[opts['algo']];
-    opts['prefixrandom'] = crypto.getPrefixRandom(opts['algo']);
-    opts['resync'] = false;
-
-    var plaintext_a = "This is the end,";
-    var plaintext_b = "my only friend,";
-    var plaintext_c = "the end.";
-
-    var encrypted_data = new Uint8Array([]);
-    var cs = new openpgp.stream.CipherFeedbackStream(opts);
-
-    cs.on('data', function(d) {
-      encrypted_data = util.concatUint8Array([encrypted_data, bto8(d)]);
-    });
-
-    cs.on('end', function(d) {
-      var decrypted = Buffer.from(crypto.cfb.decrypt(opts['algo'], opts['key'],
-                                         encrypted_data, false), 'binary').toString('binary');
-      expect(decrypted).equal(plaintext_a+plaintext_b+plaintext_c);
-      expect(encrypted_data.length).equal(cs.blockSize + (plaintext_a+plaintext_b+plaintext_c).length + 2);
+  it('works with resync set to false', function(done) {
+    opts.resync = false;
+    var text = plaintext.join('');
+    var cs = cipher(function(encrypted_data, decrypted) {
+      expect(decrypted).to.equal(text);
+      expect(encrypted_data.length).equal(cs.blockSize + text.length + 2);
       done();
     });
-    cs.write(plaintext_a+plaintext_b+plaintext_c);
+    cs.write(text);
     cs.end();
-
   });
 
 });
