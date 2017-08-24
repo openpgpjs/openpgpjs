@@ -17,7 +17,7 @@ import nodeCrypto from 'crypto';
 
 const Buffer = _util.getNativeBuffer();
 
-export default function MessageStream({ publicKeys, privateKeys, passwords, filename, armor=true, compression='zip', detached=false, signature=null }) {
+export default function MessageStream({ publicKeys, privateKeys, passwords, filename, armor=true, compression='uncompressed', detached=false, signature=null }) {
 
   var self = this;
 

@@ -40,7 +40,7 @@ export default {
   },
 
   isReadableStream: function(data) {
-    return data && typeof data === 'object' && typeof data.pipe === 'function' && data.readable !== false && typeof data._read === 'function' && typeof data._readableState === 'object';
+    return data && typeof data === 'object' && typeof data.pipe === 'function';
   },
 
   isEmailAddress: function(data) {
