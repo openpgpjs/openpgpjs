@@ -17,7 +17,7 @@ import nodeCrypto from 'crypto';
 
 const Buffer = _util.getNativeBuffer();
 
-export default function MessageStream({ publicKeys, privateKeys, passwords, filename, armor=true, compression='uncompressed', detached=false, signature=null }) {
+export default function MessageStream({ publicKeys, privateKeys, passwords, filename, compression, armor=true, detached=false, signature=null }) {
 
   var self = this;
 
@@ -74,7 +74,7 @@ export default function MessageStream({ publicKeys, privateKeys, passwords, file
     }
   });
 
-  if (compression) {
+  if (compression && compression !== 'uncompressed') {
     this.compressionPacket = new CompressionStream({ algorithm: enums.write(enums.compression, compression === true ? 'zip' : compression) });
     this.compressionPacket.on('data', function(data) {
       self.cipher.write(Buffer.from(data));
