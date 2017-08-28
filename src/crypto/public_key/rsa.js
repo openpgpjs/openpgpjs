@@ -226,19 +226,38 @@ export default function RSA() {
       key.e = parseInt(E, 16);
       key.ee = new BigInteger(E, 16);
 
-      for (;;) {
-        for (;;) {
-          key.p = new BigInteger(B - qs, 1, rng);
-          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10)) {
-            break;
-          }
-        }
-        for (;;) {
-          key.q = new BigInteger(qs, 1, rng);
-          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10)) {
-            break;
-          }
-        }
+      var determineP = function() {
+        key.p = new BigInteger(B - qs, 1, rng, true);
+        key.p.on('ready', () => {
+          key.p.async = true;
+          key.p.subtract(BigInteger.ONE).gcd(key.ee).then(function(y) {
+            y.compareTo(BigInteger.ONE).then(function(r) {
+              if (r === 0 && key.p.isProbablePrime(10)) {
+                determineQ();
+              } else {
+                util.setImmediate(determineP);
+              }
+            });
+          });
+        });
+      };
+      var determineQ = function() {
+        key.q = new BigInteger(qs, 1, rng, true);
+        key.q.on('ready', () => {
+          key.q.async = true;
+          key.q.subtract(BigInteger.ONE).gcd(key.ee).then(function(y) {
+            y.compareTo(BigInteger.ONE).then(function(r) {
+              if (r === 0 && key.q.isProbablePrime(10)) {
+                finalize();
+              } else {
+                util.setImmediate(determineQ);
+              }
+            });
+          });
+        });
+      };
+
+      var finalize = function() {
         if (key.p.compareTo(key.q) <= 0) {
           var t = key.p;
           key.p = key.q;
@@ -253,11 +272,14 @@ export default function RSA() {
           key.dmp1 = key.d.mod(p1);
           key.dmq1 = key.d.mod(q1);
           key.u = key.p.modInverse(key.q);
-          break;
+          resolve(key);
+        } else {
+          util.setImmediate(finalize);
         }
-      }
+      };
 
-      resolve(key);
+      determineP();
+
     });
   }
 

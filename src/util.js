@@ -25,7 +25,7 @@
 
 import config from './config';
 
-export default {
+const util = {
 
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
@@ -569,6 +569,17 @@ export default {
     }
 
     return require('buffer').Buffer;
-  }
+  },
+
 
 };
+
+if (typeof setImmediate === 'function') {
+  util.setImmediate = setImmediate;
+} else {
+  util.setImmediate = function(fn) {
+    setTimeout(fn, 0);
+  };
+}
+
+export default util;

@@ -1,3 +1,4 @@
+/*jshint eqeqeq: false, curly:false, -W041, -W009 */
 /*
  * Copyright (c) 2003-2005  Tom Wu (tjw@cs.Stanford.EDU)
  * All Rights Reserved.
@@ -37,7 +38,9 @@
  * @module crypto/public_key/jsbn
  */
 
-import util from '../../util.js';
+import _util from '../../util.js';
+import util from 'util';
+import { EventEmitter } from 'events';
 
 // Basic JavaScript BN library - subset useful for RSA encryption.
 
@@ -46,16 +49,31 @@ var dbits;
 
 // JavaScript engine analysis
 var canary = 0xdeadbeefcafe;
-var j_lm = ((canary & 0xffffff) == 0xefcafe);
+var j_lm = ((canary & 0xffffff) === 0xefcafe);
 
 // (public) Constructor
 
-export default function BigInteger(a, b, c) {
-  if (a != null)
-    if ("number" == typeof a) this.fromNumber(a, b, c);
-    else if (b == null && "string" != typeof a) this.fromString(a, 256);
-  else this.fromString(a, b);
+export default function BigInteger(a, b, c, isAsync) {
+  EventEmitter.call(this);
+  if (a != null) {
+    if ("number" === typeof a) {
+      if (isAsync) {
+        this.async = true;
+        this.fromNumber(a, b, c).then(() => {
+          this.emit('ready');
+        });
+      } else {
+        this.fromNumber(a, b, c);
+      }
+    } else if (b == null && "string" !== typeof a) {
+      this.fromString(a, 256);
+    } else {
+      this.fromString(a, b);
+    }
+  }
 }
+
+util.inherits(BigInteger, EventEmitter);
 
 // return new, unset BigInteger
 
@@ -138,14 +156,14 @@ BigInteger.prototype.F2 = 2 * dbits - BI_FP;
 
 // Digit conversions
 var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz";
-var BI_RC = new Array();
+var BI_RC = [];
 var rr, vv;
 rr = "0".charCodeAt(0);
-for (vv = 0; vv <= 9; ++vv) BI_RC[rr++] = vv;
+for (vv = 0; vv <= 9; ++vv) { BI_RC[rr++] = vv; }
 rr = "a".charCodeAt(0);
-for (vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+for (vv = 10; vv < 36; ++vv) { BI_RC[rr++] = vv; }
 rr = "A".charCodeAt(0);
-for (vv = 10; vv < 36; ++vv) BI_RC[rr++] = vv;
+for (vv = 10; vv < 36; ++vv) { BI_RC[rr++] = vv; }
 
 function int2char(n) {
   return BI_RM.charAt(n);
@@ -159,7 +177,9 @@ function intAt(s, i) {
 // (protected) copy this to r
 
 function bnpCopyTo(r) {
-  for (var i = this.t - 1; i >= 0; --i) r[i] = this[i];
+  for (var i = this.t - 1; i >= 0; --i) {
+    r[i] = this[i];
+  }
   r.t = this.t;
   r.s = this.s;
 }
@@ -290,12 +310,33 @@ function bnAbs() {
 
 function bnCompareTo(a) {
   var r = this.s - a.s;
-  if (r != 0) return r;
+  if (r != 0) return this.async ? Promise.resolve(r) : r;
   var i = this.t;
   r = i - a.t;
-  if (r != 0) return (this.s < 0) ? -r : r;
-  while (--i >= 0) if ((r = this[i] - a[i]) != 0) return r;
-  return 0;
+  if (r != 0) {
+    var v = (this.s < 0) ? -r : r;
+    return this.async ? Promise.resolve(v) : v;
+  }
+  if (this.async) {
+    return new Promise((resolve) => {
+      var loop = () => {
+        i--;
+        if (i >= 0) {
+          if ((r = this[i] - a[i]) != 0) {
+            resolve(r);
+          } else {
+            _util.setImmediate(loop);
+          }
+        } else {
+          resolve(0);
+        }
+      };
+      loop();
+    });
+  } else {
+    while (--i >= 0) if ((r = this[i] - a[i]) != 0) return r;
+    return 0;
+  }
 }
 
 // returns bit length of the integer x
@@ -889,15 +930,39 @@ function bnpFromRadix(s, b) {
 function bnpFromNumber(a, b, c) {
   if ("number" == typeof b) {
     // new BigInteger(int,int,RNG)
-    if (a < 2) this.fromInt(1);
-    else {
-      this.fromNumber(a, c);
-      if (!this.testBit(a - 1)) // force MSB set
-        this.bitwiseTo(BigInteger.ONE.shiftLeft(a - 1), op_or, this);
-      if (this.isEven()) this.dAddOffset(1, 0); // force odd
-      while (!this.isProbablePrime(b)) {
-        this.dAddOffset(2, 0);
-        if (this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a - 1), this);
+    if (a < 2) {
+      var v = this.fromInt(1);
+      return this.async ? Promise.resolve(v) : v;
+    } else {
+      if (this.async) {
+        return new Promise((resolve) => {
+          this.fromNumber(a, c).then(() => {
+            if (!this.testBit(a - 1)) // force MSB set
+              this.bitwiseTo(BigInteger.ONE.shiftLeft(a - 1), op_or, this);
+            if (this.isEven()) this.dAddOffset(1, 0); // force odd
+            var loop = () => {
+              this.isProbablePrime(b).then((r) => {
+                if (!r) {
+                  this.dAddOffset(2, 0);
+                  if (this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a - 1), this);
+                  _util.setImmediate(loop);
+                } else {
+                  resolve(this);
+                }
+              });
+            };
+            loop();
+          });
+        });
+      } else {
+        this.fromNumber(a, c);
+        if (!this.testBit(a - 1)) // force MSB set
+          this.bitwiseTo(BigInteger.ONE.shiftLeft(a - 1), op_or, this);
+        if (this.isEven()) this.dAddOffset(1, 0); // force odd
+        while (!this.isProbablePrime(b)) {
+          this.dAddOffset(2, 0);
+          if (this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a - 1), this);
+        }
       }
     }
   } else {
@@ -908,7 +973,8 @@ function bnpFromNumber(a, b, c) {
     b.nextBytes(x);
     if (t > 0) x[0] &= ((1 << t) - 1);
     else x[0] = 0;
-    this.fromString(x, 256);
+    var _v = this.fromString(x, 256);
+    return this.async ? Promise.resolve(_v) : _v;
   }
 }
 
@@ -1184,6 +1250,7 @@ function bnAdd(a) {
 function bnSubtract(a) {
   var r = nbi();
   this.subTo(a, r);
+  r.async = this.async;
   return r;
 }
 
@@ -1371,7 +1438,7 @@ function bnModPow(e, m) {
   var i = e.bitLength(),
     k, r = nbv(1),
     z;
-  if (i <= 0) return r;
+  if (i <= 0) return this.async ? Promise.resolve(r) : r;
   else if (i < 18) k = 1;
   else if (i < 48) k = 3;
   else if (i < 144) k = 4;
@@ -1405,7 +1472,8 @@ function bnModPow(e, m) {
     r2 = nbi(),
     t;
   i = nbits(e[j]) - 1;
-  while (j >= 0) {
+
+  var fn = () => {
     if (i >= k1) w = (e[j] >> (i - k1)) & km;
     else {
       w = (e[j] & ((1 << (i + 1)) - 1)) << (k1 - i);
@@ -1449,8 +1517,26 @@ function bnModPow(e, m) {
         --j;
       }
     }
+  };
+  if (this.async) {
+    return new Promise((resolve) => {
+      var loop = () => {
+        if (j >= 0) {
+          fn();
+          _util.setImmediate(loop);
+        } else {
+          resolve(z.revert(r));
+        }
+      };
+      loop();
+    });
+  } else {
+    while (j >= 0) {
+      fn();
+    }
+    return z.revert(r);
   }
-  return z.revert(r);
+
 }
 
 // (public) gcd(this,a) (HAC 14.54)
@@ -1471,19 +1557,49 @@ function bnGCD(a) {
     x.rShiftTo(g, x);
     y.rShiftTo(g, y);
   }
-  while (x.signum() > 0) {
-    if ((i = x.getLowestSetBit()) > 0) x.rShiftTo(i, x);
-    if ((i = y.getLowestSetBit()) > 0) y.rShiftTo(i, y);
-    if (x.compareTo(y) >= 0) {
-      x.subTo(y, x);
-      x.rShiftTo(1, x);
-    } else {
-      y.subTo(x, y);
-      y.rShiftTo(1, y);
+  if (this.async) {
+    x.async = true;
+    var fn = function(done) {
+      if ((i = x.getLowestSetBit()) > 0) x.rShiftTo(i, x);
+      if ((i = y.getLowestSetBit()) > 0) y.rShiftTo(i, y);
+      x.compareTo(y).then(function(r) {
+        if (r >= 0) {
+          x.subTo(y, x);
+          x.rShiftTo(1, x);
+        } else {
+          y.subTo(x, y);
+          y.rShiftTo(1, y);
+        }
+        done();
+      });
+    };
+    return new Promise(function(resolve) {
+      var loop = function() {
+        if (x.signum() > 0) {
+          fn(() => { _util.setImmediate(loop); });
+        } else {
+          if (g > 0) y.lShiftTo(g, y);
+          y.async = true;
+          return resolve(y);
+        }
+      };
+      loop();
+    });
+  } else {
+    while (x.signum() > 0) {
+      if ((i = x.getLowestSetBit()) > 0) x.rShiftTo(i, x);
+      if ((i = y.getLowestSetBit()) > 0) y.rShiftTo(i, y);
+      if (x.compareTo(y) >= 0) {
+        x.subTo(y, x);
+        x.rShiftTo(1, x);
+      } else {
+        y.subTo(x, y);
+        y.rShiftTo(1, y);
+      }
     }
+    if (g > 0) y.lShiftTo(g, y);
+    return y;
   }
-  if (g > 0) y.lShiftTo(g, y);
-  return y;
 }
 
 // (protected) this % n, n < 2^26
@@ -1565,19 +1681,21 @@ var lplim = (1 << 26) / lowprimes[lowprimes.length - 1];
 
 function bnIsProbablePrime(t) {
   var i, x = this.abs();
+  x.async = this.async;
+  var result = r => this.async ? Promise.resolve(r) : r;
   if (x.t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
     for (i = 0; i < lowprimes.length; ++i)
-      if (x[0] == lowprimes[i]) return true;
-    return false;
+      if (x[0] == lowprimes[i]) return result(true);
+    return result(false);
   }
-  if (x.isEven()) return false;
+  if (x.isEven()) return result(false);
   i = 1;
   while (i < lowprimes.length) {
     var m = lowprimes[i],
       j = i + 1;
     while (j < lowprimes.length && m < lplim) m *= lowprimes[j++];
     m = x.modInt(m);
-    while (i < j) if (m % lowprimes[i++] == 0) return false;
+    while (i < j) if (m % lowprimes[i++] == 0) return result(false);
   }
   return x.millerRabin(t);
 }
@@ -1616,7 +1734,7 @@ function bnToMPI() {
   var result = "";
   result += String.fromCharCode((size & 0xFF00) >> 8);
   result += String.fromCharCode(size & 0xFF);
-  result += util.bin2str(ba);
+  result += _util.bin2str(ba);
   return result;
 }
 /* END of addition */
@@ -1625,31 +1743,67 @@ function bnToMPI() {
 function bnpMillerRabin(t) {
   var n1 = this.subtract(BigInteger.ONE);
   var k = n1.getLowestSetBit();
-  if (k <= 0) return false;
+  if (k <= 0) return this.async ? Promise.resolve(false) : false;
   var r = n1.shiftRight(k);
   t = (t + 1) >> 1;
   if (t > lowprimes.length) t = lowprimes.length;
   var a = nbi();
   var j, bases = [];
-  for (var i = 0; i < t; ++i) {
-    //Pick bases at random, instead of starting at 2
-    for (;;) {
-      j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
-      if (bases.indexOf(j) == -1) break;
-    }
-    bases.push(j);
-    a.fromInt(j);
-    var y = a.modPow(r, this);
-    if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
-      var j = 1;
-      while (j++ < k && y.compareTo(n1) != 0) {
-        y = y.modPowInt(2, this);
-        if (y.compareTo(BigInteger.ONE) == 0) return false;
+  if (this.async) {
+    return new Promise((resolve) => {
+      var i = 0;
+      var fn = (done) => {
+        //Pick bases at random, instead of starting at 2
+        for (;;) {
+          j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
+          if (bases.indexOf(j) == -1) break;
+        }
+        bases.push(j);
+        a.fromInt(j);
+        a.async = true;
+        a.modPow(r, this).then((y) => {
+          if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
+            var j = 1;
+            while (j++ < k && y.compareTo(n1) != 0) {
+              y = y.modPowInt(2, this);
+              if (y.compareTo(BigInteger.ONE) == 0) return resolve(false);
+            }
+            if (y.compareTo(n1) != 0) return resolve(false);
+          }
+          done();
+        });
+      };
+      var loop = () => {
+        if (i < t) {
+          fn(() => _util.setImmediate(loop));
+          i++;
+        } else {
+          resolve(true);
+        }
+      };
+      loop();
+    });
+  } else {
+    for(var i = 0; i < t; t++) {
+      //Pick bases at random, instead of starting at 2
+      for (;;) {
+        j = lowprimes[Math.floor(Math.random() * lowprimes.length)];
+        if (bases.indexOf(j) == -1) break;
       }
-      if (y.compareTo(n1) != 0) return false;
+      bases.push(j);
+      a.fromInt(j);
+      var y = a.modPow(r, this);
+      if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
+        var j = 1;
+        while (j++ < k && y.compareTo(n1) != 0) {
+          y = y.modPowInt(2, this);
+          if (y.compareTo(BigInteger.ONE) == 0) return false;
+        }
+        if (y.compareTo(n1) != 0) return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 // protected
