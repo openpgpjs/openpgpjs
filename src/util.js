@@ -577,11 +577,12 @@ const util = {
 
 };
 
+// only use setImmediate if it's defined
 if (typeof setImmediate === 'function') {
   util.setImmediate = setImmediate;
 } else {
   util.setImmediate = function(fn) {
-    setTimeout(fn, 0);
+    fn();
   };
 }
 
