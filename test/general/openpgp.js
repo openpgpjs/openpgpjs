@@ -1154,7 +1154,7 @@ describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures.length).to.equal(0);
             done();
-          });
+          }).catch(done);
         });
 
         it('should encrypt and decrypt with password and not ascii armor', function(done) {
