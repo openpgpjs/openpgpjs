@@ -1253,6 +1253,10 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
   subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  if (options.keyExpirationTime > 0) {
+    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyNeverExpires = false;
+  }
   subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
   packetlist.push(secretSubkeyPacket);

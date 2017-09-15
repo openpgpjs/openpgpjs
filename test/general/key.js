@@ -1335,6 +1335,12 @@ describe('Key', function() {
       var actual_delta = (new Date(expiration) - new Date()) / 1000;
       expect(Math.abs(actual_delta - expect_delta)).to.be.below(60);
 
+      var subKeyExpiration = key.subKeys[0].getExpirationTime();
+      expect(subKeyExpiration).to.exist;
+
+      var actual_subKeyDelta = (new Date(subKeyExpiration) - new Date()) / 1000;
+      expect(Math.abs(actual_subKeyDelta - expect_delta)).to.be.below(60);
+
       done();
     }).catch(done);
   });

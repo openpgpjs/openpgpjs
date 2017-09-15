@@ -18598,7 +18598,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.9",
+  versionstring: "OpenPGP.js v2.5.10",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -28933,6 +28933,10 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
   subkeySignaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
   subkeySignaturePacket.keyFlags = [_enums2.default.keyFlags.encrypt_communication | _enums2.default.keyFlags.encrypt_storage];
+  if (options.keyExpirationTime > 0) {
+    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyNeverExpires = false;
+  }
   subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
   packetlist.push(secretSubkeyPacket);
@@ -36586,7 +36590,9 @@ var util = {
       return _buffer.Buffer;
     }
 
-    return _dereq_("buf" + "fer").Buffer;
+    // this "hack" allows us to access the native node buffer module.
+    // otherwise, it gets replaced with the browserified version
+    return _dereq_('buf' + 'fer').Buffer;
   }
 
 };
