@@ -13,8 +13,8 @@ import * as keyModule from '../key.js';
 import ChunkedStream from './chunked.js';
 import CompressionStream from './compression.js';
 import util from 'util';
-import nodeCrypto from 'crypto';
 
+const nodeCrypto = _util.getNodeCrypto();
 const Buffer = _util.getNativeBuffer();
 
 export default function MessageStream({ publicKeys, privateKeys, passwords, filename, compression, armor=true, detached=false, signature=null }) {
@@ -38,7 +38,7 @@ export default function MessageStream({ publicKeys, privateKeys, passwords, file
     const repeat = Buffer.from([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
     const prefix = Buffer.concat([prefixrandom, repeat]);
     resync = false;
-    this.hash = nodeCrypto.createHash('sha1');
+    this.hash = nodeCrypto ? nodeCrypto.createHash('sha1') : crypto.hash.forge_sha1.create();
     this.hash.update(prefix);
   }
 

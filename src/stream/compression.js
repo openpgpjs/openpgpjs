@@ -6,9 +6,8 @@ import packet from '../packet';
 import enums from '../enums';
 import zlib from 'zlib';
 import util from 'util';
-import _util from '../util.js';
+import { Buffer } from 'buffer';
 
-const Buffer = _util.getNativeBuffer();
 
 export default function CompressionStream(opts) {
   var self = this;

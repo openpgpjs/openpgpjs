@@ -9,7 +9,7 @@ const Buffer = _util.getNativeBuffer();
 export default CipherFeedbackStream;
 
 function CipherFeedbackStream({ prefixrandom, cipherfn, sessionKey, cipherType, resync }) {
-  Transform.call(this);
+  Transform.call(this, { objectMode: true });
   this.prefixRandom = Buffer.from(prefixrandom, 'binary');
 
   this.cipherType = cipherType === 'binary' ? 'binary' : 'utf8';

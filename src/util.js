@@ -24,6 +24,7 @@
 'use strict';
 
 import config from './config';
+import { Buffer } from 'buffer/';
 
 const util = {
 
@@ -568,7 +569,9 @@ const util = {
       return Buffer;
     }
 
-    return require('buffer').Buffer;
+    // this "hack" allows us to access the native node buffer module.
+    // otherwise, it gets replaced with the browserified version
+    return require('buf' + 'fer').Buffer;
   },
 
 

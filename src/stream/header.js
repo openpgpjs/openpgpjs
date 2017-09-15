@@ -3,7 +3,10 @@
 import { Transform } from 'stream';
 import util from 'util';
 
+
 export default function HeaderPacketStream(opts) {
+  opts = opts || {};
+  opts.objectMode = true;
   Transform.call(this, opts);
   this._headerWritten = false;
 }

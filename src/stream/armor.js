@@ -50,6 +50,7 @@ ArmorStream.prototype._transform = function(chunk, enc, callback) {
   HeaderPacketStream.prototype._transform.call(this, chunk, enc);
 
   this.checksum = armor.createcrc24(chunk, this.checksum ? this.checksum : undefined);
+  chunk = Buffer.from(chunk, enc);
   this.queue = Buffer.concat([this.queue, chunk]);
   size = this.queue.length - (this.queue.length % BYTE_LENGTH);
   if (size) {
