@@ -153,7 +153,10 @@ export default function RSA() {
         keyGenOpt = {
           name: 'RSA-OAEP',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3) // take three bytes (max 65537)
+          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          hash: {
+            name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
+          }
         };
         keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
       }
