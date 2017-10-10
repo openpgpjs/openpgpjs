@@ -4841,7 +4841,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.11",
+  versionstring: "OpenPGP.js v2.5.12",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -16475,8 +16475,7 @@ function parseClonedPackets(options, method) {
   if (options.key) {
     options.key = packetlistCloneToKey(options.key);
   }
-  if (options.message && (method === 'sign' || method === 'verify')) {
-    // sign and verify support only CleartextMessage
+  if (options.message && options.message.signature) {
     options.message = packetlistCloneToCleartextMessage(options.message);
   } else if (options.message) {
     options.message = packetlistCloneToMessage(options.message);
