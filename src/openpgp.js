@@ -100,6 +100,10 @@ export function destroyWorker() {
 export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0 } = {}) {
   const options = formatUserIds({ userIds, passphrase, numBits, unlocked, keyExpirationTime });
 
+  if (util.getWebCryptoAll() && numBits < 2048) {
+    throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
+  }
+
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
