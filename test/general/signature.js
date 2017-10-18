@@ -566,7 +566,7 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
       done();
-    });
+    }).catch(function(err){console.log(err);done(err)});
 
   });
 
@@ -761,6 +761,22 @@ describe("Signature", function() {
     expect(signatures[1].valid).to.be.true;
     expect(signatures[1].keyid.toHex()).to.equal(signerKey.primaryKey.getKeyId().toHex());
     done();
+  });
+
+  it('signed with multi-keys', function() {
+    var vKey1 = openpgp.key.readArmored(priv_key_arm1).keys[0];
+    var vKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    vKey1.decrypt('abcd');
+    vKey2.decrypt('hello world')
+    var vMessage = openpgp.message.fromText('hello, world!');
+    var vExpectSigningKeys = [vKey1, vKey2];
+    vMessage = vMessage.sign(vExpectSigningKeys);
+    vExpectSigningKeys = [vKey1.getKeyIds()[0], vKey2.getKeyIds()[0]]
+    var vSigningKeys = vMessage.getSigningKeyIds()
+    expect(vSigningKeys).length.to.be(2);
+    for (var i=0; i < 2; i++) {
+      expect(vSigningKeys[i].toHex()).to.be.equal(vExpectSigningKeys[i].toHex())
+    };
   });
 
 });
