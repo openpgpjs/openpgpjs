@@ -4841,7 +4841,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.12",
+  versionstring: "OpenPGP.js v2.5.13",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -13143,6 +13143,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Key = Key;
+exports.read = read;
 exports.readArmored = readArmored;
 exports.generate = generate;
 exports.reformat = reformat;
@@ -14179,24 +14180,20 @@ SubKey.prototype.update = function (subKey, primaryKey) {
 };
 
 /**
- * Reads an OpenPGP armored text and returns one or multiple key objects
- * @param {String} armoredText text to be parsed
+ * Reads an unarmored OpenPGP key list and returns one or multiple key objects
+ * @param {Uint8Array} data to be parsed
  * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
-function readArmored(armoredText) {
+function read(data) {
   var result = {};
   result.keys = [];
   try {
-    var input = _armor2.default.decode(armoredText);
-    if (!(input.type === _enums2.default.armor.public_key || input.type === _enums2.default.armor.private_key)) {
-      throw new Error('Armored text not of type key');
-    }
     var packetlist = new _packet2.default.List();
-    packetlist.read(input.data);
+    packetlist.read(data);
     var keyIndex = packetlist.indexOfTag(_enums2.default.packet.publicKey, _enums2.default.packet.secretKey);
     if (keyIndex.length === 0) {
-      throw new Error('No key packet found in armored text');
+      throw new Error('No key packet found');
     }
     for (var i = 0; i < keyIndex.length; i++) {
       var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
@@ -14213,6 +14210,26 @@ function readArmored(armoredText) {
     result.err.push(e);
   }
   return result;
+}
+
+/**
+ * Reads an OpenPGP armored text and returns one or multiple key objects
+ * @param {String} armoredText text to be parsed
+ * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
+ * @static
+ */
+function readArmored(armoredText) {
+  try {
+    var input = _armor2.default.decode(armoredText);
+    if (!(input.type === _enums2.default.armor.public_key || input.type === _enums2.default.armor.private_key)) {
+      throw new Error('Armored text not of type key');
+    }
+    return read(input.data);
+  } catch (e) {
+    var result = { keys: [], err: [] };
+    result.err.push(e);
+    return result;
+  }
 }
 
 /**
