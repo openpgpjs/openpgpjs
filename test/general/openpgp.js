@@ -1200,6 +1200,20 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
       });
+
+      describe('Errors', function() {
+        it('Errors should contain innerError', function(done) {
+          openpgp.encrypt({
+            data: new Uint8Array([0x01, 0x01, 0x01]),
+            passwords: null
+          })
+          .then(() => done(new Error('Error expected.')))
+          .catch(function(error){
+            expect(error.innerError).to.exist;
+            done();
+          });
+        });
+      })
     }
 
   });
