@@ -1207,7 +1207,9 @@ describe('OpenPGP.js public api tests', function() {
             data: new Uint8Array([0x01, 0x01, 0x01]),
             passwords: null
           })
-          .then(() => done(new Error('Error expected.')))
+          .then(function () {
+            done(new Error('Error expected.'));
+          })
           .catch(function(error){
             expect(error.innerError).to.exist;
             done();
