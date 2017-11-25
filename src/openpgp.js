@@ -553,6 +553,7 @@ function onError(message, error) {
   // rethrow new high level error for api users
   const newError = new Error(message + ': ' + error.message);
   newError.innerError = error;
+  newError.stack += '\n' + error.stack;
   throw newError;
 }
 
