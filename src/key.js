@@ -1180,6 +1180,10 @@ export function reformat(options) {
       throw new Error('Only RSA Encrypt or Sign supported');
     }
 
+    if (!options.privateKey.decrypt()) {
+      throw new Error('Key not decrypted');
+    }
+
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
       options.unlocked = true;
     }
