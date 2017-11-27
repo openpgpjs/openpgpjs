@@ -38,6 +38,7 @@ import enums from '../enums.js';
 import util from '../util.js';
 import crypto from '../crypto';
 import type_s2k from '../type/s2k.js';
+import type_keyid from '../type/keyid.js';
 
 /**
  * @constructor
@@ -290,4 +291,19 @@ SecretKey.prototype.clearPrivateParams = function () {
   }
   this.params = this.params.slice(0, crypto.getPubKeyParamTypes(this.algorithm).length);
   this.isDecrypted = false;
+};
+
+/**
+ * Fix custom types after cloning
+ */
+ SecretKey.prototype.postCloneTypeFix = function() {
+  const types = crypto.getPubKeyParamTypes(this.algorithm).concat(crypto.getPrivKeyParamTypes(this.algorithm));
+  for (var i = 0; i < this.params.length; i++) {
+    const param = this.params[i];
+    const cloneFn = crypto.getCloneFn(types[i]);
+    this.params[i] = cloneFn(param);
+  }
+  if (this.keyid) {
+    this.keyid = type_keyid.fromClone(this.keyid);
+  }
 };

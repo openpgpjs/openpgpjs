@@ -67,3 +67,8 @@ OID.prototype.write = function () {
   return util.str2Uint8Array(
     String.fromCharCode(this.oid.length)+this.oid);
 };
+
+OID.fromClone = function (clone) {
+  var oid = new OID(clone.oid);
+  return oid;
+};
