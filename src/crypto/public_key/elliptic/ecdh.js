@@ -73,18 +73,18 @@ function kdf(hash_algo, X, length, param) {
  * @param  {Enums}       cipher_algo  Symmetric cipher to use
  * @param  {Enums}       hash_algo    Hash to use
  * @param  {Uint8Array}  m            Value derived from session key (RFC 6637)
- * @param  {BigInteger}  R            Recipient public key
+ * @param  {BigInteger}  Q            Recipient public key
  * @param  {String}      fingerprint  Recipient fingerprint
  * @return {{V: BigInteger, C: Uint8Array}}  Returns ephemeral key and encoded session key
  */
-function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
+function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
   const v = curve.genKeyPair();
-  R = curve.keyFromPublic(R.toByteArray());
-  const S = v.derive(R);
+  Q = curve.keyFromPublic(Q.toByteArray());
+  const S = v.derive(Q);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   const C = aes_kw.wrap(Z, m.toBytes());
   return {
@@ -101,18 +101,18 @@ function encrypt(oid, cipher_algo, hash_algo, m, R, fingerprint) {
  * @param  {Enums}       hash_algo    Hash algorithm to use
  * @param  {BigInteger}  V            Public part of ephemeral key
  * @param  {Uint8Array}  C            Encrypted and wrapped value derived from session key
- * @param  {BigInteger}  r            Recipient private key
+ * @param  {BigInteger}  d            Recipient private key
  * @param  {String}      fingerprint  Recipient fingerprint
  * @return {Uint8Array}               Value derived from session
  */
-function decrypt(oid, cipher_algo, hash_algo, V, C, r, fingerprint) {
+function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
   V = curve.keyFromPublic(V.toByteArray());
-  r = curve.keyFromPrivate(r.toByteArray());
-  const S = r.derive(V);
+  d = curve.keyFromPrivate(d.toByteArray());
+  const S = d.derive(V);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   return new BigInteger(aes_kw.unwrap(Z, C));
 }

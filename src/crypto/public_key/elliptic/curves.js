@@ -36,36 +36,47 @@ import util from '../../../util.js';
 const curves = {
   p256: {
     oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
-    bits: 256,
+    curveName: 'P-256',
+    hashName: 'SHA-256',
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
+    nist: true
   },
   p384: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x22]),
-    bits: 384,
+    curveName: 'P-384',
+    hashName: 'SHA-384',
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
+    nist: true
   },
   p521: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x23]),
-    bits: 521,
+    curveName: 'P-521',
+    hashName: 'SHA-512',
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
+    nist: true
   },
   secp256k1: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
-    bits: 256,
+    curveName: 'SECP-256K1',
+    hashName: 'SHA-256',
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
+    nist: false
   }
 };
 
-function Curve(name, {oid, hash, cipher}) {
+function Curve(name, {oid, hash, cipher, curveName, hashName, nist}) {
   this.curve = new EC(name);
   this.name = name;
   this.oid = oid;
   this.hash = hash;
   this.cipher = cipher;
+  this.curveName= curveName;
+  this.hashName = hashName;
+  this.nist = nist;
 }
 
 Curve.prototype.keyFromPrivate = function (priv) {
@@ -91,7 +102,10 @@ function get(oid_or_name) {
       return new Curve(name, {
         oid: curves[name].oid,
         hash: curves[name].hash,
-        cipher: curves[name].cipher
+        cipher: curves[name].cipher,
+        curveName: curves[name].curveName,
+        hashName: curves[name].hashName,
+        nist: curves[name].nist
       });
     }
   }
@@ -104,8 +118,8 @@ function generate(curve) {
     var keyPair = curve.genKeyPair();
     resolve({
       oid: curve.oid,
-      R: new BigInteger(keyPair.getPublic()),
-      r: new BigInteger(keyPair.getPrivate()),
+      Q: new BigInteger(keyPair.getPublic()),
+      d: new BigInteger(keyPair.getPrivate()),
       hash: curve.hash,
       cipher: curve.cipher
     });
