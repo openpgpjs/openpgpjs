@@ -8,15 +8,17 @@ var chai = require('chai'),
 
 describe("ASCII armor", function() {
 
-  function getArmor(headers) {
+  function getArmor(headers, signatureHeaders) {
     return ['-----BEGIN PGP SIGNED MESSAGE-----']
       .concat(headers)
       .concat(
         ['',
         'sign this',
-        '-----BEGIN PGP SIGNATURE-----',
-        'Version: GnuPG v2.0.22 (GNU/Linux)',
-        '',
+        '-----BEGIN PGP SIGNATURE-----']
+      )
+      .concat(signatureHeaders || ['Version: GnuPG v2.0.22 (GNU/Linux)'])
+      .concat(
+        ['',
         'iJwEAQECAAYFAlMrPj0ACgkQ4IT3RGwgLJfYkQQAgHMQieazCVdfGAfzQM69Egm5',
         'HhcQszODD898wpoGCHgiNdNo1+5nujQAtXnkcxM+Vf7onfbTvUqut/siyO3fzqhK',
         'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
@@ -100,16 +102,30 @@ describe("ASCII armor", function() {
     expect(msg).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
   });
 
-  it('Exception if improperly formatted armor header', function () {
+  it('Exception if improperly formatted armor header - plaintext section', function () {
     var msg = getArmor(['Hash:SHA256']);
     msg = openpgp.cleartext.readArmored.bind(null, msg);
     expect(msg).to.throw(Error, /Improperly formatted armor header/);
     msg = getArmor(['Ha sh: SHA256']);
     msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Improperly formatted armor header/);
+    expect(msg).to.throw(Error, /Only "Hash" header allowed in cleartext signed message/);
     msg = getArmor(['Hash SHA256']);
     msg = openpgp.cleartext.readArmored.bind(null, msg);
     expect(msg).to.throw(Error, /Improperly formatted armor header/);
+  });
+
+  it('Exception if improperly formatted armor header - signature section', function () {
+    [' Space: leading', 'Space : trailing', 'Space :switched', ': empty', 'none', 'Space:missing'].forEach(function (invalidHeader) {
+      expect(openpgp.cleartext.readArmored.bind(null, getArmor(['Hash: SHA1'], [invalidHeader]))).to.throw(Error, /Improperly formatted armor header/);
+    });
+  });
+
+  it('Ignore unknown armor header - signature section', function () {
+    var validHeaders = ['Version: BCPG C# v1.7.4114.6375', 'Independent Reserve Pty. Ltd. 2017: 1.0.0.0'];
+    expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], validHeaders))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
+    ['A: Hello', 'Ab: 1.2.3', 'Abcd: #!/yah', 'Acd 123 5.6.$.8: Hello', '_: Hello', '*: Hello', '* & ## ?? ()(): Hello', '( ): Weird'].forEach(function (validHeader) {
+      expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [validHeader]))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
+    });
   });
 
   it('Exception if wrong armor header type', function () {
