@@ -45,11 +45,14 @@ function createType(data, type) {
     case 'oid':
       return new type_oid(data);
     case 'kdf':
-      return new type_kdf_params(data);
+      if (data) {
+        return new type_kdf_params(data[0], data[1]);
+      }
+      return new type_kdf_params();
     case 'ecdh_symkey':
       return new type_ecdh_symkey(data);
     default:
-      return null;
+      throw new Error('Unknown type.');
   }
 }
 
@@ -280,12 +283,12 @@ export default {
 
       case 'ecdsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return constructParams([keyObject.oid, keyObject.R, keyObject.r], types);
+          return constructParams([keyObject.oid, keyObject.Q, keyObject.d], types);
         });
 
       case 'ecdh':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return constructParams([keyObject.oid, keyObject.R, [keyObject.hash, keyObject.cipher], keyObject.r], types);
+          return constructParams([keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d], types);
         });
 
       default:
@@ -293,6 +296,21 @@ export default {
     }
   },
 
+
+  getCloneFn: function(type) {
+    switch(type) {
+      case 'mpi':
+        return type_mpi.fromClone;
+      case 'oid':
+        return type_oid.fromClone;
+      case 'kdf':
+        return type_kdf_params.fromClone;
+      case 'ecdh_symkey':
+        return type_ecdh_symkey.fromClone;
+      default:
+        throw new Error('Unknown type.');
+    }
+  },
 
   /**
    * generate random byte prefix as string for the specified algorithm

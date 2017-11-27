@@ -31,14 +31,15 @@ import BigInteger from '../jsbn.js';
 /**
  * Sign a message using the provided key
  * @param  {String}      oid        Elliptic curve for the key
+ * @param  {BigInteger}  Q          Public key used to sign
  * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}  m          Message to sign
- * @param  {BigInteger}  w          Private key used to sign
+* @param  {BigInteger}  d          Private key used to sign
  * @return {{r: BigInteger, s: BigInteger}}  Signature of the message
  */
-function sign(oid, hash_algo, m, w) {
+function sign(oid, hash_algo, m, d) {
   const curve = curves.get(oid);
-  const key = curve.keyFromPrivate(w.toByteArray());
+  const key = curve.keyFromPrivate(d.toByteArray());
   const signature = key.sign(m, hash_algo);
   return {
     r: new BigInteger(signature.r),
@@ -52,11 +53,11 @@ function sign(oid, hash_algo, m, w) {
  * @param  {enums.hash}  hash_algo  Hash algorithm used in the signature
  * @param  {{r: BigInteger, s: BigInteger}}  signature  Signature to verify
  * @param  {Uint8Array}  m          Message to verify
- * @param  {BigInteger}  gw         Public key used to verify the message
+ * @param  {BigInteger}  Q         Public key used to verify the message
  */
-function verify(oid, hash_algo, signature, m, gw) {
+function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
-  const key = curve.keyFromPublic(gw.toByteArray());
+  const key = curve.keyFromPublic(Q.toByteArray());
   return key.verify(m, {r: signature.r.toByteArray(), s: signature.s.toByteArray()}, hash_algo);
 }
 
