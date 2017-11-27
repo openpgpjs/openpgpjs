@@ -66,7 +66,9 @@ AsyncProxy.prototype.onMessage = function(event) {
     case 'method-return':
       if (msg.err) {
         // fail
-        this.tasks[msg.id].reject(new Error(msg.err));
+        const err = new Error(msg.err);
+        err.stack = msg.stack || err.stack;
+        this.tasks[msg.id].reject(err);
       } else {
         // success
         this.tasks[msg.id].resolve(msg.data);
