@@ -211,8 +211,11 @@ PublicKey.prototype.getBitSize = function () {
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {
-  for (var i = 0; i < this.params.length; i++) {
-    this.params[i] = type_mpi.fromClone(this.params[i]);
+  const types = crypto.getPubKeyParamTypes(this.algorithm);
+  for (var i = 0; i < types.length; i++) {
+    const param = this.params[i];
+    const cloneFn = crypto.getCloneFn(types[i]);
+    this.params[i] = cloneFn(param);
   }
   if (this.keyid) {
     this.keyid = type_keyid.fromClone(this.keyid);
