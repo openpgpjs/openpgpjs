@@ -1202,8 +1202,8 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('Errors', function() {
-        it('Errors stack should contain the stack of innerError', function(done) {
-          openpgp.encrypt({
+        it('Error stack should contain the stack of the original error', function(done) {
+          return openpgp.encrypt({
             data: new Uint8Array([0x01, 0x01, 0x01]),
             passwords: null
           })
@@ -1213,22 +1213,22 @@ describe('OpenPGP.js public api tests', function() {
           .catch(function(error) {
             expect(error.stack).to.match(/\nError: No keys or passwords/);
             done();
-          });
-        });
-        it('Errors should contain innerError', function(done) {
-          openpgp.encrypt({
-            data: new Uint8Array([0x01, 0x01, 0x01]),
-            passwords: null
           })
-          .then(function() {
-            done(new Error('Error expected.'));
-          })
-          .catch(function(error) {
-            expect(error.innerError).to.exist;
-            done();
-          });
         });
-      })
+        // it('Errors should contain innerError', function(done) {
+        //   openpgp.encrypt({
+        //     data: new Uint8Array([0x01, 0x01, 0x01]),
+        //     passwords: null
+        //   })
+        //   .then(function() {
+        //     done(new Error('Error expected.'));
+        //   })
+        //   .catch(function(error) {
+        //     expect(error.innerError).to.exist;
+        //     done();
+        //   });
+        // });
+      });
     }
 
   });
