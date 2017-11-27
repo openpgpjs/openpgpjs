@@ -1150,6 +1150,17 @@ describe('Key', function() {
       }).catch(done);
     }).catch(done);
   });
+  it('Throw user friendly error when reformatting encrypted key', function(done) {
+    openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
+      openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function(newKey) {
+        assert.fail('reformatKey should result in error when key not decrypted');
+        done();
+      }).catch(function(error) {
+        expect(error.message).to.equal('Error reformatting keypair: Key not decrypted');
+        done();
+      });
+    }).catch(done);
+  });
 
   it('Find a valid subkey binding signature among many invalid ones', function(done) {
     var k = openpgp.key.readArmored(valid_binding_sig_among_many_expired_sigs_pub).keys[0];
