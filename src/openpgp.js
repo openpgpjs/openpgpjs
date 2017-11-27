@@ -551,7 +551,10 @@ function onError(message, error) {
   // log the stack trace
   if (config.debug) { console.error(error.stack); }
   // rethrow new high level error for api users
-  throw new Error(message + ': ' + error.message);
+  const newError = new Error(message + ': ' + error.message);
+  newError.innerError = error;
+  newError.stack += '\n' + error.stack;
+  throw newError;
 }
 
 /**
