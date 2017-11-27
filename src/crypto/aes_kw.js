@@ -19,6 +19,71 @@
 
 import cipher from './cipher';
 
+function wrap(key, data) {
+  var aes =  new cipher["aes" + (key.length*8)](key);
+  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
+  var P = unpack(data);
+  var A = IV;
+  var R = P;
+  var n = P.length/2;
+  var t = new Uint32Array([0, 0]);
+  var B = new Uint32Array(4);
+  for (var j = 0; j <= 5; ++j) {
+    for (var i = 0; i < n; ++i) {
+      t[1] = n * j + (1 + i);
+      // B = A
+      B[0] = A[0];
+      B[1] = A[1];
+      // B = A || R[i]
+      B[2] = R[2*i];
+      B[3] = R[2*i+1];
+      // B = AES(K, B)
+      B = unpack(aes.encrypt(pack(B)));
+      // A = MSB(64, B) ^ t
+      A = B.subarray(0, 2);
+      A[0] = A[0] ^ t[0];
+      A[1] = A[1] ^ t[1];
+      // R[i] = LSB(64, B)
+      R[2*i] = B[2];
+      R[2*i+1] = B[3];
+    }
+  }
+  return pack(A, R);
+}
+
+function unwrap(key, data) {
+  var aes =  new cipher["aes" + (key.length*8)](key);
+  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
+  var C = unpack(data);
+  var A = C.subarray(0, 2);
+  var R = C.subarray(2);
+  var n = C.length/2-1;
+  var t = new Uint32Array([0, 0]);
+  var B = new Uint32Array(4);
+  for (var j = 5; j >= 0; --j) {
+    for (var i = n - 1; i >= 0; --i) {
+      t[1] = n * j + (i + 1);
+      // B = A ^ t
+      B[0] = A[0] ^ t[0];
+      B[1] = A[1] ^ t[1];
+      // B = (A ^ t) || R[i]
+      B[2] = R[2*i];
+      B[3] = R[2*i+1];
+      // B = AES-1(B)
+      B = unpack(aes.decrypt(pack(B)));
+      // A = MSB(64, B)
+      A = B.subarray(0, 2);
+      // R[i] = LSB(64, B)
+      R[2*i] = B[2];
+      R[2*i+1] = B[3];
+    }
+  }
+  if (A[0] === IV[0] && A[1] === IV[1]) {
+    return pack(R);
+  }
+  throw new Error("Key Data Integrity failed");
+}
+
 function createArrayBuffer(data) {
   if (typeof data === "string") {
     var length = data.length;
@@ -58,84 +123,6 @@ function pack() {
     offset += 4*arguments[i].length;
   }
   return new Uint8Array(buffer);
-}
-
-function formatKey(key) {
-  var length = key.length;
-  var buffer = createArrayBuffer(key);
-  var view = new DataView(buffer);
-  key = new Array(length/4);
-  for (var i=0; i<length/4; ++i) {
-    key[i] = view.getUint32(4*i);
-  }
-  return key;
-}
-
-function wrap(key, data) {
-  key = pack(formatKey(key));
-  var aes =  new cipher["aes" + (key.length*8)](key);
-  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var P = unpack(data);
-  var A = IV;
-  var R = P;
-  var n = P.length/2;
-  var t = new Uint32Array([0, 0]);
-  var B = new Uint32Array(4);
-  for (var j = 0; j <= 5; ++j) {
-    for (var i = 0; i < n; ++i) {
-      t[1] = n * j + (1 + i);
-      // B = A
-      B[0] = A[0];
-      B[1] = A[1];
-      // B = A || R[i]
-      B[2] = R[2*i];
-      B[3] = R[2*i+1];
-      // B = AES(K, B)
-      B = unpack(aes.encrypt(pack(B)));
-      // A = MSB(64, B) ^ t
-      A = B.subarray(0, 2);
-      A[0] = A[0] ^ t[0];
-      A[1] = A[1] ^ t[1];
-      // R[i] = LSB(64, B)
-      R[2*i] = B[2];
-      R[2*i+1] = B[3];
-    }
-  }
-  return pack(A, R);
-}
-
-function unwrap(key, data) {
-  key = pack(formatKey(key));
-  var aes =  new cipher["aes" + (key.length*8)](key);
-  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var C = unpack(data);
-  var A = C.subarray(0, 2);
-  var R = C.subarray(2);
-  var n = C.length/2-1;
-  var t = new Uint32Array([0, 0]);
-  var B = new Uint32Array(4);
-  for (var j = 5; j >= 0; --j) {
-    for (var i = n - 1; i >= 0; --i) {
-      t[1] = n * j + (i + 1);
-      // B = A ^ t
-      B[0] = A[0] ^ t[0];
-      B[1] = A[1] ^ t[1];
-      // B = (A ^ t) || R[i]
-      B[2] = R[2*i];
-      B[3] = R[2*i+1];
-      // B = AES-1(B)
-      B = unpack(aes.decrypt(pack(B)));
-      // A = MSB(64, B)
-      A = B.subarray(0, 2);
-      // R[i] = LSB(64, B)
-      R[2*i] = B[2];
-      R[2*i+1] = B[3];
-    }
-  }
-  if (A[0] === IV[0] && A[1] === IV[1]) {
-    return pack(R);
-  }
-  throw new Error("Key Data Integrity failed");
 }
 
 module.exports = {
