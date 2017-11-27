@@ -46,7 +46,7 @@ describe('AES Key Wrap and Unwrap', function () {
 
   test_vectors.forEach(function(test) {
     it(test[0], function(done) {
-      var kek = openpgp.util.hex2bin(test[1]);
+      var kek = openpgp.util.hex2Uint8Array(test[1]);
       var input = test[2].replace(/\s/g, "");
       var input_bin = openpgp.util.hex2bin(input);
       var output = test[3].replace(/\s/g, "");
