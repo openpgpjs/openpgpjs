@@ -113,39 +113,34 @@ describe('HKP unit tests', function() {
   afterEach(function() {});
 
   describe('lookup', function() {
-    it('by email address should work', function(done) {
-      hkp.lookup({
+    it('by email address should work', () => {
+      return hkp.lookup({
         query: 'safewithme.testuser@gmail.com'
       }).then(function(key) {
         expect(key).to.exist;
-        done();
       });
     });
 
-    it('by email address should not find a key', function(done) {
-      hkp.lookup({
+    it('by email address should not find a key', () => {
+      return hkp.lookup({
         query: 'safewithme.testuse@gmail.com'
       }).then(function(key) {
         expect(key).to.be.undefined;
-        done();
       });
     });
 
-    it('by key id should work', function(done) {
-      hkp.lookup({
+    it('by key id should work', () => {
+      return hkp.lookup({
         keyId: 'D7FB93FCDFBFC23C'
       }).then(function(key) {
         expect(key).to.exist;
-        done();
       });
     });
   });
 
   describe('upload', function() {
-    it('should work', function(done) {
-      hkp.upload(pub_key).then(function() {
-        done();
-      });
+    it('should work', () => {
+      return hkp.upload(pub_key);
     });
   });
 
