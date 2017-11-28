@@ -287,10 +287,10 @@ describe("Keyring", function() {
 
     localstore.storePublic([key]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.not.null;
-    
+
     localstore.storePublic([]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
-  })
+  });
 
   it('removeKeysForId() - unknown id', function() {
     keyring.publicKeys.importKey(pubkey);
