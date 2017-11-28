@@ -885,7 +885,7 @@ describe('Key', function() {
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
-  it('Preferences of generated key', function(done) {
+  it('Preferences of generated key', () => {
     var testPref = function(key) {
       // key flags
       var keyFlags = openpgp.enums.keyFlags;
@@ -903,10 +903,9 @@ describe('Key', function() {
     };
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(function(key) {
       testPref(key.key);
       testPref(openpgp.key.readArmored(key.publicKeyArmored).keys[0]);
-      done();
     });
   });
 
@@ -924,54 +923,51 @@ describe('Key', function() {
     expect(primUser.selfCertificate).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
-  it('Generated key is not unlocked by default', function(done) {
+  it('Generated key is not unlocked by default', () => {
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     var key;
-    openpgp.generateKey(opt).then(function(newKey) {
+    return openpgp.generateKey(opt).then(function(newKey) {
       key = newKey;
       return openpgp.message.fromText('hello').encrypt([key.key]);
     }).then(function(msg) {
       return msg.decrypt(key.key);
     }).catch(function(err) {
       expect(err.message).to.equal('Private key is not decrypted.');
-      done();
     });
   });
 
-  it('Generate key - single userid', function(done) {
+  it('Generate key - single userid', () => {
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
-      done();
-    }).catch(done);
+    });
   });
 
-  it('Generate key - multi userid', function(done) {
+  it('Generate key - multi userid', () => {
     var userId1 = 'test <a@b.com>';
     var userId2 = 'test <b@c.com>';
     var opt = {numBits: 512, userIds: [userId1, userId2], passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(2);
       expect(key.users[0].userId.userid).to.equal(userId1);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.users[1].userId.userid).to.equal(userId2);
       expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
-      done();
-    }).catch(done);
+    });
   });
 
-  it('Encrypt key with new passphrase', function(done) {
+  it('Encrypt key with new passphrase', () => {
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: 'passphrase'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       var armor1 = key.armor();
       var armor2 = key.armor();
@@ -986,15 +982,15 @@ describe('Key', function() {
       expect(key.primaryKey.isDecrypted).to.be.true;
       var armor3 = key.armor();
       expect(armor3).to.not.equal(armor1);
-      done();
-    }).catch(done);
+    });
   });
-  it('Generate key - ensure keyExpirationTime works', function(done) {
+
+  it('Generate key - ensure keyExpirationTime works', () => {
     var expect_delta = 365 * 24 * 60 * 60;
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: '123', keyExpirationTime: expect_delta};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
 
       var expiration = key.getExpirationTime();
@@ -1008,9 +1004,7 @@ describe('Key', function() {
 
       var actual_subKeyDelta = (new Date(subKeyExpiration) - new Date()) / 1000;
       expect(Math.abs(actual_subKeyDelta - expect_delta)).to.be.below(60);
-
-      done();
-    }).catch(done);
+    });
   });
 
   it('Sign and verify key - primary user', function(done) {
@@ -1086,80 +1080,78 @@ describe('Key', function() {
     expect(signatures[3].valid).to.be.null;
     done();
   });
-  it('Reformat key without passphrase', function(done) {
+  it('Reformat key without passphrase', () => {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
     var opt = {numBits: 512, userIds: userId1};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
-      key = key.key
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId1);
       expect(key.primaryKey.isDecrypted).to.be.true;
       opt.privateKey = key;
       opt.userIds = userId2;
-      openpgp.reformatKey(opt).then(function(newKey) {
-        newKey = newKey.key
+      return openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key;
         expect(newKey.users.length).to.equal(1);
         expect(newKey.users[0].userId.userid).to.equal(userId2);
         expect(newKey.primaryKey.isDecrypted).to.be.true;
-        done();
-      }).catch(done);
-    }).catch(done);
+      });
+    });
   });
-  it('Reformat and encrypt key', function(done) {
+
+  it('Reformat and encrypt key', () => {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@c.com>';
     var userId3 = 'test3 <c@d.com>';
     var opt = {numBits: 512, userIds: userId1};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
-      key = key.key
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
       opt.privateKey = key;
       opt.userIds = [userId2, userId3];
       opt.passphrase = '123';
-      openpgp.reformatKey(opt).then(function(newKey) {
-        newKey = newKey.key
+      return openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key;
         expect(newKey.users.length).to.equal(2);
         expect(newKey.users[0].userId.userid).to.equal(userId2);
         expect(newKey.primaryKey.isDecrypted).to.be.false;
         newKey.decrypt('123');
         expect(newKey.primaryKey.isDecrypted).to.be.true;
-        done();
-      }).catch(done);
-    }).catch(done);
+      });
+    });
   });
-  it('Sign and encrypt with reformatted key', function(done) {
+
+  it('Sign and encrypt with reformatted key', () => {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
     var opt = {numBits: 512, userIds: userId1};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    openpgp.generateKey(opt).then(function(key) {
-      key = key.key
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
       opt.privateKey = key;
       opt.userIds = userId2;
-      openpgp.reformatKey(opt).then(function(newKey) {
-        newKey = newKey.key
-        openpgp.encrypt({data: 'hello', publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(function(encrypted) {
-          openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKey: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
+      return openpgp.reformatKey(opt).then(function(newKey) {
+        newKey = newKey.key;
+        return openpgp.encrypt({data: 'hello', publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(function(encrypted) {
+          return openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKey: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello');
             expect(decrypted.signatures[0].valid).to.be.true;
-            done();
-          }).catch(done);
-        }).catch(done);
-      }).catch(done);
-    }).catch(done);
+          });
+        });
+      });
+    });
   });
-  it('Throw user friendly error when reformatting encrypted key', function(done) {
-    openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
-      openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function(newKey) {
+
+  it('Throw user friendly error when reformatting encrypted key', () => {
+    return openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
+      return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function(newKey) {
         assert.fail('reformatKey should result in error when key not decrypted');
-        done();
       }).catch(function(error) {
         expect(error.message).to.equal('Error reformatting keypair: Key not decrypted');
-        done();
       });
-    }).catch(done);
+    });
   });
 
   it('Find a valid subkey binding signature among many invalid ones', function(done) {

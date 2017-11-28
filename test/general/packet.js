@@ -121,7 +121,7 @@ describe("Packet", function() {
     done();
   });
 
-  it('Sym. encrypted AEAD protected packet', function(done) {
+  it('Sym. encrypted AEAD protected packet', () => {
     var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
         algo = 'aes256';
 
@@ -135,12 +135,11 @@ describe("Packet", function() {
 
     var msg2 = new openpgp.packet.List();
 
-    enc.encrypt(algo, key).then(function() {
+    return enc.encrypt(algo, key).then(function() {
       msg2.read(msg.write());
       return msg2[0].decrypt(algo, key);
     }).then(function() {
       expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
-      done();
     });
   });
 
@@ -171,11 +170,11 @@ describe("Packet", function() {
     done();
   });
 
-  it('Public key encrypted symmetric key packet', function(done) {
+  it('Public key encrypted symmetric key packet', () => {
     var rsa = new openpgp.crypto.publicKey.rsa();
     var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    rsa.generate(keySize, "10001").then(function(mpiGen) {
+    return rsa.generate(keySize, "10001").then(function(mpiGen) {
 
       var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
@@ -202,7 +201,6 @@ describe("Packet", function() {
 
       expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
       expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
-      done();
     });
   });
 
@@ -412,11 +410,11 @@ describe("Packet", function() {
         'UBGuHZzsGbTdyKvpVBuS3rnyHHBk6oCnsm1Nl7eLs64VkZUxjEUbq5pb4dlr1pw2\n' +
         'ztpmpAnRcmM=\n' +
         '=htrB\n' +
-        '-----END PGP MESSAGE-----'
+        '-----END PGP MESSAGE-----';
 
     var key = new openpgp.packet.List();
     key.read(openpgp.armor.decode(armored_key).data);
-    key[3].decrypt('test')
+    key[3].decrypt('test');
 
     var msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
@@ -424,7 +422,7 @@ describe("Packet", function() {
     msg[0].decrypt(key[3]);
     msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var payload = msg[1].packets[0].packets
+    var payload = msg[1].packets[0].packets;
 
     var verified = payload[2].verify(key[0], payload[1]);
 
@@ -432,15 +430,15 @@ describe("Packet", function() {
     done();
   });
 
-  it('Writing and encryption of a secret key packet.', function(done) {
+  it('Writing and encryption of a secret key packet.', () => {
     var key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
 
     var rsa = new openpgp.crypto.publicKey.rsa();
     var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    rsa.generate(keySize, "10001").then(function(mipGen) {
-      var mpi = [mipGen.n, mipGen.ee, mipGen.d, mipGen.p, mipGen.q, mipGen.u];
+    return rsa.generate(keySize, "10001").then(function(mpiGen) {
+      var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
         var mpi = new openpgp.MPI();
         mpi.fromBigInteger(k);
@@ -458,17 +456,16 @@ describe("Packet", function() {
       key2[0].decrypt('hello');
 
       expect(key[0].mpi.toString()).to.equal(key2[0].mpi.toString());
-      done();
     });
   });
 
-  it('Writing and verification of a signature packet.', function(done) {
+  it('Writing and verification of a signature packet.', () => {
     var key = new openpgp.packet.SecretKey();
 
     var rsa = new openpgp.crypto.publicKey.rsa();
     var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    rsa.generate(keySize, "10001").then(function(mpiGen) {
+    return rsa.generate(keySize, "10001").then(function(mpiGen) {
         var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
         mpi = mpi.map(function(k) {
           var mpi = new openpgp.MPI();
@@ -501,7 +498,6 @@ describe("Packet", function() {
         var verified = signed2[1].verify(key, signed2[0]);
 
         expect(verified).to.be.true;
-        done();
     });
   });
 });
