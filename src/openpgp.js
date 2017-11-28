@@ -550,18 +550,11 @@ function execute(cmd, message) {
 function onError(message, error) {
   // log the stack trace
   if (config.debug) { console.error(error.stack); }
-  // rethrow new high level error for api users
-  const newError = new Error(message + ': ' + error.message);
 
-  // Standardize stack trace for tests
-  if (error.stack.indexOf(error.message) === -1) {
-    error.stack = 'Error: ' + error.message + '\n' + error.stack;
-  }
+  // update error message
+  error.message = message + ': ' + error.message;
 
-  //newError.innerError = error;
-  newError.stack += '\n' + error.stack;
-
-  throw newError;
+  throw error;
 }
 
 /**
