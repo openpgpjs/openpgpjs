@@ -67,7 +67,8 @@ AsyncProxy.prototype.onMessage = function(event) {
       if (msg.err) {
         // fail
         const err = new Error(msg.err);
-        err.stack = msg.stack || err.stack;
+        // add worker stack
+        err.workerStack = msg.stack;
         this.tasks[msg.id].reject(err);
       } else {
         // success
