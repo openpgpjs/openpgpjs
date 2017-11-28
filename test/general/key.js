@@ -1145,7 +1145,9 @@ describe('Key', function() {
   });
 
   it('Throw user friendly error when reformatting encrypted key', function() {
-    return openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
+    var opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(original) {
       return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function() {
         throw new Error('reformatKey should result in error when key not decrypted');
       }).catch(function(error) {
