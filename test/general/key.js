@@ -885,7 +885,7 @@ describe('Key', function() {
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
-  it('Preferences of generated key', () => {
+  it('Preferences of generated key', function() {
     var testPref = function(key) {
       // key flags
       var keyFlags = openpgp.enums.keyFlags;
@@ -923,7 +923,7 @@ describe('Key', function() {
     expect(primUser.selfCertificate).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
-  it('Generated key is not unlocked by default', () => {
+  it('Generated key is not unlocked by default', function() {
     var opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     var key;
@@ -937,7 +937,7 @@ describe('Key', function() {
     });
   });
 
-  it('Generate key - single userid', () => {
+  it('Generate key - single userid', function() {
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -948,7 +948,7 @@ describe('Key', function() {
     });
   });
 
-  it('Generate key - multi userid', () => {
+  it('Generate key - multi userid', function() {
     var userId1 = 'test <a@b.com>';
     var userId2 = 'test <b@c.com>';
     var opt = {numBits: 512, userIds: [userId1, userId2], passphrase: '123'};
@@ -963,7 +963,7 @@ describe('Key', function() {
     });
   });
 
-  it('Encrypt key with new passphrase', () => {
+  it('Encrypt key with new passphrase', function() {
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: 'passphrase'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -985,7 +985,7 @@ describe('Key', function() {
     });
   });
 
-  it('Generate key - ensure keyExpirationTime works', () => {
+  it('Generate key - ensure keyExpirationTime works', function() {
     var expect_delta = 365 * 24 * 60 * 60;
     var userId = 'test <a@b.com>';
     var opt = {numBits: 512, userIds: userId, passphrase: '123', keyExpirationTime: expect_delta};
@@ -1080,7 +1080,7 @@ describe('Key', function() {
     expect(signatures[3].valid).to.be.null;
     done();
   });
-  it('Reformat key without passphrase', () => {
+  it('Reformat key without passphrase', function() {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
     var opt = {numBits: 512, userIds: userId1};
@@ -1101,7 +1101,7 @@ describe('Key', function() {
     });
   });
 
-  it('Reformat and encrypt key', () => {
+  it('Reformat and encrypt key', function() {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@c.com>';
     var userId3 = 'test3 <c@d.com>';
@@ -1123,7 +1123,7 @@ describe('Key', function() {
     });
   });
 
-  it('Sign and encrypt with reformatted key', () => {
+  it('Sign and encrypt with reformatted key', function() {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
     var opt = {numBits: 512, userIds: userId1};
@@ -1144,7 +1144,7 @@ describe('Key', function() {
     });
   });
 
-  it('Throw user friendly error when reformatting encrypted key', () => {
+  it('Throw user friendly error when reformatting encrypted key', function() {
     return openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
       return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function() {
         throw new Error('reformatKey should result in error when key not decrypted');

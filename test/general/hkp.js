@@ -113,7 +113,7 @@ describe('HKP unit tests', function() {
   afterEach(function() {});
 
   describe('lookup', function() {
-    it('by email address should work', () => {
+    it('by email address should work', function() {
       return hkp.lookup({
         query: 'safewithme.testuser@gmail.com'
       }).then(function(key) {
@@ -121,7 +121,7 @@ describe('HKP unit tests', function() {
       });
     });
 
-    it('by email address should not find a key', () => {
+    it('by email address should not find a key', function() {
       return hkp.lookup({
         query: 'safewithme.testuse@gmail.com'
       }).then(function(key) {
@@ -129,7 +129,7 @@ describe('HKP unit tests', function() {
       });
     });
 
-    it('by key id should work', () => {
+    it('by key id should work', function() {
       return hkp.lookup({
         keyId: 'D7FB93FCDFBFC23C'
       }).then(function(key) {
@@ -139,7 +139,7 @@ describe('HKP unit tests', function() {
   });
 
   describe('upload', function() {
-    it('should work', () => {
+    it('should work', function() {
       return hkp.upload(pub_key);
     });
   });
