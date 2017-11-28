@@ -87,7 +87,7 @@ function delegate(id, method, options) {
     // clone packets (for web worker structured cloning algorithm)
     response({ id:id, event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
   }).catch(function(e) {
-    response({ id:id, event:'method-return', err:e.message });
+    response({ id:id, event:'method-return', err:e.message, stack:e.stack });
   });
 }
 

@@ -4841,7 +4841,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.13",
+  versionstring: "OpenPGP.js v2.5.14",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -12193,7 +12193,7 @@ function splitHeaders(text) {
  */
 function verifyHeaders(headers) {
   for (var i = 0; i < headers.length; i++) {
-    if (!/^[^:\s]+: .+$/.test(headers[i])) {
+    if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
     if (_config2.default.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
@@ -14303,6 +14303,10 @@ function reformat(options) {
       throw new Error('Only RSA Encrypt or Sign supported');
     }
 
+    if (!options.privateKey.decrypt()) {
+      throw new Error('Key not decrypted');
+    }
+
     if (!options.passphrase) {
       // Key without passphrase is unlocked by definition
       options.unlocked = true;
@@ -16124,8 +16128,11 @@ function onError(message, error) {
   if (_config2.default.debug) {
     console.error(error.stack);
   }
-  // rethrow new high level error for api users
-  throw new Error(message + ': ' + error.message);
+
+  // update error message
+  error.message = message + ': ' + error.message;
+
+  throw error;
 }
 
 /**
@@ -21161,7 +21168,10 @@ AsyncProxy.prototype.onMessage = function (event) {
     case 'method-return':
       if (msg.err) {
         // fail
-        this.tasks[msg.id].reject(new Error(msg.err));
+        var err = new Error(msg.err);
+        // add worker stack
+        err.workerStack = msg.stack;
+        this.tasks[msg.id].reject(err);
       } else {
         // success
         this.tasks[msg.id].resolve(msg.data);
