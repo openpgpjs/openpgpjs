@@ -121,7 +121,7 @@ describe("Packet", function() {
     done();
   });
 
-  it('Sym. encrypted AEAD protected packet', () => {
+  it('Sym. encrypted AEAD protected packet', function() {
     var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
         algo = 'aes256';
 
@@ -170,7 +170,7 @@ describe("Packet", function() {
     done();
   });
 
-  it('Public key encrypted symmetric key packet', () => {
+  it('Public key encrypted symmetric key packet', function() {
     var rsa = new openpgp.crypto.publicKey.rsa();
     var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
@@ -430,7 +430,7 @@ describe("Packet", function() {
     done();
   });
 
-  it('Writing and encryption of a secret key packet.', () => {
+  it('Writing and encryption of a secret key packet.', function() {
     var key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
 
@@ -459,7 +459,7 @@ describe("Packet", function() {
     });
   });
 
-  it('Writing and verification of a signature packet.', () => {
+  it('Writing and verification of a signature packet.', function() {
     var key = new openpgp.packet.SecretKey();
 
     var rsa = new openpgp.crypto.publicKey.rsa();

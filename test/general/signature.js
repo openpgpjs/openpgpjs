@@ -257,7 +257,7 @@ describe("Signature", function() {
       '-----END PGP PUBLIC KEY BLOCK-----'
     ].join('\n');
 
-  it('Testing signature checking on CAST5-enciphered message', () => {
+  it('Testing signature checking on CAST5-enciphered message', function() {
     var priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0];
     var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
     var msg = openpgp.message.readArmored(msg_arm1);
@@ -269,7 +269,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Testing GnuPG stripped-key extensions', () => {
+  it('Testing GnuPG stripped-key extensions', function() {
     // exercises the GnuPG s2k type 1001 extension:
     // the secrets on the primary key have been stripped.
     var priv_key_gnupg_ext = openpgp.key.readArmored(
@@ -361,7 +361,7 @@ describe("Signature", function() {
     done();
   });
 
-  it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', () => {
+  it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', function() {
     var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -396,7 +396,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decrypt', () => {
+  it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decrypt', function() {
     var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: Encryption Desktop 10.3.0 (Build 9307)',
@@ -476,7 +476,7 @@ describe("Signature", function() {
     done();
   });
 
-  it('Verify cleartext signed message with two signatures with openpgp.verify', () => {
+  it('Verify cleartext signed message with two signatures with openpgp.verify', function() {
     var msg_armor =
       [ '-----BEGIN PGP SIGNED MESSAGE-----',
         'Hash: SHA256',
@@ -522,7 +522,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', () => {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', function() {
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -543,7 +543,7 @@ describe("Signature", function() {
 
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', () => {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -563,7 +563,7 @@ describe("Signature", function() {
 
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', () => {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -686,7 +686,7 @@ describe("Signature", function() {
     expect(result[0].valid).to.be.true;
   });
 
-  it('Detached signature signing and verification', () => {
+  it('Detached signature signing and verification', function() {
     var msg = openpgp.message.fromText('hello');
     var pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
@@ -703,7 +703,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign message with key without password', () => {
+  it('Sign message with key without password', function() {
     var opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(gen) {
