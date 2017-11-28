@@ -1146,8 +1146,8 @@ describe('Key', function() {
 
   it('Throw user friendly error when reformatting encrypted key', () => {
     return openpgp.generateKey({numBits: 1024, userIds: 'test1 <a@b.com>', passphrase: '1234'}).then(function(original) {
-      return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function(newKey) {
-        assert.fail('reformatKey should result in error when key not decrypted');
+      return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function() {
+        throw new Error('reformatKey should result in error when key not decrypted');
       }).catch(function(error) {
         expect(error.message).to.equal('Error reformatting keypair: Key not decrypted');
       });
