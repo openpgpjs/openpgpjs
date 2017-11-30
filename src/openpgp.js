@@ -295,7 +295,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   }
 
   var result = {};
-  return execute(() => {
+  return (async function(){
     var message;
 
     if (util.isString(data)) {
@@ -305,14 +305,14 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     }
 
     if (detached) {
-      var signature = message.signDetached(privateKeys);
+      var signature = await message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
         result.signature = signature;
       }
     } else {
-      message = message.sign(privateKeys);
+      message = await message.sign(privateKeys);
     }
 
     if (armor) {
@@ -322,7 +322,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     }
     return result;
 
-  }, 'Error signing cleartext message');
+  })().catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
 /**
@@ -343,7 +343,7 @@ export function verify({ message, publicKeys, signature=null }) {
   }
 
   var result = {};
-  return execute(() => {
+  return (async function(){
     if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();
     } else {
@@ -351,13 +351,13 @@ export function verify({ message, publicKeys, signature=null }) {
     }
     if (signature) {
       //detached signature
-      result.signatures = message.verifyDetached(signature, publicKeys);
+      result.signatures = await message.verifyDetached(signature, publicKeys);
     } else {
-      result.signatures = message.verify(publicKeys);
+      result.signatures = await message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error verifying cleartext signed message');
+  })().catch(onError(null, 'Error verifying cleartext signed message'));
 }
 
 
