@@ -253,7 +253,13 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   }).then(() => {
     msg.packets.push(symEncryptedPacket);
     symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
-    return msg;
+    return {
+      message: msg,
+      sessionKey: {
+        data: sessionKey,
+        algorithm: enums.read(enums.symmetric, symAlgo)
+      }
+    };
   });
 };
 
