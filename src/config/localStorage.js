@@ -3,8 +3,6 @@
  * @module config/localStorage
  */
 
-'use strict';
-
 /**
  * @constructor
  */

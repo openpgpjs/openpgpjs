@@ -22,8 +22,6 @@
  * @module crypto/cfb
  */
 
-'use strict';
-
 import cipher from './cipher';
 
 export default {

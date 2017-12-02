@@ -28,8 +28,6 @@
  * @module packet/symmetrically_encrypted
  */
 
-'use strict';
-
 import crypto from '../crypto';
 import enums from '../enums.js';
 import config from '../config';

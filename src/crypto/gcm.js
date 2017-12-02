@@ -20,8 +20,6 @@
  * the WebCrypto api as well as node.js' crypto api.
  */
 
-'use strict';
-
 import util from '../util.js';
 import config from '../config';
 import asmCrypto from 'asmcrypto-lite';

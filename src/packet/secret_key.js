@@ -31,8 +31,6 @@
  * @module packet/secret_key
  */
 
-'use strict';
-
 import publicKey from './public_key.js';
 import enums from '../enums.js';
 import util from '../util.js';

@@ -25,8 +25,6 @@
  * @module crypto/cipher/des
  */
 
-'use strict';
-
 function des(keys, message, encrypt, mode, iv, padding) {
   //declaring this locally speeds things up a bit
   var spfunction1 = new Array(0x1010400, 0, 0x10000, 0x1010404, 0x1010004, 0x10404, 0x4, 0x10000, 0x400, 0x1010400,

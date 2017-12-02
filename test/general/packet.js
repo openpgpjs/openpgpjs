@@ -1,5 +1,3 @@
-'use strict';
-
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 function stringify(array) {

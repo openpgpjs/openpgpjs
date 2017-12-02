@@ -9,8 +9,6 @@
  * @module packet/packetlist
  */
 
-'use strict';
-
 import util from '../util';
 import packetParser from './packet.js';
 import * as packets from './all_packets.js';

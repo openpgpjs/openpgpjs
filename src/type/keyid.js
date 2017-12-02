@@ -26,8 +26,6 @@
  * @module type/keyid
  */
 
-'use strict';
-
 import util from '../util.js';
 
 /**

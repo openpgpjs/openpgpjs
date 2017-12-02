@@ -6,8 +6,6 @@
  * @module crypto/hash
  */
 
-'use strict';
-
 import sha from './sha.js';
 import asmCrypto from 'asmcrypto-lite';
 import Rusha from 'rusha';

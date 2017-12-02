@@ -37,8 +37,6 @@
  * @module packet/public_key_encrypted_session_key
  */
 
-'use strict';
-
 import type_keyid from '../type/keyid.js';
 import util from '../util.js';
 import type_mpi from '../type/mpi.js';

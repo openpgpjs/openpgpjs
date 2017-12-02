@@ -23,8 +23,6 @@
  * @module cleartext
  */
 
-'use strict';
-
 import config from './config';
 import packet from './packet';
 import enums from './enums.js';

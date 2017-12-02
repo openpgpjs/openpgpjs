@@ -36,8 +36,6 @@
  * @module packet/sym_encrypted_session_key
  */
 
-'use strict';
-
 import util from '../util.js';
 import type_s2k from '../type/s2k.js';
 import enums from '../enums.js';

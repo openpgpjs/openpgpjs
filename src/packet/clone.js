@@ -21,8 +21,6 @@
  * the structured cloning algorithm.
  */
 
-'use strict';
-
 import * as key from '../key.js';
 import * as message from '../message.js';
 import * as cleartext from '../cleartext.js';

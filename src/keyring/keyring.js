@@ -23,8 +23,6 @@
  * @module keyring/keyring
  */
 
-'use strict';
-
 import * as keyModule from '../key.js';
 import LocalStore from './localstore.js';
 

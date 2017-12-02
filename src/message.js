@@ -24,8 +24,6 @@
  * @module message
  */
 
-'use strict';
-
 import util from './util.js';
 import packet from './packet';
 import enums from './enums.js';

@@ -24,8 +24,6 @@
  * @module crypto/public_key/elgamal
  */
 
-'use strict';
-
 import BigInteger from './jsbn.js';
 import random from '../random.js';
 import util from '../../util.js';

@@ -22,8 +22,6 @@
  * @param {String} prefix prefix for itemnames in localstore
  */
 
-'use strict';
-
 import config from '../config';
 import * as keyModule from '../key.js';
 import util from '../util.js';

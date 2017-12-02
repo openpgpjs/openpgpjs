@@ -15,8 +15,6 @@
  * @module encoding/base64
  */
 
-'use strict';
-
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /**

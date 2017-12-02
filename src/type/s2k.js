@@ -29,8 +29,6 @@
  * @module type/s2k
  */
 
-'use strict';
-
 import enums from '../enums.js';
 import util from '../util.js';
 import crypto from '../crypto';

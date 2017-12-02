@@ -7,8 +7,6 @@
  *  @module crypto/cipher/blowfish
  */
 
-'use strict';
-
 /*
  * Javascript implementation based on Bruce Schneier's reference implementation.
  *

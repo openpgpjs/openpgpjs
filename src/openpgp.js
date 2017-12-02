@@ -30,8 +30,6 @@
  * for extending and developing on top of the base library.
  */
 
-'use strict';
-
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
 import * as key from './key.js';

@@ -19,8 +19,6 @@
   *   1 = SHA-1, 2 = SHA-224/SHA-256, 4 = SHA-384/SHA-512
   */
 
-"use strict";
-
 var SUPPORTED_ALGS = 4 | 2 | 1;
 
 /**

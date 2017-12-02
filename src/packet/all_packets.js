@@ -3,8 +3,6 @@
  * @module packet
  */
 
-'use strict';
-
 import enums from '../enums.js';
 import * as packets from './all_packets.js'; // re-import module to parse packets from tag
 

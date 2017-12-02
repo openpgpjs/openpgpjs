@@ -34,8 +34,6 @@
  * @module type/mpi
  */
 
-'use strict';
-
 import BigInteger from '../crypto/public_key/jsbn.js';
 import util from '../util.js';
 
