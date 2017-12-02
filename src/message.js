@@ -220,9 +220,9 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(() => {
     if (keys) {
-      symAlgo = keyModule.getPreferredSymAlgo(keys);
+      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
     } else if (passwords) {
-      symAlgo = config.encryption_cipher;
+      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
     } else {
       throw new Error('No keys or passwords');
     }
@@ -231,13 +231,13 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
       }
-      symAlgo = enums.write(enums.symmetric, sessionKey.algorithm);
+      symAlgo = sessionKey.algorithm;
       sessionKey = sessionKey.data;
     } else {
-      sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
+      sessionKey = crypto.generateSessionKey(symAlgo);
     }
 
-    msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
+    msg = encryptSessionKey(sessionKey, symAlgo, keys, passwords);
 
     if (config.aead_protect) {
       symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -248,7 +248,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
     }
     symEncryptedPacket.packets = this.packets;
 
-    return symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
+    return symEncryptedPacket.encrypt(symAlgo, sessionKey);
 
   }).then(() => {
     msg.packets.push(symEncryptedPacket);
@@ -257,7 +257,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
       message: msg,
       sessionKey: {
         data: sessionKey,
-        algorithm: enums.read(enums.symmetric, symAlgo)
+        algorithm: symAlgo
       }
     };
   });
