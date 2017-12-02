@@ -213,21 +213,31 @@ Message.prototype.getText = function() {
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
+ * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(() => {
     if (keys) {
-      symAlgo = keyModule.getPreferredSymAlgo(keys);
+      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
     } else if (passwords) {
-      symAlgo = config.encryption_cipher;
+      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
     } else {
       throw new Error('No keys or passwords');
     }
 
-    let sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
-    msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
+    if (sessionKey) {
+      if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
+        throw new Error('Invalid session key for encryption.');
+      }
+      symAlgo = sessionKey.algorithm;
+      sessionKey = sessionKey.data;
+    } else {
+      sessionKey = crypto.generateSessionKey(symAlgo);
+    }
+
+    msg = encryptSessionKey(sessionKey, symAlgo, keys, passwords);
 
     if (config.aead_protect) {
       symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -238,12 +248,18 @@ Message.prototype.encrypt = function(keys, passwords) {
     }
     symEncryptedPacket.packets = this.packets;
 
-    return symEncryptedPacket.encrypt(enums.read(enums.symmetric, symAlgo), sessionKey);
+    return symEncryptedPacket.encrypt(symAlgo, sessionKey);
 
   }).then(() => {
     msg.packets.push(symEncryptedPacket);
     symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
-    return msg;
+    return {
+      message: msg,
+      sessionKey: {
+        data: sessionKey,
+        algorithm: symAlgo
+      }
+    };
   });
 };
 
