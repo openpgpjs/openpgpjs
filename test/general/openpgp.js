@@ -629,7 +629,7 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt with custom session key and decrypt using session key', function() {
+        it('should encrypt using custom session key and decrypt using session key', function() {
           var sessionKey = {
             data: openpgp.crypto.generateSessionKey('aes256'),
             algorithm: 'aes256'
