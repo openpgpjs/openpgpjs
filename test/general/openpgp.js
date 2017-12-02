@@ -629,6 +629,50 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt with custom session key and decrypt using session key', function() {
+          var sessionKey = {
+            data: openpgp.crypto.generateSessionKey('aes256'),
+            algorithm: 'aes256'
+          };
+          var encOpt = {
+            data: plaintext,
+            sessionKey: sessionKey,
+            publicKeys: publicKey.keys
+          };
+          var decOpt = {
+            sessionKey: sessionKey
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
+        it('should encrypt using custom session key and decrypt using private key', function() {
+          var sessionKey = {
+            data: openpgp.crypto.generateSessionKey('aes128'),
+            algorithm: 'aes128'
+          };
+          var encOpt = {
+            data: plaintext,
+            sessionKey: sessionKey,
+            publicKeys: publicKey.keys
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0]
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
         it('should encrypt/sign and decrypt/verify', function() {
           var encOpt = {
             data: plaintext,
