@@ -629,6 +629,27 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt then decrypt using returned session key', function() {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            returnSessionKey: true
+          };
+
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            var decOpt = {
+              sessionKey: encrypted.sessionKey,
+              message: openpgp.message.readArmored(encrypted.data)
+            };
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
         it('should encrypt using custom session key and decrypt using session key', function() {
           var sessionKey = {
             data: openpgp.crypto.generateSessionKey('aes256'),

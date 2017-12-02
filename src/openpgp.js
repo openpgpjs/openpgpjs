@@ -187,11 +187,11 @@ export function decryptKey({ privateKey, passphrase }) {
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null }) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey });
   }
   var result = {};
   return Promise.resolve().then(() => {
@@ -214,11 +214,14 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
     }
     return message.encrypt(publicKeys, passwords, sessionKey);
 
-  }).then(message => {
+  }).then(encrypted => {
     if (armor) {
-      result.data = message.armor();
+      result.data = encrypted.message.armor();
     } else {
-      result.message = message;
+      result.message = encrypted.message;
+    }
+    if (returnSessionKey) {
+      result.sessionKey = encrypted.sessionKey;
     }
     return result;
   }).catch(onError.bind(null, 'Error encrypting message'));
