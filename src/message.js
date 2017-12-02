@@ -213,9 +213,10 @@ Message.prototype.getText = function() {
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
+ * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(() => {
     if (keys) {
@@ -226,7 +227,16 @@ Message.prototype.encrypt = function(keys, passwords) {
       throw new Error('No keys or passwords');
     }
 
-    let sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
+    if (sessionKey) {
+      if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
+        throw new Error('Invalid session key for encryption.');
+      }
+      symAlgo = enums.write(enums.symmetric, sessionKey.algorithm);
+      sessionKey = sessionKey.data;
+    } else {
+      sessionKey = crypto.generateSessionKey(enums.read(enums.symmetric, symAlgo));
+    }
+
     msg = encryptSessionKey(sessionKey, enums.read(enums.symmetric, symAlgo), keys, passwords);
 
     if (config.aead_protect) {
