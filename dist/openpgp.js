@@ -5195,7 +5195,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.5.14",
+  versionstring: "OpenPGP.js v2.6.0",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15435,9 +15435,10 @@ Message.prototype.getText = function () {
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
+ * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function (keys, passwords) {
+Message.prototype.encrypt = function (keys, passwords, sessionKey) {
   var _this2 = this;
 
   var symAlgo = void 0,
@@ -15445,15 +15446,24 @@ Message.prototype.encrypt = function (keys, passwords) {
       symEncryptedPacket = void 0;
   return Promise.resolve().then(function () {
     if (keys) {
-      symAlgo = keyModule.getPreferredSymAlgo(keys);
+      symAlgo = _enums2.default.read(_enums2.default.symmetric, keyModule.getPreferredSymAlgo(keys));
     } else if (passwords) {
-      symAlgo = _config2.default.encryption_cipher;
+      symAlgo = _enums2.default.read(_enums2.default.symmetric, _config2.default.encryption_cipher);
     } else {
       throw new Error('No keys or passwords');
     }
 
-    var sessionKey = _crypto2.default.generateSessionKey(_enums2.default.read(_enums2.default.symmetric, symAlgo));
-    msg = encryptSessionKey(sessionKey, _enums2.default.read(_enums2.default.symmetric, symAlgo), keys, passwords);
+    if (sessionKey) {
+      if (!_util2.default.isUint8Array(sessionKey.data) || !_util2.default.isString(sessionKey.algorithm)) {
+        throw new Error('Invalid session key for encryption.');
+      }
+      symAlgo = sessionKey.algorithm;
+      sessionKey = sessionKey.data;
+    } else {
+      sessionKey = _crypto2.default.generateSessionKey(symAlgo);
+    }
+
+    msg = encryptSessionKey(sessionKey, symAlgo, keys, passwords);
 
     if (_config2.default.aead_protect) {
       symEncryptedPacket = new _packet2.default.SymEncryptedAEADProtected();
@@ -15464,11 +15474,17 @@ Message.prototype.encrypt = function (keys, passwords) {
     }
     symEncryptedPacket.packets = _this2.packets;
 
-    return symEncryptedPacket.encrypt(_enums2.default.read(_enums2.default.symmetric, symAlgo), sessionKey);
+    return symEncryptedPacket.encrypt(symAlgo, sessionKey);
   }).then(function () {
     msg.packets.push(symEncryptedPacket);
     symEncryptedPacket.packets = new _packet2.default.List(); // remove packets after encryption
-    return msg;
+    return {
+      message: msg,
+      sessionKey: {
+        data: sessionKey,
+        algorithm: symAlgo
+      }
+    };
   });
 };
 
@@ -16063,10 +16079,12 @@ function decryptKey(_ref4) {
  * @param  {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
  * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
+ * @param  {Object} sessionKey                (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {String} filename                  (optional) a filename for the literal data packet
  * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
+ * @param  {Boolean} returnSessionKey         (optional) if the unencrypted session key should be added to returned object
  * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
  *                                              {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -16077,19 +16095,22 @@ function encrypt(_ref5) {
       publicKeys = _ref5.publicKeys,
       privateKeys = _ref5.privateKeys,
       passwords = _ref5.passwords,
+      sessionKey = _ref5.sessionKey,
       filename = _ref5.filename,
       _ref5$armor = _ref5.armor,
       armor = _ref5$armor === undefined ? true : _ref5$armor,
       _ref5$detached = _ref5.detached,
       detached = _ref5$detached === undefined ? false : _ref5$detached,
       _ref5$signature = _ref5.signature,
-      signature = _ref5$signature === undefined ? null : _ref5$signature;
+      signature = _ref5$signature === undefined ? null : _ref5$signature,
+      _ref5$returnSessionKe = _ref5.returnSessionKey,
+      returnSessionKey = _ref5$returnSessionKe === undefined ? false : _ref5$returnSessionKe;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) {
     // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data: data, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, filename: filename, armor: armor, detached: detached, signature: signature });
+    return asyncProxy.delegate('encrypt', { data: data, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, sessionKey: sessionKey, filename: filename, armor: armor, detached: detached, signature: signature, returnSessionKey: returnSessionKey });
   }
   var result = {};
   return Promise.resolve().then(function () {
@@ -16111,12 +16132,15 @@ function encrypt(_ref5) {
         message = message.sign(privateKeys, signature);
       }
     }
-    return message.encrypt(publicKeys, passwords);
-  }).then(function (message) {
+    return message.encrypt(publicKeys, passwords, sessionKey);
+  }).then(function (encrypted) {
     if (armor) {
-      result.data = message.armor();
+      result.data = encrypted.message.armor();
     } else {
-      result.message = message;
+      result.message = encrypted.message;
+    }
+    if (returnSessionKey) {
+      result.sessionKey = encrypted.sessionKey;
     }
     return result;
   }).catch(onError.bind(null, 'Error encrypting message'));
