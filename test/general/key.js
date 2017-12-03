@@ -929,7 +929,7 @@ describe('Key', function() {
       key = newKey;
       return openpgp.message.fromText('hello').encrypt([key.key]);
     }).then(function(msg) {
-      return msg.decrypt(key.key);
+      return msg.message.decrypt(key.key);
     }).catch(function(err) {
       expect(err.message).to.equal('Private key is not decrypted.');
     });
