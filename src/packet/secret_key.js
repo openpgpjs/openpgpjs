@@ -75,24 +75,24 @@ function get_hash_fn(hash) {
 // Helper function
 
 function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
-  var hashlen = get_hash_len(hash_algorithm),
+  const hashlen = get_hash_len(hash_algorithm),
     hashfn = get_hash_fn(hash_algorithm);
 
-  var hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+  const hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
 
-  var hash = util.Uint8Array2str(hashfn(cleartext));
+  const hash = util.Uint8Array2str(hashfn(cleartext));
 
   if (hash !== hashtext) {
     return new Error("Hash mismatch.");
   }
 
-  var mpis = crypto.getPrivateMpiCount(algorithm);
+  let mpis = crypto.getPrivateMpiCount(algorithm);
 
-  var j = 0;
-  var mpi = [];
+  let j = 0;
+  const mpi = [];
 
-  for (var i = 0; i < mpis && j < cleartext.length; i++) {
+  for (let i = 0; i < mpis && j < cleartext.length; i++) {
     mpi[i] = new type_mpi();
     j += mpi[i].read(cleartext.subarray(j, cleartext.length));
   }
@@ -101,16 +101,16 @@ function parse_cleartext_mpi(hash_algorithm, cleartext, algorithm) {
 }
 
 function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
-  var arr = [];
-  var discard = crypto.getPublicMpiCount(algorithm);
+  const arr = [];
+  const discard = crypto.getPublicMpiCount(algorithm);
 
-  for (var i = discard; i < mpi.length; i++) {
+  for (let i = discard; i < mpi.length; i++) {
     arr.push(mpi[i].write());
   }
 
-  var bytes = util.concatUint8Array(arr);
+  const bytes = util.concatUint8Array(arr);
 
-  var hash = get_hash_fn(hash_algorithm)(bytes);
+  const hash = get_hash_fn(hash_algorithm)(bytes);
 
   return util.concatUint8Array([bytes, hash]);
 }
@@ -124,7 +124,7 @@ function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
  */
 SecretKey.prototype.read = function (bytes) {
   // - A Public-Key or Public-Subkey packet, as described above.
-  var len = this.readPublicKey(bytes);
+  const len = this.readPublicKey(bytes);
 
   bytes = bytes.subarray(len, bytes.length);
 
@@ -133,7 +133,7 @@ SecretKey.prototype.read = function (bytes) {
   //   indicates that the secret-key data is not encrypted.  255 or 254
   //   indicates that a string-to-key specifier is being given.  Any
   //   other value is a symmetric-key encryption algorithm identifier.
-  var isEncrypted = bytes[0];
+  const isEncrypted = bytes[0];
 
   if (isEncrypted) {
     this.encrypted = bytes;
@@ -141,7 +141,7 @@ SecretKey.prototype.read = function (bytes) {
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
-    var parsedMPI = parse_cleartext_mpi('mod', bytes.subarray(1, bytes.length), this.algorithm);
+    const parsedMPI = parse_cleartext_mpi('mod', bytes.subarray(1, bytes.length), this.algorithm);
     if (parsedMPI instanceof Error) {
       throw parsedMPI;
     }
@@ -155,7 +155,7 @@ SecretKey.prototype.read = function (bytes) {
   * @return {String} A string of bytes containing the secret key OpenPGP packet
   */
 SecretKey.prototype.write = function () {
-  var arr = [this.writePublicKey()];
+  const arr = [this.writePublicKey()];
 
   if (!this.encrypted) {
     arr.push(new Uint8Array([0]));
@@ -184,14 +184,14 @@ SecretKey.prototype.encrypt = function (passphrase) {
     throw new Error('The key must be decrypted before removing passphrase protection.');
   }
 
-  var s2k = new type_s2k(),
+  const s2k = new type_s2k(),
     symmetric = 'aes256',
     cleartext = write_cleartext_mpi('sha1', this.algorithm, this.mpi),
     key = produceEncryptionKey(s2k, passphrase, symmetric),
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
 
-  var arr = [ new Uint8Array([254, enums.write(enums.symmetric, symmetric)]) ];
+  const arr = [ new Uint8Array([254, enums.write(enums.symmetric, symmetric)]) ];
   arr.push(s2k.write());
   arr.push(iv);
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
@@ -219,11 +219,11 @@ SecretKey.prototype.decrypt = function (passphrase) {
     return true;
   }
 
-  var i = 0,
+  let i = 0,
     symmetric,
     key;
 
-  var s2k_usage = this.encrypted[i++];
+  const s2k_usage = this.encrypted[i++];
 
   // - [Optional] If string-to-key usage octet was 255 or 254, a one-
   //   octet symmetric encryption algorithm.
@@ -234,7 +234,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
     // - [Optional] If string-to-key usage octet was 255 or 254, a
     //   string-to-key specifier.  The length of the string-to-key
     //   specifier is implied by its type, as described above.
-    var s2k = new type_s2k();
+    const s2k = new type_s2k();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
     key = produceEncryptionKey(s2k, passphrase, symmetric);
@@ -247,21 +247,21 @@ SecretKey.prototype.decrypt = function (passphrase) {
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the
   //   cipher's block size.
-  var iv = this.encrypted.subarray(i,
+  const iv = this.encrypted.subarray(i,
     i + crypto.cipher[symmetric].blockSize);
 
   i += iv.length;
 
-  var cleartext,
+  let cleartext,
     ciphertext = this.encrypted.subarray(i, this.encrypted.length);
 
   cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
 
-  var hash = s2k_usage === 254 ?
+  const hash = s2k_usage === 254 ?
     'sha1' :
     'mod';
 
-  var parsedMPI = parse_cleartext_mpi(hash, cleartext, this.algorithm);
+  const parsedMPI = parse_cleartext_mpi(hash, cleartext, this.algorithm);
   if (parsedMPI instanceof Error) {
     return false;
   }
@@ -272,7 +272,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
 };
 
 SecretKey.prototype.generate = function (bits) {
-  var self = this;
+  const self = this;
 
   return crypto.generateMpi(self.algorithm, bits).then(function(mpi) {
     self.mpi = mpi;

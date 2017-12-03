@@ -13,19 +13,19 @@ import md5 from './md5.js';
 import ripemd from './ripe-md.js';
 import util from '../../util.js';
 
-const rusha = new Rusha(),
+let rusha = new Rusha(),
   nodeCrypto = util.getNodeCrypto(),
   Buffer = util.getNodeBuffer();
 
 function node_hash(type) {
   return function (data) {
-    var shasum = nodeCrypto.createHash(type);
+    const shasum = nodeCrypto.createHash(type);
     shasum.update(new Buffer(data));
     return new Uint8Array(shasum.digest());
   };
 }
 
-var hash_fns;
+let hash_fns;
 if(nodeCrypto) { // Use Node native crypto for all hash functions
 
   hash_fns = {

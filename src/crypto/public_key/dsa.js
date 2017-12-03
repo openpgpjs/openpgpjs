@@ -40,14 +40,14 @@ export default function DSA() {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
-    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+    const hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
+    const hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
     // signature shall be recalculated. It is extremely unlikely that r = 0
     // or s = 0 if signatures are generated properly.
-    var k, s1, s2;
+    let k, s1, s2;
     while (true) {
       k = random.getRandomBigIntegerInRange(BigInteger.ONE, q.subtract(BigInteger.ONE));
       s1 = (g.modPow(k, p)).mod(q);
@@ -56,14 +56,14 @@ export default function DSA() {
         break;
       }
     }
-    var result = [];
+    const result = [];
     result[0] = s1.toMPI();
     result[1] = s2.toMPI();
     return result;
   }
 
   function select_hash_algorithm(q) {
-    var usersetting = config.prefer_hash_algorithm;
+    let usersetting = config.prefer_hash_algorithm;
     /*
      * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
      * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
@@ -102,8 +102,8 @@ export default function DSA() {
   this.select_hash_algorithm = select_hash_algorithm;
 
   function verify(hashalgo, s1, s2, m, p, q, g, y) {
-    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
-    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+    const hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
+    const hash = new BigInteger(util.hexstrdump(hashed_data), 16);
     if (BigInteger.ZERO.compareTo(s1) >= 0 ||
       s1.compareTo(q) >= 0 ||
       BigInteger.ZERO.compareTo(s2) >= 0 ||
@@ -111,13 +111,13 @@ export default function DSA() {
       util.print_debug("invalid DSA Signature");
       return null;
     }
-    var w = s2.modInverse(q);
+    const w = s2.modInverse(q);
     if (BigInteger.ZERO.compareTo(w) === 0) {
       util.print_debug("invalid DSA Signature");
       return null;
     }
-    var u1 = hash.multiply(w).mod(q);
-    var u2 = s1.multiply(w).mod(q);
+    const u1 = hash.multiply(w).mod(q);
+    const u2 = s1.multiply(w).mod(q);
     return g.modPow(u1, p).multiply(y.modPow(u2, p)).mod(p).mod(q);
   }
 

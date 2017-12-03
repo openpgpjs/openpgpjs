@@ -72,7 +72,7 @@ export default function PublicKey() {
  * @return {Object} This object with attributes set by the parser
  */
 PublicKey.prototype.read = function (bytes) {
-  var pos = 0;
+  let pos = 0;
   // A one-octet version number (3 or 4).
   this.version = bytes[pos++];
 
@@ -91,13 +91,13 @@ PublicKey.prototype.read = function (bytes) {
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
 
-    var mpicount = crypto.getPublicMpiCount(this.algorithm);
+    let mpicount = crypto.getPublicMpiCount(this.algorithm);
     this.mpi = [];
 
-    var bmpi = bytes.subarray(pos, bytes.length);
-    var p = 0;
+    let bmpi = bytes.subarray(pos, bytes.length);
+    let p = 0;
 
-    for (var i = 0; i < mpicount && p < bmpi.length; i++) {
+    for (let i = 0; i < mpicount && p < bmpi.length; i++) {
 
       this.mpi[i] = new type_mpi();
 
@@ -126,8 +126,7 @@ PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
  * @return {Uint8Array} OpenPGP packet body contents,
  */
 PublicKey.prototype.write = function () {
-
-  var arr = [];
+  const arr = [];
   // Version
   arr.push(new Uint8Array([this.version]));
   arr.push(util.writeDate(this.created));
@@ -136,9 +135,9 @@ PublicKey.prototype.write = function () {
   }
   arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
 
-  var mpicount = crypto.getPublicMpiCount(this.algorithm);
+  const mpicount = crypto.getPublicMpiCount(this.algorithm);
 
-  for (var i = 0; i < mpicount; i++) {
+  for (let i = 0; i < mpicount; i++) {
     arr.push(this.mpi[i].write());
   }
 
@@ -155,7 +154,7 @@ PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
  * Write an old version packet - it's used by some of the internal routines.
  */
 PublicKey.prototype.writeOld = function () {
-  var bytes = this.writePublicKey();
+  const bytes = this.writePublicKey();
 
   return util.concatUint8Array([new Uint8Array([0x99]), util.writeNumber(bytes.length, 2), bytes]);
 };
@@ -172,7 +171,7 @@ PublicKey.prototype.getKeyId = function () {
   if (this.version === 4) {
     this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
   } else if (this.version === 3) {
-    var arr = this.mpi[0].write();
+    const arr = this.mpi[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
   }
   return this.keyid;
@@ -186,13 +185,13 @@ PublicKey.prototype.getFingerprint = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
-  var toHash = '';
+  let toHash = '';
   if (this.version === 4) {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
-    var mpicount = crypto.getPublicMpiCount(this.algorithm);
-    for (var i = 0; i < mpicount; i++) {
+    const mpicount = crypto.getPublicMpiCount(this.algorithm);
+    for (let i = 0; i < mpicount; i++) {
       toHash += this.mpi[i].toBytes();
     }
     this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
@@ -213,7 +212,7 @@ PublicKey.prototype.getBitSize = function () {
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {
-  for (var i = 0; i < this.mpi.length; i++) {
+  for (let i = 0; i < this.mpi.length; i++) {
     this.mpi[i] = type_mpi.fromClone(this.mpi[i]);
   }
   if (this.keyid) {

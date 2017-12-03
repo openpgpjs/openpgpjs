@@ -41,22 +41,22 @@ export default {
    * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
    */
   publicKeyEncrypt: function(algo, publicMPIs, data) {
-    var result = (function() {
-      var m;
+    const result = (function() {
+      let m;
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign':
-          var rsa = new publicKey.rsa();
-          var n = publicMPIs[0].toBigInteger();
-          var e = publicMPIs[1].toBigInteger();
+          let rsa = new publicKey.rsa();
+          let n = publicMPIs[0].toBigInteger();
+          let e = publicMPIs[1].toBigInteger();
           m = data.toBigInteger();
           return [rsa.encrypt(m, e, n)];
 
         case 'elgamal':
-          var elgamal = new publicKey.elgamal();
-          var p = publicMPIs[0].toBigInteger();
-          var g = publicMPIs[1].toBigInteger();
-          var y = publicMPIs[2].toBigInteger();
+          let elgamal = new publicKey.elgamal();
+          let p = publicMPIs[0].toBigInteger();
+          let g = publicMPIs[1].toBigInteger();
+          let y = publicMPIs[2].toBigInteger();
           m = data.toBigInteger();
           return elgamal.encrypt(m, g, p, y);
 
@@ -66,7 +66,7 @@ export default {
     })();
 
     return result.map(function(bn) {
-      var mpi = new type_mpi();
+      const mpi = new type_mpi();
       mpi.fromBigInteger(bn);
       return mpi;
     });
@@ -85,28 +85,28 @@ export default {
    */
 
   publicKeyDecrypt: function(algo, keyIntegers, dataIntegers) {
-    var p;
+    let p;
 
-    var bn = (function() {
+    const bn = (function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt':
-          var rsa = new publicKey.rsa();
+          let rsa = new publicKey.rsa();
           // 0 and 1 are the public key.
-          var n = keyIntegers[0].toBigInteger();
-          var e = keyIntegers[1].toBigInteger();
+          let n = keyIntegers[0].toBigInteger();
+          let e = keyIntegers[1].toBigInteger();
           // 2 to 5 are the private key.
-          var d = keyIntegers[2].toBigInteger();
+          let d = keyIntegers[2].toBigInteger();
           p = keyIntegers[3].toBigInteger();
-          var q = keyIntegers[4].toBigInteger();
-          var u = keyIntegers[5].toBigInteger();
-          var m = dataIntegers[0].toBigInteger();
+          let q = keyIntegers[4].toBigInteger();
+          let u = keyIntegers[5].toBigInteger();
+          let m = dataIntegers[0].toBigInteger();
           return rsa.decrypt(m, n, e, d, p, q, u);
         case 'elgamal':
-          var elgamal = new publicKey.elgamal();
-          var x = keyIntegers[3].toBigInteger();
-          var c1 = dataIntegers[0].toBigInteger();
-          var c2 = dataIntegers[1].toBigInteger();
+          let elgamal = new publicKey.elgamal();
+          let x = keyIntegers[3].toBigInteger();
+          let c1 = dataIntegers[0].toBigInteger();
+          let c2 = dataIntegers[1].toBigInteger();
           p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
         default:
@@ -114,7 +114,7 @@ export default {
       }
     })();
 
-    var result = new type_mpi();
+    let result = new type_mpi();
     result.fromBigInteger(bn);
     return result;
   },
@@ -184,9 +184,9 @@ export default {
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
         //remember "publicKey" refers to the crypto/public_key dir
-        var rsa = new publicKey.rsa();
+        const rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          var output = [];
+          const output = [];
           output.push(keyObject.n);
           output.push(keyObject.ee);
           output.push(keyObject.d);
@@ -201,7 +201,7 @@ export default {
 
     function mapResult(result) {
       return result.map(function(bn) {
-        var mpi = new type_mpi();
+        const mpi = new type_mpi();
         mpi.fromBigInteger(bn);
         return mpi;
       });

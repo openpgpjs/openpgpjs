@@ -32,7 +32,7 @@ const mod = {
   pkcs1: pkcs1,
 };
 
-for (var i in crypto) {
+for (let i in crypto) {
   mod[i] = crypto[i];
 }
 

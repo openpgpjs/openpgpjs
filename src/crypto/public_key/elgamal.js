@@ -32,10 +32,10 @@ export default function Elgamal() {
 
   function encrypt(m, g, p, y) {
     //  choose k in {2,...,p-2}
-    var pMinus2 = p.subtract(BigInteger.TWO);
-    var k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
+    const pMinus2 = p.subtract(BigInteger.TWO);
+    let k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
     k = k.mod(pMinus2).add(BigInteger.ONE);
-    var c = [];
+    const c = [];
     c[0] = g.modPow(k, p);
     c[1] = y.modPow(k, p).multiply(m).mod(p);
     return c;
@@ -47,7 +47,7 @@ export default function Elgamal() {
       "p:" + util.hexstrdump(p.toMPI()) + "\n" +
       "x:" + util.hexstrdump(x.toMPI()));
     return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
-    //var c = c1.pow(x).modInverse(p); // c0^-a mod p
+    //let c = c1.pow(x).modInverse(p); // c0^-a mod p
     //return c.multiply(c2).mod(p);
   }
 

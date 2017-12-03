@@ -16,14 +16,14 @@
  */
 
 // The round constants used in subkey expansion
-var Rcon = new Uint8Array([
+const Rcon = new Uint8Array([
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8,
     0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4,
     0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91
 ]);
 
 // Precomputed lookup table for the SBox
-var S = new Uint8Array([
+const S = new Uint8Array([
     99, 124, 119, 123, 242, 107, 111, 197, 48, 1, 103, 43, 254, 215, 171,
     118, 202, 130, 201, 125, 250, 89, 71, 240, 173, 212, 162, 175, 156, 164,
     114, 192, 183, 253, 147, 38, 54, 63, 247, 204, 52, 165, 229, 241, 113,
@@ -44,7 +44,7 @@ var S = new Uint8Array([
     22
 ]);
 
-var T1 = new Uint32Array([
+const T1 = new Uint32Array([
     0xa56363c6, 0x847c7cf8, 0x997777ee, 0x8d7b7bf6,
     0x0df2f2ff, 0xbd6b6bd6, 0xb16f6fde, 0x54c5c591,
     0x50303060, 0x03010102, 0xa96767ce, 0x7d2b2b56,
@@ -111,7 +111,7 @@ var T1 = new Uint32Array([
     0xcbb0b07b, 0xfc5454a8, 0xd6bbbb6d, 0x3a16162c
 ]);
 
-var T2 = new Uint32Array([
+const T2 = new Uint32Array([
     0x6363c6a5, 0x7c7cf884, 0x7777ee99, 0x7b7bf68d,
     0xf2f2ff0d, 0x6b6bd6bd, 0x6f6fdeb1, 0xc5c59154,
     0x30306050, 0x01010203, 0x6767cea9, 0x2b2b567d,
@@ -178,7 +178,7 @@ var T2 = new Uint32Array([
     0xb0b07bcb, 0x5454a8fc, 0xbbbb6dd6, 0x16162c3a
 ]);
 
-var T3 = new Uint32Array([
+const T3 = new Uint32Array([
     0x63c6a563, 0x7cf8847c, 0x77ee9977, 0x7bf68d7b,
     0xf2ff0df2, 0x6bd6bd6b, 0x6fdeb16f, 0xc59154c5,
     0x30605030, 0x01020301, 0x67cea967, 0x2b567d2b,
@@ -245,7 +245,7 @@ var T3 = new Uint32Array([
     0xb07bcbb0, 0x54a8fc54, 0xbb6dd6bb, 0x162c3a16
 ]);
 
-var T4 = new Uint32Array([
+const T4 = new Uint32Array([
     0xc6a56363, 0xf8847c7c, 0xee997777, 0xf68d7b7b,
     0xff0df2f2, 0xd6bd6b6b, 0xdeb16f6f, 0x9154c5c5,
     0x60503030, 0x02030101, 0xcea96767, 0x567d2b2b,
@@ -333,9 +333,9 @@ function F1(x0, x1, x2, x3) {
 }
 
 function packBytes(octets) {
-  var i, j;
-  var len = octets.length;
-  var b = new Array(len / 4);
+  let i, j;
+  let len = octets.length;
+  let b = new Array(len / 4);
 
   if (!octets || len % 4) {
     return;
@@ -349,10 +349,10 @@ function packBytes(octets) {
 }
 
 function unpackBytes(packed) {
-  var j;
-  var i = 0,
+  let j;
+  let i = 0,
     l = packed.length;
-  var r = new Array(l * 4);
+  let r = new Array(l * 4);
 
   for (j = 0; j < l; j++) {
     r[i++] = B0(packed[j]);
@@ -365,17 +365,17 @@ function unpackBytes(packed) {
 
 // ------------------------------------------------
 
-var maxkc = 8;
-var maxrk = 14;
+let maxkc = 8;
+let maxrk = 14;
 
 function keyExpansion(key) {
-  var kc, i, j, r, t;
-  var rounds;
-  var keySched = new Array(maxrk + 1);
-  var keylen = key.length;
-  var k = new Array(maxkc);
-  var tk = new Array(maxkc);
-  var rconpointer = 0;
+  let kc, i, j, r, t;
+  let rounds;
+  let keySched = new Array(maxrk + 1);
+  let keylen = key.length;
+  let k = new Array(maxkc);
+  let tk = new Array(maxkc);
+  let rconpointer = 0;
 
   if (keylen === 16) {
     rounds = 10;
@@ -415,7 +415,7 @@ function keyExpansion(key) {
   }
 
   while (r < rounds + 1) {
-    var temp = tk[kc - 1];
+    let temp = tk[kc - 1];
 
     tk[0] ^= S[B1(temp)] | (S[B2(temp)] << 8) | (S[B3(temp)] << 16) | (S[B0(temp)] << 24);
     tk[0] ^= Rcon[rconpointer++];
@@ -455,7 +455,7 @@ function keyExpansion(key) {
 }
 
 function AESencrypt(block, ctx, t) {
-  var r, rounds, b;
+  let r, rounds, b;
 
   b = packBytes(block);
   rounds = ctx.rounds;
@@ -490,7 +490,7 @@ function AESencrypt(block, ctx, t) {
 
 function makeClass(length) {
 
-  var c = function(key) {
+  let c = function(key) {
     this.key = keyExpansion(key);
     this._temp = new Uint32Array(this.blockSize / 4);
 

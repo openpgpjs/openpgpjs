@@ -50,7 +50,7 @@ export default function S2K() {
 
 S2K.prototype.get_count = function () {
   // Exponent bias, defined in RFC4880
-  var expbias = 6;
+  let expbias = 6;
 
   return (16 + (this.c & 15)) << ((this.c >> 4) + expbias);
 };
@@ -61,7 +61,7 @@ S2K.prototype.get_count = function () {
  * @return {Integer} Actual length of the object
  */
 S2K.prototype.read = function (bytes) {
-  var i = 0;
+  let i = 0;
   this.type = enums.read(enums.s2k, bytes[i++]);
   this.algorithm = enums.read(enums.hash, bytes[i++]);
 
@@ -85,7 +85,7 @@ S2K.prototype.read = function (bytes) {
     case 'gnu':
       if (util.Uint8Array2str(bytes.subarray(i, 3)) === "GNU") {
         i += 3; // GNU
-        var gnuExtType = 1000 + bytes[i++];
+        const gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
           this.type = gnuExtType;
           // GnuPG extension mode 1001 -- don't write secret key at all
@@ -111,7 +111,7 @@ S2K.prototype.read = function (bytes) {
  */
 S2K.prototype.write = function () {
 
-  var arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
+  const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
 
   switch (this.type) {
     case 'simple':
@@ -143,7 +143,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
   passphrase = util.str2Uint8Array(util.encode_utf8(passphrase));
 
   function round(prefix, s2k) {
-    var algorithm = enums.write(enums.hash, s2k.algorithm);
+    const algorithm = enums.write(enums.hash, s2k.algorithm);
 
     switch (s2k.type) {
       case 'simple':
@@ -154,7 +154,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
           util.concatUint8Array([prefix, s2k.salt, passphrase]));
 
       case 'iterated':
-        var isp = [],
+        let isp = [],
           count = s2k.get_count(),
           data = util.concatUint8Array([s2k.salt,passphrase]);
 
@@ -178,17 +178,18 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
     }
   }
 
-  var arr = [],
+  let arr = [],
     rlength = 0,
     prefix = new Uint8Array(numBytes);
 
-  for(var i = 0; i<numBytes; i++) {
+  let i;
+  for(i = 0; i<numBytes; i++) {
     prefix[i] = 0;
   }
   i = 0;
 
   while (rlength < numBytes) {
-    var result = round(prefix.subarray(0,i), this);
+    const result = round(prefix.subarray(0,i), this);
     arr.push(result);
     rlength += result.length;
     i++;
@@ -198,7 +199,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 };
 
 S2K.fromClone = function (clone) {
-  var s2k = new S2K();
+  const s2k = new S2K();
   s2k.algorithm = clone.algorithm;
   s2k.type = clone.type;
   s2k.c = clone.c;

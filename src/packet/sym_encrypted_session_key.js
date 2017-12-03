@@ -69,14 +69,14 @@ SymEncryptedSessionKey.prototype.read = function(bytes) {
   this.version = bytes[0];
 
   // A one-octet number describing the symmetric algorithm used.
-  var algo = enums.read(enums.symmetric, bytes[1]);
+  const algo = enums.read(enums.symmetric, bytes[1]);
 
   // A string-to-key (S2K) specifier, length as defined above.
-  var s2klength = this.s2k.read(bytes.subarray(2, bytes.length));
+  const s2klength = this.s2k.read(bytes.subarray(2, bytes.length));
 
   // Optionally, the encrypted session key itself, which is decrypted
   // with the string-to-key object.
-  var done = s2klength + 2;
+  const done = s2klength + 2;
 
   if (done < bytes.length) {
     this.encrypted = bytes.subarray(done, bytes.length);
@@ -87,11 +87,11 @@ SymEncryptedSessionKey.prototype.read = function(bytes) {
 };
 
 SymEncryptedSessionKey.prototype.write = function() {
-  var algo = this.encrypted === null ?
+  const algo = this.encrypted === null ?
     this.sessionKeyAlgorithm :
     this.sessionKeyEncryptionAlgorithm;
 
-  var bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
+  let bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
 
   if (this.encrypted !== null) {
     bytes = util.concatUint8Array([bytes, this.encrypted]);
@@ -106,18 +106,18 @@ SymEncryptedSessionKey.prototype.write = function() {
  * @return {Uint8Array} The unencrypted session key
  */
 SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
-  var algo = this.sessionKeyEncryptionAlgorithm !== null ?
+  const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
 
-  var length = crypto.cipher[algo].keySize;
-  var key = this.s2k.produce_key(passphrase, length);
+  const length = crypto.cipher[algo].keySize;
+  const key = this.s2k.produce_key(passphrase, length);
 
   if (this.encrypted === null) {
     this.sessionKey = key;
 
   } else {
-    var decrypted = crypto.cfb.normalDecrypt(
+    const decrypted = crypto.cfb.normalDecrypt(
       algo, key, this.encrypted, null);
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric,
@@ -128,23 +128,22 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
 };
 
 SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
-  var algo = this.sessionKeyEncryptionAlgorithm !== null ?
+  const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
 
   this.sessionKeyEncryptionAlgorithm = algo;
 
-  var length = crypto.cipher[algo].keySize;
-  var key = this.s2k.produce_key(passphrase, length);
+  const length = crypto.cipher[algo].keySize;
+  const key = this.s2k.produce_key(passphrase, length);
 
-  var algo_enum = new Uint8Array([
+  const algo_enum = new Uint8Array([
     enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
 
-  var private_key;
   if(this.sessionKey === null) {
     this.sessionKey = crypto.getRandomBytes(crypto.cipher[this.sessionKeyAlgorithm].keySize);
   }
-  private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
+  const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
 
   this.encrypted = crypto.cfb.normalEncrypt(
     algo, key, private_key, null);

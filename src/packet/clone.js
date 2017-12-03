@@ -24,7 +24,7 @@
 import * as key from '../key.js';
 import * as message from '../message.js';
 import * as cleartext from '../cleartext.js';
-import * as signature from '../signature.js'
+import * as signature from '../signature.js';
 import Packetlist from './packetlist.js';
 import type_keyid from '../type/keyid.js';
 
@@ -127,7 +127,7 @@ function packetlistCloneToMessage(clone) {
 }
 
 function packetlistCloneToCleartextMessage(clone) {
-  var packetlist = Packetlist.fromStructuredClone(clone.signature);
+  const packetlist = Packetlist.fromStructuredClone(clone.signature);
   return new cleartext.CleartextMessage(clone.text, new signature.Signature(packetlist));
 }
 
@@ -143,6 +143,6 @@ function packetlistCloneToSignature(clone) {
     //signature is armored
     return clone;
   }
-  var packetlist = Packetlist.fromStructuredClone(clone);
+  const packetlist = Packetlist.fromStructuredClone(clone);
   return new signature.Signature(packetlist);
 }
