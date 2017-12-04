@@ -49,84 +49,76 @@ if (webCrypto && config.use_native) {
 const curves = {
   p256: {
     oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
-    curveName: 'P-256',
-    opensslName: 'prime256v1',
+    namedCurve: 'P-256',
+    opensslCurve: 'prime256v1',
     hashName: 'SHA-256',
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    nist: true,
     node: nodeCurves.includes('prime256v1'),
     web: webCurves.includes('P-256')
   },
   p384: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x22]),
-    curveName: 'P-384',
-    opensslName: 'secp384r1', // FIXME
+    namedCurve: 'P-384',
+    opensslCurve: 'secp384r1', // FIXME
     hashName: 'SHA-384',
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    nist: true,
     node: nodeCurves.includes('secp384r1'), // FIXME
     web: webCurves.includes('P-384')
   },
   p521: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x23]),
-    curveName: 'P-521',
-    opensslName: 'secp521r1', // FIXME
+    namedCurve: 'P-521',
+    opensslCurve: 'secp521r1', // FIXME
     hashName: 'SHA-512',
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    nist: true,
     node: nodeCurves.includes('secp521r1'), // FIXME
     web: webCurves.includes('P-521')
   },
   secp256k1: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
-    curveName: 'SECP-256K1',
-    opensslName: 'secp256k1',
+    namedCurve: 'SECP-256K1',
+    opensslCurve: 'secp256k1',
     hashName: 'SHA-256',
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    nist: false,
     node: nodeCurves.includes('secp256k1'),
-    web: false // Not supported as of 12/2017
+    web: false
   }
 };
 
-function Curve(name, {oid, hash, cipher, curveName, opensslName, hashName, nist, node, web}) {
+function Curve(name, {oid, hash, cipher, namedCurve, opensslCurve, hashName, node, web}) {
   this.curve = new EC(name);
-  // webCurve doesn't really have a standalone curve type
-  if (nodeCrypto && config.use_native && curves[name].node) {
-    this.nodeCurve = new nodeCrypto.createECDH(curve.opensslName);
-  }
   this.name = name;
   this.oid = oid;
   this.hash = hash;
   this.cipher = cipher;
-  this.curveName= curveName;
-  this.opensslName = opensslName;
+  this.namedCurve= namedCurve;
+  this.opensslCurve = opensslCurve;
   this.hashName = hashName;
-  this.nist = nist;
   this.node = node;
   this.web = web;
 }
 
 Curve.prototype.keyFromPrivate = function (priv) {
-  return new KeyPair(this.curve, {priv: priv, nodeCurve: this.nodeCurve});
+  return new KeyPair(this.curve, {priv: priv});
 };
 
 Curve.prototype.keyFromPublic = function (pub) {
-  return new KeyPair(this.curve, {pub: pub, nodeCurve: this.nodeCurve});
+  return new KeyPair(this.curve, {pub: pub});
 };
 
 Curve.prototype.genKeyPair = function () {
+  var keyPair;
   if (webCrypto && config.use_native && this.web) {
-    var keyPair = webGenKeyPair(this.curveName);
+    keyPair = webGenKeyPair(this.namedCurve);
   } else if (nodeCrypto && config.use_native && this.node) {
-    var keyPair = nodeGenKeyPair(this.opensslName);
+    keyPair = nodeGenKeyPair(this.opensslCurve);
   } else {
     var r = this.curve.genKeyPair();
-    var keyPair = {
+    keyPair = {
       pub: r.getPublic().encode(),
       priv: r.getPrivate().toArray()
     };
@@ -172,13 +164,13 @@ module.exports = {
 //////////////////////////
 
 
-function webGenKeyPair(curveName) {
+function webGenKeyPair(namedCurve) {
   return webCrypto.generateKey(
     {
       name: "ECDSA",
 //      FIXME 
 //      name: "ECDH",
-      namedCurve: curveName, // "P-256", "P-384", or "P-521"
+      namedCurve: namedCurve, // "P-256", "P-384", or "P-521"
     },
 //   FIXME
     false, // whether the key is extractable (i.e. can be used in exportKey)
@@ -195,10 +187,10 @@ function webGenKeyPair(curveName) {
   });
 }
 
-function nodeGenKeyPair(opensslName) {
+function nodeGenKeyPair(opensslCurve) {
   // TODO turn this into a promise
-  var ecc = nodeCrypto.createECDH(opensslName);
-  var key = ecc.generateKeys();
+  var ecc = nodeCrypto.createECDH(opensslCurve);
+  ecc.generateKeys();
   return {
     pub: ecc.getPrivateKey().toJSON().data,
     priv: ecc.getPublicKey().toJSON().data

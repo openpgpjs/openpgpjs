@@ -295,9 +295,9 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   }
 
   var result = {};
-  return (async function(){
+  const promise = async function(){
     var message;
-
+    
     if (util.isString(data)) {
       message = new cleartext.CleartextMessage(data);
     } else {
@@ -321,8 +321,8 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
       result.message = message;
     }
     return result;
-
-  })().catch(onError.bind(null, 'Error signing cleartext message'));
+  }
+  return promise().catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
 /**
@@ -343,7 +343,7 @@ export function verify({ message, publicKeys, signature=null }) {
   }
 
   var result = {};
-  return (async function(){
+  const promise = async function(){
     if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();
     } else {
@@ -357,7 +357,8 @@ export function verify({ message, publicKeys, signature=null }) {
     }
     return result;
 
-  })().catch(onError(null, 'Error verifying cleartext signed message'));
+  }
+  return promise().catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
 

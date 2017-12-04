@@ -49,6 +49,7 @@ module.exports = function(grunt) {
           external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator"],
               ignore: ['*.min.js'],
               presets: ["es2015"]
             }]
@@ -68,6 +69,7 @@ module.exports = function(grunt) {
           external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator"],
               ignore: ['*.min.js'],
               presets: ["es2015"]
             }]
