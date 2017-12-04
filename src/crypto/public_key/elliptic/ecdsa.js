@@ -26,7 +26,7 @@
 'use strict';
 
 import asn1 from 'asn1';
-import jwk-to-pem from 'jwk-to-pem';
+import jwk2pem from 'jwk-to-pem';
 
 import curves from './curves.js';
 import BigInteger from '../jsbn.js';
@@ -126,7 +126,7 @@ async function webSign(curve, hash_algo, m, d) {
   );
 
   try {
-    const signature = await webCrypto.sign(
+    return await webCrypto.sign(
       {
         "name": 'ECDSA',
         "namedCurve": curve.namedCurve,
@@ -140,7 +140,7 @@ async function webSign(curve, hash_algo, m, d) {
   }
 }
 
-async function webVerify(oid, hash_algo, signature, m, Q) {
+async function webVerify(curve, hash_algo, signature, m, Q) {
   const publicKey = await webCrypto.importKey(
     "jwk",
     {
@@ -179,7 +179,7 @@ async function webVerify(oid, hash_algo, signature, m, Q) {
 
 async function nodeSign(curve, hash_algo, m, d) {
   const publicKey = curve.keyFromPrivate(d).getPublic();
-  const privateKey = jwk-to-pem(
+  const privateKey = jwk2pem(
     {"kty": "EC",
      "crv": curve.namedCurve,
      "x": publicKey.getX().toBuffer().base64Slice(),
@@ -188,7 +188,7 @@ async function nodeSign(curve, hash_algo, m, d) {
      "use": "sig",
      "kid": "ECDSA Private Key"},
     {private: true}
-  )
+  );
 
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
   sign.write(m);
@@ -198,7 +198,7 @@ async function nodeSign(curve, hash_algo, m, d) {
 }
 
 async function nodeVerify(curve, hash_algo, signature, m, Q) {
-  const pubicKey = jwk-to-pem(
+  const publicKey = jwk2pem(
     {"kty": "EC",
      "crv": curve.namedCurve,
      "x": Q.getX().toBuffer().base64Slice(),
@@ -206,7 +206,7 @@ async function nodeVerify(curve, hash_algo, signature, m, Q) {
      "use": "sig",
      "kid": "ECDSA Public Key"},
     {private: false}
-  )
+  );
 
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
   verify.write(m);
