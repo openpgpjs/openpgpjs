@@ -7,5 +7,7 @@ describe('General', function () {
   require('./key.js');
   require('./openpgp.js');
   require('./hkp.js');
+  require('./oid.js');
+  require('./ecc.js');
 });
 

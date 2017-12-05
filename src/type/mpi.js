@@ -42,9 +42,15 @@ import util from '../util.js';
 /**
  * @constructor
  */
-export default function MPI() {
+export default function MPI(data) {
   /** An implementation dependent integer */
-  this.data = null;
+  if (data instanceof BigInteger) {
+    this.fromBigInteger(data);
+  } else if (typeof data === 'string') {
+    this.fromBytes(data);
+  } else {
+    this.data = null;
+  }
 }
 
 /**
@@ -71,7 +77,6 @@ MPI.prototype.read = function (bytes) {
   // TODO: Verification of this size method! This size calculation as
   //      specified above is not applicable in JavaScript
   var bytelen = Math.ceil(bits / 8);
-
   var raw = util.Uint8Array2str(bytes.subarray(2, 2 + bytelen));
   this.fromBytes(raw);
 

@@ -337,7 +337,8 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
 function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.dsa) ||
           keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
-          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign)) &&
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign) ||
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.ecdsa)) &&
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
@@ -377,7 +378,7 @@ Key.prototype.encrypt = function(passphrase) {
   var keys = this.getAllKeyPackets();
   for (var i = 0; i < keys.length; i++) {
     keys[i].encrypt(passphrase);
-    keys[i].clearPrivateMPIs();
+    keys[i].clearPrivateParams();
   }
 };
 
@@ -1129,9 +1130,23 @@ export function readArmored(armoredText) {
 export function generate(options) {
   var secretKeyPacket, secretSubkeyPacket;
   return Promise.resolve().then(() => {
-    options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-      throw new Error('Only RSA Encrypt or Sign supported');
+
+    if (options.curve) {
+      options.keyType = options.keyType || enums.publicKey.ecdsa;
+      options.subkeyType = options.subkeyType || enums.publicKey.ecdh;
+    } else {
+      options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+      options.subkeyType = options.subkeyType || enums.publicKey.rsa_encrypt_sign;
+    }
+
+    if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
+        options.keyType !== enums.publicKey.ecdsa) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Unsupported key type');
+    }
+
+    if (options.subkeyType !== enums.publicKey.rsa_encrypt_sign &&
+        options.subkeyType !== enums.publicKey.ecdh) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+      throw new Error('Unsupported subkey type');
     }
 
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
@@ -1149,13 +1164,13 @@ export function generate(options) {
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretKeyPacket.generate(options.numBits);
+    return secretKeyPacket.generate(options.numBits, options.curve);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    return secretSubkeyPacket.generate(options.numBits);
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
+    return secretSubkeyPacket.generate(options.numBits, options.curve);
   }
 }
 
@@ -1194,8 +1209,10 @@ export function reformat(options) {
     for (var i = 0; i < packetlist.length; i++) {
       if (packetlist[i].tag === enums.packet.secretKey) {
         secretKeyPacket = packetlist[i];
+        options.keyType = secretKeyPacket.algorithm;
       } else if (packetlist[i].tag === enums.packet.secretSubkey) {
         secretSubkeyPacket = packetlist[i];
+        options.subkeyType = secretSubkeyPacket.algorithm;
       }
     }
     return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
@@ -1277,8 +1294,8 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   packetlist.push(subkeySignaturePacket);
 
   if (!options.unlocked) {
-    secretKeyPacket.clearPrivateMPIs();
-    secretSubkeyPacket.clearPrivateMPIs();
+    secretKeyPacket.clearPrivateParams();
+    secretSubkeyPacket.clearPrivateParams();
   }
 
   return new Key(packetlist);

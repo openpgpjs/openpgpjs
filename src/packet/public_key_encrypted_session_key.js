@@ -31,6 +31,7 @@
  * decrypt the message.
  * @requires crypto
  * @requires enums
+ * @requires type/ecdh_symkey
  * @requires type/keyid
  * @requires type/mpi
  * @requires util
@@ -41,6 +42,7 @@
 
 import type_keyid from '../type/keyid.js';
 import util from '../util.js';
+import type_ecdh_symkey from '../type/ecdh_symkey.js';
 import type_mpi from '../type/mpi.js';
 import enums from '../enums.js';
 import crypto from '../crypto';
@@ -53,10 +55,7 @@ export default function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
-  this.publicKeyAlgorithm = 'rsa_encrypt';
-
   this.sessionKey = null;
-  this.sessionKeyAlgorithm = 'aes256';
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
@@ -79,26 +78,11 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 
   var i = 10;
 
-  var integerCount = (function(algo) {
-    switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-        return 1;
+  var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  this.encrypted = crypto.constructParams(new Array(types.length), types);
 
-      case 'elgamal':
-        return 2;
-
-      default:
-        throw new Error("Invalid algorithm.");
-    }
-  })(this.publicKeyAlgorithm);
-
-  this.encrypted = [];
-
-  for (var j = 0; j < integerCount; j++) {
-    var mpi = new type_mpi();
-    i += mpi.read(bytes.subarray(i, bytes.length));
-    this.encrypted.push(mpi);
+  for (var j = 0; j < types.length; j++) {
+    i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
   }
 };
 
@@ -126,15 +110,18 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
   var checksum = util.calc_checksum(this.sessionKey);
   data += util.Uint8Array2str(util.writeNumber(checksum, 2));
 
-  var mpi = new type_mpi();
-  mpi.fromBytes(crypto.pkcs1.eme.encode(
-    data,
-    key.mpi[0].byteLength()));
+  var toEncrypt;
+  if (this.publicKeyAlgorithm === 'ecdh') {
+    toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
+  } else {
+    toEncrypt = new type_mpi(crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
+  }
 
   this.encrypted = crypto.publicKeyEncrypt(
     this.publicKeyAlgorithm,
-    key.mpi,
-    mpi);
+    key.params,
+    toEncrypt,
+    key.fingerprint);
 };
 
 /**
@@ -148,12 +135,19 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
 PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
   var result = crypto.publicKeyDecrypt(
     this.publicKeyAlgorithm,
-    key.mpi,
-    this.encrypted).toBytes();
+    key.params,
+    this.encrypted,
+    key.fingerprint).toBytes();
 
-  var checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
-
-  var decoded = crypto.pkcs1.eme.decode(result);
+  var checksum;
+  var decoded;
+  if (this.publicKeyAlgorithm === 'ecdh') {
+    decoded = crypto.pkcs5.decode(result);
+    checksum = util.readNumber(util.str2Uint8Array(decoded.substr(decoded.length - 2)));
+  } else {
+    decoded = crypto.pkcs1.eme.decode(result);
+    checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
+  }
 
   key = util.str2Uint8Array(decoded.substring(1, decoded.length - 2));
 

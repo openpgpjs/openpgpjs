@@ -97,8 +97,10 @@ export function destroyWorker() {
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, keyExpirationTime });
+
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""} = {}) {
+  userIds = formatUserIds(userIds);
+  const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
@@ -124,7 +126,9 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @static
  */
 export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
+  userIds = formatUserIds(userIds);
+
+  const options = {privateKey, userIds, passphrase, unlocked, keyExpirationTime};
 
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -296,9 +300,9 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   }
 
   var result = {};
-  return execute(() => {
+  const promise = async function(){
     var message;
-
+    
     if (util.isString(data)) {
       message = new cleartext.CleartextMessage(data);
     } else {
@@ -306,14 +310,14 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     }
 
     if (detached) {
-      var signature = message.signDetached(privateKeys);
+      var signature = await message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
         result.signature = signature;
       }
     } else {
-      message = message.sign(privateKeys);
+      message = await message.sign(privateKeys);
     }
 
     if (armor) {
@@ -322,8 +326,8 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
       result.message = message;
     }
     return result;
-
-  }, 'Error signing cleartext message');
+  }
+  return promise().catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
 /**
@@ -344,7 +348,7 @@ export function verify({ message, publicKeys, signature=null }) {
   }
 
   var result = {};
-  return execute(() => {
+  const promise = async function(){
     if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();
     } else {
@@ -352,13 +356,14 @@ export function verify({ message, publicKeys, signature=null }) {
     }
     if (signature) {
       //detached signature
-      result.signatures = message.verifyDetached(signature, publicKeys);
+      result.signatures = await message.verifyDetached(signature, publicKeys);
     } else {
-      result.signatures = message.verify(publicKeys);
+      result.signatures = await message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error verifying cleartext signed message');
+  }
+  return promise().catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
 
@@ -454,12 +459,12 @@ function checkCleartextOrMessage(message) {
 /**
  * Format user ids for internal use.
  */
-function formatUserIds(options) {
-  if (!options.userIds) {
-    return options;
+function formatUserIds(userIds) {
+  if (!userIds) {
+    return userIds;
   }
-  options.userIds = toArray(options.userIds); // normalize to array
-  options.userIds = options.userIds.map(id => {
+  userIds = toArray(userIds); // normalize to array
+  userIds = userIds.map(id => {
     if (util.isString(id) && !util.isUserId(id)) {
       throw new Error('Invalid user id format');
     }
@@ -478,7 +483,7 @@ function formatUserIds(options) {
     }
     return id.name + '<' + id.email + '>';
   });
-  return options;
+  return userIds;
 }
 
 /**

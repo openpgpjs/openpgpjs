@@ -113,8 +113,7 @@ export default {
         randomBits.charCodeAt(0)) +
         randomBits.substring(1);
     }
-    var mpi = new type_mpi();
-    mpi.fromBytes(randomBits);
+    var mpi = new type_mpi(randomBits);
     return mpi.toBigInteger();
   },
 
