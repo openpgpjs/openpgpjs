@@ -34,6 +34,10 @@ module.exports = function(grunt) {
     browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
   }
 
+  var getSauceKey = function getSaucekey () {
+    return '60ffb656-2346-4b77-81f3-bc435ff4c103';
+  };
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -224,7 +228,7 @@ module.exports = function(grunt) {
       all: {
         options: {
           username: 'openpgpjs',
-          key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
+          key: getSauceKey,
           urls: ['http://127.0.0.1:3000/test/unittests.html'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',

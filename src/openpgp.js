@@ -181,20 +181,22 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
  * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
+ * @param  {Object} sessionKey                (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {String} filename                  (optional) a filename for the literal data packet
  * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
+ * @param  {Boolean} returnSessionKey         (optional) if the unencrypted session key should be added to returned object
  * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
  *                                              {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true, detached=false, signature=null }) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached, signature });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey });
   }
   var result = {};
   return Promise.resolve().then(() => {
@@ -215,13 +217,16 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, filename, ar
         message = message.sign(privateKeys, signature);
       }
     }
-    return message.encrypt(publicKeys, passwords);
+    return message.encrypt(publicKeys, passwords, sessionKey);
 
-  }).then(message => {
+  }).then(encrypted => {
     if (armor) {
-      result.data = message.armor();
+      result.data = encrypted.message.armor();
     } else {
-      result.message = message;
+      result.message = encrypted.message;
+    }
+    if (returnSessionKey) {
+      result.sessionKey = encrypted.sessionKey;
     }
     return result;
   }).catch(onError.bind(null, 'Error encrypting message'));
