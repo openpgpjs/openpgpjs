@@ -25,7 +25,7 @@
 
 'use strict';
 
-import asn1 from 'asn1';
+import asn1 from 'asn1.js';
 import jwk2pem from 'jwk-to-pem';
 
 import curves from './curves.js';
