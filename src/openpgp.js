@@ -314,13 +314,13 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
       }
     } else {
       message = message.sign(privateKeys);
+      if (armor) {
+        result.data = message.armor();
+      } else {
+        result.message = message;
+      }
     }
 
-    if (armor) {
-      result.data = message.armor();
-    } else {
-      result.message = message;
-    }
     return result;
 
   }, 'Error signing cleartext message');
