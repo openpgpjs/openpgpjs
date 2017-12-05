@@ -14,19 +14,42 @@ matrix:
     - node_js: "9"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='9'
     - node_js: "8"
+      env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 54'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-2' BROWSER='chrome 38'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 59'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-6' BROWSER='safari 8'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-7' BROWSER='safari 10'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-5' BROWSER='microsoft edge 15'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-4' BROWSER='internet explorer 11'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-8' BROWSER='android 4.4'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-9' BROWSER='android 6.0'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-10' BROWSER='iphone 7.0'
+    - node_js: "8"
+      env: OPENPGPJSTEST='end2end-11' BROWSER='iphone 11.0'
   allow_failures:
-    env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
-    env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 54'
-    env: OPENPGPJSTEST='end2end-2' BROWSER='chrome 38'
-    env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 59'
-    env: OPENPGPJSTEST='end2end-6' BROWSER='safari 8'
-    env: OPENPGPJSTEST='end2end-7' BROWSER='safari 10'
-    env: OPENPGPJSTEST='end2end-5' BROWSER='microsoft edge 15'
-    env: OPENPGPJSTEST='end2end-4' BROWSER='internet explorer 11'
-    env: OPENPGPJSTEST='end2end-8' BROWSER='android 4.4'
-    env: OPENPGPJSTEST='end2end-9' BROWSER='android 6.0'
-    env: OPENPGPJSTEST='end2end-10' BROWSER='iphone 7.0'
-    env: OPENPGPJSTEST='end2end-11' BROWSER='iphone 11.0'
+    - env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
+    - env: OPENPGPJSTEST='end2end-1' BROWSER='firefox 54'
+    - env: OPENPGPJSTEST='end2end-2' BROWSER='chrome 38'
+    - env: OPENPGPJSTEST='end2end-3' BROWSER='chrome 59'
+    - env: OPENPGPJSTEST='end2end-6' BROWSER='safari 8'
+    - env: OPENPGPJSTEST='end2end-7' BROWSER='safari 10'
+    - env: OPENPGPJSTEST='end2end-5' BROWSER='microsoft edge 15'
+    - env: OPENPGPJSTEST='end2end-4' BROWSER='internet explorer 11'
+    - env: OPENPGPJSTEST='end2end-8' BROWSER='android 4.4'
+    - env: OPENPGPJSTEST='end2end-9' BROWSER='android 6.0'
+    - env: OPENPGPJSTEST='end2end-10' BROWSER='iphone 7.0'
+    - env: OPENPGPJSTEST='end2end-11' BROWSER='iphone 11.0'
 
 before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
