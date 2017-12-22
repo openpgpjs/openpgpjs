@@ -252,17 +252,17 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
   return message.decrypt(privateKey, sessionKey, password).then(message => {
 
     const result = parseMessage(message, format);
-    if (result.data) { // verify
-      if (!publicKeys) {
-        publicKeys = [];
-      }
-      if (signature) {
-        //detached signature
-        result.signatures = message.verifyDetached(signature, publicKeys);
-      } else {
-        result.signatures = message.verify(publicKeys);
-      }
+
+    if (!publicKeys) {
+      publicKeys = [];
     }
+    if (signature) {
+      //detached signature
+      result.signatures = message.verifyDetached(signature, publicKeys);
+    } else {
+      result.signatures = message.verify(publicKeys);
+    }
+
     return result;
 
   }).catch(onError.bind(null, 'Error decrypting message'));

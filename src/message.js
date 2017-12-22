@@ -219,21 +219,21 @@ Message.prototype.getText = function() {
 Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(() => {
-    if (keys) {
-      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-    } else if (passwords) {
-      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
-    } else {
-      throw new Error('No keys or passwords');
-    }
-
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
       }
       symAlgo = sessionKey.algorithm;
       sessionKey = sessionKey.data;
+    } else if (keys && keys.length) {
+      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
+    } else if (passwords && passwords.length) {
+      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
     } else {
+      throw new Error('No keys, passwords, or session key provided.');
+    }
+
+    if (!sessionKey) {
       sessionKey = crypto.generateSessionKey(symAlgo);
     }
 

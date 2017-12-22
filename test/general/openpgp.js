@@ -715,6 +715,27 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt/sign and decrypt/verify with null string input', function() {
+          var encOpt = {
+            data: '',
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys
+          };
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: publicKey.keys
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal('');
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+          });
+        });
+
         it('should encrypt/sign and decrypt/verify with detached signatures', function() {
           var encOpt = {
             data: plaintext,
@@ -1242,7 +1263,7 @@ describe('OpenPGP.js public api tests', function() {
             throw new Error('Error expected.');
           })
           .catch(function(error) {
-            expect(error.message).to.match(/No keys or passwords/);
+            expect(error.message).to.match(/No keys, passwords, or session key provided/);
           });
         });
 
