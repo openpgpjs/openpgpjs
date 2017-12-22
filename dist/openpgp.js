@@ -5195,7 +5195,7 @@ exports.default = {
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
   show_version: true,
   show_comment: true,
-  versionstring: "OpenPGP.js v2.6.0",
+  versionstring: "OpenPGP.js v2.6.1",
   commentstring: "https://openpgpjs.org",
   keyserver: "https://keyserver.ubuntu.com",
   node_store: './openpgp.store'
@@ -15445,21 +15445,21 @@ Message.prototype.encrypt = function (keys, passwords, sessionKey) {
       msg = void 0,
       symEncryptedPacket = void 0;
   return Promise.resolve().then(function () {
-    if (keys) {
-      symAlgo = _enums2.default.read(_enums2.default.symmetric, keyModule.getPreferredSymAlgo(keys));
-    } else if (passwords) {
-      symAlgo = _enums2.default.read(_enums2.default.symmetric, _config2.default.encryption_cipher);
-    } else {
-      throw new Error('No keys or passwords');
-    }
-
     if (sessionKey) {
       if (!_util2.default.isUint8Array(sessionKey.data) || !_util2.default.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
       }
       symAlgo = sessionKey.algorithm;
       sessionKey = sessionKey.data;
+    } else if (keys && keys.length) {
+      symAlgo = _enums2.default.read(_enums2.default.symmetric, keyModule.getPreferredSymAlgo(keys));
+    } else if (passwords && passwords.length) {
+      symAlgo = _enums2.default.read(_enums2.default.symmetric, _config2.default.encryption_cipher);
     } else {
+      throw new Error('No keys, passwords, or session key provided.');
+    }
+
+    if (!sessionKey) {
       sessionKey = _crypto2.default.generateSessionKey(symAlgo);
     }
 
@@ -16181,18 +16181,17 @@ function decrypt(_ref6) {
   return message.decrypt(privateKey, sessionKey, password).then(function (message) {
 
     var result = parseMessage(message, format);
-    if (result.data) {
-      // verify
-      if (!publicKeys) {
-        publicKeys = [];
-      }
-      if (signature) {
-        //detached signature
-        result.signatures = message.verifyDetached(signature, publicKeys);
-      } else {
-        result.signatures = message.verify(publicKeys);
-      }
+
+    if (!publicKeys) {
+      publicKeys = [];
     }
+    if (signature) {
+      //detached signature
+      result.signatures = message.verifyDetached(signature, publicKeys);
+    } else {
+      result.signatures = message.verify(publicKeys);
+    }
+
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -16250,13 +16249,13 @@ function sign(_ref7) {
       }
     } else {
       message = message.sign(privateKeys);
+      if (armor) {
+        result.data = message.armor();
+      } else {
+        result.message = message;
+      }
     }
 
-    if (armor) {
-      result.data = message.armor();
-    } else {
-      result.message = message;
-    }
     return result;
   }, 'Error signing cleartext message');
 }
