@@ -7,8 +7,6 @@
  *  @module crypto/cipher/blowfish
  */
 
-'use strict';
-
 /*
  * Javascript implementation based on Bruce Schneier's reference implementation.
  *
@@ -233,7 +231,7 @@ Blowfish.prototype.NN = 16;
 //*
 Blowfish.prototype._clean = function(xx) {
   if (xx < 0) {
-    var yy = xx & 0x7FFFFFFF;
+    let yy = xx & 0x7FFFFFFF;
     xx = yy + 0x80000000;
   }
   return xx;
@@ -243,11 +241,11 @@ Blowfish.prototype._clean = function(xx) {
 //* This is the mixing function that uses the sboxes
 //*
 Blowfish.prototype._F = function(xx) {
-  var aa;
-  var bb;
-  var cc;
-  var dd;
-  var yy;
+  let aa;
+  let bb;
+  let cc;
+  let dd;
+  let yy;
 
   dd = xx & 0x00FF;
   xx >>>= 8;
@@ -269,16 +267,16 @@ Blowfish.prototype._F = function(xx) {
 //* and does NN rounds of Blowfish on them.
 //*
 Blowfish.prototype._encrypt_block = function(vals) {
-  var dataL = vals[0];
-  var dataR = vals[1];
+  let dataL = vals[0];
+  let dataR = vals[1];
 
-  var ii;
+  let ii;
 
   for (ii = 0; ii < this.NN; ++ii) {
     dataL = dataL ^ this.parray[ii];
     dataR = this._F(dataL) ^ dataR;
 
-    var tmp = dataL;
+    let tmp = dataL;
     dataL = dataR;
     dataR = tmp;
   }
@@ -300,9 +298,9 @@ Blowfish.prototype._encrypt_block = function(vals) {
 //* the F() method to deconstruct the vector.
 //*
 Blowfish.prototype.encrypt_block = function(vector) {
-  var ii;
-  var vals = [0, 0];
-  var off = this.BLOCKSIZE / 2;
+  let ii;
+  const vals = [0, 0];
+  const off = this.BLOCKSIZE / 2;
   for (ii = 0; ii < this.BLOCKSIZE / 2; ++ii) {
     vals[0] = (vals[0] << 8) | (vector[ii + 0] & 0x00FF);
     vals[1] = (vals[1] << 8) | (vector[ii + off] & 0x00FF);
@@ -310,7 +308,7 @@ Blowfish.prototype.encrypt_block = function(vector) {
 
   this._encrypt_block(vals);
 
-  var ret = [];
+  const ret = [];
   for (ii = 0; ii < this.BLOCKSIZE / 2; ++ii) {
     ret[ii + 0] = (vals[0] >>> (24 - 8 * (ii)) & 0x00FF);
     ret[ii + off] = (vals[1] >>> (24 - 8 * (ii)) & 0x00FF);
@@ -326,16 +324,16 @@ Blowfish.prototype.encrypt_block = function(vector) {
 //* and undoes NN rounds of Blowfish on them.
 //*
 Blowfish.prototype._decrypt_block = function(vals) {
-  var dataL = vals[0];
-  var dataR = vals[1];
+  let dataL = vals[0];
+  let dataR = vals[1];
 
-  var ii;
+  let ii;
 
   for (ii = this.NN + 1; ii > 1; --ii) {
     dataL = dataL ^ this.parray[ii];
     dataR = this._F(dataL) ^ dataR;
 
-    var tmp = dataL;
+    const tmp = dataL;
     dataL = dataR;
     dataR = tmp;
   }
@@ -352,13 +350,13 @@ Blowfish.prototype._decrypt_block = function(vals) {
 //* sboxes and parray for this encryption.
 //*
 Blowfish.prototype.init = function(key) {
-  var ii;
-  var jj = 0;
+  let ii;
+  let jj = 0;
 
   this.parray = [];
   for (ii = 0; ii < this.NN + 2; ++ii) {
-    var data = 0x00000000;
-    var kk;
+    let data = 0x00000000;
+    let kk;
     for (kk = 0; kk < 4; ++kk) {
       data = (data << 8) | (key[jj] & 0x00FF);
       if (++jj >= key.length) {
@@ -376,7 +374,7 @@ Blowfish.prototype.init = function(key) {
     }
   }
 
-  var vals = [0x00000000, 0x00000000];
+  const vals = [0x00000000, 0x00000000];
 
   for (ii = 0; ii < this.NN + 2; ii += 2) {
     this._encrypt_block(vals);

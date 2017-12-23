@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Export high level api as default.
  * Usage:

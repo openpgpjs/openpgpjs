@@ -22,8 +22,6 @@
  * @param {String} prefix prefix for itemnames in localstore
  */
 
-'use strict';
-
 import config from '../config';
 import * as keyModule from '../key.js';
 import util from '../util.js';
@@ -62,11 +60,11 @@ LocalStore.prototype.loadPrivate = function () {
 };
 
 function loadKeys(storage, itemname) {
-  var armoredKeys = JSON.parse(storage.getItem(itemname));
-  var keys = [];
+  const armoredKeys = JSON.parse(storage.getItem(itemname));
+  const keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
-    var key;
-    for (var i = 0; i < armoredKeys.length; i++) {
+    let key;
+    for (let i = 0; i < armoredKeys.length; i++) {
       key = keyModule.readArmored(armoredKeys[i]);
       if (!key.err) {
         keys.push(key.keys[0]);
@@ -97,9 +95,9 @@ LocalStore.prototype.storePrivate = function (keys) {
 };
 
 function storeKeys(storage, itemname, keys) {
-  var armoredKeys = [];
+  const armoredKeys = [];
   if (keys.length) {
-    for (var i = 0; i < keys.length; i++) {
+    for (let i = 0; i < keys.length; i++) {
       armoredKeys.push(keys[i].armor());
     }
     storage.setItem(itemname, JSON.stringify(armoredKeys));

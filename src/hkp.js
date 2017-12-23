@@ -20,8 +20,6 @@
  * in order to lookup and upload keys on standard public key servers.
  */
 
-'use strict';
-
 import config from './config';
 
 /**
@@ -43,8 +41,8 @@ export default function HKP(keyServerBaseUrl) {
  * @return {Promise<String>}          The ascii armored public key.
  */
 HKP.prototype.lookup = function(options) {
-  var uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=',
-    fetch = this._fetch;
+  let uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=';
+  const fetch = this._fetch;
 
   if (options.keyId) {
     uri += '0x' + encodeURIComponent(options.keyId);
@@ -73,7 +71,7 @@ HKP.prototype.lookup = function(options) {
  * @return {Promise}
  */
 HKP.prototype.upload = function(publicKeyArmored) {
-  var uri = this._baseUrl + '/pks/add',
+  const uri = this._baseUrl + '/pks/add',
     fetch = this._fetch;
 
   return fetch(uri, {

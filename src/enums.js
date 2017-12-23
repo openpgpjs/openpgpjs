@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * @module enums
  */
@@ -316,7 +314,7 @@ export default {
 
   /** Converts from an integer to string. */
   read: function(type, e) {
-    for (var i in type) {
+    for (let i in type) {
       if (type[i] === parseInt(e)) {
         return i;
       }

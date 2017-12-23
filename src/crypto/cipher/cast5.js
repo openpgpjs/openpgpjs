@@ -16,8 +16,6 @@
 
 /** @module crypto/cipher/cast5 */
 
-'use strict';
-
 function OpenpgpSymencCast5() {
   this.BlockSize = 8;
   this.KeySize = 16;
@@ -37,7 +35,7 @@ function OpenpgpSymencCast5() {
   };
 
   this.reset = function() {
-    for (var i = 0; i < 16; i++) {
+    for (let i = 0; i < 16; i++) {
       this.masking[i] = 0;
       this.rotate[i] = 0;
     }
@@ -48,12 +46,12 @@ function OpenpgpSymencCast5() {
   };
 
   this.encrypt = function(src) {
-    var dst = new Array(src.length);
+    const dst = new Array(src.length);
 
-    for (var i = 0; i < src.length; i += 8) {
-      var l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
-      var r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
-      var t;
+    for (let i = 0; i < src.length; i += 8) {
+      let l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
+      let r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
+      let t;
 
       t = r;
       r = l ^ f1(r, this.masking[0], this.rotate[0]);
@@ -121,12 +119,12 @@ function OpenpgpSymencCast5() {
   };
 
   this.decrypt = function(src) {
-    var dst = new Array(src.length);
+    const dst = new Array(src.length);
 
-    for (var i = 0; i < src.length; i += 8) {
-      var l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
-      var r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
-      var t;
+    for (let i = 0; i < src.length; i += 8) {
+      let l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
+      let r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
+      let t;
 
       t = r;
       r = l ^ f1(r, this.masking[15], this.rotate[15]);
@@ -192,7 +190,7 @@ function OpenpgpSymencCast5() {
 
     return dst;
   };
-  var scheduleA = new Array(4);
+  const scheduleA = new Array(4);
 
   scheduleA[0] = new Array(4);
   scheduleA[0][0] = new Array(4, 0, 0xd, 0xf, 0xc, 0xe, 0x8);
@@ -219,7 +217,7 @@ function OpenpgpSymencCast5() {
   scheduleA[3][2] = new Array(2, 5, 7, 6, 5, 4, 16 + 1);
   scheduleA[3][3] = new Array(3, 7, 0xa, 9, 0xb, 8, 16 + 3);
 
-  var scheduleB = new Array(4);
+  let scheduleB = new Array(4);
 
   scheduleB[0] = new Array(4);
   scheduleB[0][0] = new Array(16 + 8, 16 + 9, 16 + 7, 16 + 6, 16 + 2);
@@ -249,24 +247,24 @@ function OpenpgpSymencCast5() {
 
   // changed 'in' to 'inn' (in javascript 'in' is a reserved word)
   this.keySchedule = function(inn) {
-    var t = new Array(8);
-    var k = new Array(32);
+    let t = new Array(8);
+    let k = new Array(32);
 
-    var i, j;
+    let i, j;
 
     for (i = 0; i < 4; i++) {
       j = i * 4;
       t[i] = inn[j] << 24 | inn[j + 1] << 16 | inn[j + 2] << 8 | inn[j + 3];
     }
 
-    var x = [6, 7, 4, 5];
-    var ki = 0;
-    var w;
+    let x = [6, 7, 4, 5];
+    let ki = 0;
+    let w;
 
-    for (var half = 0; half < 2; half++) {
-      for (var round = 0; round < 4; round++) {
+    for (let half = 0; half < 2; half++) {
+      for (let round = 0; round < 4; round++) {
         for (j = 0; j < 4; j++) {
-          var a = scheduleA[round][j];
+          let a = scheduleA[round][j];
           w = t[a[1]];
 
           w ^= sBox[4][(t[a[2] >>> 2] >>> (24 - 8 * (a[2] & 3))) & 0xff];
@@ -278,7 +276,7 @@ function OpenpgpSymencCast5() {
         }
 
         for (j = 0; j < 4; j++) {
-          var b = scheduleB[round][j];
+          let b = scheduleB[round][j];
           w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] & 3))) & 0xff];
 
           w ^= sBox[5][(t[b[1] >>> 2] >>> (24 - 8 * (b[1] & 3))) & 0xff];
@@ -300,24 +298,24 @@ function OpenpgpSymencCast5() {
   // These are the three 'f' functions. See RFC 2144, section 2.2.
 
   function f1(d, m, r) {
-    var t = m + d;
-    var I = (t << r) | (t >>> (32 - r));
+    let t = m + d;
+    let I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] ^ sBox[1][(I >>> 16) & 255]) - sBox[2][(I >>> 8) & 255]) + sBox[3][I & 255];
   }
 
   function f2(d, m, r) {
-    var t = m ^ d;
-    var I = (t << r) | (t >>> (32 - r));
+    let t = m ^ d;
+    let I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] - sBox[1][(I >>> 16) & 255]) + sBox[2][(I >>> 8) & 255]) ^ sBox[3][I & 255];
   }
 
   function f3(d, m, r) {
-    var t = m - d;
-    var I = (t << r) | (t >>> (32 - r));
+    let t = m - d;
+    let I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] + sBox[1][(I >>> 16) & 255]) ^ sBox[2][(I >>> 8) & 255]) - sBox[3][I & 255];
   }
 
-  var sBox = new Array(8);
+  let sBox = new Array(8);
   sBox[0] = new Array(
     0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949,
     0xbfd4af27, 0x88bbbdb5, 0xe2034090, 0x98d09675, 0x6e63a0e0, 0x15c361d2, 0xc2e7661d, 0x22d4ff8e,

@@ -29,8 +29,6 @@
  * @module packet/compressed
  */
 
-'use strict';
-
 import enums from '../enums.js';
 import util from '../util.js';
 import Zlib from '../compression/zlib.min.js';
@@ -98,7 +96,7 @@ Compressed.prototype.write = function () {
  * read by read_packet
  */
 Compressed.prototype.decompress = function () {
-  var decompressed, inflate;
+  let decompressed, inflate;
 
   switch (this.algorithm) {
     case 'uncompressed':
@@ -130,7 +128,7 @@ Compressed.prototype.decompress = function () {
  * Compress the packet data (member decompressedData)
  */
 Compressed.prototype.compress = function () {
-  var uncompressed, deflate;
+  let uncompressed, deflate;
   uncompressed = this.packets.write();
 
   switch (this.algorithm) {

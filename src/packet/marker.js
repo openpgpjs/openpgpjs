@@ -29,8 +29,6 @@
  * @module packet/marker
  */
 
-'use strict';
-
 import enums from '../enums.js';
 
 /**

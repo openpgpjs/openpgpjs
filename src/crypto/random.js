@@ -23,11 +23,9 @@
  * @module crypto/random
  */
 
-'use strict';
-
 import type_mpi from '../type/mpi.js';
 import util from '../util.js';
-const nodeCrypto = util.detectNode() && require('crypto');
+let nodeCrypto = util.detectNode() && require('crypto');
 
 export default {
   /**
@@ -36,8 +34,8 @@ export default {
    * @return {Uint8Array} Random byte array
    */
   getRandomBytes: function(length) {
-    var result = new Uint8Array(length);
-    for (var i = 0; i < length; i++) {
+    const result = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
       result[i] = this.getSecureRandomOctet();
     }
     return result;
@@ -50,8 +48,8 @@ export default {
    * @return {Integer} A secure random number
    */
   getSecureRandom: function(from, to) {
-    var randUint = this.getSecureRandomUint();
-    var bits = ((to - from)).toString(2).length;
+    let randUint = this.getSecureRandomUint();
+    const bits = ((to - from)).toString(2).length;
     while ((randUint & (Math.pow(2, bits) - 1)) > (to - from)) {
       randUint = this.getSecureRandomUint();
     }
@@ -59,14 +57,14 @@ export default {
   },
 
   getSecureRandomOctet: function() {
-    var buf = new Uint8Array(1);
+    const buf = new Uint8Array(1);
     this.getRandomValues(buf);
     return buf[0];
   },
 
   getSecureRandomUint: function() {
-    var buf = new Uint8Array(4);
-    var dv = new DataView(buf.buffer);
+    const buf = new Uint8Array(4);
+    const dv = new DataView(buf.buffer);
     this.getRandomValues(buf);
     return dv.getUint32(0);
   },
@@ -84,7 +82,7 @@ export default {
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
       window.msCrypto.getRandomValues(buf);
     } else if (nodeCrypto) {
-      var bytes = nodeCrypto.randomBytes(buf.length);
+      let bytes = nodeCrypto.randomBytes(buf.length);
       buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
       this.randomBuffer.get(buf);
@@ -103,9 +101,9 @@ export default {
     if (bits < 1) {
       throw new Error('Illegal parameter value: bits < 1');
     }
-    var numBytes = Math.floor((bits + 7) / 8);
+    const numBytes = Math.floor((bits + 7) / 8);
 
-    var randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
+    let randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
     if (bits % 8 > 0) {
 
       randomBits = String.fromCharCode(
@@ -113,7 +111,7 @@ export default {
         randomBits.charCodeAt(0)) +
         randomBits.substring(1);
     }
-    var mpi = new type_mpi();
+    let mpi = new type_mpi();
     mpi.fromBytes(randomBits);
     return mpi.toBigInteger();
   },
@@ -123,8 +121,8 @@ export default {
       throw new Error('Illegal parameter value: max <= min');
     }
 
-    var range = max.subtract(min);
-    var r = this.getRandomBigInteger(range.bitLength());
+    const range = max.subtract(min);
+    let r = this.getRandomBigInteger(range.bitLength());
     while (r.compareTo(range) > 0) {
       r = this.getRandomBigInteger(range.bitLength());
     }
@@ -163,7 +161,7 @@ RandomBuffer.prototype.set = function(buf) {
   if (!(buf instanceof Uint8Array)) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
-  var freeSpace = this.buffer.length - this.size;
+  const freeSpace = this.buffer.length - this.size;
   if (buf.length > freeSpace) {
     buf = buf.subarray(0, freeSpace);
   }
@@ -186,7 +184,7 @@ RandomBuffer.prototype.get = function(buf) {
   if (this.size < buf.length) {
     throw new Error('Random number buffer depleted');
   }
-  for (var i = 0; i < buf.length; i++) {
+  for (let i = 0; i < buf.length; i++) {
     buf[i] = this.buffer[--this.size];
     // clear buffer value
     this.buffer[this.size] = 0;

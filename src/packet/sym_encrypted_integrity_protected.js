@@ -32,8 +32,6 @@
  * @module packet/sym_encrypted_integrity_protected
  */
 
-'use strict';
-
 import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';

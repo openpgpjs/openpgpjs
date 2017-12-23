@@ -30,8 +30,8 @@
 
 import util from '../../util.js';
 
-var RMDsize = 160;
-var X = [];
+const RMDsize = 160;
+const X = [];
 
 function ROL(x, n) {
   return new Number((x << n) | (x >>> (32 - n)));
@@ -104,7 +104,7 @@ function mixOneRound(a, b, c, d, e, x, s, roundNumber) {
   d &= 0xffffffff;
   e &= 0xffffffff;
 
-  var retBlock = [];
+  const retBlock = [];
   retBlock[0] = a;
   retBlock[1] = b;
   retBlock[2] = c;
@@ -124,7 +124,7 @@ function MDinit(MDbuf) {
   MDbuf[4] = 0xc3d2e1f0;
 }
 
-var ROLs = [
+const ROLs = [
   [11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8],
   [7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12],
   [11, 13, 6, 7, 14, 9, 13, 15, 14, 8, 13, 6, 5, 12, 7, 5],
@@ -137,7 +137,7 @@ var ROLs = [
   [8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11]
 ];
 
-var indexes = [
+const indexes = [
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
   [7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8],
   [3, 10, 14, 4, 9, 15, 8, 1, 2, 7, 0, 6, 13, 11, 5, 12],
@@ -151,19 +151,19 @@ var indexes = [
 ];
 
 function compress(MDbuf, X) {
-  var blockA = [];
-  var blockB = [];
+  const blockA = [];
+  const blockB = [];
 
-  var retBlock;
+  let retBlock;
 
-  var i, j;
+  let i, j;
 
   for (i = 0; i < 5; i++) {
     blockA[i] = new Number(MDbuf[i]);
     blockB[i] = new Number(MDbuf[i]);
   }
 
-  var step = 0;
+  let step = 0;
   for (j = 0; j < 5; j++) {
     for (i = 0; i < 16; i++) {
       retBlock = mixOneRound(
@@ -218,7 +218,7 @@ function compress(MDbuf, X) {
 }
 
 function zeroX(X) {
-  for (var i = 0; i < 16; i++) {
+  for (let i = 0; i < 16; i++) {
     X[i] = 0;
   }
 }
@@ -227,8 +227,8 @@ function MDfinish(MDbuf, strptr, lswlen, mswlen) {
   var X = new Array(16);
   zeroX(X);
 
-  var j = 0;
-  for (var i = 0; i < (lswlen & 63); i++) {
+  let j = 0;
+  for (let i = 0; i < (lswlen & 63); i++) {
     X[i >>> 2] ^= (strptr.charCodeAt(j++) & 255) << (8 * (i & 3));
   }
 
@@ -247,7 +247,7 @@ function MDfinish(MDbuf, strptr, lswlen, mswlen) {
 }
 
 function BYTES_TO_DWORD(fourChars) {
-  var tmp = (fourChars.charCodeAt(3) & 255) << 24;
+  let tmp = (fourChars.charCodeAt(3) & 255) << 24;
   tmp |= (fourChars.charCodeAt(2) & 255) << 16;
   tmp |= (fourChars.charCodeAt(1) & 255) << 8;
   tmp |= (fourChars.charCodeAt(0) & 255);
@@ -256,10 +256,10 @@ function BYTES_TO_DWORD(fourChars) {
 }
 
 function RMD(message) {
-  var MDbuf = new Array(RMDsize / 32);
-  var hashcode = new Array(RMDsize / 8);
-  var length;
-  var nbytes;
+  const MDbuf = new Array(RMDsize / 32);
+  const hashcode = new Array(RMDsize / 8);
+  let length;
+  let nbytes;
 
   MDinit(MDbuf);
   length = message.length;
@@ -267,7 +267,7 @@ function RMD(message) {
   var X = new Array(16);
   zeroX(X);
 
-  var i, j = 0;
+  let i, j = 0;
   for (nbytes = length; nbytes > 63; nbytes -= 64) {
     for (i = 0; i < 16; i++) {
       X[i] = BYTES_TO_DWORD(message.substr(j, 4));
@@ -290,10 +290,10 @@ function RMD(message) {
 
 
 export default function RMDstring(message) {
-  var hashcode = RMD(util.Uint8Array2str(message));
-  var retString = "";
+  const hashcode = RMD(util.Uint8Array2str(message));
+  let retString = "";
 
-  for (var i = 0; i < RMDsize / 8; i++) {
+  for (let i = 0; i < RMDsize / 8; i++) {
     retString += String.fromCharCode(hashcode[i]);
   }
 

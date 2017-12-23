@@ -15,9 +15,7 @@
  * @module encoding/base64
  */
 
-'use strict';
-
-var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /**
  * Convert binary array to radix-64
@@ -27,11 +25,11 @@ var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
  */
 function s2r(t, o) {
   // TODO check btoa alternative
-  var a, c, n;
-  var r = o ? o : [],
+  let a, c, n;
+  let r = o ? o : [],
       l = 0,
       s = 0;
-  var tl = t.length;
+  let tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = t[n];
@@ -89,11 +87,11 @@ function s2r(t, o) {
  */
 function r2s(t) {
   // TODO check atob alternative
-  var c, n;
-  var r = [],
+  let c, n;
+  let r = [],
     s = 0,
     a = 0;
-  var tl = t.length;
+  const tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64s.indexOf(t.charAt(n));

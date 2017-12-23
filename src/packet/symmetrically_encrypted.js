@@ -28,8 +28,6 @@
  * @module packet/symmetrically_encrypted
  */
 
-'use strict';
-
 import crypto from '../crypto';
 import enums from '../enums.js';
 import config from '../config';
@@ -42,7 +40,7 @@ export default function SymmetricallyEncrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within.
    * @type {module:packet/packetlist} */
-  this.packets =  null;
+  this.packets = null;
   this.ignore_mdc_error = config.ignore_mdc_error;
 }
 
@@ -64,7 +62,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  *            algorithm
  */
 SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
+  const decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
   // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
   if (!this.ignore_mdc_error &&
       (sessionKeyAlgorithm === 'aes128' ||
@@ -78,7 +76,7 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
 };
 
 SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
-  var data = this.packets.write();
+  const data = this.packets.write();
 
   this.encrypted = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, data, key, true);
 

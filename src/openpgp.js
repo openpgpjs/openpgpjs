@@ -30,8 +30,6 @@
  * for extending and developing on top of the base library.
  */
 
-'use strict';
-
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
 import * as key from './key.js';
@@ -194,7 +192,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey });
   }
-  var result = {};
+  const result = {};
   return Promise.resolve().then(() => {
 
     let message = createMessage(data, filename);
@@ -203,7 +201,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        var detachedSignature = message.signDetached(privateKeys, signature);
+        const detachedSignature = message.signDetached(privateKeys, signature);
         if (armor) {
           result.signature = detachedSignature.armor();
         } else {
@@ -295,9 +293,9 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     return asyncProxy.delegate('sign', { data, privateKeys, armor, detached });
   }
 
-  var result = {};
+  const result = {};
   return execute(() => {
-    var message;
+    let message;
 
     if (util.isString(data)) {
       message = new cleartext.CleartextMessage(data);
@@ -306,7 +304,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     }
 
     if (detached) {
-      var signature = message.signDetached(privateKeys);
+      const signature = message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
@@ -343,7 +341,7 @@ export function verify({ message, publicKeys, signature=null }) {
     return asyncProxy.delegate('verify', { message, publicKeys, signature });
   }
 
-  var result = {};
+  const result = {};
   return execute(() => {
     if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();

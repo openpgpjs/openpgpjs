@@ -22,8 +22,6 @@
  * @module encoding/armor
  */
 
-'use strict';
-
 import base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';
@@ -41,9 +39,9 @@ import config from '../config';
  *         6 = SIGNATURE
  */
 function getType(text) {
-  var reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$\n/m;
+  const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$\n/m;
 
-  var header = text.match(reHeader);
+  const header = text.match(reHeader);
 
   if (!header) {
     throw new Error('Unknown ASCII armor type');
@@ -103,7 +101,7 @@ function getType(text) {
  * @returns {String} The header information
  */
 function addheader() {
-  var result = "";
+  let result = "";
   if (config.show_version) {
     result += "Version: " + config.versionstring + '\r\n';
   }
@@ -122,8 +120,8 @@ function addheader() {
  * @return {String} Base64 encoded checksum
  */
 function getCheckSum(data) {
-  var c = createcrc24(data);
-  var bytes = new Uint8Array([c >> 16, (c >> 8) & 0xFF, c & 0xFF]);
+  const c = createcrc24(data);
+  const bytes = new Uint8Array([c >> 16, (c >> 8) & 0xFF, c & 0xFF]);
   return base64.encode(bytes);
 }
 
@@ -135,8 +133,8 @@ function getCheckSum(data) {
  * @return {Boolean} True if the given checksum is correct; otherwise false
  */
 function verifyCheckSum(data, checksum) {
-  var c = getCheckSum(data);
-  var d = checksum;
+  const c = getCheckSum(data);
+  const d = checksum;
   return c[0] === d[0] && c[1] === d[1] && c[2] === d[2] && c[3] === d[3];
 }
 /**
@@ -144,7 +142,7 @@ function verifyCheckSum(data, checksum) {
  * @param {String} data Data to create a CRC-24 checksum for
  * @return {Integer} The CRC-24 checksum as number
  */
-var crc_table = [
+const crc_table = [
     0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139,
     0x0727cdc2, 0x062b5434, 0x06ad18cf, 0x043267d8, 0x04b42b23, 0x05b8b2d5, 0x053efe2e, 0x0fc54e89, 0x0f430272,
     0x0e4f9b84, 0x0ec9d77f, 0x0c56a868, 0x0cd0e493, 0x0ddc7d65, 0x0d5a319e, 0x0864cfb0, 0x08e2834b, 0x09ee1abd,
@@ -180,9 +178,9 @@ var crc_table = [
 ];
 
 function createcrc24(input) {
-  var crc = 0xB704CE;
+  let crc = 0xB704CE;
 
-  for (var index = 0; index < input.length; index++) {
+  for (let index = 0; index < input.length; index++) {
     crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index]) & 0xff];
   }
   return crc & 0xffffff;
@@ -196,11 +194,11 @@ function createcrc24(input) {
  */
 function splitHeaders(text) {
   // empty line with whitespace characters
-  var reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*\n/m;
-  var headers = '';
-  var body = text;
+  const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*\n/m;
+  let headers = '';
+  let body = text;
 
-  var matchResult = reEmptyLine.exec(text);
+  const matchResult = reEmptyLine.exec(text);
 
   if (matchResult !== null) {
     headers = text.slice(0, matchResult.index);
@@ -223,7 +221,7 @@ function splitHeaders(text) {
  * @param  {Array<String>} headers Armor headers
  */
 function verifyHeaders(headers) {
-  for (var i = 0; i < headers.length; i++) {
+  for (let i = 0; i < headers.length; i++) {
     if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
@@ -241,10 +239,10 @@ function verifyHeaders(headers) {
  */
 function splitChecksum(text) {
   text = text.trim();
-  var body = text;
-  var checksum = "";
+  let body = text;
+  let checksum = "";
 
-  var lastEquals = text.lastIndexOf("=");
+  const lastEquals = text.lastIndexOf("=");
 
   if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
     body = text.slice(0, lastEquals);
@@ -263,22 +261,22 @@ function splitChecksum(text) {
  * @static
  */
 function dearmor(text) {
-  var reSplit = /^-----[^-]+-----$\n/m;
+  const reSplit = /^-----[^-]+-----$\n/m;
 
   // remove trailing whitespace at end of line
   text = text.replace(/[\t\r ]+\n/g, '\n');
 
-  var type = getType(text);
+  const type = getType(text);
 
   text = text.trim() + "\n";
-  var splittext = text.split(reSplit);
+  const splittext = text.split(reSplit);
 
   // IE has a bug in split with a re. If the pattern matches the beginning of the
   // string it doesn't create an empty array element 0. So we need to detect this
   // so we know the index of the data we are interested in.
-  var indexBase = 1;
+  let indexBase = 1;
 
-  var result, checksum, msg;
+  let result, checksum, msg;
 
   if (text.search(reSplit) !== splittext[0].length) {
     indexBase = 0;
@@ -286,7 +284,7 @@ function dearmor(text) {
 
   if (type !== 2) {
     msg = splitHeaders(splittext[indexBase]);
-    var msg_sum = splitChecksum(msg.body);
+    const msg_sum = splitChecksum(msg.body);
 
     result = {
       data: base64.decode(msg_sum.body),
@@ -298,9 +296,9 @@ function dearmor(text) {
   } else {
     // Reverse dash-escaping for msg
     msg = splitHeaders(splittext[indexBase].replace(/^- /mg, ''));
-    var sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
+    const sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
     verifyHeaders(sig.headers);
-    var sig_sum = splitChecksum(sig.body);
+    const sig_sum = splitChecksum(sig.body);
 
     result = {
       text: msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
@@ -334,7 +332,7 @@ function dearmor(text) {
  * @static
  */
 function armor(messagetype, body, partindex, parttotal) {
-  var result = [];
+  const result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");

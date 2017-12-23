@@ -21,13 +21,11 @@
  * @module packet/packet
  */
 
-'use strict';
-
 import util from '../util.js';
 
 export default {
   readSimpleLength: function(bytes) {
-    var len = 0,
+    let len = 0,
       offset,
       type = bytes[0];
 
@@ -117,17 +115,17 @@ export default {
       0x80) === 0) {
       throw new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format.");
     }
-    var mypos = position;
-    var tag = -1;
-    var format = -1;
-    var packet_length;
+    let mypos = position;
+    let tag = -1;
+    let format = -1;
+    let packet_length;
 
     format = 0; // 0 = old format; 1 = new format
     if ((input[mypos] & 0x40) !== 0) {
       format = 1;
     }
 
-    var packet_length_type;
+    let packet_length_type;
     if (format) {
       // new format header
       tag = input[mypos] & 0x3F; // bit 5-0
@@ -141,10 +139,10 @@ export default {
     mypos++;
 
     // parsed length from length field
-    var bodydata = null;
+    let bodydata = null;
 
     // used for partial body lengths
-    var real_packet_length = -1;
+    let real_packet_length = -1;
     if (!format) {
       // 4.2.1. Old Format Packet Lengths
       switch (packet_length_type) {
@@ -195,9 +193,9 @@ export default {
         packet_length = 1 << (input[mypos++] & 0x1F);
         util.print_debug("4 byte length:" + packet_length);
         // EEEK, we're reading the full data here...
-        var mypos2 = mypos + packet_length;
+        let mypos2 = mypos + packet_length;
         bodydata = [input.subarray(mypos, mypos + packet_length)];
-        var tmplen;
+        let tmplen;
         while (true) {
           if (input[mypos2] < 192) {
             tmplen = input[mypos2++];

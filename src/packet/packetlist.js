@@ -9,8 +9,6 @@
  * @module packet/packetlist
  */
 
-'use strict';
-
 import util from '../util';
 import packetParser from './packet.js';
 import * as packets from './all_packets.js';
@@ -31,16 +29,16 @@ export default function Packetlist() {
  * @param {Uint8Array} A Uint8Array of bytes.
  */
 Packetlist.prototype.read = function (bytes) {
-  var i = 0;
+  let i = 0;
 
   while (i < bytes.length) {
-    var parsed = packetParser.read(bytes, i, bytes.length - i);
+    const parsed = packetParser.read(bytes, i, bytes.length - i);
     i = parsed.offset;
 
-    var pushed = false;
+    let pushed = false;
     try {
-      var tag = enums.read(enums.packet, parsed.tag);
-      var packet = packets.newPacketFromTag(tag);
+      const tag = enums.read(enums.packet, parsed.tag);
+      const packet = packets.newPacketFromTag(tag);
       this.push(packet);
       pushed = true;
       packet.read(parsed.packet);
@@ -61,10 +59,10 @@ Packetlist.prototype.read = function (bytes) {
  * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
 Packetlist.prototype.write = function () {
-  var arr = [];
+  const arr = [];
 
-  for (var i = 0; i < this.length; i++) {
-    var packetbytes = this[i].write();
+  for (let i = 0; i < this.length; i++) {
+    const packetbytes = this[i].write();
     arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
     arr.push(packetbytes);
   }
@@ -96,7 +94,7 @@ Packetlist.prototype.pop = function() {
     return;
   }
 
-  var packet = this[this.length - 1];
+  const packet = this[this.length - 1];
   delete this[this.length - 1];
   this.length--;
 
@@ -108,7 +106,7 @@ Packetlist.prototype.pop = function() {
 */
 Packetlist.prototype.filter = function (callback) {
 
-  var filtered = new Packetlist();
+  const filtered = new Packetlist();
 
   for (var i = 0; i < this.length; i++) {
     if (callback(this[i], i, this)) {
@@ -123,9 +121,9 @@ Packetlist.prototype.filter = function (callback) {
 * Creates a new PacketList with all packets from the given types
 */
 Packetlist.prototype.filterByTag = function () {
-  var args = Array.prototype.slice.call(arguments);
-  var filtered = new Packetlist();
-  var that = this;
+  const args = Array.prototype.slice.call(arguments);
+  const filtered = new Packetlist();
+  const that = this;
 
   function handle(packetType) {return that[i].tag === packetType;}
   for (var i = 0; i < this.length; i++) {
@@ -152,11 +150,11 @@ Packetlist.prototype.forEach = function (callback) {
  * @return {module:packet/packet|null}
  */
 Packetlist.prototype.findPacket = function (type) {
-  var packetlist = this.filterByTag(type);
+  const packetlist = this.filterByTag(type);
   if (packetlist.length) {
     return packetlist[0];
   } else {
-    var found = null;
+    let found = null;
     for (var i = 0; i < this.length; i++) {
       if (this[i].packets.length) {
         found = this[i].packets.findPacket(type);
@@ -173,9 +171,9 @@ Packetlist.prototype.findPacket = function (type) {
  * Returns array of found indices by tag
  */
 Packetlist.prototype.indexOfTag = function () {
-  var args = Array.prototype.slice.call(arguments);
-  var tagIndex = [];
-  var that = this;
+  const args = Array.prototype.slice.call(arguments);
+  const tagIndex = [];
+  const that = this;
 
   function handle(packetType) {return that[i].tag === packetType;}
   for (var i = 0; i < this.length; i++) {
@@ -193,7 +191,7 @@ Packetlist.prototype.slice = function (begin, end) {
   if (!end) {
     end = this.length;
   }
-  var part = new Packetlist();
+  const part = new Packetlist();
   for (var i = begin; i < end; i++) {
     part.push(this[i]);
   }
@@ -218,7 +216,7 @@ Packetlist.prototype.concat = function (packetlist) {
  * @returns {Object} new packetlist object with data from packetlist clone
  */
 Packetlist.fromStructuredClone = function(packetlistClone) {
-  var packetlist = new Packetlist();
+  const packetlist = new Packetlist();
   for (var i = 0; i < packetlistClone.length; i++) {
     packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
     if (packetlist[i].packets.length !== 0) {

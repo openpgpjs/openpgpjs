@@ -3,8 +3,6 @@
  * @module crypto
  */
 
-'use strict';
-
 import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';
@@ -34,7 +32,7 @@ const mod = {
   pkcs1: pkcs1,
 };
 
-for (var i in crypto) {
+for (let i in crypto) {
   mod[i] = crypto[i];
 }
 

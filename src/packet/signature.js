@@ -95,7 +95,7 @@ export default function Signature() {
  * @return {module:packet/signature} object representation
  */
 Signature.prototype.read = function (bytes) {
-  var i = 0;
+  let i = 0;
   this.version = bytes[i++];
   // switch on version (3 and 4)
   switch (this.version) {
@@ -107,7 +107,7 @@ Signature.prototype.read = function (bytes) {
           'MUST be 5. @:' + (i - 1));
       }
 
-      var sigpos = i;
+      let sigpos = i;
       // One-octet signature type.
       this.signatureType = bytes[i++];
 
@@ -135,15 +135,15 @@ Signature.prototype.read = function (bytes) {
 
       function subpackets(bytes) {
         // Two-octet scalar octet count for following subpacket data.
-        var subpacket_length = util.readNumber(
+        const subpacket_length = util.readNumber(
           bytes.subarray(0, 2));
 
-        var i = 2;
+        let i = 2;
 
         // subpacket data set (zero or more subpackets)
         while (i < 2 + subpacket_length) {
 
-          var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+          const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
           i += len.offset;
 
           this.read_sub_packet(bytes.subarray(i, i + len.len));
@@ -164,7 +164,7 @@ Signature.prototype.read = function (bytes) {
       // hash algorithm, the hashed subpacket length, and the hashed
       // subpacket body.
       this.signatureData = bytes.subarray(0, i);
-      var sigDataLength = i;
+      const sigDataLength = i;
 
       // unhashed subpackets
       i += subpackets.call(this, bytes.subarray(i, bytes.length), false);
@@ -183,7 +183,7 @@ Signature.prototype.read = function (bytes) {
 };
 
 Signature.prototype.write = function () {
-  var arr = [];
+  let arr = [];
   switch (this.version) {
     case 3:
       arr.push(new Uint8Array([3, 5])); // version, One-octet length of following hashed material.  MUST be 5
@@ -211,11 +211,11 @@ Signature.prototype.write = function () {
  * @param {Object} data Contains packets to be signed.
  */
 Signature.prototype.sign = function (key, data) {
-  var signatureType = enums.write(enums.signature, this.signatureType),
+  const signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  var arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+  const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
   this.issuerKeyId = key.getKeyId();
 
@@ -224,9 +224,9 @@ Signature.prototype.sign = function (key, data) {
 
   this.signatureData = util.concatUint8Array(arr);
 
-  var trailer = this.calculateTrailer();
+  const trailer = this.calculateTrailer();
 
-  var toHash = null;
+  let toHash = null;
 
   switch (this.version) {
     case 3:
@@ -238,7 +238,7 @@ Signature.prototype.sign = function (key, data) {
     default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
-  var hash = crypto.hash.digest(hashAlgorithm, toHash);
+  let hash = crypto.hash.digest(hashAlgorithm, toHash);
 
   this.signedHashValue = hash.subarray(0, 2);
 
@@ -251,9 +251,9 @@ Signature.prototype.sign = function (key, data) {
  * @return {String} a string-representation of a all subpacket data
  */
 Signature.prototype.write_all_sub_packets = function () {
-  var sub = enums.signatureSubpacket;
-  var arr = [];
-  var bytes;
+  let sub = enums.signatureSubpacket;
+  let arr = [];
+  let bytes;
   if (this.created !== null) {
     arr.push(write_sub_packet(sub.signature_creation_time, util.writeDate(this.created)));
   }
@@ -290,9 +290,9 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
-    for (var name in this.notation) {
+    for (let name in this.notation) {
       if (this.notation.hasOwnProperty(name)) {
-        var value = this.notation[name];
+        let value = this.notation[name];
         bytes = [new Uint8Array([0x80, 0, 0, 0])];
         // 2 octets of name length
         bytes.push(util.writeNumber(name.length, 2));
@@ -350,8 +350,8 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
   }
 
-  var result = util.concatUint8Array(arr);
-  var length = util.writeNumber(result.length, 2);
+  let result = util.concatUint8Array(arr);
+  let length = util.writeNumber(result.length, 2);
 
   return util.concatUint8Array([length, result]);
 };
@@ -364,7 +364,7 @@ Signature.prototype.write_all_sub_packets = function () {
  * @return {String} a string-representation of a sub signature packet (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  */
 function write_sub_packet(type, data) {
-  var arr = [];
+  let arr = [];
   arr.push(packet.writeSimpleLength(data.length + 1));
   arr.push(new Uint8Array([type]));
   arr.push(data);
@@ -374,19 +374,19 @@ function write_sub_packet(type, data) {
 // V4 signature sub packets
 
 Signature.prototype.read_sub_packet = function (bytes) {
-  var mypos = 0;
+  let mypos = 0;
 
   function read_array(prop, bytes) {
     this[prop] = [];
 
-    for (var i = 0; i < bytes.length; i++) {
+    for (let i = 0; i < bytes.length; i++) {
       this[prop].push(bytes[i]);
     }
   }
 
   // The leftwost bit denotes a "critical" packet, but we ignore it.
-  var type = bytes[mypos++] & 0x7F;
-  var seconds;
+  let type = bytes[mypos++] & 0x7F;
+  let seconds;
 
   // subpacket type
   switch (type) {
@@ -453,12 +453,12 @@ Signature.prototype.read_sub_packet = function (bytes) {
 
         // We extract key/value tuple from the byte stream.
         mypos += 4;
-        var m = util.readNumber(bytes.subarray(mypos, mypos + 2));
+        let m = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
-        var n = util.readNumber(bytes.subarray(mypos, mypos + 2));
+        let n = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
 
-        var name = util.Uint8Array2str(bytes.subarray(mypos, mypos + m)),
+        let name = util.Uint8Array2str(bytes.subarray(mypos, mypos + m)),
           value = util.Uint8Array2str(bytes.subarray(mypos + m, mypos + m + n));
 
         this.notation = this.notation || {};
@@ -514,7 +514,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       this.signatureTargetPublicKeyAlgorithm = bytes[mypos++];
       this.signatureTargetHashAlgorithm = bytes[mypos++];
 
-      var len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
+      let len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
       this.signatureTargetHash = util.Uint8Array2str(bytes.subarray(mypos, mypos + len));
       break;
@@ -530,7 +530,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
 
 // Produces data to produce signature on
 Signature.prototype.toSign = function (type, data) {
-  var t = enums.signature;
+  let t = enums.signature;
 
   switch (type) {
     case t.binary:
@@ -545,7 +545,7 @@ Signature.prototype.toSign = function (type, data) {
     case t.cert_casual:
     case t.cert_positive:
     case t.cert_revocation:
-      var packet, tag;
+      let packet, tag;
 
       if (data.userid !== undefined) {
         tag = 0xB4;
@@ -558,7 +558,7 @@ Signature.prototype.toSign = function (type, data) {
           'supplied for certification.');
       }
 
-      var bytes = packet.write();
+      let bytes = packet.write();
 
       if (this.version === 4) {
         return util.concatUint8Array([this.toSign(t.key, data),
@@ -602,7 +602,7 @@ Signature.prototype.calculateTrailer = function () {
   if (this.version === 3) {
     return new Uint8Array(0);
   }
-  var first = new Uint8Array([4, 0xFF]); //Version, ?
+  let first = new Uint8Array([4, 0xFF]); //Version, ?
   return util.concatUint8Array([first, util.writeNumber(this.signatureData.length, 4)]);
 };
 
@@ -615,15 +615,15 @@ Signature.prototype.calculateTrailer = function () {
  * @return {boolean} True if message is verified, else false.
  */
 Signature.prototype.verify = function (key, data) {
-  var signatureType = enums.write(enums.signature, this.signatureType),
+  let signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  var bytes = this.toSign(signatureType, data),
+  let bytes = this.toSign(signatureType, data),
     trailer = this.calculateTrailer();
 
 
-  var mpicount = 0;
+  let mpicount = 0;
   // Algorithm-Specific Fields for RSA signatures:
   //      - multiprecision number (MPI) of RSA signature value m**d mod n.
   if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
@@ -636,9 +636,9 @@ Signature.prototype.verify = function (key, data) {
     mpicount = 2;
   }
 
-  var mpi = [],
+  let mpi = [],
     i = 0;
-  for (var j = 0; j < mpicount; j++) {
+  for (let j = 0; j < mpicount; j++) {
     mpi[j] = new type_mpi();
     i += mpi[j].read(this.signature.subarray(i, this.signature.length));
   }

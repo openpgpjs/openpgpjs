@@ -5,8 +5,6 @@
  * @requires crypto/public_key
  * @module crypto/signature */
 
-'use strict';
-
 import util from '../util';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1.js';
@@ -22,7 +20,7 @@ export default {
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
   verify: function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-    var m;
+    let m;
 
     data = util.Uint8Array2str(data);
 
@@ -33,28 +31,28 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3:
         // RSA Sign-Only [HAC]
-        var rsa = new publicKey.rsa();
-        var n = publickey_MPIs[0].toBigInteger();
-        var k = publickey_MPIs[0].byteLength();
-        var e = publickey_MPIs[1].toBigInteger();
+        const rsa = new publicKey.rsa();
+        const n = publickey_MPIs[0].toBigInteger();
+        const k = publickey_MPIs[0].byteLength();
+        const e = publickey_MPIs[1].toBigInteger();
         m = msg_MPIs[0].toBigInteger();
-        var EM = rsa.verify(m, e, n);
-        var EM2 = pkcs1.emsa.encode(hash_algo, data, k);
+        const EM = rsa.verify(m, e, n);
+        const EM2 = pkcs1.emsa.encode(hash_algo, data, k);
         return EM.compareTo(EM2) === 0;
       case 16:
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error("signing with Elgamal is not defined in the OpenPGP standard.");
       case 17:
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        var dsa = new publicKey.dsa();
-        var s1 = msg_MPIs[0].toBigInteger();
-        var s2 = msg_MPIs[1].toBigInteger();
-        var p = publickey_MPIs[0].toBigInteger();
-        var q = publickey_MPIs[1].toBigInteger();
-        var g = publickey_MPIs[2].toBigInteger();
-        var y = publickey_MPIs[3].toBigInteger();
+        const dsa = new publicKey.dsa();
+        const s1 = msg_MPIs[0].toBigInteger();
+        const s2 = msg_MPIs[1].toBigInteger();
+        const p = publickey_MPIs[0].toBigInteger();
+        const q = publickey_MPIs[1].toBigInteger();
+        const g = publickey_MPIs[2].toBigInteger();
+        const y = publickey_MPIs[3].toBigInteger();
         m = data;
-        var dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
+        const dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
         return dopublic.compareTo(s1) === 0;
       default:
         throw new Error('Invalid signature algorithm.');
@@ -76,7 +74,7 @@ export default {
 
     data = util.Uint8Array2str(data);
 
-    var m;
+    let m;
 
     switch (algo) {
       case 1:
@@ -85,23 +83,23 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3:
         // RSA Sign-Only [HAC]
-        var rsa = new publicKey.rsa();
-        var d = keyIntegers[2].toBigInteger();
-        var n = keyIntegers[0].toBigInteger();
+        const rsa = new publicKey.rsa();
+        const d = keyIntegers[2].toBigInteger();
+        const n = keyIntegers[0].toBigInteger();
         m = pkcs1.emsa.encode(hash_algo,
           data, keyIntegers[0].byteLength());
         return util.str2Uint8Array(rsa.sign(m, d, n).toMPI());
 
       case 17:
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        var dsa = new publicKey.dsa();
+        const dsa = new publicKey.dsa();
 
-        var p = keyIntegers[0].toBigInteger();
-        var q = keyIntegers[1].toBigInteger();
-        var g = keyIntegers[2].toBigInteger();
-        var x = keyIntegers[4].toBigInteger();
+        const p = keyIntegers[0].toBigInteger();
+        const q = keyIntegers[1].toBigInteger();
+        const g = keyIntegers[2].toBigInteger();
+        const x = keyIntegers[4].toBigInteger();
         m = data;
-        var result = dsa.sign(hash_algo, m, g, p, q, x);
+        const result = dsa.sign(hash_algo, m, g, p, q, x);
 
         return util.str2Uint8Array(result[0].toString() + result[1].toString());
       case 16:
