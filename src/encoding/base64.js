@@ -18,6 +18,7 @@
 'use strict';
 
 var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+var b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 /**
  * Convert binary array to radix-64
@@ -25,8 +26,9 @@ var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
  * @returns {string} radix-64 version of input string
  * @static
  */
-function s2r(t, o) {
+function s2r(t, o, u) {
   // TODO check btoa alternative
+  var b64 = (u === "base64url") ? b64u : b64s;
   var a, c, n;
   var r = o ? o : [],
       l = 0,
@@ -36,21 +38,21 @@ function s2r(t, o) {
   for (n = 0; n < tl; n++) {
     c = t[n];
     if (s === 0) {
-      r.push(b64s.charAt((c >> 2) & 63));
+      r.push(b64.charAt((c >> 2) & 63));
       a = (c & 3) << 4;
     } else if (s === 1) {
-      r.push(b64s.charAt(a | ((c >> 4) & 15)));
+      r.push(b64.charAt(a | ((c >> 4) & 15)));
       a = (c & 15) << 2;
     } else if (s === 2) {
-      r.push(b64s.charAt(a | ((c >> 6) & 3)));
+      r.push(b64.charAt(a | ((c >> 6) & 3)));
       l += 1;
-      if ((l % 60) === 0) {
+      if ((l % 60) === 0 && !u) {
         r.push("\n");
       }
-      r.push(b64s.charAt(c & 63));
+      r.push(b64.charAt(c & 63));
     }
     l += 1;
-    if ((l % 60) === 0) {
+    if ((l % 60) === 0 && !u) {
       r.push("\n");
     }
 
@@ -60,16 +62,18 @@ function s2r(t, o) {
     }
   }
   if (s > 0) {
-    r.push(b64s.charAt(a));
+    r.push(b64.charAt(a));
     l += 1;
-    if ((l % 60) === 0) {
+    if ((l % 60) === 0 && !u) {
       r.push("\n");
     }
-    r.push('=');
-    l += 1;
+    if (u !== 'base64url') {
+      r.push('=');
+      l += 1;
+    }
   }
-  if (s === 1) {
-    if ((l % 60) === 0) {
+  if (s === 1 && u !== 'base64url') {
+    if ((l % 60) === 0 && !u) {
       r.push("\n");
     }
     r.push('=');
@@ -87,8 +91,9 @@ function s2r(t, o) {
  * @returns {Uint8Array} binary array version of input string
  * @static
  */
-function r2s(t) {
+function r2s(t, u) {
   // TODO check atob alternative
+  var b64 = (u === "base64url") ? b64u : b64s;
   var c, n;
   var r = [],
     s = 0,
@@ -96,7 +101,7 @@ function r2s(t) {
   var tl = t.length;
 
   for (n = 0; n < tl; n++) {
-    c = b64s.indexOf(t.charAt(n));
+    c = b64.indexOf(t.charAt(n));
     if (c >= 0) {
       if (s) {
         r.push(a | ((c >> (6 - s)) & 255));
