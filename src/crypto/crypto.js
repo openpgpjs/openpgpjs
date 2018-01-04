@@ -74,7 +74,7 @@ export default {
    */
   publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
     var types = this.getEncSessionKeyParamTypes(algo);
-    var result = (function() {
+    var result = (async function() {
       var m;
       switch (algo) {
         case 'rsa_encrypt':
@@ -98,7 +98,9 @@ export default {
           var curve = publicParams[0];
           var kdf_params = publicParams[2];
           var R = publicParams[1].toBigInteger();
-          var res = ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
+          var res = await ecdh.encrypt(
+            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
+          );
           return constructParams([res.V, res.C], types);
 
         default:

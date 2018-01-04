@@ -77,12 +77,12 @@ function kdf(hash_algo, X, length, param) {
  * @param  {String}      fingerprint  Recipient fingerprint
  * @return {{V: BigInteger, C: Uint8Array}}  Returns ephemeral key and encoded session key
  */
-function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  const v = curve.genKeyPair();
+  const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q.toByteArray());
   const S = v.derive(Q);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);

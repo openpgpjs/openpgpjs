@@ -2,8 +2,9 @@
 
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var chai = require('chai'),
-  expect = chai.expect;
+var chai = require('chai');
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
 
 describe('Elliptic Curve Cryptography', function () {
   var data = {
@@ -157,73 +158,76 @@ describe('Elliptic Curve Cryptography', function () {
     load_priv_key('juliet');
     done();
   });
-  it('Verify clear signed message', function (done) {
+  it('Verify clear signed message', function () {
     var pub = load_pub_key('juliet');
     var msg = openpgp.cleartext.readArmored(data.juliet.message_signed);
-    openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
+    return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
       expect(result).to.exist;
       expect(result.data.trim()).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
-      done();
+      expect(result.signatures[0].valid).to.eventually.be.true;
     });
   });
-  it('Sign message', function (done) {
+  // FIXME is this pattern correct?
+  it('Sign message', function () {
     var romeo = load_priv_key('romeo');
     openpgp.sign({privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (signed) {
       var romeo = load_pub_key('romeo');
       var msg = openpgp.cleartext.readArmored(signed.data);
-      openpgp.verify({publicKeys: [romeo], message: msg}).then(function (result) {
+      return openpgp.verify({publicKeys: [romeo], message: msg}).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
         expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.be.true;
-        done();
+        expect(result.signatures[0].valid).to.eventually.be.true;
       });
     });
   });
-  it('Decrypt and verify message', function (done) {
+  it('Decrypt and verify message', function () {
     var juliet = load_pub_key('juliet');
     var romeo = load_priv_key('romeo');
     var msg = openpgp.message.readArmored(data.juliet.message_encrypted);
-    openpgp.decrypt({privateKey: romeo, publicKeys: [juliet], message: msg}).then(function (result) {
+    return openpgp.decrypt(
+      {privateKey: romeo, publicKeys: [juliet], message: msg}
+    ).then(function (result) {
       expect(result).to.exist;
       // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
       expect(result.data.trim()).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
-      done();
+      expect(result.signatures[0].valid).to.eventually.be.true;
     });
   });
-  it('Encrypt and sign message', function (done) {
+  it('Encrypt and sign message', function () {
     var romeo = load_priv_key('romeo');
     var juliet = load_pub_key('juliet');
-    openpgp.encrypt({publicKeys: [juliet], privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (encrypted) {
+    expect(romeo.decrypt(data['romeo'].pass)).to.be.true;
+    openpgp.encrypt(
+      {publicKeys: [juliet], privateKeys: [romeo], data: data.romeo.message + "\n"}
+    ).then(function (encrypted) {
       var message = openpgp.message.readArmored(encrypted.data);
       var romeo = load_pub_key('romeo');
       var juliet = load_priv_key('juliet');
-      openpgp.decrypt({privateKey: juliet, publicKeys: [romeo], message: message}).then(function (result) {
+      return openpgp.decrypt(
+        {privateKey: juliet, publicKeys: [romeo], message: message}
+      ).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
         expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.be.true;
-        done();
+        expect(result.signatures[0].valid).to.eventually.be.true;
       });
     });
   });
-  it('Generate key', function (done) {
+  it('Generate key', function () {
     var options = {
       userIds: {name: "Hamlet (secp256k1)", email: "hamlet@example.net"},
       curve: "secp256k1",
       passphrase: "ophelia"
     };
-    openpgp.generateKey(options).then(function (key) {
+    return openpgp.generateKey(options).then(function (key) {
       expect(key).to.exist;
       expect(key.key).to.exist;
       expect(key.key.primaryKey).to.exist;
       expect(key.privateKeyArmored).to.exist;
       expect(key.publicKeyArmored).to.exist;
-      done();
     });
   });
 });

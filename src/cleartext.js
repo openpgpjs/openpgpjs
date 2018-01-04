@@ -69,8 +69,8 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
-CleartextMessage.prototype.sign = function(privateKeys) {
-  return new CleartextMessage(this.text, this.signDetached(privateKeys));
+CleartextMessage.prototype.sign = async function(privateKeys) {
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys));
 };
 
 /**
@@ -78,25 +78,26 @@ CleartextMessage.prototype.sign = function(privateKeys) {
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @return {module:signature~Signature}      new detached signature of message content
  */
-CleartextMessage.prototype.signDetached = function(privateKeys) {
+CleartextMessage.prototype.signDetached = async function(privateKeys) {
   var packetlist = new packet.List();
   var literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
-  for (var i = 0; i < privateKeys.length; i++) {
-    if (privateKeys[i].isPublic()) {
+  await Promise.all(privateKeys.map(async function(privateKey) {
+    if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
-    signaturePacket.sign(signingKeyPacket, literalDataPacket);
+    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
-  }
+  }));
+
   return new sigModule.Signature(packetlist);
 };
 
@@ -120,6 +121,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
+  // TODO await Promise.all(signatureList.map(async function(signature) {  }));
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {

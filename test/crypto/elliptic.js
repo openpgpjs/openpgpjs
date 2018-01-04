@@ -3,10 +3,8 @@
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var chai = require('chai');
-var chaiAsPromised = require('chai-as-promised');
-chai.use(chaiAsPromised);
-const expect = chai.expect;
-
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
 
 var bin2bi = function (bytes) {
   var mpi = new openpgp.MPI();
@@ -265,7 +263,7 @@ describe('Elliptic Curve Cryptography', function () {
     it('Invalid signature', function (done) {
       expect(verify_signature(
         'secp256k1', 8, [], [], [], secp256k1_dummy_point
-      )).to.eventually.equal(false).notify(done);
+      )).to.eventually.be.false.notify(done);
     });
 
     var p384_message = new Uint8Array([

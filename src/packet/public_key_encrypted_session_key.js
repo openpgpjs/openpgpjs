@@ -102,7 +102,7 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
   return util.concatUint8Array(arr);
 };
 
-PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
+PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   var data = String.fromCharCode(
     enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
@@ -117,7 +117,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
     toEncrypt = new type_mpi(crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
   }
 
-  this.encrypted = crypto.publicKeyEncrypt(
+  this.encrypted = await crypto.publicKeyEncrypt(
     this.publicKeyAlgorithm,
     key.params,
     toEncrypt,
