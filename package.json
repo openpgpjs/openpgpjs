@@ -78,11 +78,11 @@
   },
   "dependencies": {
     "rusha": "^0.8.9",
-    "buffer": "^5.0.8",
     "asmcrypto-lite": "^1.0.0",
     "asn1.js": "^5.0.0",
     "bn.js": "^4.11.8",
-    "elliptic": "^6.3.1",
+    "buffer": "^5.0.8",
+    "elliptic": "https://github.com/mahrud/elliptic",
     "es6-promise": "^3.3.1",
     "grunt-cli": "^1.2.0",
     "jwk-to-pem": "^1.2.6",

@@ -26,10 +26,12 @@
 'use strict';
 
 import hash from '../../hash';
-import util from '../../../util.js';
+import util from '../../../util';
+import enums from '../../../enums';
 
 function KeyPair(curve, options) {
   this.curve = curve;
+  this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
   this.keyPair = this.curve.keyPair(options);
 }
 
@@ -38,11 +40,7 @@ KeyPair.prototype.sign = function (message, hash_algo) {
     message = util.str2Uint8Array(message);
   }
   const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
-  const signature = this.keyPair.sign(digest);
-  return {
-    r: signature.r.toArray(),
-    s: signature.s.toArray()
-  };
+  return this.keyPair.sign(digest);
 };
 
 KeyPair.prototype.verify = function (message, signature, hash_algo) {
@@ -54,18 +52,25 @@ KeyPair.prototype.verify = function (message, signature, hash_algo) {
 };
 
 KeyPair.prototype.derive = function (pub) {
+  if (this.keyType === enums.publicKey.eddsa) {
+    throw new Error('Key can only be used for EdDSA');
+  }
   return this.keyPair.derive(pub.keyPair.getPublic()).toArray();
 };
 
 KeyPair.prototype.getPublic = function () {
-  return this.keyPair.getPublic().encode();
+  return this.keyPair.getPublic('array');
 };
 
 KeyPair.prototype.getPrivate = function () {
-  return this.keyPair.getPrivate().toArray();
+  if (this.keyType === enums.publicKey.eddsa) {
+    return this.keyPair.getSecret();
+  } else {
+    return this.keyPair.getPrivate().toArray();
+  }
 };
 
-KeyPair.prototype.isValid = function () {
+KeyPair.prototype.isValid = function () { // FIXME
   return this.keyPair.validate().result;
 };
 

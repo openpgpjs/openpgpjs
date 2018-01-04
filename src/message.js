@@ -128,10 +128,10 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
   return Promise.resolve().then(async () => {
     if (password) {
       var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-      // FIXME need a circuit breaker here
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
+      // FIXME need a circuit breaker here
       results = await Promise.all(symESKeyPacketlist.map(async function(packet) {
         try {
           await packet.decrypt(password);

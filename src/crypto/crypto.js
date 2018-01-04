@@ -183,6 +183,7 @@ export default {
         return ['mpi'];
       case 'ecdh':
       case 'ecdsa':
+      case 'eddsa':
         // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
         //   - MPI of an integer representing the secret key.
         return ['mpi'];
@@ -217,10 +218,11 @@ export default {
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
         return ['mpi', 'mpi', 'mpi', 'mpi'];
-        //   Algorithm-Specific Fields for ECDSA public keys:
+        //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
       case 'ecdsa':
+      case 'eddsa':
         return ['oid', 'mpi'];
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
@@ -279,6 +281,7 @@ export default {
         });
 
       case 'ecdsa':
+      case 'eddsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return constructParams([keyObject.oid, keyObject.Q, keyObject.d], types);
         });

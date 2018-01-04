@@ -6,6 +6,37 @@
 
 export default {
 
+  /** Maps curve names under various standards to one
+   * @enum {String}
+   * @readonly
+   */
+  curve: {
+    "p256":                "p256",
+    "P-256":               "p256",
+    "secp256r1":           "p256",
+    "prime256v1":          "p256",
+    "1.2.840.10045.3.1.7": "p256",
+
+    "p384":         "p384",
+    "P-384":        "p384",
+    "secp384r1":    "p384",
+    "1.3.132.0.34": "p384",
+
+    "p521":         "p521",
+    "P-521":        "p521",
+    "secp521r1":    "p521",
+    "1.3.132.0.35": "p521",
+
+    "secp256k1":    "secp256k1",
+    "1.3.132.0.10": "secp256k1",
+
+    "ed25519":                "ed25519",
+    "1.3.6.1.4.1.11591.15.1": "ed25519",
+
+    "curve25519":             "curve25519",
+    "1.3.6.1.4.1.3029.1.5.1": "curve25519"
+  },
+
   /** A string to key specifier type
    * @enum {Integer}
    * @readonly
@@ -28,7 +59,8 @@ export default {
     elgamal: 16,
     dsa: 17,
     ecdh: 18,
-    ecdsa: 19
+    ecdsa: 19,
+    eddsa: 22
   },
 
   /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

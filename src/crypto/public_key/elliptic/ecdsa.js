@@ -37,7 +37,9 @@ import util from '../../../util.js';
 import base64 from '../../../encoding/base64.js';
 
 const webCrypto = util.getWebCrypto();
+const webCurves = curves.webCurves;
 const nodeCrypto = util.getNodeCrypto();
+const nodeCurves = curves.nodeCurves;
 
 var ECDSASignature = ASN1.define('ECDSASignature', function() {
   this.seq().obj(
@@ -67,8 +69,8 @@ async function sign(oid, hash_algo, m, d) {
     signature = await key.sign(m, hash_algo);
   }
   return {
-    r: new BigInteger(signature.r),
-    s: new BigInteger(signature.s)
+    r: new BigInteger(signature.r.toArray()),
+    s: new BigInteger(signature.s.toArray())
   };
 }
 
@@ -112,7 +114,7 @@ module.exports = {
 
 
 async function webSign(curve, hash_algo, message, keyPair) {
-  var l = curve.pointSize;
+  var l = curve.payloadSize;
   if (typeof message === 'string') {
     message = util.str2Uint8Array(message);
   }
@@ -120,7 +122,7 @@ async function webSign(curve, hash_algo, message, keyPair) {
     "jwk",
     {
       "kty": "EC",
-      "crv": curve.namedCurve,
+      "crv": webCurves[curve.name],
       "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), null, 'base64url'),
       "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), null, 'base64url'),
       "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray('be', l)), null, 'base64url'),
@@ -129,8 +131,8 @@ async function webSign(curve, hash_algo, message, keyPair) {
     },
     {
       "name": "ECDSA",
-      "namedCurve": curve.namedCurve,
-      "hash": { name: curve.hashName }
+      "namedCurve": webCurves[curve.name],
+      "hash": { name: enums.read(enums.webHash, curve.hash) }
     },
     false,
     ["sign"]
@@ -139,7 +141,7 @@ async function webSign(curve, hash_algo, message, keyPair) {
   const signature = new Uint8Array(await webCrypto.sign(
     {
       "name": 'ECDSA',
-      "namedCurve": curve.namedCurve,
+      "namedCurve": webCurves[curve.name],
       "hash": { name: enums.read(enums.webHash, hash_algo) }
     },
     key,
@@ -152,7 +154,7 @@ async function webSign(curve, hash_algo, message, keyPair) {
 }
 
 async function webVerify(curve, hash_algo, signature, message, publicKey) {
-  var r = signature.r.toByteArray(), s = signature.s.toByteArray(), l = curve.pointSize;
+  var r = signature.r.toByteArray(), s = signature.s.toByteArray(), l = curve.payloadSize;
   r = (r.length === l) ? r : [0].concat(r);
   s = (s.length === l) ? s : [0].concat(s);
   signature = new Uint8Array(r.concat(s)).buffer;
@@ -163,7 +165,7 @@ async function webVerify(curve, hash_algo, signature, message, publicKey) {
     "jwk",
     {
       "kty": "EC",
-      "crv": curve.namedCurve,
+      "crv": webCurves[curve.name],
       "x": base64.encode(new Uint8Array(publicKey.getX().toArray('be', l)), null, 'base64url'),
       "y": base64.encode(new Uint8Array(publicKey.getY().toArray('be', l)), null, 'base64url'),
       "use": "sig",
@@ -171,8 +173,8 @@ async function webVerify(curve, hash_algo, signature, message, publicKey) {
     },
     {
       "name": "ECDSA",
-      "namedCurve": curve.namedCurve,
-      "hash": { name: curve.hashName }
+      "namedCurve": webCurves[curve.name],
+      "hash": { name: enums.read(enums.webHash, curve.hash) }
     },
     false,
     ["verify"]
@@ -181,7 +183,7 @@ async function webVerify(curve, hash_algo, signature, message, publicKey) {
   return webCrypto.verify(
     {
       "name": 'ECDSA',
-      "namedCurve": curve.namedCurve,
+      "namedCurve": webCurves[curve.name],
       "hash": { name: enums.read(enums.webHash, hash_algo) }
     },
     key,
@@ -198,7 +200,7 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
   const key = jwkToPem(
     {
       "kty": "EC",
-      "crv": curve.namedCurve,
+      "crv": nodeCurves[curve.name],
       "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray())),
       "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray())),
       "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray())),
@@ -231,7 +233,7 @@ async function nodeVerify(curve, hash_algo, signature, message, publicKey) {
   const key = jwkToPem(
     {
       "kty": "EC",
-      "crv": curve.namedCurve,
+      "crv": nodeCurves[curve.name],
       "x": base64.encode(new Uint8Array(publicKey.getX().toArray())),
       "y": base64.encode(new Uint8Array(publicKey.getY().toArray())),
       "use": "sig",
