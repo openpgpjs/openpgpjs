@@ -27,15 +27,26 @@
 
 'use strict';
 
+import ASN1 from 'asn1.js';
+
 import {ec as EC} from 'elliptic';
 import {KeyPair} from './key.js';
 import BigInteger from '../jsbn.js';
 import config from '../../../config';
 import enums from '../../../enums.js';
 import util from '../../../util.js';
+import base64 from '../../../encoding/base64.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
+
+
+var ECPrivateKey = ASN1.define('ECPrivateKey', function() {
+  this.seq().obj(
+    this.key('r').int(),  // FIXME int or BN?
+    this.key('s').int()   // FIXME int or BN?
+  );
+});
 
 var webCurves = [], nodeCurves = [];
 if (webCrypto && config.use_native) {
@@ -87,7 +98,9 @@ const curves = {
     node: false, // FIXME nodeCurves.includes('secp256k1'),
     // this is because jwk-to-pem does not support this curve.
     web: false
-  }
+  },
+  curve25519 : {},
+  ed25519 : {}
 };
 
 function Curve(name, {oid, hash, cipher, namedCurve, opensslCurve, hashName, node, web}) {
@@ -114,7 +127,7 @@ Curve.prototype.keyFromPublic = function (pub) {
 Curve.prototype.genKeyPair = async function () {
   var keyPair;
   if (webCrypto && config.use_native && this.web) {
-    keyPair = await webGenKeyPair(this.namedCurve);
+    keyPair = await webGenKeyPair(this.namedCurve, "ECDSA"); // FIXME
   } else if (nodeCrypto && config.use_native && this.node) {
     keyPair = await nodeGenKeyPair(this.opensslCurve);
   } else {
@@ -163,24 +176,26 @@ module.exports = {
 //////////////////////////
 
 
-async function webGenKeyPair(namedCurve) {
+async function webGenKeyPair(namedCurve, algorithm) {
   try {
-    var keyPair = await webCrypto.generateKey(
+    var webCryptoKey = await webCrypto.generateKey(
       {
-        name: "ECDSA", // FIXME or "ECDH"
-        // "P-256", "P-384", or "P-521"
+        name: algorithm === "ECDH" ? "ECDH" : "ECDSA",
         namedCurve: namedCurve
       },
-      // TODO whether the key is extractable (i.e. can be used in exportKey)
-      false,
-      // FIXME this can be any combination of "sign" and "verify"
-      // or "deriveKey" and "deriveBits" for ECDH
-      ["sign", "verify"]
+      true,
+      algorithm === "ECDH" ? ["deriveKey", "deriveBits"] : ["sign", "verify"]
     );
 
+    var privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
+    var publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
+
     return {
-      pub: keyPair.publicKey.encode(), // FIXME encoding
-      priv: keyPair.privateKey.toArray()  // FIXME encoding
+      pub: {
+        x: base64.decode(publicKey.x, 'base64url'),
+        y: base64.decode(publicKey.y, 'base64url')
+      },
+      priv: base64.decode(privateKey.d, 'base64url')
     };
   } catch(err) {
     throw new Error(err);

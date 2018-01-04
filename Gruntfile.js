@@ -87,6 +87,31 @@ module.exports = function(grunt) {
           plugin: [ 'browserify-derequire' ]
         }
       },
+      openpgp_browser: {
+        files: {
+          'dist/openpgp_browser.js': [ './src/index.js' ]
+        },
+        options: {
+          browserifyOptions: {
+            debug: true,
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto', 'node-localstorage', 'node-fetch' ],
+          transform: [
+            ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
+              ignore: ['*.min.js'],
+              presets: [
+                "es2015"
+              ]
+            }]
+          ],
+          plugin: [ 'browserify-derequire' ]
+        }
+      },
       worker: {
         files: {
           'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
@@ -97,7 +122,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'crypto', 'buffer' , 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
+          external: [ 'crypto', 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp' ]
         }
       }
     },
@@ -190,7 +215,7 @@ module.exports = function(grunt) {
       }
     },
     copy: {
-      browsertest: {
+      browser: {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
@@ -262,6 +287,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
+  grunt.loadNpmTasks('grunt-keepalive');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
@@ -304,6 +330,7 @@ module.exports = function(grunt) {
   // Test/Dev tasks
   grunt.registerTask('test', [ 'eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('saucelabs', ['default', 'copy:browser', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['browserify:openpgp_browser', 'copy:browser', 'connect:test', 'keepalive']);
 
 };
