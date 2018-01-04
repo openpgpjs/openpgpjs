@@ -86,7 +86,7 @@
     "grunt-cli": "^1.2.0",
     "jwk-to-pem": "^1.2.6",
     "node-fetch": "^1.3.3",
-    "node-localstorage": "~1.3.0",
+    "node-localstorage": "~1.3.0"
   },
   "repository": {
     "type": "git",
