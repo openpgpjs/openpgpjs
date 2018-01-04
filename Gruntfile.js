@@ -34,10 +34,6 @@ module.exports = function(grunt) {
     browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
   }
 
-  var getSauceKey = function getSaucekey () {
-    return '60ffb656-2346-4b77-81f3-bc435ff4c103';
-  };
-
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -53,8 +49,18 @@ module.exports = function(grunt) {
           external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: [
+                ["babel-preset-env", {
+                  "targets": {
+                    "node": "current"
+                  }
+                }]
+              ]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -72,8 +78,18 @@ module.exports = function(grunt) {
           external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: [
+                ["babel-preset-env", {
+                  "targets": {
+                    "node": "current"
+                  }
+                }]
+              ]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -226,7 +242,7 @@ module.exports = function(grunt) {
       all: {
         options: {
           username: 'openpgpjs',
-          key: getSauceKey,
+          key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
           urls: ['http://127.0.0.1:3000/test/unittests.html'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',

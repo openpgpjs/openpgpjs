@@ -25,22 +25,44 @@
 
 'use strict';
 
+import asn1 from 'asn1';
+import jwk2pem from 'jwk-to-pem';
+
 import curves from './curves.js';
 import BigInteger from '../jsbn.js';
+import config from '../../../config';
+import enums from '../../../enums.js';
+import util from '../../../util.js';
+
+const webCrypto = util.getWebCrypto();
+const nodeCrypto = util.getNodeCrypto();
+
+var ECDSASignature = asn1.define('ecdsa-sig', function() {
+  return this.seq().obj(
+    this.key('r').int(),  // FIXME int or BN?
+    this.key('s').int()   // FIXME int or BN?
+  );
+});
 
 /**
  * Sign a message using the provided key
  * @param  {String}      oid        Elliptic curve for the key
- * @param  {BigInteger}  Q          Public key used to sign
  * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}  m          Message to sign
-* @param  {BigInteger}  d          Private key used to sign
+ * @param  {BigInteger}  d          Private key used to sign
  * @return {{r: BigInteger, s: BigInteger}}  Signature of the message
  */
 function sign(oid, hash_algo, m, d) {
+  var signature;
   const curve = curves.get(oid);
-  const key = curve.keyFromPrivate(d.toByteArray());
-  const signature = key.sign(m, hash_algo);
+  if (webCrypto && config.use_native && curve.web) {
+    signature = webSign(curve, hash_algo, m, d);
+  } else if (nodeCrypto && config.use_native && curve.node) {
+    signature = nodeSign(curve, hash_algo, m, d);
+  } else {
+    const key = curve.keyFromPrivate(d.toByteArray());
+    signature = key.sign(m, hash_algo);
+  }
   return {
     r: new BigInteger(signature.r),
     s: new BigInteger(signature.s)
@@ -53,15 +75,141 @@ function sign(oid, hash_algo, m, d) {
  * @param  {enums.hash}  hash_algo  Hash algorithm used in the signature
  * @param  {{r: BigInteger, s: BigInteger}}  signature  Signature to verify
  * @param  {Uint8Array}  m          Message to verify
- * @param  {BigInteger}  Q         Public key used to verify the message
+ * @param  {BigInteger}  Q          Public key used to verify the message
+ * @return {Boolean}
  */
 function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
-  const key = curve.keyFromPublic(Q.toByteArray());
-  return key.verify(m, {r: signature.r.toByteArray(), s: signature.s.toByteArray()}, hash_algo);
+  if (webCrypto && config.use_native && curve.web) {
+    return webVerify(curve, hash_algo, signature, m, Q);
+  } else if (nodeCrypto && config.use_native && curve.node) {
+    return nodeVerify(curve, hash_algo, signature, m, Q);
+  } else {
+    const key = curve.keyFromPublic(Q.toByteArray());
+    return key.verify(m, {r: signature.r.toByteArray(), s: signature.s.toByteArray()}, hash_algo);
+  }
 }
 
 module.exports = {
   sign: sign,
   verify: verify
 };
+
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+async function webSign(curve, hash_algo, m, d) {
+  const publicKey = curve.keyFromPrivate(d).getPublic();
+  const privateKey = await webCrypto.importKey(
+    "jwk",
+    {
+      "kty": "EC",
+      "crv": curve.namedCurve,
+      "x": publicKey.getX().toBuffer().base64Slice(),
+      "y": publicKey.getY().toBuffer().base64Slice(),
+      "d": d.toBuffer().base64Slice(),
+      "use": "sig",
+      "kid": "ECDSA Private Key"
+    },
+    {
+      "name": "ECDSA",
+      "namedCurve": curve.namedCurve,
+      "hash": { name: enums.read(enums.hash, hash_algo) }
+    },
+    false,
+    ["sign"]
+  );
+
+  try {
+    return await webCrypto.sign(
+      {
+        "name": 'ECDSA',
+        "namedCurve": curve.namedCurve,
+        "hash": { name: enums.read(enums.hash, hash_algo) }
+      },
+      privateKey,
+      m
+    );
+  } catch(err) {
+    throw new Error(err);
+  }
+}
+
+async function webVerify(curve, hash_algo, signature, m, Q) {
+  const publicKey = await webCrypto.importKey(
+    "jwk",
+    {
+      "kty": "EC",
+      "crv": curve.namedCurve,
+      "x": Q.getX().toBuffer().base64Slice(),
+      "y": Q.getY().toBuffer().base64Slice(),
+      "use": "sig",
+      "kid": "ECDSA Public Key"
+    },
+    {
+      "name": "ECDSA",
+      "namedCurve": curve.namedCurve,
+      "hash": { name: enums.read(enums.hash, hash_algo) }
+    },
+    false,
+    ["verify"]
+  );
+
+  try {
+    return await webCrypto.verify(
+      {
+        "name": 'ECDSA',
+        "namedCurve": curve.namedCurve,
+        "hash": { name: enums.read(enums.hash, hash_algo) }
+      },
+      publicKey,
+      signature,
+      m
+    );
+  } catch(err) {
+    throw new Error(err);
+  }
+}
+
+
+async function nodeSign(curve, hash_algo, m, d) {
+  const publicKey = curve.keyFromPrivate(d).getPublic();
+  const privateKey = jwk2pem(
+    {"kty": "EC",
+     "crv": curve.namedCurve,
+     "x": publicKey.getX().toBuffer().base64Slice(),
+     "y": publicKey.getY().toBuffer().base64Slice(),
+     "d": d.toBuffer().base64Slice(),
+     "use": "sig",
+     "kid": "ECDSA Private Key"},
+    {private: true}
+  );
+
+  const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
+  sign.write(m);
+  sign.end();
+  const signature = await sign.sign(privateKey);
+  return ECDSASignature.decode(signature, 'der');
+}
+
+async function nodeVerify(curve, hash_algo, signature, m, Q) {
+  const publicKey = jwk2pem(
+    {"kty": "EC",
+     "crv": curve.namedCurve,
+     "x": Q.getX().toBuffer().base64Slice(),
+     "y": Q.getY().toBuffer().base64Slice(),
+     "use": "sig",
+     "kid": "ECDSA Public Key"},
+    {private: false}
+  );
+
+  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
+  verify.write(m);
+  verify.end();
+  return await verify.verify(publicKey, signature);
+}
