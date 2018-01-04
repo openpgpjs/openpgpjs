@@ -392,8 +392,10 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
       throw new Error('Private key is not decrypted.');
     }
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
-  }));
+    return signaturePacket;
+  })).then(signatureList => {
+    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+  });
 
   if (signature) {
     packetlist.concat(existingSigPacketlist);
@@ -431,8 +433,10 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
       throw new Error('Private key is not decrypted.');
     }
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
-  }));
+    return signaturePacket;
+  })).then(signatureList => {
+    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+  });
 
   if (signature) {
     var existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
@@ -482,11 +486,10 @@ Message.prototype.verifyDetached = function(signature, keys) {
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 function createVerificationObjects(signatureList, literalDataList, keys) {
-  var result = [];
-  for (var i = 0; i < signatureList.length; i++) {
+  return Promise.all(signatureList.map(async function(signature) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
+      keyPacket = keys[j].getSigningKeyPacket(signature.issuerKeyId);
       if (keyPacket) {
         break;
       }
@@ -495,20 +498,19 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
     var verifiedSig = {};
     if (keyPacket) {
       //found a key packet that matches keyId of signature
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
-      verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
+      verifiedSig.keyid = signature.issuerKeyId;
+      verifiedSig.valid = await signature.verify(keyPacket, literalDataList[0]);
     } else {
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.keyid = signature.issuerKeyId;
       verifiedSig.valid = null;
     }
 
     var packetlist = new packet.List();
-    packetlist.push(signatureList[i]);
+    packetlist.push(signature);
     verifiedSig.signature = new sigModule.Signature(packetlist);
 
-    result.push(verifiedSig);
-  }
-  return Promise.all(result);
+    return verifiedSig;
+  }));
 }
 
 /**

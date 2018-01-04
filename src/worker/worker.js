@@ -19,7 +19,7 @@
 
 self.window = {}; // to make UMD bundles work
 
-importScripts('openpgp.js');
+importScripts('openpgp_browser.js'); // FIXME
 var openpgp = window.openpgp;
 
 var MIN_SIZE_RANDOM_BUFFER = 40000;
