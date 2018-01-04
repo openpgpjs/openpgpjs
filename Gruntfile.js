@@ -34,6 +34,10 @@ module.exports = function(grunt) {
     browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
   }
 
+  var getSauceKey = function getSaucekey () {
+    return '60ffb656-2346-4b77-81f3-bc435ff4c103';
+  };
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -54,9 +58,7 @@ module.exports = function(grunt) {
                         "transform-regenerator",
                         "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: [
-                "es2015"
-              ]
+              presets: ["env"]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -79,9 +81,7 @@ module.exports = function(grunt) {
                         "transform-regenerator",
                         "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: [
-                "es2015"
-              ]
+              presets: ["env"]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -93,10 +93,9 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
-            debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'node-localstorage', 'node-fetch' ],
+          external: [ 'crypto' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -104,9 +103,7 @@ module.exports = function(grunt) {
                         "transform-regenerator",
                         "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: [
-                "es2015"
-              ]
+              presets: ["env"]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -122,7 +119,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'crypto', 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp' ]
+          external: [ 'crypto', 'openpgp', '../../dist/openpgp' ]
         }
       }
     },
@@ -215,7 +212,7 @@ module.exports = function(grunt) {
       }
     },
     copy: {
-      browser: {
+      browsertest: {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
@@ -249,7 +246,7 @@ module.exports = function(grunt) {
       all: {
         options: {
           username: 'openpgpjs',
-          key: '60ffb656-2346-4b77-81f3-bc435ff4c103',
+          key: getSauceKey,
           urls: ['http://127.0.0.1:3000/test/unittests.html'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
@@ -325,12 +322,12 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('default',['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
-  grunt.registerTask('test', [ 'eslint', 'mochaTest']);
+  grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['default', 'copy:browser', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['browserify:openpgp_browser', 'copy:browser', 'connect:test', 'keepalive']);
+  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['browserify:openpgp_browser', 'copy:browsertest', 'connect:test', 'keepalive']);
 
 };
