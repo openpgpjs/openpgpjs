@@ -9,5 +9,6 @@ describe('General', function () {
   require('./hkp.js');
   require('./oid.js');
   require('./ecc.js');
+  require('./x25519.js');
 });
 

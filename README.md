@@ -118,13 +118,25 @@ openpgp.decrypt(options).then(function(plaintext) {
 
 #### Generate new key pair
 
+RSA keys:
 ```js
 var options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
     numBits: 4096,                                            // RSA key size
     passphrase: 'super long and hard to guess secret'         // protects the private key
 };
+```
 
+ECC keys:
+```js
+var options = {
+    userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
+    curve: "curve25519",                                      // ECC curve (curve25519, p256, p384, p521, or secp256k1)
+    passphrase: 'super long and hard to guess secret'         // protects the private key
+};
+```
+
+```js
 openpgp.generateKey(options).then(function(key) {
     var privkey = key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
     var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
