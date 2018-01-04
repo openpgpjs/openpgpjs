@@ -89,7 +89,7 @@ export function destroyWorker() {
 
 
 /**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
@@ -100,7 +100,7 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""} = {}) {
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="" } = {}) {
   userIds = formatUserIds(userIds);
   const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
 
@@ -338,7 +338,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
  * @param  {CleartextMessage} message    cleartext message object with signatures
  * @param  {Signature} signature         (optional) detached signature for verification
  * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
- *                                         { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ *                                       { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
 export function verify({ message, publicKeys, signature=null }) {
