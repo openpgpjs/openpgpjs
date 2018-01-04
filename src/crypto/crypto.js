@@ -72,9 +72,9 @@ export default {
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} encrypted session key parameters
    */
-  publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
+  publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
     var types = this.getEncSessionKeyParamTypes(algo);
-    var result = (async function() {
+    return (async function() {
       var m;
       switch (algo) {
         case 'rsa_encrypt':
@@ -107,8 +107,6 @@ export default {
           return [];
       }
     }());
-
-    return result;
   },
 
   /**
@@ -120,9 +118,9 @@ export default {
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
-  publicKeyDecrypt: function(algo, keyIntegers, dataIntegers, fingerprint) {
+  publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
     var p;
-    var bn = (function() {
+    return new type_mpi(await (async function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt':
@@ -157,10 +155,7 @@ export default {
         default:
           return null;
       }
-    }());
-
-    var result = new type_mpi(bn);
-    return result;
+    }()));
   },
 
   /** Returns the types comprising the private key of an algorithm

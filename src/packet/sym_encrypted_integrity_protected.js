@@ -133,7 +133,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
   }
 
-  return Promise.resolve();
+  return true;
 };
 
 

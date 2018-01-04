@@ -150,6 +150,20 @@ Packetlist.prototype.forEach = function (callback) {
 };
 
 /**
+* Returns an array containing return values of callback
+* on each element
+*/
+Packetlist.prototype.map = function (callback) {
+  var packetArray = [];
+
+  for (var i = 0; i < this.length; i++) {
+    packetArray.push(callback(this[i], i, this));
+  }
+
+  return packetArray;
+};
+
+/**
  * Traverses packet tree and returns first matching packet
  * @param  {module:enums.packet} type The packet type
  * @return {module:packet/packet|null}

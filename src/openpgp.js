@@ -394,10 +394,8 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
     return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
   }
 
-  return execute(() => ({
-
-    message: messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
-
+  return execute(async () => ({
+    message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
   }), 'Error encrypting session key');
 }
 
