@@ -57,6 +57,7 @@ var ECDSASignature = ASN1.define('ECDSASignature', function() {
 async function sign(oid, hash_algo, m, d) {
   var signature;
   const curve = curves.get(oid);
+  hash_algo = hash_algo ? hash_algo : curve.hash;
   const key = curve.keyFromPrivate(d.toByteArray());
   if (webCrypto && config.use_native && curve.web) {
     signature = await webSign(curve, hash_algo, m, key.keyPair);
@@ -83,6 +84,7 @@ async function sign(oid, hash_algo, m, d) {
 async function verify(oid, hash_algo, signature, m, Q) {
   var result;
   const curve = curves.get(oid);
+  hash_algo = hash_algo ? hash_algo : curve.hash;  // FIXME is this according to the RFC?
   const key = curve.keyFromPublic(Q.toByteArray());
   if (webCrypto && config.use_native && curve.web) {
     result = await webVerify(curve, hash_algo, signature, m, key.keyPair.getPublic());
@@ -109,76 +111,83 @@ module.exports = {
 //////////////////////////
 
 
-async function webSign(curve, hash_algo, m, keyPair) {
-  try {
-    const key = await webCrypto.importKey(
-      "jwk",
-      {
-        "kty": "EC",
-        "crv": curve.namedCurve,
-        "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray()), null, 'base64url'),
-        "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray()), null, 'base64url'),
-        "d": base64.encode(new Uint8Array(keyPair.getPrivate()), null, 'base64url'),
-        "use": "sig",
-        "kid": "ECDSA Private Key"
-      },
-      {
-        "name": "ECDSA",
-        "namedCurve": curve.namedCurve,
-        "hash": { name: enums.read(enums.hash, hash_algo) }
-      },
-      false,
-      ["sign"]
-    );
-
-    return await webCrypto.sign(
-      {
-        "name": 'ECDSA',
-        "namedCurve": curve.namedCurve,
-        "hash": { name: enums.read(enums.hash, hash_algo) }
-      },
-      key,
-      m
-    );
-  } catch(err) {
-    throw new Error(err);
+async function webSign(curve, hash_algo, message, keyPair) {
+  var l = curve.pointSize;
+  if (typeof message === 'string') {
+    message = util.str2Uint8Array(message);
   }
+  const key = await webCrypto.importKey(
+    "jwk",
+    {
+      "kty": "EC",
+      "crv": curve.namedCurve,
+      "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), null, 'base64url'),
+      "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), null, 'base64url'),
+      "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray('be', l)), null, 'base64url'),
+      "use": "sig",
+      "kid": "ECDSA Private Key"
+    },
+    {
+      "name": "ECDSA",
+      "namedCurve": curve.namedCurve,
+      "hash": { name: curve.hashName }
+    },
+    false,
+    ["sign"]
+  );
+
+  const signature = new Uint8Array(await webCrypto.sign(
+    {
+      "name": 'ECDSA',
+      "namedCurve": curve.namedCurve,
+      "hash": { name: enums.read(enums.webHash, hash_algo) }
+    },
+    key,
+    message
+  ));
+  return {
+    r: signature.slice(0, l),
+    s: signature.slice(l, 2 * l)
+  };
 }
 
-async function webVerify(curve, hash_algo, signature, m, publicKey) {
-  try {
-    const key = await webCrypto.importKey(
-      "jwk",
-      {
-        "kty": "EC",
-        "crv": curve.namedCurve,
-        "x": base64.encode(new Uint8Array(publicKey.getX().toArray()), null, 'base64url'),
-        "y": base64.encode(new Uint8Array(publicKey.getY().toArray()), null, 'base64url'),
-        "use": "sig",
-        "kid": "ECDSA Public Key"
-      },
-      {
-        "name": "ECDSA",
-        "namedCurve": curve.namedCurve,
-        "hash": { name: enums.read(enums.hash, hash_algo) }
-      },
-      false,
-      ["verify"]
-    );
-
-    return await webCrypto.verify(
-      {
-        "name": 'ECDSA',
-        "namedCurve": curve.namedCurve,
-        "hash": { name: enums.read(enums.hash, hash_algo) }
-      },
-      key,
-      signature,
-      m
-    );
-  } catch(err) {
-    throw new Error(err);
+async function webVerify(curve, hash_algo, signature, message, publicKey) {
+  var r = signature.r.toByteArray(), s = signature.s.toByteArray(), l = curve.pointSize;
+  r = (r.length === l) ? r : [0].concat(r);
+  s = (s.length === l) ? s : [0].concat(s);
+  signature = new Uint8Array(r.concat(s)).buffer;
+  if (typeof message === 'string') {
+    message = util.str2Uint8Array(message);
   }
+  const key = await webCrypto.importKey(
+    "jwk",
+    {
+      "kty": "EC",
+      "crv": curve.namedCurve,
+      "x": base64.encode(new Uint8Array(publicKey.getX().toArray('be', l)), null, 'base64url'),
+      "y": base64.encode(new Uint8Array(publicKey.getY().toArray('be', l)), null, 'base64url'),
+      "use": "sig",
+      "kid": "ECDSA Public Key"
+    },
+    {
+      "name": "ECDSA",
+      "namedCurve": curve.namedCurve,
+      "hash": { name: curve.hashName }
+    },
+    false,
+    ["verify"]
+  );
+
+  return webCrypto.verify(
+    {
+      "name": 'ECDSA',
+      "namedCurve": curve.namedCurve,
+      "hash": { name: enums.read(enums.webHash, hash_algo) }
+    },
+    key,
+    signature,
+    message
+  );
 }
 
 
@@ -199,7 +208,6 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
     { private: true }
   );
 
-  // FIXME what happens when hash_algo = undefined?
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
   sign.write(message);
   sign.end();

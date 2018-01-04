@@ -27,8 +27,6 @@
 
 'use strict';
 
-import ASN1 from 'asn1.js';
-
 import {ec as EC} from 'elliptic';
 import {KeyPair} from './key.js';
 import BigInteger from '../jsbn.js';
@@ -39,14 +37,6 @@ import base64 from '../../../encoding/base64.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-
-
-var ECPrivateKey = ASN1.define('ECPrivateKey', function() {
-  this.seq().obj(
-    this.key('r').int(),  // FIXME int or BN?
-    this.key('s').int()   // FIXME int or BN?
-  );
-});
 
 var webCurves = [], nodeCurves = [];
 if (webCrypto && config.use_native) {
@@ -60,6 +50,7 @@ if (webCrypto && config.use_native) {
 const curves = {
   p256: {
     oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
+    pointSize: 66, // FIXME
     namedCurve: 'P-256',
     opensslCurve: 'prime256v1',
     hashName: 'SHA-256',
@@ -70,6 +61,7 @@ const curves = {
   },
   p384: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x22]),
+    pointSize: 48,
     namedCurve: 'P-384',
     opensslCurve: 'secp384r1', // FIXME
     hashName: 'SHA-384',
@@ -80,6 +72,7 @@ const curves = {
   },
   p521: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x23]),
+    pointSize: 66,
     namedCurve: 'P-521',
     opensslCurve: 'secp521r1', // FIXME
     hashName: 'SHA-512',
@@ -90,6 +83,7 @@ const curves = {
   },
   secp256k1: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
+    pointSize: 66, // FIXME
     namedCurve: 'SECP-256K1',
     opensslCurve: 'secp256k1',
     hashName: 'SHA-256',
@@ -103,10 +97,11 @@ const curves = {
   ed25519 : {}
 };
 
-function Curve(name, {oid, hash, cipher, namedCurve, opensslCurve, hashName, node, web}) {
+function Curve(name, {oid, pointSize, hash, cipher, namedCurve, opensslCurve, hashName, node, web}) {
   this.curve = new EC(name);
   this.name = name;
   this.oid = oid;
+  this.pointSize = pointSize;
   this.hash = hash;
   this.cipher = cipher;
   this.namedCurve= namedCurve;
@@ -177,41 +172,33 @@ module.exports = {
 
 
 async function webGenKeyPair(namedCurve, algorithm) {
-  try {
-    var webCryptoKey = await webCrypto.generateKey(
-      {
-        name: algorithm === "ECDH" ? "ECDH" : "ECDSA",
-        namedCurve: namedCurve
-      },
-      true,
-      algorithm === "ECDH" ? ["deriveKey", "deriveBits"] : ["sign", "verify"]
-    );
+  var webCryptoKey = await webCrypto.generateKey(
+    {
+      name: algorithm === "ECDH" ? "ECDH" : "ECDSA",
+      namedCurve: namedCurve
+    },
+    true,
+    algorithm === "ECDH" ? ["deriveKey", "deriveBits"] : ["sign", "verify"]
+  );
 
-    var privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
-    var publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
+  var privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
+  var publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
 
-    return {
-      pub: {
-        x: base64.decode(publicKey.x, 'base64url'),
-        y: base64.decode(publicKey.y, 'base64url')
-      },
-      priv: base64.decode(privateKey.d, 'base64url')
-    };
-  } catch(err) {
-    throw new Error(err);
-  }
+  return {
+    pub: {
+      x: base64.decode(publicKey.x, 'base64url'),
+      y: base64.decode(publicKey.y, 'base64url')
+    },
+    priv: base64.decode(privateKey.d, 'base64url')
+  };
 }
 
 async function nodeGenKeyPair(opensslCurve) {
-  try {
-    var ecdh = nodeCrypto.createECDH(opensslCurve);
-    await ecdh.generateKeys();
+  var ecdh = nodeCrypto.createECDH(opensslCurve);
+  await ecdh.generateKeys();
 
-    return {
-      pub: ecdh.getPublicKey().toJSON().data,
-      priv: ecdh.getPrivateKey().toJSON().data
-    };
-  } catch(err) {
-    throw new Error(err);
-  }
+  return {
+    pub: ecdh.getPublicKey().toJSON().data,
+    priv: ecdh.getPrivateKey().toJSON().data
+  };
 }

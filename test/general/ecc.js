@@ -165,7 +165,7 @@ describe('Elliptic Curve Cryptography', function () {
       expect(result).to.exist;
       expect(result.data.trim()).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.eventually.be.true;
+      expect(result.signatures[0].valid).to.be.true;
     });
   });
   // FIXME is this pattern correct?
@@ -178,7 +178,7 @@ describe('Elliptic Curve Cryptography', function () {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
         expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.eventually.be.true;
+        expect(result.signatures[0].valid).to.be.true;
       });
     });
   });
@@ -193,7 +193,7 @@ describe('Elliptic Curve Cryptography', function () {
       // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
       expect(result.data.trim()).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.eventually.be.true;
+      expect(result.signatures[0].valid).to.be.true;
     });
   });
   it('Encrypt and sign message', function () {
@@ -212,7 +212,7 @@ describe('Elliptic Curve Cryptography', function () {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
         expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.eventually.be.true;
+        expect(result.signatures[0].valid).to.be.true;
       });
     });
   });

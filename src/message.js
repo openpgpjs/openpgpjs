@@ -124,23 +124,21 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
  *                               { data:Uint8Array, algorithm:String }
  */
 Message.prototype.decryptSessionKey = function(privateKey, password) {
-  var keyPacket, results, error;
+  var keyPacket;
   return Promise.resolve().then(async () => {
     if (password) {
       var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-      // FIXME need a circuit breaker here
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
-      results = await Promise.all(symESKeyPacketlist.map(async function(packet) {
+      // TODO replace when Promise.some or Promise.any are implemented
+      await symESKeyPacketlist.some(async function(packet) {
         try {
           await packet.decrypt(password);
-          return packet;
-        } catch (err) {
-          error = err;
-        }
-      }));
-      keyPacket = results.find(result => result !== undefined);
+          keyPacket = packet;
+          return true;
+        } catch (err) {}
+      });
 
     } else if (privateKey) {
       var encryptionKeyIds = this.getEncryptionKeyIds();
@@ -156,19 +154,17 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
       if (!pkESKeyPacketlist) {
         throw new Error('No public key encrypted session key packet found.');
       }
-      // FIXME need a circuit breaker here
-      results = await Promise.all(pkESKeyPacketlist.map(async function(packet) {
+      // TODO replace when Promise.some or Promise.any are implemented
+      // eslint-disable-next-line no-await-in-loop
+      await pkESKeyPacketlist.some(async function(packet) {
         if (packet.publicKeyId.equals(privateKeyPacket.getKeyId())) {
           try {
-            await packet.decrypt(privateKeyPacket)
-            return packet;
-          } catch (err) {
-            error = err;
-          }
+            await packet.decrypt(privateKeyPacket);
+            keyPacket = packet;
+            return true;
+          } catch (err) {}
         }
-      }));
-      keyPacket = results.find(result => result !== undefined);
-
+      });
     } else {
       throw new Error('No key or password specified.');
     }
@@ -225,14 +221,6 @@ Message.prototype.getText = function() {
 Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(async () => {
-    if (keys) {
-      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
-    } else if (passwords) {
-      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
-    } else {
-      throw new Error('No keys or passwords');
-    }
-
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
@@ -291,6 +279,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
   return Promise.resolve().then(async () => {
     if (publicKeys) {
       results = await Promise.all(publicKeys.map(async function(key) {
+        await key.verifyPrimaryUser();
         var encryptionKeyPacket = key.getEncryptionKeyPacket();
         if (!encryptionKeyPacket) {
           throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
@@ -338,62 +327,67 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     throw new Error('No literal data packet to sign.');
   }
 
+  var i;
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat === enums.literal.binary ?
     enums.signature.binary : enums.signature.text;
-  var i, signingKeyPacket, existingSigPacketlist, onePassSig;
 
   if (signature) {
-    existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
-    if (existingSigPacketlist.length) {
-      for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
-        var sigPacket = existingSigPacketlist[i];
-        onePassSig = new packet.OnePassSignature();
-        onePassSig.type = signatureType;
-        onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
-        onePassSig.publicKeyAlgorithm = sigPacket.publicKeyAlgorithm;
-        onePassSig.signingKeyId = sigPacket.issuerKeyId;
-        if (!privateKeys.length && i === 0) {
-          onePassSig.flags = 1;
-        }
-        packetlist.push(onePassSig);
+    var existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+    for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
+      var signaturePacket = existingSigPacketlist[i];
+      var onePassSig = new packet.OnePassSignature();
+      onePassSig.type = signatureType;
+      onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
+      onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
+      onePassSig.signingKeyId = signaturePacket.issuerKeyId;
+      if (!privateKeys.length && i === 0) {
+        onePassSig.flags = 1;
       }
+      packetlist.push(onePassSig);
     }
   }
-  for (i = 0; i < privateKeys.length; i++) {
-    if (privateKeys[i].isPublic()) {
+
+  await Promise.all(privateKeys.map(async function (privateKey, i) {
+    if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
+    }
+    await privateKey.verifyPrimaryUser();
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid key packet for signing in key ' +
+                      privateKey.primaryKey.getKeyId().toHex());
     }
     onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hash algo from key signature
-    onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
-    signingKeyPacket = privateKeys[i].getSigningKeyPacket();
-    if (!signingKeyPacket) {
-      throw new Error('Could not find valid key packet for signing in key ' + privateKeys[i].primaryKey.getKeyId().toHex());
-    }
+    onePassSig.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
-    packetlist.push(onePassSig);
-  }
+    return onePassSig;
+  })).then(onePassSignatureList => {
+    onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
+  });
 
   packetlist.push(literalDataPacket);
 
   await Promise.all(privateKeys.reverse().map(async function(privateKey) {
-    var signingKeyPacket = privateKey.getSigningKeyPacket();
     var signaturePacket = new packet.Signature();
-    signaturePacket.signatureType = signatureType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
+    signaturePacket.signatureType = signatureType;
+    signaturePacket.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
-  }));
+    return signaturePacket;
+  })).then(signatureList => {
+    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+  });
 
   if (signature) {
     packetlist.concat(existingSigPacketlist);
@@ -422,17 +416,20 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
     enums.signature.binary : enums.signature.text;
 
   await Promise.all(privateKeys.map(async function(privateKey) {
-    var signingKeyPacket = privateKey.getSigningKeyPacket();
     var signaturePacket = new packet.Signature();
-    signaturePacket.signatureType = signatureType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    await privateKey.verifyPrimaryUser();
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
+    signaturePacket.signatureType = signatureType;
+    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
-  }));
+    return signaturePacket;
+  })).then(signatureList => {
+    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+  });
 
   if (signature) {
     var existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
@@ -481,34 +478,33 @@ Message.prototype.verifyDetached = function(signature, keys) {
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-function createVerificationObjects(signatureList, literalDataList, keys) {
-  var result = [];
-  for (var i = 0; i < signatureList.length; i++) {
+async function createVerificationObjects(signatureList, literalDataList, keys) {
+  return Promise.all(signatureList.map(async function(signature) {
     var keyPacket = null;
-    for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId, config.verify_expired_keys);
-      if (keyPacket) {
-        break;
+    await Promise.all(keys.map(async function(key) {
+      await key.verifyPrimaryUser();
+      var result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
+      if (result) {
+        keyPacket = result;
       }
-    }
+    }));
 
     var verifiedSig = {};
     if (keyPacket) {
       //found a key packet that matches keyId of signature
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
-      verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataList[0]);
+      verifiedSig.keyid = signature.issuerKeyId;
+      verifiedSig.valid = await signature.verify(keyPacket, literalDataList[0]);
     } else {
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.keyid = signature.issuerKeyId;
       verifiedSig.valid = null;
     }
 
     var packetlist = new packet.List();
-    packetlist.push(signatureList[i]);
+    packetlist.push(signature);
     verifiedSig.signature = new sigModule.Signature(packetlist);
 
-    result.push(verifiedSig);
-  }
-  return Promise.all(result);
+    return verifiedSig;
+  }));
 }
 
 /**
