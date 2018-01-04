@@ -22,9 +22,10 @@
 
 'use strict';
 
+import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import config from '../config';
-import asmCrypto from 'asmcrypto-lite';
+
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
@@ -49,7 +50,7 @@ export function encrypt(cipher, plaintext, key, iv) {
   if (webCrypto && config.use_native && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
     return webEncrypt(plaintext, key, iv);
   } else if (nodeCrypto && config.use_native) { // Node crypto library
-    return nodeEncrypt(plaintext, key, iv) ;
+    return nodeEncrypt(plaintext, key, iv);
   } else { // asm.js fallback
     return Promise.resolve(asmCrypto.AES_GCM.encrypt(plaintext, key, iv));
   }

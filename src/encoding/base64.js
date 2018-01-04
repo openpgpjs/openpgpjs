@@ -39,7 +39,7 @@ function s2r(t, o) {
       r.push(b64s.charAt((c >> 2) & 63));
       a = (c & 3) << 4;
     } else if (s === 1) {
-      r.push(b64s.charAt((a | (c >> 4) & 15)));
+      r.push(b64s.charAt(a | ((c >> 4) & 15)));
       a = (c & 15) << 2;
     } else if (s === 2) {
       r.push(b64s.charAt(a | ((c >> 6) & 3)));
@@ -99,7 +99,7 @@ function r2s(t) {
     c = b64s.indexOf(t.charAt(n));
     if (c >= 0) {
       if (s) {
-        r.push(a | (c >> (6 - s)) & 255);
+        r.push(a | ((c >> (6 - s)) & 255));
       }
       s = (s + 2) & 7;
       a = (c << s) & 255;

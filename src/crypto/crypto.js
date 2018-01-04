@@ -73,7 +73,7 @@ export default {
    * @return {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} encrypted session key parameters
    */
   publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
-    var types  = this.getEncSessionKeyParamTypes(algo);
+    var types = this.getEncSessionKeyParamTypes(algo);
     var result = (function() {
       var m;
       switch (algo) {
@@ -104,7 +104,7 @@ export default {
         default:
           return [];
       }
-    })();
+    }());
 
     return result;
   },
@@ -155,7 +155,7 @@ export default {
         default:
           return null;
       }
-    })();
+    }());
 
     var result = new type_mpi(bn);
     return result;
@@ -270,7 +270,7 @@ export default {
    * @return {Array} The array of parameters
    */
   generateParams: function(algo, bits, curve) {
-    var types  = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
+    var types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':

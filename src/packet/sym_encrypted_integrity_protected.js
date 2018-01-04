@@ -34,10 +34,11 @@
 
 'use strict';
 
+import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';
-import asmCrypto from 'asmcrypto-lite';
+
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 

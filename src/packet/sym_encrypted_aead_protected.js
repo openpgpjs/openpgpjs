@@ -37,7 +37,7 @@ export default function SymEncryptedAEADProtected() {
   this.version = VERSION;
   this.iv = null;
   this.encrypted = null;
-  this.packets =  null;
+  this.packets = null;
 }
 
 /**

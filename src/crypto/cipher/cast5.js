@@ -51,8 +51,8 @@ function OpenpgpSymencCast5() {
     var dst = new Array(src.length);
 
     for (var i = 0; i < src.length; i += 8) {
-      var l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
-      var r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
+      var l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
+      var r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
       var t;
 
       t = r;
@@ -124,8 +124,8 @@ function OpenpgpSymencCast5() {
     var dst = new Array(src.length);
 
     for (var i = 0; i < src.length; i += 8) {
-      var l = src[i] << 24 | src[i + 1] << 16 | src[i + 2] << 8 | src[i + 3];
-      var r = src[i + 4] << 24 | src[i + 5] << 16 | src[i + 6] << 8 | src[i + 7];
+      var l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
+      var r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
       var t;
 
       t = r;
@@ -256,7 +256,7 @@ function OpenpgpSymencCast5() {
 
     for (i = 0; i < 4; i++) {
       j = i * 4;
-      t[i] = inn[j] << 24 | inn[j + 1] << 16 | inn[j + 2] << 8 | inn[j + 3];
+      t[i] = (inn[j] << 24) | (inn[j + 1] << 16) | (inn[j + 2] << 8) | inn[j + 3];
     }
 
     var x = [6, 7, 4, 5];

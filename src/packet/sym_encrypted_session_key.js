@@ -139,8 +139,7 @@ SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
   var length = crypto.cipher[algo].keySize;
   var key = this.s2k.produce_key(passphrase, length);
 
-  var algo_enum = new Uint8Array([
-    enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
+  var algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
 
   var private_key;
   if(this.sessionKey === null) {
