@@ -64,8 +64,7 @@ export default {
         const s = msg_MPIs[1].toBigInteger();
         m = data;
         const Q = publickey_MPIs[1].toBigInteger();
-        const result = await ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
-        return result;
+        return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
       default:
         throw new Error('Invalid signature algorithm.');
     }

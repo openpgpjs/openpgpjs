@@ -105,7 +105,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {String}      fingerprint  Recipient fingerprint
  * @return {Uint8Array}               Value derived from session
  */
-function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
+async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   const curve = curves.get(oid);

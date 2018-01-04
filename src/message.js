@@ -92,30 +92,28 @@ Message.prototype.getSigningKeyIds = function() {
  * @param  {String} password     (optional) password used to decrypt
  * @return {Message}             new message with decrypted content
  */
-Message.prototype.decrypt = function(privateKey, sessionKey, password) {
-  return Promise.resolve().then(() => {
-    const keyObj = sessionKey || this.decryptSessionKey(privateKey, password);
-    if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
-      throw new Error('Invalid session key for decryption.');
-    }
+Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
+  const keyObj = sessionKey || await this.decryptSessionKey(privateKey, password);
+  if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
+    throw new Error('Invalid session key for decryption.');
+  }
 
-    const symEncryptedPacketlist = this.packets.filterByTag(
-      enums.packet.symmetricallyEncrypted,
-      enums.packet.symEncryptedIntegrityProtected,
-      enums.packet.symEncryptedAEADProtected
-    );
+  const symEncryptedPacketlist = this.packets.filterByTag(
+    enums.packet.symmetricallyEncrypted,
+    enums.packet.symEncryptedIntegrityProtected,
+    enums.packet.symEncryptedAEADProtected
+  );
 
-    if (symEncryptedPacketlist.length === 0) {
-      return;
-    }
+  if (symEncryptedPacketlist.length === 0) {
+    return;
+  }
 
-    const symEncryptedPacket = symEncryptedPacketlist[0];
-    return symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data).then(() => {
-      const resultMsg = new Message(symEncryptedPacket.packets);
-      symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
-      return resultMsg;
-    });
-  });
+  const symEncryptedPacket = symEncryptedPacketlist[0];
+  await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
+  const resultMsg = new Message(symEncryptedPacket.packets);
+  symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
+
+  return resultMsg;
 };
 
 /**
@@ -126,56 +124,64 @@ Message.prototype.decrypt = function(privateKey, sessionKey, password) {
  *                               { data:Uint8Array, algorithm:String }
  */
 Message.prototype.decryptSessionKey = function(privateKey, password) {
-  var keyPacket;
-
-  if (password) {
-    var symEncryptedSessionKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-    var symLength = symEncryptedSessionKeyPacketlist.length;
-    for (var i = 0; i < symLength; i++) {
-      keyPacket = symEncryptedSessionKeyPacketlist[i];
-      try {
-        keyPacket.decrypt(password);
-        break;
+  var keyPacket, results, error;
+  return Promise.resolve().then(async () => {
+    if (password) {
+      var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
+      // FIXME need a circuit breaker here
+      if (!symESKeyPacketlist) {
+        throw new Error('No symmetrically encrypted session key packet found.');
       }
-      catch(err) {
-        if (i === (symLength - 1)) {
-          throw err;
+      results = await Promise.all(symESKeyPacketlist.map(async function(packet) {
+        try {
+          await packet.decrypt(password);
+          return packet;
+        } catch (err) {
+          error = err;
         }
+      }));
+      keyPacket = results.find(result => result !== undefined);
+
+    } else if (privateKey) {
+      var encryptionKeyIds = this.getEncryptionKeyIds();
+      if (!encryptionKeyIds.length) {
+        // nothing to decrypt
+        return;
       }
-    }
-    if (!keyPacket) {
-      throw new Error('No symmetrically encrypted session key packet found.');
-    }
-
-  } else if (privateKey) {
-    var encryptionKeyIds = this.getEncryptionKeyIds();
-    if (!encryptionKeyIds.length) {
-      // nothing to decrypt
-      return;
-    }
-    var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
-    if (!privateKeyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
-    }
-    var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-    for (var j = 0; j < pkESKeyPacketlist.length; j++) {
-      if (pkESKeyPacketlist[j].publicKeyId.equals(privateKeyPacket.getKeyId())) {
-        keyPacket = pkESKeyPacketlist[j];
-        keyPacket.decrypt(privateKeyPacket);
-        break;
+      var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
+      if (!privateKeyPacket.isDecrypted) {
+        throw new Error('Private key is not decrypted.');
       }
+      var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+      if (!pkESKeyPacketlist) {
+        throw new Error('No public key encrypted session key packet found.');
+      }
+      // FIXME need a circuit breaker here
+      results = await Promise.all(pkESKeyPacketlist.map(async function(packet) {
+        if (packet.publicKeyId.equals(privateKeyPacket.getKeyId())) {
+          try {
+            await packet.decrypt(privateKeyPacket)
+            return packet;
+          } catch (err) {
+            error = err;
+          }
+        }
+      }));
+      keyPacket = results.find(result => result !== undefined);
+
+    } else {
+      throw new Error('No key or password specified.');
     }
-
-  } else {
-    throw new Error('No key or password specified.');
-  }
-
-  if (keyPacket) {
-    return {
-      data: keyPacket.sessionKey,
-      algorithm: keyPacket.sessionKeyAlgorithm
-    };
-  }
+  }).then(() => {
+    if (keyPacket) {
+      return {
+        data: keyPacket.sessionKey,
+        algorithm: keyPacket.sessionKeyAlgorithm
+      };
+    } else {
+      throw new Error('Session key decryption failed.');
+    }
+  });
 };
 
 /**
@@ -218,7 +224,15 @@ Message.prototype.getText = function() {
  */
 Message.prototype.encrypt = function(keys, passwords, sessionKey) {
   let symAlgo, msg, symEncryptedPacket;
-  return Promise.resolve().then(() => {
+  return Promise.resolve().then(async () => {
+    if (keys) {
+      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
+    } else if (passwords) {
+      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
+    } else {
+      throw new Error('No keys or passwords');
+    }
+
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
@@ -237,7 +251,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
       sessionKey = crypto.generateSessionKey(symAlgo);
     }
 
-    msg = encryptSessionKey(sessionKey, symAlgo, keys, passwords);
+    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords);
 
     if (config.aead_protect) {
       symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -272,38 +286,41 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
  * @return {Message}                   new message with encrypted content
  */
 export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
-  var packetlist = new packet.List();
+  var results, packetlist = new packet.List();
 
-  if (publicKeys) {
-    publicKeys.forEach(function(key) {
-      var encryptionKeyPacket = key.getEncryptionKeyPacket();
-      if (encryptionKeyPacket) {
+  return Promise.resolve().then(async () => {
+    if (publicKeys) {
+      results = await Promise.all(publicKeys.map(async function(key) {
+        var encryptionKeyPacket = key.getEncryptionKeyPacket();
+        if (!encryptionKeyPacket) {
+          throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+        }
         var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
         pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
-        pkESKeyPacket.encrypt(encryptionKeyPacket);
+        await pkESKeyPacket.encrypt(encryptionKeyPacket);
         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
-        packetlist.push(pkESKeyPacket);
-      } else {
-        throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
-      }
-    });
-  }
+        return pkESKeyPacket;
+      }));
+      packetlist.concat(results);
+    }
 
-  if (passwords) {
-    passwords.forEach(function(password) {
-      var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
-      symEncryptedSessionKeyPacket.sessionKey = sessionKey;
-      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
-      symEncryptedSessionKeyPacket.encrypt(password);
-      delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
-      packetlist.push(symEncryptedSessionKeyPacket);
-    });
-  }
-
-  return new Message(packetlist);
+    if (passwords) {
+      results = await Promise.all(passwords.map(async function(password) {
+        var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
+        symEncryptedSessionKeyPacket.sessionKey = sessionKey;
+        symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
+        await symEncryptedSessionKeyPacket.encrypt(password);
+        delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
+        return symEncryptedSessionKeyPacket;
+      }));
+      packetlist.concat(results);
+    }
+  }).then(() => {
+    return new Message(packetlist);
+  });
 }
 
 /**
@@ -365,13 +382,11 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
 
   packetlist.push(literalDataPacket);
 
-  // FIXME does the order matter here? It used to be n-1..0
-  await Promise.all(privateKeys.map(async function(privateKey) {
+  await Promise.all(privateKeys.reverse().map(async function(privateKey) {
     var signingKeyPacket = privateKey.getSigningKeyPacket();
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    // FIXME FIXME were we just signing with the last key?
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');

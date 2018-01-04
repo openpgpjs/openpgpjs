@@ -330,6 +330,7 @@ module.exports = {
     // Custom silencers: 
     "camelcase": 0,
     "no-debugger": 0,
+    "require-await": 0,
     "no-multi-assign": 0,
     "no-underscore-dangle": 0, 
     "one-var-declaration-per-line": 0,

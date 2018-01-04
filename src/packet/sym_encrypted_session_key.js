@@ -122,9 +122,7 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
     var decrypted = crypto.cfb.normalDecrypt(
       algo, key, this.encrypted, null);
 
-    this.sessionKeyAlgorithm = enums.read(enums.symmetric,
-      decrypted[0]);
-
+    this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
     this.sessionKey = decrypted.subarray(1,decrypted.length);
   }
 };
@@ -147,8 +145,7 @@ SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
   }
   private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
 
-  this.encrypted = crypto.cfb.normalEncrypt(
-    algo, key, private_key, null);
+  this.encrypted = crypto.cfb.normalEncrypt(algo, key, private_key, null);
 };
 
 /**
