@@ -19,7 +19,12 @@ export default openpgp;
  *   import { encryptMessage } from 'openpgp.js'
  *   encryptMessage(keys, text)
  */
-// export * from './openpgp';
+export {
+  encrypt, decrypt, sign, verify,
+  generateKey, reformatKey, decryptKey,
+  encryptSessionKey, decryptSessionKey,
+  initWorker, getWorker, destroyWorker
+} from './openpgp';
 
 /**
  * @see module:key

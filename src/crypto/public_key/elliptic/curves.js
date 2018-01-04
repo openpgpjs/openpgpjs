@@ -84,7 +84,8 @@ const curves = {
     hashName: 'SHA-256',
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.includes('secp256k1'),
+    node: false, // FIXME nodeCurves.includes('secp256k1'),
+    // this is because jwk-to-pem does not support this curve.
     web: false
   }
 };
@@ -110,12 +111,12 @@ Curve.prototype.keyFromPublic = function (pub) {
   return new KeyPair(this.curve, {pub: pub});
 };
 
-Curve.prototype.genKeyPair = function () {
+Curve.prototype.genKeyPair = async function () {
   var keyPair;
   if (webCrypto && config.use_native && this.web) {
-    keyPair = webGenKeyPair(this.namedCurve);
+    keyPair = await webGenKeyPair(this.namedCurve);
   } else if (nodeCrypto && config.use_native && this.node) {
-    keyPair = nodeGenKeyPair(this.opensslCurve);
+    keyPair = await nodeGenKeyPair(this.opensslCurve);
   } else {
     var r = this.curve.genKeyPair();
     keyPair = {
@@ -136,18 +137,16 @@ function get(oid_or_name) {
   throw new Error('Not valid curve');
 }
 
-function generate(curve) {
-  return new Promise(function (resolve) {
-    curve = get(curve);
-    var keyPair = curve.genKeyPair();
-    resolve({
-      oid: curve.oid,
-      Q: new BigInteger(keyPair.getPublic()),
-      d: new BigInteger(keyPair.getPrivate()),
-      hash: curve.hash,
-      cipher: curve.cipher
-    });
-  });
+async function generate(curve) {
+  curve = get(curve);
+  var keyPair = await curve.genKeyPair();
+  return {
+    oid: curve.oid,
+    Q: new BigInteger(keyPair.getPublic()),
+    d: new BigInteger(keyPair.getPrivate()),
+    hash: curve.hash,
+    cipher: curve.cipher
+  };
 }
 
 module.exports = {
@@ -164,35 +163,40 @@ module.exports = {
 //////////////////////////
 
 
-function webGenKeyPair(namedCurve) {
-  return webCrypto.generateKey(
-    {
-      name: "ECDSA",
-//      FIXME
-//      name: "ECDH",
-      namedCurve: namedCurve // "P-256", "P-384", or "P-521"
-    },
-//   FIXME
-    false, // whether the key is extractable (i.e. can be used in exportKey)
-    ["sign", "verify"] // can be any combination of "sign" and "verify"
-//    FIXME
-//    ["deriveKey", "deriveBits"] // can be any combination of "deriveKey" and "deriveBits"
-  ).then(function(key){
+async function webGenKeyPair(namedCurve) {
+  try {
+    var keyPair = await webCrypto.generateKey(
+      {
+        name: "ECDSA", // FIXME or "ECDH"
+        // "P-256", "P-384", or "P-521"
+        namedCurve: namedCurve
+      },
+      // TODO whether the key is extractable (i.e. can be used in exportKey)
+      false,
+      // FIXME this can be any combination of "sign" and "verify"
+      // or "deriveKey" and "deriveBits" for ECDH
+      ["sign", "verify"]
+    );
+
     return {
-      pub: key.publicKey.encode(), // FIXME encoding
-      priv: key.privateKey.toArray()  // FIXME encoding
+      pub: keyPair.publicKey.encode(), // FIXME encoding
+      priv: keyPair.privateKey.toArray()  // FIXME encoding
     };
-  }).catch(function(err){
+  } catch(err) {
     throw new Error(err);
-  });
+  }
 }
 
-function nodeGenKeyPair(opensslCurve) {
-  // TODO turn this into a promise
-  var ecc = nodeCrypto.createECDH(opensslCurve);
-  ecc.generateKeys();
-  return {
-    pub: ecc.getPrivateKey().toJSON().data,
-    priv: ecc.getPublicKey().toJSON().data
-  };
+async function nodeGenKeyPair(opensslCurve) {
+  try {
+    var ecdh = nodeCrypto.createECDH(opensslCurve);
+    await ecdh.generateKeys();
+
+    return {
+      pub: ecdh.getPublicKey().toJSON().data,
+      priv: ecdh.getPrivateKey().toJSON().data
+    };
+  } catch(err) {
+    throw new Error(err);
+  }
 }
