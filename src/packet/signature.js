@@ -211,7 +211,7 @@ Signature.prototype.write = function () {
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  */
-Signature.prototype.sign = function (key, data) {
+Signature.prototype.sign = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -243,7 +243,7 @@ Signature.prototype.sign = function (key, data) {
 
   this.signedHashValue = hash.subarray(0, 2);
 
-  this.signature = crypto.signature.sign(hashAlgorithm,
+  this.signature = await crypto.signature.sign(hashAlgorithm,
     publicKeyAlgorithm, key.params, toHash);
 };
 
@@ -615,7 +615,7 @@ Signature.prototype.calculateTrailer = function () {
  *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
  * @return {boolean} True if message is verified, else false.
  */
-Signature.prototype.verify = function (key, data) {
+Signature.prototype.verify = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -644,7 +644,7 @@ Signature.prototype.verify = function (key, data) {
     i += mpi[j].read(this.signature.subarray(i, this.signature.length));
   }
 
-  this.verified = crypto.signature.verify(publicKeyAlgorithm,
+  this.verified = await crypto.signature.verify(publicKeyAlgorithm,
     hashAlgorithm, mpi, key.params,
     util.concatUint8Array([bytes, this.signatureData, trailer]));
 

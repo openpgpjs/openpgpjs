@@ -312,7 +312,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @return {module:message~Message}       new message with signed content
  */
-Message.prototype.sign = function(privateKeys=[], signature=null) {
+Message.prototype.sign = async function(privateKeys=[], signature=null) {
 
   var packetlist = new packet.List();
 
@@ -349,7 +349,7 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
     }
     onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    //TODO get preferred hashg algo from key signature
+    //TODO get preferred hash algo from key signature
     onePassSig.hashAlgorithm = config.prefer_hash_algorithm;
     signingKeyPacket = privateKeys[i].getSigningKeyPacket();
     if (!signingKeyPacket) {
@@ -365,17 +365,20 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
 
   packetlist.push(literalDataPacket);
 
-  for (i = privateKeys.length - 1; i >= 0; i--) {
+  // FIXME does the order matter here? It used to be n-1..0
+  await Promise.all(privateKeys.map(async function(privateKey) {
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    // FIXME FIXME were we just signing with the last key?
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
-    signaturePacket.sign(signingKeyPacket, literalDataPacket);
+    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
-  }
+  }));
 
   if (signature) {
     packetlist.concat(existingSigPacketlist);
@@ -390,7 +393,7 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
  * @param  {Signature} signature             (optional) any existing detached signature
  * @return {module:signature~Signature}      new detached signature of message content
  */
-Message.prototype.signDetached = function(privateKeys=[], signature=null) {
+Message.prototype.signDetached = async function(privateKeys=[], signature=null) {
 
   var packetlist = new packet.List();
 
@@ -403,8 +406,8 @@ Message.prototype.signDetached = function(privateKeys=[], signature=null) {
   var signatureType = literalFormat === enums.literal.binary ?
     enums.signature.binary : enums.signature.text;
 
-  for (var i = 0; i < privateKeys.length; i++) {
-    var signingKeyPacket = privateKeys[i].getSigningKeyPacket();
+  await Promise.all(privateKeys.map(async function(privateKey) {
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
@@ -412,9 +415,10 @@ Message.prototype.signDetached = function(privateKeys=[], signature=null) {
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
-    signaturePacket.sign(signingKeyPacket, literalDataPacket);
+    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     packetlist.push(signaturePacket);
-  }
+  }));
+
   if (signature) {
     var existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
     packetlist.concat(existingSigPacketlist);
@@ -489,7 +493,7 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
 
     result.push(verifiedSig);
   }
-  return result;
+  return Promise.all(result);
 }
 
 /**

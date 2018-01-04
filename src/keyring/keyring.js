@@ -183,12 +183,12 @@ KeyArray.prototype.getForId = function (keyId, deep) {
 KeyArray.prototype.importKey = function (armored) {
   var imported = keyModule.readArmored(armored);
   var that = this;
-  imported.keys.forEach(function(key) {
+  imported.keys.forEach(async function(key) {
     // check if key already in key array
     var keyidHex = key.primaryKey.getKeyId().toHex();
     var keyFound = that.getForId(keyidHex);
     if (keyFound) {
-      keyFound.update(key);
+      await keyFound.update(key);
     } else {
       that.push(key);
     }
