@@ -1172,7 +1172,7 @@ describe('Key', function() {
         return openpgp.encrypt({data: 'hello', publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(function(encrypted) {
           return openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKey: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello');
-            expect(decrypted.signatures[0].valid).to.eventually.be.true;
+            expect(decrypted.signatures[0].valid).to.be.true;
           });
         });
       });

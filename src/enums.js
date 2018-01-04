@@ -75,6 +75,17 @@ export default {
     sha224: 11
   },
 
+  /** A list of hash names as accepted by webCrypto functions.
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest|Parameters, algo}
+   * @enum {String}
+   */
+  webHash: {
+    'SHA-1': 2,
+    'SHA-256': 8,
+    'SHA-384': 9,
+    'SHA-512': 10
+  },
+
   /** A list of packet types and numeric tags associated with them.
    * @enum {Integer}
    * @readonly

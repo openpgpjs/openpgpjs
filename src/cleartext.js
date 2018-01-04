@@ -95,8 +95,10 @@ CleartextMessage.prototype.signDetached = async function(privateKeys) {
       throw new Error('Private key is not decrypted.');
     }
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    packetlist.push(signaturePacket);
-  }));
+    return signaturePacket;
+  })).then(signatureList => {
+    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+  });
 
   return new sigModule.Signature(packetlist);
 };
@@ -116,16 +118,14 @@ CleartextMessage.prototype.verify = function(keys) {
  * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
 CleartextMessage.prototype.verifyDetached = function(signature, keys) {
-  var result = [];
   var signatureList = signature.packets;
   var literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  // TODO await Promise.all(signatureList.map(async function(signature) {  }));
-  for (var i = 0; i < signatureList.length; i++) {
+  return Promise.all(signatureList.map(async function(signature) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
+      keyPacket = keys[j].getSigningKeyPacket(signature.issuerKeyId);
       if (keyPacket) {
         break;
       }
@@ -133,20 +133,19 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
 
     var verifiedSig = {};
     if (keyPacket) {
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
-      verifiedSig.valid = signatureList[i].verify(keyPacket, literalDataPacket);
+      verifiedSig.keyid = signature.issuerKeyId;
+      verifiedSig.valid = await signature.verify(keyPacket, literalDataPacket);
     } else {
-      verifiedSig.keyid = signatureList[i].issuerKeyId;
+      verifiedSig.keyid = signature.issuerKeyId;
       verifiedSig.valid = null;
     }
 
     var packetlist = new packet.List();
-    packetlist.push(signatureList[i]);
+    packetlist.push(signature);
     verifiedSig.signature = new sigModule.Signature(packetlist);
 
-    result.push(verifiedSig);
-  }
-  return result;
+    return verifiedSig;
+  }));
 };
 
 /**
