@@ -79,7 +79,6 @@ Compressed.prototype.read = function (bytes) {
 };
 
 
-
 /**
  * Return the compressed packet.
  * @return {String} binary compressed packet

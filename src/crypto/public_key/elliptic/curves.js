@@ -168,14 +168,14 @@ function webGenKeyPair(namedCurve) {
   return webCrypto.generateKey(
     {
       name: "ECDSA",
-//      FIXME 
+//      FIXME
 //      name: "ECDH",
-      namedCurve: namedCurve, // "P-256", "P-384", or "P-521"
+      namedCurve: namedCurve // "P-256", "P-384", or "P-521"
     },
 //   FIXME
     false, // whether the key is extractable (i.e. can be used in exportKey)
     ["sign", "verify"] // can be any combination of "sign" and "verify"
-//    FIXME 
+//    FIXME
 //    ["deriveKey", "deriveBits"] // can be any combination of "deriveKey" and "deriveBits"
   ).then(function(key){
     return {

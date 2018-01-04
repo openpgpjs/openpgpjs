@@ -45,7 +45,10 @@ Packetlist.prototype.read = function (bytes) {
       pushed = true;
       packet.read(parsed.packet);
     } catch(e) {
-      if (!config.tolerant || parsed.tag == enums.packet.symmetricallyEncrypted || parsed.tag == enums.packet.literal || parsed.tag == enums.packet.compressed) {
+      if (!config.tolerant ||
+          parsed.tag === enums.packet.symmetricallyEncrypted ||
+          parsed.tag === enums.packet.literal ||
+          parsed.tag === enums.packet.compressed) {
         throw e;
       }
       if (pushed) {
@@ -127,7 +130,7 @@ Packetlist.prototype.filterByTag = function () {
   var filtered = new Packetlist();
   var that = this;
 
-  function handle(packetType) {return that[i].tag === packetType;}
+  function handle(packetType) { return that[i].tag === packetType; }
   for (var i = 0; i < this.length; i++) {
     if (args.some(handle)) {
       filtered.push(this[i]);
@@ -177,7 +180,7 @@ Packetlist.prototype.indexOfTag = function () {
   var tagIndex = [];
   var that = this;
 
-  function handle(packetType) {return that[i].tag === packetType;}
+  function handle(packetType) { return that[i].tag === packetType; }
   for (var i = 0; i < this.length; i++) {
     if (args.some(handle)) {
       tagIndex.push(i);

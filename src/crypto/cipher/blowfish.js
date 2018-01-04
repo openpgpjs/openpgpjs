@@ -312,8 +312,8 @@ Blowfish.prototype.encrypt_block = function(vector) {
 
   var ret = [];
   for (ii = 0; ii < this.BLOCKSIZE / 2; ++ii) {
-    ret[ii + 0] = (vals[0] >>> (24 - 8 * (ii)) & 0x00FF);
-    ret[ii + off] = (vals[1] >>> (24 - 8 * (ii)) & 0x00FF);
+    ret[ii + 0] = ((vals[0] >>> (24 - 8 * (ii))) & 0x00FF);
+    ret[ii + off] = ((vals[1] >>> (24 - 8 * (ii))) & 0x00FF);
     // vals[ 0 ] = ( vals[ 0 ] >>> 8 );
     // vals[ 1 ] = ( vals[ 1 ] >>> 8 );
   }

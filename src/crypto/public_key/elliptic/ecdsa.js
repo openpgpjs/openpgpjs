@@ -211,5 +211,6 @@ async function nodeVerify(curve, hash_algo, signature, m, Q) {
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
   verify.write(m);
   verify.end();
-  return await verify.verify(publicKey, signature);
+  const result = await verify.verify(publicKey, signature);
+  return result;
 }

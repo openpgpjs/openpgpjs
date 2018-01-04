@@ -1,3 +1,5 @@
+/* eslint-disable import/newline-after-import, import/first */
+
 'use strict';
 
 /**

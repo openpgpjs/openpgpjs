@@ -1320,7 +1320,7 @@ var jsSHA = function(srcString, inputFormat, encoding)
     }
 
     /* Validate the numRounds argument */
-    if ((numRounds !== parseInt(numRounds, 10)) || (1 > numRounds))
+    if ((numRounds !== parseInt(numRounds)) || (1 > numRounds))
     {
       throw "numRounds must a integer >= 1";
     }
