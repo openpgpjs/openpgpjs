@@ -46,7 +46,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -55,11 +55,7 @@ module.exports = function(grunt) {
                         "transform-runtime"],
               ignore: ['*.min.js'],
               presets: [
-                ["babel-preset-env", {
-                  "targets": {
-                    "node": "current"
-                  }
-                }]
+                "es2015"
               ]
             }]
           ],
@@ -84,11 +80,7 @@ module.exports = function(grunt) {
                         "transform-runtime"],
               ignore: ['*.min.js'],
               presets: [
-                ["babel-preset-env", {
-                  "targets": {
-                    "node": "current"
-                  }
-                }]
+                "es2015"
               ]
             }]
           ],
@@ -321,7 +313,7 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest']);
+  grunt.registerTask('test', [ 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
 
