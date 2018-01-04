@@ -786,7 +786,7 @@ User.prototype.getValidSelfCertificate = function(primaryKey) {
  * @return {Boolean}
  */
 User.prototype.isValidSelfCertificate = async function(primaryKey, selfCertificate) {
-  if (this.isRevoked(selfCertificate, primaryKey)) {
+  if (await this.isRevoked(selfCertificate, primaryKey)) {
     return false;
   }
   if (!selfCertificate.isExpired() && (selfCertificate.verified ||
@@ -873,7 +873,7 @@ User.prototype.verify = async function(primaryKey) {
   // FIXME what is the best design pattern?
   var results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.selfCertifications.map(async function(selfCertification) {
-      if (that.isRevoked(selfCertification, primaryKey)) {
+      if (await that.isRevoked(selfCertification, primaryKey)) {
         return enums.keyStatus.revoked;
       }
       if (!(selfCertification.verified ||
@@ -1149,7 +1149,7 @@ export function generate(options) {
   return Promise.resolve().then(() => {
 
     if (options.curve) {
-      if (options.curve === 'ed25519') {
+      if (options.curve === 'ed25519' || options.curve === 'curve25519') {
         options.keyType = options.keyType || enums.publicKey.eddsa;
       } else {
         options.keyType = options.keyType || enums.publicKey.ecdsa;
@@ -1187,6 +1187,7 @@ export function generate(options) {
 
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
+    secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
     var curve = options.curve === 'curve25519' ? 'ed25519' : options.curve;
     return secretKeyPacket.generate(options.numBits, curve);
@@ -1194,9 +1195,10 @@ export function generate(options) {
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
+    secretKeyPacket.packets = null;
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
     var curve = options.curve === 'ed25519' ? 'curve25519' : options.curve;
-    return secretSubkeyPacket.generate(options.numBits, options.curve);
+    return secretSubkeyPacket.generate(options.numBits, curve);
   }
 }
 
@@ -1295,13 +1297,15 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    // FIXME should not sign userIds with curve25519
     await signaturePacket.sign(secretKeyPacket, dataToSign);
 
-    packetlist.push(userIdPacket);
-    packetlist.push(signaturePacket);
-
-  }));
+    return {userIdPacket, signaturePacket};
+  })).then(list => {
+    list.forEach(({userIdPacket, signaturePacket}) => {
+      packetlist.push(userIdPacket);
+      packetlist.push(signaturePacket);
+    });
+  });
 
   var dataToSign = {};
   dataToSign.key = secretKeyPacket;

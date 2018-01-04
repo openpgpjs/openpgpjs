@@ -118,6 +118,8 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
 }
 
 module.exports = {
+  buildEcdhParam: buildEcdhParam,
+  kdf: kdf,
   encrypt: encrypt,
   decrypt: decrypt
 };

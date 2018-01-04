@@ -55,11 +55,12 @@ KeyPair.prototype.derive = function (pub) {
   if (this.keyType === enums.publicKey.eddsa) {
     throw new Error('Key can only be used for EdDSA');
   }
-  return this.keyPair.derive(pub.keyPair.getPublic()).toArray();
+  return this.keyPair.derive(pub.keyPair.getPublic());
 };
 
 KeyPair.prototype.getPublic = function () {
-  return this.keyPair.getPublic('array');
+  var compact = (this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont');
+  return this.keyPair.getPublic('array', compact);
 };
 
 KeyPair.prototype.getPrivate = function () {
@@ -70,7 +71,10 @@ KeyPair.prototype.getPrivate = function () {
   }
 };
 
-KeyPair.prototype.isValid = function () { // FIXME
+KeyPair.prototype.isValid = function () {
+  if (this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont') {
+    throw new Error('Validation is not Implemented for this curve.');
+  }
   return this.keyPair.validate().result;
 };
 
