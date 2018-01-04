@@ -60,6 +60,7 @@ if (webCrypto && config.use_native) {
 const curves = {
   p256: {
     oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
+    keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: nodeCurves.secp256r1,
@@ -68,6 +69,7 @@ const curves = {
   },
   p384: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x22]),
+    keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
     node: nodeCurves.secp384r1,
@@ -76,6 +78,7 @@ const curves = {
   },
   p521: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x23]),
+    keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
     node: nodeCurves.secp521r1,
@@ -84,17 +87,19 @@ const curves = {
   },
   secp256k1: {
     oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
+    keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: false // FIXME when we replace jwk-to-pem or it supports this curve
   },
   ed25519: {
     oid: util.bin2str([0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01]),
-    hash: enums.hash.sha512,
-    keyType: enums.publicKey.eddsa
+    keyType: enums.publicKey.eddsa,
+    hash: enums.hash.sha512
   },
   curve25519: {
     oid: util.bin2str([0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01]),
+    keyType: enums.publicKey.ecdh,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128
   },
@@ -107,12 +112,17 @@ const curves = {
 };
 
 function Curve(name, params) {
-  if (params.keyType === enums.publicKey.eddsa) {
-    this.curve = new EdDSA(name);
-    this.keyType = enums.publicKey.eddsa;
-  } else {
-    this.curve = new EC(name);
-    this.keyType = enums.publicKey.ecdsa;
+  this.keyType = params.keyType;
+  switch (this.keyType) {
+    case enums.publicKey.eddsa:
+      this.curve = new EdDSA(name);
+      break;
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.ecdh:
+      this.curve = new EC(name);
+      break;
+    default:
+      throw new Error('Unknown elliptic key type;');
   }
   this.oid = curves[name].oid;
   this.hash = params.hash;
@@ -141,16 +151,12 @@ Curve.prototype.genKeyPair = async function () {
   } else if (nodeCrypto && config.use_native && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
   } else {
+    var compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+    r = await this.curve.genKeyPair();
     if (this.keyType === enums.publicKey.eddsa) {
-      keyPair = {
-        secret: util.hexidump(random.getRandomBytes(32))
-      };
+      keyPair = { secret: r.getSecret() };
     } else {
-      r = this.curve.genKeyPair();
-      keyPair = {
-        pub: r.getPublic().encode(),
-        priv: r.getPrivate().toArray()
-      };
+      keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
     }
   }
   return new KeyPair(this.curve, keyPair);
