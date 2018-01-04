@@ -579,8 +579,8 @@ Key.prototype.update = function(key) {
   key.users.forEach(function(srcUser) {
     var found = false;
     for (var i = 0; i < that.users.length; i++) {
-      if (srcUser.userId && (srcUser.userId.userid === that.users[i].userId.userid) ||
-          srcUser.userAttribute && (srcUser.userAttribute.equals(that.users[i].userAttribute))) {
+      if ((srcUser.userId && (srcUser.userId.userid === that.users[i].userId.userid)) ||
+          (srcUser.userAttribute && (srcUser.userAttribute.equals(that.users[i].userAttribute)))) {
         that.users[i].update(srcUser, that.primaryKey);
         found = true;
         break;

@@ -97,6 +97,28 @@ export default function Signature() {
 Signature.prototype.read = function (bytes) {
   var i = 0;
   this.version = bytes[i++];
+
+  function subpackets(bytes) {
+    // Two-octet scalar octet count for following subpacket data.
+    var subpacket_length = util.readNumber(
+      bytes.subarray(0, 2));
+
+    var i = 2;
+
+    // subpacket data set (zero or more subpackets)
+    while (i < 2 + subpacket_length) {
+
+      var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      i += len.offset;
+
+      this.read_sub_packet(bytes.subarray(i, i + len.len));
+
+      i += len.len;
+    }
+
+    return i;
+  }
+
   // switch on version (3 and 4)
   switch (this.version) {
     case 3:
@@ -132,27 +154,6 @@ Signature.prototype.read = function (bytes) {
       this.signatureType = bytes[i++];
       this.publicKeyAlgorithm = bytes[i++];
       this.hashAlgorithm = bytes[i++];
-
-      function subpackets(bytes) {
-        // Two-octet scalar octet count for following subpacket data.
-        var subpacket_length = util.readNumber(
-          bytes.subarray(0, 2));
-
-        var i = 2;
-
-        // subpacket data set (zero or more subpackets)
-        while (i < 2 + subpacket_length) {
-
-          var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-          i += len.offset;
-
-          this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-          i += len.len;
-        }
-
-        return i;
-      }
 
       // hashed subpackets
       i += subpackets.call(this, bytes.subarray(i, bytes.length), true);

@@ -32,13 +32,15 @@
 
 'use strict';
 
+import es6Promise from 'es6-promise';
+
 import * as messageLib from './message.js';
 import * as cleartext from './cleartext.js';
 import * as key from './key.js';
 import config from './config/config.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
-import es6Promise from 'es6-promise';
+
 es6Promise.polyfill(); // load ES6 Promises polyfill
 
 
@@ -57,7 +59,7 @@ let asyncProxy; // instance of the asyncproxy
  * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  */
 export function initWorker({ path='openpgp.worker.js', worker } = {}) {
-  if (worker || typeof window !== 'undefined' && window.Worker) {
+  if (worker || (typeof window !== 'undefined' && window.Worker)) {
     asyncProxy = new AsyncProxy({ path, worker, config });
     return true;
   }
@@ -302,7 +304,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   var result = {};
   const promise = async function(){
     var message;
-    
+
     if (util.isString(data)) {
       message = new cleartext.CleartextMessage(data);
     } else {

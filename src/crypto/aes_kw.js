@@ -20,7 +20,7 @@
 import cipher from './cipher';
 
 function wrap(key, data) {
-  var aes =  new cipher["aes" + (key.length*8)](key);
+  var aes = new cipher["aes" + (key.length*8)](key);
   var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   var P = unpack(data);
   var A = IV;
@@ -52,7 +52,7 @@ function wrap(key, data) {
 }
 
 function unwrap(key, data) {
-  var aes =  new cipher["aes" + (key.length*8)](key);
+  var aes = new cipher["aes" + (key.length*8)](key);
   var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   var C = unpack(data);
   var A = C.subarray(0, 2);

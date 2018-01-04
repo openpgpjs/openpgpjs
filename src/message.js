@@ -184,7 +184,7 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
  */
 Message.prototype.getLiteralData = function() {
   var literal = this.packets.findPacket(enums.packet.literal);
-  return literal && literal.data || null;
+  return (literal && literal.data) || null;
 };
 
 /**
@@ -193,7 +193,7 @@ Message.prototype.getLiteralData = function() {
  */
 Message.prototype.getFilename = function() {
   var literal = this.packets.findPacket(enums.packet.literal);
-  return literal && literal.getFilename() || null;
+  return (literal && literal.getFilename()) || null;
 };
 
 /**
@@ -323,7 +323,7 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
 
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat === enums.literal.binary ?
-                      enums.signature.binary : enums.signature.text;
+    enums.signature.binary : enums.signature.text;
   var i, signingKeyPacket, existingSigPacketlist, onePassSig;
 
   if (signature) {
@@ -401,7 +401,7 @@ Message.prototype.signDetached = function(privateKeys=[], signature=null) {
 
   var literalFormat = enums.write(enums.literal, literalDataPacket.format);
   var signatureType = literalFormat === enums.literal.binary ?
-                      enums.signature.binary : enums.signature.text;
+    enums.signature.binary : enums.signature.text;
 
   for (var i = 0; i < privateKeys.length; i++) {
     var signingKeyPacket = privateKeys[i].getSigningKeyPacket();

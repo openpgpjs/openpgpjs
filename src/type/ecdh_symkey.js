@@ -65,7 +65,5 @@ ECDHSymmetricKey.prototype.read = function (input) {
  * @return  {Uint8Array}  An array containing the value
  */
 ECDHSymmetricKey.prototype.write = function () {
-  return util.concatUint8Array([
-    new Uint8Array([this.data.length]),
-    this.data]);
+  return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);
 };
