@@ -134,7 +134,7 @@ describe('Elliptic Curve Cryptography', function () {
   };
   describe('Basic Operations', function () {
     it('Creating curve with name', function (done) {
-      var names = ['p256', 'p384', 'p521', 'secp256k1'];
+      var names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
       names.forEach(function (name) {
         expect(elliptic_curves.get(name)).to.exist;
       });
@@ -147,16 +147,17 @@ describe('Elliptic Curve Cryptography', function () {
       });
       done();
     });
-    it('Creating KeyPair', function (done) {
-      var names = ['p256', 'p384', 'p521', 'secp256k1'];
-      names.forEach(function (name) {
+    it('Creating KeyPair', function () {
+      var names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
+      return Promise.all(names.map(function (name) {
         var curve = elliptic_curves.get(name);
-        curve.genKeyPair().then(keyPair => {
+        return curve.genKeyPair().then(keyPair => {
           expect(keyPair).to.exist;
-          expect(keyPair.isValid()).to.be.true; // FIXME done will skip this.
+          // FIXME validation is not implemented for Curve25519/Ed25519 key pairs
+          if (name !== 'curve25519')
+            expect(keyPair.isValid()).to.be.true;
         });
-      });
-      done();
+      }));
     });
     it('Creating KeyPair from data', function (done) {
       for (var name in key_data) {
@@ -210,16 +211,14 @@ describe('Elliptic Curve Cryptography', function () {
       } else if (!openpgp.util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
-      return Promise.resolve().then(() => {
-        var ecdsa = elliptic_curves.ecdsa;
-        return ecdsa.verify(
-          oid,
-          hash,
-          {r: bin2bi(r), s: bin2bi(s)},
-          message,
-          bin2bi(pub)
-        );
-      });
+      var ecdsa = elliptic_curves.ecdsa;
+      return ecdsa.verify(
+        oid,
+        hash,
+        {r: bin2bi(r), s: bin2bi(s)},
+        message,
+        bin2bi(pub)
+      );
     };
     var secp256k1_dummy_value = new Uint8Array([
       0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -284,11 +283,8 @@ describe('Elliptic Curve Cryptography', function () {
       0x68, 0x58, 0x23, 0x1D, 0x11, 0xEF, 0x3D, 0x21,
       0x30, 0x75, 0x24, 0x39, 0x48, 0x89, 0x03, 0xDC]);
     it('Valid signature', function (done) {
-      verify_signature('p384', 8, p384_r, p384_s, p384_message, key_data.p384.pub)
-        .then(res => {
-          expect(res).to.be.true;
-          done();
-        });
+      expect(verify_signature('p384', 8, p384_r, p384_s, p384_message, key_data.p384.pub))
+        .to.eventually.be.true.notify(done);
     });
     it('Sign and verify message', function (done) {
       var curve = elliptic_curves.get('p521');
@@ -298,10 +294,8 @@ describe('Elliptic Curve Cryptography', function () {
         var oid = curve.oid;
         var message = p384_message;
         elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(signature => {
-          elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic).then(verified => {
-            expect(verified).to.be.true;
-            done();
-          });
+          expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic))
+            .to.eventually.be.true.notify(done);
         });
       });
     });
