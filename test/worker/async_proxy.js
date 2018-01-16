@@ -49,14 +49,13 @@ tryTests('Async Proxy', tests, {
 function tests() {
 
   describe('Error handling', function() {
-    it('Depleted random buffer in worker gives error', function (done) {
+    it('Depleted random buffer in worker gives error', function() {
       var wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js' });
       wProxy.worker = new Worker('../dist/openpgp.worker.js');
       wProxy.worker.onmessage = wProxy.onMessage.bind(wProxy);
       wProxy.seedRandom(10);
-      wProxy.delegate('encrypt', { publicKeys:[pubKey], data:plaintext }).catch(function(err) {
+      return wProxy.delegate('encrypt', { publicKeys:[pubKey], data:plaintext }).catch(function(err) {
         expect(err.message).to.match(/Random number buffer depleted/);
-        done();
       });
     });
   });

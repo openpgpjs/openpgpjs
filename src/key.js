@@ -1060,24 +1060,20 @@ SubKey.prototype.update = function(subKey, primaryKey) {
 };
 
 /**
- * Reads an OpenPGP armored text and returns one or multiple key objects
- * @param {String} armoredText text to be parsed
+ * Reads an unarmored OpenPGP key list and returns one or multiple key objects
+ * @param {Uint8Array} data to be parsed
  * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
-export function readArmored(armoredText) {
+export function read(data) {
   var result = {};
   result.keys = [];
   try {
-    var input = armor.decode(armoredText);
-    if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
-      throw new Error('Armored text not of type key');
-    }
     var packetlist = new packet.List();
-    packetlist.read(input.data);
+    packetlist.read(data);
     var keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
-      throw new Error('No key packet found in armored text');
+      throw new Error('No key packet found');
     }
     for (var i = 0; i < keyIndex.length; i++) {
       var oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
@@ -1094,6 +1090,26 @@ export function readArmored(armoredText) {
     result.err.push(e);
   }
   return result;
+}
+
+/**
+ * Reads an OpenPGP armored text and returns one or multiple key objects
+ * @param {String} armoredText text to be parsed
+ * @return {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
+ * @static
+ */
+export function readArmored(armoredText) {
+  try {
+    var input = armor.decode(armoredText);
+    if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
+      throw new Error('Armored text not of type key');
+    }
+    return read(input.data);
+  } catch (e) {
+    var result = {keys: [], err: []};
+    result.err.push(e);
+    return result;
+  }
 }
 
 /**
@@ -1162,6 +1178,10 @@ export function reformat(options) {
     options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Only RSA Encrypt or Sign supported');
+    }
+
+    if (!options.privateKey.decrypt()) {
+      throw new Error('Key not decrypted');
     }
 
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
