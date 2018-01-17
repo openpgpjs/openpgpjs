@@ -299,11 +299,10 @@ Key.prototype.armor = function() {
  */
 Key.prototype.getSigningKeyPacket = function(keyId, allowExpired=false) {
   var primaryUser = this.getPrimaryUser(allowExpired);
-  var verifyStatus = this.verifyPrimaryKey(allowExpired);
   if (primaryUser &&
       isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate) &&
       (!keyId || this.primaryKey.getKeyId().equals(keyId)) &&
-      verifyStatus === enums.keyStatus.valid) {
+      this.verifyPrimaryKey(allowExpired) === enums.keyStatus.valid) {
     return this.primaryKey;
   }
   if (this.subKeys) {
@@ -924,11 +923,11 @@ SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
 /**
  * Returns true if the subkey can be used for signing of data
  * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
+ * @param  {Boolean} allowExpired allows signature verification with expired keys
  * @return {Boolean}
  */
-SubKey.prototype.isValidSigningKey = function(primaryKey) {
-  var verifyStatus = this.verify(primaryKey, config.verify_expired_keys);
-  if(verifyStatus !== enums.keyStatus.valid) {
+SubKey.prototype.isValidSigningKey = function(primaryKey, allowExpired=false) {
+  if(this.verify(primaryKey, allowExpired) !== enums.keyStatus.valid) {
     return false;
   }
   for(var i = 0; i < this.bindingSignatures.length; i++) {
