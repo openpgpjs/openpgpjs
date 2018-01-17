@@ -467,7 +467,7 @@ function createVerificationObjects(signatureList, literalDataList, keys) {
   for (var i = 0; i < signatureList.length; i++) {
     var keyPacket = null;
     for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId);
+      keyPacket = keys[j].getSigningKeyPacket(signatureList[i].issuerKeyId, config.verify_expired_keys);
       if (keyPacket) {
         break;
       }
