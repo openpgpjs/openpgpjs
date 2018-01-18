@@ -68,6 +68,14 @@ OID.prototype.write = function () {
     String.fromCharCode(this.oid.length)+this.oid);
 };
 
+/**
+ * Serialize an OID object as a hex string
+ * @return {string} String with the hex value of the OID
+ */
+OID.prototype.toHex = function() {
+  return util.hexstrdump(this.oid);
+};
+
 OID.fromClone = function (clone) {
   var oid = new OID(clone.oid);
   return oid;

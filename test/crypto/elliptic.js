@@ -175,22 +175,22 @@ describe('Elliptic Curve Cryptography', function () {
     it('Signature verification', function (done) {
       var curve = elliptic_curves.get('p256');
       var key = curve.keyFromPublic(signature_data.pub);
-      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.be.true;
+      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.true;
       done();
     });
     it('Invalid signature', function (done) {
       var curve = elliptic_curves.get('p256');
       var key = curve.keyFromPublic(key_data.p256.pub);
-      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.be.false;
+      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.false;
       done();
     });
-    it('Signature generation', function (done) {
+    it('Signature generation', function () {
       var curve = elliptic_curves.get('p256');
       var key = curve.keyFromPrivate(key_data.p256.priv);
-      var signature = key.sign(signature_data.message, 8);
-      key = curve.keyFromPublic(key_data.p256.pub);
-      expect(key.verify(signature_data.message, signature, 8)).to.be.true;
-      done();
+      return key.sign(signature_data.message, 8).then(signature => {
+        key = curve.keyFromPublic(key_data.p256.pub);
+        expect(key.verify(signature_data.message, signature, 8)).to.eventually.be.true;
+      });
     });
     it('Shared secret generation', function (done) {
       var curve = elliptic_curves.get('p256');

@@ -2,6 +2,7 @@
 
 'use strict';
 
+import hash from '../../hash';
 import curves from './curves.js';
 import BigInteger from '../jsbn.js';
 
@@ -14,11 +15,9 @@ import BigInteger from '../jsbn.js';
  * @return {{r: BigInteger, s: BigInteger}}  Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  var signature;
   const curve = curves.get(oid);
-  hash_algo = hash_algo ? hash_algo : curve.hash;
   const key = curve.keyFromSecret(d.toByteArray());
-  signature = await key.sign(m, hash_algo);
+  const signature = await key.sign(m, hash_algo);
   return {
     r: new BigInteger(signature.Rencoded()),
     s: new BigInteger(signature.Sencoded())
@@ -35,12 +34,10 @@ async function sign(oid, hash_algo, m, d) {
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  var result;
   const curve = curves.get(oid);
-  hash_algo = hash_algo ? hash_algo : curve.hash;  // FIXME is this according to the RFC?
   const key = curve.keyFromPublic(Q.toByteArray());
   return key.verify(
-    m, {R: signature.r.toByteArray(), S: signature.s.toByteArray()}, hash_algo
+    m, { R: signature.r.toByteArray(), S: signature.s.toByteArray() }, hash_algo
   );
 }
 
