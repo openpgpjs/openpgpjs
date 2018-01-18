@@ -30,6 +30,7 @@ import enums from './enums.js';
 import armor from './encoding/armor.js';
 import config from './config';
 import util from './util';
+import crypto from './crypto';
 
 /**
  * @class
@@ -314,18 +315,6 @@ Key.prototype.getSigningKeyPacket = function(keyId) {
   return null;
 };
 
-/**
- * Returns preferred signature hash algorithm of this key
- * @return {String}
- */
-Key.prototype.getPreferredHashAlgorithm = function() {
-  var primaryUser = this.getPrimaryUser();
-  if (primaryUser && primaryUser.selfCertificate.preferredHashAlgorithms) {
-    return primaryUser.selfCertificate.preferredHashAlgorithms[0];
-  }
-  return config.prefer_hash_algorithm;
-};
-
 function isValidEncryptionKeyPacket(keyPacket, signature) {
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
@@ -435,7 +424,7 @@ Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
  * @return {module:enums.keyStatus} The status of the primary key
  */
 Key.prototype.verifyPrimaryKey = async function() {
-  // FIXME should we check the expiration date of a revocation signature?
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // check revocation signature
   if (this.revocationSignature && !this.revocationSignature.isExpired() &&
      (this.revocationSignature.verified ||
@@ -569,7 +558,7 @@ Key.prototype.update = async function(key) {
     }
     this.primaryKey = key.primaryKey;
   }
-  // FIXME should we check the expiration date of a revocation signature?
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // revocation signature
   if (!this.revocationSignature && key.revocationSignature && !key.revocationSignature.isExpired() &&
      (key.revocationSignature.verified ||
@@ -578,7 +567,7 @@ Key.prototype.update = async function(key) {
   }
   // direct signatures
   mergeSignatures(key, this, 'directSignatures');
-  // FIXME find a better design pattern here
+  // TODO replace when Promise.some or Promise.any are implemented
   // users
   await Promise.all(key.users.map(async function(srcUser) {
     var found = false;
@@ -587,14 +576,13 @@ Key.prototype.update = async function(key) {
           (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
         await dstUser.update(srcUser, that.primaryKey);
         found = true;
-//        break;
       }
     }));
     if (!found) {
       that.users.push(srcUser);
     }
   }));
-  // FIXME find a better design pattern here
+  // TODO replace when Promise.some or Promise.any are implemented
   // subkeys
   if (key.subKeys) {
     await Promise.all(key.subKeys.map(async function(srcSubKey) {
@@ -603,7 +591,6 @@ Key.prototype.update = async function(key) {
         if (srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint()) {
           await dstSubKey.update(srcSubKey, that.primaryKey);
           found = true;
-//          break;
         }
       }));
       if (!found) {
@@ -828,8 +815,8 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     // Most OpenPGP implementations use generic certification (0x10)
     signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.hashAlgorithm = privateKey.getPreferredHashAlgorithm();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(privateKey);
     signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
     await signaturePacket.sign(signingKeyPacket, dataToSign);
     user.otherCertifications.push(signaturePacket);
@@ -870,7 +857,7 @@ User.prototype.verify = async function(primaryKey) {
     return enums.keyStatus.no_self_cert;
   }
   var that = this;
-  // FIXME what is the best design pattern?
+  // TODO replace when Promise.some or Promise.any are implemented
   var results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.selfCertifications.map(async function(selfCertification) {
       if (await that.isRevoked(selfCertification, primaryKey)) {
@@ -977,7 +964,7 @@ SubKey.prototype.isValidSigningKey = async function(primaryKey) {
  */
 SubKey.prototype.verify = async function(primaryKey) {
   var that = this;
-  // FIXME should we check the expiration date of a revocation signature?
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // check subkey revocation signature
   if (this.revocationSignature && !this.revocationSignature.isExpired() &&
      (this.revocationSignature.verified ||
@@ -990,7 +977,7 @@ SubKey.prototype.verify = async function(primaryKey) {
     return enums.keyStatus.expired;
   }
   // check subkey binding signatures (at least one valid binding sig needed)
-  // FIXME what is the best design pattern?
+  // TODO replace when Promise.some or Promise.any are implemented
   var results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.bindingSignatures.map(async function(bindingSignature) {
     // check binding signature is not expired
@@ -1064,7 +1051,7 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
       that.bindingSignatures.push(newBindingSignature);
     }
   }));
-  // FIXME should we check the expiration date of a revocation signature?
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // revocation signature
   if (!this.revocationSignature &&
       subKey.revocationSignature &&
@@ -1149,15 +1136,22 @@ export function generate(options) {
   return Promise.resolve().then(() => {
 
     if (options.curve) {
-      if (options.curve === 'ed25519' || options.curve === 'curve25519') {
+      try {
+        options.curve = enums.write(enums.curve, options.curve);
+      } catch (e) {
+        throw new Error('Not valid curve.')
+      }
+      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
         options.keyType = options.keyType || enums.publicKey.eddsa;
       } else {
         options.keyType = options.keyType || enums.publicKey.ecdsa;
       }
       options.subkeyType = options.subkeyType || enums.publicKey.ecdh;
-    } else {
+    } else if (options.numBits) {
       options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
       options.subkeyType = options.subkeyType || enums.publicKey.rsa_encrypt_sign;
+    } else {
+      throw new Error('Key type not specified.');
     }
 
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
@@ -1189,16 +1183,16 @@ export function generate(options) {
     secretKeyPacket = new packet.SecretKey();
     secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    var curve = options.curve === 'curve25519' ? 'ed25519' : options.curve;
-    return secretKeyPacket.generate(options.numBits, curve);
+    options.curve = options.curve === enums.curve.curve25519 ? enums.curve.ed25519 : options.curve;
+    return secretKeyPacket.generate(options.numBits, options.curve);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
     secretKeyPacket.packets = null;
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
-    var curve = options.curve === 'ed25519' ? 'curve25519' : options.curve;
-    return secretSubkeyPacket.generate(options.numBits, curve);
+    options.curve = options.curve === enums.curve.ed25519 ? enums.curve.curve25519 : options.curve;
+    return secretSubkeyPacket.generate(options.numBits, options.curve);
   }
 }
 
@@ -1269,7 +1263,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -1313,7 +1307,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-  subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+  subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretSubkeyPacket);
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   if (options.keyExpirationTime > 0) {
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
@@ -1330,6 +1324,39 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   }
 
   return new Key(packetlist);
+}
+
+/**
+ * Returns the preferred signature hash algorithm of a key
+ * @param  {object} key
+ * @return {String}
+ */
+export function getPreferredHashAlgorithm(key) {
+  var hash_algo = config.prefer_hash_algorithm,
+      pref_algo = hash_algo;
+  if (Key.prototype.isPrototypeOf(key)) {
+    var primaryUser = key.getPrimaryUser();
+    if (primaryUser && primaryUser.selfCertificate.preferredHashAlgorithms) {
+      pref_algo = primaryUser.selfCertificate.preferredHashAlgorithms[0];
+      hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
+        pref_algo : hash_algo;
+    }
+    key = key.getSigningKeyPacket();
+  }
+  switch(Object.getPrototypeOf(key)) {
+    case packet.SecretKey.prototype:
+    case packet.PublicKey.prototype:
+    case packet.SecretSubkey.prototype:
+    case packet.PublicSubkey.prototype:
+      switch(key.algorithm) {
+        case 'ecdh':
+        case 'ecdsa':
+        case 'eddsa':
+          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgorithm(key.params[0]);
+      }
+  }
+  return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
+    pref_algo : hash_algo;
 }
 
 /**
@@ -1351,7 +1378,6 @@ export function getPreferredSymAlgo(keys) {
     });
   });
   var prefAlgo = {prio: 0, algo: config.encryption_cipher};
-  // FIXME
   for (var algo in prioMap) {
     try {
       if (algo !== enums.symmetric.plaintext &&

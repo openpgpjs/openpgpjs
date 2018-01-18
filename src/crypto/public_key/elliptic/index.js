@@ -27,7 +27,7 @@
 
 'use strict';
 
-import {get, generate} from './curves';
+import {get, generate, getPreferredHashAlgorithm} from './curves';
 import ecdsa from './ecdsa';
 import eddsa from './eddsa';
 import ecdh from './ecdh';
@@ -37,5 +37,6 @@ module.exports = {
   eddsa: eddsa,
   ecdh: ecdh,
   get: get,
-  generate: generate
+  generate: generate,
+  getPreferredHashAlgorithm: getPreferredHashAlgorithm
 };
