@@ -200,7 +200,7 @@ describe('Elliptic Curve Cryptography', function () {
     var romeo = load_priv_key('romeo');
     var juliet = load_pub_key('juliet');
     expect(romeo.decrypt(data['romeo'].pass)).to.be.true;
-    openpgp.encrypt(
+    return openpgp.encrypt(
       {publicKeys: [juliet], privateKeys: [romeo], data: data.romeo.message + "\n"}
     ).then(function (encrypted) {
       var message = openpgp.message.readArmored(encrypted.data);

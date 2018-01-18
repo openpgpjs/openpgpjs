@@ -34,19 +34,19 @@ import random from '../../random';
 import config from '../../../config';
 import enums from '../../../enums';
 import util from '../../../util';
+import OID from '../../../type/oid';
 import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
 var webCurves = {}, nodeCurves = {};
-if (webCrypto && config.use_native) {
-  webCurves = {
-    'p256': 'P-256',
-    'p384': 'P-384',
-    'p521': 'P-521'
-  };
-} else if (nodeCrypto && config.use_native) {
+webCurves = {
+  'p256': 'P-256',
+  'p384': 'P-384',
+  'p521': 'P-521'
+};
+if (nodeCrypto && config.use_native) {
   var knownCurves = nodeCrypto.getCurves();
   nodeCurves = {
     'secp256k1': knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
@@ -63,8 +63,8 @@ const curves = {
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.secp256r1,
-    web: webCurves.secp256r1,
+    node: nodeCurves.p256,
+    web: webCurves.p256,
     payloadSize: 32
   },
   p384: {
@@ -72,8 +72,8 @@ const curves = {
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.secp384r1,
-    web: webCurves.secp384r1,
+    node: nodeCurves.p384,
+    web: webCurves.p384,
     payloadSize: 48
   },
   p521: {
@@ -81,8 +81,8 @@ const curves = {
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.secp521r1,
-    web: webCurves.secp521r1,
+    node: nodeCurves.p521,
+    web: webCurves.p521,
     payloadSize: 66
   },
   secp256k1: {
@@ -99,12 +99,15 @@ const curves = {
   },
   curve25519: {
     oid: util.bin2str([0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01]),
-    keyType: enums.publicKey.ecdh,
+    keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128
   },
   brainpoolP256r1: { // TODO 1.3.36.3.3.2.8.1.1.7
     oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07])
+  },
+  brainpoolP384r1: { // TODO 1.3.36.3.3.2.8.1.1.11
+    oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B])
   },
   brainpoolP512r1: { // TODO 1.3.36.3.3.2.8.1.1.13
     oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D])
@@ -118,12 +121,12 @@ function Curve(name, params) {
       this.curve = new EdDSA(name);
       break;
     case enums.publicKey.ecdsa:
-    case enums.publicKey.ecdh:
       this.curve = new EC(name);
       break;
     default:
       throw new Error('Unknown elliptic key type;');
   }
+  this.name = name;
   this.oid = curves[name].oid;
   this.hash = params.hash;
   this.cipher = params.cipher;
@@ -145,14 +148,14 @@ Curve.prototype.keyFromPublic = function (pub) {
 };
 
 Curve.prototype.genKeyPair = async function () {
-  var r, keyPair;
+  var keyPair;
   if (webCrypto && config.use_native && this.web) {
-    keyPair = await webGenKeyPair(this.name, "ECDSA"); // FIXME is ECDH different?
+    keyPair = await webGenKeyPair(this.name);
   } else if (nodeCrypto && config.use_native && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
   } else {
     var compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-    r = await this.curve.genKeyPair();
+    var r = await this.curve.genKeyPair();
     if (this.keyType === enums.publicKey.eddsa) {
       keyPair = { secret: r.getSecret() };
     } else {
@@ -162,17 +165,18 @@ Curve.prototype.genKeyPair = async function () {
   return new KeyPair(this.curve, keyPair);
 };
 
-
 function get(oid_or_name) {
   var name;
-  if (enums.curve[oid_or_name]) {
-    name = enums.write(enums.curve, oid_or_name);
+  if (OID.prototype.isPrototypeOf(oid_or_name) &&
+      enums.curve[oid_or_name.toHex()]) {
+    name = enums.write(enums.curve, oid_or_name.toHex()); // by curve OID
     return new Curve(name, curves[name]);
-  }
-  for (name in curves) {
-    if (curves[name].oid === oid_or_name) {
-      return new Curve(name, curves[name]);
-    }
+  } else if (enums.curve[oid_or_name]) {
+    name = enums.write(enums.curve, oid_or_name); // by curve name
+    return new Curve(name, curves[name]);
+  } else if (enums.curve[util.hexstrdump(oid_or_name)]) {
+    name = enums.write(enums.curve, util.hexstrdump(oid_or_name)); // by oid string
+    return new Curve(name, curves[name]);
   }
   throw new Error('Not valid curve');
 }
@@ -189,8 +193,16 @@ async function generate(curve) {
   };
 }
 
+function getPreferredHashAlgorithm(oid) {
+  return curves[enums.write(enums.curve, oid.toHex())].hash;
+}
+
 module.exports = {
   Curve: Curve,
+  curves: curves,
+  webCurves: webCurves,
+  nodeCurves: nodeCurves,
+  getPreferredHashAlgorithm: getPreferredHashAlgorithm,
   generate: generate,
   get: get
 };
@@ -203,14 +215,10 @@ module.exports = {
 //////////////////////////
 
 
-async function webGenKeyPair(name, algorithm) {
+async function webGenKeyPair(name) {
+  // Note: keys generated with ECDSA and ECDH are structurally equivalent
   var webCryptoKey = await webCrypto.generateKey(
-    {
-      name: algorithm === "ECDH" ? "ECDH" : "ECDSA",
-      namedCurve: webCurves[name]
-    },
-    true,
-    algorithm === "ECDH" ? ["deriveKey", "deriveBits"] : ["sign", "verify"]
+    { name: "ECDSA", namedCurve: webCurves[name] }, true, ["sign", "verify"]
   );
 
   var privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
@@ -218,15 +226,15 @@ async function webGenKeyPair(name, algorithm) {
 
   return {
     pub: {
-      x: base64.decode(publicKey.x, 'base64url'),
-      y: base64.decode(publicKey.y, 'base64url')
+      x: base64.decode(publicKey.x, true),
+      y: base64.decode(publicKey.y, true)
     },
-    priv: base64.decode(privateKey.d, 'base64url')
+    priv: base64.decode(privateKey.d, true)
   };
 }
 
 async function nodeGenKeyPair(name) {
-  var ecdh = nodeCrypto.createECDH(name === "secp256r1" ? "prime256v1" : name);
+  var ecdh = nodeCrypto.createECDH(nodeCurves[name]);
   await ecdh.generateKeys();
 
   return {

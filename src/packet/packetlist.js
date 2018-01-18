@@ -145,7 +145,7 @@ Packetlist.prototype.filterByTag = function () {
 */
 Packetlist.prototype.forEach = function (callback) {
   for (var i = 0; i < this.length; i++) {
-    callback(this[i]);
+    callback(this[i], i, this);
   }
 };
 
@@ -161,6 +161,20 @@ Packetlist.prototype.map = function (callback) {
   }
 
   return packetArray;
+};
+
+/**
+* Executes the callback function once for each element
+* until it finds one where callback returns a truthy value
+*/
+Packetlist.prototype.some = async function (callback) {
+  for (var i = 0; i < this.length; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await callback(this[i], i, this)) {
+      return true;
+    }
+  }
+  return false;
 };
 
 /**

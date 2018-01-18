@@ -17,20 +17,21 @@
 
 'use strict';
 
-var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-var b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
+var b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
 
 /**
  * Convert binary array to radix-64
  * @param {Uint8Array} t Uint8Array to convert
+ * @param {bool} u if true, output is URL-safe
  * @returns {string} radix-64 version of input string
  * @static
  */
-function s2r(t, o, u) {
+function s2r(t, u = false) {
   // TODO check btoa alternative
-  var b64 = (u === "base64url") ? b64u : b64s;
+  var b64 = u ? b64u : b64s;
   var a, c, n;
-  var r = o ? o : [],
+  var r = [],
       l = 0,
       s = 0;
   var tl = t.length;
@@ -67,20 +68,16 @@ function s2r(t, o, u) {
     if ((l % 60) === 0 && !u) {
       r.push("\n");
     }
-    if (u !== 'base64url') {
+    if (!u) {
       r.push('=');
       l += 1;
     }
   }
-  if (s === 1 && u !== 'base64url') {
+  if (s === 1 && !u) {
     if ((l % 60) === 0 && !u) {
       r.push("\n");
     }
     r.push('=');
-  }
-  if (o)
-  {
-    return;
   }
   return r.join('');
 }
@@ -88,12 +85,13 @@ function s2r(t, o, u) {
 /**
  * Convert radix-64 to binary array
  * @param {String} t radix-64 string to convert
+ * @param {bool} u if true, input is interpreted as URL-safe
  * @returns {Uint8Array} binary array version of input string
  * @static
  */
 function r2s(t, u) {
   // TODO check atob alternative
-  var b64 = (u === "base64url") ? b64u : b64s;
+  var b64 = u ? b64u : b64s;
   var c, n;
   var r = [],
     s = 0,
