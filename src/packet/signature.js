@@ -97,6 +97,28 @@ export default function Signature() {
 Signature.prototype.read = function (bytes) {
   var i = 0;
   this.version = bytes[i++];
+
+  function subpackets(bytes) {
+    // Two-octet scalar octet count for following subpacket data.
+    var subpacket_length = util.readNumber(
+      bytes.subarray(0, 2));
+
+    var i = 2;
+
+    // subpacket data set (zero or more subpackets)
+    while (i < 2 + subpacket_length) {
+
+      var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      i += len.offset;
+
+      this.read_sub_packet(bytes.subarray(i, i + len.len));
+
+      i += len.len;
+    }
+
+    return i;
+  }
+
   // switch on version (3 and 4)
   switch (this.version) {
     case 3:
@@ -132,27 +154,6 @@ Signature.prototype.read = function (bytes) {
       this.signatureType = bytes[i++];
       this.publicKeyAlgorithm = bytes[i++];
       this.hashAlgorithm = bytes[i++];
-
-      function subpackets(bytes) {
-        // Two-octet scalar octet count for following subpacket data.
-        var subpacket_length = util.readNumber(
-          bytes.subarray(0, 2));
-
-        var i = 2;
-
-        // subpacket data set (zero or more subpackets)
-        while (i < 2 + subpacket_length) {
-
-          var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-          i += len.offset;
-
-          this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-          i += len.len;
-        }
-
-        return i;
-      }
 
       // hashed subpackets
       i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
@@ -210,7 +211,7 @@ Signature.prototype.write = function () {
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  */
-Signature.prototype.sign = function (key, data) {
+Signature.prototype.sign = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -242,7 +243,7 @@ Signature.prototype.sign = function (key, data) {
 
   this.signedHashValue = hash.subarray(0, 2);
 
-  this.signature = crypto.signature.sign(hashAlgorithm,
+  this.signature = await crypto.signature.sign(hashAlgorithm,
     publicKeyAlgorithm, key.params, toHash);
 };
 
@@ -614,7 +615,7 @@ Signature.prototype.calculateTrailer = function () {
  *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
  * @return {boolean} True if message is verified, else false.
  */
-Signature.prototype.verify = function (key, data) {
+Signature.prototype.verify = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -632,7 +633,9 @@ Signature.prototype.verify = function (key, data) {
   //    Algorithm-Specific Fields for DSA and ECDSA signatures:
   //      - MPI of DSA value r.
   //      - MPI of DSA value s.
-  else if (publicKeyAlgorithm === 17 || publicKeyAlgorithm === 19) {
+  else if (publicKeyAlgorithm === enums.publicKey.dsa ||
+           publicKeyAlgorithm === enums.publicKey.ecdsa ||
+           publicKeyAlgorithm === enums.publicKey.eddsa) {
     mpicount = 2;
   }
 
@@ -643,7 +646,7 @@ Signature.prototype.verify = function (key, data) {
     i += mpi[j].read(this.signature.subarray(i, this.signature.length));
   }
 
-  this.verified = crypto.signature.verify(publicKeyAlgorithm,
+  this.verified = await crypto.signature.verify(publicKeyAlgorithm,
     hashAlgorithm, mpi, key.params,
     util.concatUint8Array([bytes, this.signatureData, trailer]));
 

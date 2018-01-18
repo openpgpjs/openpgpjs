@@ -115,7 +115,6 @@ function addheader() {
 }
 
 
-
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
  * @param {String} data Data to create a CRC-24 checksum for

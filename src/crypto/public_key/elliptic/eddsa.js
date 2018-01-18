@@ -1,27 +1,4 @@
-// OpenPGP.js - An OpenPGP implementation in javascript
-// Copyright (C) 2015-2016 Decentral
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-// Implementation of ECDSA following RFC6637 for Openpgpjs
-
-/**
- * @requires crypto/public_key/jsbn
- * @requires crypto/public_key/elliptic/curves
- * @module crypto/public_key/elliptic/ecdsa
- */
+// Implementation of EdDSA for OpenPGP
 
 'use strict';
 
@@ -39,11 +16,11 @@ import BigInteger from '../jsbn.js';
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = curves.get(oid);
-  const key = curve.keyFromPrivate(d.toByteArray());
+  const key = curve.keyFromSecret(d.toByteArray());
   const signature = await key.sign(m, hash_algo);
   return {
-    r: new BigInteger(signature.r.toArray()),
-    s: new BigInteger(signature.s.toArray())
+    r: new BigInteger(signature.Rencoded()),
+    s: new BigInteger(signature.Sencoded())
   };
 }
 
@@ -60,7 +37,7 @@ async function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
   const key = curve.keyFromPublic(Q.toByteArray());
   return key.verify(
-    m, { r: signature.r.toByteArray(), s: signature.s.toByteArray() }, hash_algo
+    m, { R: signature.r.toByteArray(), S: signature.s.toByteArray() }, hash_algo
   );
 }
 

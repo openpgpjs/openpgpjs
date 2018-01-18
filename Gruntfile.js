@@ -20,7 +20,7 @@ module.exports = function(grunt) {
     'src/encoding/**/*.js',
     'src/hkp/**/*.js',
     'src/keyring/**/*.js',
-    'src/packet/**/*.jss',
+    'src/packet/**/*.js',
     'src/type/**/*.js',
     'src/worker/**/*.js',
     'src/*.js',
@@ -50,11 +50,15 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: ["env"]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -69,11 +73,37 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: ["env"]
+            }]
+          ],
+          plugin: [ 'browserify-derequire' ]
+        }
+      },
+      openpgp_browser: {
+        files: {
+          'dist/openpgp_browser.js': [ './src/index.js' ]
+        },
+        options: {
+          browserifyOptions: {
+            standalone: 'openpgp'
+          },
+          external: [ 'crypto' ],
+          transform: [
+            ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
+              ignore: ['*.min.js'],
+              presets: ["env"]
             }]
           ],
           plugin: [ 'browserify-derequire' ]
@@ -89,7 +119,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'crypto', 'buffer' , 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
+          external: [ 'crypto', 'openpgp', '../../dist/openpgp' ]
         }
       }
     },
@@ -150,19 +180,9 @@ module.exports = function(grunt) {
         wrap_line_length: 120
       }
     },
-    jshint: {
-      src: lintFiles,
-      build: ['Gruntfile.js', '*.json'],
-      options: {
-        jshintrc: '.jshintrc'
-      }
-    },
-    jscs: {
-      src: lintFiles,
-      build: ['Gruntfile.js'],
-      options: {
-        config: ".jscsrc"
-      }
+    eslint: {
+      target: lintFiles,
+      options: { configFile: '.eslintrc.js' }
     },
     jsdoc: {
       dist: {
@@ -256,15 +276,15 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-jsbeautifier');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-jscs');
   grunt.loadNpmTasks('grunt-jsdoc');
+  grunt.loadNpmTasks('gruntify-eslint');
   grunt.loadNpmTasks('grunt-mocha-istanbul');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
+  grunt.loadNpmTasks('grunt-keepalive');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
@@ -305,8 +325,9 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest']);
+  grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['browserify:openpgp_browser', 'copy:browsertest', 'connect:test', 'keepalive']);
 
 };

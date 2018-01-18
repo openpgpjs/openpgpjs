@@ -170,8 +170,6 @@ SecretKey.prototype.write = function () {
 };
 
 
-
-
 /** Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isDecrypted === true)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
@@ -193,7 +191,7 @@ SecretKey.prototype.encrypt = function (passphrase) {
     blockLen = crypto.cipher[symmetric].blockSize,
     iv = crypto.random.getRandomBytes(blockLen);
 
-  var arr = [ new Uint8Array([254, enums.write(enums.symmetric, symmetric)]) ];
+  var arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
   arr.push(s2k.write());
   arr.push(iv);
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));

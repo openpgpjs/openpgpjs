@@ -37,7 +37,7 @@ const mod = {
   /** @see module:crypto/pkcs5 */
   pkcs5: pkcs5,
   /** @see module:crypto/aes_kw */
-  aes_kw: aes_kw,
+  aes_kw: aes_kw
 };
 
 for (var i in crypto) {

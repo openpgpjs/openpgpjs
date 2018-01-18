@@ -2,6 +2,10 @@
 
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
+var chai = require('chai');
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
+
 function stringify(array) {
   if(!Uint8Array.prototype.isPrototypeOf(array)) {
     throw new Error('Data must be in the form of a Uint8Array');
@@ -13,9 +17,6 @@ function stringify(array) {
   }
   return result.join('');
 }
-
-var chai = require('chai'),
-  expect = chai.expect;
 
 describe("Packet", function() {
   var armored_key =
@@ -191,16 +192,18 @@ describe("Packet", function() {
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      enc.encrypt({ params: mpi });
+      enc.encrypt({ params: mpi }).then(() => {
 
-      msg.push(enc);
+        msg.push(enc);
 
-      msg2.read(msg.write());
+        msg2.read(msg.write());
 
-      msg2[0].decrypt({ params: mpi });
+        msg2[0].decrypt({ params: mpi }).then(() => {
 
-      expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
-      expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
+          expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
+          expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
+        });
+      });
     });
   });
 
@@ -239,12 +242,14 @@ describe("Packet", function() {
     enc.sessionKeyAlgorithm = 'aes256';
     enc.publicKeyId.bytes = '12345678';
 
-    enc.encrypt(key);
+    enc.encrypt(key).then(() => {
 
-    enc.decrypt(key);
+      enc.decrypt(key).then(() => {
 
-    expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
-    done();
+        expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
+        done();
+      });
+    });
   });
 
   it('Public key encrypted packet (reading, GPG)', function(done) {
@@ -302,13 +307,14 @@ describe("Packet", function() {
     var msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    msg[0].decrypt(key).then(() => { 
+      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = stringify(msg[1].packets[0].packets[0].data);
+      var text = stringify(msg[1].packets[0].packets[0].data);
 
-    expect(text).to.equal('Hello world!');
-    done();
+      expect(text).to.equal('Hello world!');
+      done();
+    });
   });
 
   it('Sym encrypted session key reading/writing', function(done) {
@@ -331,7 +337,6 @@ describe("Packet", function() {
     literal.setText('Hello world!');
     enc.packets.push(literal);
     enc.encrypt(algo, key);
-
 
     var msg2 = new openpgp.packet.List();
     msg2.read(msg.write());
@@ -365,34 +370,31 @@ describe("Packet", function() {
     var msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    msg[0].decrypt(key).then(() => {
+      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = stringify(msg[1].packets[0].packets[0].data);
+      var text = stringify(msg[1].packets[0].packets[0].data);
 
-    expect(text).to.equal('Hello world!');
-    done();
+      expect(text).to.equal('Hello world!');
+      done();
+    });
   });
 
-  it('Secret key reading with signature verification.', function(done) {
+  it('Secret key reading with signature verification.', function() {
     var key = new openpgp.packet.List();
     key.read(openpgp.armor.decode(armored_key).data);
-
-
-    var verified = key[2].verify(key[0],
+    return Promise.all([
+      expect(key[2].verify(key[0],
         {
             userid: key[1],
             key: key[0]
-        });
-
-    verified = verified && key[4].verify(key[0],
+        })).to.eventually.be.true,
+      expect(key[4].verify(key[0],
         {
             key: key[0],
             bind: key[3]
-        });
-
-    expect(verified).to.be.true;
-    done();
+        })).to.eventually.be.true
+    ]);
   });
 
   it('Reading a signed, encrypted message.', function(done) {
@@ -419,15 +421,15 @@ describe("Packet", function() {
     var msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key[3]);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    msg[0].decrypt(key[3]).then(() => {
+      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var payload = msg[1].packets[0].packets;
+      var payload = msg[1].packets[0].packets;
 
-    var verified = payload[2].verify(key[0], payload[1]);
-
-    expect(verified).to.be.true;
-    done();
+      expect(payload[2].verify(
+        key[0], payload[1]
+      )).to.eventually.be.true.notify(done);
+    });
   });
 
   it('Writing and encryption of a secret key packet.', function() {
@@ -486,19 +488,18 @@ describe("Packet", function() {
         signature.publicKeyAlgorithm = 'rsa_sign';
         signature.signatureType = 'binary';
 
-        signature.sign(key, literal);
+        signature.sign(key, literal).then(() => {
 
-        signed.push(literal);
-        signed.push(signature);
+          signed.push(literal);
+          signed.push(signature);
 
-        var raw = signed.write();
+          var raw = signed.write();
 
-        var signed2 = new openpgp.packet.List();
-        signed2.read(raw);
+          var signed2 = new openpgp.packet.List();
+          signed2.read(raw);
 
-        var verified = signed2[1].verify(key, signed2[0]);
-
-        expect(verified).to.be.true;
+          expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true;
+          });
     });
   });
 });

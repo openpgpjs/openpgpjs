@@ -30,6 +30,7 @@ import enums from './enums.js';
 import armor from './encoding/armor.js';
 import config from './config';
 import util from './util';
+import crypto from './crypto';
 
 /**
  * @class
@@ -314,18 +315,6 @@ Key.prototype.getSigningKeyPacket = function(keyId) {
   return null;
 };
 
-/**
- * Returns preferred signature hash algorithm of this key
- * @return {String}
- */
-Key.prototype.getPreferredHashAlgorithm = function() {
-  var primaryUser = this.getPrimaryUser();
-  if (primaryUser && primaryUser.selfCertificate.preferredHashAlgorithms) {
-    return primaryUser.selfCertificate.preferredHashAlgorithms[0];
-  }
-  return config.prefer_hash_algorithm;
-};
-
 function isValidEncryptionKeyPacket(keyPacket, signature) {
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
@@ -338,7 +327,8 @@ function isValidSigningKeyPacket(keyPacket, signature) {
   return (keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.dsa) ||
           keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_sign) ||
           keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.rsa_encrypt_sign) ||
-          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.ecdsa)) &&
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.ecdsa) ||
+          keyPacket.algorithm === enums.read(enums.publicKey, enums.publicKey.eddsa)) &&
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
@@ -433,11 +423,12 @@ Key.prototype.decryptKeyPacket = function(keyIds, passphrase) {
  * and valid self signature
  * @return {module:enums.keyStatus} The status of the primary key
  */
-Key.prototype.verifyPrimaryKey = function() {
+Key.prototype.verifyPrimaryKey = async function() {
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // check revocation signature
   if (this.revocationSignature && !this.revocationSignature.isExpired() &&
      (this.revocationSignature.verified ||
-      this.revocationSignature.verify(this.primaryKey, {key: this.primaryKey}))) {
+      await this.revocationSignature.verify(this.primaryKey, {key: this.primaryKey}))) {
     return enums.keyStatus.revoked;
   }
   // check V3 expiration time
@@ -546,9 +537,9 @@ Key.prototype.getPrimaryUser = function() {
  * the destination key is tranformed to a private key.
  * @param  {module:key~Key} key source key to merge
  */
-Key.prototype.update = function(key) {
+Key.prototype.update = async function(key) {
   var that = this;
-  if (key.verifyPrimaryKey() === enums.keyStatus.invalid) {
+  if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
     return;
   }
   if (this.primaryKey.getFingerprint() !== key.primaryKey.getFingerprint()) {
@@ -567,44 +558,45 @@ Key.prototype.update = function(key) {
     }
     this.primaryKey = key.primaryKey;
   }
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // revocation signature
   if (!this.revocationSignature && key.revocationSignature && !key.revocationSignature.isExpired() &&
      (key.revocationSignature.verified ||
-      key.revocationSignature.verify(key.primaryKey, {key: key.primaryKey}))) {
+      await key.revocationSignature.verify(key.primaryKey, {key: key.primaryKey}))) {
     this.revocationSignature = key.revocationSignature;
   }
   // direct signatures
   mergeSignatures(key, this, 'directSignatures');
+  // TODO replace when Promise.some or Promise.any are implemented
   // users
-  key.users.forEach(function(srcUser) {
+  await Promise.all(key.users.map(async function(srcUser) {
     var found = false;
-    for (var i = 0; i < that.users.length; i++) {
-      if (srcUser.userId && (srcUser.userId.userid === that.users[i].userId.userid) ||
-          srcUser.userAttribute && (srcUser.userAttribute.equals(that.users[i].userAttribute))) {
-        that.users[i].update(srcUser, that.primaryKey);
+    await Promise.all(that.users.map(async function(dstUser) {
+      if ((srcUser.userId && (srcUser.userId.userid === dstUser.userId.userid)) ||
+          (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
+        await dstUser.update(srcUser, that.primaryKey);
         found = true;
-        break;
       }
-    }
+    }));
     if (!found) {
       that.users.push(srcUser);
     }
-  });
+  }));
+  // TODO replace when Promise.some or Promise.any are implemented
   // subkeys
   if (key.subKeys) {
-    key.subKeys.forEach(function(srcSubKey) {
+    await Promise.all(key.subKeys.map(async function(srcSubKey) {
       var found = false;
-      for (var i = 0; i < that.subKeys.length; i++) {
-        if (srcSubKey.subKey.getFingerprint() === that.subKeys[i].subKey.getFingerprint()) {
-          that.subKeys[i].update(srcSubKey, that.primaryKey);
+      await Promise.all(that.subKeys.map(async function(dstSubKey) {
+        if (srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint()) {
+          await dstSubKey.update(srcSubKey, that.primaryKey);
           found = true;
-          break;
         }
-      }
+      }));
       if (!found) {
         that.subKeys.push(srcSubKey);
       }
-    });
+    }));
   }
 };
 
@@ -616,14 +608,14 @@ Key.prototype.update = function(key) {
  * @param  {String} attr
  * @param  {Function} checkFn optional, signature only merged if true
  */
-function mergeSignatures(source, dest, attr, checkFn) {
+async function mergeSignatures(source, dest, attr, checkFn) {
   source = source[attr];
   if (source) {
     if (!dest[attr]) {
       dest[attr] = source;
     } else {
-      source.forEach(function(sourceSig) {
-        if (!sourceSig.isExpired() && (!checkFn || checkFn(sourceSig)) &&
+      await source.forEach(async function(sourceSig) {
+        if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
               return util.equalsUint8Array(destSig.signature,sourceSig.signature);
             })) {
@@ -644,12 +636,12 @@ Key.prototype.revoke = function() {
  * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
  * @return {module:key~Key} new public key with new certificate signature
  */
-Key.prototype.signPrimaryUser = function(privateKeys) {
+Key.prototype.signPrimaryUser = async function(privateKeys) {
   var {index, user} = this.getPrimaryUser() || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
-  user = user.sign(this.primaryKey, privateKeys);
+  user = await user.sign(this.primaryKey, privateKeys);
   var key = new Key(this.toPacketlist());
   key.users[index] = user;
   return key;
@@ -660,10 +652,12 @@ Key.prototype.signPrimaryUser = function(privateKeys) {
  * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
  * @return {module:key~Key} new public key with new certificate signature
  */
-Key.prototype.signAllUsers = function(privateKeys) {
-  var users = this.users.map(user => user.sign(this.primaryKey, privateKeys));
+Key.prototype.signAllUsers = async function(privateKeys) {
+  var that = this;
   var key = new Key(this.toPacketlist());
-  key.users = users;
+  key.users = await Promise.all(this.users.map(function(user) {
+    return user.sign(that.primaryKey, privateKeys);
+  }));
   return key;
 };
 
@@ -685,16 +679,20 @@ Key.prototype.verifyPrimaryUser = function(keys) {
  * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
  * @return {Array<({userid: String, keyid: module:type/keyid, valid: Boolean})>} list of userid, signer's keyid and validity of signature
  */
-Key.prototype.verifyAllUsers = function(keys) {
-  return this.users.reduce((signatures, user) => {
-    return signatures.concat(
-      user.verifyAllSignatures(this.primaryKey, keys).map(signature => ({
+Key.prototype.verifyAllUsers = async function(keys) {
+  var that = this;
+  var results = [];
+  await Promise.all(this.users.map(async function(user) {
+    var signatures = await user.verifyAllSignatures(that.primaryKey, keys);
+    signatures.forEach(signature => {
+      results.push({
         userid: user.userId.userid,
         keyid: signature.keyid,
         valid: signature.valid
-      }))
-    );
-  }, []);
+      });
+    });
+  }));
+  return results;
 };
 
 /**
@@ -731,14 +729,14 @@ User.prototype.toPacketlist = function() {
  * @param  {module:packet/secret_key|module:packet/public_key} primaryKey  The primary key packet
  * @return {Boolean}                                         True if the certificate is revoked
  */
-User.prototype.isRevoked = function(certificate, primaryKey) {
+User.prototype.isRevoked = async function(certificate, primaryKey) {
   if (this.revocationCertifications) {
     var that = this;
     return this.revocationCertifications.some(function(revCert) {
       return revCert.issuerKeyId.equals(certificate.issuerKeyId) &&
         !revCert.isExpired() &&
         (revCert.verified ||
-        revCert.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey}));
+         revCert.verify(primaryKey, { userid: that.userId || that.userAttribute, key: primaryKey }));
     });
   } else {
     return false;
@@ -774,13 +772,14 @@ User.prototype.getValidSelfCertificate = function(primaryKey) {
  * @param  {module:packet/signature}  selfCertificate A self certificate of this user
  * @return {Boolean}
  */
-User.prototype.isValidSelfCertificate = function(primaryKey, selfCertificate) {
-  if (this.isRevoked(selfCertificate, primaryKey)) {
+User.prototype.isValidSelfCertificate = async function(primaryKey, selfCertificate) {
+  if (await this.isRevoked(selfCertificate, primaryKey)) {
     return false;
   }
-  if (!selfCertificate.isExpired() &&
-     (selfCertificate.verified ||
-      selfCertificate.verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
+  if (!selfCertificate.isExpired() && (selfCertificate.verified ||
+       await selfCertificate.verify(
+         primaryKey,{userid: this.userId || this.userAttribute, key: primaryKey}
+       ))) {
     return true;
   }
   return false;
@@ -792,38 +791,37 @@ User.prototype.isValidSelfCertificate = function(primaryKey, selfCertificate) {
  * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
  * @return {module:key~Key} new user with new certificate signatures
  */
-User.prototype.sign = function(primaryKey, privateKeys) {
-  var user, dataToSign, signingKeyPacket, signaturePacket;
-  dataToSign = {};
+User.prototype.sign = async function(primaryKey, privateKeys) {
+  const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.userid = this.userId || this.userAttribute;
-  user = new User(this.userId || this.userAttribute);
+  const user = new User(this.userId || this.userAttribute);
   user.otherCertifications = [];
-  privateKeys.forEach(privateKey => {
+  await Promise.all(privateKeys.map(async function(privateKey) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
     if (privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint()) {
       throw new Error('Not implemented for self signing');
     }
-    signingKeyPacket = privateKey.getSigningKeyPacket();
+    const signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket) {
       throw new Error('Could not find valid signing key packet');
     }
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
-    signaturePacket = new packet.Signature();
+    const signaturePacket = new packet.Signature();
     // Most OpenPGP implementations use generic certification (0x10)
     signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.hashAlgorithm = privateKey.getPreferredHashAlgorithm();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(privateKey);
     signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
-    signaturePacket.sign(signingKeyPacket, dataToSign);
+    await signaturePacket.sign(signingKeyPacket, dataToSign);
     user.otherCertifications.push(signaturePacket);
-  });
-  user.update(this, primaryKey);
+  }));
+  await user.update(this, primaryKey);
   return user;
 };
 
@@ -836,14 +834,16 @@ User.prototype.sign = function(primaryKey, privateKeys) {
 User.prototype.verifyAllSignatures = function(primaryKey, keys) {
   var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
   var certificates = this.selfCertifications.concat(this.otherCertifications || []);
-  return certificates.map(signaturePacket => {
+  return Promise.all(certificates.map(async function(signaturePacket) {
     var keyPackets = keys.filter(key => key.getSigningKeyPacket(signaturePacket.issuerKeyId));
     var valid = null;
     if (keyPackets.length > 0) {
-      valid = keyPackets.some(keyPacket => signaturePacket.verify(keyPacket.primaryKey, dataToVerify));
+      valid = await keyPackets.some(
+        keyPacket => signaturePacket.verify(keyPacket.primaryKey, dataToVerify)
+      );
     }
     return { keyid: signaturePacket.issuerKeyId, valid: valid };
-  });
+  }));
 };
 
 /**
@@ -852,29 +852,30 @@ User.prototype.verifyAllSignatures = function(primaryKey, keys) {
  * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
  * @return {module:enums.keyStatus} status of user
  */
-User.prototype.verify = function(primaryKey) {
+User.prototype.verify = async function(primaryKey) {
   if (!this.selfCertifications) {
     return enums.keyStatus.no_self_cert;
   }
-  var status;
-  for (var i = 0; i < this.selfCertifications.length; i++) {
-    if (this.isRevoked(this.selfCertifications[i], primaryKey)) {
-      status = enums.keyStatus.revoked;
-      continue;
-    }
-    if (!(this.selfCertifications[i].verified ||
-        this.selfCertifications[i].verify(primaryKey, {userid: this.userId || this.userAttribute, key: primaryKey}))) {
-      status = enums.keyStatus.invalid;
-      continue;
-    }
-    if (this.selfCertifications[i].isExpired()) {
-      status = enums.keyStatus.expired;
-      continue;
-    }
-    status = enums.keyStatus.valid;
-    break;
-  }
-  return status;
+  var that = this;
+  // TODO replace when Promise.some or Promise.any are implemented
+  var results = [enums.keyStatus.invalid].concat(
+    await Promise.all(this.selfCertifications.map(async function(selfCertification) {
+      if (await that.isRevoked(selfCertification, primaryKey)) {
+        return enums.keyStatus.revoked;
+      }
+      if (!(selfCertification.verified ||
+            await selfCertification.verify(
+              primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey}
+            ))) {
+        return enums.keyStatus.invalid;
+      }
+      if (selfCertification.isExpired()) {
+        return enums.keyStatus.expired;
+      }
+      return enums.keyStatus.valid;
+    })));
+  return results.some(status => status === enums.keyStatus.valid)?
+    enums.keyStatus.valid : results.pop();
 };
 
 /**
@@ -882,12 +883,12 @@ User.prototype.verify = function(primaryKey) {
  * @param  {module:key~User} user source user to merge
  * @param  {module:packet/signature} primaryKey primary key used for validation
  */
-User.prototype.update = function(user, primaryKey) {
+User.prototype.update = async function(user, primaryKey) {
   var that = this;
   // self signatures
-  mergeSignatures(user, this, 'selfCertifications', function(srcSelfSig) {
+  await mergeSignatures(user, this, 'selfCertifications', function(srcSelfSig) {
     return srcSelfSig.verified ||
-           srcSelfSig.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey});
+      srcSelfSig.verify(primaryKey, {userid: that.userId || that.userAttribute, key: primaryKey});
   });
   // other signatures
   mergeSignatures(user, this, 'otherCertifications');
@@ -927,8 +928,8 @@ SubKey.prototype.toPacketlist = function() {
  * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
-SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
-  if(this.verify(primaryKey) !== enums.keyStatus.valid) {
+SubKey.prototype.isValidEncryptionKey = async function(primaryKey) {
+  if(await this.verify(primaryKey) !== enums.keyStatus.valid) {
     return false;
   }
   for(var i = 0; i < this.bindingSignatures.length; i++) {
@@ -944,8 +945,8 @@ SubKey.prototype.isValidEncryptionKey = function(primaryKey) {
  * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey The primary key packet
  * @return {Boolean}
  */
-SubKey.prototype.isValidSigningKey = function(primaryKey) {
-  if(this.verify(primaryKey) !== enums.keyStatus.valid) {
+SubKey.prototype.isValidSigningKey = async function(primaryKey) {
+  if(await this.verify(primaryKey) !== enums.keyStatus.valid) {
     return false;
   }
   for(var i = 0; i < this.bindingSignatures.length; i++) {
@@ -961,11 +962,13 @@ SubKey.prototype.isValidSigningKey = function(primaryKey) {
  * and valid binding signature
  * @return {module:enums.keyStatus} The status of the subkey
  */
-SubKey.prototype.verify = function(primaryKey) {
+SubKey.prototype.verify = async function(primaryKey) {
+  var that = this;
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // check subkey revocation signature
   if (this.revocationSignature && !this.revocationSignature.isExpired() &&
      (this.revocationSignature.verified ||
-      this.revocationSignature.verify(primaryKey, {key:primaryKey, bind: this.subKey}))) {
+      await this.revocationSignature.verify(primaryKey, {key:primaryKey, bind: this.subKey}))) {
     return enums.keyStatus.revoked;
   }
   // check V3 expiration time
@@ -974,38 +977,29 @@ SubKey.prototype.verify = function(primaryKey) {
     return enums.keyStatus.expired;
   }
   // check subkey binding signatures (at least one valid binding sig needed)
-  for(var i = 0; i < this.bindingSignatures.length; i++) {
-    var isLast = (i === this.bindingSignatures.length - 1);
-    var sig = this.bindingSignatures[i];
+  // TODO replace when Promise.some or Promise.any are implemented
+  var results = [enums.keyStatus.invalid].concat(
+    await Promise.all(this.bindingSignatures.map(async function(bindingSignature) {
     // check binding signature is not expired
-    if(sig.isExpired()) {
-      if(isLast) {
-        return enums.keyStatus.expired; // last expired binding signature
-      } else {
-        continue;
-      }
+    if(bindingSignature.isExpired()) {
+      return enums.keyStatus.expired; // last expired binding signature
     }
     // check binding signature can verify
-    if (!(sig.verified || sig.verify(primaryKey, {key: primaryKey, bind: this.subKey}))) {
-      if(isLast) {
-        return enums.keyStatus.invalid; // last invalid binding signature
-      } else {
-        continue;
-      }
+    if (!(bindingSignature.verified ||
+          await bindingSignature.verify(primaryKey, {key: primaryKey, bind: that.subKey}))) {
+      return enums.keyStatus.invalid; // last invalid binding signature
     }
     // check V4 expiration time
-    if (this.subKey.version === 4) {
-      if(sig.keyNeverExpires === false && Date.now() > (this.subKey.created.getTime() + sig.keyExpirationTime*1000)) {
-        if(isLast) {
-          return enums.keyStatus.expired; // last V4 expired binding signature
-        } else {
-          continue;
-        }
+    if (that.subKey.version === 4) {
+      if(bindingSignature.keyNeverExpires === false &&
+         Date.now() > (that.subKey.created.getTime() + bindingSignature.keyExpirationTime*1000)) {
+        return enums.keyStatus.expired; // last V4 expired binding signature
       }
     }
     return enums.keyStatus.valid; // found a binding signature that passed all checks
-  }
-  return enums.keyStatus.invalid; // no binding signatures to check
+    })));
+  return results.some(status => status === enums.keyStatus.valid) ?
+    enums.keyStatus.valid : results.pop();
 };
 
 /**
@@ -1031,8 +1025,8 @@ SubKey.prototype.getExpirationTime = function() {
  * @param  {module:key~SubKey} subKey source subkey to merge
  * @param  {module:packet/signature} primaryKey primary key used for validation
  */
-SubKey.prototype.update = function(subKey, primaryKey) {
-  if (subKey.verify(primaryKey) === enums.keyStatus.invalid) {
+SubKey.prototype.update = async function(subKey, primaryKey) {
+  if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
     return;
   }
   if (this.subKey.getFingerprint() !== subKey.subKey.getFingerprint()) {
@@ -1044,18 +1038,28 @@ SubKey.prototype.update = function(subKey, primaryKey) {
     this.subKey = subKey.subKey;
   }
   // update missing binding signatures
-  if(this.bindingSignatures.length < subKey.bindingSignatures.length) {
-    for(var i = this.bindingSignatures.length; i < subKey.bindingSignatures.length; i++) {
-      var newSig = subKey.bindingSignatures[i];
-      if (newSig.verified || newSig.verify(primaryKey, {key: primaryKey, bind: this.subKey})) {
-        this.bindingSignatures.push(newSig);
+  var that = this;
+  await Promise.all(subKey.bindingSignatures.map(async function(newBindingSignature) {
+    if (newBindingSignature.verified ||
+        await newBindingSignature.verify(primaryKey, {key: primaryKey, bind: that.subKey })) {
+      for (var i = 0; i < that.bindingSignatures.length; i++) {
+        if (that.bindingSignatures[i].issuerKeyId.equals(newBindingSignature.issuerKeyId)) {
+          that.bindingSignatures[i] = newBindingSignature;
+          return;
+        }
       }
+      that.bindingSignatures.push(newBindingSignature);
     }
-  }
+  }));
+  // TODO clarify OpenPGP's behavior given an expired revocation signature
   // revocation signature
-  if (!this.revocationSignature && subKey.revocationSignature && !subKey.revocationSignature.isExpired() &&
-     (subKey.revocationSignature.verified ||
-      subKey.revocationSignature.verify(primaryKey, {key: primaryKey, bind: this.subKey}))) {
+  if (!this.revocationSignature &&
+      subKey.revocationSignature &&
+      !subKey.revocationSignature.isExpired() &&
+      (subKey.revocationSignature.verified ||
+       await subKey.revocationSignature.verify(
+         primaryKey, {key: primaryKey, bind: this.subKey}
+       ))) {
     this.revocationSignature = subKey.revocationSignature;
   }
 };
@@ -1114,7 +1118,7 @@ export function readArmored(armoredText) {
 }
 
 /**
- * Generates a new OpenPGP key. Currently only supports RSA keys.
+ * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * Primary and subkey will be of same type.
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
  *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
@@ -1132,20 +1136,34 @@ export function generate(options) {
   return Promise.resolve().then(() => {
 
     if (options.curve) {
-      options.keyType = options.keyType || enums.publicKey.ecdsa;
+      try {
+        options.curve = enums.write(enums.curve, options.curve);
+      } catch (e) {
+        throw new Error('Not valid curve.')
+      }
+      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+        options.keyType = options.keyType || enums.publicKey.eddsa;
+      } else {
+        options.keyType = options.keyType || enums.publicKey.ecdsa;
+      }
       options.subkeyType = options.subkeyType || enums.publicKey.ecdh;
-    } else {
+    } else if (options.numBits) {
       options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
       options.subkeyType = options.subkeyType || enums.publicKey.rsa_encrypt_sign;
+    } else {
+      throw new Error('Key type not specified.');
     }
 
     if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
-        options.keyType !== enums.publicKey.ecdsa) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+        options.keyType !== enums.publicKey.ecdsa &&
+        options.keyType !== enums.publicKey.eddsa) {
+      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Unsupported key type');
     }
 
     if (options.subkeyType !== enums.publicKey.rsa_encrypt_sign &&
-        options.subkeyType !== enums.publicKey.ecdh) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+        options.subkeyType !== enums.publicKey.ecdh) {
+      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
       throw new Error('Unsupported subkey type');
     }
 
@@ -1163,13 +1181,17 @@ export function generate(options) {
 
   function generateSecretKey() {
     secretKeyPacket = new packet.SecretKey();
+    secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
+    options.curve = options.curve === enums.curve.curve25519 ? enums.curve.ed25519 : options.curve;
     return secretKeyPacket.generate(options.numBits, options.curve);
   }
 
   function generateSecretSubkey() {
     secretSubkeyPacket = new packet.SecretSubkey();
+    secretKeyPacket.packets = null;
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
+    options.curve = options.curve === enums.curve.ed25519 ? enums.curve.curve25519 : options.curve;
     return secretSubkeyPacket.generate(options.numBits, options.curve);
   }
 }
@@ -1219,7 +1241,7 @@ export function reformat(options) {
   });
 }
 
-function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
+async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   // set passphrase protection
   if (options.passphrase) {
     secretKeyPacket.encrypt(options.passphrase);
@@ -1230,7 +1252,7 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
 
   packetlist.push(secretKeyPacket);
 
-  options.userIds.forEach(function(userId, index) {
+  await Promise.all(options.userIds.map(async function(userId, index) {
 
     var userIdPacket = new packet.Userid();
     userIdPacket.read(util.str2Uint8Array(userId));
@@ -1241,7 +1263,7 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -1269,11 +1291,14 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    signaturePacket.sign(secretKeyPacket, dataToSign);
+    await signaturePacket.sign(secretKeyPacket, dataToSign);
 
-    packetlist.push(userIdPacket);
-    packetlist.push(signaturePacket);
-
+    return {userIdPacket, signaturePacket};
+  })).then(list => {
+    list.forEach(({userIdPacket, signaturePacket}) => {
+      packetlist.push(userIdPacket);
+      packetlist.push(signaturePacket);
+    });
   });
 
   var dataToSign = {};
@@ -1282,13 +1307,13 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-  subkeySignaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
+  subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretSubkeyPacket);
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   if (options.keyExpirationTime > 0) {
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+  await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
   packetlist.push(secretSubkeyPacket);
   packetlist.push(subkeySignaturePacket);
@@ -1299,6 +1324,39 @@ function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   }
 
   return new Key(packetlist);
+}
+
+/**
+ * Returns the preferred signature hash algorithm of a key
+ * @param  {object} key
+ * @return {String}
+ */
+export function getPreferredHashAlgorithm(key) {
+  var hash_algo = config.prefer_hash_algorithm,
+      pref_algo = hash_algo;
+  if (Key.prototype.isPrototypeOf(key)) {
+    var primaryUser = key.getPrimaryUser();
+    if (primaryUser && primaryUser.selfCertificate.preferredHashAlgorithms) {
+      pref_algo = primaryUser.selfCertificate.preferredHashAlgorithms[0];
+      hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
+        pref_algo : hash_algo;
+    }
+    key = key.getSigningKeyPacket();
+  }
+  switch(Object.getPrototypeOf(key)) {
+    case packet.SecretKey.prototype:
+    case packet.PublicKey.prototype:
+    case packet.SecretSubkey.prototype:
+    case packet.PublicSubkey.prototype:
+      switch(key.algorithm) {
+        case 'ecdh':
+        case 'ecdsa':
+        case 'eddsa':
+          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgorithm(key.params[0]);
+      }
+  }
+  return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
+    pref_algo : hash_algo;
 }
 
 /**

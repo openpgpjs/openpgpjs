@@ -72,9 +72,9 @@ export default {
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} encrypted session key parameters
    */
-  publicKeyEncrypt: function(algo, publicParams, data, fingerprint) {
-    var types  = this.getEncSessionKeyParamTypes(algo);
-    var result = (function() {
+  publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
+    var types = this.getEncSessionKeyParamTypes(algo);
+    return (async function() {
       var m;
       switch (algo) {
         case 'rsa_encrypt':
@@ -98,15 +98,15 @@ export default {
           var curve = publicParams[0];
           var kdf_params = publicParams[2];
           var R = publicParams[1].toBigInteger();
-          var res = ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
+          var res = await ecdh.encrypt(
+            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
+          );
           return constructParams([res.V, res.C], types);
 
         default:
           return [];
       }
-    })();
-
-    return result;
+    }());
   },
 
   /**
@@ -118,9 +118,9 @@ export default {
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
-  publicKeyDecrypt: function(algo, keyIntegers, dataIntegers, fingerprint) {
+  publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
     var p;
-    var bn = (function() {
+    return new type_mpi(await (async function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt':
@@ -155,10 +155,7 @@ export default {
         default:
           return null;
       }
-    })();
-
-    var result = new type_mpi(bn);
-    return result;
+    }()));
   },
 
   /** Returns the types comprising the private key of an algorithm
@@ -186,6 +183,7 @@ export default {
         return ['mpi'];
       case 'ecdh':
       case 'ecdsa':
+      case 'eddsa':
         // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
         //   - MPI of an integer representing the secret key.
         return ['mpi'];
@@ -220,10 +218,11 @@ export default {
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
         return ['mpi', 'mpi', 'mpi', 'mpi'];
-        //   Algorithm-Specific Fields for ECDSA public keys:
+        //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
       case 'ecdsa':
+      case 'eddsa':
         return ['oid', 'mpi'];
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
@@ -270,7 +269,7 @@ export default {
    * @return {Array} The array of parameters
    */
   generateParams: function(algo, bits, curve) {
-    var types  = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
+    var types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -282,6 +281,7 @@ export default {
         });
 
       case 'ecdsa':
+      case 'eddsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return constructParams([keyObject.oid, keyObject.Q, keyObject.d], types);
         });

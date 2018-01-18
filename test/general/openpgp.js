@@ -5,8 +5,9 @@
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var sinon = require('sinon'),
-  chai = require('chai'),
-  expect = chai.expect;
+    chai = require('chai');
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
 
 var pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',

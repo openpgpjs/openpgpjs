@@ -21,8 +21,12 @@ export default {
    * @param {Uint8Array} data Data on where the signature was computed on.
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
-  verify: function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
+  verify: async function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
     var m;
+    var r;
+    var s;
+    var Q;
+    var curve;
 
     data = util.Uint8Array2str(data);
 
@@ -59,12 +63,21 @@ export default {
       case 19:
         // ECDSA
         const ecdsa = publicKey.elliptic.ecdsa;
-        const curve = publickey_MPIs[0];
-        const r = msg_MPIs[0].toBigInteger();
-        const s = msg_MPIs[1].toBigInteger();
+        curve = publickey_MPIs[0];
+        r = msg_MPIs[0].toBigInteger();
+        s = msg_MPIs[1].toBigInteger();
         m = data;
-        const Q = publickey_MPIs[1].toBigInteger();
+        Q = publickey_MPIs[1].toBigInteger();
         return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
+      case 22:
+        // EdDSA
+        const eddsa = publicKey.elliptic.eddsa;
+        curve = publickey_MPIs[0];
+        r = msg_MPIs[0].toBigInteger();
+        s = msg_MPIs[1].toBigInteger();
+        m = data;
+        Q = publickey_MPIs[1].toBigInteger();
+        return eddsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
       default:
         throw new Error('Invalid signature algorithm.');
     }
@@ -78,12 +91,14 @@ export default {
    * @param {Uint8Array} data Data to be signed
    * @return {Array<module:type/mpi>}
    */
-  sign: function(hash_algo, algo, keyIntegers, data) {
+  sign: async function(hash_algo, algo, keyIntegers, data) {
 
     data = util.Uint8Array2str(data);
 
     var m;
     var d;
+    var curve;
+    var signature;
 
     switch (algo) {
       case 1:
@@ -117,10 +132,18 @@ export default {
       case 19:
         // ECDSA
         var ecdsa = publicKey.elliptic.ecdsa;
-        var curve = keyIntegers[0];
+        curve = keyIntegers[0];
         d = keyIntegers[2].toBigInteger();
         m = data;
-        const signature = ecdsa.sign(curve.oid, hash_algo, m, d);
+        signature = await ecdsa.sign(curve.oid, hash_algo, m, d);
+        return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
+      case 22:
+        // EdDSA
+        var eddsa = publicKey.elliptic.eddsa;
+        curve = keyIntegers[0];
+        d = keyIntegers[2].toBigInteger();
+        m = data;
+        signature = await eddsa.sign(curve.oid, hash_algo, m, d);
         return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
 
       default:
