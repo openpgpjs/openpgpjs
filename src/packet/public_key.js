@@ -94,7 +94,7 @@ PublicKey.prototype.read = function (bytes) {
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
 
     var types = crypto.getPubKeyParamTypes(this.algorithm);
-    this.params = crypto.constructParams(new Array(types.length), types);
+    this.params = crypto.constructParams(types);
 
     var b = bytes.subarray(pos, bytes.length);
     var p = 0;
@@ -214,8 +214,7 @@ PublicKey.prototype.postCloneTypeFix = function() {
   const types = crypto.getPubKeyParamTypes(this.algorithm);
   for (var i = 0; i < types.length; i++) {
     const param = this.params[i];
-    const cloneFn = crypto.getCloneFn(types[i]);
-    this.params[i] = cloneFn(param);
+    this.params[i] = types[i].fromClone(param);
   }
   if (this.keyid) {
     this.keyid = type_keyid.fromClone(this.keyid);
