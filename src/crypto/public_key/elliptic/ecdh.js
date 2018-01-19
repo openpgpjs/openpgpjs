@@ -46,7 +46,7 @@ import type_oid from '../../../type/oid.js';
 // Build Param for ECDH algorithm (RFC 6637)
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
   oid = new type_oid(oid);
-  const kdf_params = new type_kdf_params(hash_algo, cipher_algo);
+  const kdf_params = new type_kdf_params([hash_algo, cipher_algo]);
   return util.concatUint8Array([
     oid.write(),
     new Uint8Array([public_algo]),

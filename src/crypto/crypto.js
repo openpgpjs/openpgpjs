@@ -38,29 +38,15 @@ import type_kdf_params from '../type/kdf_params.js';
 import type_mpi from '../type/mpi.js';
 import type_oid from '../type/oid.js';
 
-function createType(data, type) {
-  switch(type) {
-    case 'mpi':
-      return new type_mpi(data);
-    case 'oid':
-      return new type_oid(data);
-    case 'kdf':
-      if (data) {
-        return new type_kdf_params(data[0], data[1]);
-      }
-      return new type_kdf_params();
-    case 'ecdh_symkey':
-      return new type_ecdh_symkey(data);
-    default:
-      throw new Error('Unknown type.');
-  }
-}
 
-function constructParams(result, types) {
-  for (var i=0; i < types.length; i++) {
-    result[i] = createType(result[i], types[i]);
-  }
-  return result;
+function constructParams(types, data) {
+  return types.map(function(type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    } else {
+      return new type();
+    }
+  });
 }
 
 export default {
@@ -83,7 +69,7 @@ export default {
           var n = publicParams[0].toBigInteger();
           var e = publicParams[1].toBigInteger();
           m = data.toBigInteger();
-          return constructParams([rsa.encrypt(m, e, n)], types);
+          return constructParams(types, [rsa.encrypt(m, e, n)]);
 
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
@@ -91,7 +77,7 @@ export default {
           var g = publicParams[1].toBigInteger();
           var y = publicParams[2].toBigInteger();
           m = data.toBigInteger();
-          return constructParams(elgamal.encrypt(m, g, p, y), types);
+          return constructParams(types, elgamal.encrypt(m, g, p, y));
 
         case 'ecdh':
           var ecdh = publicKey.elliptic.ecdh;
@@ -101,7 +87,7 @@ export default {
           var res = await ecdh.encrypt(
             curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
           );
-          return constructParams([res.V, res.C], types);
+          return constructParams(types, [res.V, res.C]);
 
         default:
           return [];
@@ -172,21 +158,21 @@ export default {
         //   - MPI of RSA secret prime value p.
         //   - MPI of RSA secret prime value q (p < q).
         //   - MPI of u, the multiplicative inverse of p, mod q.
-        return ['mpi', 'mpi', 'mpi', 'mpi'];
+        return [type_mpi, type_mpi, type_mpi, type_mpi];
       case 'elgamal':
         // Algorithm-Specific Fields for Elgamal secret keys:
         //   - MPI of Elgamal secret exponent x.
-        return ['mpi'];
+        return [type_mpi];
       case 'dsa':
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
-        return ['mpi'];
+        return [type_mpi];
       case 'ecdh':
       case 'ecdsa':
       case 'eddsa':
         // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
         //   - MPI of an integer representing the secret key.
-        return ['mpi'];
+        return [type_mpi];
       default:
         throw new Error('Unknown algorithm');
     }
@@ -204,32 +190,32 @@ export default {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
-        return ['mpi', 'mpi'];
+        return [type_mpi, type_mpi];
         //   Algorithm-Specific Fields for Elgamal public keys:
         //     - MPI of Elgamal prime p;
         //     - MPI of Elgamal group generator g;
         //     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
       case 'elgamal':
-        return ['mpi', 'mpi', 'mpi'];
+        return [type_mpi, type_mpi, type_mpi];
         //   Algorithm-Specific Fields for DSA public keys:
         //       - MPI of DSA prime p;
         //       - MPI of DSA group order q (q is a prime divisor of p-1);
         //       - MPI of DSA group generator g;
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
-        return ['mpi', 'mpi', 'mpi', 'mpi'];
+        return [type_mpi, type_mpi, type_mpi, type_mpi];
         //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
       case 'ecdsa':
       case 'eddsa':
-        return ['oid', 'mpi'];
+        return [type_oid, type_mpi];
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
         //       - KDF: variable-length field containing KDF parameters.
       case 'ecdh':
-        return ['oid', 'mpi', 'kdf'];
+        return [type_oid, type_mpi, type_kdf_params];
       default:
         throw new Error('Unknown algorithm.');
     }
@@ -245,19 +231,19 @@ export default {
       //        - MPI of RSA encrypted value m**e mod n.
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
-        return ['mpi'];
+        return [type_mpi];
 
       //    Algorithm-Specific Fields for Elgamal encrypted session keys:
       //        - MPI of Elgamal value g**k mod p
       //        - MPI of Elgamal value m * y**k mod p
       case 'elgamal':
-        return ['mpi', 'mpi'];
+        return [type_mpi, type_mpi];
 
       //    Algorithm-Specific Fields for ECDH encrypted session keys:
       //        - MPI containing the ephemeral key used to establish the shared secret
       //        - ECDH Symmetric Key
       case 'ecdh':
-        return ['mpi', 'ecdh_symkey'];
+        return [type_mpi, type_ecdh_symkey];
 
       default:
         throw new Error('Unknown algorithm.');
@@ -277,38 +263,22 @@ export default {
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          return constructParams([keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u], types);
+          return constructParams(types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]);
         });
 
       case 'ecdsa':
       case 'eddsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return constructParams([keyObject.oid, keyObject.Q, keyObject.d], types);
+          return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
         });
 
       case 'ecdh':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
-          return constructParams([keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d], types);
+          return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
         });
 
       default:
         throw new Error('Unsupported algorithm for key generation.');
-    }
-  },
-
-
-  getCloneFn: function(type) {
-    switch(type) {
-      case 'mpi':
-        return type_mpi.fromClone;
-      case 'oid':
-        return type_oid.fromClone;
-      case 'kdf':
-        return type_kdf_params.fromClone;
-      case 'ecdh_symkey':
-        return type_ecdh_symkey.fromClone;
-      default:
-        throw new Error('Unknown type.');
     }
   },
 
