@@ -164,7 +164,8 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
+  var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
   for (var i = 0; i < this.encrypted.length; i++) {
-    this.encrypted[i] = type_mpi.fromClone(this.encrypted[i]);
+    this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
   }
 };
