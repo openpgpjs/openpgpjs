@@ -129,7 +129,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * packets (tag 1)
  *
  * @param {module:packet/secret_key} key
- *            Private key with secMPIs unlocked
+ *            Private key with secret params unlocked
  * @return {String} The unencrypted session key
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {

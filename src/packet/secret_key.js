@@ -25,7 +25,7 @@
  * @requires crypto
  * @requires enums
  * @requires packet/public_key
- * @requires type/mpi
+ * @requires type/keyid
  * @requires type/s2k
  * @requires util
  * @module packet/secret_key
@@ -95,7 +95,7 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   for (var i = 0; i < types.length && p < cleartext.length; i++) {
     p += params[i].read(cleartext.subarray(p, cleartext.length));
     if (p > cleartext.length) {
-      throw new Error('Error reading MPI @:' + p);
+      throw new Error('Error reading param @:' + p);
     }
   }
 
@@ -205,13 +205,13 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
 }
 
 /**
- * Decrypts the private key MPIs which are needed to use the key.
+ * Decrypts the private key params which are needed to use the key.
  * @link module:packet/secret_key.isDecrypted should be
  * false otherwise a call to this function is not needed
  *
  * @param {String} str_passphrase The passphrase for this private key
  * as string
- * @return {Boolean} True if the passphrase was correct or MPI already
+ * @return {Boolean} True if the passphrase was correct or param already
  *                   decrypted; false if not
  */
 SecretKey.prototype.decrypt = function (passphrase) {
@@ -281,11 +281,11 @@ SecretKey.prototype.generate = function (bits, curve) {
 };
 
 /**
- * Clear private MPIs, return to initial state
+ * Clear private params, return to initial state
  */
 SecretKey.prototype.clearPrivateParams = function () {
   if (!this.encrypted) {
-    throw new Error('If secret key is not encrypted, clearing private MPIs is irreversible.');
+    throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
   }
   this.params = this.params.slice(0, crypto.getPubKeyParamTypes(this.algorithm).length);
   this.isDecrypted = false;
