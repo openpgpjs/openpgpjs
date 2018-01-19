@@ -33,9 +33,14 @@ module.exports = KDFParams;
  * @param  {enums.hash}       hash    Hash algorithm
  * @param  {enums.symmetric}  cipher  Symmetric algorithm
  */
-function KDFParams(hash, cipher) {
-  this.hash = hash || enums.hash.sha1;
-  this.cipher = cipher || enums.symmetric.aes128;
+function KDFParams(data) {
+  if (data && data.length === 2) {
+    this.hash = data[0];
+    this.cipher = data[1];
+  } else {
+    this.hash = enums.hash.sha1;
+    this.cipher = enums.symmetric.aes128;
+  }
 }
 
 /**

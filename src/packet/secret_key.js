@@ -89,7 +89,7 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   }
 
   var types = crypto.getPrivKeyParamTypes(algorithm);
-  var params = crypto.constructParams(new Array(types.length), types);
+  var params = crypto.constructParams(types);
   var p = 0;
 
   for (var i = 0; i < types.length && p < cleartext.length; i++) {
@@ -298,8 +298,7 @@ SecretKey.prototype.clearPrivateParams = function () {
   const types = crypto.getPubKeyParamTypes(this.algorithm).concat(crypto.getPrivKeyParamTypes(this.algorithm));
   for (var i = 0; i < this.params.length; i++) {
     const param = this.params[i];
-    const cloneFn = crypto.getCloneFn(types[i]);
-    this.params[i] = cloneFn(param);
+    this.params[i] = types[i].fromClone(param);
   }
   if (this.keyid) {
     this.keyid = type_keyid.fromClone(this.keyid);

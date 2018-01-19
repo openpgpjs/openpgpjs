@@ -79,7 +79,7 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   var i = 10;
 
   var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
-  this.encrypted = crypto.constructParams(new Array(types.length), types);
+  this.encrypted = crypto.constructParams(types);
 
   for (var j = 0; j < types.length; j++) {
     i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
