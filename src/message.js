@@ -325,6 +325,7 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
   var signatureType = literalFormat === enums.literal.binary ?
                       enums.signature.binary : enums.signature.text;
   var i, signingKeyPacket, existingSigPacketlist, onePassSig;
+  var vSigningKeyPackets = [];
 
   if (signature) {
     existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
@@ -361,12 +362,14 @@ Message.prototype.sign = function(privateKeys=[], signature=null) {
       onePassSig.flags = 1;
     }
     packetlist.push(onePassSig);
+    vSigningKeyPackets.push(signingKeyPacket);
   }
 
   packetlist.push(literalDataPacket);
 
   for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new packet.Signature();
+    signingKeyPacket = vSigningKeyPackets[i];
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
