@@ -258,6 +258,83 @@ describe("Signature", function() {
       '-----END PGP PUBLIC KEY BLOCK-----'
     ].join('\n');
 
+  var pub_expired =
+    [ '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      'Comment: GPGTools - https://gpgtools.org',
+      '',
+      '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',
+      '2g==',
+      '=X7/F',
+      '-----END PGP PUBLIC KEY BLOCK-----'
+      ].join('\n');
+
+    var msg_sig_expired =
+    [ '-----BEGIN PGP MESSAGE-----',
+      'Comment: GPGTools - https://gpgtools.org',
+      '',
+      'owEBWwKk/ZANAwAKAeyAexA3gWZ0AawUYgloZWxsby50eHRaX2WpaGVsbG+JAjME',
+      'AAEKAB0WIQTxcIn7ZRrhwd51IZbsgHsQN4FmdAUCWl9lqQAKCRDsgHsQN4FmdCln',
+      'D/44x1bcrOXg+DbRStSrC75wFa+cvPEmaTZyqN6d7qlQCMxOcPlq6lbZ74QWfEq7',
+      'i1ZYHp4AU8jALw0QqBQQE5FvABleQKpVfY22s83Bqy+P0DB9ntpD+t+oZrxGCLmL',
+      'MbZJNFnGro48gHt+/OQKLuftiVwE2opHfgogVKNL74FmYA0hMItdzpn4OPNFkP8t',
+      'Iq/m0hkXlTAKqBPITVLv1FN16v+Sm1iC317eP/HOTYqVZdJN3svVF8ZBfg29a8p6',
+      '6nl67fZhXgrt0OB6KSNIZEwMTWjFAqi365mtTssqAA0un94+cQ/WvAC5QcMM8g5S',
+      'i3G7vny9AsXor+GDU1z7UDWs3wBV4mVRdj7bBIS6PK+6oe012aNpRObcI2bU2BT/',
+      'H/7uHZWfwEmpfvH9RVZgoeETA3vSx7MDrNyDt3gwv2hxOHEd7nnVQ3EKG33173o1',
+      '/5/oEmn2USujKGhHJ2Zo3aWNRuUWZlvBaYw+PwB2R0UiuJbi0KofNYPssNdpw4sg',
+      'Qs7Nb2/Ilo1zn5bDh+WDrUrn6zHKAfBytBPpwPFWPZ8W10HUlC5vMZSKH5/UZhj5',
+      'kLlUC1zKjFPpRhO27ImTJuImil4lR2/CFjB1duG3JGJQaYIq8RFJOjvTVY29wl0i',
+      'pFy6y1Ofv2lLHB9K7N7dvvee2nvpUMkLEL52oFQ6Jc7sdg==',
+      '=Q4tk',
+      '-----END PGP MESSAGE-----'
+      ].join('\n');
+
   it('Testing signature checking on CAST5-enciphered message', function() {
     var priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0];
     var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
@@ -355,7 +432,7 @@ describe("Signature", function() {
 
     var sMsg = openpgp.message.readArmored(signedArmor);
     var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
-    sMsg.verify([pub_key]).then(verified => {
+    return sMsg.verify([pub_key]).then(verified => {
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(verified[0].valid).to.be.true;
@@ -467,7 +544,7 @@ describe("Signature", function() {
 
     expect(sMsg.getText()).to.equal(plaintext);
 
-    sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
+    return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
       expect(verifiedSig[0].valid).to.be.true;
@@ -527,7 +604,7 @@ describe("Signature", function() {
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -541,14 +618,13 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -562,14 +638,13 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
 
@@ -582,6 +657,31 @@ describe("Signature", function() {
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to false', function() {
+    openpgp.config.verify_expired_keys = false;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.not.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
+    });
+
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to true', function() {
+    openpgp.config.verify_expired_keys = true;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
     });
 
   });

@@ -279,6 +279,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
   return Promise.resolve().then(async () => {
     if (publicKeys) {
       results = await Promise.all(publicKeys.map(async function(key) {
+        await key.verifyPrimaryUser();
         var encryptionKeyPacket = key.getEncryptionKeyPacket();
         if (!encryptionKeyPacket) {
           throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
@@ -347,14 +348,15 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     }
   }
 
-  privateKeys.forEach(function (privateKey, i) {
+  await Promise.all(privateKeys.map(async function (privateKey, i) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
+    await privateKey.verifyPrimaryUser();
     var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKeys[i].primaryKey.getKeyId().toHex());
+                      privateKey.primaryKey.getKeyId().toHex());
     }
     onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
@@ -365,7 +367,9 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
-    packetlist.push(onePassSig);
+    return onePassSig;
+  })).then(onePassSignatureList => {
+    onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
   });
 
   packetlist.push(literalDataPacket);
@@ -413,6 +417,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
 
   await Promise.all(privateKeys.map(async function(privateKey) {
     var signaturePacket = new packet.Signature();
+    await privateKey.verifyPrimaryUser();
     var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
@@ -473,15 +478,16 @@ Message.prototype.verifyDetached = function(signature, keys) {
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-function createVerificationObjects(signatureList, literalDataList, keys) {
+async function createVerificationObjects(signatureList, literalDataList, keys) {
   return Promise.all(signatureList.map(async function(signature) {
     var keyPacket = null;
-    for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signature.issuerKeyId);
-      if (keyPacket) {
-        break;
+    await Promise.all(keys.map(async function(key) {
+      await key.verifyPrimaryUser();
+      var result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
+      if (result) {
+        keyPacket = result;
       }
-    }
+    }));
 
     var verifiedSig = {};
     if (keyPacket) {
