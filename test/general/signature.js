@@ -432,7 +432,7 @@ describe("Signature", function() {
 
     var sMsg = openpgp.message.readArmored(signedArmor);
     var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
-    sMsg.verify([pub_key]).then(verified => {
+    return sMsg.verify([pub_key]).then(verified => {
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(verified[0].valid).to.be.true;
@@ -544,7 +544,7 @@ describe("Signature", function() {
 
     expect(sMsg.getText()).to.equal(plaintext);
 
-    sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
+    return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
       expect(verifiedSig[0].valid).to.be.true;
@@ -604,7 +604,7 @@ describe("Signature", function() {
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -618,14 +618,13 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -639,14 +638,13 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
 
@@ -659,6 +657,31 @@ describe("Signature", function() {
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to false', function() {
+    openpgp.config.verify_expired_keys = false;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.not.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
+    });
+
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to true', function() {
+    openpgp.config.verify_expired_keys = true;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
     });
 
   });
