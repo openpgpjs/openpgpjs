@@ -86,10 +86,15 @@ CleartextMessage.prototype.signDetached = async function(privateKeys) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
+    await privateKey.verifyPrimaryUser();
+    var signingKeyPacket = privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid key packet for signing in key ' +
+                      privateKey.primaryKey.getKeyId().toHex());
+    }
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
     signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    var signingKeyPacket = privateKey.getSigningKeyPacket();
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
@@ -124,12 +129,13 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   literalDataPacket.setText(this.text);
   return Promise.all(signatureList.map(async function(signature) {
     var keyPacket = null;
-    for (var j = 0; j < keys.length; j++) {
-      keyPacket = keys[j].getSigningKeyPacket(signature.issuerKeyId);
-      if (keyPacket) {
-        break;
+    await Promise.all(keys.map(async function(key) {
+      await key.verifyPrimaryUser();
+      var result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
+      if (result) {
+        keyPacket = result;
       }
-    }
+    }));
 
     var verifiedSig = {};
     if (keyPacket) {
