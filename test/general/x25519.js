@@ -232,9 +232,9 @@ describe('X25519 Cryptography', function () {
       expect(user.selfCertifications[0].verify(
         primaryKey, {userid: user.userId, key: primaryKey}
       )).to.eventually.be.true;
-      expect(user.isValidSelfCertificate(
-        primaryKey, user.selfCertifications[0]
-      )).to.eventually.be.true;
+      expect(user.verifyCertificate(
+        primaryKey, user.selfCertifications[0], [hi.toPublic()]
+      )).to.eventually.equal(openpgp.enums.keyStatus.valid);
 
       var options = {
         userIds: {name: "Bye", email: "bye@good.bye"},
@@ -252,9 +252,9 @@ describe('X25519 Cryptography', function () {
         expect(user.selfCertifications[0].verify(
           bye.primaryKey, {userid: user.userId, key: bye.primaryKey}
         )).to.eventually.be.true;
-        expect(user.isValidSelfCertificate(
-          bye.primaryKey, user.selfCertifications[0]
-        )).to.eventually.be.true;
+        expect(user.verifyCertificate(
+          bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
+        )).to.eventually.equal(openpgp.enums.keyStatus.valid);
 
         return Promise.all([
           // Hi trusts Bye!

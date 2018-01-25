@@ -703,7 +703,7 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
       }
       // skip if certificates is not valid
       if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify)) ||
-          (selfCertification.revoked || await user.isRevoked(selfCertification, primaryKey)) ||
+          (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) ||
           selfCertification.isExpired()) {
         return;
       }
@@ -771,44 +771,27 @@ User.prototype.toPacketlist = function() {
 };
 
 /**
- * Checks if a self signature of the user is revoked
- * @param  {module:packet/signature}                    certificate
+ * Checks if a self certificate of the user is revoked
  * @param  {module:packet/secret_key|module:packet/public_key} primaryKey  The primary key packet
- * @return {Boolean}                                         True if the certificate is revoked
+ * @param  {module:packet/signature} certificate The certificate to verify
+ * @param  {module:packet/public_subkey|module:packet/public_key|
+ *          module:packet/secret_subkey|module:packet/secret_key} key, optional The key to verify the signature
+ * @return {Boolean} True if the certificate is revoked
  */
-User.prototype.isRevoked = async function(certificate, primaryKey) {
+User.prototype.isRevoked = async function(primaryKey, certificate, key) {
   if (this.revocationCertifications) {
     var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
     // TODO clarify OpenPGP's behavior given an expired revocation signature
     var results = await Promise.all(this.revocationCertifications.map(async function(revCert) {
       return revCert.issuerKeyId.equals(certificate.issuerKeyId) &&
-            !revCert.isExpired() && (revCert.verified || revCert.verify(primaryKey, dataToVerify));
+            !revCert.isExpired() &&
+            (revCert.verified || revCert.verify(key ? key : primaryKey, dataToVerify));
     }));
-    certificate.revoked = true;
-    return results.some(result => result === true);
+    certificate.revoked = results.some(result => result === true);
+    return certificate.revoked;
   } else {
     return false;
   }
-};
-
-/**
- * Returns true if the self certificate is valid
- * @param  {module:packet/secret_key|module:packet/public_key}  primaryKey      The primary key packet
- * @param  {module:packet/signature}  selfCertificate A self certificate of this user
- * @param  {Boolean} allowExpired allows signature verification with expired keys
- * @return {Boolean}
- */
-User.prototype.isValidSelfCertificate = async function(primaryKey, selfCertificate, allowExpired=false) {
-  if (await this.isRevoked(selfCertificate, primaryKey)) {
-    return false;
-  }
-  if ((!selfCertificate.isExpired() || allowExpired) &&
-      (selfCertificate.verified || await selfCertificate.verify(
-        primaryKey,{userid: this.userId || this.userAttribute, key: primaryKey}
-      ))) {
-    return true;
-  }
-  return false;
 };
 
 /**
@@ -851,28 +834,48 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
 };
 
 /**
+ * Verifies the user certificate
+ * @param  {module:packet/secret_key|module:packet/public_key} primaryKey  The primary key packet
+ * @param  {module:packet/signature}  certificate A certificate of this user
+ * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @param  {Boolean} allowExpired allows signature verification with expired keys
+ * @return {module:enums.keyStatus} status of the certificate
+ */
+User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, allowExpired=false) {
+  var that = this;
+  var keyid = certificate.issuerKeyId;
+  var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  var results = await Promise.all(keys.map(async function(key) {
+    if (!key.getKeyIds().some(id => id.equals(keyid))) { return; }
+    await key.verifyPrimaryUser();
+    var keyPacket = key.getSigningKeyPacket(keyid);
+    if (certificate.revoked || await that.isRevoked(primaryKey, certificate, keyPacket)) {
+      return enums.keyStatus.revoked;
+    }
+    if (!(certificate.verified || await certificate.verify(keyPacket, dataToVerify))) {
+      return enums.keyStatus.invalid;
+    }
+    if (certificate.isExpired()) {
+      return enums.keyStatus.expired;
+    }
+    return enums.keyStatus.valid;
+  }));
+  return results.find(result => result !== undefined);
+};
+
+/**
  * Verifies all user certificates
  * @param  {module:packet/secret_key|module:packet/public_key} primaryKey The primary key packet
  * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
-  var dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  var that = this;
   var certifications = this.selfCertifications.concat(this.otherCertifications || []);
-  await Promise.all(keys.map(async function(key) {
-    return key.verifyPrimaryUser();
-  }));
   return Promise.all(certifications.map(async function(certification) {
-    var keyid = certification.issuerKeyId;
-    var valid = null;
-    await Promise.all(keys.map(async function(key) {
-      if (valid) { return; }
-      var keyPacket = key.getSigningKeyPacket(keyid);
-      if (keyPacket) {
-        valid = valid || certification.verified || await certification.verify(keyPacket, dataToVerify);
-      }
-    }));
-    return { keyid: keyid, valid: valid };
+    var status = await that.verifyCertificate(primaryKey, certification, keys);
+    return { keyid: certification.issuerKeyId,
+             valid: status === undefined ? null : status === enums.keyStatus.valid };
   }));
 };
 
@@ -891,7 +894,7 @@ User.prototype.verify = async function(primaryKey) {
   // TODO replace when Promise.some or Promise.any are implemented
   var results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.selfCertifications.map(async function(selfCertification, i) {
-      if (selfCertification.revoked || await that.isRevoked(selfCertification, primaryKey)) {
+      if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification)) {
         return enums.keyStatus.revoked;
       }
       if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify))) {
