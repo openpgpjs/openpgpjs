@@ -18,6 +18,7 @@
 // Implementation of ECDSA following RFC6637 for Openpgpjs
 
 /**
+ * @requires crypto/hash
  * @requires crypto/public_key/jsbn
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/ecdsa
