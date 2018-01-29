@@ -92,7 +92,8 @@ export function destroyWorker() {
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
+ * @param  {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
+ * @param  {String} curve            (optional) elliptic curve for ECC keys: curve25519, p256, p384, p521, or secp256k1
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @return {Promise<Object>}         The generated key object in the form:

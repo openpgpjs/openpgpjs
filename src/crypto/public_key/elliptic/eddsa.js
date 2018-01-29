@@ -1,4 +1,11 @@
-// Implementation of EdDSA for OpenPGP
+// Implementation of EdDSA following RFC4880bis-02 for OpenPGP
+
+/**
+ * @requires crypto/hash
+ * @requires crypto/public_key/jsbn
+ * @requires crypto/public_key/elliptic/curves
+ * @module crypto/public_key/elliptic/eddsa
+ */
 
 'use strict';
 

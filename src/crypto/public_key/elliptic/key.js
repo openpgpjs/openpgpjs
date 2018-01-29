@@ -18,8 +18,15 @@
 // Wrapper for a KeyPair of an Elliptic Curve
 
 /**
+ * @requires bn.js
+ * @requires asn1.js
+ * @requires jwk-to-pem
+ * @requires crypto/public_key/elliptic/curves
  * @requires crypto/hash
  * @requires util
+ * @requires enums
+ * @requires config
+ * @requires encoding/base64
  * @module crypto/public_key/elliptic/key
  */
 
