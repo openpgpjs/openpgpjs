@@ -1594,7 +1594,6 @@ export default {
   sha384: function(str) {
     var shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-384", "TYPED");
-
   },
   /** SHA512 hash */
   sha512: function(str) {

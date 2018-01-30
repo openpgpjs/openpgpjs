@@ -270,6 +270,7 @@ describe('X25519 Cryptography', function () {
             var msg = openpgp.cleartext.readArmored(signed.data);
             // Verifying signed message
             return Promise.all([
+              // FIXME this test sporadically fails
               openpgp.verify(
                 { message: msg, publicKeys: hi.toPublic() }
               ).then(output => expect(output.signatures[0].valid).to.be.true),
