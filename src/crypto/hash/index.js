@@ -55,6 +55,7 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
     sha256: asmCrypto.SHA256.bytes,
     /** @see module:crypto/hash/sha.sha384 */
     sha384: sha.sha384,
+    // TODO: compare sha512 in asmcrypto.js and jsSHA
     /** @see module:crypto/hash/sha.sha512 */
     sha512: sha.sha512,
     /** @see module:crypto/hash/ripe-md */
