@@ -286,16 +286,16 @@ describe('Elliptic Curve Cryptography', function () {
       expect(verify_signature('p384', 8, p384_r, p384_s, p384_message, key_data.p384.pub))
         .to.eventually.be.true.notify(done);
     });
-    it('Sign and verify message', function (done) {
+    it('Sign and verify message', function () {
       var curve = elliptic_curves.get('p521');
-      curve.genKeyPair().then(keyPair => {
+      return curve.genKeyPair().then(keyPair => {
         var keyPublic = bin2bi(keyPair.getPublic());
         var keyPrivate = bin2bi(keyPair.getPrivate());
         var oid = curve.oid;
         var message = p384_message;
-        elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(signature => {
+        return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(signature => {
           expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic))
-            .to.eventually.be.true.notify(done);
+            .to.eventually.be.true;
         });
       });
     });

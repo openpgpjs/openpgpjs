@@ -17,20 +17,22 @@
 
 /**
  * @requires config
+ * @requires crypto
  * @requires encoding/armor
  * @requires enums
+ * @requires util
  * @requires packet
  * @module key
  */
 
 'use strict';
 
-import packet from './packet';
-import enums from './enums.js';
-import armor from './encoding/armor.js';
 import config from './config';
-import util from './util';
 import crypto from './crypto';
+import armor from './encoding/armor.js';
+import enums from './enums.js';
+import util from './util';
+import packet from './packet';
 
 /**
  * @class
@@ -824,7 +826,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(privateKey);
+    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
     signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
     signaturePacket.sign(signingKeyPacket, dataToSign);
     return signaturePacket;
@@ -1296,7 +1298,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     var signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
-    signaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretKeyPacket);
+    signaturePacket.hashAlgorithm = getPreferredHashAlgo(secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -1340,7 +1342,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   var subkeySignaturePacket = new packet.Signature();
   subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
   subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-  subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgorithm(secretSubkeyPacket);
+  subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgo(secretSubkeyPacket);
   subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   if (options.keyExpirationTime > 0) {
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
@@ -1364,7 +1366,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
  * @param  {object} key
  * @return {String}
  */
-export function getPreferredHashAlgorithm(key) {
+export function getPreferredHashAlgo(key) {
   var hash_algo = config.prefer_hash_algorithm,
       pref_algo = hash_algo;
   if (Key.prototype.isPrototypeOf(key)) {
@@ -1385,7 +1387,7 @@ export function getPreferredHashAlgorithm(key) {
         case 'ecdh':
         case 'ecdsa':
         case 'eddsa':
-          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgorithm(key.params[0]);
+          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(key.params[0]);
       }
   }
   return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?

@@ -16,11 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires ed6-promise
  * @requires message
  * @requires cleartext
  * @requires key
  * @requires config
  * @requires util
+ * @requires worker/async_proxy
  * @module openpgp
  */
 
@@ -35,8 +37,8 @@
 import es6Promise from 'es6-promise';
 
 import * as messageLib from './message.js';
-import * as cleartext from './cleartext.js';
-import * as key from './key.js';
+import { CleartextMessage } from './cleartext.js';
+import { generate, reformat } from './key.js';
 import config from './config/config.js';
 import util from './util';
 import AsyncProxy from './worker/async_proxy.js';
@@ -109,11 +111,11 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return key.generate(options).then(newKey => ({
+  return generate(options).then(key => ({
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    key: key,
+    privateKeyArmored: key.armor(),
+    publicKeyArmored: key.toPublic().armor()
 
   })).catch(onError.bind(null, 'Error generating keypair'));
 }
@@ -137,11 +139,11 @@ export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=fa
     return asyncProxy.delegate('reformatKey', options);
   }
 
-  return key.reformat(options).then(newKey => ({
+  return reformat(options).then(key => ({
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    key: key,
+    privateKeyArmored: key.armor(),
+    publicKeyArmored: key.toPublic().armor()
 
   })).catch(onError.bind(null, 'Error reformatting keypair'));
 }
@@ -157,16 +159,15 @@ export function decryptKey({ privateKey, passphrase }) {
     return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
   }
 
-  return execute(() => {
+  return Promise.resolve().then(async function() {
 
-    if (!privateKey.decrypt(passphrase)) {
-      throw new Error('Invalid passphrase');
-    }
+    await privateKey.decrypt(passphrase);
+
     return {
       key: privateKey
     };
 
-  }, 'Error decrypting private key');
+  }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
 
@@ -308,7 +309,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
     var message;
 
     if (util.isString(data)) {
-      message = new cleartext.CleartextMessage(data);
+      message = new CleartextMessage(data);
     } else {
       message = messageLib.fromBinary(data);
     }
@@ -353,7 +354,7 @@ export function verify({ message, publicKeys, signature=null }) {
   return Promise.resolve().then(async function() {
 
     var result = {};
-    if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
+    if (CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();
     } else {
       result.data = message.getLiteralData();
@@ -395,9 +396,11 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
     return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
   }
 
-  return execute(async () => ({
-    message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
-  }), 'Error encrypting session key');
+  return Promise.resolve().then(async function() {
+
+    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords) };
+
+  }).catch(onError.bind(null, 'Error encrypting session key'));
 }
 
 /**
@@ -418,7 +421,11 @@ export function decryptSessionKey({ message, privateKey, password }) {
     return asyncProxy.delegate('decryptSessionKey', { message, privateKey, password });
   }
 
-  return execute(() => message.decryptSessionKey(privateKey, password), 'Error decrypting session key');
+  return Promise.resolve().then(async function() {
+
+    return message.decryptSessionKey(privateKey, password);
+
+  }).catch(onError.bind(null, 'Error decrypting session key'));
 }
 
 
@@ -453,7 +460,7 @@ function checkMessage(message) {
   }
 }
 function checkCleartextOrMessage(message) {
-  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
@@ -538,20 +545,6 @@ function parseMessage(message, format) {
   } else {
     throw new Error('Invalid format');
   }
-}
-
-/**
- * Command pattern that wraps synchronous code into a promise.
- * @param  {function} cmd     The synchronous function with a return value
- *                              to be wrapped in a promise
- * @param  {String} message   A human readable error Message
- * @return {Promise}          The promise wrapped around cmd
- */
-function execute(cmd, message) {
-  // wrap the sync cmd in a promise
-  const promise = new Promise(resolve => resolve(cmd()));
-  // handler error globally
-  return promise.catch(onError.bind(null, message));
 }
 
 /**
