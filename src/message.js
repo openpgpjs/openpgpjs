@@ -20,20 +20,24 @@
  * @requires crypto
  * @requires encoding/armor
  * @requires enums
+ * @requires util
  * @requires packet
+ * @requires signature
+ * @requires key
  * @module message
  */
 
 'use strict';
 
-import util from './util.js';
-import packet from './packet';
-import enums from './enums.js';
-import armor from './encoding/armor.js';
 import config from './config';
 import crypto from './crypto';
-import * as sigModule from './signature.js';
-import * as keyModule from './key.js';
+import armor from './encoding/armor.js';
+import enums from './enums.js';
+import util from './util.js';
+import packet from './packet';
+import { Signature } from './signature.js';
+import { getPreferredHashAlgo, getPreferredSymAlgo } from './key.js';
+
 
 /**
  * @class
@@ -228,7 +232,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
       symAlgo = sessionKey.algorithm;
       sessionKey = sessionKey.data;
     } else if (keys && keys.length) {
-      symAlgo = enums.read(enums.symmetric, keyModule.getPreferredSymAlgo(keys));
+      symAlgo = enums.read(enums.symmetric, getPreferredSymAlgo(keys));
     } else if (passwords && passwords.length) {
       symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
     } else {
@@ -361,7 +365,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     //TODO get preferred hash algo from key signature
-    onePassSig.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
+    onePassSig.hashAlgorithm = getPreferredHashAlgo(privateKey);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -381,7 +385,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
       throw new Error('Private key is not decrypted.');
     }
     signaturePacket.signatureType = signatureType;
-    signaturePacket.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
+    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     return signaturePacket;
@@ -424,7 +428,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
     }
     signaturePacket.signatureType = signatureType;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = keyModule.getPreferredHashAlgorithm(privateKey);
+    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     return signaturePacket;
   })).then(signatureList => {
@@ -436,7 +440,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
     packetlist.concat(existingSigPacketlist);
   }
 
-  return new sigModule.Signature(packetlist);
+  return new Signature(packetlist);
 };
 
 
@@ -483,25 +487,22 @@ async function createVerificationObjects(signatureList, literalDataList, keys) {
     var keyPacket = null;
     await Promise.all(keys.map(async function(key) {
       await key.verifyPrimaryUser();
+      // Look for the unique key packet that matches issuerKeyId of signature
       var result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
       if (result) {
         keyPacket = result;
       }
     }));
 
-    var verifiedSig = {};
-    if (keyPacket) {
-      //found a key packet that matches keyId of signature
-      verifiedSig.keyid = signature.issuerKeyId;
-      verifiedSig.valid = await signature.verify(keyPacket, literalDataList[0]);
-    } else {
-      verifiedSig.keyid = signature.issuerKeyId;
-      verifiedSig.valid = null;
-    }
+    // Look for the unique key packet that matches issuerKeyId of signature
+    var verifiedSig = {
+      keyid: signature.issuerKeyId,
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
+    };
 
     var packetlist = new packet.List();
     packetlist.push(signature);
-    verifiedSig.signature = new sigModule.Signature(packetlist);
+    verifiedSig.signature = new Signature(packetlist);
 
     return verifiedSig;
   }));

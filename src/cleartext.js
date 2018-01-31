@@ -20,16 +20,17 @@
  * @requires encoding/armor
  * @requires enums
  * @requires packet
+ * @requires signature
  * @module cleartext
  */
 
 'use strict';
 
 import config from './config';
-import packet from './packet';
-import enums from './enums.js';
 import armor from './encoding/armor.js';
-import * as sigModule from './signature.js';
+import enums from './enums.js';
+import packet from './packet';
+import { Signature } from './signature.js';
 
 /**
  * @class
@@ -45,10 +46,10 @@ export function CleartextMessage(text, signature) {
   }
   // normalize EOL to canonical form <CR><LF>
   this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g,"\r\n");
-  if (signature && !(signature instanceof sigModule.Signature)) {
+  if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
-  this.signature = signature || new sigModule.Signature(new packet.List());
+  this.signature = signature || new Signature(new packet.List());
 }
 
 /**
@@ -105,7 +106,7 @@ CleartextMessage.prototype.signDetached = async function(privateKeys) {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
 
-  return new sigModule.Signature(packetlist);
+  return new Signature(packetlist);
 };
 
 /**
@@ -131,24 +132,21 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
     var keyPacket = null;
     await Promise.all(keys.map(async function(key) {
       await key.verifyPrimaryUser();
+      // Look for the unique key packet that matches issuerKeyId of signature
       var result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
       if (result) {
         keyPacket = result;
       }
     }));
 
-    var verifiedSig = {};
-    if (keyPacket) {
-      verifiedSig.keyid = signature.issuerKeyId;
-      verifiedSig.valid = await signature.verify(keyPacket, literalDataPacket);
-    } else {
-      verifiedSig.keyid = signature.issuerKeyId;
-      verifiedSig.valid = null;
-    }
+    var verifiedSig = {
+      keyid: signature.issuerKeyId,
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
+    };
 
     var packetlist = new packet.List();
     packetlist.push(signature);
-    verifiedSig.signature = new sigModule.Signature(packetlist);
+    verifiedSig.signature = new Signature(packetlist);
 
     return verifiedSig;
   }));
@@ -191,7 +189,7 @@ export function readArmored(armoredText) {
   var packetlist = new packet.List();
   packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
-  var signature = new sigModule.Signature(packetlist);
+  var signature = new Signature(packetlist);
   var newMessage = new CleartextMessage(input.text, signature);
   return newMessage;
 }

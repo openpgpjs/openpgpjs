@@ -193,7 +193,7 @@ async function generate(curve) {
   };
 }
 
-function getPreferredHashAlgorithm(oid) {
+function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
@@ -202,7 +202,7 @@ module.exports = {
   curves: curves,
   webCurves: webCurves,
   nodeCurves: nodeCurves,
-  getPreferredHashAlgorithm: getPreferredHashAlgorithm,
+  getPreferredHashAlgo: getPreferredHashAlgo,
   generate: generate,
   get: get
 };

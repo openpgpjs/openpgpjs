@@ -8,7 +8,7 @@
 import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';
-import * as gcm from './gcm';
+import gcm from './gcm';
 import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
