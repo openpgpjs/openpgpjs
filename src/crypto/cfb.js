@@ -2,7 +2,7 @@
 
 // Modified by Recurity Labs GmbH
 
-// modified version of http://www.hanewin.net/encrypt/PGdecode.js:
+// modified version of https://www.hanewin.net/encrypt/PGdecode.js:
 
 /* OpenPGP encryption using RSA/AES
  * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de

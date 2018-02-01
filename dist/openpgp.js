@@ -4855,7 +4855,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
- * See {@link http://tools.ietf.org/html/rfc4880#section-7}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-7}
  * @param  {String}     text       The cleartext of the signed message
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
@@ -5230,7 +5230,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // Modified by Recurity Labs GmbH
 
-// modified version of http://www.hanewin.net/encrypt/PGdecode.js:
+// modified version of https://www.hanewin.net/encrypt/PGdecode.js:
 
 /* OpenPGP encryption using RSA/AES
  * Copyright 2005-2006 Herbert Hanewinkel, www.haneWIN.de
@@ -7193,7 +7193,7 @@ exports.default = {
   /**
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
@@ -7234,7 +7234,7 @@ exports.default = {
   /**
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * of the public key part of the private key
    * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
@@ -7369,7 +7369,7 @@ exports.default = {
 
   /**
    * generate random byte prefix as string for the specified algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
+   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
    * @return {Uint8Array} Random bytes with length equal to the block
    * size of the cipher
    */
@@ -7379,7 +7379,7 @@ exports.default = {
 
   /**
    * Generating a session key for the specified symmetric algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
+   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
    * @return {Uint8Array} Random bytes as a string to be used as a key
    */
   generateSessionKey: function generateSessionKey(algo) {
@@ -7634,7 +7634,7 @@ exports.default = {
 
   /**
    * Create a hash on the specified data using the specified algorithm
-   * @param {module:enums.hash} algo Hash algorithm type (see {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+   * @param {module:enums.hash} algo Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Uint8Array} data Data to be hashed
    * @return {Uint8Array} hash value
    */
@@ -7668,7 +7668,7 @@ exports.default = {
 
   /**
    * Returns the hash size in bytes of the specified hash algorithm type
-   * @param {module:enums.hash} algo Hash algorithm type (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+   * @param {module:enums.hash} algo Hash algorithm type (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @return {Integer} Size in bytes of the resulting hash
    */
   getHashByteLength: function getHashByteLength(algo) {
@@ -8208,7 +8208,7 @@ function RMDstring(message) {
  *
  * Copyright Brian Turek 2008-2015
  * Distributed under the BSD License
- * See http://caligatio.github.com/jsSHA/ for more information
+ * See https://caligatio.github.io/jsSHA/ for more information
  *
  * Several functions taken from Paul Johnston
  */
@@ -9664,7 +9664,7 @@ var _hash2 = _interopRequireDefault(_hash);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
+ * ASN1 object identifiers for hashes (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2})
  */
 var hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04, 0x10];
@@ -9696,7 +9696,7 @@ function getPkcs1Padding(length) {
 exports.default = {
   eme: {
     /**
-     * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
+     * create a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
      * @param {String} M message to be encoded
      * @param {Integer} k the length in octets of the key modulus
      * @return {String} EME-PKCS1 padded message
@@ -9716,7 +9716,7 @@ exports.default = {
       return EM;
     },
     /**
-     * decodes a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
+     * decodes a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
      * @param {String} EM encoded message, an octet string
      * @return {String} message, an octet string
      */
@@ -9743,7 +9743,7 @@ exports.default = {
 
   emsa: {
     /**
-     * create a EMSA-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
+     * create a EMSA-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
      * @param {Integer} algo Hash algorithm type used
      * @param {String} M message to be encoded
      * @param {Integer} emLen intended length in octets of the encoded message
@@ -12302,8 +12302,8 @@ exports.default = {
 
   /**
    * Create a signature on data using the specified algorithm
-   * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
-   * @param {module:enums.publicKey} algo Asymmetric cipher algorithm to use (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+   * @param {module:enums.publicKey} algo Asymmetric cipher algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Public key multiprecision integers
    * of the private key
    * @param {Array<module:type/mpi>} secretMPIs Private key multiprecision
@@ -12866,7 +12866,7 @@ exports.default = {
     gnu: 101
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -12878,7 +12878,7 @@ exports.default = {
     dsa: 17
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
    * @enum {Integer}
    * @readonly
    */
@@ -12895,7 +12895,7 @@ exports.default = {
     twofish: 10
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.3|RFC4880, section 9.3}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.3|RFC4880, section 9.3}
    * @enum {Integer}
    * @readonly
    */
@@ -12908,7 +12908,7 @@ exports.default = {
     bzip2: 3
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC4880, section 9.4}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880, section 9.4}
    * @enum {Integer}
    * @readonly
    */
@@ -13935,7 +13935,7 @@ Key.prototype.verifyPrimaryKey = function () {
     return _enums2.default.keyStatus.expired;
   }
   // check for at least one self signature. Self signature of user ID not mandatory
-  // See {@link http://tools.ietf.org/html/rfc4880#section-11.1}
+  // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
   var selfSigned = false;
   for (var i = 0; i < this.users.length; i++) {
     if (this.users[i].userId && this.users[i].selfCertifications) {
@@ -14589,7 +14589,7 @@ function readArmored(armoredText) {
  * Generates a new OpenPGP key. Currently only supports RSA keys.
  * Primary and subkey will be of same type.
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
- *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
+ *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
  * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
                                                      If array is used, the first userId is set as primary user Id
@@ -15264,7 +15264,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
  * @param  {module:packet/packetlist} packetlist The packets that form this message
- * See {@link http://tools.ietf.org/html/rfc4880#section-11.3}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
 function Message(packetlist) {
@@ -16715,7 +16715,7 @@ function newPacketFromTag(tag) {
 
 /**
  * Allocate a new packet from structured packet clone
- * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
  * @param {Object} packetClone packet clone
  * @returns {Object} new packet object with data from packet clone
  */
@@ -16947,7 +16947,7 @@ function packetlistCloneToSignature(clone) {
 /**
  * Implementation of the Compressed Data Packet (Tag 8)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}: The Compressed Data packet contains compressed data.  Typically,
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}: The Compressed Data packet contains compressed data.  Typically,
  * this packet is found as the contents of an encrypted packet, or following
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  * @requires compression/zlib
@@ -17166,7 +17166,7 @@ exports.default = mod;
 /**
  * Implementation of the Literal Data Packet (Tag 11)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}: A Literal Data packet contains the body of a message; data that
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
  * @requires enums
  * @requires util
@@ -17317,7 +17317,7 @@ Literal.prototype.write = function () {
 /**
  * Implementation of the strange "Marker packet" (Tag 10)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
  * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
  * the Marker packet.<br/>
@@ -17390,7 +17390,7 @@ Marker.prototype.read = function (bytes) {
 /**
  * Implementation of the One-Pass Signature Packets (Tag 4)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}: The One-Pass Signature packet precedes the signed data and contains
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}: The One-Pass Signature packet precedes the signed data and contains
  * enough information to allow the receiver to begin calculating any
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
@@ -17428,9 +17428,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function OnePassSignature() {
   this.tag = _enums2.default.packet.onePassSignature; // The packet type
   this.version = null; // A one-octet version number.  The current version is 3.
-  this.type = null; // A one-octet signature type.  Signature types are described in {@link http://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
-  this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4})
-  this.publicKeyAlgorithm = null; // A one-octet number describing the public-key algorithm used. (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1})
+  this.type = null; // A one-octet signature type.  Signature types are described in {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
+  this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4})
+  this.publicKeyAlgorithm = null; // A one-octet number describing the public-key algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1})
   this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
   this.flags = null; //  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
 }
@@ -17991,7 +17991,7 @@ Packetlist.prototype.concat = function (packetlist) {
 
 /**
  * Allocate a new packetlist from structured packetlist clone
- * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */
@@ -18029,7 +18029,7 @@ Packetlist.fromStructuredClone = function (packetlistClone) {
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -18100,7 +18100,7 @@ function PublicKey() {
 }
 
 /**
- * Internal Parser for public keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
+ * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
  * called by read_tag&lt;num&gt;
  * @param {Uint8Array} bytes Input array to read the packet from
  * @return {Object} This object with attributes set by the parser
@@ -18276,7 +18276,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -18519,7 +18519,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -18645,7 +18645,7 @@ function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
 // 5.5.3.  Secret-Key Packet Formats
 
 /**
- * Internal parser for private keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
+ * Internal parser for private keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
 SecretKey.prototype.read = function (bytes) {
@@ -18918,7 +18918,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * Implementation of the Signature Packet (Tag 2)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
  * A Signature packet describes a binding between some public key and
  * some data.  The most common signatures are a signature of a file or a
  * block of text, and a signature that is a certification of a User ID.
@@ -19243,11 +19243,11 @@ Signature.prototype.write_all_sub_packets = function () {
 };
 
 /**
- * creates a string representation of a sub signature packet (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * creates a string representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  * @param {Integer} type subpacket signature type. Signature types as described
- * in {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
+ * in {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
  * @param {String} data data to be included
- * @return {String} a string-representation of a sub signature packet (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * @return {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  */
 function write_sub_packet(type, data) {
   var arr = [];
@@ -19676,7 +19676,7 @@ SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key
  * Implementation of the Sym. Encrypted Integrity Protected Data
  * Packet (Tag 18)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
  * The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature
  * created for OpenPGP that addresses the problem of detecting a modification to
@@ -19880,7 +19880,7 @@ function nodeDecrypt(algo, ct, key) {
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -20049,7 +20049,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
@@ -20104,7 +20104,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  * Symmetrically decrypt the packet data
  *
  * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
  * @param {String} key
  *             Key as string with the corresponding length to the
  *            algorithm
@@ -20460,7 +20460,7 @@ function read(input) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id ({@link http://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3})<br/>
+ * Implementation of type key id ({@link https://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3})<br/>
  * <br/>
  * A Key ID is an eight-octet scalar that identifies a key.
  * Implementations SHOULD NOT assume that Key IDs are unique.  The
@@ -20554,7 +20554,7 @@ Keyid.fromId = function (hex) {
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- * Implementation of type MPI ({@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})<br/>
+ * Implementation of type MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})<br/>
  * <br/>
  * Multiprecision integers (also called MPIs) are unsigned integers used
  * to hold large integers such as the ones used in cryptographic
@@ -20593,7 +20593,7 @@ function MPI() {
 }
 
 /**
- * Parsing function for a mpi ({@link http://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
+ * Parsing function for a mpi ({@link https://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
  * @param {String} input Payload of mpi data
  * @return {Integer} Length of data read
  */
@@ -20637,7 +20637,7 @@ MPI.prototype.byteLength = function () {
 };
 
 /**
- * Converts the mpi object to a bytes as specified in {@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
+ * Converts the mpi object to a bytes as specified in {@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
  * @return {Uint8Aray} mpi Byte representation
  */
 MPI.prototype.write = function () {
@@ -20680,7 +20680,7 @@ MPI.fromClone = function (clone) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the String-to-key specifier ({@link http://tools.ietf.org/html/rfc4880#section-3.7|RFC4880 3.7})<br/>
+ * Implementation of the String-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC4880 3.7})<br/>
  * <br/>
  * String-to-key (S2K) specifiers are used to convert passphrase strings
  * into symmetric-key encryption/decryption keys.  They are used in two
@@ -20737,7 +20737,7 @@ S2K.prototype.get_count = function () {
 };
 
 /**
- * Parsing function for a string-to-key specifier ({@link http://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
+ * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
  * @param {String} input Payload of string-to-key specifier
  * @return {Integer} Actual length of the object
  */

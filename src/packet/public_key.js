@@ -18,7 +18,7 @@
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -68,7 +68,7 @@ export default function PublicKey() {
 }
 
 /**
- * Internal Parser for public keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
+ * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
  * called by read_tag&lt;num&gt;
  * @param {Uint8Array} bytes Input array to read the packet from
  * @return {Object} This object with attributes set by the parser

@@ -18,7 +18,7 @@
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
  * with a symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
@@ -58,7 +58,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  * Symmetrically decrypt the packet data
  *
  * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
  * @param {String} key
  *             Key as string with the corresponding length to the
  *            algorithm

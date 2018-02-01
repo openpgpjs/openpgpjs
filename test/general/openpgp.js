@@ -1134,7 +1134,7 @@ describe('OpenPGP.js public api tests', function() {
         var pgp_msg =
             ['-----BEGIN PGP MESSAGE-----',
             'Version: GnuPG/MacGPG2 v2.0.19 (Darwin)',
-            'Comment: GPGTools - http://gpgtools.org',
+            'Comment: GPGTools - https://gpgtools.org',
             '',
             'hIwDBU4Dycfvp2EBA/9tuhQgOrcATcm2PRmIOcs6q947YhlsBTZZdVJDfVjkKlyM',
             'M0yE+lnNplWb041Cpfkkl6IvorKQd2iPbAkOL0IXwmVN41l+PvVgMcuFvvzetehG',
@@ -1147,7 +1147,7 @@ describe('OpenPGP.js public api tests', function() {
         var priv_key =
             ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
             'Version: GnuPG/MacGPG2 v2.0.19 (Darwin)',
-            'Comment: GPGTools - http://gpgtools.org',
+            'Comment: GPGTools - https://gpgtools.org',
             '',
             'lQH+BFLqLegBBAC/rN3g30Jrcpx5lTb7Kxe+ZfS7ppOIoBjjN+qcOh81cJJVS5dT',
             'UGcDsm2tCLVS3P2dGaYhfU9fsoSq/wK/tXsdoWXvXdjHbbueyi1kTZqlnyT190UE',

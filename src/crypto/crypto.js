@@ -36,7 +36,7 @@ export default {
   /**
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
@@ -77,7 +77,7 @@ export default {
   /**
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
    * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
    * of the public key part of the private key
    * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
@@ -213,7 +213,7 @@ export default {
 
   /**
    * generate random byte prefix as string for the specified algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
+   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
    * @return {Uint8Array} Random bytes with length equal to the block
    * size of the cipher
    */
@@ -223,7 +223,7 @@ export default {
 
   /**
    * Generating a session key for the specified symmetric algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
+   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
    * @return {Uint8Array} Random bytes as a string to be used as a key
    */
   generateSessionKey: function(algo) {

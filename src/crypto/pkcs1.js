@@ -33,7 +33,7 @@ import BigInteger from './public_key/jsbn.js';
 import hash from './hash';
 
 /**
- * ASN1 object identifiers for hashes (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.2})
+ * ASN1 object identifiers for hashes (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2})
  */
 var hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04,
@@ -76,7 +76,7 @@ function getPkcs1Padding(length) {
 export default {
   eme: {
     /**
-     * create a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
+     * create a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
      * @param {String} M message to be encoded
      * @param {Integer} k the length in octets of the key modulus
      * @return {String} EME-PKCS1 padded message
@@ -100,7 +100,7 @@ export default {
       return EM;
     },
     /**
-     * decodes a EME-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
+     * decodes a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
      * @param {String} EM encoded message, an octet string
      * @return {String} message, an octet string
      */
@@ -127,7 +127,7 @@ export default {
 
   emsa: {
     /**
-     * create a EMSA-PKCS1-v1_5 padding (See {@link http://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
+     * create a EMSA-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
      * @param {Integer} algo Hash algorithm type used
      * @param {String} M message to be encoded
      * @param {Integer} emLen intended length in octets of the encoded message
