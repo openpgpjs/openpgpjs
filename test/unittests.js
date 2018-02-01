@@ -14,6 +14,7 @@
 
       tests();
 
+      //if (typeof window !== 'undefined') { afterEach(function () { window.scrollTo(0, document.body.scrollHeight); }); }
       if (options.afterEach) { afterEach(options.afterEach); }
       if (options.after) { after(options.after); }
     });
@@ -23,6 +24,9 @@
 };
 
 describe('Unit Tests', function () {
+
+  if (typeof window !== 'undefined') { afterEach(function () { window.scrollTo(0, document.body.scrollHeight); }); }
+
   require('./crypto');
   require('./general');
   require('./worker');

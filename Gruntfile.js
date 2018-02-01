@@ -263,7 +263,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
-  grunt.loadNpmTasks('grunt-keepalive');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
@@ -307,6 +306,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['browserify:openpgp', 'copy:browsertest', 'connect:test', 'keepalive']);
+  grunt.registerTask('browsertest', ['default', 'copy:browsertest', 'connect:test', 'watch']);
 
 };
