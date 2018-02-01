@@ -24,11 +24,8 @@
  */
 function encode(msg) {
   const c = 8 - (msg.length % 8);
-  var result = [];
-  for (var i = 0; i < c; ++i) {
-    result.push(String.fromCharCode(c));
-  }
-  return msg + result.join("");
+  const padding = String.fromCharCode(c).repeat(c);
+  return msg + padding;
 }
 
 /**
@@ -37,11 +34,15 @@ function encode(msg) {
  * @return {String}       Text with padding removed
  */
 function decode(msg) {
-  var len = msg.length;
+  const len = msg.length;
   if (len > 0) {
-    var c = msg.charCodeAt(len - 1);
+    const c = msg.charCodeAt(len - 1);
     if (c >= 1 && c <= 8) {
-      return msg.substr(0, len - c);
+      const provided = msg.substr(len - c);
+      const computed = String.fromCharCode(c).repeat(c);
+      if (provided === computed) {
+        return msg.substr(0, len - c);
+      }
     }
   }
   throw new Error('Invalid padding');
