@@ -11,7 +11,7 @@ import * as openpgp from './openpgp';
 export default openpgp;
 
 /**
- * Export each high level api function seperately.
+ * Export each high level api function separately.
  * Usage:
  *
  *   import { encryptMessage } from 'openpgp.js'
