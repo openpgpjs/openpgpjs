@@ -17,7 +17,7 @@
 
 /**
  * @fileoverview This module implements packet list cloning required to
- * pass certain object types beteen the web worker and main thread using
+ * pass certain object types between the web worker and main thread using
  * the structured cloning algorithm.
  */
 

@@ -1265,7 +1265,7 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
             if (openpgp.getWorker()) {
-              expect(encOpt.data.byteLength).to.equal(0); // transfered buffer should be empty
+              expect(encOpt.data.byteLength).to.equal(0); // transferred buffer should be empty
             }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]));
             expect(decrypted.signatures.length).to.equal(0);
