@@ -153,9 +153,6 @@ describe('Elliptic Curve Cryptography', function () {
         var curve = elliptic_curves.get(name);
         return curve.genKeyPair().then(keyPair => {
           expect(keyPair).to.exist;
-          // FIXME validation is not implemented for Curve25519/Ed25519 key pairs
-          if (name !== 'curve25519')
-            expect(keyPair.isValid()).to.be.true;
         });
       }));
     });
