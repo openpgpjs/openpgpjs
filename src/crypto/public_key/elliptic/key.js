@@ -65,13 +65,17 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
     message = util.str2Uint8Array(message);
   }
   if (webCrypto && config.use_native && this.curve.web) {
-    return webSign(this.curve, hash_algo, message, this.keyPair);
+    // If browser doesn't support a curve, we'll catch it
+    try {
+      return webSign(this.curve, hash_algo, message, this.keyPair);
+    } catch (err) {
+      util.print_debug("Browser did not support signing: " + err.message);
+    }
   } else if (nodeCrypto && config.use_native && this.curve.node) {
     return nodeSign(this.curve, hash_algo, message, this.keyPair);
-  } else {
-    const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
-    return this.keyPair.sign(digest);
   }
+  const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
+  return this.keyPair.sign(digest);
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo) {
@@ -79,13 +83,17 @@ KeyPair.prototype.verify = async function (message, signature, hash_algo) {
     message = util.str2Uint8Array(message);
   }
   if (webCrypto && config.use_native && this.curve.web) {
-    return webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
+    // If browser doesn't support a curve, we'll catch it
+    try {
+      return webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
+    } catch (err) {
+      util.print_debug("Browser did not support signing: " + err.message);
+    }
   } else if (nodeCrypto && config.use_native && this.curve.node) {
     return nodeVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
-  } else {
-    const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
-    return this.keyPair.verify(digest, signature);
   }
+  const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
+  return this.keyPair.verify(digest, signature);
 };
 
 KeyPair.prototype.derive = function (pub) {

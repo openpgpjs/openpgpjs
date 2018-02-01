@@ -150,17 +150,23 @@ Curve.prototype.keyFromPublic = function (pub) {
 Curve.prototype.genKeyPair = async function () {
   var keyPair;
   if (webCrypto && config.use_native && this.web) {
-    keyPair = await webGenKeyPair(this.name);
+    // If browser doesn't support a curve, we'll catch it
+    try {
+      keyPair = await webGenKeyPair(this.name);
+      return new KeyPair(this.curve, keyPair);
+    } catch (err) {
+      util.print_debug("Browser did not support signing: " + err.message);
+    }
   } else if (nodeCrypto && config.use_native && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
+    return new KeyPair(this.curve, keyPair);
+  }
+  var compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+  var r = await this.curve.genKeyPair();
+  if (this.keyType === enums.publicKey.eddsa) {
+    keyPair = { secret: r.getSecret() };
   } else {
-    var compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-    var r = await this.curve.genKeyPair();
-    if (this.keyType === enums.publicKey.eddsa) {
-      keyPair = { secret: r.getSecret() };
-    } else {
-      keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
-    }
+    keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
   }
   return new KeyPair(this.curve, keyPair);
 };
