@@ -1,5 +1,5 @@
 // OpenPGP.js - An OpenPGP implementation in javascript
-// Copyright (C) 2018 ProtonMail.ch
+// Copyright (C) 2018 Proton Technologies AG
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
