@@ -153,7 +153,6 @@ describe('X25519 Cryptography', function () {
       expect(result.signatures[0].valid).to.be.true;
     });
   });
-  // FIXME is this pattern correct?
   it('Sign message', function () {
     var name = 'light'
     var priv = load_priv_key(name);

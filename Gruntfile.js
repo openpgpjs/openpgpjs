@@ -50,7 +50,8 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
+          // Don't bundle these packages with openpgp.js
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'bn.js', 'jwk-to-pem' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -73,7 +74,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'bn.js', 'jwk-to-pem' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -87,6 +88,7 @@ module.exports = function(grunt) {
           plugin: [ 'browserify-derequire' ]
         }
       },
+      // TODO: remove this, as it is only necessary to get browsertest working.
       openpgp_browser: {
         files: {
           'dist/openpgp_browser.js': [ './src/index.js' ]
@@ -95,7 +97,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -119,7 +121,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
         },
         options: {
-          external: [ 'crypto', 'openpgp', '../../dist/openpgp' ]
+          external: [ 'buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
         }
       }
     },

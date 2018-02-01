@@ -630,7 +630,7 @@ Signature.prototype.verify = async function (key, data) {
   if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
     mpicount = 1;
   }
-  //    Algorithm-Specific Fields for DSA and ECDSA signatures:
+  //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
   //      - MPI of DSA value r.
   //      - MPI of DSA value s.
   else if (publicKeyAlgorithm === enums.publicKey.dsa ||

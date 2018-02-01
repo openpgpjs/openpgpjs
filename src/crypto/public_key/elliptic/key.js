@@ -32,10 +32,6 @@
 
 'use strict';
 
-import BN from 'bn.js';
-import ASN1 from 'asn1.js';
-import jwkToPem from 'jwk-to-pem';
-
 import curves from './curves';
 import hash from '../../hash';
 import util from '../../../util';
@@ -48,12 +44,15 @@ const webCurves = curves.webCurves;
 const nodeCrypto = util.getNodeCrypto();
 const nodeCurves = curves.nodeCurves;
 
-var ECDSASignature = ASN1.define('ECDSASignature', function() {
-  this.seq().obj(
-    this.key('r').int(),
-    this.key('s').int()
-  );
-});
+const BN = nodeCrypto ? require('bn.js') : undefined;
+const jwkToPem = nodeCrypto ? require('jwk-to-pem') : undefined;
+const ECDSASignature = nodeCrypto ?
+      require('asn1.js').define('ECDSASignature', function() {
+        this.seq().obj(
+          this.key('r').int(),
+          this.key('s').int()
+        );
+      }) : undefined;
 
 function KeyPair(curve, options) {
   this.curve = curve;
@@ -62,7 +61,7 @@ function KeyPair(curve, options) {
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo) {
-  if (typeof message === 'string') {
+  if (util.isString(message)) {
     message = util.str2Uint8Array(message);
   }
   if (webCrypto && config.use_native && this.curve.web) {
@@ -76,7 +75,7 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo) {
-  if (typeof message === 'string') {
+  if (util.isString(message)) {
     message = util.str2Uint8Array(message);
   }
   if (webCrypto && config.use_native && this.curve.web) {
@@ -240,7 +239,6 @@ async function nodeVerify(curve, hash_algo, {r, s}, message, publicKey) {
     { private: false }
   );
 
-  // FIXME what happens when hash_algo = undefined?
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
   verify.write(message);
   verify.end();

@@ -31,12 +31,12 @@
 
 import config from './config';
 import crypto from './crypto';
-import armor from './encoding/armor.js';
-import enums from './enums.js';
-import util from './util.js';
+import armor from './encoding/armor';
+import enums from './enums';
+import util from './util';
 import packet from './packet';
-import { Signature } from './signature.js';
-import { getPreferredHashAlgo, getPreferredSymAlgo } from './key.js';
+import { Signature } from './signature';
+import { getPreferredHashAlgo, getPreferredSymAlgo } from './key';
 
 
 /**
@@ -145,18 +145,13 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
       });
 
     } else if (privateKey) {
-      var encryptionKeyIds = this.getEncryptionKeyIds();
-      if (!encryptionKeyIds.length) {
-        // nothing to decrypt
-        return;
-      }
-      var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
-      if (!privateKeyPacket.isDecrypted) {
-        throw new Error('Private key is not decrypted.');
-      }
       var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
       if (!pkESKeyPacketlist) {
         throw new Error('No public key encrypted session key packet found.');
+      }
+      var privateKeyPacket = privateKey.getKeyPacket(this.getEncryptionKeyIds());
+      if (!privateKeyPacket.isDecrypted) {
+        throw new Error('Private key is not decrypted.');
       }
       // TODO replace when Promise.some or Promise.any are implemented
       // eslint-disable-next-line no-await-in-loop

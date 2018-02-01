@@ -168,10 +168,9 @@ describe('Elliptic Curve Cryptography', function () {
       expect(result.signatures[0].valid).to.be.true;
     });
   });
-  // FIXME is this pattern correct?
   it('Sign message', function () {
     var romeo = load_priv_key('romeo');
-    openpgp.sign({privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (signed) {
+    return openpgp.sign({privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (signed) {
       var romeo = load_pub_key('romeo');
       var msg = openpgp.cleartext.readArmored(signed.data);
       return openpgp.verify({publicKeys: [romeo], message: msg}).then(function (result) {

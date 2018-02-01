@@ -34,16 +34,12 @@
 
 'use strict';
 
-import es6Promise from 'es6-promise';
-
-import * as messageLib from './message.js';
-import { CleartextMessage } from './cleartext.js';
-import { generate, reformat } from './key.js';
-import config from './config/config.js';
+import * as messageLib from './message';
+import { CleartextMessage } from './cleartext';
+import { generate, reformat } from './key';
+import config from './config/config';
 import util from './util';
-import AsyncProxy from './worker/async_proxy.js';
-
-es6Promise.polyfill(); // load ES6 Promises polyfill
+import AsyncProxy from './worker/async_proxy';
 
 
 //////////////////////////
