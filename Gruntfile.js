@@ -51,7 +51,7 @@ module.exports = function(grunt) {
             standalone: 'openpgp'
           },
           // Don't bundle these packages with openpgp.js
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -74,7 +74,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
