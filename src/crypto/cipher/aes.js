@@ -6,6 +6,7 @@
 
 import asmCrypto from 'asmcrypto-lite';
 
+// TODO use webCrypto or nodeCrypto when possible.
 export default function aes(length) {
 
   var c = function(key) {

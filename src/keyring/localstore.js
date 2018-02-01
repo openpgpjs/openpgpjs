@@ -27,8 +27,8 @@
 'use strict';
 
 import config from '../config';
-import { readArmored } from '../key.js';
-import util from '../util.js';
+import { readArmored } from '../key';
+import util from '../util';
 
 export default function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';

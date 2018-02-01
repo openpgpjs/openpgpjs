@@ -23,10 +23,10 @@
 
 'use strict';
 
-import { Key } from '../key.js';
-import { Message } from '../message.js';
-import { CleartextMessage } from '../cleartext.js';
-import { Signature } from '../signature.js'
+import { Key } from '../key';
+import { Message } from '../message';
+import { CleartextMessage } from '../cleartext';
+import { Signature } from '../signature'
 import Packetlist from './packetlist.js';
 import type_keyid from '../type/keyid.js';
 

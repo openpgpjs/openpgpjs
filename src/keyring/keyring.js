@@ -25,8 +25,8 @@
 
 'use strict';
 
-import { readArmored } from '../key.js';
-import LocalStore from './localstore.js';
+import { readArmored } from '../key';
+import LocalStore from './localstore';
 
 /**
  * Initialization routine for the keyring. This method reads the

@@ -29,8 +29,8 @@
 
 import config from './config';
 import crypto from './crypto';
-import armor from './encoding/armor.js';
-import enums from './enums.js';
+import armor from './encoding/armor';
+import enums from './enums';
 import util from './util';
 import packet from './packet';
 
@@ -542,7 +542,7 @@ Key.prototype.getPrimaryUser = function(allowExpired=false) {
   // sort by primary user flag and signature creation time
   primaryUsers = primaryUsers.sort(function(a, b) {
     var A = a.selfCertificate, B = b.selfCertificate;
-    return A.isPrimaryUserID < B.isPrimaryUserID || A.created < B.created;
+    return (B.isPrimaryUserID - A.isPrimaryUserID) || (B.created - A.created);
   });
   return primaryUsers.pop();
 };
@@ -907,7 +907,7 @@ User.prototype.verify = async function(primaryKey) {
       }
       return enums.keyStatus.valid;
     })));
-  return results.some(status => status === enums.keyStatus.valid)?
+  return results.some(status => status === enums.keyStatus.valid) ?
     enums.keyStatus.valid : results.pop();
 };
 

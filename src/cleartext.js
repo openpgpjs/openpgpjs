@@ -27,10 +27,10 @@
 'use strict';
 
 import config from './config';
-import armor from './encoding/armor.js';
-import enums from './enums.js';
+import armor from './encoding/armor';
+import enums from './enums';
 import packet from './packet';
-import { Signature } from './signature.js';
+import { Signature } from './signature';
 
 /**
  * @class
