@@ -51,7 +51,7 @@ module.exports = function(grunt) {
             standalone: 'openpgp'
           },
           // Don't bundle these packages with openpgp.js
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'bn.js', 'jwk-to-pem' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -74,30 +74,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'bn.js', 'jwk-to-pem' ],
-          transform: [
-            ["babelify", {
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime"],
-              ignore: ['*.min.js'],
-              presets: ["env"]
-            }]
-          ],
-          plugin: [ 'browserify-derequire' ]
-        }
-      },
-      // TODO: remove this, as it is only necessary to get browsertest working.
-      openpgp_browser: {
-        files: {
-          'dist/openpgp_browser.js': [ './src/index.js' ]
-        },
-        options: {
-          browserifyOptions: {
-            standalone: 'openpgp'
-          },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js' ],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -330,6 +307,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['browserify:openpgp_browser', 'copy:browsertest', 'connect:test', 'keepalive']);
+  grunt.registerTask('browsertest', ['browserify:openpgp', 'copy:browsertest', 'connect:test', 'keepalive']);
 
 };
