@@ -19,7 +19,7 @@
 /**
  * Implementation of the strange "Marker packet" (Tag 10)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
  * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
  * the Marker packet.<br/>

@@ -7,7 +7,7 @@ var util = openpgp.util,
   chai = require('chai'),
   expect = chai.expect;
 
-it('Blowfish cipher test with test vectors from http://www.schneier.com/code/vectors.txt', function(done) {
+it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {
     var blowfish = new openpgp.crypto.cipher.blowfish(util.bin2str(key));
     var result = util.bin2str(blowfish.encrypt(input));

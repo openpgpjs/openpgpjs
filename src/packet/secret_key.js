@@ -18,7 +18,7 @@
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
@@ -121,7 +121,7 @@ function write_cleartext_mpi(hash_algorithm, algorithm, mpi) {
 // 5.5.3.  Secret-Key Packet Formats
 
 /**
- * Internal parser for private keys as specified in {@link http://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
+ * Internal parser for private keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
 SecretKey.prototype.read = function (bytes) {

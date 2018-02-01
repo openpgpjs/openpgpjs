@@ -18,7 +18,7 @@
 /**
  * Implementation of the Signature Packet (Tag 2)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
  * A Signature packet describes a binding between some public key and
  * some data.  The most common signatures are a signature of a file or a
  * block of text, and a signature that is a certification of a User ID.
@@ -357,11 +357,11 @@ Signature.prototype.write_all_sub_packets = function () {
 };
 
 /**
- * creates a string representation of a sub signature packet (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * creates a string representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  * @param {Integer} type subpacket signature type. Signature types as described
- * in {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
+ * in {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
  * @param {String} data data to be included
- * @return {String} a string-representation of a sub signature packet (See {@link http://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * @return {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  */
 function write_sub_packet(type, data) {
   var arr = [];
