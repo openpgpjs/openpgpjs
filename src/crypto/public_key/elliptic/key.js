@@ -108,13 +108,6 @@ KeyPair.prototype.getPrivate = function () {
   }
 };
 
-KeyPair.prototype.isValid = function () {
-  if (this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont') {
-    throw new Error('Validation is not Implemented for this curve.');
-  }
-  return this.keyPair.validate().result;
-};
-
 module.exports = {
   KeyPair: KeyPair
 };
