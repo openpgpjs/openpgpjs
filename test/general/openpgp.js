@@ -1224,6 +1224,7 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        // FIXME this test sporadically fails
         it('should encrypt and decrypt with two passwords', function() {
           var encOpt = {
             data: plaintext,

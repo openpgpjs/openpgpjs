@@ -27,8 +27,8 @@
 'use strict';
 
 import hash from '../../hash';
-import curves from './curves.js';
-import BigInteger from '../jsbn.js';
+import curves from './curves';
+import BigInteger from '../jsbn';
 
 /**
  * Sign a message using the provided key
@@ -60,8 +60,10 @@ async function sign(oid, hash_algo, m, d) {
 async function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
   const key = curve.keyFromPublic(Q.toByteArray());
+  const R = signature.r.toByteArray(), S = signature.s.toByteArray();
   return key.verify(
-    m, { R: signature.r.toByteArray(), S: signature.s.toByteArray() }, hash_algo
+    m, { R: Array(curve.payloadSize - R.length).fill(0).concat(R),
+         S: Array(curve.payloadSize - S.length).fill(0).concat(S) }, hash_algo
   );
 }
 

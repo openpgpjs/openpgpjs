@@ -27,8 +27,8 @@
 'use strict';
 
 import hash from '../../hash';
-import curves from './curves.js';
-import BigInteger from '../jsbn.js';
+import curves from './curves';
+import BigInteger from '../jsbn';
 
 /**
  * Sign a message using the provided key

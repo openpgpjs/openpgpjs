@@ -107,6 +107,7 @@ describe('X25519 Cryptography', function () {
         '-----END PGP MESSAGE-----'].join('\n')
     }
   };
+
   function load_pub_key(name) {
     if (data[name].pub_key) {
       return data[name].pub_key;
@@ -269,7 +270,6 @@ describe('X25519 Cryptography', function () {
             var msg = openpgp.cleartext.readArmored(signed.data);
             // Verifying signed message
             return Promise.all([
-              // FIXME this test sporadically fails
               openpgp.verify(
                 { message: msg, publicKeys: hi.toPublic() }
               ).then(output => expect(output.signatures[0].valid).to.be.true),
@@ -300,6 +300,36 @@ describe('X25519 Cryptography', function () {
           })
         ]);
       });
+    });
+  });
+
+  it('Should handle little-endian parameters in EdDSA', function () {
+    var pubKey = [
+      '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      'Version: OpenPGP.js VERSION',
+      'Comment: https://openpgpjs.org',
+      '',
+      'xjMEWnRgnxYJKwYBBAHaRw8BAQdAZ8gxxCdUxIv4tBwhfUMW2uoEb1KvOfP8',
+      'D+0ObBtsLnfNDkhpIDxoaUBoZWwubG8+wnYEEBYKACkFAlp0YJ8GCwkHCAMC',
+      'CRDAYsFlymHCFQQVCAoCAxYCAQIZAQIbAwIeAQAAswsA/3qNZnwBn/ef4twv',
+      'uvmFicYK//DDX1jIkpDiQ+/okLUEAPdAr3J/Z2WA7OD0d36trHNB06WLXJUu',
+      'aCVm1TwoJHcNzjgEWnRgnxIKKwYBBAGXVQEFAQEHQPBVH+skap0NHMBw2HMe',
+      'xWYUQ67I9Did3KoJuuEJ/ctQAwEIB8JhBBgWCAATBQJadGCfCRDAYsFlymHC',
+      'FQIbDAAAhNQBAKmy4gPorjbwTwy5usylHttP28XnTdaGkZ1E7Rc3G9luAQCs',
+      'Gbm1oe83ZB+0aSp5m34YkpHQNb80y8PGFy7nIexiAA==',
+      '=xeG/',
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+    var hi = openpgp.key.readArmored(pubKey).keys[0];
+    return hi.verifyPrimaryUser().then(() => {
+      var results = hi.getPrimaryUser();
+      expect(results.user).to.exist;
+      var user = results.user;
+      expect(user.selfCertifications[0].verify(
+        hi.primaryKey, {userid: user.userId, key: hi.primaryKey}
+      )).to.eventually.be.true;
+      expect(user.verifyCertificate(
+        hi.primaryKey, user.selfCertifications[0], [hi]
+      )).to.eventually.equal(openpgp.enums.keyStatus.valid);
     });
   });
 });

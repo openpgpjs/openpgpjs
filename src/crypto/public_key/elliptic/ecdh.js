@@ -18,11 +18,11 @@
 // Key encryption and decryption for RFC 6637 ECDH
 
 /**
- * @requires crypto/hash
- * @requires crypto/cipher
- * @requires crypto/aes_kw
  * @requires crypto/public_key/elliptic/curves
  * @requires crypto/public_key/jsbn
+ * @requires crypto/cipher
+ * @requires crypto/hash
+ * @requires crypto/aes_kw
  * @requires type/oid
  * @requires type/kdf_params
  * @requires enums
@@ -32,15 +32,15 @@
 
 'use strict';
 
-import BigInteger from '../jsbn.js';
-import curves from './curves.js';
+import curves from './curves';
+import BigInteger from '../jsbn';
 import cipher from '../../cipher';
 import hash from '../../hash';
-import aes_kw from '../../aes_kw.js';
-import enums from '../../../enums.js';
-import util from '../../../util.js';
-import type_kdf_params from '../../../type/kdf_params.js';
-import type_oid from '../../../type/oid.js';
+import aes_kw from '../../aes_kw';
+import type_kdf_params from '../../../type/kdf_params';
+import type_oid from '../../../type/oid';
+import enums from '../../../enums';
+import util from '../../../util';
 
 
 // Build Param for ECDH algorithm (RFC 6637)
