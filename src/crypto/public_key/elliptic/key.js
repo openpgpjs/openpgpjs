@@ -18,21 +18,22 @@
 // Wrapper for a KeyPair of an Elliptic Curve
 
 /**
- * @requires bn.js
- * @requires asn1.js
- * @requires jwk-to-pem
  * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/jsbn
  * @requires crypto/hash
  * @requires util
  * @requires enums
  * @requires config
  * @requires encoding/base64
+ * @requires jwk-to-pem
+ * @requires asn1.js
  * @module crypto/public_key/elliptic/key
  */
 
 'use strict';
 
 import curves from './curves';
+import BigInteger from '../jsbn';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
@@ -44,7 +45,6 @@ const webCurves = curves.webCurves;
 const nodeCrypto = util.getNodeCrypto();
 const nodeCurves = curves.nodeCurves;
 
-const BN = nodeCrypto ? require('bn.js') : undefined;
 const jwkToPem = nodeCrypto ? require('jwk-to-pem') : undefined;
 const ECDSASignature = nodeCrypto ?
       require('asn1.js').define('ECDSASignature', function() {
@@ -167,8 +167,8 @@ async function webSign(curve, hash_algo, message, keyPair) {
 
 async function webVerify(curve, hash_algo, {r, s}, message, publicKey) {
   var l = curve.payloadSize;
-  r = (r.length === l) ? r : [0].concat(r);
-  s = (s.length === l) ? s : [0].concat(s);
+  r = Array(l - r.length).fill(0).concat(r);
+  s = Array(l - s.length).fill(0).concat(s);
   var signature = new Uint8Array(r.concat(s)).buffer;
   const key = await webCrypto.importKey(
     "jwk",
@@ -227,7 +227,7 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
 }
 
 async function nodeVerify(curve, hash_algo, {r, s}, message, publicKey) {
-  var signature = ECDSASignature.encode({ r: new BN(r), s: new BN(s) }, 'der');
+  var signature = ECDSASignature.encode({ r: new BigInteger(r), s: new BigInteger(s) }, 'der');
   const key = jwkToPem(
     {
       "kty": "EC",
