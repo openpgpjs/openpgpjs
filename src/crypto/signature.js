@@ -77,7 +77,7 @@ export default {
         s = msg_MPIs[1].toBigInteger();
         m = data;
         Q = publickey_MPIs[1].toBigInteger();
-        return eddsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
+        return eddsa.verify(curve.oid, hash_algo, { R: r, S: s }, m, Q);
       default:
         throw new Error('Invalid signature algorithm.');
     }
@@ -144,7 +144,10 @@ export default {
         d = keyIntegers[2].toBigInteger();
         m = data;
         signature = await eddsa.sign(curve.oid, hash_algo, m, d);
-        return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
+        return new Uint8Array([].concat(
+          util.Uint8Array2MPI(signature.R.toArrayLike(Uint8Array, 'le', 32)),
+          util.Uint8Array2MPI(signature.S.toArrayLike(Uint8Array, 'le', 32))
+        ));
 
       default:
         throw new Error('Invalid signature algorithm.');

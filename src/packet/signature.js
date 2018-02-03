@@ -639,11 +639,14 @@ Signature.prototype.verify = async function (key, data) {
     mpicount = 2;
   }
 
+  // EdDSA signature parameters are encoded in litte-endian format
+  // https://tools.ietf.org/html/rfc8032#section-5.1.2
+  var endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
   var mpi = [],
     i = 0;
   for (var j = 0; j < mpicount; j++) {
     mpi[j] = new type_mpi();
-    i += mpi[j].read(this.signature.subarray(i, this.signature.length));
+    i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
   }
 
   this.verified = await crypto.signature.verify(publicKeyAlgorithm,

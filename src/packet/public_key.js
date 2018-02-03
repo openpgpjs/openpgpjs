@@ -24,23 +24,17 @@
  * major versions.  Consequently, this section is complex.
  * @requires crypto
  * @requires enums
- * @requires type/kdf_params
- * @requires type/keyid
- * @requires type/mpi
- * @requires type/oid
  * @requires util
+ * @requires type/keyid
  * @module packet/public_key
  */
 
 'use strict';
 
-import util from '../util.js';
-import type_mpi from '../type/mpi.js';
-import type_kdf_params from '../type/kdf_params.js';
-import type_keyid from '../type/keyid.js';
-import type_oid from '../type/oid.js';
-import enums from '../enums.js';
 import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+import type_keyid from '../type/keyid';
 
 /**
  * @constructor

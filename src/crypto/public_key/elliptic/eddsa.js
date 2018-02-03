@@ -18,33 +18,34 @@
 // Implementation of EdDSA following RFC4880bis-03 for OpenPGP
 
 /**
+ * @requires bn.js
  * @requires crypto/hash
- * @requires crypto/public_key/jsbn
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/eddsa
  */
 
 'use strict';
 
+import BN from 'bn.js';
 import hash from '../../hash';
 import curves from './curves';
-import BigInteger from '../jsbn';
 
 /**
  * Sign a message using the provided key
  * @param  {String}      oid        Elliptic curve for the key
  * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}  m          Message to sign
- * @param  {BigInteger}  d          Private key used to sign
- * @return {{r: BigInteger, s: BigInteger}}  Signature of the message
+ * @param  {BN}          d          Private key used to sign
+ * @return {{r: BN, s: BN}}         Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = curves.get(oid);
   const key = curve.keyFromSecret(d.toByteArray());
   const signature = await key.sign(m, hash_algo);
+  // EdDSA signature params are returned in little-endian format
   return {
-    r: new BigInteger(signature.Rencoded()),
-    s: new BigInteger(signature.Sencoded())
+    R: new BN(Array.from(signature.Rencoded()).reverse()),
+    S: new BN(Array.from(signature.Sencoded()).reverse())
   };
 }
 
@@ -60,10 +61,12 @@ async function sign(oid, hash_algo, m, d) {
 async function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
   const key = curve.keyFromPublic(Q.toByteArray());
-  const R = signature.r.toByteArray(), S = signature.s.toByteArray();
+  // EdDSA signature params are expected in little-endian format
+  const R = Array.from(signature.R.toByteArray()).reverse(),
+        S = Array.from(signature.S.toByteArray()).reverse();
   return key.verify(
-    m, { R: Array(curve.payloadSize - R.length).fill(0).concat(R),
-         S: Array(curve.payloadSize - S.length).fill(0).concat(S) }, hash_algo
+    m, { R: [].concat(R, Array(curve.payloadSize - R.length).fill(0)),
+         S: [].concat(S, Array(curve.payloadSize - S.length).fill(0)) }, hash_algo
   );
 }
 

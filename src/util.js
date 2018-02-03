@@ -290,6 +290,48 @@ export default {
     return result.join('');
   },
 
+  // returns bit length of the integer x
+  nbits: function (x) {
+    var r = 1,
+      t = x >>> 16;
+    if (t !== 0) {
+      x = t;
+      r += 16;
+    }
+    t = x >> 8;
+    if (t !== 0) {
+      x = t;
+      r += 8;
+    }
+    t = x >> 4;
+    if (t !== 0) {
+      x = t;
+      r += 4;
+    }
+    t = x >> 2;
+    if (t !== 0) {
+      x = t;
+      r += 2;
+    }
+    t = x >> 1;
+    if (t !== 0) {
+      x = t;
+      r += 1;
+    }
+    return r;
+  },
+
+  /**
+   * Convert a Uint8Array to an MPI array.
+   * @function module:util.Uint8Array2MPI
+   * @param {Uint8Array} bin An array of (binary) integers to convert
+   * @return {Array<Integer>} MPI-formatted array
+   */
+  Uint8Array2MPI: function (bin) {
+    var size = (bin.length - 1) * 8 + this.nbits(bin[0]);
+    return [(size & 0xFF00) >> 8, size & 0xFF].concat(Array.from(bin));
+  },
+
   /**
    * Concat Uint8arrays
    * @function module:util.concatUint8Array
