@@ -18,6 +18,7 @@
 // Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
 
 import cipher from './cipher';
+import util from '../util';
 
 function wrap(key, data) {
   var aes = new cipher["aes" + (key.length*8)](key);
@@ -85,7 +86,7 @@ function unwrap(key, data) {
 }
 
 function createArrayBuffer(data) {
-  if (typeof data === "string") {
+  if (util.isString(data)) {
     var length = data.length;
     var buffer = new ArrayBuffer(length);
     var view = new Uint8Array(buffer);

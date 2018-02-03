@@ -299,7 +299,7 @@ describe('Elliptic Curve Cryptography', function () {
   });
   describe('ECDH key exchange', function () {
     var decrypt_message = function (oid, hash, cipher, priv, ephemeral, data, fingerprint) {
-      if (typeof data === 'string') {
+      if (openpgp.util.isString(data)) {
         data = openpgp.util.str2Uint8Array(data);
       } else {
         data = new Uint8Array(data);

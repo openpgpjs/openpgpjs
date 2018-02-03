@@ -27,8 +27,9 @@ import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';
 import { Signature } from '../signature'
-import Packetlist from './packetlist.js';
-import type_keyid from '../type/keyid.js';
+import Packetlist from './packetlist';
+import type_keyid from '../type/keyid';
+import util from '../util';
 
 
 //////////////////////////////
@@ -141,7 +142,7 @@ function packetlistCloneToSignatures(clone) {
 }
 
 function packetlistCloneToSignature(clone) {
-  if (typeof clone === "string") {
+  if (util.isString(clone)) {
     //signature is armored
     return clone;
   }

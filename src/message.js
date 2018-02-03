@@ -373,7 +373,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
 
   packetlist.push(literalDataPacket);
 
-  await Promise.all(privateKeys.reverse().map(async function(privateKey) {
+  await Promise.all(Array.from(privateKeys).reverse().map(async function(privateKey) {
     var signaturePacket = new packet.Signature();
     var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket.isDecrypted) {

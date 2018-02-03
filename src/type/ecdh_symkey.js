@@ -24,7 +24,7 @@
 
 'use strict';
 
-import util from '../util.js';
+import util from '../util';
 
 module.exports = ECDHSymmetricKey;
 
@@ -34,7 +34,7 @@ module.exports = ECDHSymmetricKey;
 function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
-  } else if (typeof data === 'string') {
+  } else if (util.isString(data)) {
     data = util.str2Uint8Array(data);
   } else {
     data = new Uint8Array(data);

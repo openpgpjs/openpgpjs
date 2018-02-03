@@ -850,7 +850,7 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
   var results = await Promise.all(keys.map(async function(key) {
     if (!key.getKeyIds().some(id => id.equals(keyid))) { return; }
     await key.verifyPrimaryUser();
-    var keyPacket = key.getSigningKeyPacket(keyid);
+    var keyPacket = key.getSigningKeyPacket(keyid, allowExpired);
     if (certificate.revoked || await that.isRevoked(primaryKey, certificate, keyPacket)) {
       return enums.keyStatus.revoked;
     }
@@ -1205,7 +1205,7 @@ export function generate(options) {
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
       options.unlocked = true;
     }
-    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+    if (util.isString(options.userIds)) {
       options.userIds = [options.userIds];
     }
 
@@ -1259,7 +1259,7 @@ export function reformat(options) {
     if (!options.passphrase) { // Key without passphrase is unlocked by definition
       options.unlocked = true;
     }
-    if (String.prototype.isPrototypeOf(options.userIds) || typeof options.userIds === 'string') {
+    if (util.isString(options.userIds)) {
       options.userIds = [options.userIds];
     }
     var packetlist = options.privateKey.toPacketlist();
