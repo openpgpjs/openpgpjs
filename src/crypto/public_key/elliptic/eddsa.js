@@ -35,8 +35,8 @@ import curves from './curves';
  * @param  {String}      oid        Elliptic curve for the key
  * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}  m          Message to sign
- * @param  {BN}          d          Private key used to sign
- * @return {{r: BN, s: BN}}         Signature of the message
+ * @param  {BigInteger}  d          Private key used to sign
+ * @return {{R: BN, S: BN}}         Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = curves.get(oid);
@@ -53,7 +53,7 @@ async function sign(oid, hash_algo, m, d) {
  * Verifies if a signature is valid for a message
  * @param  {String}      oid        Elliptic curve for the key
  * @param  {enums.hash}  hash_algo  Hash algorithm used in the signature
- * @param  {{r: BigInteger, s: BigInteger}}  signature  Signature to verify
+ * @param  {{R: BigInteger, S: BigInteger}}  signature  Signature to verify
  * @param  {Uint8Array}  m          Message to verify
  * @param  {BigInteger}  Q          Public key used to verify the message
  * @return {Boolean}
