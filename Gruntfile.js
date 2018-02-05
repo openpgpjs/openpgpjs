@@ -235,7 +235,6 @@ module.exports = function(grunt) {
           throttled: 2,
           pollInterval: 4000,
           statusCheckAttempts: 200,
-          extendedDebugging : true
         }
       }
     },
