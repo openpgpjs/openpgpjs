@@ -71,10 +71,10 @@
     "zlibjs": "~0.3.1"
   },
   "dependencies": {
+    "asmcrypto-lite": "git+https://github.com/openpgpjs/asmcrypto-lite.git",
+    "asn1.js": "^5.0.0",
     "bn.js": "^4.11.8",
     "buffer": "^5.0.8",
-    "asn1.js": "^5.0.0",
-    "asmcrypto-lite": "git+https://github.com/openpgpjs/asmcrypto-lite.git",
     "elliptic": "git+https://github.com/openpgpjs/elliptic.git",
     "es6-promise": "^4.2.4",
     "jwk-to-pem": "^1.2.6",
