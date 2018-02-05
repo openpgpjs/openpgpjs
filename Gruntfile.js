@@ -23,7 +23,7 @@ module.exports = function(grunt) {
     'src/packet/**/*.js',
     'src/type/**/*.js',
     'src/worker/**/*.js',
-    'src/*.js',
+    'src/*.js'
   ]; // add more over time ... goal should be 100% coverage
 
   var version = grunt.option('release');
@@ -44,14 +44,14 @@ module.exports = function(grunt) {
     browserify: {
       openpgp: {
         files: {
-          'dist/openpgp.js': [ './src/index.js' ]
+          'dist/openpgp.js': ['./src/index.js']
         },
         options: {
           browserifyOptions: {
             standalone: 'openpgp'
           },
           // Don't bundle these packages with openpgp.js
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem' ],
+          external: ['crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -62,19 +62,19 @@ module.exports = function(grunt) {
               presets: ["env"]
             }]
           ],
-          plugin: [ 'browserify-derequire' ]
+          plugin: ['browserify-derequire']
         }
       },
       openpgp_debug: {
         files: {
-          'dist/openpgp_debug.js': [ './src/index.js' ]
+          'dist/openpgp_debug.js': ['./src/index.js']
         },
         options: {
           browserifyOptions: {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem' ],
+          external: ['crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -85,20 +85,20 @@ module.exports = function(grunt) {
               presets: ["env"]
             }]
           ],
-          plugin: [ 'browserify-derequire' ]
+          plugin: ['browserify-derequire']
         }
       },
       worker: {
         files: {
-          'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
+          'dist/openpgp.worker.js': ['./src/worker/worker.js']
         }
       },
       unittests: {
         files: {
-          'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
+          'test/lib/unittests-bundle.js': ['./test/unittests.js']
         },
         options: {
-          external: [ 'buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
+          external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp']
         }
       }
     },
@@ -139,8 +139,8 @@ module.exports = function(grunt) {
     uglify: {
       openpgp: {
         files: {
-          'dist/openpgp.min.js' : [ 'dist/openpgp.js' ],
-          'dist/openpgp.worker.min.js' : [ 'dist/openpgp.worker.js' ]
+          'dist/openpgp.min.js' : ['dist/openpgp.js'],
+          'dist/openpgp.worker.min.js' : ['dist/openpgp.worker.js']
         }
       },
       options: {
@@ -177,7 +177,7 @@ module.exports = function(grunt) {
         src: 'test',
         options: {
           root: '.',
-          timeout: 240000,
+          timeout: 240000
         }
       }
     },
@@ -187,7 +187,7 @@ module.exports = function(grunt) {
           reporter: 'spec',
           timeout: 120000
         },
-        src: [ 'test/unittests.js' ]
+        src: ['test/unittests.js']
       }
     },
     copy: {
@@ -234,9 +234,10 @@ module.exports = function(grunt) {
           maxRetries: 3,
           throttled: 2,
           pollInterval: 4000,
-          statusCheckAttempts: 200
+          statusCheckAttempts: 200,
+          extendedDebugging : true
         }
-      },
+      }
     },
     watch: {
       src: {
@@ -247,7 +248,7 @@ module.exports = function(grunt) {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
         tasks: ['browserify:unittests']
       }
-    },
+    }
   });
 
   // Load the plugin(s)
