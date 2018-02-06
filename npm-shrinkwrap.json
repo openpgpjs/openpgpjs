@@ -1920,7 +1920,8 @@
     "core-js": {
       "version": "2.5.3",
       "resolved": "https://registry.npmjs.org/core-js/-/core-js-2.5.3.tgz",
-      "integrity": "sha1-isw4NFgk8W2DZbfJtCWRaOjtYD4="
+      "integrity": "sha1-isw4NFgk8W2DZbfJtCWRaOjtYD4=",
+      "dev": true
     },
     "core-util-is": {
       "version": "1.0.2",
@@ -2421,11 +2422,6 @@
         "es6-symbol": "3.1.1",
         "event-emitter": "0.3.5"
       }
-    },
-    "es6-promise": {
-      "version": "4.2.4",
-      "resolved": "https://registry.npmjs.org/es6-promise/-/es6-promise-4.2.4.tgz",
-      "integrity": "sha512-/NdNZVJg+uZgtm9eS3O6lrOLYmQag2DjdEXuPaHlZ6RuVqgqaVZfgYCepEIKsLqwdQArOPtC3XzRLqGGfT8KQQ=="
     },
     "es6-set": {
       "version": "0.1.5",

@@ -1,8 +1,3 @@
-// ES6 Promise polyfill
-if (typeof Promise === 'undefined') {
-  require('es6-promise').polyfill();
-}
-
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
