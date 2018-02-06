@@ -98,7 +98,18 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': ['./test/unittests.js']
         },
         options: {
-          external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp']
+          external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp'],
+          transform: [
+            ["babelify", {
+              global: true,
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-remove-strict-mode"],
+              ignore: ['*.min.js'],
+              presets: ["env"]
+            }]
+          ]
         }
       }
     },
@@ -195,7 +206,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
-        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'whatwg-fetch/fetch.js'],
+        src: ['mocha/mocha.css', 'mocha/mocha.js'],
         dest: 'test/lib/'
       },
       zlib: {
