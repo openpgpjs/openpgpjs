@@ -41,6 +41,12 @@ import config from './config/config';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
 
+// Polyfills
+require('core-js/fn/array/fill');
+require('core-js/fn/array/find');
+require('core-js/fn/array/from');
+require('core-js/fn/typed/uint8-array');
+require('core-js/fn/symbol');
 
 //////////////////////////
 //                      //
