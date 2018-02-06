@@ -19,11 +19,6 @@
 
 self.window = {}; // to make UMD bundles work
 
-// ES6 Promise polyfill
-if (typeof Promise === 'undefined') {
-  require('es6-promise').polyfill();
-}
-
 importScripts('openpgp.js');
 var openpgp = window.openpgp;
 
