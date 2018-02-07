@@ -1320,7 +1320,7 @@ var jsSHA = function(srcString, inputFormat, encoding)
     }
 
     /* Validate the numRounds argument */
-    if ((numRounds !== parseInt(numRounds, 10)) || (1 > numRounds))
+    if ((numRounds !== parseInt(numRounds)) || (1 > numRounds))
     {
       throw "numRounds must a integer >= 1";
     }
@@ -1594,7 +1594,6 @@ export default {
   sha384: function(str) {
     var shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-384", "TYPED");
-
   },
   /** SHA512 hash */
   sha512: function(str) {

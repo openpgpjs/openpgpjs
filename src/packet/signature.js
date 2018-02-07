@@ -97,6 +97,28 @@ export default function Signature() {
 Signature.prototype.read = function (bytes) {
   var i = 0;
   this.version = bytes[i++];
+
+  function subpackets(bytes) {
+    // Two-octet scalar octet count for following subpacket data.
+    var subpacket_length = util.readNumber(
+      bytes.subarray(0, 2));
+
+    var i = 2;
+
+    // subpacket data set (zero or more subpackets)
+    while (i < 2 + subpacket_length) {
+
+      var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      i += len.offset;
+
+      this.read_sub_packet(bytes.subarray(i, i + len.len));
+
+      i += len.len;
+    }
+
+    return i;
+  }
+
   // switch on version (3 and 4)
   switch (this.version) {
     case 3:
@@ -132,27 +154,6 @@ Signature.prototype.read = function (bytes) {
       this.signatureType = bytes[i++];
       this.publicKeyAlgorithm = bytes[i++];
       this.hashAlgorithm = bytes[i++];
-
-      function subpackets(bytes) {
-        // Two-octet scalar octet count for following subpacket data.
-        var subpacket_length = util.readNumber(
-          bytes.subarray(0, 2));
-
-        var i = 2;
-
-        // subpacket data set (zero or more subpackets)
-        while (i < 2 + subpacket_length) {
-
-          var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-          i += len.offset;
-
-          this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-          i += len.len;
-        }
-
-        return i;
-      }
 
       // hashed subpackets
       i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
@@ -210,7 +211,7 @@ Signature.prototype.write = function () {
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  */
-Signature.prototype.sign = function (key, data) {
+Signature.prototype.sign = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -242,8 +243,8 @@ Signature.prototype.sign = function (key, data) {
 
   this.signedHashValue = hash.subarray(0, 2);
 
-  this.signature = crypto.signature.sign(hashAlgorithm,
-    publicKeyAlgorithm, key.mpi, toHash);
+  this.signature = await crypto.signature.sign(hashAlgorithm,
+    publicKeyAlgorithm, key.params, toHash);
 };
 
 /**
@@ -614,7 +615,7 @@ Signature.prototype.calculateTrailer = function () {
  *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
  * @return {boolean} True if message is verified, else false.
  */
-Signature.prototype.verify = function (key, data) {
+Signature.prototype.verify = async function (key, data) {
   var signatureType = enums.write(enums.signature, this.signatureType),
     publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm),
     hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -629,22 +630,27 @@ Signature.prototype.verify = function (key, data) {
   if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
     mpicount = 1;
   }
-  //    Algorithm-Specific Fields for DSA signatures:
+  //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
   //      - MPI of DSA value r.
   //      - MPI of DSA value s.
-  else if (publicKeyAlgorithm === 17) {
+  else if (publicKeyAlgorithm === enums.publicKey.dsa ||
+           publicKeyAlgorithm === enums.publicKey.ecdsa ||
+           publicKeyAlgorithm === enums.publicKey.eddsa) {
     mpicount = 2;
   }
 
+  // EdDSA signature parameters are encoded in litte-endian format
+  // https://tools.ietf.org/html/rfc8032#section-5.1.2
+  var endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
   var mpi = [],
     i = 0;
   for (var j = 0; j < mpicount; j++) {
     mpi[j] = new type_mpi();
-    i += mpi[j].read(this.signature.subarray(i, this.signature.length));
+    i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
   }
 
-  this.verified = crypto.signature.verify(publicKeyAlgorithm,
-    hashAlgorithm, mpi, key.mpi,
+  this.verified = await crypto.signature.verify(publicKeyAlgorithm,
+    hashAlgorithm, mpi, key.params,
     util.concatUint8Array([bytes, this.signatureData, trailer]));
 
   return this.verified;

@@ -92,7 +92,6 @@ function mixOneRound(a, b, c, d, e, x, s, roundNumber) {
 
     default:
       throw new Error("Bogus round number");
-      break;
   }
 
   a = ROL(a, s) + e;
