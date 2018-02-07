@@ -37,7 +37,7 @@ export default {
   prefer_hash_algorithm: enums.hash.sha256,
   encryption_cipher: enums.symmetric.aes256,
   compression: enums.compression.zip,
-  aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption
+  aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption (NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS)
   integrity_protect: true, // use integrity protection for symmetric encryption
   ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
   checksum_required: false, // do not throw error when armor is missing a checksum
@@ -46,7 +46,8 @@ export default {
   use_native: true, // use native node.js crypto and Web Crypto apis (if available)
   zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
-  tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error
+  tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error,
+  password_collision_check: false, // work-around for rare GPG decryption bug with encrypting with multiple passwords
   show_version: true,
   show_comment: true,
   versionstring: "OpenPGP.js VERSION",

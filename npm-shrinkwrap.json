@@ -842,7 +842,8 @@
     "babel-plugin-transform-remove-strict-mode": {
       "version": "0.0.2",
       "resolved": "https://registry.npmjs.org/babel-plugin-transform-remove-strict-mode/-/babel-plugin-transform-remove-strict-mode-0.0.2.tgz",
-      "integrity": "sha1-kTaFqrlUOfOg7YjliPvV6ZeJBXk="
+      "integrity": "sha1-kTaFqrlUOfOg7YjliPvV6ZeJBXk=",
+      "dev": true
     },
     "babel-plugin-transform-runtime": {
       "version": "6.23.0",
