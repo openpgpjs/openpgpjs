@@ -537,22 +537,7 @@ export default {
   },
 
   /**
-   * Wraps a generic synchronous function in an ES6 Promise.
-   * @param  {Function} fn  The function to be wrapped
-   * @return {Function}     The function wrapped in a Promise
-   */
-  promisify: function(fn) {
-    return function() {
-      var args = arguments;
-      return new Promise(function(resolve) {
-        var result = fn.apply(null, args);
-        resolve(result);
-      });
-    };
-  },
-
-  /**
-   * Converts an IE11 web crypro api result to a promise.
+   * Converts an IE11 web crypto api result to a promise.
    *   This is required since IE11 implements an old version of the
    *   Web Crypto specification that does not use promises.
    * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call

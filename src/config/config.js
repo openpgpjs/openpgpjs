@@ -16,16 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * This object contains configuration values.
+ * This object contains global configuration values.
  * @requires enums
- * @property {Integer} prefer_hash_algorithm
- * @property {Integer} encryption_cipher
- * @property {Integer} compression
- * @property {Boolean} show_version
- * @property {Boolean} show_comment
- * @property {Boolean} integrity_protect
- * @property {String} keyserver
- * @property {Boolean} debug If enabled, debug messages will be printed
  * @module config/config
  */
 
@@ -34,24 +26,56 @@
 import enums from '../enums.js';
 
 export default {
+  /** @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash} */
   prefer_hash_algorithm: enums.hash.sha256,
+  /** @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric} */
   encryption_cipher: enums.symmetric.aes256,
+  /** @property {Integer} compression Default compression algorithm {@link module:enums.compression} */
   compression: enums.compression.zip,
-  aead_protect: false, // use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption (NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS)
-  integrity_protect: true, // use integrity protection for symmetric encryption
-  ignore_mdc_error: false, // fail on decrypt if message is not integrity protected
-  checksum_required: false, // do not throw error when armor is missing a checksum
-  verify_expired_keys: true, // allow signature verification with expired keys
-  rsa_blinding: true,
-  use_native: true, // use native node.js crypto and Web Crypto apis (if available)
-  zero_copy: false, // use transferable objects between the Web Worker and main thread
-  debug: false,
-  tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error,
-  password_collision_check: false, // work-around for rare GPG decryption bug when encrypting with multiple passwords. Slower and slightly less secure
+
+  /**
+   * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
+   * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * @property {Boolean} aead_protect
+   */
+  aead_protect:             false,
+  /** Use integrity protection for symmetric encryption
+   * @property {Boolean} integrity_protect */
+  integrity_protect:        true,
+  /** @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected */
+  ignore_mdc_error:         false,
+  /** @property {Boolean} checksum_required Do not throw error when armor is missing a checksum */
+  checksum_required:        false,
+  /** @property {Boolean} verify_expired_keys Allow signature verification with expired keys */
+  verify_expired_keys:      true,
+  /** @property {Boolean} rsa_blinding */
+  rsa_blinding:             true,
+  /** Work-around for rare GPG decryption bug when encrypting with multiple passwords
+   * Slower and slightly less secure
+   * @property {Boolean} password_collision_check
+   */
+  password_collision_check: false,
+
+  /** @property {Boolean} use_native Use native Node.js crypto and WebCrypto API's when available */
+  use_native:               true,
+  /** @property {Boolean} Use transferable objects between the Web Worker and main thread */
+  zero_copy:                false,
+  /** @property {Boolean} debug If enabled, debug messages will be printed */
+  debug:                    false,
+  /** @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error */
+  tolerant:                 true,
+
+  /** @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages */
   show_version: true,
+  /** @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages */
   show_comment: true,
+  /** @property {String} versionstring A version string to be included in armored messages */
   versionstring: "OpenPGP.js VERSION",
+  /** @property {String} commentstring A comment string to be included in armored messages */
   commentstring: "https://openpgpjs.org",
-  keyserver: "https://keyserver.ubuntu.com",
-  node_store: './openpgp.store'
+
+  /** @property {String} keyserver */
+  keyserver:     "https://keyserver.ubuntu.com",
+  /** @property {String} node_store */
+  node_store:    "./openpgp.store"
 };
