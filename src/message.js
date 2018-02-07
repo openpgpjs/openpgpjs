@@ -97,7 +97,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
-  let keyObjs = sessionKey || await this.decryptSessionKey(privateKey, password);
+  let keyObjs = sessionKey || await this.decryptSessionKeys(privateKey, password);
   if (!util.isArray(keyObjs)) {
     keyObjs = [keyObjs];
   }
@@ -146,7 +146,7 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
  * @return {Array}             array of object with potential sessionKey, algorithm pairs in the form:
  *                               { data:Uint8Array, algorithm:String }
  */
-Message.prototype.decryptSessionKey = function(privateKey, password) {
+Message.prototype.decryptSessionKeys = function(privateKey, password) {
   var keyPackets = [];
   return Promise.resolve().then(async () => {
     if (password) {
@@ -154,12 +154,12 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
-      await symESKeyPacketlist.map(async function(packet) {
+      await Promise.all(symESKeyPacketlist.map(async function(packet) {
         try {
           await packet.decrypt(password);
           keyPackets.push(packet);
         } catch (err) {}
-      });
+      }));
 
     } else if (privateKey) {
       var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
@@ -170,21 +170,34 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
       if (!privateKeyPacket.isDecrypted) {
         throw new Error('Private key is not decrypted.');
       }
-      // TODO replace when Promise.some or Promise.any are implemented
-      // eslint-disable-next-line no-await-in-loop
-      await pkESKeyPacketlist.some(async function(packet) {
+      await Promise.all(pkESKeyPacketlist.map(async function(packet) {
         if (packet.publicKeyId.equals(privateKeyPacket.getKeyId())) {
           try {
             await packet.decrypt(privateKeyPacket);
             keyPackets.push(packet);
           } catch (err) {}
         }
-      });
+      }));
     } else {
       throw new Error('No key or password specified.');
     }
   }).then(() => {
+
     if (keyPackets.length) {
+
+      // Return only unique session keys
+      if (keyPackets.length > 1) {
+        var seen = {};
+        keyPackets = keyPackets.filter(function(item) {
+            var k = item.sessionKeyAlgorithm + util.Uint8Array2str(item.sessionKey);
+            if (seen.hasOwnProperty(k)) {
+              return false;
+            }
+            seen[k] = true;
+            return true;
+        });
+      }
+
       return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
     } else {
       throw new Error('Session key decryption failed.');

@@ -414,18 +414,18 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
  *                                          or 'undefined' if no key packets found
  * @static
  */
-export function decryptSessionKey({ message, privateKey, password }) {
+export function decryptSessionKeys({ message, privateKey, password }) {
   checkMessage(message);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, password });
+    return asyncProxy.delegate('decryptSessionKeys', { message, privateKey, password });
   }
 
   return Promise.resolve().then(async function() {
 
-    return message.decryptSessionKey(privateKey, password);
+    return message.decryptSessionKeys(privateKey, password);
 
-  }).catch(onError.bind(null, 'Error decrypting session key'));
+  }).catch(onError.bind(null, 'Error decrypting session keys'));
 }
 
 
