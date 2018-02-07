@@ -272,11 +272,11 @@ SecretKey.prototype.decrypt = function (passphrase) {
 };
 
 SecretKey.prototype.generate = function (bits, curve) {
-  var self = this;
+  var that = this;
 
-  return crypto.generateParams(self.algorithm, bits, curve).then(function(params) {
-    self.params = params;
-    self.isDecrypted = true;
+  return crypto.generateParams(that.algorithm, bits, curve).then(function(params) {
+    that.params = params;
+    that.isDecrypted = true;
   });
 };
 

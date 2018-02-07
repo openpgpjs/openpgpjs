@@ -62,7 +62,7 @@ export default {
         return dopublic.compareTo(s1) === 0;
       case 19:
         // ECDSA
-        const ecdsa = publicKey.elliptic.ecdsa;
+        var ecdsa = publicKey.elliptic.ecdsa;
         curve = publickey_MPIs[0];
         r = msg_MPIs[0].toBigInteger();
         s = msg_MPIs[1].toBigInteger();
@@ -71,7 +71,7 @@ export default {
         return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
       case 22:
         // EdDSA
-        const eddsa = publicKey.elliptic.eddsa;
+        var eddsa = publicKey.elliptic.eddsa;
         curve = publickey_MPIs[0];
         r = msg_MPIs[0].toBigInteger();
         s = msg_MPIs[1].toBigInteger();
