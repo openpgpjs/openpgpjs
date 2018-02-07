@@ -47,7 +47,7 @@ export default {
   zero_copy: false, // use transferable objects between the Web Worker and main thread
   debug: false,
   tolerant: true, // ignore unsupported/unrecognizable packets instead of throwing an error,
-  password_collision_check: false, // work-around for rare GPG decryption bug with encrypting with multiple passwords
+  password_collision_check: false, // work-around for rare GPG decryption bug when encrypting with multiple passwords. Slower and slightly less secure
   show_version: true,
   show_comment: true,
   versionstring: "OpenPGP.js VERSION",
