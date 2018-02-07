@@ -90,7 +90,7 @@ AsyncProxy.prototype.onMessage = function(event) {
  */
 AsyncProxy.prototype.seedRandom = function(size) {
   const buf = this.getRandomBuffer(size);
-  this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables.call(util, buf));
+  this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
 };
 
 /**
@@ -125,7 +125,7 @@ AsyncProxy.prototype.delegate = function(method, options) {
 
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.worker.postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables.call(util, options));
+    this.worker.postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options));
 
     // remember to handle parsing cloned packets from worker
     this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject };

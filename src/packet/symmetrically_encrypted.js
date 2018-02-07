@@ -42,7 +42,7 @@ export default function SymmetricallyEncrypted() {
   this.encrypted = null;
   /** Decrypted packets contained within.
    * @type {module:packet/packetlist} */
-  this.packets =  null;
+  this.packets = null;
   this.ignore_mdc_error = config.ignore_mdc_error;
 }
 

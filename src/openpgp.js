@@ -21,6 +21,8 @@
  * @requires key
  * @requires config
  * @requires util
+ * @requires polyfills
+ * @requires worker/async_proxy
  * @module openpgp
  */
 
@@ -32,15 +34,17 @@
 
 'use strict';
 
-import * as messageLib from './message.js';
-import * as cleartext from './cleartext.js';
-import * as key from './key.js';
-import config from './config/config.js';
+import * as messageLib from './message';
+import { CleartextMessage } from './cleartext';
+import { generate, reformat } from './key';
+import config from './config/config';
 import util from './util';
-import AsyncProxy from './worker/async_proxy.js';
-import es6Promise from 'es6-promise';
-es6Promise.polyfill(); // load ES6 Promises polyfill
+import AsyncProxy from './worker/async_proxy';
 
+// Old browser polyfills
+if (typeof window !== 'undefined') {
+  require('./polyfills');
+}
 
 //////////////////////////
 //                      //
@@ -57,7 +61,7 @@ let asyncProxy; // instance of the asyncproxy
  * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  */
 export function initWorker({ path='openpgp.worker.js', worker } = {}) {
-  if (worker || typeof window !== 'undefined' && window.Worker) {
+  if (worker || (typeof window !== 'undefined' && window.Worker)) {
     asyncProxy = new AsyncProxy({ path, worker, config });
     return true;
   }
@@ -87,28 +91,31 @@ export function destroyWorker() {
 
 
 /**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
+ * @param  {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
+ * @param  {String} curve            (optional) elliptic curve for ECC keys: curve25519, p256, p384, p521, or secp256k1
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @return {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, keyExpirationTime });
+
+export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="" } = {}) {
+  userIds = formatUserIds(userIds);
+  const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return key.generate(options).then(newKey => ({
+  return generate(options).then(key => ({
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    key: key,
+    privateKeyArmored: key.armor(),
+    publicKeyArmored: key.toPublic().armor()
 
   })).catch(onError.bind(null, 'Error generating keypair'));
 }
@@ -124,17 +131,19 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  * @static
  */
 export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
+  userIds = formatUserIds(userIds);
+
+  const options = {privateKey, userIds, passphrase, unlocked, keyExpirationTime};
 
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
 
-  return key.reformat(options).then(newKey => ({
+  return reformat(options).then(key => ({
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    key: key,
+    privateKeyArmored: key.armor(),
+    publicKeyArmored: key.toPublic().armor()
 
   })).catch(onError.bind(null, 'Error reformatting keypair'));
 }
@@ -150,16 +159,15 @@ export function decryptKey({ privateKey, passphrase }) {
     return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
   }
 
-  return execute(() => {
+  return Promise.resolve().then(async function() {
 
-    if (!privateKey.decrypt(passphrase)) {
-      throw new Error('Invalid passphrase');
-    }
+    await privateKey.decrypt(passphrase);
+
     return {
       key: privateKey
     };
 
-  }, 'Error decrypting private key');
+  }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
 
@@ -195,7 +203,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey });
   }
   var result = {};
-  return Promise.resolve().then(() => {
+  return Promise.resolve().then(async function() {
 
     let message = createMessage(data, filename);
     if (!privateKeys) {
@@ -203,14 +211,14 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        var detachedSignature = message.signDetached(privateKeys, signature);
+        var detachedSignature = await message.signDetached(privateKeys, signature);
         if (armor) {
           result.signature = detachedSignature.armor();
         } else {
           result.signature = detachedSignature;
         }
       } else {
-        message = message.sign(privateKeys, signature);
+        message = await message.sign(privateKeys, signature);
       }
     }
     return message.encrypt(publicKeys, passwords, sessionKey);
@@ -225,6 +233,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
       result.sessionKey = encrypted.sessionKey;
     }
     return result;
+
   }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
@@ -249,7 +258,7 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
     return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format, signature });
   }
 
-  return message.decrypt(privateKey, sessionKey, password).then(message => {
+  return message.decrypt(privateKey, sessionKey, password).then(async function(message) {
 
     const result = parseMessage(message, format);
 
@@ -258,9 +267,9 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
     }
     if (signature) {
       //detached signature
-      result.signatures = message.verifyDetached(signature, publicKeys);
+      result.signatures = await message.verifyDetached(signature, publicKeys);
     } else {
-      result.signatures = message.verify(publicKeys);
+      result.signatures = await message.verify(publicKeys);
     }
 
     return result;
@@ -296,34 +305,33 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
   }
 
   var result = {};
-  return execute(() => {
+  return Promise.resolve().then(async function() {
     var message;
 
     if (util.isString(data)) {
-      message = new cleartext.CleartextMessage(data);
+      message = new CleartextMessage(data);
     } else {
       message = messageLib.fromBinary(data);
     }
 
     if (detached) {
-      var signature = message.signDetached(privateKeys);
+      var signature = await message.signDetached(privateKeys);
       if (armor) {
         result.signature = signature.armor();
       } else {
         result.signature = signature;
       }
     } else {
-      message = message.sign(privateKeys);
+      message = await message.sign(privateKeys);
       if (armor) {
         result.data = message.armor();
       } else {
         result.message = message;
       }
     }
-
     return result;
 
-  }, 'Error signing cleartext message');
+  }).catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
 /**
@@ -332,7 +340,7 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
  * @param  {CleartextMessage} message    cleartext message object with signatures
  * @param  {Signature} signature         (optional) detached signature for verification
  * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
- *                                         { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ *                                       { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
 export function verify({ message, publicKeys, signature=null }) {
@@ -343,22 +351,24 @@ export function verify({ message, publicKeys, signature=null }) {
     return asyncProxy.delegate('verify', { message, publicKeys, signature });
   }
 
-  var result = {};
-  return execute(() => {
-    if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
+  return Promise.resolve().then(async function() {
+
+    var result = {};
+    if (CleartextMessage.prototype.isPrototypeOf(message)) {
       result.data = message.getText();
     } else {
       result.data = message.getLiteralData();
     }
+
     if (signature) {
       //detached signature
-      result.signatures = message.verifyDetached(signature, publicKeys);
+      result.signatures = await message.verifyDetached(signature, publicKeys);
     } else {
-      result.signatures = message.verify(publicKeys);
+      result.signatures = await message.verify(publicKeys);
     }
     return result;
 
-  }, 'Error verifying cleartext signed message');
+  }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
 
@@ -386,11 +396,11 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
     return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
   }
 
-  return execute(() => ({
+  return Promise.resolve().then(async function() {
 
-    message: messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
+    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords) };
 
-  }), 'Error encrypting session key');
+  }).catch(onError.bind(null, 'Error encrypting session key'));
 }
 
 /**
@@ -399,19 +409,23 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
  * @param  {Message} message              a message object containing the encrypted session key packets
  * @param  {Key} privateKey               (optional) private key with decrypted secret key data
  * @param  {String} password              (optional) a single password to decrypt the session key
- * @return {Promise<Object|undefined>}    decrypted session key and algorithm in object form:
+ * @return {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
  * @static
  */
-export function decryptSessionKey({ message, privateKey, password }) {
+export function decryptSessionKeys({ message, privateKey, password }) {
   checkMessage(message);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, password });
+    return asyncProxy.delegate('decryptSessionKeys', { message, privateKey, password });
   }
 
-  return execute(() => message.decryptSessionKey(privateKey, password), 'Error decrypting session key');
+  return Promise.resolve().then(async function() {
+
+    return message.decryptSessionKeys(privateKey, password);
+
+  }).catch(onError.bind(null, 'Error decrypting session keys'));
 }
 
 
@@ -446,7 +460,7 @@ function checkMessage(message) {
   }
 }
 function checkCleartextOrMessage(message) {
-  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
@@ -454,12 +468,12 @@ function checkCleartextOrMessage(message) {
 /**
  * Format user ids for internal use.
  */
-function formatUserIds(options) {
-  if (!options.userIds) {
-    return options;
+function formatUserIds(userIds) {
+  if (!userIds) {
+    return userIds;
   }
-  options.userIds = toArray(options.userIds); // normalize to array
-  options.userIds = options.userIds.map(id => {
+  userIds = toArray(userIds); // normalize to array
+  userIds = userIds.map(id => {
     if (util.isString(id) && !util.isUserId(id)) {
       throw new Error('Invalid user id format');
     }
@@ -478,7 +492,7 @@ function formatUserIds(options) {
     }
     return id.name + '<' + id.email + '>';
   });
-  return options;
+  return userIds;
 }
 
 /**
@@ -531,20 +545,6 @@ function parseMessage(message, format) {
   } else {
     throw new Error('Invalid format');
   }
-}
-
-/**
- * Command pattern that wraps synchronous code into a promise.
- * @param  {function} cmd     The synchronous function with a return value
- *                              to be wrapped in a promise
- * @param  {String} message   A human readable error Message
- * @return {Promise}          The promise wrapped around cmd
- */
-function execute(cmd, message) {
-  // wrap the sync cmd in a promise
-  const promise = new Promise(resolve => resolve(cmd()));
-  // handler error globally
-  return promise.catch(onError.bind(null, message));
 }
 
 /**

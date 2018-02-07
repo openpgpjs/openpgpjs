@@ -156,15 +156,11 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
           util.concatUint8Array([prefix, s2k.salt, passphrase]));
 
       case 'iterated':
-        var isp = [],
-          count = s2k.get_count(),
-          data = util.concatUint8Array([s2k.salt,passphrase]);
+        var count = s2k.get_count(),
+          data = util.concatUint8Array([s2k.salt,passphrase]),
+          isp = new Array(Math.ceil(count / data.length));
 
-        while (isp.length * data.length < count) {
-          isp.push(data);
-        }
-
-        isp = util.concatUint8Array(isp);
+        isp = util.concatUint8Array(isp.fill(data));
 
         if (isp.length > count) {
           isp = isp.subarray(0, count);

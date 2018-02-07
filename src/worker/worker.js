@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/* globals self: true */
+/* eslint-disable no-restricted-globals */
 
 self.window = {}; // to make UMD bundles work
 
@@ -98,5 +98,5 @@ function response(event) {
   if (openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
     self.postMessage({event: 'request-seed'});
   }
-  self.postMessage(event, openpgp.util.getTransferables.call(openpgp.util, event.data));
+  self.postMessage(event, openpgp.util.getTransferables(event.data));
 }
