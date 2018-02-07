@@ -97,9 +97,9 @@ Message.prototype.getSigningKeyIds = function() {
  * @return {Message}             new message with decrypted content
  */
 Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
-  const keyObj = sessionKey || await this.decryptSessionKey(privateKey, password);
-  if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
-    throw new Error('Invalid session key for decryption.');
+  let keyObjs = sessionKey || await this.decryptSessionKey(privateKey, password);
+  if (!util.isArray(keyObjs)) {
+    keyObjs = [keyObjs];
   }
 
   const symEncryptedPacketlist = this.packets.filterByTag(
@@ -113,7 +113,26 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
   }
 
   const symEncryptedPacket = symEncryptedPacketlist[0];
-  await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data);
+  let exception = null;
+  for (let i = 0; i < keyObjs.length; i++) {
+    if (!keyObjs[i] || !util.isUint8Array(keyObjs[i].data) || !util.isString(keyObjs[i].algorithm)) {
+      throw new Error('Invalid session key for decryption.');
+    }
+
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data);
+      break;
+    }
+    catch(e) {
+      exception = e;
+    }
+  }
+
+  if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
+    throw exception ? exception : new Error('Decryption failed.');
+  }
+
   const resultMsg = new Message(symEncryptedPacket.packets);
   symEncryptedPacket.packets = new packet.List(); // remove packets after decryption
 
@@ -124,23 +143,21 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
  * Decrypt an encrypted session key either with a private key or a password.
  * @param  {Key} privateKey    (optional) private key with decrypted secret data
  * @param  {String} password   (optional) password used to decrypt
- * @return {Object}            object with sessionKey, algorithm in the form:
+ * @return {Array}             array of object with potential sessionKey, algorithm pairs in the form:
  *                               { data:Uint8Array, algorithm:String }
  */
 Message.prototype.decryptSessionKey = function(privateKey, password) {
-  var keyPacket;
+  var keyPackets = [];
   return Promise.resolve().then(async () => {
     if (password) {
       var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
-      // TODO replace when Promise.some or Promise.any are implemented
-      await symESKeyPacketlist.some(async function(packet) {
+      await symESKeyPacketlist.map(async function(packet) {
         try {
           await packet.decrypt(password);
-          keyPacket = packet;
-          return true;
+          keyPackets.push(packet);
         } catch (err) {}
       });
 
@@ -159,8 +176,7 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
         if (packet.publicKeyId.equals(privateKeyPacket.getKeyId())) {
           try {
             await packet.decrypt(privateKeyPacket);
-            keyPacket = packet;
-            return true;
+            keyPackets.push(packet);
           } catch (err) {}
         }
       });
@@ -168,11 +184,8 @@ Message.prototype.decryptSessionKey = function(privateKey, password) {
       throw new Error('No key or password specified.');
     }
   }).then(() => {
-    if (keyPacket) {
-      return {
-        data: keyPacket.sessionKey,
-        algorithm: keyPacket.sessionKeyAlgorithm
-      };
+    if (keyPackets.length) {
+      return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
     } else {
       throw new Error('Session key decryption failed.');
     }
@@ -296,14 +309,38 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
     }
 
     if (passwords) {
-      results = await Promise.all(passwords.map(async function(password) {
+
+      const testDecrypt = async function(keyPacket, password) {
+        try {
+          await keyPacket.decrypt(password);
+          return 1;
+        }
+        catch (e) {
+          return 0;
+        }
+      };
+
+      const sum = (accumulator, currentValue) => accumulator + currentValue;
+
+      const encryptPassword = async function(sessionKey, symAlgo, password) {
+
         var symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
         symEncryptedSessionKeyPacket.sessionKey = sessionKey;
         symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
         await symEncryptedSessionKeyPacket.encrypt(password);
+
+        if (config.password_collision_check) {
+          var results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
+          if (results.reduce(sum) !== 1) {
+            return encryptPassword(sessionKey, symAlgo, password);
+          }
+        }
+
         delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
         return symEncryptedSessionKeyPacket;
-      }));
+      };
+
+      results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, pwd)));
       packetlist.concat(results);
     }
   }).then(() => {
