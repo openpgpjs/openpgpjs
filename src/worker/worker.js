@@ -98,5 +98,5 @@ function response(event) {
   if (openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
     self.postMessage({event: 'request-seed'});
   }
-  self.postMessage(event, openpgp.util.getTransferables.call(openpgp.util, event.data));
+  self.postMessage(event, openpgp.util.getTransferables(event.data));
 }

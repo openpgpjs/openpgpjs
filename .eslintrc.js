@@ -333,6 +333,7 @@ module.exports = {
     "require-await": 0,
     "no-multi-assign": 0,
     "no-underscore-dangle": 0, 
+    "no-restricted-syntax": 0,
     "one-var-declaration-per-line": 0,
 
     // Custom errors:
@@ -347,18 +348,13 @@ module.exports = {
     "no-unused-vars": 0,
     "indent": [ 0, 2, { "SwitchCase": 1 } ],
 
-    // Consider fixing these:
+    // TODO Consider fixing these:
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
     "no-lonely-if": 0,
     "no-fallthrough": 0,
-    "consistent-this": 0,
     "no-invalid-this": 0,
-    "callback-return": 0,
-    "no-useless-call": 0, // only occurs for workers
     "import/extensions": 0,
     "no-useless-escape": 0,
-    "no-case-declarations": 0,
-    "no-restricted-syntax": 0,
     "no-array-constructor": 0,
     "no-constant-condition": 0,
     "no-buffer-constructor": 0, // deprecated

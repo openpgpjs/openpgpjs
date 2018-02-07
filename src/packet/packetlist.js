@@ -1,3 +1,4 @@
+/* eslint-disable callback-return */
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
