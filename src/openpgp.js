@@ -16,12 +16,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires ed6-promise
  * @requires message
  * @requires cleartext
  * @requires key
  * @requires config
  * @requires util
+ * @requires polyfills
  * @requires worker/async_proxy
  * @module openpgp
  */
@@ -409,7 +409,7 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
  * @param  {Message} message              a message object containing the encrypted session key packets
  * @param  {Key} privateKey               (optional) private key with decrypted secret key data
  * @param  {String} password              (optional) a single password to decrypt the session key
- * @return {Promise<Object|undefined>}    decrypted session key and algorithm in object form:
+ * @return {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
  * @static

@@ -54,10 +54,10 @@ export default {
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} publicParams Algorithm dependent params
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} publicParams Algorithm dependent params
    * @param {module:type/mpi} data Data to be encrypted as MPI
    * @param {String} fingerprint Recipient fingerprint
-   * @return {Array<module:type/mpi|module:type/oid|module:type/kdf|module:type/ecdh_symkey>} encrypted session key parameters
+   * @return {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} encrypted session key parameters
    */
   publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
     var types = this.getEncSessionKeyParamTypes(algo);
@@ -100,7 +100,7 @@ export default {
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf} keyIntegers Algorithm dependent params
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params>} keyIntegers Algorithm dependent params
    * @param {Array<module:type/mpi|module:type/ecdh_symkey>} dataIntegers encrypted session key parameters
    * @param {String} fingerprint Recipient fingerprint
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null

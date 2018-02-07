@@ -143,8 +143,7 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
  * Decrypt an encrypted session key either with a private key or a password.
  * @param  {Key} privateKey    (optional) private key with decrypted secret data
  * @param  {String} password   (optional) password used to decrypt
- * @return {Array}             array of object with potential sessionKey, algorithm pairs in the form:
- *                               { data:Uint8Array, algorithm:String }
+ * @return {Array<{ data:Uint8Array, algorithm:String }>} array of object with potential sessionKey, algorithm pairs
  */
 Message.prototype.decryptSessionKeys = function(privateKey, password) {
   var keyPackets = [];

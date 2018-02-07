@@ -1,25 +1,62 @@
 OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch=master)](https://travis-ci.org/openpgpjs/openpgpjs)
 ==========
-
-[OpenPGP.js](http://openpgpjs.org/) is a Javascript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
+ 
+[OpenPGP.js](http://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. This is defined in [RFC 4880](http://tools.ietf.org/html/rfc4880).
 
 [![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs.svg)](https://saucelabs.com/u/openpgpjs)
+ 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
 
+- [OpenPGP.js](#openpgpjs)
+    - [Platform Support](#platform-support)
+    - [Performance](#performance)
+    - [Getting started](#getting-started)
+        - [Npm](#npm)
+        - [Bower](#bower)
+    - [Examples](#examples)
+        - [Set up](#set-up)
+        - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
+        - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
+        - [Generate new key pair](#generate-new-key-pair)
+        - [Lookup public key on HKP server](#lookup-public-key-on-hkp-server)
+        - [Upload public key to HKP server](#upload-public-key-to-hkp-server)
+        - [Sign and verify cleartext messages](#sign-and-verify-cleartext-messages)
+        - [Create and verify *detached* signatures](#create-and-verify-detached-signatures)
+    - [Documentation](#documentation)
+    - [Security Audit](#security-audit)
+    - [Security recommendations](#security-recommendations)
+    - [Development](#development)
+    - [How do I get involved?](#how-do-i-get-involved)
+    - [License](#license)
+    - [Resources](#resources)
 
-### Platform support
+<!-- markdown-toc end -->
 
-* OpenPGP.js v2.x is written in ES6 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in most environments. We support node.js v0.12+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
+### Platform Support
 
-* The api uses ES6 promises which are available in [most modern browsers](http://caniuse.com/#feat=promises). If you need to support browsers that do not support Promises, fear not! There is a [polyfill](https://github.com/jakearchibald/es6-promise), which is included in our build. So no action required on your part!
+* OpenPGP.js v3.x is written in ES7 but is transpiled to ES5 using [Babel](https://babeljs.io/) to run in most environments. We support Node.js v8+ and browsers that implement [window.crypto.getRandomValues](http://caniuse.com/#feat=getrandomvalues).
 
-* For the OpenPGP HTTP Key Server (HKP) client the new [fetch api](http://caniuse.com/#feat=fetch) is used. There is a polyfill for both [browsers](https://github.com/github/fetch) and [node.js](https://github.com/bitinn/node-fetch) runtimes. The node module is included as a dependency if you install via npm, but we do not include the browser polyfill in our build. So you'll need to include it in your app if you intend to use the HKP client.
+* The API uses the Async/Await syntax introduced in ES7 to return Promise objects. Async functions are available in [most modern browsers](https://caniuse.com/#feat=async-functions). If you need to support older browsers, fear not! We use [core-js](https://github.com/zloirock/core-js) to polyfill new features so that no action is required on your part!
 
+* For the OpenPGP HTTP Key Server (HKP) client the new [fetch API](http://caniuse.com/#feat=fetch) is used. The module is polyfilled for [browsers](https://github.com/github/fetch) and is included as a dependency for [Node.js](https://github.com/bitinn/node-fetch) runtimes.
 
 ### Performance
 
+* Version 3.0.0 of the library introduces support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available or [Elliptic](https://github.com/indutny/elliptic) when otherwise. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported: ("Yes*" means "when available")
+
+>| Curve      | Encryption | Signature | Elliptic | NodeCrypto | WebCrypto |
+>|:---------- |:----------:|:---------:|:--------:|:----------:|:---------:|
+>| p256       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+>| p384       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+>| p521       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+>| secp256k1  | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+>| curve25519 | ECDH       | N/A       | Yes      | No         | No        |
+>| ed25519    | N/A        | EdDSA     | Yes      | No         | No        |
+
 * Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
 
-* If the user's browser supports [native WebCrypto](http://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` api, this will be used. Under node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used. This can be deactivated by setting `openpgp.config.use_native = false`.
+* If the user's browser supports [native WebCrypto](http://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/API/crypto.html#crypto_crypto) is used. This can be deactivated by setting `openpgp.config.use_native = false`.
 
 * The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ford-openpgp-format-00) for authenticated encryption [using native AES-GCM](https://github.com/openpgpjs/openpgpjs/pull/430). This makes symmetric encryption about 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. You can activate it by setting `openpgp.config.aead_protect = true`. **Note: activating this setting can break compatibility with other OpenPGP implementations, so be careful if that's one of your requirements.**
 
@@ -41,7 +78,7 @@ Or just fetch a minified build under [dist](https://github.com/openpgpjs/openpgp
 
 ### Examples
 
-Here are some examples of how to use the v2.x api. For more elaborate examples and working code, please check out the [public api unit tests](https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js). If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use the v2.x+ API. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js). If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Set up
 
@@ -131,7 +168,7 @@ ECC keys:
 ```js
 var options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
-    curve: "curve25519",                                      // ECC curve (curve25519, p256, p384, p521, or secp256k1)
+    curve: "ed25519",                                         // ECC curve (curve25519, p256, p384, p521, or secp256k1)
     passphrase: 'super long and hard to guess secret'         // protects the private key
 };
 ```
@@ -266,6 +303,10 @@ It is also recommended to set a strong passphrase that protects the user's priva
 To create your own build of the library, just run the following command after cloning the git repo. This will download all dependencies, run the tests and create a minified bundle under `dist/openpgp.min.js` to use in your project:
 
     npm install && npm test
+
+For debugging browser errors, you can open `test/unittests.html` in a browser or, after running the following command, open [`http://localhost:3000/test/unittests.html`](http://localhost:3000/test/unittests.html):
+
+    grunt browsertest
 
 ### How do I get involved?
 
