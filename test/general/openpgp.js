@@ -494,7 +494,7 @@ describe('OpenPGP.js public api tests', function() {
           publicKeys: publicKey.keys,
         };
         var decOpt = {
-          privateKey: privateKey.keys[0]
+          privateKeys: privateKey.keys[0]
         };
         return openpgp.encrypt(encOpt).then(function(encrypted) {
           decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -541,7 +541,7 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             return openpgp.decryptSessionKeys({
               message: encrypted.message,
-              privateKey: privateKey.keys[0]
+              privateKeys: privateKey.keys[0]
             });
           }).then(function(decrypted) {
             expect(decrypted[0].data).to.deep.equal(sk);
@@ -556,7 +556,7 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             return openpgp.decryptSessionKeys({
               message: encrypted.message,
-              password: password1
+              passwords: password1
             });
           }).then(function(decrypted) {
             expect(decrypted[0].data).to.deep.equal(sk);
@@ -572,7 +572,7 @@ describe('OpenPGP.js public api tests', function() {
             msgAsciiArmored = encrypted.data;
             return openpgp.decryptSessionKeys({
               message: openpgp.message.readArmored(msgAsciiArmored),
-              privateKey: privateKey.keys[0]
+              privateKeys: privateKey.keys[0]
             });
 
           }).then(function(decryptedSessionKeys) {
@@ -595,7 +595,7 @@ describe('OpenPGP.js public api tests', function() {
             msgAsciiArmored = encrypted.data;
             return openpgp.decryptSessionKeys({
               message: openpgp.message.readArmored(msgAsciiArmored),
-              password: password1
+              passwords: password1
             });
 
           }).then(function(decryptedSessionKeys) {
@@ -616,7 +616,7 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             return openpgp.decryptSessionKeys({
               message: openpgp.message.readArmored(encrypted.data),
-              password: password1
+              passwords: password1
             });
           }).then(function(decryptedSessionKeys) {
             expect(decryptedSessionKeys.length).to.equal(1);
@@ -648,7 +648,7 @@ describe('OpenPGP.js public api tests', function() {
             publicKeys: publicKey.keys,
           };
           var decOpt = {
-            privateKey: privateKey.keys[0]
+            privateKeys: privateKey.keys[0]
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -715,7 +715,7 @@ describe('OpenPGP.js public api tests', function() {
             publicKeys: publicKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0]
+            privateKeys: privateKey.keys[0]
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -733,7 +733,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKeys: privateKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: publicKey.keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -754,7 +754,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKeys: privateKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: publicKey.keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -776,7 +776,7 @@ describe('OpenPGP.js public api tests', function() {
             detached: true
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: publicKey.keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -805,7 +805,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: publicKey.keys[0]
           };
 
@@ -843,7 +843,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: [publicKey.keys[0], pubKeyDE]
           };
 
@@ -880,7 +880,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
           };
 
@@ -912,7 +912,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
           };
 
@@ -937,7 +937,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKeys: privateKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -958,7 +958,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKeys: privateKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -979,7 +979,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKeys: privateKey.keys
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -1000,7 +1000,7 @@ describe('OpenPGP.js public api tests', function() {
             detached: true
           };
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -1028,7 +1028,7 @@ describe('OpenPGP.js public api tests', function() {
           };
 
           var decOpt = {
-            privateKey: privateKey.keys[0],
+            privateKeys: privateKey.keys[0],
             publicKeys: [publicKey.keys[0], pubKeyDE]
           };
 
@@ -1183,7 +1183,7 @@ describe('OpenPGP.js public api tests', function() {
             data: plaintext
           }).then(function(encrypted) {
             return openpgp.decrypt({
-              privateKey: privKeyDE,
+              privateKeys: privKeyDE,
               publicKeys: pubKeyDE,
               message: openpgp.message.readArmored(encrypted.data)
             });
@@ -1258,7 +1258,7 @@ describe('OpenPGP.js public api tests', function() {
           privKey.decrypt('1234');
           message = openpgp.message.readArmored(pgp_msg);
 
-          return openpgp.decrypt({ privateKey:privKey, message:message }).then(function(decrypted) {
+          return openpgp.decrypt({ privateKeys:privKey, message:message }).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello 3des\n');
             expect(decrypted.signatures.length).to.equal(0);
           });
@@ -1272,7 +1272,7 @@ describe('OpenPGP.js public api tests', function() {
             passwords: password1
           };
           var decOpt = {
-            password: password1
+            passwords: password1
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -1289,7 +1289,7 @@ describe('OpenPGP.js public api tests', function() {
             passwords: [password1, password2]
           };
           var decOpt = {
-            password: password2
+            passwords: password2
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -1304,7 +1304,7 @@ describe('OpenPGP.js public api tests', function() {
 
           var decOpt = {
             message: openpgp.message.readArmored(twoPasswordGPGFail),
-            password: password2
+            passwords: password2
           };
           return openpgp.decrypt(decOpt).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1319,7 +1319,7 @@ describe('OpenPGP.js public api tests', function() {
             armor: false
           };
           var decOpt = {
-            password: password1
+            passwords: password1
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             decOpt.message = encrypted.message;
@@ -1338,7 +1338,7 @@ describe('OpenPGP.js public api tests', function() {
             armor: false
           };
           var decOpt = {
-            password: password1,
+            passwords: password1,
             format: 'binary'
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {

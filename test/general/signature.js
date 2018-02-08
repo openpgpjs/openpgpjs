@@ -340,7 +340,7 @@ describe("Signature", function() {
     var pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
     var msg = openpgp.message.readArmored(msg_arm1);
     priv_key.decrypt("abcd");
-    return openpgp.decrypt({ privateKey: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
+    return openpgp.decrypt({ privateKeys: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.signatures[0].valid).to.be.true;
       expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
@@ -382,7 +382,7 @@ describe("Signature", function() {
     var msg = openpgp.message.readArmored(msg_arm1);
 
     priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
-    return msg.decrypt(priv_key_gnupg_ext).then(function(msg) {
+    return msg.decrypt([priv_key_gnupg_ext]).then(function(msg) {
       return msg.verify([pub_key]).then(verified => {
         expect(verified).to.exist;
         expect(verified).to.have.length(1);
@@ -466,7 +466,7 @@ describe("Signature", function() {
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
 
-    return openpgp.decrypt({ privateKey: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
+    return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
@@ -502,7 +502,7 @@ describe("Signature", function() {
     var keyids = esMsg.getEncryptionKeyIds();
     privKey.decryptKeyPacket(keyids, 'hello world');
 
-    return openpgp.decrypt({ privateKey: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
+    return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.data).to.equal(plaintext);
       expect(decrypted.signatures).to.have.length(1);
