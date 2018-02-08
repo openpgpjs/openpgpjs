@@ -107,6 +107,10 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
   userIds = formatUserIds(userIds);
   const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
 
+  if (util.getWebCryptoAll() && numBits < 2048) {
+    throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
+  }
+
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
