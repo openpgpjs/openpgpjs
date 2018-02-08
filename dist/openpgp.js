@@ -4141,7 +4141,7 @@ function defaultClearTimeout () {
 } ())
 function runTimeout(fun) {
     if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
+        //normal environments in sane situations
         return setTimeout(fun, 0);
     }
     // if setTimeout wasn't available but was latter defined
@@ -4166,7 +4166,7 @@ function runTimeout(fun) {
 }
 function runClearTimeout(marker) {
     if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
+        //normal environments in sane situations
         return clearTimeout(marker);
     }
     // if clearTimeout wasn't available but was latter defined
@@ -4506,7 +4506,7 @@ process.umask = function() { return 0; };
             // The size of the heap is the sum of:
             // 1. The padded input message size
             // 2. The extended space the algorithm needs (320 byte)
-            // 3. The 160 bit state the algoritm uses
+            // 3. The 160 bit state the algorithm uses
             self$2.heap = new ArrayBuffer(ceilHeapSize(self$2.padMaxChunkLen + 320 + 20));
             self$2.h32 = new Int32Array(self$2.heap);
             self$2.h8 = new Int8Array(self$2.heap);
@@ -8930,7 +8930,7 @@ function safeAdd_64_2(x, y) {
  * @param {Int_64} a The first 64-bit integer argument to be added
  * @param {Int_64} b The second 64-bit integer argument to be added
  * @param {Int_64} c The third 64-bit integer argument to be added
- * @param {Int_64} d The fouth 64-bit integer argument to be added
+ * @param {Int_64} d The fourth 64-bit integer argument to be added
  * @return {Int_64} The sum of a + b + c + d
  */
 function safeAdd_64_4(a, b, c, d) {
@@ -8955,8 +8955,8 @@ function safeAdd_64_4(a, b, c, d) {
  * @param {Int_64} a The first 64-bit integer argument to be added
  * @param {Int_64} b The second 64-bit integer argument to be added
  * @param {Int_64} c The third 64-bit integer argument to be added
- * @param {Int_64} d The fouth 64-bit integer argument to be added
- * @param {Int_64} e The fouth 64-bit integer argument to be added
+ * @param {Int_64} d The fourth 64-bit integer argument to be added
+ * @param {Int_64} e The fourth 64-bit integer argument to be added
  * @return {Int_64} The sum of a + b + c + d + e
  */
 function safeAdd_64_5(a, b, c, d, e) {
@@ -13432,7 +13432,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 exports.default = openpgp;
 
 /**
- * Export each high level api function seperately.
+ * Export each high level api function separately.
  * Usage:
  *
  *   import { encryptMessage } from 'openpgp.js'
@@ -13838,7 +13838,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
  * @returns {(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key|null)} key packet or null if no encryption key has been found
  */
 Key.prototype.getEncryptionKeyPacket = function () {
-  // V4: by convention subkeys are prefered for encryption service
+  // V4: by convention subkeys are preferred for encryption service
   // V3: keys MUST NOT have subkeys
   if (this.subKeys) {
     for (var i = 0; i < this.subKeys.length; i++) {
@@ -14033,7 +14033,7 @@ Key.prototype.getPrimaryUser = function () {
  * users, subkeys, certificates are merged into the destination key,
  * duplicates are ignored.
  * If the specified key is a private key and the destination key is public,
- * the destination key is tranformed to a private key.
+ * the destination key is transformed to a private key.
  * @param  {module:key~Key} key source key to merge
  */
 Key.prototype.update = function (key) {
@@ -16762,7 +16762,7 @@ function packetClassFromTagName(tag) {
 
 /**
  * @fileoverview This module implements packet list cloning required to
- * pass certain object types beteen the web worker and main thread using
+ * pass certain object types between the web worker and main thread using
  * the structured cloning algorithm.
  */
 
@@ -20548,7 +20548,7 @@ Keyid.fromId = function (hex) {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
+// Hint: We hold our MPIs as an array of octets in big endian format preceding a two
 // octet scalar: MPI: [a,b,c,d,e,f]
 // - MPI size: (a << 8) | b
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)

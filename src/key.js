@@ -360,7 +360,7 @@ function isValidSigningKeyPacket(keyPacket, signature, allowExpired=false) {
  * @returns {(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key|null)} key packet or null if no encryption key has been found
  */
 Key.prototype.getEncryptionKeyPacket = function(keyId) {
-  // V4: by convention subkeys are prefered for encryption service
+  // V4: by convention subkeys are preferred for encryption service
   // V3: keys MUST NOT have subkeys
   if (this.subKeys) {
     for (var i = 0; i < this.subKeys.length; i++) {
@@ -552,7 +552,7 @@ Key.prototype.getPrimaryUser = function(allowExpired=false) {
  * users, subkeys, certificates are merged into the destination key,
  * duplicates are ignored.
  * If the specified key is a private key and the destination key is public,
- * the destination key is tranformed to a private key.
+ * the destination key is transformed to a private key.
  * @param  {module:key~Key} key source key to merge
  */
 Key.prototype.update = async function(key) {
