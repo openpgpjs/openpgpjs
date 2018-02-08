@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
+// Hint: We hold our MPIs as an array of octets in big endian format preceding a two
 // octet scalar: MPI: [a,b,c,d,e,f]
 // - MPI size: (a << 8) | b
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
