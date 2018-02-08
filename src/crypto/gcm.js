@@ -22,14 +22,15 @@
 
 'use strict';
 
+import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import config from '../config';
-import asmCrypto from 'asmcrypto-lite';
+
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
-export const ivLength = 12; // size of the IV in bytes
+const ivLength = 12; // size of the IV in bytes
 const TAG_LEN = 16; // size of the tag in bytes
 const ALGO = 'AES-GCM';
 
@@ -41,7 +42,7 @@ const ALGO = 'AES-GCM';
  * @param  {Uint8Array} iv          The initialization vector (12 bytes)
  * @return {Promise<Uint8Array>}    The ciphertext output
  */
-export function encrypt(cipher, plaintext, key, iv) {
+function encrypt(cipher, plaintext, key, iv) {
   if (cipher.substr(0,3) !== 'aes') {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
@@ -49,7 +50,7 @@ export function encrypt(cipher, plaintext, key, iv) {
   if (webCrypto && config.use_native && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
     return webEncrypt(plaintext, key, iv);
   } else if (nodeCrypto && config.use_native) { // Node crypto library
-    return nodeEncrypt(plaintext, key, iv) ;
+    return nodeEncrypt(plaintext, key, iv);
   } else { // asm.js fallback
     return Promise.resolve(asmCrypto.AES_GCM.encrypt(plaintext, key, iv));
   }
@@ -63,7 +64,7 @@ export function encrypt(cipher, plaintext, key, iv) {
  * @param  {Uint8Array} iv           The initialization vector (12 bytes)
  * @return {Promise<Uint8Array>}     The plaintext output
  */
-export function decrypt(cipher, ciphertext, key, iv) {
+function decrypt(cipher, ciphertext, key, iv) {
   if (cipher.substr(0,3) !== 'aes') {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
@@ -76,6 +77,12 @@ export function decrypt(cipher, ciphertext, key, iv) {
     return Promise.resolve(asmCrypto.AES_GCM.decrypt(ciphertext, key, iv));
   }
 }
+
+export default {
+  ivLength,
+  encrypt,
+  decrypt
+};
 
 
 //////////////////////////

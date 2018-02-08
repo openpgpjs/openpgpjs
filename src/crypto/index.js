@@ -8,12 +8,14 @@
 import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';
-import * as gcm from './gcm';
+import gcm from './gcm';
 import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
 import pkcs1 from './pkcs1';
+import pkcs5 from './pkcs5.js';
 import crypto from './crypto.js';
+import aes_kw from './aes_kw.js';
 
 const mod = {
   /** @see module:crypto/cipher */
@@ -32,6 +34,10 @@ const mod = {
   random: random,
   /** @see module:crypto/pkcs1 */
   pkcs1: pkcs1,
+  /** @see module:crypto/pkcs5 */
+  pkcs5: pkcs5,
+  /** @see module:crypto/aes_kw */
+  aes_kw: aes_kw
 };
 
 for (var i in crypto) {

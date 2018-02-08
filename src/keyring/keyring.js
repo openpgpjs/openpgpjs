@@ -17,22 +17,22 @@
 
 /**
  * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
- * @requires enums
  * @requires key
- * @requires util
+ * @requires keyring/localstore
  * @module keyring/keyring
+ * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 
 'use strict';
 
-import * as keyModule from '../key.js';
-import LocalStore from './localstore.js';
+import { readArmored } from '../key';
+import LocalStore from './localstore';
 
 /**
  * Initialization routine for the keyring. This method reads the
  * keyring from HTML5 local storage and initializes this instance.
  * @constructor
- * @param {class} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
+ * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 export default function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new LocalStore();
@@ -181,14 +181,14 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  * @return {Array<Error>|null} array of error objects or null
  */
 KeyArray.prototype.importKey = function (armored) {
-  var imported = keyModule.readArmored(armored);
+  var imported = readArmored(armored);
   var that = this;
-  imported.keys.forEach(function(key) {
+  imported.keys.forEach(async function(key) {
     // check if key already in key array
     var keyidHex = key.primaryKey.getKeyId().toHex();
     var keyFound = that.getForId(keyidHex);
     if (keyFound) {
-      keyFound.update(key);
+      await keyFound.update(key);
     } else {
       that.push(key);
     }
