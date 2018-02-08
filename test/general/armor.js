@@ -151,7 +151,7 @@ describe("ASCII armor", function() {
     var privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: OpenPGP.js v0.3.0',
-      'Comment: http://openpgpjs.org',
+      'Comment: https://openpgpjs.org',
       '',
       'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
       'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',
@@ -187,7 +187,7 @@ describe("ASCII armor", function() {
     var privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
-        'Comment: http://openpgpjs.org',
+        'Comment: https://openpgpjs.org',
         '',
         'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
         'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',
@@ -221,7 +221,7 @@ describe("ASCII armor", function() {
     var privKeyNoCheckSum =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
-        'Comment: http://openpgpjs.org',
+        'Comment: https://openpgpjs.org',
         '',
         'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
         'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',
@@ -264,7 +264,7 @@ describe("ASCII armor", function() {
     var privKeyNoCheckSumWithTrailingNewline =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
-        'Comment: http://openpgpjs.org',
+        'Comment: https://openpgpjs.org',
         '',
         'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
         'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',
@@ -308,7 +308,7 @@ describe("ASCII armor", function() {
     var privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----\t \r',
       'Version: OpenPGP.js v0.3.0',
-      'Comment: http://openpgpjs.org',
+      'Comment: https://openpgpjs.org',
       '',
       'xbYEUubX7gEBANDWhzoP+Tr/IyRSv++vl5jBesQIPTYGQBdzF4YDnGEBABEB',
       'AAH+CQMIfzdw4/PKNl5gVXdtfDFdSIN8yJT2rbeg3+SsWexXZNNdRaONWaiB',

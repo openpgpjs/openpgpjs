@@ -245,7 +245,7 @@ Packetlist.prototype.concat = function (packetlist) {
 
 /**
  * Allocate a new packetlist from structured packetlist clone
- * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */

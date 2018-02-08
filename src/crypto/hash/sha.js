@@ -5,7 +5,7 @@
  *
  * Copyright Brian Turek 2008-2015
  * Distributed under the BSD License
- * See http://caligatio.github.com/jsSHA/ for more information
+ * See https://caligatio.github.com/jsSHA/ for more information
  *
  * Several functions taken from Paul Johnston
  */

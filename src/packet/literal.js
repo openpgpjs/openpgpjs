@@ -18,7 +18,7 @@
 /**
  * Implementation of the Literal Data Packet (Tag 11)<br/>
  * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}: A Literal Data packet contains the body of a message; data that
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}: A Literal Data packet contains the body of a message; data that
  * is not to be further interpreted.
  * @requires enums
  * @requires util

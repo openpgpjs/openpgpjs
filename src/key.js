@@ -465,7 +465,7 @@ Key.prototype.verifyPrimaryKey = async function(allowExpired=false) {
     return enums.keyStatus.expired;
   }
   // check for at least one self signature. Self signature of user ID not mandatory
-  // See {@link http://tools.ietf.org/html/rfc4880#section-11.1}
+  // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
   if (!this.users.some(user => user.userId && user.selfCertifications)) {
     return enums.keyStatus.no_self_cert;
   }
@@ -1156,7 +1156,7 @@ export function readArmored(armoredText) {
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * Primary and subkey will be of same type.
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
- *                             RSA is 1. See {@link http://tools.ietf.org/html/rfc4880#section-9.1}
+ *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
  * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
                                                      If array is used, the first userId is set as primary user Id

@@ -54,7 +54,7 @@ export function newPacketFromTag(tag) {
 
 /**
  * Allocate a new packet from structured packet clone
- * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
  * @param {Object} packetClone packet clone
  * @returns {Object} new packet object with data from packet clone
  */

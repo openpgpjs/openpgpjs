@@ -69,7 +69,7 @@ export default {
     gnu: 101
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -84,7 +84,7 @@ export default {
     eddsa: 22
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
    * @enum {Integer}
    * @readonly
    */
@@ -101,7 +101,7 @@ export default {
     twofish: 10
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.3|RFC4880, section 9.3}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.3|RFC4880, section 9.3}
    * @enum {Integer}
    * @readonly
    */
@@ -114,7 +114,7 @@ export default {
     bzip2: 3
   },
 
-  /** {@link http://tools.ietf.org/html/rfc4880#section-9.4|RFC4880, section 9.4}
+  /** {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880, section 9.4}
    * @enum {Integer}
    * @readonly
    */
