@@ -246,30 +246,31 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
  * Decrypts a message with the user's private key, a session key or a password. Either a private key,
  *   a session key or a password must be specified.
  * @param  {Message} message             the message object with the encrypted data
- * @param  {Key} privateKey              (optional) private key with decrypted secret key data or session key
- * @param  {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
- * @param  {Object} sessionKey           (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {String} password             (optional) single password to decrypt the message
- * @param  {String} format               (optional) return data format either as 'utf8' or 'binary'
- * @param  {Signature} signature         (optional) detached signature for verification
+ * @param  {Key|Array<Key>} privateKeys     (optional) private key with decrypted secret key data or session key
+ * @param  {String|Array<String>} passwords (optional) single password to decrypt the message
+ * @param  {Object} sessionKey              (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Key|Array<Key>} publicKeys      (optional) array of public keys or single key, to verify signatures
+ * @param  {String} format                  (optional) return data format either as 'utf8' or 'binary'
+ * @param  {Signature} signature            (optional) detached signature for verification
  * @return {Promise<Object>}             decrypted and verified message in the form:
  *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
-export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8', signature=null }) {
-  checkMessage(message); publicKeys = toArray(publicKeys);
+export function decrypt({ message, privateKeys, passwords, sessionKey, publicKeys, format='utf8', signature=null }) {
+  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format, signature });
+    return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKey, publicKeys, format, signature });
   }
 
-  return message.decrypt(privateKey, sessionKey, password).then(async function(message) {
+  return message.decrypt(privateKeys, passwords, sessionKey).then(async function(message) {
 
     const result = parseMessage(message, format);
 
     if (!publicKeys) {
       publicKeys = [];
     }
+
     if (signature) {
       //detached signature
       result.signatures = await message.verifyDetached(signature, publicKeys);
