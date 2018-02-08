@@ -70,7 +70,6 @@
     "gruntify-eslint": "^4.0.0",
     "istanbul": "^0.4.5",
     "mocha": "^4.1.0",
-    "ripemd160": "^2.0.1",
     "sinon": "^4.2.2",
     "whatwg-fetch": "^2.0.3",
     "zlibjs": "~0.3.1"
@@ -84,6 +83,7 @@
     "jwk-to-pem": "^1.2.6",
     "node-fetch": "^1.7.3",
     "node-localstorage": "~1.3.0",
+    "ripemd160": "^2.0.1",
     "rusha": "^0.8.12"
   },
   "repository": {
