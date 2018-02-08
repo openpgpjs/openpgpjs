@@ -6,6 +6,58 @@
 
 export default {
 
+  /** Maps curve names under various standards to one
+   * @enum {String}
+   * @readonly
+   */
+  curve: {
+    /** NIST P-256 Curve */
+    "p256":                "p256",
+    "P-256":               "p256",
+    "secp256r1":           "p256",
+    "prime256v1":          "p256",
+    "1.2.840.10045.3.1.7": "p256",
+    "2a8648ce3d030107":  "p256",
+    "2A8648CE3D030107":  "p256",
+
+    /** NIST P-384 Curve */
+    "p384":         "p384",
+    "P-384":        "p384",
+    "secp384r1":    "p384",
+    "1.3.132.0.34": "p384",
+    "2b81040022": "p384",
+    "2B81040022": "p384",
+
+    /** NIST P-521 Curve */
+    "p521":         "p521",
+    "P-521":        "p521",
+    "secp521r1":    "p521",
+    "1.3.132.0.35": "p521",
+    "2b81040023": "p521",
+    "2B81040023": "p521",
+
+    /** SECP256k1 Curve */
+    "secp256k1":    "secp256k1",
+    "1.3.132.0.10": "secp256k1",
+    "2b8104000a": "secp256k1",
+    "2B8104000A": "secp256k1",
+
+    /** Ed25519 Curve */
+    "ed25519":                "ed25519",
+    "Ed25519":                "ed25519",
+    "1.3.6.1.4.1.11591.15.1": "ed25519",
+    "2b06010401da470f01":   "ed25519",
+    "2B06010401DA470F01":   "ed25519",
+
+    /** Curve25519 */
+    "cv25519":                "curve25519",
+    "curve25519":             "curve25519",
+    "Curve25519":             "curve25519",
+    "1.3.6.1.4.1.3029.1.5.1": "curve25519",
+    "2b060104019755010501":   "curve25519",
+    "2B060104019755010501":   "curve25519"
+  },
+
   /** A string to key specifier type
    * @enum {Integer}
    * @readonly
@@ -26,7 +78,10 @@ export default {
     rsa_encrypt: 2,
     rsa_sign: 3,
     elgamal: 16,
-    dsa: 17
+    dsa: 17,
+    ecdh: 18,
+    ecdsa: 19,
+    eddsa: 22
   },
 
   /** {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
@@ -71,6 +126,17 @@ export default {
     sha384: 9,
     sha512: 10,
     sha224: 11
+  },
+
+  /** A list of hash names as accepted by webCrypto functions.
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest|Parameters, algo}
+   * @enum {String}
+   */
+  webHash: {
+    'SHA-1': 2,
+    'SHA-256': 8,
+    'SHA-384': 9,
+    'SHA-512': 10
   },
 
   /** A list of packet types and numeric tags associated with them.

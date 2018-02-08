@@ -34,10 +34,11 @@
 
 'use strict';
 
+import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';
-import asmCrypto from 'asmcrypto-lite';
+
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
@@ -132,7 +133,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
     this.packets.read(decrypted.subarray(0, decrypted.length - 22));
   }
 
-  return Promise.resolve();
+  return true;
 };
 
 

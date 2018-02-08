@@ -37,7 +37,7 @@
  * @module crypto/public_key/jsbn
  */
 
-import util from '../../util.js';
+import util from '../../util';
 
 // Basic JavaScript BN library - subset useful for RSA encryption.
 
@@ -53,7 +53,7 @@ var j_lm = ((canary & 0xffffff) == 0xefcafe);
 export default function BigInteger(a, b, c) {
   if (a != null)
     if ("number" == typeof a) this.fromNumber(a, b, c);
-    else if (b == null && "string" != typeof a) this.fromString(a, 256);
+    else if (b == null && !util.isString(a)) this.fromString(a, 256);
   else this.fromString(a, b);
 }
 
@@ -114,7 +114,7 @@ function am3(i, x, w, j, c, n) {
   return c;
 }
 /*if(j_lm && (navigator != undefined &&
-	navigator.appName == "Microsoft Internet Explorer")) {
+            navigator.appName == "Microsoft Internet Explorer")) {
   BigInteger.prototype.am = am2;
   dbits = 30;
 }

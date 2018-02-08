@@ -21,7 +21,10 @@
  * @requires crypto/cipher
  * @requires crypto/public_key
  * @requires crypto/random
+ * @requires type/ecdh_symkey
+ * @requires type/kdf_params
  * @requires type/mpi
+ * @requires type/oid
  * @module crypto/crypto
  */
 
@@ -30,66 +33,82 @@
 import random from './random.js';
 import cipher from './cipher';
 import publicKey from './public_key';
+import type_ecdh_symkey from '../type/ecdh_symkey.js';
+import type_kdf_params from '../type/kdf_params.js';
 import type_mpi from '../type/mpi.js';
+import type_oid from '../type/oid.js';
+
+
+function constructParams(types, data) {
+  return types.map(function(type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    } else {
+      return new type();
+    }
+  });
+}
 
 export default {
   /**
    * Encrypts data using the specified public key multiprecision integers
    * and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} publicParams Algorithm dependent params
    * @param {module:type/mpi} data Data to be encrypted as MPI
-   * @return {Array<module:type/mpi>} if RSA an module:type/mpi;
-   * if elgamal encryption an array of two module:type/mpi is returned; otherwise null
+   * @param {String} fingerprint Recipient fingerprint
+   * @return {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} encrypted session key parameters
    */
-  publicKeyEncrypt: function(algo, publicMPIs, data) {
-    var result = (function() {
+  publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
+    var types = this.getEncSessionKeyParamTypes(algo);
+    return (async function() {
       var m;
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign':
           var rsa = new publicKey.rsa();
-          var n = publicMPIs[0].toBigInteger();
-          var e = publicMPIs[1].toBigInteger();
+          var n = publicParams[0].toBigInteger();
+          var e = publicParams[1].toBigInteger();
           m = data.toBigInteger();
-          return [rsa.encrypt(m, e, n)];
+          return constructParams(types, [rsa.encrypt(m, e, n)]);
 
         case 'elgamal':
           var elgamal = new publicKey.elgamal();
-          var p = publicMPIs[0].toBigInteger();
-          var g = publicMPIs[1].toBigInteger();
-          var y = publicMPIs[2].toBigInteger();
+          var p = publicParams[0].toBigInteger();
+          var g = publicParams[1].toBigInteger();
+          var y = publicParams[2].toBigInteger();
           m = data.toBigInteger();
-          return elgamal.encrypt(m, g, p, y);
+          return constructParams(types, elgamal.encrypt(m, g, p, y));
+
+        case 'ecdh':
+          var ecdh = publicKey.elliptic.ecdh;
+          var curve = publicParams[0];
+          var kdf_params = publicParams[2];
+          var R = publicParams[1].toBigInteger();
+          var res = await ecdh.encrypt(
+            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
+          );
+          return constructParams(types, [res.V, res.C]);
 
         default:
           return [];
       }
-    })();
-
-    return result.map(function(bn) {
-      var mpi = new type_mpi();
-      mpi.fromBigInteger(bn);
-      return mpi;
-    });
+    }());
   },
 
   /**
    * Decrypts data using the specified public key multiprecision integers of the private key,
    * the specified secretMPIs of the private key and the specified algorithm.
    * @param {module:enums.publicKey} algo Algorithm to be used (See {@link http://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Algorithm dependent multiprecision integers
-   * of the public key part of the private key
-   * @param {Array<module:type/mpi>} secretMPIs Algorithm dependent multiprecision integers
-   * of the private key used
-   * @param {module:type/mpi} data Data to be encrypted as MPI
+   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params>} keyIntegers Algorithm dependent params
+   * @param {Array<module:type/mpi|module:type/ecdh_symkey>} dataIntegers encrypted session key parameters
+   * @param {String} fingerprint Recipient fingerprint
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
 
-  publicKeyDecrypt: function(algo, keyIntegers, dataIntegers) {
+  publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
     var p;
-
-    var bn = (function() {
+    return new type_mpi(await (async function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt':
@@ -111,21 +130,27 @@ export default {
           var c2 = dataIntegers[1].toBigInteger();
           p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
+
+        case 'ecdh':
+          var ecdh = publicKey.elliptic.ecdh;
+          var curve = keyIntegers[0];
+          var kdf_params = keyIntegers[2];
+          var V = dataIntegers[0].toBigInteger();
+          var C = dataIntegers[1].data;
+          var r = keyIntegers[3].toBigInteger();
+          return ecdh.decrypt(curve.oid, kdf_params.cipher, kdf_params.hash, V, C, r, fingerprint);
+
         default:
           return null;
       }
-    })();
-
-    var result = new type_mpi();
-    result.fromBigInteger(bn);
-    return result;
+    }()));
   },
 
-  /** Returns the number of integers comprising the private key of an algorithm
+  /** Returns the types comprising the private key of an algorithm
    * @param {String} algo The public key algorithm
-   * @return {Integer} The number of integers.
+   * @return {Array<String>} The array of types
    */
-  getPrivateMpiCount: function(algo) {
+  getPrivKeyParamTypes: function(algo) {
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -135,22 +160,31 @@ export default {
         //   - MPI of RSA secret prime value p.
         //   - MPI of RSA secret prime value q (p < q).
         //   - MPI of u, the multiplicative inverse of p, mod q.
-        return 4;
+        return [type_mpi, type_mpi, type_mpi, type_mpi];
       case 'elgamal':
         // Algorithm-Specific Fields for Elgamal secret keys:
         //   - MPI of Elgamal secret exponent x.
-        return 1;
+        return [type_mpi];
       case 'dsa':
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
-        return 1;
+        return [type_mpi];
+      case 'ecdh':
+      case 'ecdsa':
+      case 'eddsa':
+        // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
+        //   - MPI of an integer representing the secret key.
+        return [type_mpi];
       default:
         throw new Error('Unknown algorithm');
     }
   },
 
-  getPublicMpiCount: function(algo) {
-    // - A series of multiprecision integers comprising the key material:
+  /** Returns the types comprising the public key of an algorithm
+   * @param {String} algo The public key algorithm
+   * @return {Array<String>} The array of types
+   */
+  getPubKeyParamTypes: function(algo) {
     //   Algorithm-Specific Fields for RSA public keys:
     //       - a multiprecision integer (MPI) of RSA public modulus n;
     //       - an MPI of RSA public encryption exponent e.
@@ -158,29 +192,72 @@ export default {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign':
-        return 2;
-
+        return [type_mpi, type_mpi];
         //   Algorithm-Specific Fields for Elgamal public keys:
         //     - MPI of Elgamal prime p;
         //     - MPI of Elgamal group generator g;
         //     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
       case 'elgamal':
-        return 3;
-
+        return [type_mpi, type_mpi, type_mpi];
         //   Algorithm-Specific Fields for DSA public keys:
         //       - MPI of DSA prime p;
         //       - MPI of DSA group order q (q is a prime divisor of p-1);
         //       - MPI of DSA group generator g;
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case 'dsa':
-        return 4;
+        return [type_mpi, type_mpi, type_mpi, type_mpi];
+        //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
+        //       - OID of curve;
+        //       - MPI of EC point representing public key.
+      case 'ecdsa':
+      case 'eddsa':
+        return [type_oid, type_mpi];
+        //   Algorithm-Specific Fields for ECDH public keys:
+        //       - OID of curve;
+        //       - MPI of EC point representing public key.
+        //       - KDF: variable-length field containing KDF parameters.
+      case 'ecdh':
+        return [type_oid, type_mpi, type_kdf_params];
+      default:
+        throw new Error('Unknown algorithm.');
+    }
+  },
+
+  /** Returns the types comprising the encrypted session key of an algorithm
+   * @param {String} algo The public key algorithm
+   * @return {Array<String>} The array of types
+   */
+  getEncSessionKeyParamTypes: function(algo) {
+    switch (algo) {
+      //    Algorithm-Specific Fields for RSA encrypted session keys:
+      //        - MPI of RSA encrypted value m**e mod n.
+      case 'rsa_encrypt':
+      case 'rsa_encrypt_sign':
+        return [type_mpi];
+
+      //    Algorithm-Specific Fields for Elgamal encrypted session keys:
+      //        - MPI of Elgamal value g**k mod p
+      //        - MPI of Elgamal value m * y**k mod p
+      case 'elgamal':
+        return [type_mpi, type_mpi];
+
+      //    Algorithm-Specific Fields for ECDH encrypted session keys:
+      //        - MPI containing the ephemeral key used to establish the shared secret
+      //        - ECDH Symmetric Key
+      case 'ecdh':
+        return [type_mpi, type_ecdh_symkey];
 
       default:
         throw new Error('Unknown algorithm.');
     }
   },
 
-  generateMpi: function(algo, bits) {
+  /** Generate algorithm-specific key parameters
+   * @param {String} algo The public key algorithm
+   * @return {Array} The array of parameters
+   */
+  generateParams: function(algo, bits, curve) {
+    var types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
@@ -188,28 +265,24 @@ export default {
         //remember "publicKey" refers to the crypto/public_key dir
         var rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          var output = [];
-          output.push(keyObject.n);
-          output.push(keyObject.ee);
-          output.push(keyObject.d);
-          output.push(keyObject.p);
-          output.push(keyObject.q);
-          output.push(keyObject.u);
-          return mapResult(output);
+          return constructParams(types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]);
         });
+
+      case 'ecdsa':
+      case 'eddsa':
+        return publicKey.elliptic.generate(curve).then(function (keyObject) {
+          return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
+        });
+
+      case 'ecdh':
+        return publicKey.elliptic.generate(curve).then(function (keyObject) {
+          return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
+        });
+
       default:
         throw new Error('Unsupported algorithm for key generation.');
     }
-
-    function mapResult(result) {
-      return result.map(function(bn) {
-        var mpi = new type_mpi();
-        mpi.fromBigInteger(bn);
-        return mpi;
-      });
-    }
   },
-
 
   /**
    * generate random byte prefix as string for the specified algorithm
@@ -228,5 +301,7 @@ export default {
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);
-  }
+  },
+
+  constructParams: constructParams
 };

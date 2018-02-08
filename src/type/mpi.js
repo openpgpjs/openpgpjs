@@ -36,25 +36,32 @@
 
 'use strict';
 
-import BigInteger from '../crypto/public_key/jsbn.js';
-import util from '../util.js';
+import BigInteger from '../crypto/public_key/jsbn';
+import util from '../util';
 
 /**
  * @constructor
  */
-export default function MPI() {
+export default function MPI(data) {
   /** An implementation dependent integer */
-  this.data = null;
+  if (data instanceof BigInteger) {
+    this.fromBigInteger(data);
+  } else if (util.isString(data)) {
+    this.fromBytes(data);
+  } else {
+    this.data = null;
+  }
 }
 
 /**
  * Parsing function for a mpi ({@link http://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
  * @param {String} input Payload of mpi data
+ * @param {String} endian Endianness of the payload; 'be' for big-endian and 'le' for little-endian
  * @return {Integer} Length of data read
  */
-MPI.prototype.read = function (bytes) {
+MPI.prototype.read = function (bytes, endian='be') {
 
-  if(typeof bytes === 'string' || String.prototype.isPrototypeOf(bytes)) {
+  if(util.isString(bytes)) {
     bytes = util.str2Uint8Array(bytes);
   }
 
@@ -71,8 +78,11 @@ MPI.prototype.read = function (bytes) {
   // TODO: Verification of this size method! This size calculation as
   //      specified above is not applicable in JavaScript
   var bytelen = Math.ceil(bits / 8);
-
-  var raw = util.Uint8Array2str(bytes.subarray(2, 2 + bytelen));
+  var payload = bytes.subarray(2, 2 + bytelen);
+  if (endian === 'le') {
+    payload = new Uint8Array(payload).reverse();
+  }
+  var raw = util.Uint8Array2str(payload);
   this.fromBytes(raw);
 
   return 2 + bytelen;

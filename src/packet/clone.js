@@ -23,12 +23,13 @@
 
 'use strict';
 
-import * as key from '../key.js';
-import * as message from '../message.js';
-import * as cleartext from '../cleartext.js';
-import * as signature from '../signature.js'
-import Packetlist from './packetlist.js';
-import type_keyid from '../type/keyid.js';
+import { Key } from '../key';
+import { Message } from '../message';
+import { CleartextMessage } from '../cleartext';
+import { Signature } from '../signature'
+import Packetlist from './packetlist';
+import type_keyid from '../type/keyid';
+import util from '../util';
 
 
 //////////////////////////////
@@ -58,13 +59,13 @@ export function clonePackets(options) {
   }
   if (options.message) {
     //could be either a Message or CleartextMessage object
-    if (options.message instanceof message.Message) {
+    if (options.message instanceof Message) {
       options.message = options.message.packets;
-    } else if (options.message instanceof cleartext.CleartextMessage) {
+    } else if (options.message instanceof CleartextMessage) {
       options.message.signature = options.message.signature.packets;
     }
   }
-  if (options.signature && (options.signature instanceof signature.Signature)) {
+  if (options.signature && (options.signature instanceof Signature)) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
@@ -120,31 +121,31 @@ export function parseClonedPackets(options, method) {
 
 function packetlistCloneToKey(clone) {
   const packetlist = Packetlist.fromStructuredClone(clone);
-  return new key.Key(packetlist);
+  return new Key(packetlist);
 }
 
 function packetlistCloneToMessage(clone) {
   const packetlist = Packetlist.fromStructuredClone(clone);
-  return new message.Message(packetlist);
+  return new Message(packetlist);
 }
 
 function packetlistCloneToCleartextMessage(clone) {
   var packetlist = Packetlist.fromStructuredClone(clone.signature);
-  return new cleartext.CleartextMessage(clone.text, new signature.Signature(packetlist));
+  return new CleartextMessage(clone.text, new Signature(packetlist));
 }
 
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
-  clone.signature = new signature.Signature(clone.signature);
+  clone.signature = new Signature(clone.signature);
   return clone;
 }
 
 function packetlistCloneToSignature(clone) {
-  if (typeof clone === "string") {
+  if (util.isString(clone)) {
     //signature is armored
     return clone;
   }
   var packetlist = Packetlist.fromStructuredClone(clone);
-  return new signature.Signature(packetlist);
+  return new Signature(packetlist);
 }
