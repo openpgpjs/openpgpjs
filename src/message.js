@@ -91,13 +91,13 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message. Either a private key, a session key, or a password must be specified.
- * @param  {Key} privateKey      (optional) private key with decrypted secret data
- * @param  {Object} sessionKey   (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {String} password     (optional) password used to decrypt
+ * @param  {Array<Key>} privateKeys     (optional) private key with decrypted secret data
+ * @param  {Array<String>} passwords    (optional) password used to decrypt
+ * @param  {Object} sessionKey          (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}             new message with decrypted content
  */
-Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
-  let keyObjs = sessionKey || await this.decryptSessionKeys(privateKey, password);
+Message.prototype.decrypt = async function(privateKeys, passwords, sessionKey) {
+  let keyObjs = sessionKey || await this.decryptSessionKeys(privateKeys, passwords);
   if (!util.isArray(keyObjs)) {
     keyObjs = [keyObjs];
   }
@@ -140,15 +140,15 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
 };
 
 /**
- * Decrypt an encrypted session key either with a private key or a password.
- * @param  {Key} privateKey    (optional) private key with decrypted secret data
- * @param  {String} password   (optional) password used to decrypt
+ * Decrypt an encrypted session key either with private keys or passwords.
+ * @param  {Array<Key>} privateKeys    (optional) private key with decrypted secret data
+ * @param  {Array<String>} passwords   (optional) password used to decrypt
  * @return {Array<{ data:Uint8Array, algorithm:String }>} array of object with potential sessionKey, algorithm pairs
  */
-Message.prototype.decryptSessionKeys = function(privateKey, password) {
+Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
   var keyPackets = [];
   return Promise.resolve().then(async () => {
-    if (password) {
+    if (passwords) {
       var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
@@ -160,7 +160,7 @@ Message.prototype.decryptSessionKeys = function(privateKey, password) {
         } catch (err) {}
       }));
 
-    } else if (privateKey) {
+    } else if (privateKeys) {
       var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
       if (!pkESKeyPacketlist) {
         throw new Error('No public key encrypted session key packet found.');
