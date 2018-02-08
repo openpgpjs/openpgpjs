@@ -396,7 +396,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     }
   }
 
-  await Promise.all(privateKeys.map(async function (privateKey, i) {
+  await Promise.all(Array.from(privateKeys).reverse().map(async function (privateKey, i) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
@@ -422,7 +422,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
 
   packetlist.push(literalDataPacket);
 
-  await Promise.all(Array.from(privateKeys).reverse().map(async function(privateKey) {
+  await Promise.all(privateKeys.map(async function(privateKey) {
     var signaturePacket = new packet.Signature();
     var signingKeyPacket = privateKey.getSigningKeyPacket();
     if (!signingKeyPacket.isDecrypted) {
