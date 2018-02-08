@@ -1,6 +1,7 @@
 /**
  * @requires crypto/public_key/dsa
  * @requires crypto/public_key/elgamal
+ * @requires crypto/public_key/elliptic
  * @requires crypto/public_key/rsa
  * @module crypto/public_key
  */
@@ -11,11 +12,14 @@
 import rsa from './rsa.js';
 /** @see module:crypto/public_key/elgamal */
 import elgamal from './elgamal.js';
+/** @see module:crypto/public_key/elliptic */
+import elliptic from './elliptic';
 /** @see module:crypto/public_key/dsa */
 import dsa from './dsa.js';
 
 export default {
   rsa: rsa,
   elgamal: elgamal,
+  elliptic: elliptic,
   dsa: dsa
 };

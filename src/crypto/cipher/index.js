@@ -8,7 +8,7 @@
 
 'use strict';
 
-import aes from'./aes.js';
+import aes from './aes.js';
 import desModule from './des.js';
 import cast5 from './cast5.js';
 import twofish from './twofish.js';
@@ -16,9 +16,9 @@ import blowfish from './blowfish.js';
 
 export default {
   /** @see module:crypto/cipher/aes */
-  aes128: aes[128],
-  aes192: aes[192],
-  aes256: aes[256],
+  aes128: aes(128),
+  aes192: aes(192),
+  aes256: aes(256),
   /** @see module:crypto/cipher/des.originalDes */
   des: desModule.originalDes,
   /** @see module:crypto/cipher/des.des */

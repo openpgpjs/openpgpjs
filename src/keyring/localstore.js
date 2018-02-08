@@ -18,6 +18,8 @@
 /**
  * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  * @requires config
+ * @requires key
+ * @requires util
  * @module keyring/localstore
  * @param {String} prefix prefix for itemnames in localstore
  */
@@ -25,8 +27,8 @@
 'use strict';
 
 import config from '../config';
-import * as keyModule from '../key.js';
-import util from '../util.js';
+import { readArmored } from '../key';
+import util from '../util';
 
 export default function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
@@ -67,7 +69,7 @@ function loadKeys(storage, itemname) {
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     var key;
     for (var i = 0; i < armoredKeys.length; i++) {
-      key = keyModule.readArmored(armoredKeys[i]);
+      key = readArmored(armoredKeys[i]);
       if (!key.err) {
         keys.push(key.keys[0]);
       } else {

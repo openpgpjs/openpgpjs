@@ -1,3 +1,5 @@
+/* eslint-disable import/newline-after-import, import/first */
+
 'use strict';
 
 /**
@@ -17,7 +19,12 @@ export default openpgp;
  *   import { encryptMessage } from 'openpgp.js'
  *   encryptMessage(keys, text)
  */
-export * from './openpgp';
+export {
+  encrypt, decrypt, sign, verify,
+  generateKey, reformatKey, decryptKey,
+  encryptSessionKey, decryptSessionKeys,
+  initWorker, getWorker, destroyWorker
+} from './openpgp';
 
 /**
  * @see module:key
@@ -76,6 +83,24 @@ export { default as S2K } from './type/s2k';
  * @name module:openpgp.Keyid
  */
 export { default as Keyid } from './type/keyid';
+
+/**
+ * @see module:type/ecdh_symkey
+ * @name module:openpgp.ECDHSymmetricKey
+ */
+export { default as ECDHSymmetricKey } from './type/ecdh_symkey';
+
+/**
+ * @see module:type/kdf_params
+ * @name module:openpgp.KDFParams
+ */
+export { default as KDFParams } from './type/kdf_params';
+
+/**
+ * @see module:type/oid
+ * @name module:openpgp.OID
+ */
+export { default as OID } from './type/oid';
 
 /**
  * @see module:encoding/armor
