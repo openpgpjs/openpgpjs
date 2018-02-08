@@ -186,7 +186,7 @@ describe('Elliptic Curve Cryptography', function () {
     var romeo = load_priv_key('romeo');
     var msg = openpgp.message.readArmored(data.juliet.message_encrypted);
     return openpgp.decrypt(
-      {privateKey: romeo, publicKeys: [juliet], message: msg}
+      {privateKeys: romeo, publicKeys: [juliet], message: msg}
     ).then(function (result) {
       expect(result).to.exist;
       // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
@@ -206,7 +206,7 @@ describe('Elliptic Curve Cryptography', function () {
       var romeo = load_pub_key('romeo');
       var juliet = load_priv_key('juliet');
       return openpgp.decrypt(
-        {privateKey: juliet, publicKeys: [romeo], message: message}
+        {privateKeys: juliet, publicKeys: [romeo], message: message}
       ).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
