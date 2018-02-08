@@ -1,7 +1,6 @@
 /**
  * @requires crypto/hash/sha
  * @requires crypto/hash/md5
- * @requires crypto/hash/ripe-md
  * @requires util
  * @module crypto/hash
  */
@@ -9,10 +8,10 @@
 'use strict';
 
 import Rusha from 'rusha';
+import RIPEMD160 from 'ripemd160';
 import asmCrypto from 'asmcrypto-lite';
 import sha from './sha.js';
 import md5 from './md5.js';
-import ripemd from './ripe-md.js';
 import util from '../../util.js';
 
 const rusha = new Rusha(),
@@ -58,8 +57,10 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
     // TODO: compare sha512 in asmcrypto.js and jsSHA
     /** @see module:crypto/hash/sha.sha512 */
     sha512: sha.sha512,
-    /** @see module:crypto/hash/ripe-md */
-    ripemd: ripemd
+    /** @see module:ripemd160 */
+    ripemd: function(data) {
+      return util.str2Uint8Array(util.hex2bin(new RIPEMD160.update(data).digest('hex')));
+    }
   };
 }
 
