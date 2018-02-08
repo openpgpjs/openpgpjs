@@ -1015,6 +1015,39 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt and decrypt/verify both signatures when signed with two private keys', function() {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: [privateKey.keys[0], privKeyDE]
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: [publicKey.keys[0], pubKeyDE]
+          };
+
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            expect(decrypted.signatures[1].valid).to.be.true;
+            return privKeyDE.verifyPrimaryUser().then(() => {
+              expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+              expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
+              });
+          });
+        });
+
         it('should sign and verify cleartext data', function() {
           var signOpt = {
             data: plaintext,
