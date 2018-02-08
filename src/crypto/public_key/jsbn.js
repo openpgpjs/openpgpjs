@@ -118,14 +118,14 @@ function am3(i, x, w, j, c, n) {
   BigInteger.prototype.am = am2;
   dbits = 30;
 }
-else if(j_lm && (navigator != undefined && navigator.appName != "Netscape")) {*/
+else if(j_lm && (navigator != undefined && navigator.appName != "Netscape")) {
 BigInteger.prototype.am = am1;
 dbits = 26;
-/*}
-else { // Mozilla/Netscape seems to prefer am3
+}
+else { // Mozilla/Netscape seems to prefer am3*/
   BigInteger.prototype.am = am3;
   dbits = 28;
-}*/
+/*}*/
 
 BigInteger.prototype.DB = dbits;
 BigInteger.prototype.DM = ((1 << dbits) - 1);
