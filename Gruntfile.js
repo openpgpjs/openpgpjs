@@ -15,14 +15,15 @@ module.exports = function(grunt) {
     'src/crypto/public_key/elgamal.js',
     'src/crypto/public_key/index.js',
     'src/crypto/public_key/rsa.js',
+    'src/crypto/public_key/elliptic/*.js',
     'src/crypto/*.js',
     'src/encoding/**/*.js',
     'src/hkp/**/*.js',
     'src/keyring/**/*.js',
-    'src/packet/**/*.jss',
+    'src/packet/**/*.js',
     'src/type/**/*.js',
     'src/worker/**/*.js',
-    'src/*.js',
+    'src/*.js'
   ]; // add more over time ... goal should be 100% coverage
 
   var version = grunt.option('release');
@@ -43,52 +44,72 @@ module.exports = function(grunt) {
     browserify: {
       openpgp: {
         files: {
-          'dist/openpgp.js': [ './src/index.js' ]
+          'dist/openpgp.js': ['./src/index.js']
         },
         options: {
           browserifyOptions: {
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          // Don't bundle these packages with openpgp.js
+          external: ['crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: ["env"]
             }]
           ],
-          plugin: [ 'browserify-derequire' ]
+          plugin: ['browserify-derequire']
         }
       },
       openpgp_debug: {
         files: {
-          'dist/openpgp_debug.js': [ './src/index.js' ]
+          'dist/openpgp_debug.js': ['./src/index.js']
         },
         options: {
           browserifyOptions: {
             debug: true,
             standalone: 'openpgp'
           },
-          external: [ 'crypto', 'buffer', 'node-localstorage', 'node-fetch' ],
+          external: ['crypto', 'buffer', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-runtime"],
               ignore: ['*.min.js'],
-              presets: ["es2015"]
+              presets: ["env"]
             }]
           ],
-          plugin: [ 'browserify-derequire' ]
+          plugin: ['browserify-derequire']
         }
       },
       worker: {
         files: {
-          'dist/openpgp.worker.js': [ './src/worker/worker.js' ]
+          'dist/openpgp.worker.js': ['./src/worker/worker.js']
         }
       },
       unittests: {
         files: {
-          'test/lib/unittests-bundle.js': [ './test/unittests.js' ]
+          'test/lib/unittests-bundle.js': ['./test/unittests.js']
         },
         options: {
-          external: [ 'crypto', 'buffer' , 'node-localstorage', 'node-fetch', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp' ]
+          external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp'],
+          transform: [
+            ["babelify", {
+              global: true,
+              plugins: ["transform-async-to-generator",
+                        "syntax-async-functions",
+                        "transform-regenerator",
+                        "transform-remove-strict-mode"],
+              ignore: ['*.min.js'],
+              presets: ["env"]
+            }]
+          ]
         }
       }
     },
@@ -129,8 +150,8 @@ module.exports = function(grunt) {
     uglify: {
       openpgp: {
         files: {
-          'dist/openpgp.min.js' : [ 'dist/openpgp.js' ],
-          'dist/openpgp.worker.min.js' : [ 'dist/openpgp.worker.js' ]
+          'dist/openpgp.min.js' : ['dist/openpgp.js'],
+          'dist/openpgp.worker.min.js' : ['dist/openpgp.worker.js']
         }
       },
       options: {
@@ -149,19 +170,9 @@ module.exports = function(grunt) {
         wrap_line_length: 120
       }
     },
-    jshint: {
-      src: lintFiles,
-      build: ['Gruntfile.js', '*.json'],
-      options: {
-        jshintrc: '.jshintrc'
-      }
-    },
-    jscs: {
-      src: lintFiles,
-      build: ['Gruntfile.js'],
-      options: {
-        config: ".jscsrc"
-      }
+    eslint: {
+      target: lintFiles,
+      options: { configFile: '.eslintrc.js' }
     },
     jsdoc: {
       dist: {
@@ -177,7 +188,7 @@ module.exports = function(grunt) {
         src: 'test',
         options: {
           root: '.',
-          timeout: 240000,
+          timeout: 240000
         }
       }
     },
@@ -187,7 +198,7 @@ module.exports = function(grunt) {
           reporter: 'spec',
           timeout: 120000
         },
-        src: [ 'test/unittests.js' ]
+        src: ['test/unittests.js']
       }
     },
     copy: {
@@ -195,7 +206,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         cwd: 'node_modules/',
-        src: ['mocha/mocha.css', 'mocha/mocha.js', 'chai/chai.js', 'whatwg-fetch/fetch.js'],
+        src: ['mocha/mocha.css', 'mocha/mocha.js'],
         dest: 'test/lib/'
       },
       zlib: {
@@ -234,9 +245,9 @@ module.exports = function(grunt) {
           maxRetries: 3,
           throttled: 2,
           pollInterval: 4000,
-          statusCheckAttempts: 200
+          statusCheckAttempts: 200,
         }
-      },
+      }
     },
     watch: {
       src: {
@@ -247,7 +258,7 @@ module.exports = function(grunt) {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
         tasks: ['browserify:unittests']
       }
-    },
+    }
   });
 
   // Load the plugin(s)
@@ -255,9 +266,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-jsbeautifier');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-jscs');
   grunt.loadNpmTasks('grunt-jsdoc');
+  grunt.loadNpmTasks('gruntify-eslint');
   grunt.loadNpmTasks('grunt-mocha-istanbul');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-copy');
@@ -304,8 +314,9 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
-  grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest']);
+  grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['default', 'copy:browsertest', 'connect:test', 'watch']);
 
 };

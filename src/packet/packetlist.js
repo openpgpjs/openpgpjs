@@ -1,3 +1,4 @@
+/* eslint-disable callback-return */
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
@@ -45,7 +46,10 @@ Packetlist.prototype.read = function (bytes) {
       pushed = true;
       packet.read(parsed.packet);
     } catch(e) {
-      if (!config.tolerant || parsed.tag == enums.packet.symmetricallyEncrypted || parsed.tag == enums.packet.literal || parsed.tag == enums.packet.compressed) {
+      if (!config.tolerant ||
+          parsed.tag === enums.packet.symmetricallyEncrypted ||
+          parsed.tag === enums.packet.literal ||
+          parsed.tag === enums.packet.compressed) {
         throw e;
       }
       if (pushed) {
@@ -127,7 +131,7 @@ Packetlist.prototype.filterByTag = function () {
   var filtered = new Packetlist();
   var that = this;
 
-  function handle(packetType) {return that[i].tag === packetType;}
+  function handle(packetType) { return that[i].tag === packetType; }
   for (var i = 0; i < this.length; i++) {
     if (args.some(handle)) {
       filtered.push(this[i]);
@@ -142,8 +146,36 @@ Packetlist.prototype.filterByTag = function () {
 */
 Packetlist.prototype.forEach = function (callback) {
   for (var i = 0; i < this.length; i++) {
-    callback(this[i]);
+    callback(this[i], i, this);
   }
+};
+
+/**
+* Returns an array containing return values of callback
+* on each element
+*/
+Packetlist.prototype.map = function (callback) {
+  var packetArray = [];
+
+  for (var i = 0; i < this.length; i++) {
+    packetArray.push(callback(this[i], i, this));
+  }
+
+  return packetArray;
+};
+
+/**
+* Executes the callback function once for each element
+* until it finds one where callback returns a truthy value
+*/
+Packetlist.prototype.some = async function (callback) {
+  for (var i = 0; i < this.length; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await callback(this[i], i, this)) {
+      return true;
+    }
+  }
+  return false;
 };
 
 /**
@@ -177,7 +209,7 @@ Packetlist.prototype.indexOfTag = function () {
   var tagIndex = [];
   var that = this;
 
-  function handle(packetType) {return that[i].tag === packetType;}
+  function handle(packetType) { return that[i].tag === packetType; }
   for (var i = 0; i < this.length; i++) {
     if (args.some(handle)) {
       tagIndex.push(i);

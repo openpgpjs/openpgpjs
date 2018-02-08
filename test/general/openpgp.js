@@ -5,8 +5,9 @@
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var sinon = require('sinon'),
-  chai = require('chai'),
-  expect = chai.expect;
+    chai = require('chai');
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
 
 var pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -163,6 +164,18 @@ var plaintext = 'short message\nnext line\n한국어/조선말';
 var password1 = 'I am a password';
 var password2 = 'I am another password';
 
+var twoPasswordGPGFail = ['-----BEGIN PGP MESSAGE-----',
+'Version: OpenPGP.js v3.0.0',
+'Comment: https://openpgpjs.org',
+'',
+'wy4ECQMIWjj3WEfWxGpgrfb3vXu0TS9L8UNTBvNZFIjltGjMVkLFD+/afgs5',
+'aXt0wy4ECQMIrFo3TFN5xqtgtB+AaAjBcWJrA4bvIPBpJ38PbMWeF0JQgrqg',
+'j3uehxXy0mUB5i7B61g0ho+YplyFGM0s9XayJCnu40tWmr5LqqsRxuwrhJKR',
+'migslOF/l6Y9F0F9xGIZWGhxp3ugQPjVKjj8fOH7ap14mLm60C8q8AOxiSmL',
+'ubsd/hL7FPZatUYAAZVA0a6hmQ==',
+'=cHCV',
+'-----END PGP MESSAGE-----'].join('\n');
+
 describe('OpenPGP.js public api tests', function() {
 
   describe('initWorker, getWorker, destroyWorker - unit tests', function() {
@@ -304,7 +317,8 @@ describe('OpenPGP.js public api tests', function() {
           passphrase: 'secret',
           numBits: 2048,
           unlocked: true,
-          keyExpirationTime: 0
+          keyExpirationTime: 0,
+          curve: ""
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
@@ -319,7 +333,8 @@ describe('OpenPGP.js public api tests', function() {
           passphrase: undefined,
           numBits: 2048,
           unlocked: false,
-          keyExpirationTime: 0
+          keyExpirationTime: 0,
+          curve: ""
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
       });
@@ -402,7 +417,7 @@ describe('OpenPGP.js public api tests', function() {
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
     var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal;
 
-    beforeEach(function() {
+    beforeEach(function(done) {
       publicKey = openpgp.key.readArmored(pub_key);
       expect(publicKey.keys).to.have.length(1);
       expect(publicKey.err).to.not.exist;
@@ -412,6 +427,7 @@ describe('OpenPGP.js public api tests', function() {
       zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
+      privateKey.keys[0].verifyPrimaryUser().then(() => done());
     });
 
     afterEach(function() {
@@ -509,11 +525,12 @@ describe('OpenPGP.js public api tests', function() {
         });
       });
 
-      describe('encryptSessionKey, decryptSessionKey', function() {
+      describe('encryptSessionKey, decryptSessionKeys', function() {
         var sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
-        beforeEach(function() {
+        beforeEach(function(done) {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
+          privateKey.keys[0].verifyPrimaryUser().then(() => done());
         });
 
         it('should encrypt with public key', function() {
@@ -522,12 +539,12 @@ describe('OpenPGP.js public api tests', function() {
             algorithm: 'aes128',
             publicKeys: publicKey.keys
           }).then(function(encrypted) {
-            return openpgp.decryptSessionKey({
+            return openpgp.decryptSessionKeys({
               message: encrypted.message,
               privateKey: privateKey.keys[0]
             });
           }).then(function(decrypted) {
-            expect(decrypted.data).to.deep.equal(sk);
+            expect(decrypted[0].data).to.deep.equal(sk);
           });
         });
 
@@ -537,30 +554,30 @@ describe('OpenPGP.js public api tests', function() {
             algorithm: 'aes128',
             passwords: password1
           }).then(function(encrypted) {
-            return openpgp.decryptSessionKey({
+            return openpgp.decryptSessionKeys({
               message: encrypted.message,
               password: password1
             });
           }).then(function(decrypted) {
-            expect(decrypted.data).to.deep.equal(sk);
+            expect(decrypted[0].data).to.deep.equal(sk);
           });
         });
 
-        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with pgp key pair', function() {
+        it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with pgp key pair', function() {
           var msgAsciiArmored;
           return openpgp.encrypt({
             data: plaintext,
             publicKeys: publicKey.keys
           }).then(function(encrypted) {
             msgAsciiArmored = encrypted.data;
-            return openpgp.decryptSessionKey({
+            return openpgp.decryptSessionKeys({
               message: openpgp.message.readArmored(msgAsciiArmored),
               privateKey: privateKey.keys[0]
             });
 
-          }).then(function(decryptedSessionKey) {
+          }).then(function(decryptedSessionKeys) {
             return openpgp.decrypt({
-              sessionKey: decryptedSessionKey,
+              sessionKey: decryptedSessionKeys[0],
               message: openpgp.message.readArmored(msgAsciiArmored)
             });
 
@@ -569,26 +586,40 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('roundtrip workflow: encrypt, decryptSessionKey, decrypt with password', function() {
+        it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with password', function() {
           var msgAsciiArmored;
           return openpgp.encrypt({
             data: plaintext,
             passwords: password1
           }).then(function(encrypted) {
             msgAsciiArmored = encrypted.data;
-            return openpgp.decryptSessionKey({
+            return openpgp.decryptSessionKeys({
               message: openpgp.message.readArmored(msgAsciiArmored),
               password: password1
             });
 
-          }).then(function(decryptedSessionKey) {
+          }).then(function(decryptedSessionKeys) {
             return openpgp.decrypt({
-              sessionKey: decryptedSessionKey,
+              sessionKey: decryptedSessionKeys[0],
               message: openpgp.message.readArmored(msgAsciiArmored)
             });
 
           }).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
+        it('roundtrip workflow: encrypt twice with one password, decryptSessionKeys, only one session key', function() {
+          return openpgp.encrypt({
+            data: plaintext,
+            passwords: [password1, password1]
+          }).then(function(encrypted) {
+            return openpgp.decryptSessionKeys({
+              message: openpgp.message.readArmored(encrypted.data),
+              password: password1
+            });
+          }).then(function(decryptedSessionKeys) {
+            expect(decryptedSessionKeys.length).to.equal(1);
           });
         });
       });
@@ -606,8 +637,9 @@ describe('OpenPGP.js public api tests', function() {
           '=6XMW\r\n' +
           '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
 
-        beforeEach(function() {
+        beforeEach(function(done) {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
+          privateKey.keys[0].verifyPrimaryUser().then(() => done());
         });
 
         it('should encrypt then decrypt', function() {
@@ -827,8 +859,10 @@ describe('OpenPGP.js public api tests', function() {
             expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             expect(decrypted.signatures[1].valid).to.be.true;
-            expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
-            expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
+            return privKeyDE.verifyPrimaryUser().then(() => {
+              expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+              expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
+              });
           });
         });
 
@@ -981,6 +1015,39 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt and decrypt/verify both signatures when signed with two private keys', function() {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: [privateKey.keys[0], privKeyDE]
+          };
+
+          var decOpt = {
+            privateKey: privateKey.keys[0],
+            publicKeys: [publicKey.keys[0], pubKeyDE]
+          };
+
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.true;
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            expect(decrypted.signatures[1].valid).to.be.true;
+            return privKeyDE.verifyPrimaryUser().then(() => {
+              expect(decrypted.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+              expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
+              });
+          });
+        });
+
         it('should sign and verify cleartext data', function() {
           var signOpt = {
             data: plaintext,
@@ -1124,8 +1191,10 @@ describe('OpenPGP.js public api tests', function() {
             expect(encrypted.data).to.exist;
             expect(encrypted.data).to.equal(plaintext);
             expect(encrypted.signatures[0].valid).to.be.true;
-            expect(encrypted.signatures[0].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
-            expect(encrypted.signatures[0].signature.packets.length).to.equal(1);
+            return privKeyDE.verifyPrimaryUser().then(() => {
+              expect(encrypted.signatures[0].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+              expect(encrypted.signatures[0].signature.packets.length).to.equal(1);
+            });
           });
         });
       });
@@ -1226,6 +1295,18 @@ describe('OpenPGP.js public api tests', function() {
             decOpt.message = openpgp.message.readArmored(encrypted.data);
             return openpgp.decrypt(decOpt);
           }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should decrypt with two passwords message which GPG fails on', function() {
+
+          var decOpt = {
+            message: openpgp.message.readArmored(twoPasswordGPGFail),
+            password: password2
+          };
+          return openpgp.decrypt(decOpt).then(function(decrypted) {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures.length).to.equal(0);
           });

@@ -6,7 +6,8 @@ var util = openpgp.util,
   chai = require('chai'),
   expect = chai.expect;
 
-describe('TripleDES (EDE) cipher test with test vectors from https://csrc.nist.gov/publications/detail/sp/800-20/final', function() {
+describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
+  // see https://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf
   var key = new Uint8Array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
   var testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],
                      [[0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0xDD,0x7F,0x12,0x1C,0xA5,0x01,0x56,0x19]],

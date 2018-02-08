@@ -2,8 +2,9 @@
 
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var chai = require('chai'),
-	expect = chai.expect;
+var chai = require('chai');
+chai.use(require('chai-as-promised'));
+var expect = chai.expect;
 
 describe("Signature", function() {
   var priv_key_arm1 =
@@ -382,15 +383,16 @@ describe("Signature", function() {
 
     priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
     return msg.decrypt(priv_key_gnupg_ext).then(function(msg) {
-      var verified = msg.verify([pub_key]);
-      expect(verified).to.exist;
-      expect(verified).to.have.length(1);
-      expect(verified[0].valid).to.be.true;
-      expect(verified[0].signature.packets.length).to.equal(1);
+      return msg.verify([pub_key]).then(verified => {
+        expect(verified).to.exist;
+        expect(verified).to.have.length(1);
+        expect(verified[0].valid).to.be.true;
+        expect(verified[0].signature.packets.length).to.equal(1);
+      });
     });
   });
 
-  it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', function(done) {
+  it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', function() {
     var signedArmor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -406,15 +408,15 @@ describe("Signature", function() {
 
     var sMsg = openpgp.message.readArmored(signedArmor);
     var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
-    var verified = sMsg.verify([pub_key]);
-    expect(verified).to.exist;
-    expect(verified).to.have.length(1);
-    expect(verified[0].valid).to.be.true;
-    expect(verified[0].signature.packets.length).to.equal(1);
-    done();
+    return sMsg.verify([pub_key]).then(verified => {
+      expect(verified).to.exist;
+      expect(verified).to.have.length(1);
+      expect(verified[0].valid).to.be.true;
+      expect(verified[0].signature.packets.length).to.equal(1);
+    });
   });
 
-  it('Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)', function(done) {
+  it('Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)', function() {
     var signedArmor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -430,12 +432,12 @@ describe("Signature", function() {
 
     var sMsg = openpgp.message.readArmored(signedArmor);
     var pub_key = openpgp.key.readArmored(pub_key_arm2).keys[0];
-    var verified = sMsg.verify([pub_key]);
-    expect(verified).to.exist;
-    expect(verified).to.have.length(1);
-    expect(verified[0].valid).to.be.true;
-    expect(verified[0].signature.packets.length).to.equal(1);
-    done();
+    return sMsg.verify([pub_key]).then(verified => {
+      expect(verified).to.exist;
+      expect(verified).to.have.length(1);
+      expect(verified[0].valid).to.be.true;
+      expect(verified[0].signature.packets.length).to.equal(1);
+    });
   });
 
   it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', function() {
@@ -510,7 +512,7 @@ describe("Signature", function() {
 
   });
 
-  it('Verify signed message with two one pass signatures', function(done) {
+  it('Verify signed message with two one pass signatures', function() {
     var msg_armor =
       [ '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -542,15 +544,14 @@ describe("Signature", function() {
 
     expect(sMsg.getText()).to.equal(plaintext);
 
-    var verifiedSig = sMsg.verify([pubKey2, pubKey3]);
-
-    expect(verifiedSig).to.exist;
-    expect(verifiedSig).to.have.length(2);
-    expect(verifiedSig[0].valid).to.be.true;
-    expect(verifiedSig[1].valid).to.be.true;
-    expect(verifiedSig[0].signature.packets.length).to.equal(1);
-    expect(verifiedSig[1].signature.packets.length).to.equal(1);
-    done();
+    return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
+      expect(verifiedSig).to.exist;
+      expect(verifiedSig).to.have.length(2);
+      expect(verifiedSig[0].valid).to.be.true;
+      expect(verifiedSig[1].valid).to.be.true;
+      expect(verifiedSig[0].signature.packets.length).to.equal(1);
+      expect(verifiedSig[1].signature.packets.length).to.equal(1);
+    });
   });
 
   it('Verify cleartext signed message with two signatures with openpgp.verify', function() {
@@ -603,7 +604,7 @@ describe("Signature", function() {
     var plaintext = 'short message\nnext line\n한국어/조선말';
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -617,16 +618,16 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
+
       var csMsg = openpgp.message.readArmored(signed.data);
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
@@ -637,16 +638,16 @@ describe("Signature", function() {
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
     var plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
     var pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     var privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.getSigningKeyPacket().decrypt('hello world');
+    privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
+
       var csMsg = signed.message;
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
@@ -656,6 +657,31 @@ describe("Signature", function() {
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to false', function() {
+    openpgp.config.verify_expired_keys = false;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.not.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
+    });
+
+  });
+
+  it('Verify test with expired verification public key and verify_expired_keys set to true', function() {
+    openpgp.config.verify_expired_keys = true;
+    var pubKey = openpgp.key.readArmored(pub_expired).keys[0];
+    var message = openpgp.message.readArmored(msg_sig_expired);
+    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+      expect(verified).to.exist;
+      expect(verified.signatures).to.have.length(1);
+      expect(verified.signatures[0].valid).to.be.true;
+      expect(verified.signatures[0].signature.packets.length).to.equal(1);
     });
 
   });
@@ -688,20 +714,16 @@ describe("Signature", function() {
 
   it('Verify primary key revocation signature', function(done) {
     var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
-
-    var verified = pubKey.revocationSignature.verify(pubKey.primaryKey, {key: pubKey.primaryKey});
-
-    expect(verified).to.be.true;
-    done();
+    expect(pubKey.revocationSignature.verify(
+      pubKey.primaryKey, {key: pubKey.primaryKey}
+    )).to.eventually.be.true.notify(done);
   });
 
   it('Verify subkey revocation signature', function(done) {
     var pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
-
-    var verified = pubKey.subKeys[0].revocationSignature.verify(pubKey.primaryKey, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].subKey});
-
-    expect(verified).to.be.true;
-    done();
+    expect(pubKey.subKeys[0].revocationSignature.verify(
+      pubKey.primaryKey, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].subKey}
+    )).to.eventually.be.true.notify(done);
   });
 
   it('Verify key expiration date', function(done) {
@@ -715,11 +737,7 @@ describe("Signature", function() {
 
   it('Verify V3 certification signature', function(done) {
     var pubKey = openpgp.key.readArmored(pub_v3).keys[0];
-
-    var verified = pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userid: pubKey.users[0].userId});
-
-    expect(verified).to.be.true;
-    done();
+    expect(pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userid: pubKey.users[0].userId})).to.eventually.be.true.notify(done);
   });
 
   it('Write unhashed subpackets', function() {
@@ -785,8 +803,9 @@ describe("Signature", function() {
     var publicKeys = openpgp.key.readArmored(publicKeyArmored).keys;
 
     var msg = openpgp.message.readSignedContent(content, detachedSig);
-    var result = msg.verify(publicKeys);
-    expect(result[0].valid).to.be.true;
+    return msg.verify(publicKeys).then(result => {
+      expect(result[0].valid).to.be.true;
+    });
   });
 
   it('Detached signature signing and verification', function() {
@@ -799,10 +818,12 @@ describe("Signature", function() {
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(gen) {
       var generatedKey = gen.key;
-      var detachedSig = msg.signDetached([generatedKey, privKey2]);
-      var result = msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);
-      expect(result[0].valid).to.be.true;
-      expect(result[1].valid).to.be.true;
+      return msg.signDetached([generatedKey, privKey2]).then(detachedSig => {
+        return msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]).then(result => {
+          expect(result[0].valid).to.be.true;
+          expect(result[1].valid).to.be.true;
+        });
+      });
     });
   });
 
@@ -817,7 +838,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify signed key', function(done) {
+  it('Verify signed key', function() {
     var signedArmor = [
       '-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v1',
@@ -847,12 +868,12 @@ describe("Signature", function() {
 
     var signedKey = openpgp.key.readArmored(signedArmor).keys[0];
     var signerKey = openpgp.key.readArmored(priv_key_arm1).keys[0];
-    var signatures = signedKey.verifyPrimaryUser([signerKey]);
-    expect(signatures[0].valid).to.be.null;
-    expect(signatures[0].keyid.toHex()).to.equal(signedKey.primaryKey.getKeyId().toHex());
-    expect(signatures[1].valid).to.be.true;
-    expect(signatures[1].keyid.toHex()).to.equal(signerKey.primaryKey.getKeyId().toHex());
-    done();
+    return signedKey.verifyPrimaryUser([signerKey]).then(signatures => {
+      expect(signatures[0].valid).to.be.null;
+      expect(signatures[0].keyid.toHex()).to.equal(signedKey.primaryKey.getKeyId().toHex());
+      expect(signatures[1].valid).to.be.true;
+      expect(signatures[1].keyid.toHex()).to.equal(signerKey.primaryKey.getKeyId().toHex());
+    });
   });
 
 });

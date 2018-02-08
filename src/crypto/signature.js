@@ -21,8 +21,12 @@ export default {
    * @param {Uint8Array} data Data on where the signature was computed on.
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
-  verify: function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
+  verify: async function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
     var m;
+    var r;
+    var s;
+    var Q;
+    var curve;
 
     data = util.Uint8Array2str(data);
 
@@ -56,6 +60,24 @@ export default {
         m = data;
         var dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
         return dopublic.compareTo(s1) === 0;
+      case 19:
+        // ECDSA
+        var ecdsa = publicKey.elliptic.ecdsa;
+        curve = publickey_MPIs[0];
+        r = msg_MPIs[0].toBigInteger();
+        s = msg_MPIs[1].toBigInteger();
+        m = data;
+        Q = publickey_MPIs[1].toBigInteger();
+        return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
+      case 22:
+        // EdDSA
+        var eddsa = publicKey.elliptic.eddsa;
+        curve = publickey_MPIs[0];
+        r = msg_MPIs[0].toBigInteger();
+        s = msg_MPIs[1].toBigInteger();
+        m = data;
+        Q = publickey_MPIs[1].toBigInteger();
+        return eddsa.verify(curve.oid, hash_algo, { R: r, S: s }, m, Q);
       default:
         throw new Error('Invalid signature algorithm.');
     }
@@ -65,18 +87,18 @@ export default {
    * Create a signature on data using the specified algorithm
    * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {module:enums.publicKey} algo Asymmetric cipher algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi>} publicMPIs Public key multiprecision integers
-   * of the private key
-   * @param {Array<module:type/mpi>} secretMPIs Private key multiprecision
-   * integers which is used to sign the data
+   * @param {Array<module:type/mpi>} keyIntegers Public followed by Private key multiprecision algorithm-specific parameters
    * @param {Uint8Array} data Data to be signed
    * @return {Array<module:type/mpi>}
    */
-  sign: function(hash_algo, algo, keyIntegers, data) {
+  sign: async function(hash_algo, algo, keyIntegers, data) {
 
     data = util.Uint8Array2str(data);
 
     var m;
+    var d;
+    var curve;
+    var signature;
 
     switch (algo) {
       case 1:
@@ -86,7 +108,7 @@ export default {
       case 3:
         // RSA Sign-Only [HAC]
         var rsa = new publicKey.rsa();
-        var d = keyIntegers[2].toBigInteger();
+        d = keyIntegers[2].toBigInteger();
         var n = keyIntegers[0].toBigInteger();
         m = pkcs1.emsa.encode(hash_algo,
           data, keyIntegers[0].byteLength());
@@ -102,11 +124,31 @@ export default {
         var x = keyIntegers[4].toBigInteger();
         m = data;
         var result = dsa.sign(hash_algo, m, g, p, q, x);
-
         return util.str2Uint8Array(result[0].toString() + result[1].toString());
       case 16:
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
+
+      case 19:
+        // ECDSA
+        var ecdsa = publicKey.elliptic.ecdsa;
+        curve = keyIntegers[0];
+        d = keyIntegers[2].toBigInteger();
+        m = data;
+        signature = await ecdsa.sign(curve.oid, hash_algo, m, d);
+        return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
+      case 22:
+        // EdDSA
+        var eddsa = publicKey.elliptic.eddsa;
+        curve = keyIntegers[0];
+        d = keyIntegers[2].toBigInteger();
+        m = data;
+        signature = await eddsa.sign(curve.oid, hash_algo, m, d);
+        return new Uint8Array([].concat(
+          util.Uint8Array2MPI(signature.R.toArrayLike(Uint8Array, 'le', 32)),
+          util.Uint8Array2MPI(signature.S.toArrayLike(Uint8Array, 'le', 32))
+        ));
+
       default:
         throw new Error('Invalid signature algorithm.');
     }

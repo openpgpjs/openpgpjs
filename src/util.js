@@ -43,7 +43,7 @@ export default {
     if (!this.isString(data)) {
       return false;
     }
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
     return re.test(data);
   },
 
@@ -169,6 +169,15 @@ export default {
     return str;
   },
 
+
+  hex2Uint8Array: function (hex) {
+    var result = new Uint8Array(hex.length/2);
+    for (var k=0; k<hex.length/2; k++) {
+      result[k] = parseInt(hex.substr(2*k, 2), 16);
+    }
+    return result;
+  },
+
   /**
    * Creating a hex string from an binary array of integers (0..255)
    * @param {String} str Array of bytes to convert
@@ -279,6 +288,48 @@ export default {
       result.push(String.fromCharCode.apply(String, bin.subarray(i, i+bs < j ? i+bs : j)));
     }
     return result.join('');
+  },
+
+  // returns bit length of the integer x
+  nbits: function (x) {
+    var r = 1,
+      t = x >>> 16;
+    if (t !== 0) {
+      x = t;
+      r += 16;
+    }
+    t = x >> 8;
+    if (t !== 0) {
+      x = t;
+      r += 8;
+    }
+    t = x >> 4;
+    if (t !== 0) {
+      x = t;
+      r += 4;
+    }
+    t = x >> 2;
+    if (t !== 0) {
+      x = t;
+      r += 2;
+    }
+    t = x >> 1;
+    if (t !== 0) {
+      x = t;
+      r += 1;
+    }
+    return r;
+  },
+
+  /**
+   * Convert a Uint8Array to an MPI array.
+   * @function module:util.Uint8Array2MPI
+   * @param {Uint8Array} bin An array of (binary) integers to convert
+   * @return {Array<Integer>} MPI-formatted array
+   */
+  Uint8Array2MPI: function (bin) {
+    var size = (bin.length - 1) * 8 + this.nbits(bin[0]);
+    return [(size & 0xFF00) >> 8, size & 0xFF].concat(Array.from(bin));
   },
 
   /**
@@ -486,22 +537,7 @@ export default {
   },
 
   /**
-   * Wraps a generic synchronous function in an ES6 Promise.
-   * @param  {Function} fn  The function to be wrapped
-   * @return {Function}     The function wrapped in a Promise
-   */
-  promisify: function(fn) {
-    return function() {
-      var args = arguments;
-      return new Promise(function(resolve) {
-        var result = fn.apply(null, args);
-        resolve(result);
-      });
-    };
-  },
-
-  /**
-   * Converts an IE11 web crypro api result to a promise.
+   * Converts an IE11 web crypto api result to a promise.
    *   This is required since IE11 implements an old version of the
    *   Web Crypto specification that does not use promises.
    * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call
