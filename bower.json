@@ -2,7 +2,7 @@
   "name": "openpgp",
   "version": "2.6.2",
   "license": "LGPL-3.0+",
-  "homepage": "http://openpgpjs.org/",
+  "homepage": "https://openpgpjs.org/",
   "authors": [
     "OpenPGP Development Team <list@openpgpjs.org> (https://github.com/openpgpjs/openpgpjs/graphs/contributors)"
   ],

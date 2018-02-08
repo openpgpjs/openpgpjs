@@ -14,7 +14,7 @@ describe("Keyring", function() {
     keyFingerP = '5856cef789c3a307e8a1b976f6f60e9b42cdff4c',
     pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
       'Version: OpenPGP.js v.1.20131011\n' +
-      'Comment: http://openpgpjs.org\n' +
+      'Comment: https://openpgpjs.org\n' +
       '\n' +
       'xk0EUlhMvAEB/2MZtCUOAYvyLFjDp3OBMGn3Ev8FwjzyPbIF0JUw+L7y2XR5\n' +
       'RVGvbK88unV3cU/1tOYdNsXI6pSp/Ztjyv7vbBUAEQEAAc0pV2hpdGVvdXQg\n' +
@@ -25,7 +25,7 @@ describe("Keyring", function() {
       '-----END PGP PUBLIC KEY BLOCK-----',
     privkey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: OpenPGP.js v.1.20131011\n' +
-      'Comment: http://openpgpjs.org\n' +
+      'Comment: https://openpgpjs.org\n' +
       '\n' +
       'xcBeBFJYTLwBAf9jGbQlDgGL8ixYw6dzgTBp9xL/BcI88j2yBdCVMPi+8tl0\n' +
       'eUVRr2yvPLp1d3FP9bTmHTbFyOqUqf2bY8r+72wVABEBAAH+AwMIhNB4ivtv\n' +
