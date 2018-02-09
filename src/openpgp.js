@@ -126,6 +126,7 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
 
 /**
  * Reformats signature packets for a key and rewraps key object.
+ * @param  {Key} privateKey          private key to reformat
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
