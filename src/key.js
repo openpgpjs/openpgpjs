@@ -1272,6 +1272,9 @@ export function reformat(options) {
         options.subkeyType = secretSubkeyPacket.algorithm;
       }
     }
+    if (!secretKeyPacket) {
+      throw new Error('Key does not contain a secret key packet');
+    }
     return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
   });
 }
@@ -1280,7 +1283,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   // set passphrase protection
   if (options.passphrase) {
     secretKeyPacket.encrypt(options.passphrase);
-    secretSubkeyPacket.encrypt(options.passphrase);
+    if (secretSubkeyPacket) {
+      secretSubkeyPacket.encrypt(options.passphrase);
+    }
   }
 
   var packetlist = new packet.List();
@@ -1336,26 +1341,30 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     });
   });
 
-  var dataToSign = {};
-  dataToSign.key = secretKeyPacket;
-  dataToSign.bind = secretSubkeyPacket;
-  var subkeySignaturePacket = new packet.Signature();
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-  subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgo(secretSubkeyPacket);
-  subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-  if (options.keyExpirationTime > 0) {
-    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
-    subkeySignaturePacket.keyNeverExpires = false;
-  }
-  await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+  if (secretSubkeyPacket) {
+    var dataToSign = {};
+    dataToSign.key = secretKeyPacket;
+    dataToSign.bind = secretSubkeyPacket;
+    var subkeySignaturePacket = new packet.Signature();
+    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+    subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+    subkeySignaturePacket.hashAlgorithm = getPreferredHashAlgo(secretSubkeyPacket);
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    if (options.keyExpirationTime > 0) {
+      subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+      subkeySignaturePacket.keyNeverExpires = false;
+    }
+    await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-  packetlist.push(secretSubkeyPacket);
-  packetlist.push(subkeySignaturePacket);
+    packetlist.push(secretSubkeyPacket);
+    packetlist.push(subkeySignaturePacket);
+  }
 
   if (!options.unlocked) {
     secretKeyPacket.clearPrivateParams();
-    secretSubkeyPacket.clearPrivateParams();
+    if (secretSubkeyPacket) {
+      secretSubkeyPacket.clearPrivateParams();
+    }
   }
 
   return new Key(packetlist);
