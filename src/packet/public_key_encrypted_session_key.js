@@ -71,7 +71,6 @@ export default function PublicKeyEncryptedSessionKey() {
  * @return {module:packet/public_key_encrypted_session_key} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
-
   this.version = bytes[0];
   this.publicKeyId.read(bytes.subarray(1,bytes.length));
   this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
