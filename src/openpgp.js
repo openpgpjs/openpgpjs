@@ -201,11 +201,11 @@ export function decryptKey({ privateKey, passphrase }) {
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false}) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false, useWildcard=false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, useWildcard });
   }
   var result = {};
   return Promise.resolve().then(async function() {
@@ -226,7 +226,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
         message = await message.sign(privateKeys, signature);
       }
     }
-    return message.encrypt(publicKeys, passwords, sessionKey);
+    return message.encrypt(publicKeys, passwords, sessionKey, useWildcard);
 
   }).then(encrypted => {
     if (armor) {
@@ -395,16 +395,16 @@ export function verify({ message, publicKeys, signature=null }) {
  * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @static
  */
-export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
+export function encryptSessionKey({ data, algorithm, publicKeys, passwords, useWildcard=false }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords, useWildcard });
   }
 
   return Promise.resolve().then(async function() {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords) };
+    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords, useWildcard) };
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }
@@ -412,24 +412,24 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
 /**
  * Decrypt a symmetric session key with a private key or password. Either a private key or
  *   a password must be specified.
- * @param  {Message} message              a message object containing the encrypted session key packets
- * @param  {Key} privateKey               (optional) private key with decrypted secret key data
- * @param  {String} password              (optional) a single password to decrypt the session key
+ * @param  {Message} message                 a message object containing the encrypted session key packets
+ * @param  {Key|Array<Key} privateKeys      (optional) private keys with decrypted secret key data
+ * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
  * @return {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
  * @static
  */
-export function decryptSessionKeys({ message, privateKey, password }) {
-  checkMessage(message);
+export function decryptSessionKeys({ message, privateKeys, passwords }) {
+  checkMessage(message); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKeys', { message, privateKey, password });
+    return asyncProxy.delegate('decryptSessionKeys', { message, privateKeys, passwords });
   }
 
   return Promise.resolve().then(async function() {
 
-    return message.decryptSessionKeys(privateKey, password);
+    return message.decryptSessionKeys(privateKeys, passwords);
 
   }).catch(onError.bind(null, 'Error decrypting session keys'));
 }
