@@ -583,6 +583,42 @@ describe('Key', function() {
     '=yzZh',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
+  var key_without_subkey = [
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    'Version: OpenPGP.js v2.6.2',
+    'Comment: https://openpgpjs.org',
+    '',
+    'xcLYBFp9nCsBCACXTmLI9bJzaAanrD7r6j7gNDS7PsebJr0e182hgHVnGkr3',
+    '8XCsCdWSllUNfBRln4MI8GfWVO5Bhhx5en6ntCptJVeSsohAHfBzmdoauSGW',
+    'y+M+3dlSGeVqgqmDukQSxuNgKBC/ELDhKvAb8uKWnS/MUOapk/6aF8mf9Vqm',
+    'eG/1RHrIvxfeOsRCEFH0OqB2tOeCWPXohxpzv2AvFxWviwzpedwNGDhN/XjZ',
+    'JzI4LyBKlorHJvwe4KLKtaLuOq0jmNkT6AcsniyhvqN8QRP4OK7084Uc/7Yd',
+    '6Qrcnw/6plqMB5J2PyYkB6eTptp28bwIxUGzfGQ6qfDyHHQBIbAVt3m5ABEB',
+    'AAEAB/9uDdjynSvon5C/oxy9Ukvbnn2AeOCNLLdA2O07/Ijoroo7IIW4zQpo',
+    'rio9PbREWqrf9KVCk9IdHORXQ88eQoDdlNzG2k8ae+xq2Ux4RZJ18eVf09P/',
+    '0NA7EcElDHX5RmsahOnxX72YejfdzGQd80VSEsJENF5rTMQeMkN2dIHS3pFM',
+    '9ar2nJe9dc/L9ND0P79X8twZvvfh287Tm23fs384nRedcUwELm43kNV7Us3t',
+    'ub1ORmAzHhVCa8dWev7Zca7FqiZxa0u3X/QHvVMMpr0ewTBulr/mEjaglfYf',
+    'dNp1PxduWYPWU54/XLG3G4nqLUS++qjd3O46VhMMCIigGf01BACgrkPwdrTJ',
+    'EGCfgIq48IGoMU//wS1P0g7EIzplwGAzGAJQw6LhGqKrDONcyKGqHzRgn8oz',
+    'dF8iezGjlVq7oiyrrB4ez1gDG4RRDC+6+PTn/TXBTZ21krUgPUrB0jcqV7SQ',
+    'IIWZost7zNcbEqiPI91SPAMwYJZbJrSL4pTnDVLfewQA8RB1y3IzuK/rT+gs',
+    'JfcSHqZ12G+sUIgpK6yv4pN7hQDhWC3+qe8ULnLLXYv+FQslnRW7tTkAbCRl',
+    'kJvbibRqrYj+fQS2d3Hau5HYcGKcv9KPgOhB49yRkQpWCT+fqsQwJByyeZ47',
+    'iiJRR8t0X92nr0zbf0f+LalmK4cQnQ6LS1sEAN2R8RiamrNcbsdmre0v6QVL',
+    'WUOIwRWABRWFOm9QbSr80ji1q9pHlS5WbIw4LVeiO8V6H21QTL2fqDA9yWOK',
+    'mNsOgIi+1PMkC4lwPu60VR7yBtLFWFF2SuuqPuDG8TFA2PBQFisrxcq63E38',
+    'kroxpqxNCXXuB3E0uNL2fO6dqWbaRPzNF2dpYm9saW5AcHJvdG9ubWFpbC5i',
+    'bHVlwsBcBBABAgAGBQJafZwrAAoJEFu1JX+Hv3FrMWEH/jE6HN5MayB6RHe7',
+    'FTrfMlMEh54BqsiugmAIgtKYcxUcNsPw/hC53lJ6tDzo3/zk/2shvfItafh5',
+    'ldUsERj1y5e7OMR+2GgfgMdddLddBuV8sXv2HwQgMtykeXOIPuH+7CZDwV7F',
+    'lUyrykwpIjGGPkK+fG64fVt0cfWprdEsqcGZmHf/lHtoGprG8syfF+Ao3beI',
+    'g6HJ61NHIBy4ewueKMBZ58/9VF2MQ7YgBQCtQNAnQKKrDFmxjZw3J4zBl83i',
+    '3LrYpnYepvMUitQ/Y2pBAYygUExZ0dPC2uGFdPISbDGLg3DhGcyy1MvbLuNh',
+    'EyjB8RncAfSIwK4dSGVh+PD5dkc=',
+    '=w6Dj',
+    '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+
   it('Parsing armored text with RSA key and ECC subkey', function(done) {
     openpgp.config.tolerant = true;
     var pubKeys = openpgp.key.readArmored(rsa_ecc_pub);
@@ -1135,6 +1171,7 @@ describe('Key', function() {
       });
     });
   });
+
   it('Reformat key without passphrase', function() {
     var userId1 = 'test1 <a@b.com>';
     var userId2 = 'test2 <b@a.com>';
@@ -1152,6 +1189,37 @@ describe('Key', function() {
         expect(newKey.users.length).to.equal(1);
         expect(newKey.users[0].userId.userid).to.equal(userId2);
         expect(newKey.primaryKey.isDecrypted).to.be.true;
+      });
+    });
+  });
+
+  it('Reformat key with no subkey with passphrase', function() {
+    var userId = 'test1 <a@b.com>';
+    var keys = openpgp.key.readArmored(key_without_subkey).keys;
+    var opt = {privateKey: keys[0], userIds: [userId], passphrase: "test"}
+    return openpgp.reformatKey(opt).then(function(newKey) {
+      newKey = newKey.key;
+      expect(newKey.users.length).to.equal(1);
+      expect(newKey.users[0].userId.userid).to.equal(userId);
+      expect(newKey.primaryKey.isDecrypted).to.be.false;
+    });
+  });
+
+  it('Reformat key with no subkey without passphrase', function() {
+    var userId = 'test1 <a@b.com>';
+    var keys = openpgp.key.readArmored(key_without_subkey).keys;
+    var opt = {privateKey: keys[0], userIds: [userId]}
+    return openpgp.reformatKey(opt).then(function(newKey) {
+      newKey = newKey.key;
+      expect(newKey.users.length).to.equal(1);
+      expect(newKey.users[0].userId.userid).to.equal(userId);
+      expect(newKey.primaryKey.isDecrypted).to.be.true;
+      return openpgp.sign({data: 'hello', privateKeys: newKey, armor: true}).then(function(signed) {
+        return openpgp.verify({message: openpgp.cleartext.readArmored(signed.data), publicKeys: newKey.toPublic()}).then(function(verified) {
+          expect(verified.signatures[0].valid).to.be.true;
+          expect(verified.signatures[0].keyid.toHex()).to.equal(newKey.getSigningKeyPacket().getKeyId().toHex());
+          expect(verified.signatures[0].signature.packets.length).to.equal(1);
+        });
       });
     });
   });
