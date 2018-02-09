@@ -59,7 +59,9 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
     sha512: sha.sha512,
     /** @see module:ripemd160 */
     ripemd: function(data) {
-      return util.str2Uint8Array(util.hex2bin(new RIPEMD160.update(data).digest('hex')));
+      // Convert Uint8Array to buffer
+      data = require('buffer').Buffer.from(data.buffer);
+      return util.str2Uint8Array(util.hex2bin(new RIPEMD160().update(data).digest('hex')));
     }
   };
 }
