@@ -163,6 +163,7 @@ var passphrase = 'hello world';
 var plaintext = 'short message\nnext line\n한국어/조선말';
 var password1 = 'I am a password';
 var password2 = 'I am another password';
+var password3 = 'I am a third password';
 
 var twoPasswordGPGFail = ['-----BEGIN PGP MESSAGE-----',
 'Version: OpenPGP.js v3.0.0',
@@ -609,6 +610,52 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with multiple passwords', function() {
+          var msgAsciiArmored;
+          return openpgp.encrypt({
+            data: plaintext,
+            passwords: password2
+          }).then(function(encrypted) {
+            msgAsciiArmored = encrypted.data;
+            return openpgp.decryptSessionKeys({
+              message: openpgp.message.readArmored(msgAsciiArmored),
+              passwords: [password1, password2, password3]
+            });
+
+          }).then(function(decryptedSessionKeys) {
+            return openpgp.decrypt({
+              sessionKey: decryptedSessionKeys[0],
+              message: openpgp.message.readArmored(msgAsciiArmored)
+            });
+
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
+        it('roundtrip workflow: encrypt with multiple passwords, decryptSessionKeys, decrypt with multiple passwords', function() {
+          var msgAsciiArmored;
+          return openpgp.encrypt({
+            data: plaintext,
+            passwords: [password1, password2]
+          }).then(function(encrypted) {
+            msgAsciiArmored = encrypted.data;
+            return openpgp.decryptSessionKeys({
+              message: openpgp.message.readArmored(msgAsciiArmored),
+              passwords: [password1, password2]
+            });
+
+          }).then(function(decryptedSessionKeys) {
+            return openpgp.decrypt({
+              sessionKey: decryptedSessionKeys[0],
+              message: openpgp.message.readArmored(msgAsciiArmored)
+            });
+
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
         it('roundtrip workflow: encrypt twice with one password, decryptSessionKeys, only one session key', function() {
           return openpgp.encrypt({
             data: plaintext,
@@ -648,7 +695,91 @@ describe('OpenPGP.js public api tests', function() {
             publicKeys: publicKey.keys,
           };
           var decOpt = {
-            privateKeys: privateKey.keys[0]
+            privateKeys: privateKey.keys
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should encrypt then decrypt', function() {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+          };
+          var decOpt = {
+            privateKeys: privateKey.keys
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should encrypt then decrypt wuth multiple private keys', function() {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+          };
+          var decOpt = {
+            privateKeys: [privKeyDE, privateKey.keys[0]]
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should encrypt then decrypt with wildcard', function() {
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            useWildcard: true
+          };
+          var decOpt = {
+            privateKeys: privateKey.keys
+          };
+          return openpgp.encrypt(encOpt).then(function(encrypted) {
+            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            return openpgp.decrypt(decOpt);
+          }).then(function(decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures).to.exist;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should encrypt then decrypt with wildcard with multiple private keys', function() {
+          var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          privKeyDE.decrypt(passphrase);
+
+          var encOpt = {
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            useWildcard: true
+          };
+          var decOpt = {
+            privateKeys: [privKeyDE, privateKey.keys[0]]
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
