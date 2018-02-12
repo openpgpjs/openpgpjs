@@ -1,7 +1,5 @@
 /* globals tryTests: true */
 
-'use strict';
-
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var sinon = require('sinon'),

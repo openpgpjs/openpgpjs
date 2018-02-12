@@ -3,8 +3,6 @@
  * @module crypto
  */
 
-'use strict';
-
 import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';

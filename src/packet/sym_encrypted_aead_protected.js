@@ -20,8 +20,6 @@
  * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}: AEAD Protected Data Packet
  */
 
-'use strict';
-
 import util from '../util.js';
 import crypto from '../crypto';
 import enums from '../enums.js';

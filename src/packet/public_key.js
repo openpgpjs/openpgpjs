@@ -29,8 +29,6 @@
  * @module packet/public_key
  */
 
-'use strict';
-
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';

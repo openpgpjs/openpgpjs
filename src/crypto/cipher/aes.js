@@ -2,8 +2,6 @@
  * @module crypto/cipher/aes
  */
 
-'use strict';
-
 import asmCrypto from 'asmcrypto-lite';
 
 // TODO use webCrypto or nodeCrypto when possible.

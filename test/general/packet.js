@@ -1,5 +1,3 @@
-'use strict';
-
 var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 var chai = require('chai');
@@ -307,7 +305,7 @@ describe("Packet", function() {
     var msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key).then(() => { 
+    msg[0].decrypt(key).then(() => {
       msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       var text = stringify(msg[1].packets[0].packets[0].data);

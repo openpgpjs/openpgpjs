@@ -20,8 +20,6 @@
  * in order to lookup and upload keys on standard public key servers.
  */
 
-'use strict';
-
 import config from './config';
 
 /**

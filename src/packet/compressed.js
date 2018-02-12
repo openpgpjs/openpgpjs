@@ -29,8 +29,6 @@
  * @module packet/compressed
  */
 
-'use strict';
-
 import enums from '../enums.js';
 import util from '../util.js';
 import Zlib from '../compression/zlib.min.js';

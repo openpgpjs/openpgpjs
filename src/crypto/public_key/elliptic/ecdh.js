@@ -30,8 +30,6 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-'use strict';
-
 import curves from './curves';
 import BigInteger from '../jsbn';
 import cipher from '../../cipher';

@@ -32,8 +32,6 @@
  * @module packet/sym_encrypted_integrity_protected
  */
 
-'use strict';
-
 import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import crypto from '../crypto';
