@@ -1,7 +1,5 @@
 /* eslint-disable import/newline-after-import, import/first */
 
-'use strict';
-
 /**
  * Export high level api as default.
  * Usage:

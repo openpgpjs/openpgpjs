@@ -24,8 +24,6 @@
  * @module cleartext
  */
 
-'use strict';
-
 import config from './config';
 import armor from './encoding/armor';
 import enums from './enums';

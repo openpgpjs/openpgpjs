@@ -32,8 +32,6 @@
  * for extending and developing on top of the base library.
  */
 
-'use strict';
-
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';

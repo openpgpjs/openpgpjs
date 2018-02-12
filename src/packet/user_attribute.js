@@ -36,8 +36,6 @@
  * @module packet/user_attribute
  */
 
-'use strict';
-
 import util from '../util.js';
 import packet from './packet.js';
 import enums from '../enums.js';

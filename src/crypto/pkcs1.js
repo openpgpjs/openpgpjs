@@ -25,8 +25,6 @@
  * @module crypto/pkcs1
  */
 
-'use strict';
-
 import random from './random.js';
 import util from '../util.js';
 import BigInteger from './public_key/jsbn.js';

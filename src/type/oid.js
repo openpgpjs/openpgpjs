@@ -23,8 +23,6 @@
  * @module type/oid
  */
 
-'use strict';
-
 import util from '../util.js';
 
 module.exports = OID;

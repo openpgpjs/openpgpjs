@@ -27,8 +27,6 @@
  * @module message
  */
 
-'use strict';
-
 import config from './config';
 import crypto from './crypto';
 import armor from './encoding/armor';

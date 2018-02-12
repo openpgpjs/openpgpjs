@@ -25,8 +25,6 @@
  * @module crypto/public_key/elliptic/curve
  */
 
-'use strict';
-
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
 import { KeyPair } from './key';
 import BigInteger from '../jsbn';

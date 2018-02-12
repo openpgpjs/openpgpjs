@@ -28,8 +28,6 @@
  * @module crypto/crypto
  */
 
-'use strict';
-
 import random from './random.js';
 import cipher from './cipher';
 import publicKey from './public_key';
