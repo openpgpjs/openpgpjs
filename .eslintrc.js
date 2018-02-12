@@ -277,10 +277,6 @@ module.exports = {
     "prefer-template": "off",
     "quote-props": "off",
     "quotes": "off",
-    "radix": [
-      "error",
-      "as-needed"
-    ],
     "require-await": "error",
     "require-jsdoc": "off",
     "rest-spread-spacing": "error",
@@ -327,12 +323,12 @@ module.exports = {
       "never"
     ],
 
-    // Custom silencers: 
+    // Custom silencers:
     "camelcase": 0,
     "no-debugger": 0,
     "require-await": 0,
     "no-multi-assign": 0,
-    "no-underscore-dangle": 0, 
+    "no-underscore-dangle": 0,
     "no-restricted-syntax": 0,
     "one-var-declaration-per-line": 0,
 
