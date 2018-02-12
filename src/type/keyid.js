@@ -61,6 +61,10 @@ Keyid.prototype.isNull = function() {
   return this.bytes === '';
 };
 
+Keyid.prototype.isWildcard = function() {
+  return /^0+$/.test(this.toHex());
+};
+
 Keyid.mapToHex = function (keyId) {
   return keyId.toHex();
 };
@@ -74,5 +78,11 @@ Keyid.fromClone = function (clone) {
 Keyid.fromId = function (hex) {
   var keyid = new Keyid();
   keyid.read(util.str2Uint8Array(util.hex2bin(hex)));
+  return keyid;
+};
+
+Keyid.wildcard = function () {
+  var keyid = new Keyid();
+  keyid.read(new Uint8Array(8));
   return keyid;
 };

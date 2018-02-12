@@ -174,7 +174,7 @@ describe('X25519 Cryptography', function () {
     expect(night.decrypt(data['night'].pass)).to.be.true;
     var msg = openpgp.message.readArmored(data['night'].message_encrypted);
     return openpgp.decrypt(
-      {privateKey: night, publicKeys: [light], message: msg}
+      {privateKeys: night, publicKeys: [light], message: msg}
     ).then(function (result) {
       expect(result).to.exist;
       // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
@@ -194,7 +194,7 @@ describe('X25519 Cryptography', function () {
       var light = load_pub_key('light');
       var night = load_priv_key('night');
       return openpgp.decrypt(
-        {privateKey: night, publicKeys: [light], message: message}
+        {privateKeys: night, publicKeys: [light], message: message}
       ).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data['light'].message);
@@ -291,7 +291,7 @@ describe('X25519 Cryptography', function () {
             // Decrypting and verifying
             return openpgp.decrypt(
               { message: msg,
-                privateKey: bye,
+                privateKeys: bye,
                 publicKeys: [ hi.toPublic() ] }
             ).then(output => {
               expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
