@@ -30,8 +30,6 @@
  * @module crypto/public_key/elliptic/key
  */
 
-'use strict';
-
 import curves from './curves';
 import BigInteger from '../jsbn';
 import hash from '../../hash';

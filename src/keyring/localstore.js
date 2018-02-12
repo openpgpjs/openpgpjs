@@ -24,8 +24,6 @@
  * @param {String} prefix prefix for itemnames in localstore
  */
 
-'use strict';
-
 import config from '../config';
 import { readArmored } from '../key';
 import util from '../util';

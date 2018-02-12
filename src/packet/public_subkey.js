@@ -21,8 +21,6 @@
  * @module packet/public_subkey
  */
 
-'use strict';
-
 import publicKey from './public_key.js';
 import enums from '../enums.js';
 

@@ -3,8 +3,6 @@
  * @module packet/trust
  */
 
-'use strict';
-
 import enums from '../enums.js';
 
 /**

@@ -25,8 +25,6 @@
  * @module packet/literal
  */
 
-'use strict';
-
 import util from '../util.js';
 import enums from '../enums.js';
 

@@ -29,8 +29,6 @@
  * @module packet/one_pass_signature
 */
 
-'use strict';
-
 import util from '../util.js';
 import enums from '../enums.js';
 import type_keyid from '../type/keyid.js';

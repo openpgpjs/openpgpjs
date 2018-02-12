@@ -24,8 +24,6 @@
  * @module crypto/public_key/rsa
  */
 
-'use strict';
-
 import BigInteger from './jsbn.js';
 import util from '../../util.js';
 import random from '../random.js';

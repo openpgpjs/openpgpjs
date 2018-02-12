@@ -22,8 +22,6 @@
  * @module type/kdf_params
  */
 
-'use strict';
-
 import enums from '../enums.js';
 
 module.exports = KDFParams;

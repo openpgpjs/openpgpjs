@@ -24,8 +24,6 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-'use strict';
-
 import BN from 'bn.js';
 import hash from '../../hash';
 import curves from './curves';
