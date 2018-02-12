@@ -196,17 +196,17 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} returnSessionKey         (optional) if the unencrypted session key should be added to returned object
- * @param  {Boolean} useWildcard              (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
  * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
  *                                              {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false, useWildcard=false}) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, useWildcard });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, wildcard });
   }
   var result = {};
   return Promise.resolve().then(async function() {
@@ -223,7 +223,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
         message = await message.sign(privateKeys, signature);
       }
     }
-    return message.encrypt(publicKeys, passwords, sessionKey, useWildcard);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard);
 
   }).then(encrypted => {
     if (armor) {
@@ -363,20 +363,20 @@ export function verify({ message, publicKeys, signature=null }) {
  * @param  {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
- * @param  {Boolean} useWildcard              (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
  * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @static
  */
-export function encryptSessionKey({ data, algorithm, publicKeys, passwords, useWildcard=false }) {
+export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wildcard=false }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords, useWildcard });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords, wildcard });
   }
 
   return Promise.resolve().then(async function() {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords, useWildcard) };
+    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords, wildcard) };
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }

@@ -245,10 +245,10 @@ Message.prototype.getText = function() {
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {Boolean} useWildcard       (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard=false) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(async () => {
     if (sessionKey) {
@@ -269,7 +269,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard=fa
       sessionKey = crypto.generateSessionKey(symAlgo);
     }
 
-    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, useWildcard);
+    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard);
 
     if (config.aead_protect) {
       symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -301,10 +301,10 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard=fa
  * @param  {String} symAlgo            session key algorithm
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
- * @param  {Boolean} useWildcard       (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, useWildcard=false) {
+export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false) {
   var results, packetlist = new packet.List();
 
   return Promise.resolve().then(async () => {
@@ -316,7 +316,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, us
           throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
         }
         var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-        pkESKeyPacket.publicKeyId = useWildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
+        pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
