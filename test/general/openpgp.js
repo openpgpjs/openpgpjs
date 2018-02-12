@@ -730,7 +730,7 @@ describe('OpenPGP.js public api tests', function() {
           var encOpt = {
             data: plaintext,
             publicKeys: publicKey.keys,
-            useWildcard: true
+            wildcard: true
           };
           var decOpt = {
             privateKeys: privateKey.keys
@@ -753,7 +753,7 @@ describe('OpenPGP.js public api tests', function() {
           var encOpt = {
             data: plaintext,
             publicKeys: publicKey.keys,
-            useWildcard: true
+            wildcard: true
           };
           var decOpt = {
             privateKeys: [privKeyDE, privateKey.keys[0]]
