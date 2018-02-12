@@ -208,22 +208,23 @@ Key.prototype.getKeyIds = function() {
 };
 
 /**
- * Returns first key packet for given array of key IDs
- * @param  {Array<module:type/keyid>} keyIds
+ * Returns array containing first key packet for given key ID or all key packets in the case of a wildcard ID
+ * @param  {type/keyid>} keyIds
  * @return {(module:packet/public_subkey|module:packet/public_key|
  *           module:packet/secret_subkey|module:packet/secret_key|null)}
  */
-Key.prototype.getKeyPacket = function(keyIds) {
+Key.prototype.getKeyPackets = function(packetKeyId) {
   var keys = this.getAllKeyPackets();
+  if (packetKeyId.isWildcard()) {
+    return keys;
+  }
   for (var i = 0; i < keys.length; i++) {
     var keyId = keys[i].getKeyId();
-    for (var j = 0; j < keyIds.length; j++) {
-      if (keyId.equals(keyIds[j])) {
-        return keys[i];
-      }
+    if (keyId.equals(packetKeyId)) {
+      return [keys[i]];
     }
   }
-  return null;
+  return [];
 };
 
 /**

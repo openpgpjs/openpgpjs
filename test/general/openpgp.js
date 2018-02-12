@@ -578,7 +578,7 @@ describe('OpenPGP.js public api tests', function() {
 
           }).then(function(decryptedSessionKeys) {
             return openpgp.decrypt({
-              sessionKey: decryptedSessionKeys[0],
+              sessionKeys: decryptedSessionKeys[0],
               message: openpgp.message.readArmored(msgAsciiArmored)
             });
 
@@ -601,30 +601,7 @@ describe('OpenPGP.js public api tests', function() {
 
           }).then(function(decryptedSessionKeys) {
             return openpgp.decrypt({
-              sessionKey: decryptedSessionKeys[0],
-              message: openpgp.message.readArmored(msgAsciiArmored)
-            });
-
-          }).then(function(decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-          });
-        });
-
-        it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with multiple passwords', function() {
-          var msgAsciiArmored;
-          return openpgp.encrypt({
-            data: plaintext,
-            passwords: password2
-          }).then(function(encrypted) {
-            msgAsciiArmored = encrypted.data;
-            return openpgp.decryptSessionKeys({
-              message: openpgp.message.readArmored(msgAsciiArmored),
-              passwords: [password1, password2, password3]
-            });
-
-          }).then(function(decryptedSessionKeys) {
-            return openpgp.decrypt({
-              sessionKey: decryptedSessionKeys[0],
+              sessionKeys: decryptedSessionKeys[0],
               message: openpgp.message.readArmored(msgAsciiArmored)
             });
 
@@ -647,7 +624,7 @@ describe('OpenPGP.js public api tests', function() {
 
           }).then(function(decryptedSessionKeys) {
             return openpgp.decrypt({
-              sessionKey: decryptedSessionKeys[0],
+              sessionKeys: decryptedSessionKeys,
               message: openpgp.message.readArmored(msgAsciiArmored)
             });
 
@@ -727,7 +704,7 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt then decrypt wuth multiple private keys', function() {
+        it('should encrypt then decrypt with multiple private keys', function() {
           var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
           privKeyDE.decrypt(passphrase);
 
@@ -802,7 +779,7 @@ describe('OpenPGP.js public api tests', function() {
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
             var decOpt = {
-              sessionKey: encrypted.sessionKey,
+              sessionKeys: encrypted.sessionKey,
               message: openpgp.message.readArmored(encrypted.data)
             };
             return openpgp.decrypt(decOpt);
@@ -824,7 +801,7 @@ describe('OpenPGP.js public api tests', function() {
             publicKeys: publicKey.keys
           };
           var decOpt = {
-            sessionKey: sessionKey
+            sessionKeys: sessionKey
           };
           return openpgp.encrypt(encOpt).then(function(encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
@@ -842,7 +819,7 @@ describe('OpenPGP.js public api tests', function() {
           };
           var encOpt = {
             data: plaintext,
-            sessionKey: sessionKey,
+            sessionKeys: sessionKey,
             publicKeys: publicKey.keys
           };
           var decOpt = {
