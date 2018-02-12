@@ -246,7 +246,7 @@ openpgp.verify(options).then(function(verified) {
 #### Create and verify *detached* signatures
 
 ```js
-var options, cleartext, detachedSig, validity;
+var options, detachedSig, validity;
 
 var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
 var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
@@ -264,7 +264,6 @@ options = {
 };
 
 openpgp.sign(options).then(function(signed) {
-    cleartext = signed.data;
     detachedSig = signed.signature;
 });
 ```
@@ -272,7 +271,7 @@ openpgp.sign(options).then(function(signed) {
 
 ```js
 options = {
-    message: openpgp.cleartext.readArmored(cleartext), // parse armored message
+    message: openpgp.message.fromText('Hello, World!'), // input as Message object
     signature: openpgp.signature.readArmored(detachedSig), // parse detached signature
     publicKeys: openpgp.key.readArmored(pubkey).keys   // for verification
 };
