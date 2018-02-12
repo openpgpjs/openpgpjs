@@ -1004,7 +1004,7 @@ describe('Key', function() {
       key = newKey;
       return openpgp.message.fromText('hello').encrypt([key.key]);
     }).then(function(msg) {
-      return msg.message.decrypt(key.key);
+      return msg.message.decrypt([key.key]);
     }).catch(function(err) {
       expect(err.message).to.equal('Private key is not decrypted.');
     });
@@ -1258,7 +1258,7 @@ describe('Key', function() {
       return openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key;
         return openpgp.encrypt({data: 'hello', publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(function(encrypted) {
-          return openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKey: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
+          return openpgp.decrypt({message: openpgp.message.readArmored(encrypted.data), privateKeys: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello');
             expect(decrypted.signatures[0].valid).to.be.true;
           });

@@ -35,6 +35,7 @@ import armor from './encoding/armor';
 import enums from './enums';
 import util from './util';
 import packet from './packet';
+import type_keyid from './type/keyid';
 import { Signature } from './signature';
 import { getPreferredHashAlgo, getPreferredSymAlgo } from './key';
 
@@ -91,16 +92,13 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message. Either a private key, a session key, or a password must be specified.
- * @param  {Key} privateKey      (optional) private key with decrypted secret data
- * @param  {Object} sessionKey   (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {String} password     (optional) password used to decrypt
+ * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
+ * @param  {Array<String>} passwords    (optional) passwords used to decrypt
+ * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}             new message with decrypted content
  */
-Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
-  let keyObjs = sessionKey || await this.decryptSessionKeys(privateKey, password);
-  if (!util.isArray(keyObjs)) {
-    keyObjs = [keyObjs];
-  }
+Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) {
+  const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
 
   const symEncryptedPacketlist = this.packets.filterByTag(
     enums.packet.symmetricallyEncrypted,
@@ -140,42 +138,49 @@ Message.prototype.decrypt = async function(privateKey, sessionKey, password) {
 };
 
 /**
- * Decrypt an encrypted session key either with a private key or a password.
- * @param  {Key} privateKey    (optional) private key with decrypted secret data
- * @param  {String} password   (optional) password used to decrypt
+ * Decrypt encrypted session keys either with private keys or passwords.
+ * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
+ * @param  {Array<String>} passwords   (optional) passwords used to decrypt
  * @return {Array<{ data:Uint8Array, algorithm:String }>} array of object with potential sessionKey, algorithm pairs
  */
-Message.prototype.decryptSessionKeys = function(privateKey, password) {
+Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
   var keyPackets = [];
   return Promise.resolve().then(async () => {
-    if (password) {
+    if (passwords) {
       var symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
       if (!symESKeyPacketlist) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
       await Promise.all(symESKeyPacketlist.map(async function(packet) {
-        try {
-          await packet.decrypt(password);
-          keyPackets.push(packet);
-        } catch (err) {}
+        await Promise.all(passwords.map(async function(password) {
+          try {
+            await packet.decrypt(password);
+            keyPackets.push(packet);
+          } catch (err) {}
+        }));
       }));
 
-    } else if (privateKey) {
+    } else if (privateKeys) {
       var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
       if (!pkESKeyPacketlist) {
         throw new Error('No public key encrypted session key packet found.');
       }
-      var privateKeyPacket = privateKey.getKeyPacket(this.getEncryptionKeyIds());
-      if (!privateKeyPacket.isDecrypted) {
-        throw new Error('Private key is not decrypted.');
-      }
       await Promise.all(pkESKeyPacketlist.map(async function(packet) {
-        if (packet.publicKeyId.equals(privateKeyPacket.getKeyId())) {
+        var privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
+          return acc.concat(privateKey.getKeyPackets(packet.publicKeyId));
+        }, []);
+        await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
+          if (!privateKeyPacket) {
+           return;
+          }
+          if (!privateKeyPacket.isDecrypted) {
+            throw new Error('Private key is not decrypted.');
+          }
           try {
             await packet.decrypt(privateKeyPacket);
             keyPackets.push(packet);
           } catch (err) {}
-        }
+        }));
       }));
     } else {
       throw new Error('No key or password specified.');
@@ -240,9 +245,10 @@ Message.prototype.getText = function() {
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords, sessionKey) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(async () => {
     if (sessionKey) {
@@ -263,7 +269,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
       sessionKey = crypto.generateSessionKey(symAlgo);
     }
 
-    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords);
+    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard);
 
     if (config.aead_protect) {
       symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -295,9 +301,10 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey) {
  * @param  {String} symAlgo            session key algorithm
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
+ * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
+export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false) {
   var results, packetlist = new packet.List();
 
   return Promise.resolve().then(async () => {
@@ -309,7 +316,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
           throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
         }
         var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-        pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
+        pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
