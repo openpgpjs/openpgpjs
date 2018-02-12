@@ -62,7 +62,7 @@ Keyid.prototype.isNull = function() {
 };
 
 Keyid.prototype.isWildcard = function() {
-  return this.toHex() === '0000000000000000';
+  return /^0+$/.test(this.toHex());
 };
 
 Keyid.mapToHex = function (keyId) {
@@ -83,6 +83,6 @@ Keyid.fromId = function (hex) {
 
 Keyid.wildcard = function () {
   var keyid = new Keyid();
-  keyid.read(util.str2Uint8Array(util.hex2bin('0000000000000000')));
+  keyid.read(new Uint8Array(8));
   return keyid;
 };

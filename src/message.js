@@ -92,16 +92,13 @@ Message.prototype.getSigningKeyIds = function() {
 
 /**
  * Decrypt the message. Either a private key, a session key, or a password must be specified.
- * @param  {Array<Key>} privateKeys     (optional) private key with decrypted secret data
- * @param  {Array<String>} passwords    (optional) password used to decrypt
- * @param  {Object} sessionKey          (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
+ * @param  {Array<String>} passwords    (optional) passwords used to decrypt
+ * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
  * @return {Message}             new message with decrypted content
  */
-Message.prototype.decrypt = async function(privateKeys, passwords, sessionKey) {
-  let keyObjs = sessionKey || await this.decryptSessionKeys(privateKeys, passwords);
-  if (!util.isArray(keyObjs)) {
-    keyObjs = [keyObjs];
-  }
+Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) {
+  const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
 
   const symEncryptedPacketlist = this.packets.filterByTag(
     enums.packet.symmetricallyEncrypted,
@@ -141,9 +138,9 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKey) {
 };
 
 /**
- * Decrypt an encrypted session key either with private keys or passwords.
- * @param  {Array<Key>} privateKeys    (optional) private key with decrypted secret data
- * @param  {Array<String>} passwords   (optional) password used to decrypt
+ * Decrypt encrypted session keys either with private keys or passwords.
+ * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
+ * @param  {Array<String>} passwords   (optional) passwords used to decrypt
  * @return {Array<{ data:Uint8Array, algorithm:String }>} array of object with potential sessionKey, algorithm pairs
  */
 Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
@@ -155,14 +152,12 @@ Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
       await Promise.all(symESKeyPacketlist.map(async function(packet) {
-        for (var i = 0; i < passwords.length; i++) {
+        await Promise.all(passwords.map(async function(password) {
           try {
-            // eslint-disable-next-line no-await-in-loop
-            await packet.decrypt(passwords[i]);
+            await packet.decrypt(password);
             keyPackets.push(packet);
-            break;
           } catch (err) {}
-        }
+        }));
       }));
 
     } else if (privateKeys) {
@@ -171,30 +166,21 @@ Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
         throw new Error('No public key encrypted session key packet found.');
       }
       await Promise.all(pkESKeyPacketlist.map(async function(packet) {
-        for (var i = 0; i < privateKeys.length; i++){
-          var privateKeyPackets;
-          if (packet.publicKeyId.isWildcard()) {
-            // wildcard key ID - try all key packets
-            privateKeyPackets = privateKeys[i].getAllKeyPackets();
-          } else {
-            privateKeyPackets = [privateKeys[i].getKeyPacket([packet.publicKeyId])];
+        var privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
+          return acc.concat(privateKey.getKeyPackets(packet.publicKeyId));
+        }, []);
+        await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
+          if (!privateKeyPacket) {
+           return;
           }
-          for (var j = 0; j < privateKeyPackets.length; j++) {
-            var privateKeyPacket = privateKeyPackets[j];
-            if (!privateKeyPacket) {
-             continue;
-            }
-            if (!privateKeyPacket.isDecrypted) {
-              throw new Error('Private key is not decrypted.');
-            }
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              await packet.decrypt(privateKeyPacket);
-              keyPackets.push(packet);
-              break;
-            } catch (err) {}
+          if (!privateKeyPacket.isDecrypted) {
+            throw new Error('Private key is not decrypted.');
           }
-        }
+          try {
+            await packet.decrypt(privateKeyPacket);
+            keyPackets.push(packet);
+          } catch (err) {}
+        }));
       }));
     } else {
       throw new Error('No key or password specified.');
@@ -259,9 +245,10 @@ Message.prototype.getText = function() {
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Boolean} useWildcard       (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard=false) {
   let symAlgo, msg, symEncryptedPacket;
   return Promise.resolve().then(async () => {
     if (sessionKey) {
@@ -314,9 +301,10 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, useWildcard) {
  * @param  {String} symAlgo            session key algorithm
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
+ * @param  {Boolean} useWildcard       (optional) use a key ID of 0 instead of the public key IDs
  * @return {Message}                   new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, useWildcard) {
+export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, useWildcard=false) {
   var results, packetlist = new packet.List();
 
   return Promise.resolve().then(async () => {
@@ -328,11 +316,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, us
           throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
         }
         var pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-        if (!useWildcard) {
-          pkESKeyPacket.publicKeyId = encryptionKeyPacket.getKeyId();
-        } else {
-          pkESKeyPacket.publicKeyId = type_keyid.wildcard();
-        }
+        pkESKeyPacket.publicKeyId = useWildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
