@@ -17,8 +17,6 @@
  * @module crypto/hash/md5
  */
 
-'use strict';
-
 import util from '../../util.js';
 
 /**

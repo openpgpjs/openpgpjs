@@ -21,8 +21,6 @@
  * @module config/config
  */
 
-'use strict';
-
 import enums from '../enums.js';
 
 export default {

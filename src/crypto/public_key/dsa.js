@@ -25,8 +25,6 @@
  * @module crypto/public_key/dsa
  */
 
-'use strict';
-
 import BigInteger from './jsbn.js';
 import random from '../random.js';
 import hashModule from '../hash';

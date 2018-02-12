@@ -22,8 +22,6 @@
  * @module type/ecdh_symkey
  */
 
-'use strict';
-
 import util from '../util';
 
 module.exports = ECDHSymmetricKey;

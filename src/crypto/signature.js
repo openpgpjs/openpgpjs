@@ -5,8 +5,6 @@
  * @requires crypto/public_key
  * @module crypto/signature */
 
-'use strict';
-
 import util from '../util';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1.js';

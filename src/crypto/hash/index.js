@@ -5,8 +5,6 @@
  * @module crypto/hash
  */
 
-'use strict';
-
 import Rusha from 'rusha';
 import RIPEMD160 from 'ripemd160';
 import asmCrypto from 'asmcrypto-lite';

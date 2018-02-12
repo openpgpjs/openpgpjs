@@ -6,8 +6,6 @@
  * @module crypto/public_key
  */
 
-'use strict';
-
 /** @see module:crypto/public_key/rsa */
 import rsa from './rsa.js';
 /** @see module:crypto/public_key/elgamal */

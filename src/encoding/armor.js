@@ -22,8 +22,6 @@
  * @module encoding/armor
  */
 
-'use strict';
-
 import base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';

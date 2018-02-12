@@ -23,8 +23,6 @@
  * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 
-'use strict';
-
 import { readArmored } from '../key';
 import LocalStore from './localstore';
 

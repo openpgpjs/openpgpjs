@@ -21,8 +21,6 @@
  * the structured cloning algorithm.
  */
 
-'use strict';
-
 import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';

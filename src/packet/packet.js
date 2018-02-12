@@ -21,8 +21,6 @@
  * @module packet/packet
  */
 
-'use strict';
-
 import util from '../util.js';
 
 export default {
