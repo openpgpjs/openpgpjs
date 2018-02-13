@@ -154,6 +154,35 @@ openpgp.decrypt(options).then(function(plaintext) {
 });
 ```
 
+#### Encrypt with compression
+
+By default, `encrypt` will not use any compression. It's possible to override that behavior in two ways:
+
+Either set the `compression` parameter in the options object when calling `encrypt`.
+
+```js
+var options, encrypted;
+
+options = {
+    data: new Uint8Array([0x01, 0x02, 0x03]),    // input as Uint8Array (or String)
+    passwords: ['secret stuff'],                 // multiple passwords possible
+    compression: openpgp.enums.compression.zip   // compress the data with zip
+};
+
+openpgp.encrypt(options).then(function(ciphertext) {
+    // use ciphertext
+});
+```
+
+Or, override the config to enable compression:
+
+```js
+openpgp.config.compression = openpgp.enums.compression.zip
+```
+
+Where `compression` can take the value of `openpgp.enums.compression.zlib` or `openpgp.enums.compression.zip`.
+
+
 #### Generate new key pair
 
 RSA keys:
