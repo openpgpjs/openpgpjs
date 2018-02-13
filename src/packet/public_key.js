@@ -195,7 +195,7 @@ PublicKey.prototype.getFingerprint = function () {
  * @return {Promise<Object} An object of the form {algorithm: String, bits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
-  var result = {};
+  const result = {};
   result.algorithm = this.algorithm;
   if (this.params[0] instanceof type_mpi) {
     result.bits = this.params[0].byteLength() * 8;
