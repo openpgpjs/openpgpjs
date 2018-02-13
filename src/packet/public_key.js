@@ -35,6 +35,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import type_keyid from '../type/keyid';
+import type_mpi from '../type/mpi';
 
 /**
  * @constructor
@@ -194,11 +195,18 @@ PublicKey.prototype.getFingerprint = function () {
 };
 
 /**
- * Returns bit size of key
- * @return {int} Number of bits
+ * Returns algorithm information
+ * @return {Promise<Object} An object of the form {algorithm: String, bits:int, curve:String}
  */
-PublicKey.prototype.getBitSize = function () {
-  return this.params[0].byteLength() * 8;
+PublicKey.prototype.getAlgorithmInfo = function () {
+  var result = {};
+  result.algorithm = this.algorithm;
+  if (this.params[0] instanceof type_mpi) {
+    result.bits = this.params[0].byteLength() * 8;
+  } else {
+    result.curve = crypto.publicKey.elliptic.get(this.params[0]).name;
+  }
+  return result;
 };
 
 /**
