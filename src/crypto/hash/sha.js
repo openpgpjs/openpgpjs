@@ -132,7 +132,7 @@ function hex2binb(str) {
 
   for (let i = 0; i < length; i += 2) {
     num = parseInt(str.substr(i, 2), 16);
-    if (!isNaN(num)) {
+    if (!Number.isNaN(num)) {
       offset = i >>> 3;
       while (bin.length <= offset) {
         bin.push(0);
@@ -216,14 +216,13 @@ function b642binb(str) {
   let j;
   let tmpInt;
   let strPart;
-  let firstEqual;
   let offset;
   const b64Tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
   if (str.search(/^[a-zA-Z0-9=+\/]+$/) === -1) {
     throw new Error('Invalid character in base-64 string');
   }
-  firstEqual = str.indexOf('=');
+  const firstEqual = str.indexOf('=');
   str = str.replace(/\=/g, '');
   if ((firstEqual !== -1) && (firstEqual < str.length)) {
     throw new Error('Invalid \'=\' found in base-64 string');
@@ -472,7 +471,7 @@ function shr_64(x, n) {
   if (n <= 32) {
     retVal = new Int_64(
       x.highOrder >>> n,
-      x.lowOrder >>> n | ((x.highOrder << (32 - n)) & 0xFFFFFFFF)
+      (x.lowOrder >>> n) | ((x.highOrder << (32 - n)) & 0xFFFFFFFF)
     );
   } else {
     retVal = new Int_64(
@@ -1067,7 +1066,7 @@ function coreSHA2(message, messageLen, variant) {
       ];
     }
   } else {
-    throw "Unexpected error in SHA-2 implementation";
+    throw new Error("Unexpected error in SHA-2 implementation");
   }
 
   while (message.length <= lengthPosition) {
@@ -1148,7 +1147,7 @@ function coreSHA2(message, messageLen, variant) {
       H[7].highOrder, H[7].lowOrder
     ];
   } else { /* This should never be reached */
-    throw "Unexpected error in SHA-2 implementation";
+    throw new Error("Unexpected error in SHA-2 implementation");
   }
 
   return retVal;
@@ -1239,7 +1238,7 @@ const jsSHA = function(srcString, inputFormat, encoding) {
     }
 
     /* Validate the numRounds argument */
-    if ((numRounds !== parseInt(numRounds)) || (numRounds < 1)) {
+    if ((numRounds !== parseInt(numRounds, 10)) || (numRounds < 1)) {
       throw new Error('numRounds must a integer >= 1');
     }
 
