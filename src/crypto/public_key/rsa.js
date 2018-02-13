@@ -89,6 +89,8 @@ export default function RSA() {
     }
     t = t.multiply(p).add(xp);
 
+//    var t = RSA.decrypt(m, [n, e, d, q, p, dq, dp, u]).slice(1)
+
     if (config.rsa_blinding) {
       t = unblind(t, n);
     }

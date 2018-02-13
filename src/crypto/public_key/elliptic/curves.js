@@ -191,8 +191,8 @@ async function generate(curve) {
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
-    Q: new BigInteger(keyPair.getPublic()),
-    d: new BigInteger(keyPair.getPrivate()),
+    Q: new BigInteger(util.hexidump(keyPair.getPublic()), 16),
+    d: new BigInteger(util.hexidump(keyPair.getPrivate()), 16),
     hash: curve.hash,
     cipher: curve.cipher
   };

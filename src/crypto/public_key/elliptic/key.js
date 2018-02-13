@@ -226,7 +226,8 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
 }
 
 async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
-  const signature = ECDSASignature.encode({ r: new BigInteger(r), s: new BigInteger(s) }, 'der');
+  const signature = ECDSASignature.encode(
+    { r: new BigInteger(util.hexidump(r), 16), s: new BigInteger(util.hexidump(s), 16) }, 'der');
   const key = jwkToPem(
     {
       "kty": "EC",
