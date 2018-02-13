@@ -318,7 +318,7 @@ describe('X25519 Cryptography', function () {
 
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
-    const crypto = openpgp.crypto.signature;
+    const signature = openpgp.crypto.signature;
     const curve = openpgp.crypto.publicKey.elliptic.get('ed25519');
     const util = openpgp.util;
     function testVector(vector) {
@@ -336,12 +336,12 @@ describe('X25519 Cryptography', function () {
         new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.S).reverse()))
       ];
       return Promise.all([
-        crypto.sign(undefined, 22, keyIntegers, data).then(signature => {
-          const len = ((signature[0] << 8 | signature[1]) + 7) / 8;
-          expect(util.hex2Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signature.slice(2, 2 + len));
-          expect(util.hex2Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signature.slice(4 + len));
+        signature.sign(22, undefined, keyIntegers, data).then(signed => {
+          const len = ((signed[0] << 8| signed[1]) + 7) / 8;
+          expect(util.hex2Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
+          expect(util.hex2Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
         }),
-        crypto.verify(22, undefined, msg_MPIs, keyIntegers, data).then(result => {
+        signature.verify(22, undefined, msg_MPIs, keyIntegers, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

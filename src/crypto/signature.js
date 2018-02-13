@@ -1,13 +1,15 @@
 /**
- * @requires util
- * @requires crypto/hash
- * @requires crypto/pkcs1
+ * @requires asmcrypto.js
  * @requires crypto/public_key
+ * @requires crypto/pkcs1
+ * @requires util
  * @module crypto/signature */
 
-import util from '../util';
+
+import { RSA_RAW } from 'asmcrypto.js'
 import publicKey from './public_key';
-import pkcs1 from './pkcs1.js';
+import pkcs1 from './pkcs1';
+import util from '../util';
 
 export default {
   /**
@@ -35,14 +37,13 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3: {
         // RSA Sign-Only [HAC]
-        const rsa = new publicKey.rsa();
-        const n = publickey_MPIs[0].toBigInteger();
+        const n = util.str2Uint8Array(publickey_MPIs[0].toBytes());
         const k = publickey_MPIs[0].byteLength();
-        const e = publickey_MPIs[1].toBigInteger();
-        m = msg_MPIs[0].toBigInteger();
-        const EM = rsa.verify(m, e, n);
+        const e = util.str2Uint8Array(publickey_MPIs[1].toBytes());
+        m = msg_MPIs[0].write().slice(2); // FIXME
+        const EM = RSA_RAW.verify(m, [n, e]);
         const EM2 = pkcs1.emsa.encode(hash_algo, data, k);
-        return EM.compareTo(EM2) === 0;
+        return util.hexidump(EM) === EM2;
       }
       case 16: {
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
@@ -88,13 +89,14 @@ export default {
 
   /**
    * Create a signature on data using the specified algorithm
-   * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {module:enums.publicKey} algo Asymmetric cipher algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
+   * @param {module:enums.hash} hash_algo hash Algorithm to use (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Array<module:type/mpi>} keyIntegers Public followed by Private key multiprecision algorithm-specific parameters
    * @param {Uint8Array} data Data to be signed
    * @return {Array<module:type/mpi>}
    */
-  sign: async function(hash_algo, algo, keyIntegers, data) {
+  sign: async function(algo, hash_algo, keyIntegers, data) {
+
     data = util.Uint8Array2str(data);
 
     let m;
@@ -109,15 +111,14 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3: {
         // RSA Sign-Only [HAC]
-        const rsa = new publicKey.rsa();
-        d = keyIntegers[2].toBigInteger();
-        const n = keyIntegers[0].toBigInteger();
-        m = pkcs1.emsa.encode(
-          hash_algo,
-          data, keyIntegers[0].byteLength()
+        const n = util.str2Uint8Array(keyIntegers[0].toBytes());
+        const k = keyIntegers[0].byteLength();
+        const e = util.str2Uint8Array(keyIntegers[1].toBytes());
+        d = util.str2Uint8Array(keyIntegers[2].toBytes());
+        m = util.hex2Uint8Array(
+          '00'+pkcs1.emsa.encode(hash_algo, data, k) // FIXME
         );
-        return util.str2Uint8Array(rsa.sign(m, d, n).toMPI());
-      }
+        return util.Uint8Array2MPI(RSA_RAW.sign(m, [n, e, d]));
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
         const dsa = new publicKey.dsa();
@@ -150,10 +151,10 @@ export default {
         d = keyIntegers[2].toBigInteger();
         m = data;
         signature = await eddsa.sign(curve.oid, hash_algo, m, d);
-        return new Uint8Array([].concat(
+        return util.concatUint8Array([
           util.Uint8Array2MPI(signature.R.toArrayLike(Uint8Array, 'le', 32)),
           util.Uint8Array2MPI(signature.S.toArrayLike(Uint8Array, 'le', 32))
-        ));
+        ]);
       }
       default:
         throw new Error('Invalid signature algorithm.');

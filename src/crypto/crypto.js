@@ -82,7 +82,9 @@ export default {
           const curve = publicParams[0];
           const kdf_params = publicParams[2];
           const R = publicParams[1].toBigInteger();
-          const res = await ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
+          const res = await ecdh.encrypt(
+            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
+          );
           return constructParams(types, [res.V, res.C]);
         }
         default:
@@ -261,7 +263,9 @@ export default {
         //remember "publicKey" refers to the crypto/public_key dir
         const rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
-          return constructParams(types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]);
+          return constructParams(
+            types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
+          );
         });
       }
       case 'ecdsa':
@@ -269,12 +273,10 @@ export default {
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
         });
-
       case 'ecdh':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
         });
-
       default:
         throw new Error('Unsupported algorithm for key generation.');
     }

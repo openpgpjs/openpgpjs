@@ -17,18 +17,15 @@
 
 /**
  * PKCS1 encoding
- * @requires crypto/crypto
- * @requires crypto/hash
- * @requires crypto/public_key/jsbn
  * @requires crypto/random
+ * @requires crypto/hash
  * @requires util
  * @module crypto/pkcs1
  */
 
-import random from './random.js';
-import util from '../util.js';
-import BigInteger from './public_key/jsbn.js';
+import random from './random';
 import hash from './hash';
+import util from '../util';
 
 /**
  * ASN1 object identifiers for hashes (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2})
@@ -98,6 +95,7 @@ export default {
      * @return {String} message, an octet string
      */
     decode: function(EM) {
+      // FIXME
       // leading zeros truncated by jsbn
       if (EM.charCodeAt(0) !== 0) {
         EM = String.fromCharCode(0) + EM;
@@ -158,7 +156,7 @@ export default {
                PS +
                String.fromCharCode(0x00) +
                T;
-      return new BigInteger(util.hexstrdump(EM), 16);
+      return util.hexstrdump(EM);
     }
   }
 };
