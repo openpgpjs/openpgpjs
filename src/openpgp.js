@@ -32,8 +32,6 @@
  * for extending and developing on top of the base library.
  */
 
-'use strict';
-
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
@@ -103,9 +101,13 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="" } = {}) {
+export function generateKey({
+  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""
+} = {}) {
   userIds = formatUserIds(userIds);
-  const options = {userIds, passphrase, numBits, unlocked, keyExpirationTime, curve};
+  const options = {
+    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve
+  };
 
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
@@ -135,10 +137,14 @@ export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=fal
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
-export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
+export function reformatKey({
+  privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0
+} = {}) {
   userIds = formatUserIds(userIds);
 
-  const options = {privateKey, userIds, passphrase, unlocked, keyExpirationTime};
+  const options = {
+    privateKey, userIds, passphrase, unlocked, keyExpirationTime
+  };
 
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -165,13 +171,11 @@ export function decryptKey({ privateKey, passphrase }) {
   }
 
   return Promise.resolve().then(async function() {
-
     await privateKey.decrypt(passphrase);
 
     return {
       key: privateKey
     };
-
   }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
@@ -203,22 +207,21 @@ export function decryptKey({ privateKey, passphrase }) {
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false}) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression = config.compression, armor = true, detached = false, signature = null, returnSessionKey = false, wildcard = false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, wildcard });
   }
-  var result = {};
+  const result = {};
   return Promise.resolve().then(async function() {
-
     let message = createMessage(data, filename);
     if (!privateKeys) {
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        var detachedSignature = await message.signDetached(privateKeys, signature);
+        const detachedSignature = await message.signDetached(privateKeys, signature);
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
         message = await message.sign(privateKeys, signature);
@@ -237,7 +240,6 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
       result.sessionKey = encrypted.sessionKey;
     }
     return result;
-
   }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
@@ -272,7 +274,6 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys) : await message.verify(publicKeys);
     return result;
-
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
 
@@ -295,20 +296,24 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function sign({ data, privateKeys, armor=true, detached=false}) {
+export function sign({
+  data, privateKeys, armor=true, detached=false
+}) {
   checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', { data, privateKeys, armor, detached });
+    return asyncProxy.delegate('sign', {
+      data, privateKeys, armor, detached
+    });
   }
 
-  var result = {};
+  const result = {};
   return Promise.resolve().then(async function() {
-    var message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data);
+    let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data);
 
     if (detached) {
-      var signature = await message.signDetached(privateKeys);
+      const signature = await message.signDetached(privateKeys);
       result.signature = armor ? signature.armor() : signature;
     } else {
       message = await message.sign(privateKeys);
@@ -319,7 +324,6 @@ export function sign({ data, privateKeys, armor=true, detached=false}) {
       }
     }
     return result;
-
   }).catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
@@ -341,12 +345,10 @@ export function verify({ message, publicKeys, signature=null }) {
   }
 
   return Promise.resolve().then(async function() {
-
-    var result = {};
+    const result = {};
     result.data = CleartextMessage.prototype.isPrototypeOf(message) ? message.getText() : message.getLiteralData();
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys) : await message.verify(publicKeys);
     return result;
-
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
@@ -522,9 +524,8 @@ function parseMessage(message, format) {
       data: message.getText(),
       filename: message.getFilename()
     };
-  } else {
-    throw new Error('Invalid format');
   }
+  throw new Error('Invalid format');
 }
 
 /**

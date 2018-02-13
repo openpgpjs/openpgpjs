@@ -36,8 +36,6 @@
  * @module packet/user_attribute
  */
 
-'use strict';
-
 import util from '../util.js';
 import packet from './packet.js';
 import enums from '../enums.js';
@@ -55,9 +53,9 @@ export default function UserAttribute() {
  * @param {Uint8Array} input payload of a tag 17 packet
  */
 UserAttribute.prototype.read = function(bytes) {
-  var i = 0;
+  let i = 0;
   while (i < bytes.length) {
-    var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+    const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
     i += len.offset;
 
     this.attributes.push(util.Uint8Array2str(bytes.subarray(i, i + len.len)));
@@ -70,8 +68,8 @@ UserAttribute.prototype.read = function(bytes) {
  * @return {Uint8Array} string representation
  */
 UserAttribute.prototype.write = function() {
-  var arr = [];
-  for (var i = 0; i < this.attributes.length; i++) {
+  const arr = [];
+  for (let i = 0; i < this.attributes.length; i++) {
     arr.push(packet.writeSimpleLength(this.attributes[i].length));
     arr.push(util.str2Uint8Array(this.attributes[i]));
   }

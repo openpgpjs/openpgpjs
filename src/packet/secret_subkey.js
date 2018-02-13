@@ -21,8 +21,6 @@
  * @module packet/secret_subkey
  */
 
-'use strict';
-
 import secretKey from './secret_key.js';
 import enums from '../enums.js';
 

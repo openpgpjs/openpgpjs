@@ -24,20 +24,17 @@
  * @module crypto/public_key/elgamal
  */
 
-'use strict';
-
 import BigInteger from './jsbn.js';
 import random from '../random.js';
 import util from '../../util.js';
 
 export default function Elgamal() {
-
   function encrypt(m, g, p, y) {
     //  choose k in {2,...,p-2}
-    var pMinus2 = p.subtract(BigInteger.TWO);
-    var k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
+    const pMinus2 = p.subtract(BigInteger.TWO);
+    let k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
     k = k.mod(pMinus2).add(BigInteger.ONE);
-    var c = [];
+    const c = [];
     c[0] = g.modPow(k, p);
     c[1] = y.modPow(k, p).multiply(m).mod(p);
     return c;

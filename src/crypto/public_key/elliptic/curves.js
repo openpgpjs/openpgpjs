@@ -25,8 +25,6 @@
  * @module crypto/public_key/elliptic/curve
  */
 
-'use strict';
-
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
 import { KeyPair } from './key';
 import BigInteger from '../jsbn';
@@ -40,14 +38,15 @@ import base64 from '../../../encoding/base64';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
-var webCurves = {}, nodeCurves = {};
+let webCurves = {};
+let nodeCurves = {};
 webCurves = {
   'p256': 'P-256',
   'p384': 'P-384',
   'p521': 'P-521'
 };
 if (nodeCrypto && config.use_native) {
-  var knownCurves = nodeCrypto.getCurves();
+  const knownCurves = nodeCrypto.getCurves();
   nodeCurves = {
     'secp256k1': knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
     'p256': knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
@@ -149,7 +148,7 @@ Curve.prototype.keyFromPublic = function (pub) {
 };
 
 Curve.prototype.genKeyPair = async function () {
-  var keyPair;
+  let keyPair;
   if (webCrypto && config.use_native && this.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
@@ -162,8 +161,8 @@ Curve.prototype.genKeyPair = async function () {
     keyPair = await nodeGenKeyPair(this.name);
     return new KeyPair(this.curve, keyPair);
   }
-  var compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-  var r = await this.curve.genKeyPair();
+  const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+  const r = await this.curve.genKeyPair();
   if (this.keyType === enums.publicKey.eddsa) {
     keyPair = { secret: r.getSecret() };
   } else {
@@ -173,7 +172,7 @@ Curve.prototype.genKeyPair = async function () {
 };
 
 function get(oid_or_name) {
-  var name;
+  let name;
   if (OID.prototype.isPrototypeOf(oid_or_name) &&
       enums.curve[oid_or_name.toHex()]) {
     name = enums.write(enums.curve, oid_or_name.toHex()); // by curve OID
@@ -190,7 +189,7 @@ function get(oid_or_name) {
 
 async function generate(curve) {
   curve = get(curve);
-  var keyPair = await curve.genKeyPair();
+  const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
     Q: new BigInteger(keyPair.getPublic()),
@@ -205,13 +204,13 @@ function getPreferredHashAlgo(oid) {
 }
 
 module.exports = {
-  Curve: Curve,
-  curves: curves,
-  webCurves: webCurves,
-  nodeCurves: nodeCurves,
-  getPreferredHashAlgo: getPreferredHashAlgo,
-  generate: generate,
-  get: get
+  Curve,
+  curves,
+  webCurves,
+  nodeCurves,
+  getPreferredHashAlgo,
+  generate,
+  get
 };
 
 
@@ -224,12 +223,10 @@ module.exports = {
 
 async function webGenKeyPair(name) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
-  var webCryptoKey = await webCrypto.generateKey(
-    { name: "ECDSA", namedCurve: webCurves[name] }, true, ["sign", "verify"]
-  );
+  const webCryptoKey = await webCrypto.generateKey({ name: "ECDSA", namedCurve: webCurves[name] }, true, ["sign", "verify"]);
 
-  var privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
-  var publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
+  const privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
+  const publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
 
   return {
     pub: {
@@ -241,7 +238,7 @@ async function webGenKeyPair(name) {
 }
 
 async function nodeGenKeyPair(name) {
-  var ecdh = nodeCrypto.createECDH(nodeCurves[name]);
+  const ecdh = nodeCrypto.createECDH(nodeCurves[name]);
   await ecdh.generateKeys();
 
   return {

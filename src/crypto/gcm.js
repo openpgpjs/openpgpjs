@@ -20,8 +20,6 @@
  * the WebCrypto api as well as node.js' crypto api.
  */
 
-'use strict';
-
 import asmCrypto from 'asmcrypto-lite';
 import util from '../util.js';
 import config from '../config';
@@ -43,7 +41,7 @@ const ALGO = 'AES-GCM';
  * @return {Promise<Uint8Array>}    The ciphertext output
  */
 function encrypt(cipher, plaintext, key, iv) {
-  if (cipher.substr(0,3) !== 'aes') {
+  if (cipher.substr(0, 3) !== 'aes') {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
@@ -51,9 +49,8 @@ function encrypt(cipher, plaintext, key, iv) {
     return webEncrypt(plaintext, key, iv);
   } else if (nodeCrypto && config.use_native) { // Node crypto library
     return nodeEncrypt(plaintext, key, iv);
-  } else { // asm.js fallback
-    return Promise.resolve(asmCrypto.AES_GCM.encrypt(plaintext, key, iv));
-  }
+  } // asm.js fallback
+  return Promise.resolve(asmCrypto.AES_GCM.encrypt(plaintext, key, iv));
 }
 
 /**
@@ -65,7 +62,7 @@ function encrypt(cipher, plaintext, key, iv) {
  * @return {Promise<Uint8Array>}     The plaintext output
  */
 function decrypt(cipher, ciphertext, key, iv) {
-  if (cipher.substr(0,3) !== 'aes') {
+  if (cipher.substr(0, 3) !== 'aes') {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
@@ -73,9 +70,8 @@ function decrypt(cipher, ciphertext, key, iv) {
     return webDecrypt(ciphertext, key, iv);
   } else if (nodeCrypto && config.use_native) { // Node crypto library
     return nodeDecrypt(ciphertext, key, iv);
-  } else { // asm.js fallback
-    return Promise.resolve(asmCrypto.AES_GCM.decrypt(ciphertext, key, iv));
-  }
+  } // asm.js fallback
+  return Promise.resolve(asmCrypto.AES_GCM.decrypt(ciphertext, key, iv));
 }
 
 export default {

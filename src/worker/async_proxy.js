@@ -15,14 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'use strict';
-
 import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
 
-const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
-    RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
+const INITIAL_RANDOM_SEED = 50000; // random bytes seeded to worker
+const RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
 
 /**
  * Initializes a new proxy and loads the web worker

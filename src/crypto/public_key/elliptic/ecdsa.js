@@ -24,8 +24,6 @@
  * @module crypto/public_key/elliptic/ecdsa
  */
 
-'use strict';
-
 import hash from '../../hash';
 import curves from './curves';
 import BigInteger from '../jsbn';

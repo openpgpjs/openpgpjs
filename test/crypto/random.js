@@ -1,12 +1,11 @@
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const chai = require('chai');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const { expect } = chai;
 
 describe('Random Buffer', function() {
-  var randomBuffer;
+  let randomBuffer;
 
   before(function() {
     randomBuffer = new openpgp.crypto.random.randomBuffer.constructor();
@@ -26,7 +25,7 @@ describe('Random Buffer', function() {
   });
 
   function equal(buf, arr) {
-    for (var i = 0; i < buf.length; i++) {
+    for (let i = 0; i < buf.length; i++) {
       if (buf[i] !== arr[i]) {
         return false;
       }
@@ -36,7 +35,7 @@ describe('Random Buffer', function() {
 
   it('Set Method', function () {
     randomBuffer.init(5);
-    var buf = new Uint32Array(2);
+    let buf = new Uint32Array(2);
     expect(randomBuffer.set.bind(randomBuffer, buf)).to.throw('Invalid type: buf not an Uint8Array');
     buf = new Uint8Array(2);
     buf[0] = 1; buf[1] = 2;
@@ -59,7 +58,7 @@ describe('Random Buffer', function() {
 
   it('Get Method', function () {
     randomBuffer.init(5);
-    var buf = new Uint8Array(5);
+    let buf = new Uint8Array(5);
     buf[0] = 1; buf[1] = 2; buf[2] = 5; buf[3] = 7; buf[4] = 8;
     randomBuffer.set(buf);
     buf = new Uint32Array(2);

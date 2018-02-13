@@ -23,8 +23,6 @@
  * @module type/oid
  */
 
-'use strict';
-
 import util from '../util.js';
 
 module.exports = OID;
@@ -50,7 +48,7 @@ function OID(oid) {
  */
 OID.prototype.read = function (input) {
   if (input.length >= 1) {
-    var length = input[0];
+    const length = input[0];
     if (input.length >= 1+length) {
       this.oid = util.Uint8Array2str(input.subarray(1, 1+length));
       return 1+this.oid.length;
@@ -64,8 +62,7 @@ OID.prototype.read = function (input) {
  * @return {Uint8Array} Array with the serialized value the OID
  */
 OID.prototype.write = function () {
-  return util.str2Uint8Array(
-    String.fromCharCode(this.oid.length)+this.oid);
+  return util.str2Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
 };
 
 /**
@@ -77,6 +74,6 @@ OID.prototype.toHex = function() {
 };
 
 OID.fromClone = function (clone) {
-  var oid = new OID(clone.oid);
+  const oid = new OID(clone.oid);
   return oid;
 };

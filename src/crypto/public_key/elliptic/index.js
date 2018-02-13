@@ -25,9 +25,7 @@
  * @module crypto/public_key/elliptic
  */
 
-'use strict';
-
-import {get, generate, getPreferredHashAlgo} from './curves';
+import { get, generate, getPreferredHashAlgo } from './curves';
 import ecdsa from './ecdsa';
 import eddsa from './eddsa';
 import ecdh from './ecdh';

@@ -1,16 +1,15 @@
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const chai = require('chai');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const { expect } = chai;
 
 describe('HKP unit tests', function() {
   this.timeout(60000);
 
-  var hkp;
+  let hkp;
 
-  var pub_key = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+  const pub_key = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
       'Version: SKS 1.1.5\r\n' +
       'Comment: Hostname: keyserver.ubuntu.com\r\n' +
       '\r\n' +

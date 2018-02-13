@@ -6,8 +6,6 @@
  * @module crypto/cipher
  */
 
-'use strict';
-
 import aes from './aes.js';
 import desModule from './des.js';
 import cast5 from './cast5.js';

@@ -3,8 +3,6 @@
  * @module packet
  */
 
-'use strict';
-
 import enums from '../enums.js';
 import * as packets from './all_packets.js'; // re-import module to parse packets from tag
 
@@ -59,9 +57,9 @@ export function newPacketFromTag(tag) {
  * @returns {Object} new packet object with data from packet clone
  */
 export function fromStructuredClone(packetClone) {
-  var tagName = enums.read(enums.packet, packetClone.tag);
-  var packet = newPacketFromTag(tagName);
-  for (var attr in packetClone) {
+  const tagName = enums.read(enums.packet, packetClone.tag);
+  const packet = newPacketFromTag(tagName);
+  for (const attr in packetClone) {
     if (packetClone.hasOwnProperty(attr)) {
       packet[attr] = packetClone[attr];
     }

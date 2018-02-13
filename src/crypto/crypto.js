@@ -28,8 +28,6 @@
  * @module crypto/crypto
  */
 
-'use strict';
-
 import random from './random.js';
 import cipher from './cipher';
 import publicKey from './public_key';
@@ -43,9 +41,8 @@ function constructParams(types, data) {
   return types.map(function(type, i) {
     if (data && data[i]) {
       return new type(data[i]);
-    } else {
-      return new type();
     }
+    return new type();
   });
 }
 
@@ -60,36 +57,34 @@ export default {
    * @return {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} encrypted session key parameters
    */
   publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
-    var types = this.getEncSessionKeyParamTypes(algo);
+    const types = this.getEncSessionKeyParamTypes(algo);
     return (async function() {
-      var m;
+      let m;
       switch (algo) {
         case 'rsa_encrypt':
-        case 'rsa_encrypt_sign':
-          var rsa = new publicKey.rsa();
-          var n = publicParams[0].toBigInteger();
-          var e = publicParams[1].toBigInteger();
+        case 'rsa_encrypt_sign': {
+          const rsa = new publicKey.rsa();
+          const n = publicParams[0].toBigInteger();
+          const e = publicParams[1].toBigInteger();
           m = data.toBigInteger();
           return constructParams(types, [rsa.encrypt(m, e, n)]);
-
-        case 'elgamal':
-          var elgamal = new publicKey.elgamal();
-          var p = publicParams[0].toBigInteger();
-          var g = publicParams[1].toBigInteger();
-          var y = publicParams[2].toBigInteger();
+        }
+        case 'elgamal': {
+          const elgamal = new publicKey.elgamal();
+          const p = publicParams[0].toBigInteger();
+          const g = publicParams[1].toBigInteger();
+          const y = publicParams[2].toBigInteger();
           m = data.toBigInteger();
           return constructParams(types, elgamal.encrypt(m, g, p, y));
-
-        case 'ecdh':
-          var ecdh = publicKey.elliptic.ecdh;
-          var curve = publicParams[0];
-          var kdf_params = publicParams[2];
-          var R = publicParams[1].toBigInteger();
-          var res = await ecdh.encrypt(
-            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
-          );
+        }
+        case 'ecdh': {
+          const { ecdh } = publicKey.elliptic;
+          const curve = publicParams[0];
+          const kdf_params = publicParams[2];
+          const R = publicParams[1].toBigInteger();
+          const res = await ecdh.encrypt(curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint);
           return constructParams(types, [res.V, res.C]);
-
+        }
         default:
           return [];
       }
@@ -107,39 +102,40 @@ export default {
    */
 
   publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
-    var p;
+    let p;
     return new type_mpi(await (async function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
-        case 'rsa_encrypt':
-          var rsa = new publicKey.rsa();
+        case 'rsa_encrypt': {
+          const rsa = new publicKey.rsa();
           // 0 and 1 are the public key.
-          var n = keyIntegers[0].toBigInteger();
-          var e = keyIntegers[1].toBigInteger();
+          const n = keyIntegers[0].toBigInteger();
+          const e = keyIntegers[1].toBigInteger();
           // 2 to 5 are the private key.
-          var d = keyIntegers[2].toBigInteger();
+          const d = keyIntegers[2].toBigInteger();
           p = keyIntegers[3].toBigInteger();
-          var q = keyIntegers[4].toBigInteger();
-          var u = keyIntegers[5].toBigInteger();
-          var m = dataIntegers[0].toBigInteger();
+          const q = keyIntegers[4].toBigInteger();
+          const u = keyIntegers[5].toBigInteger();
+          const m = dataIntegers[0].toBigInteger();
           return rsa.decrypt(m, n, e, d, p, q, u);
-        case 'elgamal':
-          var elgamal = new publicKey.elgamal();
-          var x = keyIntegers[3].toBigInteger();
-          var c1 = dataIntegers[0].toBigInteger();
-          var c2 = dataIntegers[1].toBigInteger();
+        }
+        case 'elgamal': {
+          const elgamal = new publicKey.elgamal();
+          const x = keyIntegers[3].toBigInteger();
+          const c1 = dataIntegers[0].toBigInteger();
+          const c2 = dataIntegers[1].toBigInteger();
           p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
-
-        case 'ecdh':
-          var ecdh = publicKey.elliptic.ecdh;
-          var curve = keyIntegers[0];
-          var kdf_params = keyIntegers[2];
-          var V = dataIntegers[0].toBigInteger();
-          var C = dataIntegers[1].data;
-          var r = keyIntegers[3].toBigInteger();
+        }
+        case 'ecdh': {
+          const { ecdh } = publicKey.elliptic;
+          const curve = keyIntegers[0];
+          const kdf_params = keyIntegers[2];
+          const V = dataIntegers[0].toBigInteger();
+          const C = dataIntegers[1].data;
+          const r = keyIntegers[3].toBigInteger();
           return ecdh.decrypt(curve.oid, kdf_params.cipher, kdf_params.hash, V, C, r, fingerprint);
-
+        }
         default:
           return null;
       }
@@ -257,17 +253,17 @@ export default {
    * @return {Array} The array of parameters
    */
   generateParams: function(algo, bits, curve) {
-    var types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
+    const types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
-      case 'rsa_sign':
+      case 'rsa_sign': {
         //remember "publicKey" refers to the crypto/public_key dir
-        var rsa = new publicKey.rsa();
+        const rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]);
         });
-
+      }
       case 'ecdsa':
       case 'eddsa':
         return publicKey.elliptic.generate(curve).then(function (keyObject) {

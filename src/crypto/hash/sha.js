@@ -10,7 +10,7 @@
  * Several functions taken from Paul Johnston
  */
 
- /**
+/**
   * SUPPORTED_ALGS is the stub for a compile flag that will cause pruning of
   * functions that are not needed when a limited number of SHA families are
   * selected
@@ -19,9 +19,7 @@
   *   1 = SHA-1, 2 = SHA-224/SHA-256, 4 = SHA-384/SHA-512
   */
 
-"use strict";
-
-var SUPPORTED_ALGS = 4 | 2 | 1;
+const SUPPORTED_ALGS = 4 | 2 | 1;
 
 /**
  * Int_64 is a object for 2 32-bit numbers emulating a 64-bit number
@@ -32,8 +30,7 @@ var SUPPORTED_ALGS = 4 | 2 | 1;
  * @param {number} msint_32 The most significant 32-bits of a 64-bit number
  * @param {number} lsint_32 The least significant 32-bits of a 64-bit number
  */
-function Int_64(msint_32, lsint_32)
-{
+function Int_64(msint_32, lsint_32) {
   this.highOrder = msint_32;
   this.lowOrder = lsint_32;
 }
@@ -49,35 +46,32 @@ function Int_64(msint_32, lsint_32)
  *   "value" contains the output number array and "binLen" is the binary
  *   length of "value"
  */
-function str2binb(str, utfType)
-{
-  var bin = [], codePnt, binArr = [], byteCnt = 0, i, j, offset;
+function str2binb(str, utfType) {
+  const bin = [];
+  let codePnt;
+  let binArr = [];
+  let byteCnt = 0;
+  let i;
+  let j;
+  let offset;
 
-  if ("UTF8" === utfType)
-  {
-    for (i = 0; i < str.length; i += 1)
-    {
+  if (utfType === "UTF8") {
+    for (i = 0; i < str.length; i += 1) {
       codePnt = str.charCodeAt(i);
       binArr = [];
 
-      if (0x80 > codePnt)
-      {
+      if (codePnt < 0x80) {
         binArr.push(codePnt);
-      }
-      else if (0x800 > codePnt)
-      {
+      } else if (codePnt < 0x800) {
         binArr.push(0xC0 | (codePnt >>> 6));
         binArr.push(0x80 | (codePnt & 0x3F));
-      }
-      else if ((0xd800 > codePnt) || (0xe000 <= codePnt)) {
+      } else if ((codePnt < 0xd800) || (codePnt >= 0xe000)) {
         binArr.push(
           0xe0 | (codePnt >>> 12),
           0x80 | ((codePnt >>> 6) & 0x3f),
           0x80 | (codePnt & 0x3f)
         );
-      }
-      else
-      {
+      } else {
         i += 1;
         codePnt = 0x10000 + (((codePnt & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
         binArr.push(
@@ -88,40 +82,33 @@ function str2binb(str, utfType)
         );
       }
 
-      for (j = 0; j < binArr.length; j += 1)
-      {
+      for (j = 0; j < binArr.length; j += 1) {
         offset = byteCnt >>> 2;
-        while (bin.length <= offset)
-        {
+        while (bin.length <= offset) {
           bin.push(0);
         }
         bin[offset] |= binArr[j] << (24 - (8 * (byteCnt % 4)));
         byteCnt += 1;
       }
     }
-  }
-  else if (("UTF16BE" === utfType) || "UTF16LE" === utfType)
-  {
-    for (i = 0; i < str.length; i += 1)
-    {
+  } else if ((utfType === "UTF16BE") || utfType === "UTF16LE") {
+    for (i = 0; i < str.length; i += 1) {
       codePnt = str.charCodeAt(i);
       /* Internally strings are UTF-16BE so only change if UTF-16LE */
-      if ("UTF16LE" === utfType)
-      {
+      if (utfType === "UTF16LE") {
         j = codePnt & 0xFF;
         codePnt = (j << 8) | (codePnt >> 8);
       }
 
       offset = byteCnt >>> 2;
-      while (bin.length <= offset)
-      {
+      while (bin.length <= offset) {
         bin.push(0);
       }
       bin[offset] |= codePnt << (16 - (8 * (byteCnt % 4)));
       byteCnt += 2;
     }
   }
-  return {"value" : bin, "binLen" : byteCnt * 8};
+  return { "value" : bin, "binLen" : byteCnt * 8 };
 }
 
 /**
@@ -133,34 +120,30 @@ function str2binb(str, utfType)
  *   "value" contains the output number array and "binLen" is the binary
  *   length of "value"
  */
-function hex2binb(str)
-{
-  var bin = [], length = str.length, i, num, offset;
+function hex2binb(str) {
+  const bin = [];
+  const { length } = str;
+  let num;
+  let offset;
 
-  if (0 !== (length % 2))
-  {
-    throw "String of HEX type must be in byte increments";
+  if ((length % 2) !== 0) {
+    throw new Error('String of HEX type must be in byte increments');
   }
 
-  for (i = 0; i < length; i += 2)
-  {
+  for (let i = 0; i < length; i += 2) {
     num = parseInt(str.substr(i, 2), 16);
-    if (!isNaN(num))
-    {
+    if (!Number.isNaN(num)) {
       offset = i >>> 3;
-      while (bin.length <= offset)
-      {
+      while (bin.length <= offset) {
         bin.push(0);
       }
       bin[i >>> 3] |= num << (24 - (4 * (i % 8)));
-    }
-    else
-    {
-      throw "String of HEX type contains invalid characters";
+    } else {
+      throw new Error('String of HEX type contains invalid characters');
     }
   }
 
-  return {"value" : bin, "binLen" : length * 4};
+  return { "value" : bin, "binLen" : length * 4 };
 }
 
 /**
@@ -172,23 +155,22 @@ function hex2binb(str)
  *   "value" contains the output number array and "binLen" is the binary
  *   length of "value"
  */
-function bytes2binb(str)
-{
-  var bin = [], codePnt, i, offset;
+function bytes2binb(str) {
+  const bin = [];
+  let codePnt;
+  let offset;
 
-  for (i = 0; i < str.length; i += 1)
-  {
+  for (let i = 0; i < str.length; i += 1) {
     codePnt = str.charCodeAt(i);
 
     offset = i >>> 2;
-    if (bin.length <= offset)
-    {
+    if (bin.length <= offset) {
       bin.push(0);
     }
     bin[offset] |= codePnt << (24 - (8 * (i % 4)));
   }
 
-  return {"value" : bin, "binLen" : str.length * 8};
+  return { "value" : bin, "binLen" : str.length * 8 };
 }
 
 /**
@@ -200,24 +182,22 @@ function bytes2binb(str)
  *   "value" contains the output array and "binLen" is the binary
  *   length of "value"
  */
-function typed2binb(array)
-{
+function typed2binb(array) {
+  const bin = [];
+  let octet;
+  let offset;
 
-  var bin = [], octet, i, offset;
-
-  for (i = 0; i < array.length; i += 1)
-  {
+  for (let i = 0; i < array.length; i += 1) {
     octet = array[i];
 
     offset = i >>> 2;
-    if (bin.length <= offset)
-    {
+    if (bin.length <= offset) {
       bin.push(0);
     }
     bin[offset] |= octet << (24 - (8 * (i % 4)));
   }
 
-  return {"value" : bin, "binLen" : array.length * 8};
+  return { "value" : bin, "binLen" : array.length * 8 };
 }
 
 /**
@@ -229,38 +209,37 @@ function typed2binb(array)
  *   "value" contains the output number array and "binLen" is the binary
  *   length of "value"
  */
-function b642binb(str)
-{
-  var retVal = [], byteCnt = 0, index, i, j, tmpInt, strPart, firstEqual, offset,
-    b64Tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+function b642binb(str) {
+  const retVal = [];
+  let byteCnt = 0;
+  let index;
+  let j;
+  let tmpInt;
+  let strPart;
+  let offset;
+  const b64Tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-  if (-1 === str.search(/^[a-zA-Z0-9=+\/]+$/))
-  {
-    throw "Invalid character in base-64 string";
+  if (str.search(/^[a-zA-Z0-9=+\/]+$/) === -1) {
+    throw new Error('Invalid character in base-64 string');
   }
-  firstEqual = str.indexOf('=');
+  const firstEqual = str.indexOf('=');
   str = str.replace(/\=/g, '');
-  if ((-1 !== firstEqual) && (firstEqual < str.length))
-  {
-    throw "Invalid '=' found in base-64 string";
+  if ((firstEqual !== -1) && (firstEqual < str.length)) {
+    throw new Error('Invalid \'=\' found in base-64 string');
   }
 
-  for (i = 0; i < str.length; i += 4)
-  {
+  for (let i = 0; i < str.length; i += 4) {
     strPart = str.substr(i, 4);
     tmpInt = 0;
 
-    for (j = 0; j < strPart.length; j += 1)
-    {
+    for (j = 0; j < strPart.length; j += 1) {
       index = b64Tab.indexOf(strPart[j]);
       tmpInt |= index << (18 - (6 * j));
     }
 
-    for (j = 0; j < strPart.length - 1; j += 1)
-    {
+    for (j = 0; j < strPart.length - 1; j += 1) {
       offset = byteCnt >>> 2;
-      while (retVal.length <= offset)
-      {
+      while (retVal.length <= offset) {
         retVal.push(0);
       }
       retVal[offset] |= ((tmpInt >>> (16 - (j * 8))) & 0xFF) <<
@@ -269,7 +248,7 @@ function b642binb(str)
     }
   }
 
-  return {"value" : retVal, "binLen" : byteCnt * 8};
+  return { "value" : retVal, "binLen" : byteCnt * 8 };
 }
 
 /**
@@ -283,20 +262,20 @@ function b642binb(str)
  * @return {string} Hexidecimal representation of the parameter in string
  *   form
  */
-function binb2hex(binarray, formatOpts)
-{
-  var hex_tab = "0123456789abcdef", str = "",
-    length = binarray.length * 4, i, srcByte;
+function binb2hex(binarray, formatOpts) {
+  const hex_tab = "0123456789abcdef";
+  let str = "";
+  const length = binarray.length * 4;
+  let srcByte;
 
-  for (i = 0; i < length; i += 1)
-  {
+  for (let i = 0; i < length; i += 1) {
     /* The below is more than a byte but it gets taken care of later */
     srcByte = binarray[i >>> 2] >>> ((3 - (i % 4)) * 8);
     str += hex_tab.charAt((srcByte >>> 4) & 0xF) +
       hex_tab.charAt(srcByte & 0xF);
   }
 
-  return (formatOpts["outputUpper"]) ? str.toUpperCase() : str;
+  return (formatOpts.outputUpper) ? str.toUpperCase() : str;
 }
 
 /**
@@ -310,13 +289,16 @@ function binb2hex(binarray, formatOpts)
  * @return {string} Base-64 encoded representation of the parameter in
  *   string form
  */
-function binb2b64(binarray, formatOpts)
-{
-  var str = "", length = binarray.length * 4, i, j, triplet, offset, int1, int2,
-    b64Tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+function binb2b64(binarray, formatOpts) {
+  let str = "";
+  const length = binarray.length * 4;
+  let triplet;
+  let offset;
+  let int1;
+  let int2;
+  const b64Tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-  for (i = 0; i < length; i += 3)
-  {
+  for (let i = 0; i < length; i += 3) {
     offset = (i + 1) >>> 2;
     int1 = (binarray.length <= offset) ? 0 : binarray[offset];
     offset = (i + 2) >>> 2;
@@ -324,15 +306,11 @@ function binb2b64(binarray, formatOpts)
     triplet = (((binarray[i >>> 2] >>> 8 * (3 - i % 4)) & 0xFF) << 16) |
       (((int1 >>> 8 * (3 - (i + 1) % 4)) & 0xFF) << 8) |
       ((int2 >>> 8 * (3 - (i + 2) % 4)) & 0xFF);
-    for (j = 0; j < 4; j += 1)
-    {
-      if (i * 8 + j * 6 <= binarray.length * 32)
-      {
+    for (let j = 0; j < 4; j += 1) {
+      if (i * 8 + j * 6 <= binarray.length * 32) {
         str += b64Tab.charAt((triplet >>> 6 * (3 - j)) & 0x3F);
-      }
-      else
-      {
-        str += formatOpts["b64Pad"];
+      } else {
+        str += formatOpts.b64Pad;
       }
     }
   }
@@ -349,12 +327,12 @@ function binb2b64(binarray, formatOpts)
  * @return {string} Raw bytes representation of the parameter in string
  *   form
  */
-function binb2bytes(binarray, formatOpts)
-{
-  var str = "", length = binarray.length * 4, i, srcByte;
+function binb2bytes(binarray, formatOpts) {
+  let str = "";
+  const length = binarray.length * 4;
+  let srcByte;
 
-  for (i = 0; i < length; i += 1)
-  {
+  for (let i = 0; i < length; i += 1) {
     srcByte = (binarray[i >>> 2] >>> ((3 - (i % 4)) * 8)) & 0xFF;
     str += String.fromCharCode(srcByte);
   }
@@ -371,13 +349,11 @@ function binb2bytes(binarray, formatOpts)
  * @param {!Object} formatOpts Unused Hash list
  * @return {Uint8Array} Raw bytes representation of the parameter
  */
-function binb2typed(binarray, formatOpts)
-{
-  var length = binarray.length * 4;
-  var arr = new Uint8Array(length), i;
+function binb2typed(binarray, formatOpts) {
+  const length = binarray.length * 4;
+  const arr = new Uint8Array(length);
 
-  for (i = 0; i < length; i += 1)
-  {
+  for (let i = 0; i < length; i += 1) {
     arr[i] = (binarray[i >>> 2] >>> ((3 - (i % 4)) * 8)) & 0xFF;
   }
 
@@ -394,33 +370,25 @@ function binb2typed(binarray, formatOpts)
  * @return {{outputUpper : boolean, b64Pad : string}} Validated hash list
  *   containing output formatting options
  */
-function getOutputOpts(outputOpts)
-{
-  var retVal = {"outputUpper" : false, "b64Pad" : "="};
+function getOutputOpts(outputOpts) {
+  const retVal = { "outputUpper" : false, "b64Pad" : "=" };
 
-  try
-  {
-    if (outputOpts.hasOwnProperty("outputUpper"))
-    {
-      retVal["outputUpper"] = outputOpts["outputUpper"];
+  try {
+    if (outputOpts.hasOwnProperty("outputUpper")) {
+      retVal.outputUpper = outputOpts.outputUpper;
     }
 
-    if (outputOpts.hasOwnProperty("b64Pad"))
-    {
-      retVal["b64Pad"] = outputOpts["b64Pad"];
+    if (outputOpts.hasOwnProperty("b64Pad")) {
+      retVal.b64Pad = outputOpts.b64Pad;
     }
-  }
-  catch(ignore)
-  {}
+  } catch (ignore) {}
 
-  if ("boolean" !== typeof(retVal["outputUpper"]))
-  {
-    throw "Invalid outputUpper formatting option";
+  if (typeof (retVal.outputUpper) !== "boolean") {
+    throw new Error('Invalid outputUpper formatting option');
   }
 
-  if ("string" !== typeof(retVal["b64Pad"]))
-  {
-    throw "Invalid b64Pad formatting option";
+  if (typeof (retVal.b64Pad) !== "string") {
+    throw new Error('Invalid b64Pad formatting option');
   }
 
   return retVal;
@@ -434,8 +402,7 @@ function getOutputOpts(outputOpts)
  * @param {number} n The number of bits to shift
  * @return {number} The x shifted circularly by n bits
  */
-function rotl_32(x, n)
-{
+function rotl_32(x, n) {
   return (x << n) | (x >>> (32 - n));
 }
 
@@ -447,8 +414,7 @@ function rotl_32(x, n)
  * @param {number} n The number of bits to shift
  * @return {number} The x shifted circularly by n bits
  */
-function rotr_32(x, n)
-{
+function rotr_32(x, n) {
   return (x >>> n) | (x << (32 - n));
 }
 
@@ -460,23 +426,20 @@ function rotr_32(x, n)
  * @param {number} n The number of bits to shift
  * @return {Int_64} The x shifted circularly by n bits
  */
-function rotr_64(x, n)
-{
-  var retVal = null, tmp = new Int_64(x.highOrder, x.lowOrder);
+function rotr_64(x, n) {
+  let retVal = null;
+  const tmp = new Int_64(x.highOrder, x.lowOrder);
 
-  if (32 >= n)
-  {
+  if (n <= 32) {
     retVal = new Int_64(
-        (tmp.highOrder >>> n) | ((tmp.lowOrder << (32 - n)) & 0xFFFFFFFF),
-        (tmp.lowOrder >>> n) | ((tmp.highOrder << (32 - n)) & 0xFFFFFFFF)
-      );
-  }
-  else
-  {
+      (tmp.highOrder >>> n) | ((tmp.lowOrder << (32 - n)) & 0xFFFFFFFF),
+      (tmp.lowOrder >>> n) | ((tmp.highOrder << (32 - n)) & 0xFFFFFFFF)
+    );
+  } else {
     retVal = new Int_64(
-        (tmp.lowOrder >>> (n - 32)) | ((tmp.highOrder << (64 - n)) & 0xFFFFFFFF),
-        (tmp.highOrder >>> (n - 32)) | ((tmp.lowOrder << (64 - n)) & 0xFFFFFFFF)
-      );
+      (tmp.lowOrder >>> (n - 32)) | ((tmp.highOrder << (64 - n)) & 0xFFFFFFFF),
+      (tmp.highOrder >>> (n - 32)) | ((tmp.lowOrder << (64 - n)) & 0xFFFFFFFF)
+    );
   }
 
   return retVal;
@@ -490,8 +453,7 @@ function rotr_64(x, n)
  * @param {number} n The number of bits to shift
  * @return {number} The x shifted by n bits
  */
-function shr_32(x, n)
-{
+function shr_32(x, n) {
   return x >>> n;
 }
 
@@ -503,23 +465,19 @@ function shr_32(x, n)
  * @param {number} n The number of bits to shift
  * @return {Int_64} The x shifted by n bits
  */
-function shr_64(x, n)
-{
-  var retVal = null;
+function shr_64(x, n) {
+  let retVal = null;
 
-  if (32 >= n)
-  {
+  if (n <= 32) {
     retVal = new Int_64(
-        x.highOrder >>> n,
-        x.lowOrder >>> n | ((x.highOrder << (32 - n)) & 0xFFFFFFFF)
-      );
-  }
-  else
-  {
+      x.highOrder >>> n,
+      (x.lowOrder >>> n) | ((x.highOrder << (32 - n)) & 0xFFFFFFFF)
+    );
+  } else {
     retVal = new Int_64(
-        0,
-        x.highOrder >>> (n - 32)
-      );
+      0,
+      x.highOrder >>> (n - 32)
+    );
   }
 
   return retVal;
@@ -534,8 +492,7 @@ function shr_64(x, n)
  * @param {number} z The third 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function parity_32(x, y, z)
-{
+function parity_32(x, y, z) {
   return x ^ y ^ z;
 }
 
@@ -548,8 +505,7 @@ function parity_32(x, y, z)
  * @param {number} z The third 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function ch_32(x, y, z)
-{
+function ch_32(x, y, z) {
   return (x & y) ^ (~x & z);
 }
 
@@ -562,12 +518,11 @@ function ch_32(x, y, z)
  * @param {Int_64} z The third 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function ch_64(x, y, z)
-{
+function ch_64(x, y, z) {
   return new Int_64(
-      (x.highOrder & y.highOrder) ^ (~x.highOrder & z.highOrder),
-      (x.lowOrder & y.lowOrder) ^ (~x.lowOrder & z.lowOrder)
-    );
+    (x.highOrder & y.highOrder) ^ (~x.highOrder & z.highOrder),
+    (x.lowOrder & y.lowOrder) ^ (~x.lowOrder & z.lowOrder)
+  );
 }
 
 /**
@@ -579,8 +534,7 @@ function ch_64(x, y, z)
  * @param {number} z The third 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function maj_32(x, y, z)
-{
+function maj_32(x, y, z) {
   return (x & y) ^ (x & z) ^ (y & z);
 }
 
@@ -593,16 +547,15 @@ function maj_32(x, y, z)
  * @param {Int_64} z The third 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function maj_64(x, y, z)
-{
+function maj_64(x, y, z) {
   return new Int_64(
-      (x.highOrder & y.highOrder) ^
+    (x.highOrder & y.highOrder) ^
       (x.highOrder & z.highOrder) ^
       (y.highOrder & z.highOrder),
-      (x.lowOrder & y.lowOrder) ^
+    (x.lowOrder & y.lowOrder) ^
       (x.lowOrder & z.lowOrder) ^
       (y.lowOrder & z.lowOrder)
-    );
+  );
 }
 
 /**
@@ -612,8 +565,7 @@ function maj_64(x, y, z)
  * @param {number} x The 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function sigma0_32(x)
-{
+function sigma0_32(x) {
   return rotr_32(x, 2) ^ rotr_32(x, 13) ^ rotr_32(x, 22);
 }
 
@@ -624,14 +576,15 @@ function sigma0_32(x)
  * @param {Int_64} x The 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function sigma0_64(x)
-{
-  var rotr28 = rotr_64(x, 28), rotr34 = rotr_64(x, 34),
-    rotr39 = rotr_64(x, 39);
+function sigma0_64(x) {
+  const rotr28 = rotr_64(x, 28);
+  const rotr34 = rotr_64(x, 34);
+  const rotr39 = rotr_64(x, 39);
 
   return new Int_64(
-      rotr28.highOrder ^ rotr34.highOrder ^ rotr39.highOrder,
-      rotr28.lowOrder ^ rotr34.lowOrder ^ rotr39.lowOrder);
+    rotr28.highOrder ^ rotr34.highOrder ^ rotr39.highOrder,
+    rotr28.lowOrder ^ rotr34.lowOrder ^ rotr39.lowOrder
+  );
 }
 
 /**
@@ -641,8 +594,7 @@ function sigma0_64(x)
  * @param {number} x The 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function sigma1_32(x)
-{
+function sigma1_32(x) {
   return rotr_32(x, 6) ^ rotr_32(x, 11) ^ rotr_32(x, 25);
 }
 
@@ -653,14 +605,15 @@ function sigma1_32(x)
  * @param {Int_64} x The 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function sigma1_64(x)
-{
-  var rotr14 = rotr_64(x, 14), rotr18 = rotr_64(x, 18),
-    rotr41 = rotr_64(x, 41);
+function sigma1_64(x) {
+  const rotr14 = rotr_64(x, 14);
+  const rotr18 = rotr_64(x, 18);
+  const rotr41 = rotr_64(x, 41);
 
   return new Int_64(
-      rotr14.highOrder ^ rotr18.highOrder ^ rotr41.highOrder,
-      rotr14.lowOrder ^ rotr18.lowOrder ^ rotr41.lowOrder);
+    rotr14.highOrder ^ rotr18.highOrder ^ rotr41.highOrder,
+    rotr14.lowOrder ^ rotr18.lowOrder ^ rotr41.lowOrder
+  );
 }
 
 /**
@@ -670,8 +623,7 @@ function sigma1_64(x)
  * @param {number} x The 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function gamma0_32(x)
-{
+function gamma0_32(x) {
   return rotr_32(x, 7) ^ rotr_32(x, 18) ^ shr_32(x, 3);
 }
 
@@ -682,14 +634,15 @@ function gamma0_32(x)
  * @param {Int_64} x The 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function gamma0_64(x)
-{
-  var rotr1 = rotr_64(x, 1), rotr8 = rotr_64(x, 8), shr7 = shr_64(x, 7);
+function gamma0_64(x) {
+  const rotr1 = rotr_64(x, 1);
+  const rotr8 = rotr_64(x, 8);
+  const shr7 = shr_64(x, 7);
 
   return new Int_64(
-      rotr1.highOrder ^ rotr8.highOrder ^ shr7.highOrder,
-      rotr1.lowOrder ^ rotr8.lowOrder ^ shr7.lowOrder
-    );
+    rotr1.highOrder ^ rotr8.highOrder ^ shr7.highOrder,
+    rotr1.lowOrder ^ rotr8.lowOrder ^ shr7.lowOrder
+  );
 }
 
 /**
@@ -699,8 +652,7 @@ function gamma0_64(x)
  * @param {number} x The 32-bit integer argument
  * @return {number} The NIST specified output of the function
  */
-function gamma1_32(x)
-{
+function gamma1_32(x) {
   return rotr_32(x, 17) ^ rotr_32(x, 19) ^ shr_32(x, 10);
 }
 
@@ -711,15 +663,15 @@ function gamma1_32(x)
  * @param {Int_64} x The 64-bit integer argument
  * @return {Int_64} The NIST specified output of the function
  */
-function gamma1_64(x)
-{
-  var rotr19 = rotr_64(x, 19), rotr61 = rotr_64(x, 61),
-    shr6 = shr_64(x, 6);
+function gamma1_64(x) {
+  const rotr19 = rotr_64(x, 19);
+  const rotr61 = rotr_64(x, 61);
+  const shr6 = shr_64(x, 6);
 
   return new Int_64(
-      rotr19.highOrder ^ rotr61.highOrder ^ shr6.highOrder,
-      rotr19.lowOrder ^ rotr61.lowOrder ^ shr6.lowOrder
-    );
+    rotr19.highOrder ^ rotr61.highOrder ^ shr6.highOrder,
+    rotr19.lowOrder ^ rotr61.lowOrder ^ shr6.lowOrder
+  );
 }
 
 /**
@@ -731,10 +683,9 @@ function gamma1_64(x)
  * @param {number} b The second 32-bit integer argument to be added
  * @return {number} The sum of a + b
  */
-function safeAdd_32_2(a, b)
-{
-  var lsw = (a & 0xFFFF) + (b & 0xFFFF),
-    msw = (a >>> 16) + (b >>> 16) + (lsw >>> 16);
+function safeAdd_32_2(a, b) {
+  const lsw = (a & 0xFFFF) + (b & 0xFFFF);
+  const msw = (a >>> 16) + (b >>> 16) + (lsw >>> 16);
 
   return ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 }
@@ -750,10 +701,9 @@ function safeAdd_32_2(a, b)
  * @param {number} d The fourth 32-bit integer argument to be added
  * @return {number} The sum of a + b + c + d
  */
-function safeAdd_32_4(a, b, c, d)
-{
-  var lsw = (a & 0xFFFF) + (b & 0xFFFF) + (c & 0xFFFF) + (d & 0xFFFF),
-    msw = (a >>> 16) + (b >>> 16) + (c >>> 16) + (d >>> 16) +
+function safeAdd_32_4(a, b, c, d) {
+  const lsw = (a & 0xFFFF) + (b & 0xFFFF) + (c & 0xFFFF) + (d & 0xFFFF);
+  const msw = (a >>> 16) + (b >>> 16) + (c >>> 16) + (d >>> 16) +
       (lsw >>> 16);
 
   return ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
@@ -771,11 +721,10 @@ function safeAdd_32_4(a, b, c, d)
  * @param {number} e The fifth 32-bit integer argument to be added
  * @return {number} The sum of a + b + c + d + e
  */
-function safeAdd_32_5(a, b, c, d, e)
-{
-  var lsw = (a & 0xFFFF) + (b & 0xFFFF) + (c & 0xFFFF) + (d & 0xFFFF) +
-      (e & 0xFFFF),
-    msw = (a >>> 16) + (b >>> 16) + (c >>> 16) + (d >>> 16) +
+function safeAdd_32_5(a, b, c, d, e) {
+  const lsw = (a & 0xFFFF) + (b & 0xFFFF) + (c & 0xFFFF) + (d & 0xFFFF) +
+      (e & 0xFFFF);
+  const msw = (a >>> 16) + (b >>> 16) + (c >>> 16) + (d >>> 16) +
       (e >>> 16) + (lsw >>> 16);
 
   return ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
@@ -790,17 +739,17 @@ function safeAdd_32_5(a, b, c, d, e)
  * @param {Int_64} y The second 64-bit integer argument to be added
  * @return {Int_64} The sum of x + y
  */
-function safeAdd_64_2(x, y)
-{
-  var lsw, msw, lowOrder, highOrder;
+function safeAdd_64_2(x, y) {
+  let lsw;
+  let msw;
 
   lsw = (x.lowOrder & 0xFFFF) + (y.lowOrder & 0xFFFF);
   msw = (x.lowOrder >>> 16) + (y.lowOrder >>> 16) + (lsw >>> 16);
-  lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   lsw = (x.highOrder & 0xFFFF) + (y.highOrder & 0xFFFF) + (msw >>> 16);
   msw = (x.highOrder >>> 16) + (y.highOrder >>> 16) + (lsw >>> 16);
-  highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   return new Int_64(highOrder, lowOrder);
 }
@@ -816,21 +765,21 @@ function safeAdd_64_2(x, y)
  * @param {Int_64} d The fourth 64-bit integer argument to be added
  * @return {Int_64} The sum of a + b + c + d
  */
-function safeAdd_64_4(a, b, c, d)
-{
-  var lsw, msw, lowOrder, highOrder;
+function safeAdd_64_4(a, b, c, d) {
+  let lsw;
+  let msw;
 
   lsw = (a.lowOrder & 0xFFFF) + (b.lowOrder & 0xFFFF) +
     (c.lowOrder & 0xFFFF) + (d.lowOrder & 0xFFFF);
   msw = (a.lowOrder >>> 16) + (b.lowOrder >>> 16) +
     (c.lowOrder >>> 16) + (d.lowOrder >>> 16) + (lsw >>> 16);
-  lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   lsw = (a.highOrder & 0xFFFF) + (b.highOrder & 0xFFFF) +
     (c.highOrder & 0xFFFF) + (d.highOrder & 0xFFFF) + (msw >>> 16);
   msw = (a.highOrder >>> 16) + (b.highOrder >>> 16) +
     (c.highOrder >>> 16) + (d.highOrder >>> 16) + (lsw >>> 16);
-  highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   return new Int_64(highOrder, lowOrder);
 }
@@ -847,9 +796,9 @@ function safeAdd_64_4(a, b, c, d)
  * @param {Int_64} e The fourth 64-bit integer argument to be added
  * @return {Int_64} The sum of a + b + c + d + e
  */
-function safeAdd_64_5(a, b, c, d, e)
-{
-  var lsw, msw, lowOrder, highOrder;
+function safeAdd_64_5(a, b, c, d, e) {
+  let lsw;
+  let msw;
 
   lsw = (a.lowOrder & 0xFFFF) + (b.lowOrder & 0xFFFF) +
     (c.lowOrder & 0xFFFF) + (d.lowOrder & 0xFFFF) +
@@ -857,7 +806,7 @@ function safeAdd_64_5(a, b, c, d, e)
   msw = (a.lowOrder >>> 16) + (b.lowOrder >>> 16) +
     (c.lowOrder >>> 16) + (d.lowOrder >>> 16) + (e.lowOrder >>> 16) +
     (lsw >>> 16);
-  lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const lowOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   lsw = (a.highOrder & 0xFFFF) + (b.highOrder & 0xFFFF) +
     (c.highOrder & 0xFFFF) + (d.highOrder & 0xFFFF) +
@@ -865,7 +814,7 @@ function safeAdd_64_5(a, b, c, d, e)
   msw = (a.highOrder >>> 16) + (b.highOrder >>> 16) +
     (c.highOrder >>> 16) + (d.highOrder >>> 16) +
     (e.highOrder >>> 16) + (lsw >>> 16);
-  highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
+  const highOrder = ((msw & 0xFFFF) << 16) | (lsw & 0xFFFF);
 
   return new Int_64(highOrder, lowOrder);
 }
@@ -880,18 +829,22 @@ function safeAdd_64_5(a, b, c, d, e)
  * @return {Array.<number>} The array of integers representing the SHA-1
  *   hash of message
  */
-function coreSHA1(message, messageLen)
-{
-  var W = [], a, b, c, d, e, T, ch = ch_32, parity = parity_32,
-    maj = maj_32, rotl = rotl_32, safeAdd_2 = safeAdd_32_2, i, t,
-    safeAdd_5 = safeAdd_32_5, appendedMessageLength, offset,
-    H = [
-      0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0
-    ];
+function coreSHA1(message, messageLen) {
+  const W = [];
+  let T;
+  const ch = ch_32;
+  const parity = parity_32;
+  const maj = maj_32;
+  const rotl = rotl_32;
+  const safeAdd_2 = safeAdd_32_2;
+  const safeAdd_5 = safeAdd_32_5;
 
-  offset = (((messageLen + 65) >>> 9) << 4) + 15;
-  while (message.length <= offset)
-  {
+  const H = [
+    0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0
+  ];
+
+  const offset = (((messageLen + 65) >>> 9) << 4) + 15;
+  while (message.length <= offset) {
     message.push(0);
   }
   /* Append '1' at the end of the binary string */
@@ -901,37 +854,23 @@ function coreSHA1(message, messageLen)
   of 512 but there can never be even multiples of 512 */
   message[offset] = messageLen;
 
-  appendedMessageLength = message.length;
+  const appendedMessageLength = message.length;
 
-  for (i = 0; i < appendedMessageLength; i += 16)
-  {
-    a = H[0];
-    b = H[1];
-    c = H[2];
-    d = H[3];
-    e = H[4];
+  for (let i = 0; i < appendedMessageLength; i += 16) {
+    let [a, b, c, d, e] = H;
 
-    for (t = 0; t < 80; t += 1)
-    {
-      if (t < 16)
-      {
+    for (let t = 0; t < 80; t += 1) {
+      if (t < 16) {
         W[t] = message[t + i];
-      }
-      else
-      {
+      } else {
         W[t] = rotl(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
       }
 
-      if (t < 20)
-      {
+      if (t < 20) {
         T = safeAdd_5(rotl(a, 5), ch(b, c, d), e, 0x5a827999, W[t]);
-      }
-      else if (t < 40)
-      {
+      } else if (t < 40) {
         T = safeAdd_5(rotl(a, 5), parity(b, c, d), e, 0x6ed9eba1, W[t]);
-      }
-      else if (t < 60)
-      {
+      } else if (t < 60) {
         T = safeAdd_5(rotl(a, 5), maj(b, c, d), e, 0x8f1bbcdc, W[t]);
       } else {
         T = safeAdd_5(rotl(a, 5), parity(b, c, d), e, 0xca62c1d6, W[t]);
@@ -965,44 +904,70 @@ function coreSHA1(message, messageLen)
  * @return {Array.<number>} The array of integers representing the SHA-2
  *   hash of message
  */
-function coreSHA2(message, messageLen, variant)
-{
-  var a, b, c, d, e, f, g, h, T1, T2, H, numRounds, lengthPosition, i, t,
-    binaryStringInc, binaryStringMult, safeAdd_2, safeAdd_4, safeAdd_5,
-    gamma0, gamma1, sigma0, sigma1, ch, maj, Int, W = [], int1, int2, offset,
-    appendedMessageLength, retVal,
-    K = [
-      0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
-      0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
-      0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
-      0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
-      0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
-      0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
-      0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
-      0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
-      0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
-      0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
-      0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
-      0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
-      0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
-      0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
-      0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
-      0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
-    ],
-    H_trunc = [
-      0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
-      0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4
-    ],
-    H_full = [
-      0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-      0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
-    ];
+function coreSHA2(message, messageLen, variant) {
+  let a;
+  let b;
+  let c;
+  let d;
+  let e;
+  let f;
+  let g;
+  let h;
+  let T1;
+  let T2;
+  let H;
+  let numRounds;
+  let lengthPosition;
+  let i;
+  let t;
+  let binaryStringInc;
+  let binaryStringMult;
+  let safeAdd_2;
+  let safeAdd_4;
+  let safeAdd_5;
+  let gamma0;
+  let gamma1;
+  let sigma0;
+  let sigma1;
+  let ch;
+  let maj;
+  let Int;
+  const W = [];
+  let int1;
+  let int2;
+  let offset;
+  let retVal;
+  let K = [
+    0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
+    0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+    0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
+    0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+    0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
+    0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+    0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
+    0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+    0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
+    0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+    0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
+    0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+    0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
+    0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+    0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
+    0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
+  ];
+  const H_trunc = [
+    0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+    0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4
+  ];
+  const H_full = [
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
+  ];
 
   /* Set up the various function handles and variable for the specific
    * variant */
   if ((variant === "SHA-224" || variant === "SHA-256") &&
-    (2 & SUPPORTED_ALGS))
-  {
+    (2 & SUPPORTED_ALGS)) {
     /* 32-bit variant */
     numRounds = 64;
     lengthPosition = (((messageLen + 65) >>> 9) << 4) + 15;
@@ -1019,18 +984,13 @@ function coreSHA2(message, messageLen, variant)
     maj = maj_32;
     ch = ch_32;
 
-    if ("SHA-224" === variant)
-    {
+    if (variant === "SHA-224") {
       H = H_trunc;
-    }
-    else /* "SHA-256" === variant */
-    {
+    } else { /* "SHA-256" === variant */
       H = H_full;
     }
-  }
-  else if ((variant === "SHA-384" || variant === "SHA-512") &&
-    (4 & SUPPORTED_ALGS))
-  {
+  } else if ((variant === "SHA-384" || variant === "SHA-512") &&
+    (4 & SUPPORTED_ALGS)) {
     /* 64-bit variant */
     numRounds = 80;
     lengthPosition = (((messageLen + 128) >>> 10) << 5) + 31;
@@ -1048,11 +1008,11 @@ function coreSHA2(message, messageLen, variant)
     ch = ch_64;
 
     K = [
-      new Int(K[ 0], 0xd728ae22), new Int(K[ 1], 0x23ef65cd),
-      new Int(K[ 2], 0xec4d3b2f), new Int(K[ 3], 0x8189dbbc),
-      new Int(K[ 4], 0xf348b538), new Int(K[ 5], 0xb605d019),
-      new Int(K[ 6], 0xaf194f9b), new Int(K[ 7], 0xda6d8118),
-      new Int(K[ 8], 0xa3030242), new Int(K[ 9], 0x45706fbe),
+      new Int(K[0], 0xd728ae22), new Int(K[1], 0x23ef65cd),
+      new Int(K[2], 0xec4d3b2f), new Int(K[3], 0x8189dbbc),
+      new Int(K[4], 0xf348b538), new Int(K[5], 0xb605d019),
+      new Int(K[6], 0xaf194f9b), new Int(K[7], 0xda6d8118),
+      new Int(K[8], 0xa3030242), new Int(K[9], 0x45706fbe),
       new Int(K[10], 0x4ee4b28c), new Int(K[11], 0xd5ffb4e2),
       new Int(K[12], 0xf27b896f), new Int(K[13], 0x3b1696b1),
       new Int(K[14], 0x25c71235), new Int(K[15], 0xcf692694),
@@ -1090,17 +1050,14 @@ function coreSHA2(message, messageLen, variant)
       new Int(0x5fcb6fab, 0x3ad6faec), new Int(0x6c44198c, 0x4a475817)
     ];
 
-    if ("SHA-384" === variant)
-    {
+    if (variant === "SHA-384") {
       H = [
         new Int(0xcbbb9d5d, H_trunc[0]), new Int(0x0629a292a, H_trunc[1]),
         new Int(0x9159015a, H_trunc[2]), new Int(0x0152fecd8, H_trunc[3]),
         new Int(0x67332667, H_trunc[4]), new Int(0x98eb44a87, H_trunc[5]),
         new Int(0xdb0c2e0d, H_trunc[6]), new Int(0x047b5481d, H_trunc[7])
       ];
-    }
-    else /* "SHA-512" === variant */
-    {
+    } else { /* "SHA-512" === variant */
       H = [
         new Int(H_full[0], 0xf3bcc908), new Int(H_full[1], 0x84caa73b),
         new Int(H_full[2], 0xfe94f82b), new Int(H_full[3], 0x5f1d36f1),
@@ -1108,14 +1065,11 @@ function coreSHA2(message, messageLen, variant)
         new Int(H_full[6], 0xfb41bd6b), new Int(H_full[7], 0x137e2179)
       ];
     }
-  }
-  else
-  {
-    throw "Unexpected error in SHA-2 implementation";
+  } else {
+    throw new Error("Unexpected error in SHA-2 implementation");
   }
 
-  while (message.length <= lengthPosition)
-  {
+  while (message.length <= lengthPosition) {
     message.push(0);
   }
   /* Append '1' at the end of the binary string */
@@ -1124,35 +1078,23 @@ function coreSHA2(message, messageLen, variant)
    * length is correct */
   message[lengthPosition] = messageLen;
 
-  appendedMessageLength = message.length;
+  const appendedMessageLength = message.length;
 
-  for (i = 0; i < appendedMessageLength; i += binaryStringInc)
-  {
-    a = H[0];
-    b = H[1];
-    c = H[2];
-    d = H[3];
-    e = H[4];
-    f = H[5];
-    g = H[6];
-    h = H[7];
+  for (i = 0; i < appendedMessageLength; i += binaryStringInc) {
+    [a, b, c, d, e, f, g, h] = H;
 
-    for (t = 0; t < numRounds; t += 1)
-    {
-      if (t < 16)
-      {
+    for (t = 0; t < numRounds; t += 1) {
+      if (t < 16) {
         offset = t * binaryStringMult + i;
         int1 = (message.length <= offset) ? 0 : message[offset];
         int2 = (message.length <= offset + 1) ? 0 : message[offset + 1];
         /* Bit of a hack - for 32-bit, the second term is ignored */
         W[t] = new Int(int1, int2);
-      }
-      else
-      {
+      } else {
         W[t] = safeAdd_4(
-            gamma1(W[t - 2]), W[t - 7],
-            gamma0(W[t - 15]), W[t - 16]
-          );
+          gamma1(W[t - 2]), W[t - 7],
+          gamma0(W[t - 15]), W[t - 16]
+        );
       }
 
       T1 = safeAdd_5(h, sigma1(e), ch(e, f, g), K[t], W[t]);
@@ -1165,7 +1107,6 @@ function coreSHA2(message, messageLen, variant)
       c = b;
       b = a;
       a = safeAdd_2(T1, T2);
-
     }
 
     H[0] = safeAdd_2(a, H[0]);
@@ -1178,19 +1119,14 @@ function coreSHA2(message, messageLen, variant)
     H[7] = safeAdd_2(h, H[7]);
   }
 
-  if (("SHA-224" === variant) && (2 & SUPPORTED_ALGS))
-  {
+  if ((variant === "SHA-224") && (2 & SUPPORTED_ALGS)) {
     retVal = [
       H[0], H[1], H[2], H[3],
       H[4], H[5], H[6]
     ];
-  }
-  else if (("SHA-256" === variant) && (2 & SUPPORTED_ALGS))
-  {
+  } else if ((variant === "SHA-256") && (2 & SUPPORTED_ALGS)) {
     retVal = H;
-  }
-  else if (("SHA-384" === variant) && (4 & SUPPORTED_ALGS))
-  {
+  } else if ((variant === "SHA-384") && (4 & SUPPORTED_ALGS)) {
     retVal = [
       H[0].highOrder, H[0].lowOrder,
       H[1].highOrder, H[1].lowOrder,
@@ -1199,9 +1135,7 @@ function coreSHA2(message, messageLen, variant)
       H[4].highOrder, H[4].lowOrder,
       H[5].highOrder, H[5].lowOrder
     ];
-  }
-  else if (("SHA-512" === variant) && (4 & SUPPORTED_ALGS))
-  {
+  } else if ((variant === "SHA-512") && (4 & SUPPORTED_ALGS)) {
     retVal = [
       H[0].highOrder, H[0].lowOrder,
       H[1].highOrder, H[1].lowOrder,
@@ -1212,10 +1146,8 @@ function coreSHA2(message, messageLen, variant)
       H[6].highOrder, H[6].lowOrder,
       H[7].highOrder, H[7].lowOrder
     ];
-  }
-  else /* This should never be reached */
-  {
-    throw "Unexpected error in SHA-2 implementation";
+  } else { /* This should never be reached */
+    throw new Error("Unexpected error in SHA-2 implementation");
   }
 
   return retVal;
@@ -1229,59 +1161,48 @@ function coreSHA2(message, messageLen, variant)
  * @this {jsSHA}
  * @param {string} srcString The string to be hashed
  * @param {string} inputFormat The format of srcString, HEX, ASCII, TEXT,
-   *   B64, or BYTES
+ *   B64, or BYTES
  * @param {string=} encoding The text encoding to use to encode the source
  *   string
  */
-var jsSHA = function(srcString, inputFormat, encoding)
-{
-  var strBinLen = 0, strToHash = [0], utfType = '', srcConvertRet = null;
+const jsSHA = function(srcString, inputFormat, encoding) {
+  let strBinLen = 0;
+  let strToHash = [0];
+  let utfType = '';
+  let srcConvertRet = null;
 
   utfType = encoding || "UTF8";
 
-  if (!(("UTF8" === utfType) || ("UTF16BE" === utfType) || ("UTF16LE" === utfType)))
-  {
-    throw "encoding must be UTF8, UTF16BE, or UTF16LE";
+  if (!((utfType === "UTF8") || (utfType === "UTF16BE") || (utfType === "UTF16LE"))) {
+    throw new Error('encoding must be UTF8, UTF16BE, or UTF16LE');
   }
 
   /* Convert the input string into the correct type */
-  if ("HEX" === inputFormat)
-  {
-    if (0 !== (srcString.length % 2))
-    {
-      throw "srcString of HEX type must be in byte increments";
+  if (inputFormat === "HEX") {
+    if ((srcString.length % 2) !== 0) {
+      throw new Error('srcString of HEX type must be in byte increments');
     }
     srcConvertRet = hex2binb(srcString);
-    strBinLen = srcConvertRet["binLen"];
-    strToHash = srcConvertRet["value"];
-  }
-  else if (("TEXT" === inputFormat) || ("ASCII" === inputFormat))
-  {
+    strBinLen = srcConvertRet.binLen;
+    strToHash = srcConvertRet.value;
+  } else if ((inputFormat === "TEXT") || (inputFormat === "ASCII")) {
     srcConvertRet = str2binb(srcString, utfType);
-    strBinLen = srcConvertRet["binLen"];
-    strToHash = srcConvertRet["value"];
-  }
-  else if ("B64" === inputFormat)
-  {
+    strBinLen = srcConvertRet.binLen;
+    strToHash = srcConvertRet.value;
+  } else if (inputFormat === "B64") {
     srcConvertRet = b642binb(srcString);
-    strBinLen = srcConvertRet["binLen"];
-    strToHash = srcConvertRet["value"];
-  }
-  else if ("BYTES" === inputFormat)
-  {
+    strBinLen = srcConvertRet.binLen;
+    strToHash = srcConvertRet.value;
+  } else if (inputFormat === "BYTES") {
     srcConvertRet = bytes2binb(srcString);
-    strBinLen = srcConvertRet["binLen"];
-    strToHash = srcConvertRet["value"];
-  }
-  else if ("TYPED" === inputFormat)
-  {
+    strBinLen = srcConvertRet.binLen;
+    strToHash = srcConvertRet.value;
+  } else if (inputFormat === "TYPED") {
     srcConvertRet = typed2binb(srcString);
-    strBinLen = srcConvertRet["binLen"];
-    strToHash = srcConvertRet["value"];
-  }
-  else
-  {
-    throw "inputFormat must be HEX, TEXT, ASCII, B64, BYTES, or TYPED";
+    strBinLen = srcConvertRet.binLen;
+    strToHash = srcConvertRet.value;
+  } else {
+    throw new Error('inputFormat must be HEX, TEXT, ASCII, B64, BYTES, or TYPED');
   }
 
   /**
@@ -1299,94 +1220,73 @@ var jsSHA = function(srcString, inputFormat, encoding)
    * @return {string} The string representation of the hash in the format
    *   specified
    */
-  this.getHash = function(variant, format, numRounds, outputFormatOpts)
-  {
-    var formatFunc = null, message = strToHash.slice(),
-      messageBinLen = strBinLen, i;
+  this.getHash = function(variant, format, numRounds, outputFormatOpts) {
+    let formatFunc = null;
+    let message = strToHash.slice();
+    let messageBinLen = strBinLen;
+    let i;
 
     /* Need to do argument patching since both numRounds and
        outputFormatOpts are optional */
-    if (3 === arguments.length)
-    {
-      if ("number" !== typeof numRounds)
-      {
+    if (arguments.length === 3) {
+      if (typeof numRounds !== "number") {
         outputFormatOpts = numRounds;
         numRounds = 1;
       }
-    }
-    else if (2 === arguments.length)
-    {
+    } else if (arguments.length === 2) {
       numRounds = 1;
     }
 
     /* Validate the numRounds argument */
-    if ((numRounds !== parseInt(numRounds)) || (1 > numRounds))
-    {
-      throw "numRounds must a integer >= 1";
+    if ((numRounds !== parseInt(numRounds, 10)) || (numRounds < 1)) {
+      throw new Error('numRounds must a integer >= 1');
     }
 
     /* Validate the output format selection */
-    switch (format)
-    {
-    case "HEX":
-      formatFunc = binb2hex;
-      break;
-    case "B64":
-      formatFunc = binb2b64;
-      break;
-    case "BYTES":
-      formatFunc = binb2bytes;
-      break;
-    case "TYPED":
-      formatFunc = binb2typed;
-      break;
-    default:
-      throw "format must be HEX, B64, or BYTES";
+    switch (format) {
+      case "HEX":
+        formatFunc = binb2hex;
+        break;
+      case "B64":
+        formatFunc = binb2b64;
+        break;
+      case "BYTES":
+        formatFunc = binb2bytes;
+        break;
+      case "TYPED":
+        formatFunc = binb2typed;
+        break;
+      default:
+        throw new Error('format must be HEX, B64, or BYTES');
     }
 
-    if (("SHA-1" === variant) && (1 & SUPPORTED_ALGS))
-    {
-      for (i = 0; i < numRounds; i += 1)
-      {
+    if ((variant === "SHA-1") && (1 & SUPPORTED_ALGS)) {
+      for (i = 0; i < numRounds; i += 1) {
         message = coreSHA1(message, messageBinLen);
         messageBinLen = 160;
       }
-    }
-    else if (("SHA-224" === variant) && (2 & SUPPORTED_ALGS))
-    {
-      for (i = 0; i < numRounds; i += 1)
-      {
+    } else if ((variant === "SHA-224") && (2 & SUPPORTED_ALGS)) {
+      for (i = 0; i < numRounds; i += 1) {
         message = coreSHA2(message, messageBinLen, variant);
         messageBinLen = 224;
       }
-    }
-    else if (("SHA-256" === variant) && (2 & SUPPORTED_ALGS))
-    {
-      for (i = 0; i < numRounds; i += 1)
-      {
+    } else if ((variant === "SHA-256") && (2 & SUPPORTED_ALGS)) {
+      for (i = 0; i < numRounds; i += 1) {
         message = coreSHA2(message, messageBinLen, variant);
         messageBinLen = 256;
       }
-    }
-    else if (("SHA-384" === variant) && (4 & SUPPORTED_ALGS))
-    {
-      for (i = 0; i < numRounds; i += 1)
-      {
+    } else if ((variant === "SHA-384") && (4 & SUPPORTED_ALGS)) {
+      for (i = 0; i < numRounds; i += 1) {
         message = coreSHA2(message, messageBinLen, variant);
         messageBinLen = 384;
       }
-    }
-    else if (("SHA-512" === variant) && (4 & SUPPORTED_ALGS))
-    {
-      for (i = 0; i < numRounds; i += 1)
-      {
+    } else if ((variant === "SHA-512") && (4 & SUPPORTED_ALGS)) {
+      for (i = 0; i < numRounds; i += 1) {
         message = coreSHA2(message, messageBinLen, variant);
         messageBinLen = 512;
       }
-    }
-    else
-    {
-      throw "Chosen SHA variant is not supported";
+    } else {
+      throw new Error('Chosen SHA variant is not supported');
     }
 
     return formatFunc(message, getOutputOpts(outputFormatOpts));
@@ -1409,165 +1309,134 @@ var jsSHA = function(srcString, inputFormat, encoding)
    * @return {string} The string representation of the hash in the format
    *   specified
    */
-  this.getHMAC = function(key, inputFormat, variant, outputFormat,
-    outputFormatOpts)
-  {
-    var formatFunc, keyToUse, blockByteSize, blockBitSize, i,
-      retVal, lastArrayIndex, keyBinLen, hashBitSize,
-      keyWithIPad = [], keyWithOPad = [], keyConvertRet = null;
+  this.getHMAC = function(
+    key, inputFormat, variant, outputFormat,
+    outputFormatOpts
+  ) {
+    let formatFunc;
+    let keyToUse;
+    let blockByteSize;
+    let i;
+    let retVal;
+    let keyBinLen;
+    let hashBitSize;
+    const keyWithIPad = [];
+    const keyWithOPad = [];
+    let keyConvertRet = null;
 
     /* Validate the output format selection */
-    switch (outputFormat)
-    {
-    case "HEX":
-      formatFunc = binb2hex;
-      break;
-    case "B64":
-      formatFunc = binb2b64;
-      break;
-    case "BYTES":
-      formatFunc = binb2bytes;
-      break;
-    default:
-      throw "outputFormat must be HEX, B64, or BYTES";
+    switch (outputFormat) {
+      case "HEX":
+        formatFunc = binb2hex;
+        break;
+      case "B64":
+        formatFunc = binb2b64;
+        break;
+      case "BYTES":
+        formatFunc = binb2bytes;
+        break;
+      default:
+        throw new Error('outputFormat must be HEX, B64, or BYTES');
     }
 
     /* Validate the hash variant selection and set needed variables */
-    if (("SHA-1" === variant) && (1 & SUPPORTED_ALGS))
-    {
+    if ((variant === "SHA-1") && (1 & SUPPORTED_ALGS)) {
       blockByteSize = 64;
       hashBitSize = 160;
-    }
-    else if (("SHA-224" === variant) && (2 & SUPPORTED_ALGS))
-    {
+    } else if ((variant === "SHA-224") && (2 & SUPPORTED_ALGS)) {
       blockByteSize = 64;
       hashBitSize = 224;
-    }
-    else if (("SHA-256" === variant) && (2 & SUPPORTED_ALGS))
-    {
+    } else if ((variant === "SHA-256") && (2 & SUPPORTED_ALGS)) {
       blockByteSize = 64;
       hashBitSize = 256;
-    }
-    else if (("SHA-384" === variant) && (4 & SUPPORTED_ALGS))
-    {
+    } else if ((variant === "SHA-384") && (4 & SUPPORTED_ALGS)) {
       blockByteSize = 128;
       hashBitSize = 384;
-    }
-    else if (("SHA-512" === variant) && (4 & SUPPORTED_ALGS))
-    {
+    } else if ((variant === "SHA-512") && (4 & SUPPORTED_ALGS)) {
       blockByteSize = 128;
       hashBitSize = 512;
-    }
-    else
-    {
-      throw "Chosen SHA variant is not supported";
+    } else {
+      throw new Error('Chosen SHA variant is not supported');
     }
 
     /* Validate input format selection */
-    if ("HEX" === inputFormat)
-    {
+    if (inputFormat === "HEX") {
       keyConvertRet = hex2binb(key);
-      keyBinLen = keyConvertRet["binLen"];
-      keyToUse = keyConvertRet["value"];
-    }
-    else if (("TEXT" === inputFormat) || ("ASCII" === inputFormat))
-    {
+      keyBinLen = keyConvertRet.binLen;
+      keyToUse = keyConvertRet.value;
+    } else if ((inputFormat === "TEXT") || (inputFormat === "ASCII")) {
       keyConvertRet = str2binb(key, utfType);
-      keyBinLen = keyConvertRet["binLen"];
-      keyToUse = keyConvertRet["value"];
-    }
-    else if ("B64" === inputFormat)
-    {
+      keyBinLen = keyConvertRet.binLen;
+      keyToUse = keyConvertRet.value;
+    } else if (inputFormat === "B64") {
       keyConvertRet = b642binb(key);
-      keyBinLen = keyConvertRet["binLen"];
-      keyToUse = keyConvertRet["value"];
-    }
-    else if ("BYTES" === inputFormat)
-    {
+      keyBinLen = keyConvertRet.binLen;
+      keyToUse = keyConvertRet.value;
+    } else if (inputFormat === "BYTES") {
       keyConvertRet = bytes2binb(key);
-      keyBinLen = keyConvertRet["binLen"];
-      keyToUse = keyConvertRet["value"];
-    }
-    else
-    {
-      throw "inputFormat must be HEX, TEXT, ASCII, B64, or BYTES";
+      keyBinLen = keyConvertRet.binLen;
+      keyToUse = keyConvertRet.value;
+    } else {
+      throw new Error('inputFormat must be HEX, TEXT, ASCII, B64, or BYTES');
     }
 
     /* These are used multiple times, calculate and store them */
-    blockBitSize = blockByteSize * 8;
-    lastArrayIndex = (blockByteSize / 4) - 1;
+    const blockBitSize = blockByteSize * 8;
+    const lastArrayIndex = (blockByteSize / 4) - 1;
 
     /* Figure out what to do with the key based on its size relative to
      * the hash's block size */
-    if (blockByteSize < (keyBinLen / 8))
-    {
-      if (("SHA-1" === variant) && (1 & SUPPORTED_ALGS))
-      {
+    if (blockByteSize < (keyBinLen / 8)) {
+      if ((variant === "SHA-1") && (1 & SUPPORTED_ALGS)) {
         keyToUse = coreSHA1(keyToUse, keyBinLen);
-      }
-      else if (6 & SUPPORTED_ALGS)
-      {
+      } else if (6 & SUPPORTED_ALGS) {
         keyToUse = coreSHA2(keyToUse, keyBinLen, variant);
-      }
-      else
-      {
-        throw "Unexpected error in HMAC implementation";
+      } else {
+        throw new Error('Unexpected error in HMAC implementation');
       }
       /* For all variants, the block size is bigger than the output
        * size so there will never be a useful byte at the end of the
        * string */
-      while (keyToUse.length <= lastArrayIndex)
-      {
+      while (keyToUse.length <= lastArrayIndex) {
         keyToUse.push(0);
       }
       keyToUse[lastArrayIndex] &= 0xFFFFFF00;
-    }
-    else if (blockByteSize > (keyBinLen / 8))
-    {
+    } else if (blockByteSize > (keyBinLen / 8)) {
       /* If the blockByteSize is greater than the key length, there
        * will always be at LEAST one "useless" byte at the end of the
        * string */
-      while (keyToUse.length <= lastArrayIndex)
-      {
+      while (keyToUse.length <= lastArrayIndex) {
         keyToUse.push(0);
       }
       keyToUse[lastArrayIndex] &= 0xFFFFFF00;
     }
 
     /* Create ipad and opad */
-    for (i = 0; i <= lastArrayIndex; i += 1)
-    {
+    for (i = 0; i <= lastArrayIndex; i += 1) {
       keyWithIPad[i] = keyToUse[i] ^ 0x36363636;
       keyWithOPad[i] = keyToUse[i] ^ 0x5C5C5C5C;
     }
 
     /* Calculate the HMAC */
-    if (("SHA-1" === variant) && (1 & SUPPORTED_ALGS))
-    {
+    if ((variant === "SHA-1") && (1 & SUPPORTED_ALGS)) {
       retVal = coreSHA1(
-        keyWithOPad.concat(
-          coreSHA1(
-            keyWithIPad.concat(strToHash),
-            blockBitSize + strBinLen
-          )
-        ),
-        blockBitSize + hashBitSize);
-    }
-    else if (6 & SUPPORTED_ALGS)
-    {
+        keyWithOPad.concat(coreSHA1(
+          keyWithIPad.concat(strToHash),
+          blockBitSize + strBinLen
+        )),
+        blockBitSize + hashBitSize
+      );
+    } else if (6 & SUPPORTED_ALGS) {
       retVal = coreSHA2(
-        keyWithOPad.concat(
-          coreSHA2(
-            keyWithIPad.concat(strToHash),
-            blockBitSize + strBinLen,
-            variant
-          )
-        ),
-        blockBitSize + hashBitSize, variant);
-    }
-    else
-    {
-      throw "Unexpected error in HMAC implementation";
+        keyWithOPad.concat(coreSHA2(
+          keyWithIPad.concat(strToHash),
+          blockBitSize + strBinLen,
+          variant
+        )),
+        blockBitSize + hashBitSize, variant
+      );
+    } else {
+      throw new Error('Unexpected error in HMAC implementation');
     }
 
     return formatFunc(retVal, getOutputOpts(outputFormatOpts));
@@ -1577,27 +1446,27 @@ var jsSHA = function(srcString, inputFormat, encoding)
 export default {
   /** SHA1 hash */
   sha1: function(str) {
-    var shaObj = new jsSHA(str, "TYPED", "UTF8");
+    const shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-1", "TYPED");
   },
   /** SHA224 hash */
   sha224: function(str) {
-    var shaObj = new jsSHA(str, "TYPED", "UTF8");
+    const shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-224", "TYPED");
   },
   /** SHA256 hash */
   sha256: function(str) {
-    var shaObj = new jsSHA(str, "TYPED", "UTF8");
+    const shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-256", "TYPED");
   },
   /** SHA384 hash */
   sha384: function(str) {
-    var shaObj = new jsSHA(str, "TYPED", "UTF8");
+    const shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-384", "TYPED");
   },
   /** SHA512 hash */
   sha512: function(str) {
-    var shaObj = new jsSHA(str, "TYPED", "UTF8");
+    const shaObj = new jsSHA(str, "TYPED", "UTF8");
     return shaObj.getHash("SHA-512", "TYPED");
   }
 };
