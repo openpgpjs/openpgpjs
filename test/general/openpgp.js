@@ -1,13 +1,14 @@
 /* globals tryTests: true */
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var sinon = require('sinon'),
-    chai = require('chai');
+const sinon = require('sinon');
+const chai = require('chai');
 chai.use(require('chai-as-promised'));
-var expect = chai.expect;
 
-var pub_key =
+const expect = chai.expect;
+
+const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
@@ -32,7 +33,7 @@ var pub_key =
   '=h/aX',
   '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var priv_key =
+const priv_key =
   ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
@@ -72,7 +73,7 @@ var priv_key =
   '=lw5e',
   '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-var pub_key_de =
+const pub_key_de =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.22 (GNU/Linux)',
   '',
@@ -113,7 +114,7 @@ var pub_key_de =
   '=v3+L',
   '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var priv_key_de =
+const priv_key_de =
   ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
   'Version: GnuPG v2.0.22 (GNU/Linux)',
   '',
@@ -157,13 +158,13 @@ var priv_key_de =
   '=kyeP',
   '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-var passphrase = 'hello world';
-var plaintext = 'short message\nnext line\n한국어/조선말';
-var password1 = 'I am a password';
-var password2 = 'I am another password';
-var password3 = 'I am a third password';
+const passphrase = 'hello world';
+const plaintext = 'short message\nnext line\n한국어/조선말';
+const password1 = 'I am a password';
+const password2 = 'I am another password';
+const password3 = 'I am a third password';
 
-var twoPasswordGPGFail = ['-----BEGIN PGP MESSAGE-----',
+const twoPasswordGPGFail = ['-----BEGIN PGP MESSAGE-----',
 'Version: OpenPGP.js v3.0.0',
 'Comment: https://openpgpjs.org',
 '',
@@ -237,7 +238,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work', function() {
-      var workerStub = {
+      const workerStub = {
         postMessage: function() {}
       };
       openpgp.initWorker({
@@ -250,7 +251,9 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    var keyGenStub, keyObjStub, getWebCryptoAllStub;
+    let keyGenStub;
+    let keyObjStub;
+    let getWebCryptoAllStub;
 
     beforeEach(function() {
       keyObjStub = {
@@ -277,89 +280,89 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should fail for invalid user name', function() {
-      var opt = {
+      const opt = {
         userIds: [{ name: {}, email: 'text@example.com' }]
       };
-      var test = openpgp.generateKey.bind(null, opt);
+      const test = openpgp.generateKey.bind(null, opt);
       expect(test).to.throw(/Invalid user id format/);
     });
 
     it('should fail for invalid user email address', function() {
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'textexample.com' }]
       };
-      var test = openpgp.generateKey.bind(null, opt);
+      const test = openpgp.generateKey.bind(null, opt);
       expect(test).to.throw(/Invalid user id format/);
     });
 
     it('should fail for invalid user email address', function() {
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'text@examplecom' }]
       };
-      var test = openpgp.generateKey.bind(null, opt);
+      const test = openpgp.generateKey.bind(null, opt);
       expect(test).to.throw(/Invalid user id format/);
     });
 
     it('should fail for invalid string user id', function() {
-      var opt = {
+      const opt = {
         userIds: ['Test User text@example.com>']
       };
-      var test = openpgp.generateKey.bind(null, opt);
+      const test = openpgp.generateKey.bind(null, opt);
       expect(test).to.throw(/Invalid user id format/);
     });
 
     it('should fail for invalid single string user id', function() {
-      var opt = {
+      const opt = {
         userIds: 'Test User text@example.com>'
       };
-      var test = openpgp.generateKey.bind(null, opt);
+      const test = openpgp.generateKey.bind(null, opt);
       expect(test).to.throw(/Invalid user id format/);
     });
 
     it('should work for valid single string user id', function() {
-      var opt = {
+      const opt = {
         userIds: 'Test User <text@example.com>'
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for valid string user id', function() {
-      var opt = {
+      const opt = {
         userIds: ['Test User <text@example.com>']
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for valid single user id hash', function() {
-      var opt = {
+      const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for valid single user id hash', function() {
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }]
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for an empty name', function() {
-      var opt = {
+      const opt = {
         userIds: { email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for an empty email address', function() {
-      var opt = {
+      const opt = {
         userIds: { name: 'Test User' }
       };
       return openpgp.generateKey(opt);
     });
 
     it('should have default params set', function() {
-      var opt = {
+      const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
         unlocked: true
@@ -394,13 +397,13 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should delegate to async proxy', function() {
-      var workerStub = {
+      const workerStub = {
         postMessage: function() {}
       };
       openpgp.initWorker({
         worker: workerStub
       });
-      var proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
+      const proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
 
       openpgp.generateKey();
@@ -410,7 +413,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - integration tests', function() {
-    var use_nativeVal;
+    let use_nativeVal;
 
     beforeEach(function() {
       use_nativeVal = openpgp.config.use_native;
@@ -424,7 +427,7 @@ describe('OpenPGP.js public api tests', function() {
     it('should work in JS (without worker)', function() {
       openpgp.config.use_native = false;
       openpgp.destroyWorker();
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
       };
@@ -439,7 +442,7 @@ describe('OpenPGP.js public api tests', function() {
     it('should work in JS (with worker)', function() {
       openpgp.config.use_native = false;
       openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
       };
@@ -453,7 +456,7 @@ describe('OpenPGP.js public api tests', function() {
 
     it('should work in with native crypto', function() {
       openpgp.config.use_native = true;
-      var opt = {
+      const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
       };
@@ -468,7 +471,11 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
-    var privateKey, publicKey, zero_copyVal, use_nativeVal, aead_protectVal;
+    let privateKey;
+    let publicKey;
+    let zero_copyVal;
+    let use_nativeVal;
+    let aead_protectVal;
 
     beforeEach(function(done) {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -542,11 +549,11 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       it('Calling decrypt with not decrypted key leads to exception', function() {
-        var encOpt = {
+        const encOpt = {
           data: plaintext,
-          publicKeys: publicKey.keys,
+          publicKeys: publicKey.keys
         };
-        var decOpt = {
+        const decOpt = {
           privateKeys: privateKey.keys[0]
         };
         return openpgp.encrypt(encOpt).then(function(encrypted) {
@@ -579,7 +586,7 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('encryptSessionKey, decryptSessionKeys', function() {
-        var sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
+        const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
         beforeEach(function(done) {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
@@ -618,7 +625,7 @@ describe('OpenPGP.js public api tests', function() {
 
         withCompression(function (modifyCompressionEncryptOptions, verifyCompressionDecrypted) {
           it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with pgp key pair', function () {
-            var msgAsciiArmored;
+            let msgAsciiArmored;
             return openpgp.encrypt(modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys
@@ -642,7 +649,7 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with password', function () {
-            var msgAsciiArmored;
+            let msgAsciiArmored;
             return openpgp.encrypt(modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: password1
@@ -666,7 +673,7 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('roundtrip workflow: encrypt with multiple passwords, decryptSessionKeys, decrypt with multiple passwords', function () {
-            var msgAsciiArmored;
+            let msgAsciiArmored;
             return openpgp.encrypt(modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: [password1, password2]
@@ -690,7 +697,7 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('roundtrip workflow: encrypt twice with one password, decryptSessionKeys, only one session key', function () {
-            var msgAsciiArmored;
+            let msgAsciiArmored;
             return openpgp.encrypt(modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: [password1, password1]
@@ -715,7 +722,7 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe('AES / RSA encrypt, decrypt, sign, verify', function() {
-        var wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+        const wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
           'Version: OpenPGP.js v0.9.0\r\n' +
           'Comment: Hoodiecrow - https://hoodiecrow.com\r\n' +
           '\r\n' +
@@ -734,11 +741,11 @@ describe('OpenPGP.js public api tests', function() {
 
         withCompression(function (modifyCompressionEncryptOptions, verifyCompressionDecrypted) {
           it('should encrypt then decrypt', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
-              publicKeys: publicKey.keys,
+              publicKeys: publicKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -754,11 +761,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt then decrypt', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
-              publicKeys: publicKey.keys,
+              publicKeys: publicKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -774,14 +781,14 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt then decrypt with multiple private keys', function () {
-            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
-              publicKeys: publicKey.keys,
+              publicKeys: publicKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: [privKeyDE, privateKey.keys[0]]
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -797,12 +804,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt then decrypt with wildcard', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               wildcard: true
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -818,15 +825,15 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt then decrypt with wildcard with multiple private keys', function () {
-            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               wildcard: true
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: [privKeyDE, privateKey.keys[0]]
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -842,7 +849,7 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt then decrypt using returned session key', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               returnSessionKey: true
@@ -850,7 +857,7 @@ describe('OpenPGP.js public api tests', function() {
 
             return openpgp.encrypt(encOpt).then(function (encrypted) {
               expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
-              var decOpt = {
+              const decOpt = {
                 sessionKeys: encrypted.sessionKey,
                 message: openpgp.message.readArmored(encrypted.data)
               };
@@ -864,16 +871,16 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt using custom session key and decrypt using session key', function () {
-            var sessionKey = {
+            const sessionKey = {
               data: openpgp.crypto.generateSessionKey('aes256'),
               algorithm: 'aes256'
             };
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               sessionKey: sessionKey,
               publicKeys: publicKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               sessionKeys: sessionKey
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -887,16 +894,16 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt using custom session key and decrypt using private key', function () {
-            var sessionKey = {
+            const sessionKey = {
               data: openpgp.crypto.generateSessionKey('aes128'),
               algorithm: 'aes128'
             };
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               sessionKeys: sessionKey,
               publicKeys: publicKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0]
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -910,12 +917,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt/sign and decrypt/verify', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: publicKey.keys
             };
@@ -932,12 +939,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt/sign and decrypt/verify with null string input', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: '',
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: publicKey.keys
             };
@@ -954,13 +961,13 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt/sign and decrypt/verify with detached signatures', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys,
               detached: true
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: publicKey.keys
             };
@@ -978,19 +985,19 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt/verify with detached signature input and detached flag set for encryption', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys[0],
               detached: true
             };
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               detached: true
             });
 
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: publicKey.keys[0]
             };
@@ -1012,24 +1019,24 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', function () {
-            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
 
-            var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+            const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
 
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privKeyDE,
               detached: true
             };
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys[0]
             });
 
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: [publicKey.keys[0], pubKeyDE]
             };
@@ -1055,19 +1062,19 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to encrypt and decrypt/verify with detached signature input and detached flag set for encryption with wrong public key', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               detached: true
             };
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               detached: true
             });
 
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
@@ -1089,18 +1096,18 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption with wrong public key', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               detached: true
             };
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys
             });
 
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
@@ -1121,12 +1128,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to verify decrypted data with wrong public pgp key', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
@@ -1143,12 +1150,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to verify decrypted null string with wrong public pgp key', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: '',
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
@@ -1165,13 +1172,13 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should successfully decrypt signed message without public keys to verify', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys
             });
-            var decOpt = {
-              privateKeys: privateKey.keys[0],
+            const decOpt = {
+              privateKeys: privateKey.keys[0]
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
               decOpt.message = openpgp.message.readArmored(encrypted.data);
@@ -1186,13 +1193,13 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should fail to verify decrypted data with wrong public pgp key with detached signatures', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: privateKey.keys,
               detached: true
             });
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
@@ -1210,18 +1217,18 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt/verify both signatures when signed with two private keys', function () {
-            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
 
-            var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+            const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
 
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               publicKeys: publicKey.keys,
               privateKeys: [privateKey.keys[0], privKeyDE]
             });
 
-            var decOpt = {
+            const decOpt = {
               privateKeys: privateKey.keys[0],
               publicKeys: [publicKey.keys[0], pubKeyDE]
             };
@@ -1244,11 +1251,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and verify cleartext data', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: publicKey.keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1264,12 +1271,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and verify cleartext data with detached signatures', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               detached: true
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: publicKey.keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1285,11 +1292,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and fail to verify cleartext data with wrong public pgp key', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1304,12 +1311,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and fail to verify cleartext data with wrong public pgp key with detached signature', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               detached: true
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: openpgp.key.readArmored(wrong_pubkey).keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1325,12 +1332,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and verify cleartext data and not armor', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               armor: false
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: publicKey.keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1345,13 +1352,13 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should sign and verify cleartext data and not armor with detached signatures', function () {
-            var signOpt = {
+            const signOpt = {
               data: plaintext,
               privateKeys: privateKey.keys,
               detached: true,
               armor: false
             };
-            var verifyOpt = {
+            const verifyOpt = {
               publicKeys: publicKey.keys
             };
             return openpgp.sign(signOpt).then(function (signed) {
@@ -1371,8 +1378,8 @@ describe('OpenPGP.js public api tests', function() {
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
         withCompression(function (modifyCompressionEncryptOptions, verifyCompressionDecrypted) {
           it('round trip test', function () {
-            var pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
-            var privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
             privKeyDE.decrypt(passphrase);
             return openpgp.encrypt(modifyCompressionEncryptOptions({
               publicKeys: pubKeyDE,
@@ -1398,7 +1405,7 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       describe("3DES decrypt", function() {
-        var pgp_msg =
+        const pgp_msg =
             ['-----BEGIN PGP MESSAGE-----',
             'Version: GnuPG/MacGPG2 v2.0.19 (Darwin)',
             'Comment: GPGTools - https://gpgtools.org',
@@ -1411,7 +1418,7 @@ describe('OpenPGP.js public api tests', function() {
             '=JyIa',
             '-----END PGP MESSAGE-----'].join('\n');
 
-        var priv_key =
+        const priv_key =
             ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
             'Version: GnuPG/MacGPG2 v2.0.19 (Darwin)',
             'Comment: GPGTools - https://gpgtools.org',
@@ -1450,11 +1457,9 @@ describe('OpenPGP.js public api tests', function() {
             '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
         it('Decrypt message', function() {
-          var privKey, message;
-
-          privKey = openpgp.key.readArmored(priv_key).keys[0];
+          const privKey = openpgp.key.readArmored(priv_key).keys[0];
           privKey.decrypt('1234');
-          message = openpgp.message.readArmored(pgp_msg);
+          const message = openpgp.message.readArmored(pgp_msg);
 
           return openpgp.decrypt({ privateKeys:privKey, message:message }).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello 3des\n');
@@ -1466,11 +1471,11 @@ describe('OpenPGP.js public api tests', function() {
       describe('AES encrypt, decrypt', function() {
         withCompression(function (modifyCompressionEncryptOptions, verifyCompressionDecrypted) {
           it('should encrypt and decrypt with one password', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: password1
             });
-            var decOpt = {
+            const decOpt = {
               passwords: password1
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -1484,11 +1489,11 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt with two passwords', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: [password1, password2]
             });
-            var decOpt = {
+            const decOpt = {
               passwords: password2
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -1503,7 +1508,7 @@ describe('OpenPGP.js public api tests', function() {
 
           it('should decrypt with two passwords message which GPG fails on', function () {
 
-            var decOpt = {
+            const decOpt = {
               message: openpgp.message.readArmored(twoPasswordGPGFail),
               passwords: password2
             };
@@ -1514,12 +1519,12 @@ describe('OpenPGP.js public api tests', function() {
           });
 
           it('should encrypt and decrypt with password and not ascii armor', function () {
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: plaintext,
               passwords: password1,
               armor: false
             });
-            var decOpt = {
+            const decOpt = {
               passwords: password1
             };
             return openpgp.encrypt(encOpt).then(function (encrypted) {
@@ -1534,12 +1539,12 @@ describe('OpenPGP.js public api tests', function() {
 
           it('should encrypt and decrypt with binary data and transferable objects', function () {
             openpgp.config.zero_copy = true; // activate transferable objects
-            var encOpt = modifyCompressionEncryptOptions({
+            const encOpt = modifyCompressionEncryptOptions({
               data: new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01]),
               passwords: password1,
               armor: false
             });
-            var decOpt = {
+            const decOpt = {
               passwords: password1,
               format: 'binary'
             };

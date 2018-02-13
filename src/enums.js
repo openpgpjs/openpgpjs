@@ -373,14 +373,14 @@ export default {
 
     if (type[e] !== undefined) {
       return type[e];
-    } else {
-      throw new Error('Invalid enum value.');
     }
+
+    throw new Error('Invalid enum value.');
   },
 
   /** Converts from an integer to string. */
   read: function(type, e) {
-    for (var i in type) {
+    for (const i in type) {
       if (type[i] === parseInt(e, 10)) {
         return i;
       }

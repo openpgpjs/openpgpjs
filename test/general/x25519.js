@@ -1,12 +1,14 @@
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
-var elliptic = openpgp.crypto.publicKey.elliptic;
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var chai = require('chai');
+const elliptic = openpgp.crypto.publicKey.elliptic;
+
+const chai = require('chai');
 chai.use(require('chai-as-promised'));
-var expect = chai.expect;
+
+const { expect } = chai;
 
 describe('X25519 Cryptography', function () {
-  var data = {
+  const data = {
     light: {
       id: '1ecdf026c0245830',
       pass: 'sun',
@@ -23,7 +25,8 @@ describe('X25519 Cryptography', function () {
         '36pfjrl82srS6XPRJxl3r/6lpWGaNij0VptB2wEA2V10ifOhnwILCw1qBle6On7a',
         'Ba257lrFM+cOSMaEsgo=',
         '=D8HS',
-        '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
+        '-----END PGP PUBLIC KEY BLOCK-----'
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         '',
@@ -40,7 +43,8 @@ describe('X25519 Cryptography', function () {
         'GwwACgkQHs3wJsAkWDCe9QEA5qEE4N+qX465fNrK0ulz0ScZd6/+paVhmjYo9Fab',
         'QdsBANlddInzoZ8CCwsNagZXujp+2gWtue5axTPnDkjGhLIK',
         '=wo91',
-        '-----END PGP PRIVATE KEY BLOCK-----'].join('\n'),
+        '-----END PGP PRIVATE KEY BLOCK-----'
+      ].join('\n'),
       message: 'Hi, Light wrote this!',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
@@ -53,7 +57,8 @@ describe('X25519 Cryptography', function () {
         'AAoJEB7N8CbAJFgwdqAA/RwTsy9Nt5HEJLnokUNgHVX8wNr7Ef9wfAG1RaMgMMWs',
         'AP9KEEohpHqaj8smb1oLjYU9DgOugE40LrkujvnWNbOZBQ==',
         '=T9p+',
-        '-----END PGP SIGNATURE-----'].join('\n')
+        '-----END PGP SIGNATURE-----'
+      ].join('\n')
     },
     night: {
       id: 'f25e5f24bb372cfa',
@@ -71,7 +76,8 @@ describe('X25519 Cryptography', function () {
         'Gd7R77zhC8mkSDIssegrFCoLqDgNYOSISgixUdgA/j7tIDGF45C9JC4LQsjfKY9W',
         'Td0I97hWRfub9tYo0P8K',
         '=nbhM',
-        '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
+        '-----END PGP PUBLIC KEY BLOCK-----'
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         '',
@@ -88,7 +94,8 @@ describe('X25519 Cryptography', function () {
         'AhsMAAoJEPJeXyS7Nyz6I04BAKcoNxne0e+84QvJpEgyLLHoKxQqC6g4DWDkiEoI',
         'sVHYAP4+7SAxheOQvSQuC0LI3ymPVk3dCPe4VkX7m/bWKND/Cg==',
         '=NDSU',
-        '-----END PGP PRIVATE KEY BLOCK-----'].join('\n'),
+        '-----END PGP PRIVATE KEY BLOCK-----'
+      ].join('\n'),
       message: 'Oh hi, this is a private message from Light to Night!',
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
@@ -102,7 +109,8 @@ describe('X25519 Cryptography', function () {
         'JRZdfjq5haoEjWTuqSIS+O40AgmQYPIjnO5ALehFuWTHKLDFVv4EDqx7MatXZidz',
         'drpAMWGi',
         '=erKa',
-        '-----END PGP MESSAGE-----'].join('\n')
+        '-----END PGP MESSAGE-----'
+      ].join('\n')
     }
   };
 
@@ -110,7 +118,7 @@ describe('X25519 Cryptography', function () {
     if (data[name].pub_key) {
       return data[name].pub_key;
     }
-    var pub = openpgp.key.readArmored(data[name].pub);
+    const pub = openpgp.key.readArmored(data[name].pub);
     expect(pub).to.exist;
     expect(pub.err).to.not.exist;
     expect(pub.keys).to.have.length(1);
@@ -118,11 +126,12 @@ describe('X25519 Cryptography', function () {
     data[name].pub_key = pub.keys[0];
     return data[name].pub_key;
   }
+
   function load_priv_key(name) {
     if (data[name].priv_key) {
       return data[name].priv_key;
     }
-    var pk = openpgp.key.readArmored(data[name].priv);
+    const pk = openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
     expect(pk.err).to.not.exist;
     expect(pk.keys).to.have.length(1);
@@ -131,34 +140,38 @@ describe('X25519 Cryptography', function () {
     data[name].priv_key = pk.keys[0];
     return data[name].priv_key;
   }
+
   it('Load public key', function (done) {
     load_pub_key('light');
     load_pub_key('night');
     done();
   });
+
   it('Load private key', function (done) {
     load_priv_key('light');
     load_priv_key('night');
     done();
-  }).timeout(10000);
+  }).timeout(15000);
+
   it('Verify clear signed message', function () {
-    var name = 'light';
-    var pub = load_pub_key(name);
-    var msg = openpgp.cleartext.readArmored(data[name].message_signed);
-    return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
+    const name = 'light';
+    const pub = load_pub_key(name);
+    const msg = openpgp.cleartext.readArmored(data[name].message_signed);
+    return openpgp.verify({ publicKeys: [pub], message: msg }).then(function(result) {
       expect(result).to.exist;
       expect(result.data.trim()).to.equal(data[name].message);
       expect(result.signatures).to.have.length(1);
       expect(result.signatures[0].valid).to.be.true;
     });
   });
+
   it('Sign message', function () {
-    var name = 'light'
-    var priv = load_priv_key(name);
-    return openpgp.sign({privateKeys: [priv], data: data[name].message + "\n"}).then(function (signed) {
-      var pub = load_pub_key(name);
-      var msg = openpgp.cleartext.readArmored(signed.data);
-      return openpgp.verify({publicKeys: [pub], message: msg}).then(function (result) {
+    const name = 'light';
+    const priv = load_priv_key(name);
+    return openpgp.sign({ privateKeys: [priv], data: data[name].message + "\n" }).then(function (signed) {
+      const pub = load_pub_key(name);
+      const msg = openpgp.cleartext.readArmored(signed.data);
+      return openpgp.verify({ publicKeys: [pub], message: msg}).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data[name].message);
         expect(result.signatures).to.have.length(1);
@@ -166,36 +179,38 @@ describe('X25519 Cryptography', function () {
       });
     });
   });
+
   it('Decrypt and verify message', function () {
-    var light = load_pub_key('light');
-    var night = load_priv_key('night');
-    expect(night.decrypt(data['night'].pass)).to.be.true;
-    var msg = openpgp.message.readArmored(data['night'].message_encrypted);
+    const light = load_pub_key('light');
+    const night = load_priv_key('night');
+    expect(night.decrypt(data.night.pass)).to.be.true;
+    const msg = openpgp.message.readArmored(data.night.message_encrypted);
     return openpgp.decrypt(
-      {privateKeys: night, publicKeys: [light], message: msg}
+      { privateKeys: night, publicKeys: [light], message: msg }
     ).then(function (result) {
       expect(result).to.exist;
       // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
-      expect(result.data.trim()).to.equal(data['night'].message);
+      expect(result.data.trim()).to.equal(data.night.message);
       expect(result.signatures).to.have.length(1);
       expect(result.signatures[0].valid).to.be.true;
     });
   });
+
   it('Encrypt and sign message', function () {
-    var night = load_pub_key('night');
-    var light = load_priv_key('light');
-    expect(light.decrypt(data['light'].pass)).to.be.true;
+    const night = load_pub_key('night');
+    const light = load_priv_key('light');
+    expect(light.decrypt(data.light.pass)).to.be.true;
     openpgp.encrypt(
-      {publicKeys: [night], privateKeys: [light], data: data['light'].message + "\n"}
+      { publicKeys: [night], privateKeys: [light], data: data.light.message + "\n" }
     ).then(function (encrypted) {
-      var message = openpgp.message.readArmored(encrypted.data);
-      var light = load_pub_key('light');
-      var night = load_priv_key('night');
+      const message = openpgp.message.readArmored(encrypted.data);
+      const light = load_pub_key('light');
+      const night = load_priv_key('night');
       return openpgp.decrypt(
-        {privateKeys: night, publicKeys: [light], message: message}
+        { privateKeys: night, publicKeys: [light], message: message }
       ).then(function (result) {
         expect(result).to.exist;
-        expect(result.data.trim()).to.equal(data['light'].message);
+        expect(result.data.trim()).to.equal(data.light.message);
         expect(result.signatures).to.have.length(1);
         expect(result.signatures[0].valid).to.be.true;
       });
@@ -204,7 +219,7 @@ describe('X25519 Cryptography', function () {
 
   // TODO generate, export, then reimport key and validate
   it('Omnibus Ed25519/Curve25519 Test', function () {
-    var options = {
+    const options = {
       userIds: {name: "Hi", email: "hi@hel.lo"},
       curve: "ed25519"
     };
@@ -217,38 +232,38 @@ describe('X25519 Cryptography', function () {
       expect(firstKey.key.subKeys).to.have.length(1);
       expect(firstKey.key.subKeys[0].subKey).to.exist;
 
-      var hi = firstKey.key;
-      var primaryKey = hi.primaryKey;
-      var subKey = hi.subKeys[0].subKey;
+      const hi = firstKey.key;
+      const primaryKey = hi.primaryKey;
+      const subKey = hi.subKeys[0].subKey;
       expect(primaryKey.params[0].oid).to.equal(elliptic.get('ed25519').oid);
       expect(primaryKey.algorithm).to.equal('eddsa');
       expect(subKey.params[0].oid).to.equal(elliptic.get('curve25519').oid);
       expect(subKey.algorithm).to.equal('ecdh');
 
       // Self Certificate is valid
-      var user = hi.users[0]
+      const user = hi.users[0];
       expect(user.selfCertifications[0].verify(
-        primaryKey, {userid: user.userId, key: primaryKey}
+        primaryKey, { userid: user.userId, key: primaryKey }
       )).to.eventually.be.true;
       expect(user.verifyCertificate(
         primaryKey, user.selfCertifications[0], [hi.toPublic()]
       )).to.eventually.equal(openpgp.enums.keyStatus.valid);
 
-      var options = {
-        userIds: {name: "Bye", email: "bye@good.bye"},
+      const options = {
+        userIds: { name: "Bye", email: "bye@good.bye" },
         curve: "curve25519"
       };
       return openpgp.generateKey(options).then(function (secondKey) {
-        var bye = secondKey.key;
+        const bye = secondKey.key;
         expect(bye.primaryKey.params[0].oid).to.equal(elliptic.get('ed25519').oid);
         expect(bye.primaryKey.algorithm).to.equal('eddsa');
         expect(bye.subKeys[0].subKey.params[0].oid).to.equal(elliptic.get('curve25519').oid);
         expect(bye.subKeys[0].subKey.algorithm).to.equal('ecdh');
 
         // Self Certificate is valid
-        var user = bye.users[0]
+        const user = bye.users[0];
         expect(user.selfCertifications[0].verify(
-          bye.primaryKey, {userid: user.userId, key: bye.primaryKey}
+          bye.primaryKey, { userid: user.userId, key: bye.primaryKey }
         )).to.eventually.be.true;
         expect(user.verifyCertificate(
           bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
@@ -256,7 +271,7 @@ describe('X25519 Cryptography', function () {
 
         return Promise.all([
           // Hi trusts Bye!
-          bye.toPublic().signPrimaryUser([ hi ]).then(trustedBye => {
+          bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
             expect(trustedBye.users[0].otherCertifications[0].verify(
               primaryKey, { userid: user.userId, key: bye.toPublic().primaryKey }
             )).to.eventually.be.true;
@@ -265,7 +280,7 @@ describe('X25519 Cryptography', function () {
           openpgp.sign(
             { data: 'Hi, this is me, Hi!', privateKeys: hi }
           ).then(signed => {
-            var msg = openpgp.cleartext.readArmored(signed.data);
+            const msg = openpgp.cleartext.readArmored(signed.data);
             // Verifying signed message
             return Promise.all([
               openpgp.verify(
@@ -282,15 +297,15 @@ describe('X25519 Cryptography', function () {
           // Encrypting and signing
           openpgp.encrypt(
             { data: 'Hi, Hi wrote this but only Bye can read it!',
-              publicKeys: [ bye.toPublic() ],
-              privateKeys: [ hi ] }
+              publicKeys: [bye.toPublic()],
+              privateKeys: [hi] }
           ).then(encrypted => {
-            var msg = openpgp.message.readArmored(encrypted.data)
+            const msg = openpgp.message.readArmored(encrypted.data);
             // Decrypting and verifying
             return openpgp.decrypt(
               { message: msg,
                 privateKeys: bye,
-                publicKeys: [ hi.toPublic() ] }
+                publicKeys: [hi.toPublic()] }
             ).then(output => {
               expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
               expect(output.signatures[0].valid).to.be.true;
@@ -307,22 +322,22 @@ describe('X25519 Cryptography', function () {
     const curve = openpgp.crypto.publicKey.elliptic.get('ed25519');
     const util = openpgp.util;
     function testVector(vector) {
-      var S = curve.keyFromSecret(vector.SECRET_KEY);
-      var P = curve.keyFromPublic(vector.PUBLIC_KEY);
+      const S = curve.keyFromSecret(vector.SECRET_KEY);
+      const P = curve.keyFromPublic(vector.PUBLIC_KEY);
       expect(S.getPublic()).to.deep.equal(P.getPublic());
-      var data = util.str2Uint8Array(vector.MESSAGE);
-      var keyIntegers = [
+      const data = util.str2Uint8Array(vector.MESSAGE);
+      const keyIntegers = [
         openpgp.OID.fromClone(curve),
         new openpgp.MPI(util.hex2bin(vector.PUBLIC_KEY)),
         new openpgp.MPI(util.hex2bin(vector.SECRET_KEY))
       ];
-      var msg_MPIs = [
+      const msg_MPIs = [
         new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.R).reverse())),
-        new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.S).reverse())),
+        new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.S).reverse()))
       ];
       return Promise.all([
         crypto.sign(undefined, 22, keyIntegers, data).then(signature => {
-          var len = ((signature[0] << 8| signature[1]) + 7) / 8;
+          const len = ((signature[0] << 8 | signature[1]) + 7) / 8;
           expect(util.hex2Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signature.slice(2, 2 + len));
           expect(util.hex2Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signature.slice(4 + len));
         }),
@@ -330,7 +345,7 @@ describe('X25519 Cryptography', function () {
           expect(result).to.be.true;
         })
       ]);
-    };
+    }
 
     it('Signature of empty string', function () {
       return testVector({
@@ -455,7 +470,8 @@ describe('X25519 Cryptography', function () {
           'b2eaaa707b4c4185c32eddcdd306705e',
           '4dc1ffc872eeee475a64dfac86aba41c',
           '0618983f8741c5ef68d3a101e8a3b8ca',
-          'c60c905c15fc910840b94c00a0b9d0'].join('')),
+          'c60c905c15fc910840b94c00a0b9d0'
+        ].join('')),
         SIGNATURE:
         { R: ['0aab4c900501b3e24d7cdf4663326a3a',
               '87df5e4843b2cbdb67cbf6e460fec350'].join(''),
@@ -476,7 +492,8 @@ describe('X25519 Cryptography', function () {
           'ddaf35a193617abacc417349ae204131',
           '12e6fa4e89a97ea20a9eeee64b55d39a',
           '2192992a274fc1a836ba3c23a3feebbd',
-          '454d4423643ce80e2a9ac94fa54ca49f'].join('')),
+          '454d4423643ce80e2a9ac94fa54ca49f'
+        ].join('')),
         SIGNATURE:
         { R: ['dc2a4459e7369633a52b1bf277839a00',
               '201009a3efbf3ecb69bea2186c26b589'].join(''),

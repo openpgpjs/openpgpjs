@@ -38,7 +38,7 @@ const mod = {
   aes_kw: aes_kw
 };
 
-for (var i in crypto) {
+for (const i in crypto) {
   mod[i] = crypto[i];
 }
 

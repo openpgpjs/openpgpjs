@@ -21,16 +21,16 @@ import cipher from './cipher';
 import util from '../util';
 
 function wrap(key, data) {
-  var aes = new cipher["aes" + (key.length*8)](key);
-  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var P = unpack(data);
-  var A = IV;
-  var R = P;
-  var n = P.length/2;
-  var t = new Uint32Array([0, 0]);
-  var B = new Uint32Array(4);
-  for (var j = 0; j <= 5; ++j) {
-    for (var i = 0; i < n; ++i) {
+  const aes = new cipher["aes" + (key.length*8)](key);
+  const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
+  const P = unpack(data);
+  let A = IV;
+  const R = P;
+  const n = P.length/2;
+  const t = new Uint32Array([0, 0]);
+  let B = new Uint32Array(4);
+  for (let j = 0; j <= 5; ++j) {
+    for (let i = 0; i < n; ++i) {
       t[1] = n * j + (1 + i);
       // B = A
       B[0] = A[0];
@@ -42,8 +42,8 @@ function wrap(key, data) {
       B = unpack(aes.encrypt(pack(B)));
       // A = MSB(64, B) ^ t
       A = B.subarray(0, 2);
-      A[0] = A[0] ^ t[0];
-      A[1] = A[1] ^ t[1];
+      A[0] ^= t[0];
+      A[1] ^= t[1];
       // R[i] = LSB(64, B)
       R[2*i] = B[2];
       R[2*i+1] = B[3];
@@ -53,16 +53,16 @@ function wrap(key, data) {
 }
 
 function unwrap(key, data) {
-  var aes = new cipher["aes" + (key.length*8)](key);
-  var IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
-  var C = unpack(data);
-  var A = C.subarray(0, 2);
-  var R = C.subarray(2);
-  var n = C.length/2-1;
-  var t = new Uint32Array([0, 0]);
-  var B = new Uint32Array(4);
-  for (var j = 5; j >= 0; --j) {
-    for (var i = n - 1; i >= 0; --i) {
+  const aes = new cipher["aes" + (key.length*8)](key);
+  const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
+  const C = unpack(data);
+  let A = C.subarray(0, 2);
+  const R = C.subarray(2);
+  const n = C.length/2-1;
+  const t = new Uint32Array([0, 0]);
+  let B = new Uint32Array(4);
+  for (let j = 5; j >= 0; --j) {
+    for (let i = n - 1; i >= 0; --i) {
       t[1] = n * j + (i + 1);
       // B = A ^ t
       B[0] = A[0] ^ t[0];
@@ -87,10 +87,10 @@ function unwrap(key, data) {
 
 function createArrayBuffer(data) {
   if (util.isString(data)) {
-    var length = data.length;
-    var buffer = new ArrayBuffer(length);
-    var view = new Uint8Array(buffer);
-    for (var j = 0; j < length; ++j) {
+    const { length } = data;
+    const buffer = new ArrayBuffer(length);
+    const view = new Uint8Array(buffer);
+    for (let j = 0; j < length; ++j) {
       view[j] = data.charCodeAt(j);
     }
     return buffer;
@@ -99,29 +99,29 @@ function createArrayBuffer(data) {
 }
 
 function unpack(data) {
-  var length = data.length;
-  var buffer = createArrayBuffer(data);
-  var view = new DataView(buffer);
-  var arr = new Uint32Array(length/4);
-  for (var i=0; i<length/4; ++i) {
+  const { length } = data;
+  const buffer = createArrayBuffer(data);
+  const view = new DataView(buffer);
+  const arr = new Uint32Array(length/4);
+  for (let i=0; i<length/4; ++i) {
     arr[i] = view.getUint32(4*i);
   }
   return arr;
 }
 
 function pack() {
-  var length = 0;
-  for (var k=0; k<arguments.length; ++k) {
-    length += 4*arguments[k].length;
+  let length = 0;
+  for (let k = 0; k < arguments.length; ++k) {
+    length += 4 * arguments[k].length;
   }
-  var buffer = new ArrayBuffer(length);
-  var view = new DataView(buffer);
-  var offset = 0;
-  for (var i=0; i<arguments.length; ++i) {
-    for (var j=0; j<arguments[i].length; ++j) {
-      view.setUint32(offset+4*j, arguments[i][j]);
+  const buffer = new ArrayBuffer(length);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < arguments.length; ++i) {
+    for (let j = 0; j < arguments[i].length; ++j) {
+      view.setUint32(offset + 4 * j, arguments[i][j]);
     }
-    offset += 4*arguments[i].length;
+    offset += 4 * arguments[i].length;
   }
   return new Uint8Array(buffer);
 }
