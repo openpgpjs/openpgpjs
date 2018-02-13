@@ -31,7 +31,7 @@ export default {
   /** @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric} */
   encryption_cipher: enums.symmetric.aes256,
   /** @property {Integer} compression Default compression algorithm {@link module:enums.compression} */
-  compression: enums.compression.zip,
+  compression: enums.compression.uncompressed,
 
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
