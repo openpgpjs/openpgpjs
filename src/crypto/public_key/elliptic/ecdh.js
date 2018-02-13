@@ -86,7 +86,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   const C = aes_kw.wrap(Z, m.toBytes());
   return {
-    V: new BigInteger(v.getPublic()),
+    V: new BigInteger(util.hexidump(v.getPublic()), 16),
     C: C
   };
 }
@@ -112,7 +112,7 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   d = curve.keyFromPrivate(d.toByteArray());
   const S = d.derive(V);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  return new BigInteger(aes_kw.unwrap(Z, C));
+  return new BigInteger(util.hexidump(aes_kw.unwrap(Z, C)), 16);
 }
 
 module.exports = {

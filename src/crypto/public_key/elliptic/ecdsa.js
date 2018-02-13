@@ -18,12 +18,14 @@
 // Implementation of ECDSA following RFC6637 for Openpgpjs
 
 /**
+ * @requires util
  * @requires crypto/hash
  * @requires crypto/public_key/jsbn
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/ecdsa
  */
 
+import util from '../../../util';
 import hash from '../../hash';
 import curves from './curves';
 import BigInteger from '../jsbn';
@@ -41,8 +43,8 @@ async function sign(oid, hash_algo, m, d) {
   const key = curve.keyFromPrivate(d.toByteArray());
   const signature = await key.sign(m, hash_algo);
   return {
-    r: new BigInteger(signature.r.toArray()),
-    s: new BigInteger(signature.s.toArray())
+    r: new BigInteger(util.hexidump(signature.r.toArray()), 16),
+    s: new BigInteger(util.hexidump(signature.s.toArray()), 16)
   };
 }
 

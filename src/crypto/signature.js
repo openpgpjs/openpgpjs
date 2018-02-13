@@ -3,10 +3,10 @@
  * @requires crypto/public_key
  * @requires crypto/pkcs1
  * @requires util
- * @module crypto/signature */
+ * @module crypto/signature
+*/
 
-
-import { RSA_RAW } from 'asmcrypto.js'
+import { RSA_RAW } from 'asmcrypto.js';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1';
 import util from '../util';
@@ -119,6 +119,7 @@ export default {
           '00'+pkcs1.emsa.encode(hash_algo, data, k) // FIXME
         );
         return util.Uint8Array2MPI(RSA_RAW.sign(m, [n, e, d]));
+      }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
         const dsa = new publicKey.dsa();

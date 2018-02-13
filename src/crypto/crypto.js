@@ -18,23 +18,28 @@
 // The GPG4Browsers crypto interface
 
 /**
- * @requires crypto/cipher
+ * @requires asmcrypto.js
  * @requires crypto/public_key
+ * @requires crypto/cipher
  * @requires crypto/random
  * @requires type/ecdh_symkey
  * @requires type/kdf_params
  * @requires type/mpi
  * @requires type/oid
+ * @requires util
  * @module crypto/crypto
  */
 
-import random from './random.js';
-import cipher from './cipher';
+import { RSA_RAW, BigNumber, Modulus } from 'asmcrypto.js';
+import BigInteger from './public_key/jsbn';
 import publicKey from './public_key';
-import type_ecdh_symkey from '../type/ecdh_symkey.js';
-import type_kdf_params from '../type/kdf_params.js';
-import type_mpi from '../type/mpi.js';
-import type_oid from '../type/oid.js';
+import cipher from './cipher';
+import random from './random';
+import type_ecdh_symkey from '../type/ecdh_symkey';
+import type_kdf_params from '../type/kdf_params';
+import type_mpi from '../type/mpi';
+import type_oid from '../type/oid';
+import util from '../util';
 
 
 function constructParams(types, data) {
@@ -63,11 +68,12 @@ export default {
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign': {
-          const rsa = new publicKey.rsa();
-          const n = publicParams[0].toBigInteger();
-          const e = publicParams[1].toBigInteger();
-          m = data.toBigInteger();
-          return constructParams(types, [rsa.encrypt(m, e, n)]);
+          const n = util.str2Uint8Array(publicParams[0].toBytes());
+          const e = util.str2Uint8Array(publicParams[1].toBytes());
+          m = data.write().slice(2); // FIXME
+          return constructParams(types, [
+            new BigInteger(util.hexidump(RSA_RAW.encrypt(m, [n, e])), 16) // FIXME
+          ]);
         }
         case 'elgamal': {
           const elgamal = new publicKey.elgamal();
@@ -109,17 +115,23 @@ export default {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt': {
-          const rsa = new publicKey.rsa();
-          // 0 and 1 are the public key.
-          const n = keyIntegers[0].toBigInteger();
-          const e = keyIntegers[1].toBigInteger();
-          // 2 to 5 are the private key.
-          const d = keyIntegers[2].toBigInteger();
-          p = keyIntegers[3].toBigInteger();
-          const q = keyIntegers[4].toBigInteger();
-          const u = keyIntegers[5].toBigInteger();
-          const m = dataIntegers[0].toBigInteger();
-          return rsa.decrypt(m, n, e, d, p, q, u);
+          const c = util.str2Uint8Array(dataIntegers[0].toBytes());
+          const n = util.str2Uint8Array(keyIntegers[0].toBytes()); // pq
+          const e = util.str2Uint8Array(keyIntegers[1].toBytes());
+          const d = util.str2Uint8Array(keyIntegers[2].toBytes()); // de = 1 mod (p-1)(q-1)
+          const p = util.str2Uint8Array(keyIntegers[3].toBytes());
+          const q = util.str2Uint8Array(keyIntegers[4].toBytes());
+          const u = util.str2Uint8Array(keyIntegers[5].toBytes()); // q^-1 mod p
+          const dd = BigNumber.fromArrayBuffer(d);
+          const dp = new Modulus(
+            BigNumber.fromArrayBuffer(p).subtract(BigNumber.ONE)
+          ).reduce(dd).toBytes(); // d mod (p-1)
+          const dq = new Modulus(
+            BigNumber.fromArrayBuffer(q).subtract(BigNumber.ONE)
+          ).reduce(dd).toBytes(); // d mod (q-1)
+          return new BigInteger(
+            util.hexidump(RSA_RAW.decrypt(c, [n, e, d, q, p, dq, dp, u]).slice(1)), 16 // FIXME
+          );
         }
         case 'elgamal': {
           const elgamal = new publicKey.elgamal();
