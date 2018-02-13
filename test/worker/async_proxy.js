@@ -1,11 +1,12 @@
 /* globals tryTests: true */
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const chai = require('chai');
 
-var pub_key =
+const { expect } = chai;
+
+const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
@@ -30,8 +31,8 @@ var pub_key =
   '=h/aX',
   '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var plaintext = 'short message\nnext line\n한국어/조선말';
-var pubKey;
+const plaintext = 'short message\nnext line\n한국어/조선말';
+let pubKey;
 
 tryTests('Async Proxy', tests, {
   if: typeof window !== 'undefined' && window.Worker,
@@ -48,7 +49,7 @@ function tests() {
 
   describe('Error handling', function() {
     it('Depleted random buffer in worker gives error', function() {
-      var wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js' });
+      const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js' });
       wProxy.worker = new Worker('../dist/openpgp.worker.js');
       wProxy.worker.onmessage = wProxy.onMessage.bind(wProxy);
       wProxy.seedRandom(10);

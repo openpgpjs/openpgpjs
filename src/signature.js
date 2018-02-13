@@ -57,7 +57,7 @@ Signature.prototype.armor = function() {
  * @static
  */
 export function readArmored(armoredText) {
-  var input = armor.decode(armoredText).data;
+  const input = armor.decode(armoredText).data;
   return read(input);
 }
 
@@ -68,7 +68,7 @@ export function readArmored(armoredText) {
  * @static
  */
 export function read(input) {
-  var packetlist = new packet.List();
+  const packetlist = new packet.List();
   packetlist.read(input);
   return new Signature(packetlist);
 }

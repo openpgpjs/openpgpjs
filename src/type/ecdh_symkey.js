@@ -46,11 +46,9 @@ function ECDHSymmetricKey(data) {
  * @return {Number}             Number of read bytes
  */
 ECDHSymmetricKey.prototype.read = function (input) {
-  if (input.length >= 1)
-  {
-    var length = input[0];
-    if (input.length >= 1+length)
-    {
+  if (input.length >= 1) {
+    const length = input[0];
+    if (input.length >= 1+length) {
       this.data = input.subarray(1, 1+length);
       return 1+this.data.length;
     }

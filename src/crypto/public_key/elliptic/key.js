@@ -39,9 +39,13 @@ import config from '../../../config';
 import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
-const webCurves = curves.webCurves;
+const { webCurves } = curves;
 const nodeCrypto = util.getNodeCrypto();
-const nodeCurves = curves.nodeCurves;
+const { nodeCurves } = curves;
+
+// const webCrypto = util.getWebCrypto();
+// const nodeCrypto = util.getNodeCrypto();
+// const { webCurves, nodeCurves } = curves;
 
 const jwkToPem = nodeCrypto ? require('jwk-to-pem') : undefined;
 const ECDSASignature = nodeCrypto ?
@@ -102,16 +106,15 @@ KeyPair.prototype.derive = function (pub) {
 };
 
 KeyPair.prototype.getPublic = function () {
-  var compact = (this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont');
+  const compact = (this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont');
   return this.keyPair.getPublic('array', compact);
 };
 
 KeyPair.prototype.getPrivate = function () {
   if (this.keyType === enums.publicKey.eddsa) {
     return this.keyPair.getSecret();
-  } else {
-    return this.keyPair.getPrivate().toArray();
   }
+  return this.keyPair.getPrivate().toArray();
 };
 
 module.exports = {
@@ -127,7 +130,7 @@ module.exports = {
 
 
 async function webSign(curve, hash_algo, message, keyPair) {
-  var l = curve.payloadSize;
+  const l = curve.payloadSize;
   const key = await webCrypto.importKey(
     "jwk",
     {
@@ -163,11 +166,11 @@ async function webSign(curve, hash_algo, message, keyPair) {
   };
 }
 
-async function webVerify(curve, hash_algo, {r, s}, message, publicKey) {
-  var l = curve.payloadSize;
+async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
+  const l = curve.payloadSize;
   r = Array(l - r.length).fill(0).concat(r);
   s = Array(l - s.length).fill(0).concat(s);
-  var signature = new Uint8Array(r.concat(s)).buffer;
+  const signature = new Uint8Array(r.concat(s)).buffer;
   const key = await webCrypto.importKey(
     "jwk",
     {
@@ -224,8 +227,8 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
   };
 }
 
-async function nodeVerify(curve, hash_algo, {r, s}, message, publicKey) {
-  var signature = ECDSASignature.encode({ r: new BigInteger(r), s: new BigInteger(s) }, 'der');
+async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
+  const signature = ECDSASignature.encode({ r: new BigInteger(r), s: new BigInteger(s) }, 'der');
   const key = jwkToPem(
     {
       "kty": "EC",

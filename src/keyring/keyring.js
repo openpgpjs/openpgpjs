@@ -62,7 +62,7 @@ Keyring.prototype.clear = function() {
  * @return {Array<module:key~Key>|null} keys found or null
  */
 Keyring.prototype.getKeysForId = function (keyId, deep) {
-  var result = [];
+  let result = [];
   result = result.concat(this.publicKeys.getForId(keyId, deep) || []);
   result = result.concat(this.privateKeys.getForId(keyId, deep) || []);
   return result.length ? result : null;
@@ -75,7 +75,7 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
  * @return {Array<module:key~Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
-  var result = [];
+  let result = [];
   result = result.concat(this.publicKeys.removeForId(keyId) || []);
   result = result.concat(this.privateKeys.removeForId(keyId) || []);
   return result.length ? result : null;
@@ -103,8 +103,8 @@ function KeyArray(keys) {
  * @return {Array<module:key~Key>} The public keys associated with provided email address.
  */
 KeyArray.prototype.getForAddress = function(email) {
-  var results = [];
-  for (var i = 0; i < this.keys.length; i++) {
+  const results = [];
+  for (let i = 0; i < this.keys.length; i++) {
     if (emailCheck(email, this.keys[i])) {
       results.push(this.keys[i]);
     }
@@ -122,11 +122,11 @@ KeyArray.prototype.getForAddress = function(email) {
 function emailCheck(email, key) {
   email = email.toLowerCase();
   // escape email before using in regular expression
-  var emailEsc = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var emailRegex = new RegExp('<' + emailEsc + '>');
-  var userIds = key.getUserIds();
-  for (var i = 0; i < userIds.length; i++) {
-    var userId = userIds[i].toLowerCase();
+  const emailEsc = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const emailRegex = new RegExp('<' + emailEsc + '>');
+  const userIds = key.getUserIds();
+  for (let i = 0; i < userIds.length; i++) {
+    const userId = userIds[i].toLowerCase();
     if (email === userId || emailRegex.test(userId)) {
       return true;
     }
@@ -145,9 +145,8 @@ function emailCheck(email, key) {
 function keyIdCheck(keyId, keypacket) {
   if (keyId.length === 16) {
     return keyId === keypacket.getKeyId().toHex();
-  } else {
-    return keyId === keypacket.getFingerprint();
   }
+  return keyId === keypacket.getFingerprint();
 }
 
 /**
@@ -158,12 +157,12 @@ function keyIdCheck(keyId, keypacket) {
  * @return {module:key~Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
-  for (var i = 0; i < this.keys.length; i++) {
+  for (let i = 0; i < this.keys.length; i++) {
     if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
       return this.keys[i];
     }
     if (deep && this.keys[i].subKeys) {
-      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
+      for (let j = 0; j < this.keys[i].subKeys.length; j++) {
         if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
           return this.keys[i];
         }
@@ -179,12 +178,12 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  * @return {Array<Error>|null} array of error objects or null
  */
 KeyArray.prototype.importKey = function (armored) {
-  var imported = readArmored(armored);
-  var that = this;
+  const imported = readArmored(armored);
+  const that = this;
   imported.keys.forEach(async function(key) {
     // check if key already in key array
-    var keyidHex = key.primaryKey.getKeyId().toHex();
-    var keyFound = that.getForId(keyidHex);
+    const keyidHex = key.primaryKey.getKeyId().toHex();
+    const keyFound = that.getForId(keyidHex);
     if (keyFound) {
       await keyFound.update(key);
     } else {
@@ -210,7 +209,7 @@ KeyArray.prototype.push = function (key) {
  * @return {module:key~Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
-  for (var i = 0; i < this.keys.length; i++) {
+  for (let i = 0; i < this.keys.length; i++) {
     if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
       return this.keys.splice(i, 1)[0];
     }

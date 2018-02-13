@@ -1,11 +1,12 @@
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var chai = require('chai');
+const chai = require('chai');
 chai.use(require('chai-as-promised'));
-var expect = chai.expect;
+
+const expect = chai.expect;
 
 describe('Elliptic Curve Cryptography', function () {
-  var data = {
+  const data = {
     romeo: {
       id: 'c2b12389b401a43d',
       pass: 'juliet',
@@ -25,7 +26,8 @@ describe('Elliptic Curve Cryptography', function () {
         'gwEA4B3lysFe/3+KE/PgCSZkUfx7n7xlKqMiqrX+VNyPej8BAMQJgtMVdslQ',
         'HLr5fhoGnRots3JSC0j20UQQOKVOXaW3',
         '=VpL9',
-        '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
+        '-----END PGP PUBLIC KEY BLOCK-----'
+].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js 1.3+secp256k1',
@@ -46,7 +48,8 @@ describe('Elliptic Curve Cryptography', function () {
         '4AkmZFH8e5+8ZSqjIqq1/lTcj3o/AQDECYLTFXbJUBy6+X4aBp0aLbNyUgtI',
         '9tFEEDilTl2ltw==',
         '=C3TW',
-        '-----END PGP PRIVATE KEY BLOCK-----'].join('\n'),
+        '-----END PGP PRIVATE KEY BLOCK-----'
+].join('\n'),
       message: 'Shall I hear more, or shall I speak at this?'
     },
     juliet: {
@@ -68,7 +71,8 @@ describe('Elliptic Curve Cryptography', function () {
         '7FoA/1Y4xDYO49u21I7aqjPyTygLoObdLMAtK6xht+DDc0YKAQDNp2wv0HOJ',
         '+0kjoUNu6PRIll/jMgTVAXn0Mov6HqJ95A==',
         '=ISmy',
-        '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
+        '-----END PGP PUBLIC KEY BLOCK-----'
+].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js 1.3+secp256k1',
@@ -89,7 +93,8 @@ describe('Elliptic Curve Cryptography', function () {
         '2qoz8k8oC6Dm3SzALSusYbfgw3NGCgEAzadsL9BziftJI6FDbuj0SJZf4zIE',
         '1QF59DKL+h6ifeQ=',
         '=QvXN',
-        '-----END PGP PRIVATE KEY BLOCK-----'].join('\n'),
+        '-----END PGP PRIVATE KEY BLOCK-----'
+].join('\n'),
       message: 'O Romeo, Romeo! Wherefore art thou Romeo?',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
@@ -103,7 +108,8 @@ describe('Elliptic Curve Cryptography', function () {
         'iF4EARMIAAYFAlYxF8oACgkQZBFgIZWb3+BfTwD/b1yKtFnKrRjELuD6/gOH9/er',
         '6yc7nzn1FBYFzMz8aFIA/3FlcIvR+eLvRTVmfiEatB6IU6JviBnzxR1gA/SOdyS2',
         '=GCiR',
-        '-----END PGP SIGNATURE-----'].join('\n'),
+        '-----END PGP SIGNATURE-----'
+].join('\n'),
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2',
@@ -118,14 +124,15 @@ describe('Elliptic Curve Cryptography', function () {
         'j5FhrMbD3Z+TPlrNjJqidAV28XwSBFvhw8Jf5WpaewOxVlxLjUHnnkUGHyvfdEr/',
         'DP/V1yLuBUZuRg==',
         '=GEAB',
-        '-----END PGP MESSAGE-----'].join('\n')
+        '-----END PGP MESSAGE-----'
+].join('\n')
     }
   };
   function load_pub_key(name) {
     if (data[name].pub_key) {
       return data[name].pub_key;
     }
-    var pub = openpgp.key.readArmored(data[name].pub);
+    const pub = openpgp.key.readArmored(data[name].pub);
     expect(pub).to.exist;
     expect(pub.err).to.not.exist;
     expect(pub.keys).to.have.length(1);
@@ -137,7 +144,7 @@ describe('Elliptic Curve Cryptography', function () {
     if (data[name].priv_key) {
       return data[name].priv_key;
     }
-    var pk = openpgp.key.readArmored(data[name].priv);
+    const pk = openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
     expect(pk.err).to.not.exist;
     expect(pk.keys).to.have.length(1);
@@ -157,8 +164,8 @@ describe('Elliptic Curve Cryptography', function () {
     done();
   });
   it('Verify clear signed message', function () {
-    var pub = load_pub_key('juliet');
-    var msg = openpgp.cleartext.readArmored(data.juliet.message_signed);
+    const pub = load_pub_key('juliet');
+    const msg = openpgp.cleartext.readArmored(data.juliet.message_signed);
     return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
       expect(result).to.exist;
       expect(result.data.trim()).to.equal(data.juliet.message);
@@ -167,10 +174,10 @@ describe('Elliptic Curve Cryptography', function () {
     });
   });
   it('Sign message', function () {
-    var romeo = load_priv_key('romeo');
+    const romeo = load_priv_key('romeo');
     return openpgp.sign({privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (signed) {
-      var romeo = load_pub_key('romeo');
-      var msg = openpgp.cleartext.readArmored(signed.data);
+      const romeo = load_pub_key('romeo');
+      const msg = openpgp.cleartext.readArmored(signed.data);
       return openpgp.verify({publicKeys: [romeo], message: msg}).then(function (result) {
         expect(result).to.exist;
         expect(result.data.trim()).to.equal(data.romeo.message);
@@ -180,9 +187,9 @@ describe('Elliptic Curve Cryptography', function () {
     });
   });
   it('Decrypt and verify message', function () {
-    var juliet = load_pub_key('juliet');
-    var romeo = load_priv_key('romeo');
-    var msg = openpgp.message.readArmored(data.juliet.message_encrypted);
+    const juliet = load_pub_key('juliet');
+    const romeo = load_priv_key('romeo');
+    const msg = openpgp.message.readArmored(data.juliet.message_encrypted);
     return openpgp.decrypt(
       {privateKeys: romeo, publicKeys: [juliet], message: msg}
     ).then(function (result) {
@@ -194,15 +201,15 @@ describe('Elliptic Curve Cryptography', function () {
     });
   });
   it('Encrypt and sign message', function () {
-    var romeo = load_priv_key('romeo');
-    var juliet = load_pub_key('juliet');
-    expect(romeo.decrypt(data['romeo'].pass)).to.be.true;
+    const romeo = load_priv_key('romeo');
+    const juliet = load_pub_key('juliet');
+    expect(romeo.decrypt(data.romeo.pass)).to.be.true;
     return openpgp.encrypt(
       {publicKeys: [juliet], privateKeys: [romeo], data: data.romeo.message + "\n"}
     ).then(function (encrypted) {
-      var message = openpgp.message.readArmored(encrypted.data);
-      var romeo = load_pub_key('romeo');
-      var juliet = load_priv_key('juliet');
+      const message = openpgp.message.readArmored(encrypted.data);
+      const romeo = load_pub_key('romeo');
+      const juliet = load_priv_key('juliet');
       return openpgp.decrypt(
         {privateKeys: juliet, publicKeys: [romeo], message: message}
       ).then(function (result) {
@@ -214,7 +221,7 @@ describe('Elliptic Curve Cryptography', function () {
     });
   });
   it('Generate key', function () {
-    var options = {
+    const options = {
       userIds: {name: "Hamlet (secp256k1)", email: "hamlet@example.net"},
       curve: "secp256k1",
       passphrase: "ophelia"
