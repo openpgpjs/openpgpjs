@@ -192,6 +192,7 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
  * @param  {Object} sessionKey                (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {String} filename                  (optional) a filename for the literal data packet
+ * @param  {Boolean} compression              (optional) which compression algorithm to compress the message with, defaults to what is specified in config
  * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
@@ -202,7 +203,7 @@ export function decryptKey({ privateKey, passphrase }) {
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false}) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -223,6 +224,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
         message = await message.sign(privateKeys, signature);
       }
     }
+    message = message.compress(compression);
     return message.encrypt(publicKeys, passwords, sessionKey, wildcard);
 
   }).then(encrypted => {
