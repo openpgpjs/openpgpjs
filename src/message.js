@@ -454,7 +454,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
 /**
  * Compresses the message (the literal and -if signed- signature data packets of the message)
  * @param  {module:enums.compression}   compression     compression algorithm to be used
- * @return {module:message~Message}       new message with signed content
+ * @return {module:message~Message}       new message with compressed content
  */
 Message.prototype.compress = function(compression) {
   if (compression === enums.compression.uncompressed) {
