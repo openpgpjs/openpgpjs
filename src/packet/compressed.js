@@ -88,7 +88,7 @@ Compressed.prototype.write = function () {
     this.compress();
   }
 
-  return util.concatUint8Array(new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed);
+  return util.concatUint8Array([new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed]);
 };
 
 

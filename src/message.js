@@ -452,6 +452,26 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
 };
 
 /**
+ * Compresses the message (the literal and -if signed- signature data packets of the message)
+ * @param  {module:enums.compression}   compression     compression algorithm to be used
+ * @return {module:message~Message}       new message with compressed content
+ */
+Message.prototype.compress = function(compression) {
+  if (compression === enums.compression.uncompressed) {
+    return this;
+  }
+
+  const compressed = new packet.Compressed();
+  compressed.packets = this.packets;
+  compressed.algorithm = enums.read(enums.compression, compression);
+
+  const packetList = new packet.List();
+  packetList.push(compressed);
+
+  return new Message(packetList);
+};
+
+/**
  * Create a detached signature for the message (the literal data packet of the message)
  * @param  {Array<module:key~Key>}           privateKey private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
