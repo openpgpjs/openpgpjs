@@ -210,6 +210,11 @@ function withCompression(tests) {
           return options;
         },
         function() {
+          // Disable the call expectations when using the web worker because it's not possible to spy on what functions get called.
+          if (openpgp.getWorker()) {
+            return;
+          }
+
           if (compression === openpgp.enums.compression.uncompressed) {
             expect(compressSpy.called).to.be.false;
             expect(decompressSpy.called).to.be.false;
@@ -632,7 +637,6 @@ describe('OpenPGP.js public api tests', function() {
                 sessionKeys: decryptedSessionKeys[0],
                 message
               });
-
             }).then(function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
               verifyCompressionDecrypted(decrypted);
@@ -1382,14 +1386,13 @@ describe('OpenPGP.js public api tests', function() {
                 publicKeys: pubKeyDE,
                 message: openpgp.message.readArmored(encrypted.data)
               });
-            }).then(function (encrypted) {
-              expect(encrypted.data).to.exist;
-              expect(encrypted.data).to.equal(plaintext);
-              expect(encrypted.signatures[0].valid).to.be.true;
-              verifyCompressionDecrypted(encrypted);
+            }).then(function (decrypted) {
+              expect(decrypted.data).to.exist;
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures[0].valid).to.be.true;
               return privKeyDE.verifyPrimaryUser().then(() => {
-                expect(encrypted.signatures[0].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
-                expect(encrypted.signatures[0].signature.packets.length).to.equal(1);
+                expect(decrypted.signatures[0].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+                expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
               });
             });
           });
