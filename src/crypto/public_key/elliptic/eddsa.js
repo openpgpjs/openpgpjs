@@ -60,12 +60,12 @@ async function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
   const key = curve.keyFromPublic(Q.toByteArray());
   // EdDSA signature params are expected in little-endian format
-  const R = Array.from(signature.R.toByteArray()).reverse(),
-        S = Array.from(signature.S.toByteArray()).reverse();
-  return key.verify(
-    m, { R: [].concat(R, Array(curve.payloadSize - R.length).fill(0)),
-         S: [].concat(S, Array(curve.payloadSize - S.length).fill(0)) }, hash_algo
-  );
+  const R = Array.from(signature.R.toByteArray()).reverse();
+  const S = Array.from(signature.S.toByteArray()).reverse();
+  return key.verify(m, {
+    R: [].concat(R, Array(curve.payloadSize - R.length).fill(0)),
+    S: [].concat(S, Array(curve.payloadSize - S.length).fill(0))
+  }, hash_algo);
 }
 
 module.exports = {

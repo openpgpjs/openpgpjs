@@ -1,16 +1,17 @@
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var keyring = new openpgp.Keyring(),
-  chai = require('chai'),
-  expect = chai.expect;
+const chai = require('chai');
+
+const { expect } = chai;
+const keyring = new openpgp.Keyring();
 
 describe("Keyring", function() {
-  var user = 'whiteout.test@t-online.de',
-    passphrase = 'asdf',
-    keySize = 512,
-    keyId = 'f6f60e9b42cdff4c',
-    keyFingerP = '5856cef789c3a307e8a1b976f6f60e9b42cdff4c',
-    pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
+  const user = 'whiteout.test@t-online.de';
+  const passphrase = 'asdf';
+  const keySize = 512;
+  const keyId = 'f6f60e9b42cdff4c';
+  const keyFingerP = '5856cef789c3a307e8a1b976f6f60e9b42cdff4c';
+  const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
       'Version: OpenPGP.js v.1.20131011\n' +
       'Comment: https://openpgpjs.org\n' +
       '\n' +
@@ -20,8 +21,8 @@ describe("Keyring", function() {
       'vQkQ9vYOm0LN/0wAAAW4Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXq\n' +
       'IiN602mWrkd8jcEzLsW5IUNzVPLhrFIuKyBDTpLnC07Loce1\n' +
       '=6XMW\n' +
-      '-----END PGP PUBLIC KEY BLOCK-----',
-    privkey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+      '-----END PGP PUBLIC KEY BLOCK-----';
+  const privkey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: OpenPGP.js v.1.20131011\n' +
       'Comment: https://openpgpjs.org\n' +
       '\n' +
@@ -36,12 +37,12 @@ describe("Keyring", function() {
       'Af9C+kYW1AvNWmivdtr0M0iYCUjM9DNOQH1fcvXqIiN602mWrkd8jcEzLsW5\n' +
       'IUNzVPLhrFIuKyBDTpLnC07Loce1\n' +
       '=ULta\n' +
-      '-----END PGP PRIVATE KEY BLOCK-----',
-    keyId2 = 'ba993fc2aee18a3a',
-    keyFingerP2 = '560b7a7f3f9ab516b233b299ba993fc2aee18a3a',
-    subkeyId2 = 'f47c5210a8cc2740',
-    subkeyFingerP2 = '2a20c371141e000833848d85f47c5210a8cc2740',
-    pubkey2 =
+      '-----END PGP PRIVATE KEY BLOCK-----';
+  const keyId2 = 'ba993fc2aee18a3a';
+  const keyFingerP2 = '560b7a7f3f9ab516b233b299ba993fc2aee18a3a';
+  const subkeyId2 = 'f47c5210a8cc2740';
+  const subkeyFingerP2 = '2a20c371141e000833848d85f47c5210a8cc2740';
+  const pubkey2 =
       ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
       '',
@@ -80,10 +81,10 @@ describe("Keyring", function() {
       'y61IhKbJCOlQxyem+kepjNapkhKDAQDIDL38bZWU4Rm0nq82Xb4yaI0BCWDcFkHV',
       'og2umGfGng==',
       '=v3+L',
-      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n'),
-    user3 = 'plain@email.org',
-    keyFingerP3 = 'f9972bf320a86a93c6614711ed241e1de755d53c',
-    pubkey3 =
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+  const user3 = 'plain@email.org';
+  const keyFingerP3 = 'f9972bf320a86a93c6614711ed241e1de755d53c';
+  const pubkey3 =
       ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       '',
       'xo0EVe6wawEEAKG4LDE9946jdvvbfVTF9qWtOyxHYjb40z7hgcZsPEGd6QfN',
@@ -114,117 +115,117 @@ describe("Keyring", function() {
   });
 
   it('getKeysForId() - unknown id', function() {
-    var keys = keyring.getKeysForId('01234567890123456');
+    const keys = keyring.getKeysForId('01234567890123456');
     expect(keys).to.be.null;
   });
 
   it('getKeysForId() - valid id', function() {
-    var keys = keyring.getKeysForId(keyId);
+    const keys = keyring.getKeysForId(keyId);
     // we get public and private key
     expect(keys).to.exist.and.have.length(2);
     expect(keys[0].primaryKey.getKeyId().toHex()).equals(keyId);
   });
 
   it('publicKeys.getForId() - unknown id', function() {
-    var key = keyring.publicKeys.getForId('01234567890123456');
+    const key = keyring.publicKeys.getForId('01234567890123456');
     expect(key).to.be.null;
   });
 
   it('publicKeys.getForId() - valid id', function() {
-    var key = keyring.publicKeys.getForId(keyId);
+    const key = keyring.publicKeys.getForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
   });
 
   it('privateKeys.getForId() - unknown id', function() {
-    var key = keyring.privateKeys.getForId('01234567890123456');
+    const key = keyring.privateKeys.getForId('01234567890123456');
     expect(key).to.be.null;
   });
 
   it('privateKeys.getForId() - valid id', function() {
-    var key = keyring.privateKeys.getForId(keyId);
+    const key = keyring.privateKeys.getForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
   });
 
   it('publicKeys.getForId() - subkey id', function() {
-    var key = keyring.publicKeys.getForId(subkeyId2);
+    const key = keyring.publicKeys.getForId(subkeyId2);
     expect(key).to.be.null;
   });
 
   it('publicKeys.getForId() - deep, including subkeys - subkey id', function() {
-    var key = keyring.publicKeys.getForId(subkeyId2, true);
+    const key = keyring.publicKeys.getForId(subkeyId2, true);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
   it('getKeysForId() - unknown fingerprint', function() {
-    var keys = keyring.getKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
+    const keys = keyring.getKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(keys).to.be.null;
   });
 
   it('getKeysForId() - valid fingerprint', function() {
-    var keys = keyring.getKeysForId(keyFingerP2);
+    const keys = keyring.getKeysForId(keyFingerP2);
     expect(keys).to.exist.and.have.length(1);
     expect(keys[0].primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForId() - unknown fingerprint', function() {
-    var key = keyring.publicKeys.getForId('71130e8383bef9526e062600d5e9f93acbbc7275');
+    const key = keyring.publicKeys.getForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(key).to.be.null;
   });
 
   it('publicKeys.getForId() - valid fingerprint', function() {
-    var key = keyring.publicKeys.getForId(keyFingerP2);
+    const key = keyring.publicKeys.getForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForId() - subkey fingerprint', function() {
-    var key = keyring.publicKeys.getForId(subkeyFingerP2);
+    const key = keyring.publicKeys.getForId(subkeyFingerP2);
     expect(key).to.be.null;
   });
 
   it('publicKeys.getForId() - deep, including subkeys - subkey fingerprint', function() {
-    var key = keyring.publicKeys.getForId(subkeyFingerP2, true);
+    const key = keyring.publicKeys.getForId(subkeyFingerP2, true);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForAddress() - unknown address', function() {
-    var keys = keyring.publicKeys.getForAddress('nobody@example.com');
+    const keys = keyring.publicKeys.getForAddress('nobody@example.com');
     expect(keys).to.be.empty;
   });
 
   it('publicKeys.getForAddress() - valid address', function() {
-    var keys = keyring.publicKeys.getForAddress(user);
+    const keys = keyring.publicKeys.getForAddress(user);
     expect(keys).to.exist.and.have.length(1);
   });
 
   it('publicKeys.getForAddress() - valid address, plain email user id', function() {
     keyring.publicKeys.importKey(pubkey3);
-    var keys = keyring.publicKeys.getForAddress(user3);
+    const keys = keyring.publicKeys.getForAddress(user3);
     keyring.removeKeysForId(keyFingerP3);
     expect(keys).to.exist.and.have.length(1);
   });
 
   it('publicKeys.getForAddress() - address with regex special char |', function() {
-    var keys = keyring.publicKeys.getForAddress('whiteout.test|not@t-online.de');
+    const keys = keyring.publicKeys.getForAddress('whiteout.test|not@t-online.de');
     expect(keys).to.be.empty;
   });
 
   it('publicKeys.getForAddress() - address with regex special char .', function() {
-    var keys = keyring.publicKeys.getForAddress('wh.t.out.test@t-online.de');
+    const keys = keyring.publicKeys.getForAddress('wh.t.out.test@t-online.de');
     expect(keys).to.be.empty;
   });
 
   it('privateKeys.getForAddress() - unknown address', function() {
-    var key = keyring.privateKeys.getForAddress('nobody@example.com');
+    const key = keyring.privateKeys.getForAddress('nobody@example.com');
     expect(key).to.be.empty;
   });
 
   it('privateKeys.getForAddress() - valid address', function() {
-    var key = keyring.privateKeys.getForAddress(user);
+    const key = keyring.privateKeys.getForAddress(user);
     expect(key).to.exist.and.have.length(1);
   });
 
@@ -233,52 +234,52 @@ describe("Keyring", function() {
   });
 
   it('after loading from localstorage: getKeysForKeyId() - valid id', function() {
-    var keyring = new openpgp.Keyring(),
-      keys = keyring.getKeysForId(keyId);
+    const keyring = new openpgp.Keyring();
+    const keys = keyring.getKeysForId(keyId);
     // we expect public and private key
     expect(keys).to.exist.and.have.length(2);
   });
 
   it('publicKeys.removeForId() - unknown id', function() {
-    var key = keyring.publicKeys.removeForId('01234567890123456');
+    const key = keyring.publicKeys.removeForId('01234567890123456');
     expect(key).to.be.null;
   });
 
   it('publicKeys.removeForId() - valid id', function() {
-    var key = keyring.publicKeys.removeForId(keyId);
+    const key = keyring.publicKeys.removeForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
 
   it('publicKeys.removeForId() - unknown fingerprint', function() {
-    var key = keyring.publicKeys.removeForId('71130e8383bef9526e062600d5e9f93acbbc7275');
+    const key = keyring.publicKeys.removeForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(key).to.be.null;
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
 
   it('publicKeys.removeForId() - valid fingerprint', function() {
-    var key = keyring.publicKeys.removeForId(keyFingerP2);
+    const key = keyring.publicKeys.removeForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
     expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
     expect(keyring.publicKeys.keys).to.be.empty;
   });
 
   it('customize localstorage itemname', function() {
-    var localstore1 = new openpgp.Keyring.localstore('my-custom-prefix-');
-    var localstore2 = new openpgp.Keyring.localstore('my-custom-prefix-');
-    var localstore3 = new openpgp.Keyring.localstore();
+    const localstore1 = new openpgp.Keyring.localstore('my-custom-prefix-');
+    const localstore2 = new openpgp.Keyring.localstore('my-custom-prefix-');
+    const localstore3 = new openpgp.Keyring.localstore();
     localstore3.storePublic([]);
-    var key = openpgp.key.readArmored(pubkey).keys[0];
+    const key = openpgp.key.readArmored(pubkey).keys[0];
     localstore1.storePublic([key]);
     expect(localstore2.loadPublic()[0].primaryKey.getKeyId().equals(key.primaryKey.getKeyId())).to.be.true;
     expect(localstore3.loadPublic()).to.have.length(0);
   });
 
   it('emptying keyring and storing removes keys', function() {
-    var key = openpgp.key.readArmored(pubkey).keys[0];
+    const key = openpgp.key.readArmored(pubkey).keys[0];
 
-    var localstore = new openpgp.Keyring.localstore('remove-prefix-');
+    const localstore = new openpgp.Keyring.localstore('remove-prefix-');
 
     localstore.storePublic([]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
@@ -296,14 +297,14 @@ describe("Keyring", function() {
     keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
-    var keys = keyring.removeKeysForId('01234567890123456');
+    const keys = keyring.removeKeysForId('01234567890123456');
     expect(keys).to.be.null;
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
   });
 
   it('removeKeysForId() - valid id', function() {
-    var keys = keyring.removeKeysForId(keyId);
+    const keys = keyring.removeKeysForId(keyId);
     expect(keys).to.have.length(2);
     expect(keyring.publicKeys.keys).to.have.length(1);
     expect(keyring.privateKeys.keys).to.have.length(0);
@@ -315,14 +316,14 @@ describe("Keyring", function() {
     keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
-    var keys = keyring.removeKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
+    const keys = keyring.removeKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');
     expect(keys).to.be.null;
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
   });
 
   it('removeKeysForId() - valid fingerprint', function() {
-    var keys = keyring.removeKeysForId(keyFingerP);
+    const keys = keyring.removeKeysForId(keyFingerP);
     expect(keys).to.have.length(2);
     expect(keyring.publicKeys.keys).to.have.length(1);
     expect(keyring.privateKeys.keys).to.have.length(0);

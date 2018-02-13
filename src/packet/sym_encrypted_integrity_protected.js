@@ -93,7 +93,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
   const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
   tohash = util.concatUint8Array([tohash, hash]);
 
-  if(sessionKeyAlgorithm.substr(0,3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
+  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     this.encrypted = aesEncrypt(sessionKeyAlgorithm, prefix, tohash, key);
   } else {
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
@@ -111,7 +111,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   let decrypted;
-  if(sessionKeyAlgorithm.substr(0,3) === 'aes') {  // AES optimizations. Native code for node, asmCrypto for browser.
+  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, this.encrypted, key);
   } else {
     decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, false);
@@ -143,16 +143,15 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 
 
 function aesEncrypt(algo, prefix, pt, key) {
-  if(nodeCrypto) { // Node crypto library.
+  if (nodeCrypto) { // Node crypto library.
     return nodeEncrypt(algo, prefix, pt, key);
-  } else { // asm.js fallback
-    return asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
-  }
+  } // asm.js fallback
+  return asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
 }
 
 function aesDecrypt(algo, ct, key) {
   let pt;
-  if(nodeCrypto) { // Node crypto library.
+  if (nodeCrypto) { // Node crypto library.
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
     pt = asmCrypto.AES_CFB.decrypt(ct, key);
@@ -163,7 +162,7 @@ function aesDecrypt(algo, ct, key) {
 function nodeEncrypt(algo, prefix, pt, key) {
   key = new Buffer(key);
   const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
+  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
   const ct = cipherObj.update(new Buffer(util.concatUint8Array([prefix, pt])));
   return new Uint8Array(ct);
 }
@@ -172,7 +171,7 @@ function nodeDecrypt(algo, ct, key) {
   ct = new Buffer(ct);
   key = new Buffer(key);
   const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3,3) + '-cfb', key, iv);
+  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
   const pt = decipherObj.update(ct);
   return new Uint8Array(pt);
 }

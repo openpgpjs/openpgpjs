@@ -25,13 +25,13 @@ import util from '../util.js';
 
 export default {
   readSimpleLength: function(bytes) {
-    var len = 0,
-      offset,
-      type = bytes[0];
+    let len = 0;
+    let offset;
+    const type = bytes[0];
 
 
     if (type < 192) {
-      len = bytes[0];
+      [len] = bytes;
       offset = 1;
     } else if (type < 255) {
       len = ((bytes[0] - 192) << 8) + (bytes[1]) + 192;
@@ -55,7 +55,6 @@ export default {
    * @return {Uint8Array} String with openpgp length representation
    */
   writeSimpleLength: function(length) {
-
     if (length < 192) {
       return new Uint8Array([length]);
     } else if (length > 191 && length < 8384) {
@@ -64,9 +63,8 @@ export default {
        * representation of a let d = b + 192
        */
       return new Uint8Array([((length - 192) >> 8) + 192, (length - 192) & 0xFF]);
-    } else {
-      return util.concatUint8Array([new Uint8Array([255]), util.writeNumber(length, 4)]);
     }
+    return util.concatUint8Array([new Uint8Array([255]), util.writeNumber(length, 4)]);
   },
 
   /**
@@ -91,14 +89,12 @@ export default {
    * @return {String} String of the header
    */
   writeOldHeader: function(tag_type, length) {
-
     if (length < 256) {
       return new Uint8Array([0x80 | (tag_type << 2), length]);
     } else if (length < 65536) {
       return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 1]), util.writeNumber(length, 2)]);
-    } else {
-      return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 2]), util.writeNumber(length, 4)]);
     }
+    return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 2]), util.writeNumber(length, 4)]);
   },
 
   /**
@@ -115,17 +111,17 @@ export default {
       0x80) === 0) {
       throw new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format.");
     }
-    var mypos = position;
-    var tag = -1;
-    var format = -1;
-    var packet_length;
+    let mypos = position;
+    let tag = -1;
+    let format = -1;
+    let packet_length;
 
     format = 0; // 0 = old format; 1 = new format
     if ((input[mypos] & 0x40) !== 0) {
       format = 1;
     }
 
-    var packet_length_type;
+    let packet_length_type;
     if (format) {
       // new format header
       tag = input[mypos] & 0x3F; // bit 5-0
@@ -139,10 +135,10 @@ export default {
     mypos++;
 
     // parsed length from length field
-    var bodydata = null;
+    let bodydata = null;
 
     // used for partial body lengths
-    var real_packet_length = -1;
+    let real_packet_length = -1;
     if (!format) {
       // 4.2.1. Old Format Packet Lengths
       switch (packet_length_type) {
@@ -176,10 +172,7 @@ export default {
           packet_length = len;
           break;
       }
-
-    } else // 4.2.2. New Format Packet Lengths
-    {
-
+    } else { // 4.2.2. New Format Packet Lengths
       // 4.2.2.1. One-Octet Lengths
       if (input[mypos] < 192) {
         packet_length = input[mypos++];
@@ -193,9 +186,9 @@ export default {
         packet_length = 1 << (input[mypos++] & 0x1F);
         util.print_debug("4 byte length:" + packet_length);
         // EEEK, we're reading the full data here...
-        var mypos2 = mypos + packet_length;
+        let mypos2 = mypos + packet_length;
         bodydata = [input.subarray(mypos, mypos + packet_length)];
-        var tmplen;
+        let tmplen;
         while (true) {
           if (input[mypos2] < 192) {
             tmplen = input[mypos2++];
@@ -240,8 +233,7 @@ export default {
 
     if (bodydata === null) {
       bodydata = input.subarray(mypos, mypos + real_packet_length);
-    }
-    else if(bodydata instanceof Array) {
+    } else if (bodydata instanceof Array) {
       bodydata = util.concatUint8Array(bodydata);
     }
 

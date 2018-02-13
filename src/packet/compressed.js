@@ -95,7 +95,8 @@ Compressed.prototype.write = function () {
  * read by read_packet
  */
 Compressed.prototype.decompress = function () {
-  var decompressed, inflate;
+  let decompressed;
+  let inflate;
 
   switch (this.algorithm) {
     case 'uncompressed':
@@ -127,11 +128,10 @@ Compressed.prototype.decompress = function () {
  * Compress the packet data (member decompressedData)
  */
 Compressed.prototype.compress = function () {
-  var uncompressed, deflate;
-  uncompressed = this.packets.write();
+  let deflate;
+  const uncompressed = this.packets.write();
 
   switch (this.algorithm) {
-
     case 'uncompressed':
       // - Uncompressed
       this.compressed = uncompressed;

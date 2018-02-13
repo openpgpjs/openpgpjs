@@ -24,7 +24,7 @@
 import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';
-import { Signature } from '../signature'
+import { Signature } from '../signature';
 import Packetlist from './packetlist';
 import type_keyid from '../type/keyid';
 import util from '../util';
@@ -43,13 +43,13 @@ import util from '../util';
  * @return {Object}           a mutated version of the options optject
  */
 export function clonePackets(options) {
-  if(options.publicKeys) {
+  if (options.publicKeys) {
     options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
   }
-  if(options.privateKeys) {
+  if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
   }
-  if(options.privateKey) {
+  if (options.privateKey) {
     options.privateKey = options.privateKey.toPacketlist();
   }
   if (options.key) {
@@ -90,14 +90,14 @@ function verificationObjectToClone(verObject) {
  * @param  {String} method    the public api function name to be delegated to the worker
  * @return {Object}           a mutated version of the options optject
  */
-export function parseClonedPackets(options, method) {
-  if(options.publicKeys) {
+export function parseClonedPackets(options) {
+  if (options.publicKeys) {
     options.publicKeys = options.publicKeys.map(packetlistCloneToKey);
   }
-  if(options.privateKeys) {
+  if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(packetlistCloneToKey);
   }
-  if(options.privateKey) {
+  if (options.privateKey) {
     options.privateKey = packetlistCloneToKey(options.privateKey);
   }
   if (options.key) {
@@ -128,7 +128,7 @@ function packetlistCloneToMessage(clone) {
 }
 
 function packetlistCloneToCleartextMessage(clone) {
-  var packetlist = Packetlist.fromStructuredClone(clone.signature);
+  const packetlist = Packetlist.fromStructuredClone(clone.signature);
   return new CleartextMessage(clone.text, new Signature(packetlist));
 }
 
@@ -144,6 +144,6 @@ function packetlistCloneToSignature(clone) {
     //signature is armored
     return clone;
   }
-  var packetlist = Packetlist.fromStructuredClone(clone);
+  const packetlist = Packetlist.fromStructuredClone(clone);
   return new Signature(packetlist);
 }

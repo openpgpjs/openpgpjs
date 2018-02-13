@@ -51,7 +51,6 @@ module.exports = {
         "before": true
       }
     ],
-    "block-scoped-var": "off",
     "block-spacing": [
       "error",
       "always"
@@ -239,7 +238,6 @@ module.exports = {
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
     "no-useless-return": "error",
-    "no-var": "off",
     "no-void": "error",
     "no-warning-comments": "off",
     "no-whitespace-before-property": "error",
@@ -254,7 +252,6 @@ module.exports = {
       }
     ],
     "object-shorthand": "off",
-    "one-var": "off",
     "one-var-declaration-per-line": [
       "error",
       "initializations"
@@ -267,7 +264,6 @@ module.exports = {
     "padded-blocks": "off",
     "padding-line-between-statements": "error",
     "prefer-arrow-callback": "off",
-    "prefer-const": "off",
     "prefer-destructuring": "off",
     "prefer-numeric-literals": "error",
     "prefer-promise-reject-errors": "error",
@@ -279,8 +275,6 @@ module.exports = {
     "quotes": "off",
     "require-await": "error",
     "require-jsdoc": "off",
-    "rest-spread-spacing": "error",
-    "semi": "off",
     "semi-spacing": [
       "error",
       {
@@ -314,7 +308,6 @@ module.exports = {
       "never"
     ],
     "valid-jsdoc": "off",
-    "vars-on-top": "off",
     "wrap-iife": "error",
     "wrap-regex": "off",
     "yield-star-spacing": "error",
@@ -354,6 +347,5 @@ module.exports = {
     "no-array-constructor": 0,
     "no-constant-condition": 0,
     "no-buffer-constructor": 0, // deprecated
-    "no-restricted-properties": 0 // Math.pow
   }
 };
