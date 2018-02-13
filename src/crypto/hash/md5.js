@@ -17,8 +17,6 @@
  * @module crypto/hash/md5
  */
 
-'use strict';
-
 import util from '../../util.js';
 
 /**
@@ -26,16 +24,16 @@ import util from '../../util.js';
  * @param {String} entree string to hash
  */
 export default function(entree) {
-  var hex = md5(util.Uint8Array2str(entree));
-  var bin = util.str2Uint8Array(util.hex2bin(hex));
+  const hex = md5(util.Uint8Array2str(entree));
+  const bin = util.str2Uint8Array(util.hex2bin(hex));
   return bin;
 }
 
 function md5cycle(x, k) {
-  var a = x[0],
-    b = x[1],
-    c = x[2],
-    d = x[3];
+  let a = x[0];
+  let b = x[1];
+  let c = x[2];
+  let d = x[3];
 
   a = ff(a, b, c, d, k[0], 7, -680876936);
   d = ff(d, a, b, c, k[1], 12, -389564586);
@@ -109,7 +107,6 @@ function md5cycle(x, k) {
   x[1] = add32(b, x[1]);
   x[2] = add32(c, x[2]);
   x[3] = add32(d, x[3]);
-
 }
 
 function cmn(q, a, b, x, s, t) {
@@ -134,14 +131,14 @@ function ii(a, b, c, d, x, s, t) {
 }
 
 function md51(s) {
-  var n = s.length,
-    state = [1732584193, -271733879, -1732584194, 271733878],
-    i;
+  const n = s.length;
+  const state = [1732584193, -271733879, -1732584194, 271733878];
+  let i;
   for (i = 64; i <= s.length; i += 64) {
     md5cycle(state, md5blk(s.substring(i - 64, i)));
   }
   s = s.substring(i - 64);
-  var tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (i = 0; i < s.length; i++) {
     tail[i >> 2] |= s.charCodeAt(i) << ((i % 4) << 3);
   }
@@ -173,8 +170,8 @@ function md51(s) {
  * 8-bit unsigned value arrays.
  */
 function md5blk(s) { /* I figured global was faster.   */
-  var md5blks = [],
-    i; /* Andy King said do it this way. */
+  const md5blks = [];
+  let i; /* Andy King said do it this way. */
   for (i = 0; i < 64; i += 4) {
     md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) <<
       24);
@@ -182,11 +179,11 @@ function md5blk(s) { /* I figured global was faster.   */
   return md5blks;
 }
 
-var hex_chr = '0123456789abcdef'.split('');
+const hex_chr = '0123456789abcdef'.split('');
 
 function rhex(n) {
-  var s = '',
-    j = 0;
+  let s = '';
+  let j = 0;
   for (; j < 4; j++) {
     s += hex_chr[(n >> (j * 8 + 4)) & 0x0F] + hex_chr[(n >> (j * 8)) & 0x0F];
   }
@@ -194,7 +191,7 @@ function rhex(n) {
 }
 
 function hex(x) {
-  for (var i = 0; i < x.length; i++) {
+  for (let i = 0; i < x.length; i++) {
     x[i] = rhex(x[i]);
   }
   return x.join('');

@@ -5,8 +5,6 @@
  * @requires crypto/public_key
  * @module crypto/signature */
 
-'use strict';
-
 import util from '../util';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1.js';
@@ -22,11 +20,11 @@ export default {
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
   verify: async function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-    var m;
-    var r;
-    var s;
-    var Q;
-    var curve;
+    let m;
+    let r;
+    let s;
+    let Q;
+    let curve;
 
     data = util.Uint8Array2str(data);
 
@@ -35,49 +33,54 @@ export default {
         // RSA (Encrypt or Sign) [HAC]
       case 2:
         // RSA Encrypt-Only [HAC]
-      case 3:
+      case 3: {
         // RSA Sign-Only [HAC]
-        var rsa = new publicKey.rsa();
-        var n = publickey_MPIs[0].toBigInteger();
-        var k = publickey_MPIs[0].byteLength();
-        var e = publickey_MPIs[1].toBigInteger();
+        const rsa = new publicKey.rsa();
+        const n = publickey_MPIs[0].toBigInteger();
+        const k = publickey_MPIs[0].byteLength();
+        const e = publickey_MPIs[1].toBigInteger();
         m = msg_MPIs[0].toBigInteger();
-        var EM = rsa.verify(m, e, n);
-        var EM2 = pkcs1.emsa.encode(hash_algo, data, k);
+        const EM = rsa.verify(m, e, n);
+        const EM2 = pkcs1.emsa.encode(hash_algo, data, k);
         return EM.compareTo(EM2) === 0;
-      case 16:
+      }
+      case 16: {
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error("signing with Elgamal is not defined in the OpenPGP standard.");
-      case 17:
+      }
+      case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        var dsa = new publicKey.dsa();
-        var s1 = msg_MPIs[0].toBigInteger();
-        var s2 = msg_MPIs[1].toBigInteger();
-        var p = publickey_MPIs[0].toBigInteger();
-        var q = publickey_MPIs[1].toBigInteger();
-        var g = publickey_MPIs[2].toBigInteger();
-        var y = publickey_MPIs[3].toBigInteger();
+        const dsa = new publicKey.dsa();
+        const s1 = msg_MPIs[0].toBigInteger();
+        const s2 = msg_MPIs[1].toBigInteger();
+        const p = publickey_MPIs[0].toBigInteger();
+        const q = publickey_MPIs[1].toBigInteger();
+        const g = publickey_MPIs[2].toBigInteger();
+        const y = publickey_MPIs[3].toBigInteger();
         m = data;
-        var dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
+        const dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
         return dopublic.compareTo(s1) === 0;
-      case 19:
+      }
+      case 19: {
         // ECDSA
-        var ecdsa = publicKey.elliptic.ecdsa;
-        curve = publickey_MPIs[0];
+        const { ecdsa } = publicKey.elliptic;
+        [curve] = publickey_MPIs;
         r = msg_MPIs[0].toBigInteger();
         s = msg_MPIs[1].toBigInteger();
         m = data;
         Q = publickey_MPIs[1].toBigInteger();
-        return ecdsa.verify(curve.oid, hash_algo, {r: r, s: s}, m, Q);
-      case 22:
+        return ecdsa.verify(curve.oid, hash_algo, { r: r, s: s }, m, Q);
+      }
+      case 22: {
         // EdDSA
-        var eddsa = publicKey.elliptic.eddsa;
-        curve = publickey_MPIs[0];
+        const { eddsa } = publicKey.elliptic;
+        [curve] = publickey_MPIs;
         r = msg_MPIs[0].toBigInteger();
         s = msg_MPIs[1].toBigInteger();
         m = data;
         Q = publickey_MPIs[1].toBigInteger();
         return eddsa.verify(curve.oid, hash_algo, { R: r, S: s }, m, Q);
+      }
       default:
         throw new Error('Invalid signature algorithm.');
     }
@@ -92,55 +95,58 @@ export default {
    * @return {Array<module:type/mpi>}
    */
   sign: async function(hash_algo, algo, keyIntegers, data) {
-
     data = util.Uint8Array2str(data);
 
-    var m;
-    var d;
-    var curve;
-    var signature;
+    let m;
+    let d;
+    let curve;
+    let signature;
 
     switch (algo) {
       case 1:
         // RSA (Encrypt or Sign) [HAC]
       case 2:
         // RSA Encrypt-Only [HAC]
-      case 3:
+      case 3: {
         // RSA Sign-Only [HAC]
-        var rsa = new publicKey.rsa();
+        const rsa = new publicKey.rsa();
         d = keyIntegers[2].toBigInteger();
-        var n = keyIntegers[0].toBigInteger();
-        m = pkcs1.emsa.encode(hash_algo,
-          data, keyIntegers[0].byteLength());
+        const n = keyIntegers[0].toBigInteger();
+        m = pkcs1.emsa.encode(
+          hash_algo,
+          data, keyIntegers[0].byteLength()
+        );
         return util.str2Uint8Array(rsa.sign(m, d, n).toMPI());
-
-      case 17:
+      }
+      case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        var dsa = new publicKey.dsa();
+        const dsa = new publicKey.dsa();
 
-        var p = keyIntegers[0].toBigInteger();
-        var q = keyIntegers[1].toBigInteger();
-        var g = keyIntegers[2].toBigInteger();
-        var x = keyIntegers[4].toBigInteger();
+        const p = keyIntegers[0].toBigInteger();
+        const q = keyIntegers[1].toBigInteger();
+        const g = keyIntegers[2].toBigInteger();
+        const x = keyIntegers[4].toBigInteger();
         m = data;
-        var result = dsa.sign(hash_algo, m, g, p, q, x);
+        const result = dsa.sign(hash_algo, m, g, p, q, x);
         return util.str2Uint8Array(result[0].toString() + result[1].toString());
-      case 16:
+      }
+      case 16: {
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
         throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
-
-      case 19:
+      }
+      case 19: {
         // ECDSA
-        var ecdsa = publicKey.elliptic.ecdsa;
-        curve = keyIntegers[0];
+        const { ecdsa } = publicKey.elliptic;
+        [curve] = keyIntegers;
         d = keyIntegers[2].toBigInteger();
         m = data;
         signature = await ecdsa.sign(curve.oid, hash_algo, m, d);
         return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
-      case 22:
+      }
+      case 22: {
         // EdDSA
-        var eddsa = publicKey.elliptic.eddsa;
-        curve = keyIntegers[0];
+        const { eddsa } = publicKey.elliptic;
+        [curve] = keyIntegers;
         d = keyIntegers[2].toBigInteger();
         m = data;
         signature = await eddsa.sign(curve.oid, hash_algo, m, d);
@@ -148,7 +154,7 @@ export default {
           util.Uint8Array2MPI(signature.R.toArrayLike(Uint8Array, 'le', 32)),
           util.Uint8Array2MPI(signature.S.toArrayLike(Uint8Array, 'le', 32))
         ));
-
+      }
       default:
         throw new Error('Invalid signature algorithm.');
     }

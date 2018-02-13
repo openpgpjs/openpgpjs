@@ -31,8 +31,6 @@
  * @module packet/secret_key
  */
 
-'use strict';
-
 import publicKey from './public_key.js';
 import enums from '../enums.js';
 import util from '../util.js';
@@ -59,40 +57,38 @@ SecretKey.prototype.constructor = SecretKey;
 function get_hash_len(hash) {
   if (hash === 'sha1') {
     return 20;
-  } else {
-    return 2;
   }
+  return 2;
 }
 
 function get_hash_fn(hash) {
   if (hash === 'sha1') {
     return crypto.hash.sha1;
-  } else {
-    return function(c) {
-      return util.writeNumber(util.calc_checksum(c), 2);
-    };
   }
+  return function(c) {
+    return util.writeNumber(util.calc_checksum(c), 2);
+  };
 }
 
 // Helper function
 
 function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
-  var hashlen = get_hash_len(hash_algorithm),
-    hashfn = get_hash_fn(hash_algorithm);
+  const hashlen = get_hash_len(hash_algorithm);
+  const hashfn = get_hash_fn(hash_algorithm);
 
-  var hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+  const hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
-  var hash = util.Uint8Array2str(hashfn(cleartext));
+  const hash = util.Uint8Array2str(hashfn(cleartext));
 
   if (hash !== hashtext) {
     return new Error("Hash mismatch.");
   }
 
-  var types = crypto.getPrivKeyParamTypes(algorithm);
-  var params = crypto.constructParams(types);
-  var p = 0;
+  const types = crypto.getPrivKeyParamTypes(algorithm);
+  const params = crypto.constructParams(types);
+  let p = 0;
 
-  for (var i = 0; i < types.length && p < cleartext.length; i++) {
+  for (let i = 0; i < types.length && p < cleartext.length; i++) {
     p += params[i].read(cleartext.subarray(p, cleartext.length));
     if (p > cleartext.length) {
       throw new Error('Error reading param @:' + p);
@@ -103,16 +99,16 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
 }
 
 function write_cleartext_params(hash_algorithm, algorithm, params) {
-  var arr = [];
-  var numPublicParams = crypto.getPubKeyParamTypes(algorithm).length;
+  const arr = [];
+  const numPublicParams = crypto.getPubKeyParamTypes(algorithm).length;
 
-  for (var i = numPublicParams; i < params.length; i++) {
+  for (let i = numPublicParams; i < params.length; i++) {
     arr.push(params[i].write());
   }
 
-  var bytes = util.concatUint8Array(arr);
+  const bytes = util.concatUint8Array(arr);
 
-  var hash = get_hash_fn(hash_algorithm)(bytes);
+  const hash = get_hash_fn(hash_algorithm)(bytes);
 
   return util.concatUint8Array([bytes, hash]);
 }
@@ -126,7 +122,7 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
  */
 SecretKey.prototype.read = function (bytes) {
   // - A Public-Key or Public-Subkey packet, as described above.
-  var len = this.readPublicKey(bytes);
+  const len = this.readPublicKey(bytes);
 
   bytes = bytes.subarray(len, bytes.length);
 
@@ -135,7 +131,7 @@ SecretKey.prototype.read = function (bytes) {
   //   indicates that the secret-key data is not encrypted.  255 or 254
   //   indicates that a string-to-key specifier is being given.  Any
   //   other value is a symmetric-key encryption algorithm identifier.
-  var isEncrypted = bytes[0];
+  const isEncrypted = bytes[0];
 
   if (isEncrypted) {
     this.encrypted = bytes;
@@ -143,21 +139,20 @@ SecretKey.prototype.read = function (bytes) {
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
-    var privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
+    const privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
     if (privParams instanceof Error) {
       throw privParams;
     }
     this.params = this.params.concat(privParams);
     this.isDecrypted = true;
   }
-
 };
 
 /** Creates an OpenPGP key packet for the given key.
   * @return {String} A string of bytes containing the secret key OpenPGP packet
   */
 SecretKey.prototype.write = function () {
-  var arr = [this.writePublicKey()];
+  const arr = [this.writePublicKey()];
 
   if (!this.encrypted) {
     arr.push(new Uint8Array([0]));
@@ -184,14 +179,14 @@ SecretKey.prototype.encrypt = function (passphrase) {
     throw new Error('The key must be decrypted before removing passphrase protection.');
   }
 
-  var s2k = new type_s2k(),
-    symmetric = 'aes256',
-    cleartext = write_cleartext_params('sha1', this.algorithm, this.params),
-    key = produceEncryptionKey(s2k, passphrase, symmetric),
-    blockLen = crypto.cipher[symmetric].blockSize,
-    iv = crypto.random.getRandomBytes(blockLen);
+  const s2k = new type_s2k();
+  const symmetric = 'aes256';
+  const cleartext = write_cleartext_params('sha1', this.algorithm, this.params);
+  const key = produceEncryptionKey(s2k, passphrase, symmetric);
+  const blockLen = crypto.cipher[symmetric].blockSize;
+  const iv = crypto.random.getRandomBytes(blockLen);
 
-  var arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
+  const arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
   arr.push(s2k.write());
   arr.push(iv);
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
@@ -200,8 +195,10 @@ SecretKey.prototype.encrypt = function (passphrase) {
 };
 
 function produceEncryptionKey(s2k, passphrase, algorithm) {
-  return s2k.produce_key(passphrase,
-    crypto.cipher[algorithm].keySize);
+  return s2k.produce_key(
+    passphrase,
+    crypto.cipher[algorithm].keySize
+  );
 }
 
 /**
@@ -219,11 +216,11 @@ SecretKey.prototype.decrypt = function (passphrase) {
     return true;
   }
 
-  var i = 0,
-    symmetric,
-    key;
+  let i = 0;
+  let symmetric;
+  let key;
 
-  var s2k_usage = this.encrypted[i++];
+  const s2k_usage = this.encrypted[i++];
 
   // - [Optional] If string-to-key usage octet was 255 or 254, a one-
   //   octet symmetric encryption algorithm.
@@ -234,7 +231,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
     // - [Optional] If string-to-key usage octet was 255 or 254, a
     //   string-to-key specifier.  The length of the string-to-key
     //   specifier is implied by its type, as described above.
-    var s2k = new type_s2k();
+    const s2k = new type_s2k();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
     key = produceEncryptionKey(s2k, passphrase, symmetric);
@@ -247,21 +244,20 @@ SecretKey.prototype.decrypt = function (passphrase) {
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the
   //   cipher's block size.
-  var iv = this.encrypted.subarray(i,
-    i + crypto.cipher[symmetric].blockSize);
+  const iv = this.encrypted.subarray(
+    i,
+    i + crypto.cipher[symmetric].blockSize
+  );
 
   i += iv.length;
 
-  var cleartext,
-    ciphertext = this.encrypted.subarray(i, this.encrypted.length);
-
-  cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
-
-  var hash = s2k_usage === 254 ?
+  const ciphertext = this.encrypted.subarray(i, this.encrypted.length);
+  const cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
+  const hash = s2k_usage === 254 ?
     'sha1' :
     'mod';
 
-  var privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
+  const privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
   if (privParams instanceof Error) {
     return false;
   }
@@ -272,7 +268,7 @@ SecretKey.prototype.decrypt = function (passphrase) {
 };
 
 SecretKey.prototype.generate = function (bits, curve) {
-  var that = this;
+  const that = this;
 
   return crypto.generateParams(that.algorithm, bits, curve).then(function(params) {
     that.params = params;
@@ -294,9 +290,9 @@ SecretKey.prototype.clearPrivateParams = function () {
 /**
  * Fix custom types after cloning
  */
- SecretKey.prototype.postCloneTypeFix = function() {
+SecretKey.prototype.postCloneTypeFix = function() {
   const types = crypto.getPubKeyParamTypes(this.algorithm).concat(crypto.getPrivKeyParamTypes(this.algorithm));
-  for (var i = 0; i < this.params.length; i++) {
+  for (let i = 0; i < this.params.length; i++) {
     const param = this.params[i];
     this.params[i] = types[i].fromClone(param);
   }

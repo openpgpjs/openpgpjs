@@ -34,8 +34,6 @@
  * @module type/mpi
  */
 
-'use strict';
-
 import BigInteger from '../crypto/public_key/jsbn';
 import util from '../util';
 
@@ -60,12 +58,11 @@ export default function MPI(data) {
  * @return {Integer} Length of data read
  */
 MPI.prototype.read = function (bytes, endian='be') {
-
-  if(util.isString(bytes)) {
+  if (util.isString(bytes)) {
     bytes = util.str2Uint8Array(bytes);
   }
 
-  var bits = (bytes[0] << 8) | bytes[1];
+  const bits = (bytes[0] << 8) | bytes[1];
 
   // Additional rules:
   //
@@ -77,12 +74,12 @@ MPI.prototype.read = function (bytes, endian='be') {
 
   // TODO: Verification of this size method! This size calculation as
   //      specified above is not applicable in JavaScript
-  var bytelen = Math.ceil(bits / 8);
-  var payload = bytes.subarray(2, 2 + bytelen);
+  const bytelen = Math.ceil(bits / 8);
+  let payload = bytes.subarray(2, 2 + bytelen);
   if (endian === 'le') {
     payload = new Uint8Array(payload).reverse();
   }
-  var raw = util.Uint8Array2str(payload);
+  const raw = util.Uint8Array2str(payload);
   this.fromBytes(raw);
 
   return 2 + bytelen;
@@ -93,7 +90,7 @@ MPI.prototype.fromBytes = function (bytes) {
 };
 
 MPI.prototype.toBytes = function () {
-  var bytes = util.Uint8Array2str(this.write());
+  const bytes = util.Uint8Array2str(this.write());
   return bytes.substr(2);
 };
 
@@ -119,9 +116,9 @@ MPI.prototype.fromBigInteger = function (bn) {
 
 MPI.fromClone = function (clone) {
   clone.data.copyTo = BigInteger.prototype.copyTo;
-  var bn = new BigInteger();
+  const bn = new BigInteger();
   clone.data.copyTo(bn);
-  var mpi = new MPI();
+  const mpi = new MPI();
   mpi.data = bn;
   return mpi;
 };

@@ -22,8 +22,6 @@
  * @module crypto/cfb
  */
 
-'use strict';
-
 import cipher from './cipher';
 
 export default {
@@ -46,20 +44,22 @@ export default {
    */
   encrypt: function(prefixrandom, cipherfn, plaintext, key, resync) {
     cipherfn = new cipher[cipherfn](key);
-    var block_size = cipherfn.blockSize;
+    const block_size = cipherfn.blockSize;
 
-    var FR = new Uint8Array(block_size);
-    var FRE = new Uint8Array(block_size);
+    const FR = new Uint8Array(block_size);
+    let FRE = new Uint8Array(block_size);
 
-    var new_prefix = new Uint8Array(prefixrandom.length + 2);
+    const new_prefix = new Uint8Array(prefixrandom.length + 2);
     new_prefix.set(prefixrandom);
     new_prefix[prefixrandom.length] = prefixrandom[block_size-2];
     new_prefix[prefixrandom.length+1] = prefixrandom[block_size-1];
     prefixrandom = new_prefix;
 
-    var ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
-    var i, n, begin;
-    var offset = resync ? 0 : 2;
+    let ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
+    let i;
+    let n;
+    let begin;
+    const offset = resync ? 0 : 2;
 
     // 1.  The feedback register (FR) is set to the IV, which is all zeros.
     for (i = 0; i < block_size; i++) {
@@ -137,11 +137,11 @@ export default {
    */
   mdc: function(cipherfn, key, ciphertext) {
     cipherfn = new cipher[cipherfn](key);
-    var block_size = cipherfn.blockSize;
+    const block_size = cipherfn.blockSize;
 
-    var iblock = new Uint8Array(block_size);
-    var ablock = new Uint8Array(block_size);
-    var i;
+    let iblock = new Uint8Array(block_size);
+    let ablock = new Uint8Array(block_size);
+    let i;
 
 
     // initialisation vector
@@ -157,7 +157,7 @@ export default {
 
     ablock = cipherfn.encrypt(ablock);
 
-    var result = new Uint8Array(iblock.length + 2);
+    const result = new Uint8Array(iblock.length + 2);
     result.set(iblock);
     result[iblock.length] = ablock[0] ^ ciphertext[block_size];
     result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
@@ -180,13 +180,15 @@ export default {
 
   decrypt: function(cipherfn, key, ciphertext, resync) {
     cipherfn = new cipher[cipherfn](key);
-    var block_size = cipherfn.blockSize;
+    const block_size = cipherfn.blockSize;
 
-    var iblock = new Uint8Array(block_size);
-    var ablock = new Uint8Array(block_size);
+    let iblock = new Uint8Array(block_size);
+    let ablock = new Uint8Array(block_size);
 
-    var i, j, n;
-    var text = new Uint8Array(ciphertext.length - block_size);
+    let i;
+    let j;
+    let n;
+    let text = new Uint8Array(ciphertext.length - block_size);
 
     // initialisation vector
     for (i = 0; i < block_size; i++) {
@@ -224,7 +226,7 @@ export default {
 
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext[n + i];
-          if(j < text.length) {
+          if (j < text.length) {
             text[j] = ablock[i] ^ iblock[i];
             j++;
           }
@@ -238,7 +240,7 @@ export default {
         ablock = cipherfn.encrypt(iblock);
         for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
           iblock[i] = ciphertext[n + i];
-          if(j < text.length) {
+          if (j < text.length) {
             text[j] = ablock[i] ^ iblock[i];
             j++;
           }
@@ -255,26 +257,26 @@ export default {
 
   normalEncrypt: function(cipherfn, key, plaintext, iv) {
     cipherfn = new cipher[cipherfn](key);
-    var block_size = cipherfn.blockSize;
+    const block_size = cipherfn.blockSize;
 
-    var blocki = new Uint8Array(block_size);
-    var blockc = new Uint8Array(block_size);
-    var pos = 0;
-    var cyphertext = new Uint8Array(plaintext.length);
-    var i, j = 0;
+    let blocki = new Uint8Array(block_size);
+    const blockc = new Uint8Array(block_size);
+    let pos = 0;
+    const cyphertext = new Uint8Array(plaintext.length);
+    let i;
+    let j = 0;
 
     if (iv === null) {
       for (i = 0; i < block_size; i++) {
         blockc[i] = 0;
       }
-    }
-    else {
+    } else {
       for (i = 0; i < block_size; i++) {
         blockc[i] = iv[i];
       }
     }
     while (plaintext.length > block_size * pos) {
-      var encblock = cipherfn.encrypt(blockc);
+      const encblock = cipherfn.encrypt(blockc);
       blocki = plaintext.subarray((pos * block_size), (pos * block_size) + block_size);
       for (i = 0; i < blocki.length; i++) {
         blockc[i] = blocki[i] ^ encblock[i];
@@ -287,25 +289,25 @@ export default {
 
   normalDecrypt: function(cipherfn, key, ciphertext, iv) {
     cipherfn = new cipher[cipherfn](key);
-    var block_size = cipherfn.blockSize;
+    const block_size = cipherfn.blockSize;
 
-    var blockp;
-    var pos = 0;
-    var plaintext = new Uint8Array(ciphertext.length);
-    var offset = 0;
-    var i, j = 0;
+    let blockp;
+    let pos = 0;
+    const plaintext = new Uint8Array(ciphertext.length);
+    const offset = 0;
+    let i;
+    let j = 0;
 
     if (iv === null) {
       blockp = new Uint8Array(block_size);
       for (i = 0; i < block_size; i++) {
         blockp[i] = 0;
       }
-    }
-    else {
+    } else {
       blockp = iv.subarray(0, block_size);
     }
     while (ciphertext.length > (block_size * pos)) {
-      var decblock = cipherfn.encrypt(blockp);
+      const decblock = cipherfn.encrypt(blockp);
       blockp = ciphertext.subarray((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
       for (i = 0; i < blockp.length; i++) {
         plaintext[j++] = blockp[i] ^ decblock[i];

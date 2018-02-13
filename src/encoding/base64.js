@@ -15,10 +15,8 @@
  * @module encoding/base64
  */
 
-'use strict';
-
-var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
-var b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
+const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
+const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
 
 /**
  * Convert binary array to radix-64
@@ -29,12 +27,14 @@ var b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; /
  */
 function s2r(t, u = false) {
   // TODO check btoa alternative
-  var b64 = u ? b64u : b64s;
-  var a, c, n;
-  var r = [],
-      l = 0,
-      s = 0;
-  var tl = t.length;
+  const b64 = u ? b64u : b64s;
+  let a;
+  let c;
+  let n;
+  const r = [];
+  let l = 0;
+  let s = 0;
+  const tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = t[n];
@@ -91,12 +91,13 @@ function s2r(t, u = false) {
  */
 function r2s(t, u) {
   // TODO check atob alternative
-  var b64 = u ? b64u : b64s;
-  var c, n;
-  var r = [],
-    s = 0,
-    a = 0;
-  var tl = t.length;
+  const b64 = u ? b64u : b64s;
+  let c;
+  let n;
+  const r = [];
+  let s = 0;
+  let a = 0;
+  const tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64.indexOf(t.charAt(n));

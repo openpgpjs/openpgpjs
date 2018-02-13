@@ -2,14 +2,11 @@
  * @module crypto/cipher/aes
  */
 
-'use strict';
-
 import asmCrypto from 'asmcrypto-lite';
 
 // TODO use webCrypto or nodeCrypto when possible.
 export default function aes(length) {
-
-  var c = function(key) {
+  const c = function(key) {
     this.key = Uint8Array.from(key);
 
     this.encrypt = function(block) {

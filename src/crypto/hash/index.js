@@ -5,8 +5,6 @@
  * @module crypto/hash
  */
 
-'use strict';
-
 import Rusha from 'rusha';
 import RIPEMD160 from 'ripemd160';
 import asmCrypto from 'asmcrypto-lite';
@@ -14,21 +12,20 @@ import sha from './sha.js';
 import md5 from './md5.js';
 import util from '../../util.js';
 
-const rusha = new Rusha(),
-  nodeCrypto = util.getNodeCrypto(),
-  Buffer = util.getNodeBuffer();
+const rusha = new Rusha();
+const nodeCrypto = util.getNodeCrypto();
+const Buffer = util.getNodeBuffer();
 
 function node_hash(type) {
   return function (data) {
-    var shasum = nodeCrypto.createHash(type);
+    const shasum = nodeCrypto.createHash(type);
     shasum.update(new Buffer(data));
     return new Uint8Array(shasum.digest());
   };
 }
 
-var hash_fns;
-if(nodeCrypto) { // Use Node native crypto for all hash functions
-
+let hash_fns;
+if (nodeCrypto) { // Use Node native crypto for all hash functions
   hash_fns = {
     md5: node_hash('md5'),
     sha1: node_hash('sha1'),
@@ -38,9 +35,7 @@ if(nodeCrypto) { // Use Node native crypto for all hash functions
     sha512: node_hash('sha512'),
     ripemd: node_hash('ripemd160')
   };
-
 } else { // Use JS fallbacks
-
   hash_fns = {
     /** @see module:crypto/hash/md5 */
     md5: md5,

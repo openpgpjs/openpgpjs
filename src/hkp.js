@@ -20,8 +20,6 @@
  * in order to lookup and upload keys on standard public key servers.
  */
 
-'use strict';
-
 import config from './config';
 
 /**
@@ -31,7 +29,7 @@ import config from './config';
  *   the protocol to use e.g. https://pgp.mit.edu
  */
 export default function HKP(keyServerBaseUrl) {
-  this._baseUrl = keyServerBaseUrl ? keyServerBaseUrl : config.keyserver;
+  this._baseUrl = keyServerBaseUrl || config.keyserver;
   this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
 
@@ -43,8 +41,8 @@ export default function HKP(keyServerBaseUrl) {
  * @return {Promise<String>}          The ascii armored public key.
  */
 HKP.prototype.lookup = function(options) {
-  var uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=',
-    fetch = this._fetch;
+  let uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=';
+  const fetch = this._fetch;
 
   if (options.keyId) {
     uri += '0x' + encodeURIComponent(options.keyId);
@@ -58,7 +56,6 @@ HKP.prototype.lookup = function(options) {
     if (response.status === 200) {
       return response.text();
     }
-
   }).then(function(publicKeyArmored) {
     if (!publicKeyArmored || publicKeyArmored.indexOf('-----END PGP PUBLIC KEY BLOCK-----') < 0) {
       return;
@@ -73,8 +70,8 @@ HKP.prototype.lookup = function(options) {
  * @return {Promise}
  */
 HKP.prototype.upload = function(publicKeyArmored) {
-  var uri = this._baseUrl + '/pks/add',
-    fetch = this._fetch;
+  const uri = this._baseUrl + '/pks/add';
+  const fetch = this._fetch;
 
   return fetch(uri, {
     method: 'post',

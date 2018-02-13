@@ -1,5 +1,3 @@
-'use strict';
-
 import * as packets from './all_packets.js';
 import * as clone from './clone.js';
 import List from './packetlist.js';
@@ -11,7 +9,7 @@ const mod = {
   clone: clone
 };
 
-for (let i in packets) {
+for (const i in packets) {
   mod[i] = packets[i];
 }
 

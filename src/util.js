@@ -21,8 +21,6 @@
  * @module util
  */
 
-'use strict';
-
 import config from './config';
 
 export default {
@@ -77,23 +75,23 @@ export default {
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      for (let key in obj) { // recursively search all children
+      for (const key in obj) { // recursively search all children
         this.collectBuffers(obj[key], collection);
       }
     }
   },
 
   readNumber: function (bytes) {
-    var n = 0;
-    for (var i = 0; i < bytes.length; i++) {
-      n += Math.pow(256, i) * bytes[bytes.length - 1 - i];
+    let n = 0;
+    for (let i = 0; i < bytes.length; i++) {
+      n += (256 ** i) * bytes[bytes.length - 1 - i];
     }
     return n;
   },
 
   writeNumber: function (n, bytes) {
-    var b = new Uint8Array(bytes);
-    for (var i = 0; i < bytes; i++) {
+    const b = new Uint8Array(bytes);
+    for (let i = 0; i < bytes; i++) {
       b[i] = (n >> (8 * (bytes - i - 1))) & 0xFF;
     }
 
@@ -101,24 +99,24 @@ export default {
   },
 
   readDate: function (bytes) {
-    var n = this.readNumber(bytes);
-    var d = new Date();
+    const n = this.readNumber(bytes);
+    const d = new Date();
     d.setTime(n * 1000);
     return d;
   },
 
   writeDate: function (time) {
-    var numeric = Math.round(time.getTime() / 1000);
+    const numeric = Math.round(time.getTime() / 1000);
 
     return this.writeNumber(numeric, 4);
   },
 
   hexdump: function (str) {
-    var r = [];
-    var e = str.length;
-    var c = 0;
-    var h;
-    var i = 0;
+    const r = [];
+    const e = str.length;
+    let c = 0;
+    let h;
+    let i = 0;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
       while (h.length < 2) {
@@ -142,10 +140,10 @@ export default {
     if (str === null) {
       return "";
     }
-    var r = [];
-    var e = str.length;
-    var c = 0;
-    var h;
+    const r = [];
+    const e = str.length;
+    let c = 0;
+    let h;
     while (c < e) {
       h = str.charCodeAt(c++).toString(16);
       while (h.length < 2) {
@@ -162,8 +160,8 @@ export default {
    * @return {String} String containing the binary values
    */
   hex2bin: function (hex) {
-    var str = '';
-    for (var i = 0; i < hex.length; i += 2) {
+    let str = '';
+    for (let i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
     }
     return str;
@@ -171,8 +169,8 @@ export default {
 
 
   hex2Uint8Array: function (hex) {
-    var result = new Uint8Array(hex.length/2);
-    for (var k=0; k<hex.length/2; k++) {
+    const result = new Uint8Array(hex.length/2);
+    for (let k=0; k<hex.length/2; k++) {
       result[k] = parseInt(hex.substr(2*k, 2), 16);
     }
     return result;
@@ -184,10 +182,10 @@ export default {
    * @return {String} Hexadecimal representation of the array
    */
   hexidump: function (str) {
-    var r = [];
-    var e = str.length;
-    var c = 0;
-    var h;
+    const r = [];
+    const e = str.length;
+    let c = 0;
+    let h;
     while (c < e) {
       h = str[c++].toString(16);
       while (h.length < 2) {
@@ -230,8 +228,8 @@ export default {
    * @return {String} The string representation of the array
    */
   bin2str: function (bin) {
-    var result = [];
-    for (var i = 0; i < bin.length; i++) {
+    const result = [];
+    for (let i = 0; i < bin.length; i++) {
       result[i] = String.fromCharCode(bin[i]);
     }
     return result.join('');
@@ -243,8 +241,8 @@ export default {
    * @return {Array<Integer>} An array of (binary) integers
    */
   str2bin: function (str) {
-    var result = [];
-    for (var i = 0; i < str.length; i++) {
+    const result = [];
+    for (let i = 0; i < str.length; i++) {
       result[i] = str.charCodeAt(i);
     }
     return result;
@@ -257,12 +255,12 @@ export default {
    * @return {Uint8Array} The array of (binary) integers
    */
   str2Uint8Array: function (str) {
-    if(typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
+    if (typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
       throw new Error('str2Uint8Array: Data must be in the form of a string');
     }
 
-    var result = new Uint8Array(str.length);
-    for (var i = 0; i < str.length; i++) {
+    const result = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
       result[i] = str.charCodeAt(i);
     }
     return result;
@@ -276,15 +274,15 @@ export default {
    * @return {String} String representation of the array
    */
   Uint8Array2str: function (bin) {
-    if(!Uint8Array.prototype.isPrototypeOf(bin)) {
+    if (!Uint8Array.prototype.isPrototypeOf(bin)) {
       throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
     }
 
-    var result = [],
-      bs = 16384,
-      j = bin.length;
+    const result = [];
+    const bs = 16384;
+    const j = bin.length;
 
-    for (var i = 0; i < j; i += bs) {
+    for (let i = 0; i < j; i += bs) {
       result.push(String.fromCharCode.apply(String, bin.subarray(i, i+bs < j ? i+bs : j)));
     }
     return result.join('');
@@ -292,8 +290,8 @@ export default {
 
   // returns bit length of the integer x
   nbits: function (x) {
-    var r = 1,
-      t = x >>> 16;
+    let r = 1;
+    let t = x >>> 16;
     if (t !== 0) {
       x = t;
       r += 16;
@@ -328,7 +326,7 @@ export default {
    * @return {Array<Integer>} MPI-formatted array
    */
   Uint8Array2MPI: function (bin) {
-    var size = (bin.length - 1) * 8 + this.nbits(bin[0]);
+    const size = (bin.length - 1) * 8 + this.nbits(bin[0]);
     return [(size & 0xFF00) >> 8, size & 0xFF].concat(Array.from(bin));
   },
 
@@ -339,19 +337,19 @@ export default {
    * @return {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
-    var totalLength = 0;
+    let totalLength = 0;
     arrays.forEach(function (element) {
-      if(!Uint8Array.prototype.isPrototypeOf(element)) {
+      if (!Uint8Array.prototype.isPrototypeOf(element)) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
       totalLength += element.length;
     });
 
-    var result = new Uint8Array(totalLength);
-    var pos = 0;
+    const result = new Uint8Array(totalLength);
+    let pos = 0;
     arrays.forEach(function (element) {
-      result.set(element,pos);
+      result.set(element, pos);
       pos += element.length;
     });
 
@@ -365,11 +363,11 @@ export default {
    * @return {Uint8Array} new Uint8Array
    */
   copyUint8Array: function (array) {
-    if(!Uint8Array.prototype.isPrototypeOf(array)) {
+    if (!Uint8Array.prototype.isPrototypeOf(array)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
-    var copy = new Uint8Array(array.length);
+    const copy = new Uint8Array(array.length);
     copy.set(array);
     return copy;
   },
@@ -382,16 +380,16 @@ export default {
    * @return {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {
-    if(!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
+    if (!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
-    if(array1.length !== array2.length) {
+    if (array1.length !== array2.length) {
       return false;
     }
 
-    for(var i = 0; i < array1.length; i++) {
-      if(array1[i] !== array2[i]) {
+    for (let i = 0; i < array1.length; i++) {
+      if (array1[i] !== array2[i]) {
         return false;
       }
     }
@@ -406,13 +404,13 @@ export default {
    * codes % 65535
    */
   calc_checksum: function (text) {
-    var checksum = {
+    const checksum = {
       s: 0,
       add: function (sadd) {
         this.s = (this.s + sadd) % 65536;
       }
     };
-    for (var i = 0; i < text.length; i++) {
+    for (let i = 0; i < text.length; i++) {
       checksum.add(text[i]);
     }
     return checksum.s;
@@ -439,18 +437,18 @@ export default {
    */
   print_debug_hexstr_dump: function (str, strToHex) {
     if (config.debug) {
-      str = str + this.hexstrdump(strToHex);
+      str += this.hexstrdump(strToHex);
       console.log(str);
     }
   },
 
   getLeftNBits: function (string, bitcount) {
-    var rest = bitcount % 8;
+    const rest = bitcount % 8;
     if (rest === 0) {
       return string.substring(0, bitcount / 8);
     }
-    var bytes = (bitcount - rest) / 8 + 1;
-    var result = string.substring(0, bytes);
+    const bytes = (bitcount - rest) / 8 + 1;
+    const result = string.substring(0, bytes);
     return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
@@ -462,9 +460,9 @@ export default {
    * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
-    var temp = this.str2bin(value);
+    const temp = this.str2bin(value);
     if (bitcount % 8 !== 0) {
-      for (var i = temp.length - 1; i >= 0; i--) {
+      for (let i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
         if (i > 0) {
           temp[i] |= (temp[i - 1] << (8 - (bitcount % 8))) & 0xFF;
