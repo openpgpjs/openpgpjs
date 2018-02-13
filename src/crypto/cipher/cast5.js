@@ -35,7 +35,7 @@ function OpenpgpSymencCast5() {
   };
 
   this.reset = function() {
-    for (var i = 0; i < 16; i++) {
+    for (let i = 0; i < 16; i++) {
       this.masking[i] = 0;
       this.rotate[i] = 0;
     }
@@ -46,12 +46,12 @@ function OpenpgpSymencCast5() {
   };
 
   this.encrypt = function(src) {
-    var dst = new Array(src.length);
+    const dst = new Array(src.length);
 
-    for (var i = 0; i < src.length; i += 8) {
-      var l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
-      var r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
-      var t;
+    for (let i = 0; i < src.length; i += 8) {
+      let l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
+      let r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
+      let t;
 
       t = r;
       r = l ^ f1(r, this.masking[0], this.rotate[0]);
@@ -119,12 +119,12 @@ function OpenpgpSymencCast5() {
   };
 
   this.decrypt = function(src) {
-    var dst = new Array(src.length);
+    const dst = new Array(src.length);
 
-    for (var i = 0; i < src.length; i += 8) {
-      var l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
-      var r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
-      var t;
+    for (let i = 0; i < src.length; i += 8) {
+      let l = (src[i] << 24) | (src[i + 1] << 16) | (src[i + 2] << 8) | src[i + 3];
+      let r = (src[i + 4] << 24) | (src[i + 5] << 16) | (src[i + 6] << 8) | src[i + 7];
+      let t;
 
       t = r;
       r = l ^ f1(r, this.masking[15], this.rotate[15]);
@@ -190,7 +190,7 @@ function OpenpgpSymencCast5() {
 
     return dst;
   };
-  var scheduleA = new Array(4);
+  const scheduleA = new Array(4);
 
   scheduleA[0] = new Array(4);
   scheduleA[0][0] = new Array(4, 0, 0xd, 0xf, 0xc, 0xe, 0x8);
@@ -217,7 +217,7 @@ function OpenpgpSymencCast5() {
   scheduleA[3][2] = new Array(2, 5, 7, 6, 5, 4, 16 + 1);
   scheduleA[3][3] = new Array(3, 7, 0xa, 9, 0xb, 8, 16 + 3);
 
-  var scheduleB = new Array(4);
+  const scheduleB = new Array(4);
 
   scheduleB[0] = new Array(4);
   scheduleB[0][0] = new Array(16 + 8, 16 + 9, 16 + 7, 16 + 6, 16 + 2);
@@ -247,24 +247,24 @@ function OpenpgpSymencCast5() {
 
   // changed 'in' to 'inn' (in javascript 'in' is a reserved word)
   this.keySchedule = function(inn) {
-    var t = new Array(8);
-    var k = new Array(32);
+    const t = new Array(8);
+    const k = new Array(32);
 
-    var i, j;
+    let j;
 
-    for (i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) {
       j = i * 4;
       t[i] = (inn[j] << 24) | (inn[j + 1] << 16) | (inn[j + 2] << 8) | inn[j + 3];
     }
 
-    var x = [6, 7, 4, 5];
-    var ki = 0;
-    var w;
+    const x = [6, 7, 4, 5];
+    let ki = 0;
+    let w;
 
-    for (var half = 0; half < 2; half++) {
-      for (var round = 0; round < 4; round++) {
+    for (let half = 0; half < 2; half++) {
+      for (let round = 0; round < 4; round++) {
         for (j = 0; j < 4; j++) {
-          var a = scheduleA[round][j];
+          const a = scheduleA[round][j];
           w = t[a[1]];
 
           w ^= sBox[4][(t[a[2] >>> 2] >>> (24 - 8 * (a[2] & 3))) & 0xff];
@@ -276,7 +276,7 @@ function OpenpgpSymencCast5() {
         }
 
         for (j = 0; j < 4; j++) {
-          var b = scheduleB[round][j];
+          const b = scheduleB[round][j];
           w = sBox[4][(t[b[0] >>> 2] >>> (24 - 8 * (b[0] & 3))) & 0xff];
 
           w ^= sBox[5][(t[b[1] >>> 2] >>> (24 - 8 * (b[1] & 3))) & 0xff];
@@ -289,7 +289,7 @@ function OpenpgpSymencCast5() {
       }
     }
 
-    for (i = 0; i < 16; i++) {
+    for (let i = 0; i < 16; i++) {
       this.masking[i] = k[i];
       this.rotate[i] = k[16 + i] & 0x1f;
     }
@@ -298,24 +298,24 @@ function OpenpgpSymencCast5() {
   // These are the three 'f' functions. See RFC 2144, section 2.2.
 
   function f1(d, m, r) {
-    var t = m + d;
-    var I = (t << r) | (t >>> (32 - r));
+    const t = m + d;
+    const I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] ^ sBox[1][(I >>> 16) & 255]) - sBox[2][(I >>> 8) & 255]) + sBox[3][I & 255];
   }
 
   function f2(d, m, r) {
-    var t = m ^ d;
-    var I = (t << r) | (t >>> (32 - r));
+    const t = m ^ d;
+    const I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] - sBox[1][(I >>> 16) & 255]) + sBox[2][(I >>> 8) & 255]) ^ sBox[3][I & 255];
   }
 
   function f3(d, m, r) {
-    var t = m - d;
-    var I = (t << r) | (t >>> (32 - r));
+    const t = m - d;
+    const I = (t << r) | (t >>> (32 - r));
     return ((sBox[0][I >>> 24] + sBox[1][(I >>> 16) & 255]) ^ sBox[2][(I >>> 8) & 255]) - sBox[3][I & 255];
   }
 
-  var sBox = new Array(8);
+  const sBox = new Array(8);
   sBox[0] = new Array(
     0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949,
     0xbfd4af27, 0x88bbbdb5, 0xe2034090, 0x98d09675, 0x6e63a0e0, 0x15c361d2, 0xc2e7661d, 0x22d4ff8e,
@@ -348,7 +348,8 @@ function OpenpgpSymencCast5() {
     0xaf1fbda7, 0xd4234870, 0xa7870bf3, 0x2d3b4d79, 0x42e04198, 0x0cd0ede7, 0x26470db8, 0xf881814c,
     0x474d6ad7, 0x7c0c5e5c, 0xd1231959, 0x381b7298, 0xf5d2f4db, 0xab838653, 0x6e2f1e23, 0x83719c9e,
     0xbd91e046, 0x9a56456e, 0xdc39200c, 0x20c8c571, 0x962bda1c, 0xe1e696ff, 0xb141ab08, 0x7cca89b9,
-    0x1a69e783, 0x02cc4843, 0xa2f7c579, 0x429ef47d, 0x427b169c, 0x5ac9f049, 0xdd8f0f00, 0x5c8165bf);
+    0x1a69e783, 0x02cc4843, 0xa2f7c579, 0x429ef47d, 0x427b169c, 0x5ac9f049, 0xdd8f0f00, 0x5c8165bf
+  );
 
   sBox[1] = new Array(
     0x1f201094, 0xef0ba75b, 0x69e3cf7e, 0x393f4380, 0xfe61cf7a, 0xeec5207a, 0x55889c94, 0x72fc0651,
@@ -382,7 +383,8 @@ function OpenpgpSymencCast5() {
     0x5483697b, 0x2667a8cc, 0x85196048, 0x8c4bacea, 0x833860d4, 0x0d23e0f9, 0x6c387e8a, 0x0ae6d249,
     0xb284600c, 0xd835731d, 0xdcb1c647, 0xac4c56ea, 0x3ebd81b3, 0x230eabb0, 0x6438bc87, 0xf0b5b1fa,
     0x8f5ea2b3, 0xfc184642, 0x0a036b7a, 0x4fb089bd, 0x649da589, 0xa345415e, 0x5c038323, 0x3e5d3bb9,
-    0x43d79572, 0x7e6dd07c, 0x06dfdf1e, 0x6c6cc4ef, 0x7160a539, 0x73bfbe70, 0x83877605, 0x4523ecf1);
+    0x43d79572, 0x7e6dd07c, 0x06dfdf1e, 0x6c6cc4ef, 0x7160a539, 0x73bfbe70, 0x83877605, 0x4523ecf1
+  );
 
   sBox[2] = new Array(
     0x8defc240, 0x25fa5d9f, 0xeb903dbf, 0xe810c907, 0x47607fff, 0x369fe44b, 0x8c1fc644, 0xaececa90,
@@ -416,7 +418,8 @@ function OpenpgpSymencCast5() {
     0x67214cb8, 0xb1e583d1, 0xb7dc3e62, 0x7f10bdce, 0xf90a5c38, 0x0ff0443d, 0x606e6dc6, 0x60543a49,
     0x5727c148, 0x2be98a1d, 0x8ab41738, 0x20e1be24, 0xaf96da0f, 0x68458425, 0x99833be5, 0x600d457d,
     0x282f9350, 0x8334b362, 0xd91d1120, 0x2b6d8da0, 0x642b1e31, 0x9c305a00, 0x52bce688, 0x1b03588a,
-    0xf7baefd5, 0x4142ed9c, 0xa4315c11, 0x83323ec5, 0xdfef4636, 0xa133c501, 0xe9d3531c, 0xee353783);
+    0xf7baefd5, 0x4142ed9c, 0xa4315c11, 0x83323ec5, 0xdfef4636, 0xa133c501, 0xe9d3531c, 0xee353783
+  );
 
   sBox[3] = new Array(
     0x9db30420, 0x1fb6e9de, 0xa7be7bef, 0xd273a298, 0x4a4f7bdb, 0x64ad8c57, 0x85510443, 0xfa020ed1,
@@ -450,7 +453,8 @@ function OpenpgpSymencCast5() {
     0x39e4460c, 0x1fda8538, 0x1987832f, 0xca007367, 0xa99144f8, 0x296b299e, 0x492fc295, 0x9266beab,
     0xb5676e69, 0x9bd3ddda, 0xdf7e052f, 0xdb25701c, 0x1b5e51ee, 0xf65324e6, 0x6afce36c, 0x0316cc04,
     0x8644213e, 0xb7dc59d0, 0x7965291f, 0xccd6fd43, 0x41823979, 0x932bcdf6, 0xb657c34d, 0x4edfd282,
-    0x7ae5290c, 0x3cb9536b, 0x851e20fe, 0x9833557e, 0x13ecf0b0, 0xd3ffb372, 0x3f85c5c1, 0x0aef7ed2);
+    0x7ae5290c, 0x3cb9536b, 0x851e20fe, 0x9833557e, 0x13ecf0b0, 0xd3ffb372, 0x3f85c5c1, 0x0aef7ed2
+  );
 
   sBox[4] = new Array(
     0x7ec90c04, 0x2c6e74b9, 0x9b0e66df, 0xa6337911, 0xb86a7fff, 0x1dd358f5, 0x44dd9d44, 0x1731167f,
@@ -484,7 +488,8 @@ function OpenpgpSymencCast5() {
     0x6cf6e479, 0x20758184, 0xd0cefa65, 0x88f7be58, 0x4a046826, 0x0ff6f8f3, 0xa09c7f70, 0x5346aba0,
     0x5ce96c28, 0xe176eda3, 0x6bac307f, 0x376829d2, 0x85360fa9, 0x17e3fe2a, 0x24b79767, 0xf5a96b20,
     0xd6cd2595, 0x68ff1ebf, 0x7555442c, 0xf19f06be, 0xf9e0659a, 0xeeb9491d, 0x34010718, 0xbb30cab8,
-    0xe822fe15, 0x88570983, 0x750e6249, 0xda627e55, 0x5e76ffa8, 0xb1534546, 0x6d47de08, 0xefe9e7d4);
+    0xe822fe15, 0x88570983, 0x750e6249, 0xda627e55, 0x5e76ffa8, 0xb1534546, 0x6d47de08, 0xefe9e7d4
+  );
 
   sBox[5] = new Array(
     0xf6fa8f9d, 0x2cac6ce1, 0x4ca34867, 0xe2337f7c, 0x95db08e7, 0x016843b4, 0xeced5cbc, 0x325553ac,
@@ -518,7 +523,8 @@ function OpenpgpSymencCast5() {
     0x653d7e6a, 0x54268d49, 0x51a477ea, 0x5017d55b, 0xd7d25d88, 0x44136c76, 0x0404a8c8, 0xb8e5a121,
     0xb81a928a, 0x60ed5869, 0x97c55b96, 0xeaec991b, 0x29935913, 0x01fdb7f1, 0x088e8dfa, 0x9ab6f6f5,
     0x3b4cbf9f, 0x4a5de3ab, 0xe6051d35, 0xa0e1d855, 0xd36b4cf1, 0xf544edeb, 0xb0e93524, 0xbebb8fbd,
-    0xa2d762cf, 0x49c92f54, 0x38b5f331, 0x7128a454, 0x48392905, 0xa65b1db8, 0x851c97bd, 0xd675cf2f);
+    0xa2d762cf, 0x49c92f54, 0x38b5f331, 0x7128a454, 0x48392905, 0xa65b1db8, 0x851c97bd, 0xd675cf2f
+  );
 
   sBox[6] = new Array(
     0x85e04019, 0x332bf567, 0x662dbfff, 0xcfc65693, 0x2a8d7f6f, 0xab9bc912, 0xde6008a1, 0x2028da1f,
@@ -552,7 +558,8 @@ function OpenpgpSymencCast5() {
     0x1814386b, 0x30bcc33d, 0x38a0c07d, 0xfd1606f2, 0xc363519b, 0x589dd390, 0x5479f8e6, 0x1cb8d647,
     0x97fd61a9, 0xea7759f4, 0x2d57539d, 0x569a58cf, 0xe84e63ad, 0x462e1b78, 0x6580f87e, 0xf3817914,
     0x91da55f4, 0x40a230f3, 0xd1988f35, 0xb6e318d2, 0x3ffa50bc, 0x3d40f021, 0xc3c0bdae, 0x4958c24c,
-    0x518f36b2, 0x84b1d370, 0x0fedce83, 0x878ddada, 0xf2a279c7, 0x94e01be8, 0x90716f4b, 0x954b8aa3);
+    0x518f36b2, 0x84b1d370, 0x0fedce83, 0x878ddada, 0xf2a279c7, 0x94e01be8, 0x90716f4b, 0x954b8aa3
+  );
 
   sBox[7] = new Array(
     0xe216300d, 0xbbddfffc, 0xa7ebdabd, 0x35648095, 0x7789f8b7, 0xe6c1121b, 0x0e241600, 0x052ce8b5,
@@ -586,8 +593,8 @@ function OpenpgpSymencCast5() {
     0xaa12e4f2, 0x87451c0f, 0xe0f6a27a, 0x3ada4819, 0x4cf1764f, 0x0d771c2b, 0x67cdb156, 0x350d8384,
     0x5938fa0f, 0x42399ef3, 0x36997b07, 0x0e84093d, 0x4aa93e61, 0x8360d87b, 0x1fa98b0c, 0x1149382c,
     0xe97625a5, 0x0614d1b7, 0x0e25244b, 0x0c768347, 0x589e8d82, 0x0d2059d1, 0xa466bb1e, 0xf8da0a82,
-    0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e);
-
+    0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e
+  );
 }
 
 export default function Cast5(key) {

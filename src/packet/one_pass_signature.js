@@ -52,7 +52,7 @@ export default function OnePassSignature() {
  * @return {module:packet/one_pass_signature} object representation
  */
 OnePassSignature.prototype.read = function (bytes) {
-  var mypos = 0;
+  let mypos = 0;
   // A one-octet version number.  The current version is 3.
   this.version = bytes[mypos++];
 
@@ -84,12 +84,11 @@ OnePassSignature.prototype.read = function (bytes) {
  * @return {Uint8Array} a Uint8Array representation of a one-pass signature packet
  */
 OnePassSignature.prototype.write = function () {
-
-  var start = new Uint8Array([3, enums.write(enums.signature, this.type),
+  const start = new Uint8Array([3, enums.write(enums.signature, this.type),
     enums.write(enums.hash, this.hashAlgorithm),
     enums.write(enums.publicKey, this.publicKeyAlgorithm)]);
 
-  var end = new Uint8Array([this.flags]);
+  const end = new Uint8Array([this.flags]);
 
   return util.concatUint8Array([start, this.signingKeyId.write(), end]);
 };

@@ -68,19 +68,19 @@ Keyid.mapToHex = function (keyId) {
 };
 
 Keyid.fromClone = function (clone) {
-  var keyid = new Keyid();
+  const keyid = new Keyid();
   keyid.bytes = clone.bytes;
   return keyid;
 };
 
 Keyid.fromId = function (hex) {
-  var keyid = new Keyid();
+  const keyid = new Keyid();
   keyid.read(util.str2Uint8Array(util.hex2bin(hex)));
   return keyid;
 };
 
 Keyid.wildcard = function () {
-  var keyid = new Keyid();
+  const keyid = new Keyid();
   keyid.read(new Uint8Array(8));
   return keyid;
 };

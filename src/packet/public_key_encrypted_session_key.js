@@ -69,17 +69,16 @@ export default function PublicKeyEncryptedSessionKey() {
  * @return {module:packet/public_key_encrypted_session_key} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
-
   this.version = bytes[0];
-  this.publicKeyId.read(bytes.subarray(1,bytes.length));
+  this.publicKeyId.read(bytes.subarray(1, bytes.length));
   this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
 
-  var i = 10;
+  let i = 10;
 
-  var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  const types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
   this.encrypted = crypto.constructParams(types);
 
-  for (var j = 0; j < types.length; j++) {
+  for (let j = 0; j < types.length; j++) {
     i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
   }
 };
@@ -90,10 +89,9 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
  * @return {Uint8Array} The Uint8Array representation
  */
 PublicKeyEncryptedSessionKey.prototype.write = function () {
+  const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
 
-  var arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
-
-  for (var i = 0; i < this.encrypted.length; i++) {
+  for (let i = 0; i < this.encrypted.length; i++) {
     arr.push(this.encrypted[i].write());
   }
 
@@ -101,14 +99,13 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 };
 
 PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
-  var data = String.fromCharCode(
-    enums.write(enums.symmetric, this.sessionKeyAlgorithm));
+  let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
   data += util.Uint8Array2str(this.sessionKey);
-  var checksum = util.calc_checksum(this.sessionKey);
+  const checksum = util.calc_checksum(this.sessionKey);
   data += util.Uint8Array2str(util.writeNumber(checksum, 2));
 
-  var toEncrypt;
+  let toEncrypt;
   if (this.publicKeyAlgorithm === 'ecdh') {
     toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
   } else {
@@ -119,7 +116,8 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
     this.publicKeyAlgorithm,
     key.params,
     toEncrypt,
-    key.fingerprint);
+    key.fingerprint
+  );
 };
 
 /**
@@ -131,14 +129,15 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * @return {String} The unencrypted session key
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
-  var result = (await crypto.publicKeyDecrypt(
+  const result = (await crypto.publicKeyDecrypt(
     this.publicKeyAlgorithm,
     key.params,
     this.encrypted,
-    key.fingerprint)).toBytes();
+    key.fingerprint
+  )).toBytes();
 
-  var checksum;
-  var decoded;
+  let checksum;
+  let decoded;
   if (this.publicKeyAlgorithm === 'ecdh') {
     decoded = crypto.pkcs5.decode(result);
     checksum = util.readNumber(util.str2Uint8Array(decoded.substr(decoded.length - 2)));
@@ -162,8 +161,8 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
-  var types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
-  for (var i = 0; i < this.encrypted.length; i++) {
+  const types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  for (let i = 0; i < this.encrypted.length; i++) {
     this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
   }
 };

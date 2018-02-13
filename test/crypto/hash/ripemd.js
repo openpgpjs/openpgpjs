@@ -1,9 +1,10 @@
-var openpgp = typeof window != 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
 
-var util = openpgp.util,
-  RMDstring = openpgp.crypto.hash.ripemd,
-  chai = require('chai'),
-  expect = chai.expect;
+const chai = require('chai');
+
+const { util } = openpgp;
+const RMDstring = openpgp.crypto.hash.ripemd;
+const { expect } = chai;
 
 it("RIPE-MD 160 bits with test vectors from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html", function(done) {
   expect(util.hexstrdump(util.Uint8Array2str(RMDstring(util.str2Uint8Array(''))), 'RMDstring("") = 9c1185a5c5e9fc54612808977ee8f548b2258d31')).to.equal('9c1185a5c5e9fc54612808977ee8f548b2258d31');

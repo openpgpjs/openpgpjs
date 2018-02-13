@@ -58,7 +58,7 @@ Literal.prototype.setText = function(text) {
  */
 Literal.prototype.getText = function() {
   // decode UTF8
-  var text = util.decode_utf8(util.Uint8Array2str(this.data));
+  const text = util.decode_utf8(util.Uint8Array2str(this.data));
   // normalize EOL to \n
   return text.replace(/\r\n/g, '\n');
 };
@@ -109,14 +109,14 @@ Literal.prototype.getFilename = function() {
  */
 Literal.prototype.read = function(bytes) {
   // - A one-octet field that describes how the data is formatted.
-  var format = enums.read(enums.literal, bytes[0]);
+  const format = enums.read(enums.literal, bytes[0]);
 
-  var filename_len = bytes[1];
+  const filename_len = bytes[1];
   this.filename = util.decode_utf8(util.Uint8Array2str(bytes.subarray(2, 2 + filename_len)));
 
   this.date = util.readDate(bytes.subarray(2 + filename_len, 2 + filename_len + 4));
 
-  var data = bytes.subarray(6 + filename_len, bytes.length);
+  const data = bytes.subarray(6 + filename_len, bytes.length);
 
   this.setBytes(data, format);
 };
@@ -127,12 +127,12 @@ Literal.prototype.read = function(bytes) {
  * @return {Uint8Array} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
-  var filename = util.str2Uint8Array(util.encode_utf8(this.filename));
-  var filename_length = new Uint8Array([filename.length]);
+  const filename = util.str2Uint8Array(util.encode_utf8(this.filename));
+  const filename_length = new Uint8Array([filename.length]);
 
-  var format = new Uint8Array([enums.write(enums.literal, this.format)]);
-  var date = util.writeDate(this.date);
-  var data = this.getBytes();
+  const format = new Uint8Array([enums.write(enums.literal, this.format)]);
+  const date = util.writeDate(this.date);
+  const data = this.getBytes();
 
   return util.concatUint8Array([format, filename_length, filename, date, data]);
 };

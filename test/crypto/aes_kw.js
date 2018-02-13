@@ -1,9 +1,9 @@
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var expect = require('chai').expect;
+const expect = require('chai').expect;
 
 describe('AES Key Wrap and Unwrap', function () {
-  var test_vectors = [
+  const test_vectors = [
     [
       "128 bits of Key Data with a 128-bit KEK",
       "000102030405060708090A0B0C0D0E0F",
@@ -44,11 +44,11 @@ describe('AES Key Wrap and Unwrap', function () {
 
   test_vectors.forEach(function(test) {
     it(test[0], function(done) {
-      var kek = openpgp.util.hex2Uint8Array(test[1]);
-      var input = test[2].replace(/\s/g, "");
-      var input_bin = openpgp.util.hex2bin(input);
-      var output = test[3].replace(/\s/g, "");
-      var output_bin = openpgp.util.hex2bin(output);
+      const kek = openpgp.util.hex2Uint8Array(test[1]);
+      const input = test[2].replace(/\s/g, "");
+      const input_bin = openpgp.util.hex2bin(input);
+      const output = test[3].replace(/\s/g, "");
+      const output_bin = openpgp.util.hex2bin(output);
       expect(openpgp.util.hexidump(openpgp.crypto.aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
       expect(openpgp.util.hexidump(openpgp.crypto.aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
       done();
