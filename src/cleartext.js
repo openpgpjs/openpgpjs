@@ -29,6 +29,7 @@ import armor from './encoding/armor';
 import enums from './enums';
 import packet from './packet';
 import { Signature } from './signature';
+import { createVerificationObjects } from './message';
 import { getPreferredHashAlgo } from './key';
 
 /**
@@ -82,6 +83,7 @@ CleartextMessage.prototype.signDetached = async function(privateKeys) {
   const packetlist = new packet.List();
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
+
   await Promise.all(privateKeys.map(async function(privateKey) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
@@ -127,28 +129,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   const literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  return Promise.all(signatureList.map(async function(signature) {
-    let keyPacket = null;
-    await Promise.all(keys.map(async function(key) {
-      await key.verifyPrimaryUser();
-      // Look for the unique key packet that matches issuerKeyId of signature
-      const result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
-      if (result) {
-        keyPacket = result;
-      }
-    }));
-
-    const verifiedSig = {
-      keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
-    };
-
-    const packetlist = new packet.List();
-    packetlist.push(signature);
-    verifiedSig.signature = new Signature(packetlist);
-
-    return verifiedSig;
-  }));
+  return createVerificationObjects(signatureList, [literalDataPacket], keys);
 };
 
 /**

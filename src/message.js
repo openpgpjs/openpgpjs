@@ -540,7 +540,7 @@ Message.prototype.verifyDetached = function(signature, keys) {
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-async function createVerificationObjects(signatureList, literalDataList, keys) {
+export async function createVerificationObjects(signatureList, literalDataList, keys) {
   return Promise.all(signatureList.map(async function(signature) {
     let keyPacket = null;
     await Promise.all(keys.map(async function(key) {
