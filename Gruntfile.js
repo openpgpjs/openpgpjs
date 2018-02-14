@@ -213,6 +213,12 @@ module.exports = function(grunt) {
         cwd: 'node_modules/zlibjs/bin/',
         src: ['rawdeflate.min.js','rawinflate.min.js','zlib.min.js'],
         dest: 'src/compression/'
+      },
+      bzip2: {
+        expand: true,
+        cwd: 'node_modules/compressjs/bin/',
+        src: ['bzip2.build.js'],
+        dest: 'src/compression/'
       }
     },
     clean: ['dist/'],
@@ -310,7 +316,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('default', ['clean', 'copy:zlib', 'browserify', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('default', ['clean', 'copy:zlib', 'copy:bzip2', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
