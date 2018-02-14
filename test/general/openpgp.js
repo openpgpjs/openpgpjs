@@ -1270,6 +1270,29 @@ describe('OpenPGP.js public api tests', function() {
             });
           });
 
+          it('should sign and verify cleartext data with multiple private keys', function () {
+            const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+            privKeyDE.decrypt(passphrase);
+
+            const signOpt = {
+              data: plaintext,
+              privateKeys: [privateKey.keys[0], privKeyDE]
+            };
+            const verifyOpt = {
+              publicKeys: publicKey.keys
+            };
+            return openpgp.sign(signOpt).then(function (signed) {
+              expect(signed.data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
+              verifyOpt.message = openpgp.cleartext.readArmored(signed.data);
+              return openpgp.verify(verifyOpt);
+            }).then(function (verified) {
+              expect(verified.data).to.equal(plaintext);
+              expect(verified.signatures[0].valid).to.be.true;
+              expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
+              expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            });
+          });
+
           it('should sign and verify cleartext data with detached signatures', function () {
             const signOpt = {
               data: plaintext,
