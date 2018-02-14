@@ -84,7 +84,7 @@
     "node-fetch": "^1.7.3",
     "node-localstorage": "~1.3.0",
     "rusha": "^0.8.12",
-    "compressjs": "github:mmso/compressjs.git"
+    "compressjs": "github:openpgpjs/compressjs.git"
   },
   "repository": {
     "type": "git",
