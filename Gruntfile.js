@@ -69,6 +69,7 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
+            fullPaths: true,
             debug: true,
             standalone: 'openpgp'
           },

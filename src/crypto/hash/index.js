@@ -6,10 +6,12 @@
  */
 
 import Rusha from 'rusha';
-import RIPEMD160 from 'ripemd160';
 import asmCrypto from 'asmcrypto-lite';
-import sha from './sha.js';
-import md5 from './md5.js';
+import sha224 from 'hash.js/lib/hash/sha/224';
+import sha384 from 'hash.js/lib/hash/sha/384';
+import sha512 from 'hash.js/lib/hash/sha/512';
+import { ripemd160 } from 'hash.js/lib/hash/ripemd';
+import md5 from './md5';
 import util from '../../util.js';
 
 const rusha = new Rusha();
@@ -21,6 +23,12 @@ function node_hash(type) {
     const shasum = nodeCrypto.createHash(type);
     shasum.update(new Buffer(data));
     return new Uint8Array(shasum.digest());
+  };
+}
+
+function hashjs_hash(hash) {
+  return function(data) {
+    return util.str2Uint8Array(util.hex2bin(hash().update(data).digest('hex')));
   };
 }
 
@@ -37,27 +45,23 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
   };
 } else { // Use JS fallbacks
   hash_fns = {
-    /** @see module:crypto/hash/md5 */
+    /** @see module:./md5 */
     md5: md5,
     /** @see module:rusha */
     sha1: function(data) {
       return util.str2Uint8Array(util.hex2bin(rusha.digest(data)));
     },
-    /** @see module:crypto/hash/sha.sha224 */
-    sha224: sha.sha224,
+    /** @see module:hash.js */
+    sha224: hashjs_hash(sha224),
     /** @see module:asmcrypto */
     sha256: asmCrypto.SHA256.bytes,
-    /** @see module:crypto/hash/sha.sha384 */
-    sha384: sha.sha384,
-    // TODO: compare sha512 in asmcrypto.js and jsSHA
-    /** @see module:crypto/hash/sha.sha512 */
-    sha512: sha.sha512,
-    /** @see module:ripemd160 */
-    ripemd: function(data) {
-      // Convert Uint8Array to buffer
-      data = require('buffer').Buffer.from(data.buffer);
-      return util.str2Uint8Array(util.hex2bin(new RIPEMD160().update(data).digest('hex')));
-    }
+    /** @see module:hash.js */
+    sha384: hashjs_hash(sha384),
+    // TODO, benchmark this vs asmCrypto's SHA512
+    /** @see module:hash.js */
+    sha512: hashjs_hash(sha512),
+    /** @see module:hash.js */
+    ripemd: hashjs_hash(ripemd160)
   };
 }
 
