@@ -183,12 +183,6 @@ function withCompression(tests) {
     const compressionName = openpgp.enums.read(openpgp.enums.compression, compression);
     const group = `compression - ${compressionName}`;
 
-    // Compression bzip2 [BZ2] is yet to be implemented.
-    if (compression === openpgp.enums.compression.bzip2) {
-      describe.skip(`${group} (not implemented --> skipping tests)`, tests);
-      return;
-    }
-
     describe(group, function() {
       let compressSpy;
       let decompressSpy;

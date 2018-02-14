@@ -19,6 +19,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
         - [Set up](#set-up)
         - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
         - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
+        - [Encrypt with compression](#encrypt-with-compression)
         - [Generate new key pair](#generate-new-key-pair)
         - [Lookup public key on HKP server](#lookup-public-key-on-hkp-server)
         - [Upload public key to HKP server](#upload-public-key-to-hkp-server)
@@ -180,7 +181,10 @@ Or, override the config to enable compression:
 openpgp.config.compression = openpgp.enums.compression.zip
 ```
 
-Where `compression` can take the value of `openpgp.enums.compression.zlib` or `openpgp.enums.compression.zip`.
+Where the value can be any of:
+ * `openpgp.enums.compression.zip`
+ * `openpgp.enums.compression.zlib`
+ * `openpgp.enums.compression.bzip2`
 
 
 #### Generate new key pair

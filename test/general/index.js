@@ -10,5 +10,6 @@ describe('General', function () {
   require('./oid.js');
   require('./ecc_nist.js');
   require('./x25519.js');
+  require('./decompression.js');
 });
 

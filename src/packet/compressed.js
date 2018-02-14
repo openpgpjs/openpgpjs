@@ -24,6 +24,7 @@
  * @requires compression/zlib
  * @requires compression/rawinflate
  * @requires compression/rawdeflate
+ * @requires compression/bzip2
  * @requires enums
  * @requires util
  * @module packet/compressed
@@ -34,6 +35,7 @@ import util from '../util.js';
 import Zlib from '../compression/zlib.min.js';
 import RawInflate from '../compression/rawinflate.min.js';
 import RawDeflate from '../compression/rawdeflate.min.js';
+import Bzip2 from '../compression/bzip2.build.js';
 
 /**
  * @constructor
@@ -114,8 +116,8 @@ Compressed.prototype.decompress = function () {
       break;
 
     case 'bzip2':
-      // TODO: need to implement this
-      throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
+      decompressed = Bzip2.decompressFile(this.compressed);
+      break;
 
     default:
       throw new Error("Compression algorithm unknown :" + this.algorithm);
@@ -150,9 +152,8 @@ Compressed.prototype.compress = function () {
       break;
 
     case 'bzip2':
-      //  - BZip2 [BZ2]
-      // TODO: need to implement this
-      throw new Error("Compression algorithm BZip2 [BZ2] is not implemented.");
+      this.compressed = Bzip2.compressFile(uncompressed);
+      break;
 
     default:
       throw new Error("Compression algorithm unknown :" + this.type);
