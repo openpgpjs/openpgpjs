@@ -54,7 +54,7 @@ export default {
    */
   password_collision_check: false,
 
-  /** @property {Boolean} use_native Use native Node.js crypto and WebCrypto API's when available */
+  /** @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available */
   use_native:               true,
   /** @property {Boolean} Use transferable objects between the Web Worker and main thread */
   zero_copy:                false,

@@ -23,7 +23,6 @@
  * @requires crypto/hash
  * @requires util
  * @requires enums
- * @requires config
  * @requires encoding/base64
  * @requires jwk-to-pem
  * @requires asn1.js
@@ -35,7 +34,6 @@ import BigInteger from '../jsbn';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
-import config from '../../../config';
 import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
@@ -66,14 +64,14 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
   if (util.isString(message)) {
     message = util.str2Uint8Array(message);
   }
-  if (webCrypto && config.use_native && this.curve.web) {
+  if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
       return webSign(this.curve, hash_algo, message, this.keyPair);
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && config.use_native && this.curve.node) {
+  } else if (nodeCrypto && this.curve.node) {
     return nodeSign(this.curve, hash_algo, message, this.keyPair);
   }
   const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
@@ -84,14 +82,14 @@ KeyPair.prototype.verify = async function (message, signature, hash_algo) {
   if (util.isString(message)) {
     message = util.str2Uint8Array(message);
   }
-  if (webCrypto && config.use_native && this.curve.web) {
+  if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
       return webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && config.use_native && this.curve.node) {
+  } else if (nodeCrypto && this.curve.node) {
     return nodeVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
   }
   const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);

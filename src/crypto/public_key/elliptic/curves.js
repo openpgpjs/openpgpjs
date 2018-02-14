@@ -29,7 +29,6 @@ import { ec as EC, eddsa as EdDSA } from 'elliptic';
 import { KeyPair } from './key';
 import BigInteger from '../jsbn';
 import random from '../../random';
-import config from '../../../config';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
@@ -45,7 +44,7 @@ webCurves = {
   'p384': 'P-384',
   'p521': 'P-521'
 };
-if (nodeCrypto && config.use_native) {
+if (nodeCrypto) {
   const knownCurves = nodeCrypto.getCurves();
   nodeCurves = {
     'secp256k1': knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
@@ -149,7 +148,7 @@ Curve.prototype.keyFromPublic = function (pub) {
 
 Curve.prototype.genKeyPair = async function () {
   let keyPair;
-  if (webCrypto && config.use_native && this.web) {
+  if (webCrypto && this.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
       keyPair = await webGenKeyPair(this.name);
@@ -157,7 +156,7 @@ Curve.prototype.genKeyPair = async function () {
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && config.use_native && this.node) {
+  } else if (nodeCrypto && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
     return new KeyPair(this.curve, keyPair);
   }
