@@ -404,7 +404,6 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    //TODO get preferred hash algo from key signature
     onePassSig.hashAlgorithm = getPreferredHashAlgo(privateKey);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();

@@ -29,6 +29,7 @@ import armor from './encoding/armor';
 import enums from './enums';
 import packet from './packet';
 import { Signature } from './signature';
+import { getPreferredHashAlgo } from './key';
 
 /**
  * @class
@@ -93,8 +94,8 @@ CleartextMessage.prototype.signDetached = async function(privateKeys) {
     }
     const signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.text;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
@@ -164,8 +165,12 @@ CleartextMessage.prototype.getText = function() {
  * @return {String} ASCII armor
  */
 CleartextMessage.prototype.armor = function() {
+  let hashes = this.signature.packets.map(function(packet) {
+    return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
+  });
+  hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
   const body = {
-    hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
+    hash: hashes.join(),
     text: this.text,
     data: this.signature.packets.write()
   };
@@ -233,7 +238,7 @@ function verifyHeaders(headers, packetlist) {
 
   if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
     throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
-  } else if (!checkHashAlgos(hashAlgos)) {
+  } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }
