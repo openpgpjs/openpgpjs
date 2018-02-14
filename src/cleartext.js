@@ -29,6 +29,8 @@ import armor from './encoding/armor';
 import enums from './enums';
 import packet from './packet';
 import { Signature } from './signature';
+import { createVerificationObjects, createSignaturePackets } from './message';
+import { getPreferredHashAlgo } from './key';
 
 /**
  * @class
@@ -78,33 +80,10 @@ CleartextMessage.prototype.sign = async function(privateKeys) {
  * @return {module:signature~Signature}      new detached signature of message content
  */
 CleartextMessage.prototype.signDetached = async function(privateKeys) {
-  const packetlist = new packet.List();
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
-  await Promise.all(privateKeys.map(async function(privateKey) {
-    if (privateKey.isPublic()) {
-      throw new Error('Need private key for signing');
-    }
-    await privateKey.verifyPrimaryUser();
-    const signingKeyPacket = privateKey.getSigningKeyPacket();
-    if (!signingKeyPacket) {
-      throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKey.primaryKey.getKeyId().toHex());
-    }
-    const signaturePacket = new packet.Signature();
-    signaturePacket.signatureType = enums.signature.text;
-    signaturePacket.hashAlgorithm = config.prefer_hash_algorithm;
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    if (!signingKeyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
-    }
-    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    return signaturePacket;
-  })).then(signatureList => {
-    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
-  });
 
-  return new Signature(packetlist);
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys));
 };
 
 /**
@@ -126,28 +105,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys) {
   const literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  return Promise.all(signatureList.map(async function(signature) {
-    let keyPacket = null;
-    await Promise.all(keys.map(async function(key) {
-      await key.verifyPrimaryUser();
-      // Look for the unique key packet that matches issuerKeyId of signature
-      const result = key.getSigningKeyPacket(signature.issuerKeyId, config.verify_expired_keys);
-      if (result) {
-        keyPacket = result;
-      }
-    }));
-
-    const verifiedSig = {
-      keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
-    };
-
-    const packetlist = new packet.List();
-    packetlist.push(signature);
-    verifiedSig.signature = new Signature(packetlist);
-
-    return verifiedSig;
-  }));
+  return createVerificationObjects(signatureList, [literalDataPacket], keys);
 };
 
 /**
@@ -164,8 +122,12 @@ CleartextMessage.prototype.getText = function() {
  * @return {String} ASCII armor
  */
 CleartextMessage.prototype.armor = function() {
+  let hashes = this.signature.packets.map(function(packet) {
+    return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
+  });
+  hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
   const body = {
-    hash: enums.read(enums.hash, config.prefer_hash_algorithm).toUpperCase(),
+    hash: hashes.join(),
     text: this.text,
     data: this.signature.packets.write()
   };
@@ -233,7 +195,7 @@ function verifyHeaders(headers, packetlist) {
 
   if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
     throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
-  } else if (!checkHashAlgos(hashAlgos)) {
+  } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }
