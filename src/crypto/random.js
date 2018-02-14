@@ -26,6 +26,7 @@
 import type_mpi from '../type/mpi.js';
 import util from '../util.js';
 
+// Do not use util.getNodeCrypto because we need this regardless of use_native setting
 const nodeCrypto = util.detectNode() && require('crypto');
 
 export default {

@@ -49,7 +49,7 @@ module.exports = function(grunt) {
             standalone: 'openpgp'
           },
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -73,7 +73,7 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: ['crypto', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
               plugins: ["transform-async-to-generator",
@@ -208,12 +208,6 @@ module.exports = function(grunt) {
         src: ['mocha/mocha.css', 'mocha/mocha.js'],
         dest: 'test/lib/'
       },
-      zlib: {
-        expand: true,
-        cwd: 'node_modules/zlibjs/bin/',
-        src: ['rawdeflate.min.js','rawinflate.min.js','zlib.min.js'],
-        dest: 'src/compression/'
-      },
       bzip2: {
         expand: true,
         cwd: 'node_modules/compressjs/bin/',
@@ -316,7 +310,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('default', ['clean', 'copy:zlib', 'copy:bzip2', 'browserify', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('default', ['clean', 'copy:bzip2', 'browserify', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);

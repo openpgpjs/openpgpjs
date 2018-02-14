@@ -28,7 +28,6 @@
  * @requires crypto
  * @requires util
  * @requires enums
- * @requires config
  * @module packet/sym_encrypted_integrity_protected
  */
 

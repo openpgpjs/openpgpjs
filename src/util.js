@@ -587,6 +587,13 @@ export default {
     // otherwise, it gets replaced with the browserified version
     // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
     return require('buf'+'fer').Buffer;
-  }
+  },
 
+  getNodeZlib: function() {
+    if (!this.detectNode() || !config.use_native) {
+      return;
+    }
+
+    return require('zlib');
+  }
 };

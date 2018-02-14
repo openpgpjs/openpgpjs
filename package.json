@@ -70,21 +70,21 @@
     "istanbul": "^0.4.5",
     "mocha": "^5.0.0",
     "sinon": "^4.3.0",
-    "whatwg-fetch": "^2.0.3",
-    "zlibjs": "~0.3.1"
+    "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
     "asmcrypto-lite": "github:openpgpjs/asmcrypto-lite",
     "asn1.js": "^5.0.0",
     "bn.js": "^4.11.8",
     "buffer": "^5.0.8",
+    "compressjs": "github:openpgpjs/compressjs.git",
     "elliptic": "github:openpgpjs/elliptic.git",
     "hash.js": "^1.1.3",
     "jwk-to-pem": "^1.2.6",
     "node-fetch": "^1.7.3",
     "node-localstorage": "~1.3.0",
-    "rusha": "^0.8.12",
-    "compressjs": "github:openpgpjs/compressjs.git"
+    "pako": "^1.0.6",
+    "rusha": "^0.8.12"
   },
   "repository": {
     "type": "git",
