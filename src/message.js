@@ -416,25 +416,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null) {
   });
 
   packetlist.push(literalDataPacket);
-
-  await Promise.all(privateKeys.map(async function(privateKey) {
-    const signaturePacket = new packet.Signature();
-    const signingKeyPacket = privateKey.getSigningKeyPacket();
-    if (!signingKeyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
-    }
-    signaturePacket.signatureType = signatureType;
-    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    return signaturePacket;
-  })).then(signatureList => {
-    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
-  });
-
-  if (signature) {
-    packetlist.concat(existingSigPacketlist);
-  }
+  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature));
 
   return new Message(packetlist);
 };
@@ -466,24 +448,40 @@ Message.prototype.compress = function(compression) {
  * @return {module:signature~Signature}      new detached signature of message content
  */
 Message.prototype.signDetached = async function(privateKeys=[], signature=null) {
-  const packetlist = new packet.List();
-
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature));
+};
+
+/**
+ * Create signature packets for the message
+ * @param  {module:packet/literal}           the literal data packet to sign
+ * @param  {Array<module:key~Key>}           privateKey private keys with decrypted secret key data for signing
+ * @param  {Signature} signature             (optional) any existing detached signature to append
+ * @return {module:packet/packetlist}        list of signature packets
+ */
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null) {
+  const packetlist = new packet.List();
 
   const literalFormat = enums.write(enums.literal, literalDataPacket.format);
   const signatureType = literalFormat === enums.literal.binary ?
     enums.signature.binary : enums.signature.text;
 
   await Promise.all(privateKeys.map(async function(privateKey) {
-    const signaturePacket = new packet.Signature();
+    if (privateKey.isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     await privateKey.verifyPrimaryUser();
     const signingKeyPacket = privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid key packet for signing in key ' + privateKey.primaryKey.getKeyId().toHex());
+    }
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
     }
+    const signaturePacket = new packet.Signature();
     signaturePacket.signatureType = signatureType;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
@@ -497,10 +495,8 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null) 
     const existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
     packetlist.concat(existingSigPacketlist);
   }
-
-  return new Signature(packetlist);
-};
-
+  return packetlist;
+}
 
 /**
  * Verify message signatures

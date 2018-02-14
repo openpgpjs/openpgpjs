@@ -1279,7 +1279,7 @@ describe('OpenPGP.js public api tests', function() {
               privateKeys: [privateKey.keys[0], privKeyDE]
             };
             const verifyOpt = {
-              publicKeys: publicKey.keys
+              publicKeys: [publicKey.keys[0], privKeyDE.toPublic()]
             };
             return openpgp.sign(signOpt).then(function (signed) {
               expect(signed.data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
@@ -1290,6 +1290,9 @@ describe('OpenPGP.js public api tests', function() {
               expect(verified.signatures[0].valid).to.be.true;
               expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
               expect(verified.signatures[0].signature.packets.length).to.equal(1);
+              expect(verified.signatures[1].valid).to.be.true;
+              expect(verified.signatures[1].keyid.toHex()).to.equal(privKeyDE.getSigningKeyPacket().getKeyId().toHex());
+              expect(verified.signatures[1].signature.packets.length).to.equal(1);
             });
           });
 
