@@ -146,18 +146,7 @@ export default function RSA() {
       let keyGenOpt;
 
       let keys;
-      if (window.crypto && window.crypto.webkitSubtle) {
-        // outdated spec implemented by Webkit
-        keyGenOpt = {
-          name: 'RSA-OAEP',
-          modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
-          hash: {
-            name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
-          }
-        };
-        keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
-      } else {
+      if ((window.crypto && window.crypto.subtle) || window.msCrypto) {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
@@ -172,6 +161,21 @@ export default function RSA() {
         if (typeof keys.then !== 'function') { // IE11 KeyOperation
           keys = util.promisifyIE11Op(keys, 'Error generating RSA key pair.');
         }
+      }
+      else if (window.crypto && window.crypto.webkitSubtle) {
+        // outdated spec implemented by old Webkit
+        keyGenOpt = {
+          name: 'RSA-OAEP',
+          modulusLength: B, // the specified keysize in bits
+          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          hash: {
+            name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
+          }
+        };
+        keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
+      }
+      else {
+        throw new Error('Unknown WebCrypto implementation');
       }
 
       return keys.then(exportKey).then(function(key) {
