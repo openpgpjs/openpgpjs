@@ -31,12 +31,19 @@
  */
 
 import pako from 'pako';
+import config from '../config';
 import enums from '../enums.js';
 import util from '../util.js';
 import Bzip2 from '../compression/bzip2.build.js';
 
 const nodeZlib = util.getNodeZlib();
 const Buffer = util.getNodeBuffer();
+
+function node_zlib(func, options = {}) {
+  return function (data) {
+    return func(data, options);
+  };
+}
 
 function pako_zlib(constructor, options = {}) {
   return function(data) {
@@ -51,23 +58,23 @@ let decompress_fns;
 if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   compress_fns = {
     // eslint-disable-next-line no-sync
-    zip: nodeZlib.deflateRawSync,
+    zip: node_zlib(nodeZlib.deflateRawSync, { level: config.deflate_level }),
     // eslint-disable-next-line no-sync
-    zlib: nodeZlib.deflateSync,
+    zlib: node_zlib(nodeZlib.deflateSync, { level: config.deflate_level }),
     bzip2: Bzip2.compressFile
   };
 
   decompress_fns = {
     // eslint-disable-next-line no-sync
-    zip: nodeZlib.inflateRawSync,
+    zip: node_zlib(nodeZlib.inflateRawSync),
     // eslint-disable-next-line no-sync
-    zlib: nodeZlib.inflateSync,
+    zlib: node_zlib(nodeZlib.inflateSync),
     bzip2: Bzip2.decompressFile
   };
 } else { // Use JS fallbacks
   compress_fns = {
-    zip: pako_zlib(pako.Deflate, { raw: true }),
-    zlib: pako_zlib(pako.Deflate),
+    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
+    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level }),
     bzip2: Bzip2.compressFile
   };
 

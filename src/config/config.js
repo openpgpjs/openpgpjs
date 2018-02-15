@@ -30,6 +30,8 @@ export default {
   encryption_cipher: enums.symmetric.aes256,
   /** @property {Integer} compression Default compression algorithm {@link module:enums.compression} */
   compression: enums.compression.uncompressed,
+  /** @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9 */
+  deflate_level: 6,
 
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
