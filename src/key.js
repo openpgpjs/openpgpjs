@@ -301,19 +301,20 @@ Key.prototype.armor = function() {
  * Returns first key packet or key packet by given keyId that is available for signing or signature verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Boolean} allowExpired allows signature verification with expired keys
+ * @param  {Date} currentDate the current date
  * @return {(module:packet/secret_subkey|module:packet/secret_key|null)} key packet or null if no signing key has been found
  */
-Key.prototype.getSigningKeyPacket = function(keyId, allowExpired=false) {
+Key.prototype.getSigningKeyPacket = function(keyId, allowExpired=false, currentDate = new Date()) {
   const primaryUser = this.getPrimaryUser(allowExpired);
   if (primaryUser && (!keyId || this.primaryKey.getKeyId().equals(keyId)) &&
-      isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate, allowExpired)) {
+      isValidSigningKeyPacket(this.primaryKey, primaryUser.selfCertificate, allowExpired, currentDate)) {
     return this.primaryKey;
   }
   if (this.subKeys) {
     for (let i = 0; i < this.subKeys.length; i++) {
       if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
         for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-          if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], allowExpired)) {
+          if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], allowExpired, currentDate)) {
             return this.subKeys[i].subKey;
           }
         }
@@ -323,7 +324,7 @@ Key.prototype.getSigningKeyPacket = function(keyId, allowExpired=false) {
   return null;
 };
 
-function isValidEncryptionKeyPacket(keyPacket, signature, allowExpired=false) {
+function isValidEncryptionKeyPacket(keyPacket, signature, allowExpired=false, currentDate = new Date()) {
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
@@ -331,43 +332,44 @@ function isValidEncryptionKeyPacket(keyPacket, signature, allowExpired=false) {
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
           (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0) &&
-         (allowExpired || (!signature.isExpired() &&
+         (allowExpired || (!signature.isExpired(currentDate) &&
           // check expiration time of V3 key packet
           !(keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0 &&
-            Date.now() > (keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000)) &&
+            +currentDate > (keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000)) &&
           // check expiration time of V4 key packet
           !(keyPacket.version === 4 && signature.keyNeverExpires === false &&
-            Date.now() > (keyPacket.created.getTime() + signature.keyExpirationTime*1000))));
+            +currentDate > (keyPacket.created.getTime() + signature.keyExpirationTime*1000))));
 }
 
-function isValidSigningKeyPacket(keyPacket, signature, allowExpired=false) {
+function isValidSigningKeyPacket(keyPacket, signature, allowExpired=false, currentDate = new Date()) {
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_encrypt) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
          (!signature.keyFlags ||
           (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0) &&
-         (allowExpired || (!signature.isExpired() &&
+         (allowExpired || (!signature.isExpired(currentDate) &&
           // check expiration time of V3 key packet
           !(keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0 &&
-            Date.now() > (keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000)) &&
+            +currentDate > (keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000)) &&
           // check expiration time of V4 key packet
           !(keyPacket.version === 4 && signature.keyNeverExpires === false &&
-            Date.now() > (keyPacket.created.getTime() + signature.keyExpirationTime*1000))));
+            +currentDate > (keyPacket.created.getTime() + signature.keyExpirationTime*1000))));
 }
 
 /**
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
+ * @param  {Date} currentDate optional
  * @returns {(module:packet/public_subkey|module:packet/secret_subkey|module:packet/secret_key|module:packet/public_key|null)} key packet or null if no encryption key has been found
  */
-Key.prototype.getEncryptionKeyPacket = function(keyId) {
+Key.prototype.getEncryptionKeyPacket = function(keyId, currentDate = new Date()) {
   // V4: by convention subkeys are preferred for encryption service
   // V3: keys MUST NOT have subkeys
   if (this.subKeys) {
     for (let i = 0; i < this.subKeys.length; i++) {
       if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
         for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-          if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j])) {
+          if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], false, currentDate)) {
             return this.subKeys[i].subKey;
           }
         }
@@ -377,7 +379,7 @@ Key.prototype.getEncryptionKeyPacket = function(keyId) {
   // if no valid subkey for encryption, evaluate primary key
   const primaryUser = this.getPrimaryUser();
   if (primaryUser && (!keyId || this.primaryKey.getKeyId().equals(keyId)) &&
-      isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate)) {
+      isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate, false, currentDate)) {
     return this.primaryKey;
   }
   return null;
