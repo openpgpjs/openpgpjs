@@ -31,10 +31,10 @@ import enums from '../enums.js';
 /**
  * @constructor
  */
-export default function Literal(creationDate = new Date()) {
+export default function Literal(date = new Date()) {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
-  this.date = creationDate;
+  this.date = date;
   this.data = new Uint8Array(0); // literal data representation
   this.filename = 'msg.txt';
 }

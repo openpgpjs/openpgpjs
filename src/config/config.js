@@ -46,8 +46,6 @@ export default {
   ignore_mdc_error:         false,
   /** @property {Boolean} checksum_required Do not throw error when armor is missing a checksum */
   checksum_required:        false,
-  /** @property {Boolean} verify_expired_keys Allow signature verification with expired keys */
-  verify_expired_keys:      true,
   /** @property {Boolean} rsa_blinding */
   rsa_blinding:             true,
   /** Work-around for rare GPG decryption bug when encrypting with multiple passwords

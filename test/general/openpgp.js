@@ -1583,7 +1583,7 @@ describe('OpenPGP.js public api tests', function() {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(plaintext);
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, undefined, past))
+                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, past))
                       .to.be.not.a('null');
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1611,7 +1611,7 @@ describe('OpenPGP.js public api tests', function() {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
                   expect(verified.data).to.equal(data);
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, undefined, future))
+                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
                       .to.be.not.a('null');
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1686,7 +1686,7 @@ describe('OpenPGP.js public api tests', function() {
               }).then(function (signatures) {
                   expect(+signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, undefined, past))
+                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, past))
                       .to.be.not.a('null');
                   expect(signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1715,7 +1715,7 @@ describe('OpenPGP.js public api tests', function() {
               }).then(function (signatures) {
                   expect(+signatures[0].signature.packets[0].created).to.equal(+future);
                   expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, undefined, future))
+                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, future))
                       .to.be.not.a('null');
                   expect(signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1741,7 +1741,7 @@ describe('OpenPGP.js public api tests', function() {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(plaintext);
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, undefined, past))
+                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, past))
                       .to.be.not.a('null');
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1816,7 +1816,7 @@ describe('OpenPGP.js public api tests', function() {
               }).then(function (signatures) {
                   expect(+signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, undefined, past))
+                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, past))
                       .to.be.not.a('null');
                   expect(signatures[0].signature.packets.length).to.equal(1);
               });
@@ -1845,7 +1845,7 @@ describe('OpenPGP.js public api tests', function() {
               }).then(function (signatures) {
                   expect(+signatures[0].signature.packets[0].created).to.equal(+future);
                   expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, undefined, future))
+                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, future))
                       .to.be.not.a('null');
                   expect(signatures[0].signature.packets.length).to.equal(1);
               });
@@ -2072,7 +2072,6 @@ describe('OpenPGP.js public api tests', function() {
         });
 
       });
-
     }
 
   });
