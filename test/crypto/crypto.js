@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const asmCrypto = require('asmcrypto-lite');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -289,13 +290,15 @@ describe('API functional testing', function() {
         if(algo.substr(0,3) === 'aes') {
           const symmKey = openpgp.crypto.generateSessionKey(algo);
           const rndm = openpgp.crypto.getPrefixRandom(algo);
+          const repeat = new Uint8Array([rndm[rndm.length - 2], rndm[rndm.length - 1]]);
+          const prefix = util.concatUint8Array([rndm, repeat]);
 
           const symmencData = openpgp.crypto.cfb.encrypt(rndm, algo, util.str2Uint8Array(plaintext), symmKey, false);
-          const symmencData2 = asmCrypto.AES_CFB.encrypt(util.str2Uint8Array(plaintext), key);
+          const symmencData2 = asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, util.str2Uint8Array(plaintext)]), symmKey);
 
-          let decrypted = asmCrypto.AES_CFB.decrypt(symmencData, key);
+          let decrypted = asmCrypto.AES_CFB.decrypt(symmencData, symmKey);
           decrypted = decrypted.subarray(openpgp.crypto.cipher[algo].blockSize + 2, decrypted.length);
-          expect(symmencData).to.equal(symmencData2);
+          expect(util.Uint8Array2str(symmencData)).to.equal(util.Uint8Array2str(symmencData2));
 
           const text = util.Uint8Array2str(decrypted);
           expect(text).to.equal(plaintext);
@@ -336,7 +339,7 @@ describe('API functional testing', function() {
       testCFB("12345678901234567890123456789012345678901234567890", false);
     });
 
-    it.skip("asmCrypto AES without OpenPGP CFB resync", function () {
+    it("asmCrypto AES without OpenPGP CFB resync", function () {
       testAESCFB("hello");
       testAESCFB("1234567");
       testAESCFB("foobarfoobar1234567890");
