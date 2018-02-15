@@ -69,25 +69,25 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} creationDate     The creation time of the signature that should be created
+ * @param  {Date} date     The creation time of the signature that should be created
  * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
-CleartextMessage.prototype.sign = async function(privateKeys, signature = null, creationDate = new Date()) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, creationDate));
+CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date = new Date()) {
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date));
 };
 
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} creationDate     The creation time of the signature that should be created
+ * @param  {Date} date     The creation time of the signature that should be created
  * @return {module:signature~Signature}      new detached signature of message content
  */
-CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, creationDate = new Date()) {
+CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date()) {
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, creationDate));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date));
 };
 
 /**

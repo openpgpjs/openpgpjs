@@ -202,34 +202,34 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {Signature} signature                  (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} creationDate                    (optional) the creation date used to encrypt and sign the message
+ * @param  {Date} date                            (optional) the date used to encrypt and sign the message
  * @return {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression = config.compression, armor = true, detached = false, signature = null, returnSessionKey = false, wildcard = false, creationDate = new Date()}) {
+export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression = config.compression, armor = true, detached = false, signature = null, returnSessionKey = false, wildcard = false, date = new Date()}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, wildcard, creationDate });
+    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, armor, detached, signature, returnSessionKey, wildcard, date });
   }
   const result = {};
   return Promise.resolve().then(async function() {
-    let message = createMessage(data, filename, creationDate);
+    let message = createMessage(data, filename, date);
     if (!privateKeys) {
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        const detachedSignature = await message.signDetached(privateKeys, signature, creationDate);
+        const detachedSignature = await message.signDetached(privateKeys, signature, date);
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = await message.sign(privateKeys, signature, creationDate);
+        message = await message.sign(privateKeys, signature, date);
       }
     }
     message = message.compress(compression);
-    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, creationDate);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date);
 
   }).then(encrypted => {
     if (armor) {
@@ -254,15 +254,16 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, to verify signatures
  * @param  {String} format                    (optional) return data format either as 'utf8' or 'binary'
  * @param  {Signature} signature              (optional) detached signature for verification
+ * @param  {Date} date                        (optional) the current date
  * @return {Promise<Object>}             decrypted and verified message in the form:
  *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', signature=null }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', signature=null, date=new Date() }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, signature });
+    return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, signature, date });
   }
 
   return message.decrypt(privateKeys, passwords, sessionKeys).then(async function(message) {
@@ -273,7 +274,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
       publicKeys = [];
     }
 
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys) : await message.verify(publicKeys);
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -292,21 +293,21 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
- * @param  {Date} creationDate                  (optional) the creation date used to sign the message
+ * @param  {Date} date                          (optional) the creation date used to sign the message
  * @return {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
  */
 export function sign({
-  data, privateKeys, armor=true, detached=false, creationDate = new Date()
+  data, privateKeys, armor=true, detached=false, date = new Date()
 }) {
   checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
-      data, privateKeys, armor, detached, creationDate
+      data, privateKeys, armor, detached, date
     });
   }
 
@@ -315,10 +316,10 @@ export function sign({
     let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data);
 
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, creationDate);
+      const signature = await message.signDetached(privateKeys, undefined, date);
       result.signature = armor ? signature.armor() : signature;
     } else {
-      message = await message.sign(privateKeys, undefined, creationDate);
+      message = await message.sign(privateKeys, undefined, date);
       if (armor) {
         result.data = message.armor();
       } else {
@@ -334,11 +335,12 @@ export function sign({
  * @param  {Key|Array<Key>} publicKeys   array of publicKeys or single key, to verify signatures
  * @param  {CleartextMessage} message    cleartext message object with signatures
  * @param  {Signature} signature         (optional) detached signature for verification
+ * @param  {Date} date
  * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
  *                                       { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
-export function verify({ message, publicKeys, signature=null }) {
+export function verify({ message, publicKeys, signature=null, date = new Date() }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
@@ -349,7 +351,7 @@ export function verify({ message, publicKeys, signature=null }) {
   return Promise.resolve().then(async function() {
     const result = {};
     result.data = CleartextMessage.prototype.isPrototypeOf(message) ? message.getText() : message.getLiteralData();
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys) : await message.verify(publicKeys);
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
@@ -495,15 +497,15 @@ function toArray(param) {
  * Creates a message obejct either from a Uint8Array or a string.
  * @param  {String|Uint8Array} data   the payload for the message
  * @param  {String} filename          the literal data packet's filename
- * @param  {Date} creationDate      the creation date of the package
+ * @param  {Date} date      the creation date of the package
  * @return {Message}                  a message object
  */
-function createMessage(data, filename, creationDate = new Date()) {
+function createMessage(data, filename, date = new Date()) {
   let msg;
   if (util.isUint8Array(data)) {
-    msg = messageLib.fromBinary(data, filename, creationDate);
+    msg = messageLib.fromBinary(data, filename, date);
   } else if (util.isString(data)) {
-    msg = messageLib.fromText(data, filename, creationDate);
+    msg = messageLib.fromText(data, filename, date);
   } else {
     throw new Error('Data must be of type String or Uint8Array');
   }
