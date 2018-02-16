@@ -18,6 +18,7 @@
 // The GPG4Browsers crypto interface
 
 /**
+ * @requires bn.js
  * @requires asmcrypto.js
  * @requires crypto/public_key
  * @requires crypto/cipher
@@ -30,8 +31,8 @@
  * @module crypto/crypto
  */
 
+import BN from 'bn.js';
 import { RSA_RAW, BigNumber, Modulus } from 'asmcrypto.js';
-import BigInteger from './public_key/jsbn';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -67,12 +68,10 @@ export default {
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign': {
-          const n = util.str2Uint8Array(publicParams[0].toBytes());
-          const e = util.str2Uint8Array(publicParams[1].toBytes());
-          m = data.write().slice(2); // FIXME
-          return constructParams(types, [
-            new BigInteger(util.hexidump(RSA_RAW.encrypt(m, [n, e])), 16) // FIXME
-          ]);
+          const n = publicParams[0].toUint8Array();
+          const e = publicParams[1].toUint8Array();
+          m = data.toUint8Array();
+          return constructParams(types, [new BN(RSA_RAW.encrypt(m, [n, e]))]);
         }
         case 'elgamal': {
           const elgamal = new publicKey.elgamal();
@@ -114,13 +113,13 @@ export default {
       switch (algo) {
         case 'rsa_encrypt_sign':
         case 'rsa_encrypt': {
-          const c = util.str2Uint8Array(dataIntegers[0].toBytes());
-          const n = util.str2Uint8Array(keyIntegers[0].toBytes()); // pq
-          const e = util.str2Uint8Array(keyIntegers[1].toBytes());
-          const d = util.str2Uint8Array(keyIntegers[2].toBytes()); // de = 1 mod (p-1)(q-1)
-          const p = util.str2Uint8Array(keyIntegers[3].toBytes());
-          const q = util.str2Uint8Array(keyIntegers[4].toBytes());
-          const u = util.str2Uint8Array(keyIntegers[5].toBytes()); // q^-1 mod p
+          const c = dataIntegers[0].toUint8Array();
+          const n = keyIntegers[0].toUint8Array(); // pq
+          const e = keyIntegers[1].toUint8Array();
+          const d = keyIntegers[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
+          const p = keyIntegers[3].toUint8Array();
+          const q = keyIntegers[4].toUint8Array();
+          const u = keyIntegers[5].toUint8Array(); // q^-1 mod p
           const dd = BigNumber.fromArrayBuffer(d);
           const dp = new Modulus(
             BigNumber.fromArrayBuffer(p).subtract(BigNumber.ONE)
@@ -128,9 +127,7 @@ export default {
           const dq = new Modulus(
             BigNumber.fromArrayBuffer(q).subtract(BigNumber.ONE)
           ).reduce(dd).toBytes(); // d mod (q-1)
-          return new BigInteger(
-            util.hexidump(RSA_RAW.decrypt(c, [n, e, d, q, p, dq, dp, u]).slice(1)), 16 // FIXME
-          );
+          return new BN(RSA_RAW.decrypt(c, [n, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
         }
         case 'elgamal': {
           const elgamal = new publicKey.elgamal();

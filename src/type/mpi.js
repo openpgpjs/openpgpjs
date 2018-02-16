@@ -46,6 +46,8 @@ export default function MPI(data) {
   /** An implementation dependent integer */
   if (data instanceof BigInteger) {
     this.fromBigInteger(data);
+  } else if (data instanceof BN) {
+    this.fromBytes(util.Uint8Array2str(data.toArrayLike(Uint8Array)));
   } else if (util.isString(data)) {
     this.fromBytes(data);
   } else {
@@ -92,8 +94,11 @@ MPI.prototype.fromBytes = function (bytes) {
 };
 
 MPI.prototype.toBytes = function () {
-  const bytes = util.Uint8Array2str(this.write());
-  return bytes.substr(2);
+  return util.Uint8Array2str(this.toUint8Array());
+};
+
+MPI.prototype.toUint8Array = function () {
+  return this.write().slice(2);
 };
 
 MPI.prototype.byteLength = function () {
