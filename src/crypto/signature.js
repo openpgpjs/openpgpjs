@@ -38,10 +38,10 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3: {
         // RSA Sign-Only [HAC]
-        const n = util.str2Uint8Array(publickey_MPIs[0].toBytes());
+        const n = publickey_MPIs[0].toUint8Array();
         const k = publickey_MPIs[0].byteLength();
-        const e = util.str2Uint8Array(publickey_MPIs[1].toBytes());
-        m = msg_MPIs[0].write().slice(2); // FIXME
+        const e = publickey_MPIs[1].toUint8Array();
+        m = msg_MPIs[0].toUint8Array();
         const EM = RSA_RAW.verify(m, [n, e]);
         const EM2 = pkcs1.emsa.encode(hash_algo, data, k);
         return util.hexidump(EM) === EM2;
@@ -111,13 +111,11 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3: {
         // RSA Sign-Only [HAC]
-        const n = util.str2Uint8Array(keyIntegers[0].toBytes());
+        const n = keyIntegers[0].toUint8Array();
         const k = keyIntegers[0].byteLength();
-        const e = util.str2Uint8Array(keyIntegers[1].toBytes());
-        d = util.str2Uint8Array(keyIntegers[2].toBytes());
-        m = util.hex2Uint8Array(
-          '00'+pkcs1.emsa.encode(hash_algo, data, k) // FIXME
-        );
+        const e = keyIntegers[1].toUint8Array();
+        d = keyIntegers[2].toUint8Array();
+        m = util.hex2Uint8Array('00'+pkcs1.emsa.encode(hash_algo, data, k)); // FIXME remove '00'
         return util.Uint8Array2MPI(RSA_RAW.sign(m, [n, e, d]));
       }
       case 17: {
