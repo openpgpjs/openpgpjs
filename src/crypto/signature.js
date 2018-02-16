@@ -22,15 +22,6 @@ export default {
    * @return {Boolean} true if signature (sig_data was equal to data over hash)
    */
   verify: async function(algo, hash_algo, msg_MPIs, publickey_MPIs, data) {
-    let m;
-    let r;
-    let s;
-    let Q;
-    let curve;
-    let signature;
-
-    data = util.Uint8Array2str(data);
-
     switch (algo) {
       case 1:
         // RSA (Encrypt or Sign) [HAC]
@@ -38,12 +29,11 @@ export default {
         // RSA Encrypt-Only [HAC]
       case 3: {
         // RSA Sign-Only [HAC]
+        const m = msg_MPIs[0].toUint8Array();
         const n = publickey_MPIs[0].toUint8Array();
-        const k = publickey_MPIs[0].byteLength();
         const e = publickey_MPIs[1].toUint8Array();
-        m = msg_MPIs[0].toUint8Array();
         const EM = RSA_RAW.verify(m, [n, e]);
-        const EM2 = pkcs1.emsa.encode(hash_algo, data, k);
+        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array2str(data), n.length);
         return util.hexidump(EM) === EM2;
       }
       case 16: {
@@ -52,35 +42,27 @@ export default {
       }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        const dsa = publicKey.dsa;
-        r = msg_MPIs[0].toBN();
-        s = msg_MPIs[1].toBN();
+        const r = msg_MPIs[0].toBN();
+        const s = msg_MPIs[1].toBN();
         const p = publickey_MPIs[0].toBN();
         const q = publickey_MPIs[1].toBN();
         const g = publickey_MPIs[2].toBN();
         const y = publickey_MPIs[3].toBN();
-        m = util.str2Uint8Array(data);
-        return dsa.verify(hash_algo, r, s, m, p, q, g, y);
+        return publicKey.dsa.verify(hash_algo, r, s, data, p, q, g, y);
       }
       case 19: {
         // ECDSA
-        const { ecdsa } = publicKey.elliptic;
-        [curve] = publickey_MPIs;
-        r = msg_MPIs[0].toBigInteger();
-        s = msg_MPIs[1].toBigInteger();
-        m = data;
-        Q = publickey_MPIs[1].toBigInteger();
-        return ecdsa.verify(curve.oid, hash_algo, { r: r, s: s }, m, Q);
+        const oid = publickey_MPIs[0];
+        const signature = { r: msg_MPIs[0].toUint8Array(), s: msg_MPIs[1].toUint8Array() };
+        const Q = publickey_MPIs[1].toUint8Array();
+        return publicKey.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q);
       }
       case 22: {
         // EdDSA
-        const { eddsa } = publicKey.elliptic;
-        [curve] = publickey_MPIs;
-        r = msg_MPIs[0].toBigInteger();
-        s = msg_MPIs[1].toBigInteger();
-        m = data;
-        Q = publickey_MPIs[1].toBigInteger();
-        return eddsa.verify(curve.oid, hash_algo, { R: r, S: s }, m, Q);
+        const oid = publickey_MPIs[0];
+        const signature = { R: msg_MPIs[0].toBN(), S: msg_MPIs[1].toBN() };
+        const Q = publickey_MPIs[1].toBN();
+        return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q);
       }
       default:
         throw new Error('Invalid signature algorithm.');
@@ -97,13 +79,6 @@ export default {
    */
   sign: async function(algo, hash_algo, keyIntegers, data) {
 
-    data = util.Uint8Array2str(data);
-
-    let m;
-    let d;
-    let curve;
-    let signature;
-
     switch (algo) {
       case 1:
         // RSA (Encrypt or Sign) [HAC]
@@ -112,21 +87,21 @@ export default {
       case 3: {
         // RSA Sign-Only [HAC]
         const n = keyIntegers[0].toUint8Array();
-        const k = keyIntegers[0].byteLength();
         const e = keyIntegers[1].toUint8Array();
-        d = keyIntegers[2].toUint8Array();
-        m = util.hex2Uint8Array('00'+pkcs1.emsa.encode(hash_algo, data, k)); // FIXME remove '00'
+        const d = keyIntegers[2].toUint8Array();
+        data = util.Uint8Array2str(data);
+        const m = util.hex2Uint8Array(
+          '00'+pkcs1.emsa.encode(hash_algo, data, n.length)  // FIXME remove '00'
+        );
         return util.Uint8Array2MPI(RSA_RAW.sign(m, [n, e, d]));
       }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        const dsa = publicKey.dsa;
         const p = keyIntegers[0].toBN();
         const q = keyIntegers[1].toBN();
         const g = keyIntegers[2].toBN();
         const x = keyIntegers[4].toBN();
-        m = util.str2Uint8Array(data);
-        signature = dsa.sign(hash_algo, m, g, p, q, x);
+        const signature = publicKey.dsa.sign(hash_algo, data, g, p, q, x);
         return util.concatUint8Array([
           util.Uint8Array2MPI(signature.r.toArrayLike(Uint8Array)),
           util.Uint8Array2MPI(signature.s.toArrayLike(Uint8Array))
@@ -138,23 +113,22 @@ export default {
       }
       case 19: {
         // ECDSA
-        const { ecdsa } = publicKey.elliptic;
-        [curve] = keyIntegers;
-        d = keyIntegers[2].toBigInteger();
-        m = data;
-        signature = await ecdsa.sign(curve.oid, hash_algo, m, d);
-        return util.str2Uint8Array(signature.r.toMPI() + signature.s.toMPI());
+        const oid = keyIntegers[0];
+        const d = keyIntegers[2].toUint8Array();
+        const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d);
+        return util.concatUint8Array([
+          util.Uint8Array2MPI(signature.r.toArrayLike(Uint8Array)),
+          util.Uint8Array2MPI(signature.s.toArrayLike(Uint8Array))
+        ]);
       }
       case 22: {
         // EdDSA
-        const { eddsa } = publicKey.elliptic;
-        [curve] = keyIntegers;
-        d = keyIntegers[2].toBigInteger();
-        m = data;
-        signature = await eddsa.sign(curve.oid, hash_algo, m, d);
+        const oid = keyIntegers[0];
+        const d = keyIntegers[2].toBN();
+        const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.R.toArrayLike(Uint8Array, 'le', 32)),
-          util.Uint8Array2MPI(signature.S.toArrayLike(Uint8Array, 'le', 32))
+          util.Uint8Array2MPI(Uint8Array.from(signature.R)),
+          util.Uint8Array2MPI(Uint8Array.from(signature.S))
         ]);
       }
       default:

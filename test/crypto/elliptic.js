@@ -9,7 +9,7 @@ const bin2bi = function (bytes) {
   const mpi = new openpgp.MPI();
   bytes = openpgp.util.bin2str(bytes);
   mpi.fromBytes(bytes);
-  return mpi.toBigInteger();
+  return mpi.toUint8Array(); // FIXME
 };
 
 describe('Elliptic Curve Cryptography', function () {
@@ -316,9 +316,9 @@ describe('Elliptic Curve Cryptography', function () {
         data = new Uint8Array(data);
       }
       return Promise.resolve().then(() => {
-        const ecdh = elliptic_curves.ecdh;
-        return ecdh.decrypt(
-          oid,
+        const curve = elliptic_curves.get(oid);
+        return elliptic_curves.ecdh.decrypt(
+          curve.oid,
           cipher,
           hash,
           bin2bi(ephemeral),

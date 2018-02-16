@@ -30,11 +30,6 @@ import ecdsa from './ecdsa';
 import eddsa from './eddsa';
 import ecdh from './ecdh';
 
-module.exports = {
-  ecdsa: ecdsa,
-  eddsa: eddsa,
-  ecdh: ecdh,
-  get: get,
-  generate: generate,
-  getPreferredHashAlgo: getPreferredHashAlgo
+export default {
+  ecdh, ecdsa, eddsa, get, generate, getPreferredHashAlgo
 };

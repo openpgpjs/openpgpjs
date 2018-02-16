@@ -26,7 +26,7 @@
  */
 
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
-import { KeyPair } from './key';
+import KeyPair from './key';
 import BigInteger from '../jsbn';
 import random from '../../random';
 import enums from '../../../enums';
@@ -126,7 +126,7 @@ function Curve(name, params) {
       throw new Error('Unknown elliptic key type;');
   }
   this.name = name;
-  this.oid = curves[name].oid;
+  this.oid = new OID(curves[name].oid);
   this.hash = params.hash;
   this.cipher = params.cipher;
   this.node = params.node && curves[name].node;
@@ -202,14 +202,9 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
+// TODO convert to export default {...}
 module.exports = {
-  Curve,
-  curves,
-  webCurves,
-  nodeCurves,
-  getPreferredHashAlgo,
-  generate,
-  get
+  Curve, curves, webCurves, nodeCurves, get, generate, getPreferredHashAlgo
 };
 
 

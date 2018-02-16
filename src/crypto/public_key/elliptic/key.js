@@ -29,7 +29,7 @@
  * @module crypto/public_key/elliptic/key
  */
 
-import curves from './curves';
+import { webCurves, nodeCurves } from './curves';
 import BigInteger from '../jsbn';
 import hash from '../../hash';
 import util from '../../../util';
@@ -37,13 +37,7 @@ import enums from '../../../enums';
 import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
-const { webCurves } = curves;
 const nodeCrypto = util.getNodeCrypto();
-const { nodeCurves } = curves;
-
-// const webCrypto = util.getWebCrypto();
-// const nodeCrypto = util.getNodeCrypto();
-// const { webCurves, nodeCurves } = curves;
 
 const jwkToPem = nodeCrypto ? require('jwk-to-pem') : undefined;
 const ECDSASignature = nodeCrypto ?
@@ -54,16 +48,13 @@ const ECDSASignature = nodeCrypto ?
         );
       }) : undefined;
 
-function KeyPair(curve, options) {
+export default function KeyPair(curve, options) {
   this.curve = curve;
   this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
   this.keyPair = this.curve.keyPair(options);
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo) {
-  if (util.isString(message)) {
-    message = util.str2Uint8Array(message);
-  }
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
@@ -79,9 +70,6 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo) {
-  if (util.isString(message)) {
-    message = util.str2Uint8Array(message);
-  }
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
@@ -113,10 +101,6 @@ KeyPair.prototype.getPrivate = function () {
     return this.keyPair.getSecret();
   }
   return this.keyPair.getPrivate().toArray();
-};
-
-module.exports = {
-  KeyPair: KeyPair
 };
 
 

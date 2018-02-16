@@ -31,7 +31,9 @@ module.exports = OID;
  * @constructor
  */
 function OID(oid) {
-  if (typeof oid === 'undefined') {
+  if (oid instanceof OID) {
+    oid = oid.oid;
+  } else if (typeof oid === 'undefined') {
     oid = '';
   } else if (util.isArray(oid)) {
     oid = util.bin2str(oid);

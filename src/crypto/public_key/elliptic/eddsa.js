@@ -30,45 +30,37 @@ import curves from './curves';
 
 /**
  * Sign a message using the provided key
- * @param  {String}      oid        Elliptic curve for the key
- * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
- * @param  {Uint8Array}  m          Message to sign
- * @param  {BigInteger}  d          Private key used to sign
- * @return {{R: BN, S: BN}}         Signature of the message
+ * @param  {module:type/oid} oid        Elliptic curve object identifier
+ * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
+ * @param  {Uint8Array}      m          Message to sign
+ * @param  {BN}              d          Private key used to sign
+ * @return {{R: Array, S: Array}}       Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = curves.get(oid);
-  const key = curve.keyFromSecret(d.toByteArray());
+  const key = curve.keyFromSecret(d.toArray('be', 32));
   const signature = await key.sign(m, hash_algo);
   // EdDSA signature params are returned in little-endian format
-  return {
-    R: new BN(Array.from(signature.Rencoded()).reverse()),
-    S: new BN(Array.from(signature.Sencoded()).reverse())
-  };
+  return { R: signature.Rencoded(), S: signature.Sencoded() };
 }
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {String}      oid        Elliptic curve for the key
- * @param  {enums.hash}  hash_algo  Hash algorithm used in the signature
- * @param  {{R: BigInteger, S: BigInteger}}  signature  Signature to verify
- * @param  {Uint8Array}  m          Message to verify
- * @param  {BigInteger}  Q          Public key used to verify the message
+ * @param  {module:type/oid} oid        Elliptic curve object identifier
+ * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
+ * @param  {{R: BN, S: BN}}  signature  Signature to verify the message
+ * @param  {Uint8Array}      m          Message to verify
+ * @param  {BN}              Q          Public key used to verify the message
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
   const curve = curves.get(oid);
-  const key = curve.keyFromPublic(Q.toByteArray());
+  const key = curve.keyFromPublic(Q.toArray('be', 33));
   // EdDSA signature params are expected in little-endian format
-  const R = Array.from(signature.R.toByteArray()).reverse();
-  const S = Array.from(signature.S.toByteArray()).reverse();
   return key.verify(m, {
-    R: [].concat(R, Array(curve.payloadSize - R.length).fill(0)),
-    S: [].concat(S, Array(curve.payloadSize - S.length).fill(0))
+    R: signature.R.toArray('le', 32),
+    S: signature.S.toArray('le', 32)
   }, hash_algo);
 }
 
-module.exports = {
-  sign: sign,
-  verify: verify
-};
+export default { sign, verify };
