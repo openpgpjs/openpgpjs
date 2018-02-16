@@ -32,7 +32,7 @@
  */
 
 import BN from 'bn.js';
-import { RSA_RAW, BigNumber, Modulus } from 'asmcrypto.js';
+import { RSA_RAW } from 'asmcrypto.js';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -62,15 +62,15 @@ export default {
    * @return {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} encrypted session key parameters
    */
   publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
+    // TODO change algo to return enums
     const types = this.getEncSessionKeyParamTypes(algo);
     return (async function() {
-      let m;
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign': {
           const n = publicParams[0].toUint8Array();
           const e = publicParams[1].toUint8Array();
-          m = data.toUint8Array();
+          const m = data.toUint8Array();
           return constructParams(types, [new BN(RSA_RAW.encrypt(m, [n, e]))]);
         }
         case 'elgamal': {
@@ -78,17 +78,15 @@ export default {
           const p = publicParams[0].toBigInteger();
           const g = publicParams[1].toBigInteger();
           const y = publicParams[2].toBigInteger();
-          m = data.toBigInteger();
+          const m = data.toBigInteger();
           return constructParams(types, elgamal.encrypt(m, g, p, y));
         }
         case 'ecdh': {
-          const { ecdh } = publicKey.elliptic;
-          const curve = publicParams[0];
+          const oid = publicParams[0];
           const kdf_params = publicParams[2];
-          const R = publicParams[1].toBigInteger();
-          const res = await ecdh.encrypt(
-            curve.oid, kdf_params.cipher, kdf_params.hash, data, R, fingerprint
-          );
+          const Q = publicParams[1].toUint8Array();
+          const res = await publicKey.elliptic.ecdh.encrypt(
+            oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
           return constructParams(types, [res.V, res.C]);
         }
         default:
@@ -106,9 +104,8 @@ export default {
    * @param {String} fingerprint Recipient fingerprint
    * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
    */
-
   publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
-    let p;
+    // TODO change algo to return enums
     return new type_mpi(await (async function() {
       switch (algo) {
         case 'rsa_encrypt_sign':
@@ -120,13 +117,9 @@ export default {
           const p = keyIntegers[3].toUint8Array();
           const q = keyIntegers[4].toUint8Array();
           const u = keyIntegers[5].toUint8Array(); // q^-1 mod p
-          const dd = BigNumber.fromArrayBuffer(d);
-          const dp = new Modulus(
-            BigNumber.fromArrayBuffer(p).subtract(BigNumber.ONE)
-          ).reduce(dd).toBytes(); // d mod (p-1)
-          const dq = new Modulus(
-            BigNumber.fromArrayBuffer(q).subtract(BigNumber.ONE)
-          ).reduce(dd).toBytes(); // d mod (q-1)
+          const dd = new BN(d);
+          const dp = dd.mod(new BN(p).subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
+          const dq = dd.mod(new BN(q).subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
           return new BN(RSA_RAW.decrypt(c, [n, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
         }
         case 'elgamal': {
@@ -134,17 +127,17 @@ export default {
           const x = keyIntegers[3].toBigInteger();
           const c1 = dataIntegers[0].toBigInteger();
           const c2 = dataIntegers[1].toBigInteger();
-          p = keyIntegers[0].toBigInteger();
+          const p = keyIntegers[0].toBigInteger();
           return elgamal.decrypt(c1, c2, p, x);
         }
         case 'ecdh': {
-          const { ecdh } = publicKey.elliptic;
-          const curve = keyIntegers[0];
+          const oid = keyIntegers[0];
           const kdf_params = keyIntegers[2];
-          const V = dataIntegers[0].toBigInteger();
+          const V = dataIntegers[0].toUint8Array();
           const C = dataIntegers[1].data;
-          const r = keyIntegers[3].toBigInteger();
-          return ecdh.decrypt(curve.oid, kdf_params.cipher, kdf_params.hash, V, C, r, fingerprint);
+          const d = keyIntegers[3].toUint8Array();
+          return publicKey.elliptic.ecdh.decrypt(
+            oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
         }
         default:
           return null;
@@ -259,16 +252,17 @@ export default {
   },
 
   /** Generate algorithm-specific key parameters
-   * @param {String} algo The public key algorithm
-   * @return {Array} The array of parameters
+   * @param {String}          algo The public key algorithm
+   * @param {Integer}         bits Bit length for RSA keys
+   * @param {module:type/oid} oid  Object identifier for ECC keys
+   * @return {Array}               The array of parameters
    */
-  generateParams: function(algo, bits, curve) {
+  generateParams: function(algo, bits, oid) {
     const types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign': {
-        //remember "publicKey" refers to the crypto/public_key dir
         const rsa = new publicKey.rsa();
         return rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(
@@ -278,11 +272,11 @@ export default {
       }
       case 'ecdsa':
       case 'eddsa':
-        return publicKey.elliptic.generate(curve).then(function (keyObject) {
+        return publicKey.elliptic.generate(oid).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
         });
       case 'ecdh':
-        return publicKey.elliptic.generate(curve).then(function (keyObject) {
+        return publicKey.elliptic.generate(oid).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
         });
       default:
