@@ -214,38 +214,6 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
 =C0fJ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-const pub_key_2000_2008 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
-
-xo0EOKg3aAEEALLlUS7z92VAc53Xa/y01jYCJz4L6TrLIp7t4dF/U+rB3R050yT7
-QS8yLVn6LTH9xCPz217zUXtMKZV36qshZHqspz/pZDOD0VDSHVZArENiLMQjKJrR
-k0S5h3sXUfrJzHfna3KZ6kC2HTmLq3UvEjmMTEUOr53zPwvl7Or7/oFlABEBAAHN
-E3Rlc3QgPHRlc3RAZXhhbXBsZT7CrQQTAQoAFwUCOKg3aAIbLwMLCQcDFQoIAh4B
-AheAAAoJEFzwINOIu4R09q8EAIqd3AAl3W0oacbyhLELNKATdR+TwMdQQBl2p8Po
-8QxVJKw5NQzkq2RZzGqIbqCa2MqBP0ZC89OtYPLRXPyhE5p8iQHFy/zz4nN7Twgr
-NXKYVQLAIxC7GMDy+FEKRZ0VNnvqYYM1/TPxu/ML6ojhnDPytEmU58kb2GgBx7ix
-RNsZzo0EOKg3aAEEALOt5AUdDf7fz0DwOkIokGj4zeiFuphsTPwpRAS6c1o9xAzS
-/C8hLFShhTKL4Z9znYkdaMHuFIs7AJ3P5tKlvG0/cZAl3u286lz0aTtQluHMCKNy
-UyhuZ0K1VgZOj+HcDKo8jQ+aejcwjHDg02yPvfzrXHBjWAJMjglV4W+YPFYjABEB
-AAHCwIMEGAEKAA8FAjioN2gFCQ8JnAACGy4AqAkQXPAg04i7hHSdIAQZAQoABgUC
-OKg3aAAKCRDh8+Pj74TEoHURA/4+mbmGa/ZzTjzfrAxceOMIhfV+wGEk1J5Y1mWP
-E85w+BvSQB3aFjVL9Wf1kOiB5iYMFRD8kePjYR11rYhhrH/vh0DBRNXYqcOx0FPx
-Nv2WMedjcYzsmoQqL+7T27tl/Crdq5EMfxFb+FEdDTnx1+RKiiuk3mIJR/Ngl6Yz
-hmYDs08LA/4+xDre4g+YMHj0zaxDBXUawFz5gH5oPeGCCxG/tQeHiC+vYYJy6RGU
-cOL+k4Q79lNqjJK6febtvYziffVsSPWWSdkG0xkujS5bDDpikBATAUVeFVwA5hCo
-5vYp8XWskYHrDXS2ald01abkk8A27pGppcjOS4xxFSqVhw0t/PpJQc6NBDioN2gB
-BAC30PxDScc8m4HSi0AYRfETd8W9VfA4mBbX4A5G6Gr44kg+z1RAzTtvOnC6Hv7g
-JBPg4JtqBBZmfyCUoV/gS9SZB63jSrlk1tBs9I5KmGxOOCrLMucsAl3NCLVuMqzL
-Wm1zyOc6l83j3fRcKe2TrfEDf41Pk1HxlDMBL9rQyqv/uwARAQABwsCDBBgBCgAP
-BQI4qDdoBQkPCZwAAhsuAKgJEFzwINOIu4R0nSAEGQEKAAYFAjioN2gACgkQJVG+
-vfNJQKhK6gP+LB5qXTJKCduuqZm7VhFvPeOu4W0pyORo29zZI0owKZnD2ZKZrZhK
-XZC/1+xKXi8aX4V2ygRth2P1tGFLJRqRiA3C20NVewdI4tQtEqWWSlfNFDz4EsbN
-spyodQ4jPsKPk2R8pFjAwmpXLizPg2UyPKUJ/2GnNWjleP0UNyUXgD1MkgP+IkxX
-TYgDF5/LrOlrq7ThWqFqQ/prQCBy7xxNLjpVKLDxGYbXVER6p0pkD6DXlaOgSB3i
-32dQJnU96l44TlUyaUK/dJP7JPbVUOFq/awSxJiCxFxF6Oarc10qQ+OG5ESdJAjp
-CMHGCzlbt/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
-=kwK1
------END PGP PUBLIC KEY BLOCK-----`;
-
 const priv_key_2038_2045 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xcEYBH/oGU8BBACilkYen6vxr1LAhqWc0HaS+zMkjeND/P9ENePoNRVo3Bq8
@@ -302,37 +270,19 @@ J4wE4f3U5NnR+W6uranaXA2ghVyUsk0lJtnM400nA/45gAq9EBZUSL+DWdYZ
 =WLIN
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-const pub_key_2038_2045 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+const priv_key_expires_1337 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
-xo0Ef+gZTwEEAKKWRh6fq/GvUsCGpZzQdpL7MySN40P8/0Q14+g1FWjcGrwotpyr
-WlAWK0lVxRrPoPmWTTC2KNJZv+5RKHohbqV1Vi+yMd1OkZiofe8smylhfMHNPqxe
-qG35x5A+Lmkikv9fnbjRZ5pBC0PRqt5xUC2a2Cs3nAn/dKjyWWqZ/yrRABEBAAHN
-FmV4YW1wbGUgPHRlc3RAZXhhbXBsZT7CrQQTAQoAFwUCf+gZTwIbLwMLCQcDFQoI
-Ah4BAheAAAoJEHSimBgePDrrKzoD/2e/hfwT+K59Ag8j4F5l74/hAGBdm0VhW8Vh
-j7PCjrmvV77gDtVyUAguzIMfw/Lf+y3y2J+JE8xGyhU/92bTc5e+D5f0JQ2aqHZk
-/IBREg3dNS7C+fZiNDvc8O4D+0WZH7Yhb3jhr0+DrP0rzs3aVxhlgH8rR7aMZsQ6
-uuoM7mVDzo0Ef+gZTwEEAK0pLhDM5pDxWVfuVFssIdbWhClxlN9ZGhjGM27vf5QE
-0YAluhlv5BTtLU3pYtQYScJksNAFYmENtufWU+c4fv4HHSTGXsW5baw8Ix1vFasr
-Aa9atZWBZklQVt3Bsxu9+jOYxGJDjkzyhpLOZgJSYFK36l8dATPF5t1eGy405i0n
-ABEBAAHCwIMEGAEKAA8FAn/oGU8FCQ8JnAACGy4AqAkQdKKYGB48OuudIAQZAQoA
-BgUCf+gZTwAKCRDuSkIwkyAjaKEqA/9XS9AgN4nV9on6GsuK1ZpQpqcKAf4SZaF3
-rDXqpYfM+LDpqaIl8LZKzK7EyW2pVNV9PwnYtMXwQ7A3KAu2audWxSawHNyvgez1
-Ujl0J7TfKwJyVBrCDjZCJrr+joPU0To95jJivSrnCYC3l1ngoMIZycfaU6FhYwHd
-2XJe2kbzc8JPA/9aCPIahfTEDEH/giKdtzlLbkri2UYGCJqcoNl0Maz6LVUI3NCo
-3O77zi2v7gLtu+9hgfWa8dTxCOszDbNTknb8XXCK74FxwIBgr4gHlvK+xh38RI+8
-eC2y0qONraQ/qACJ+UGh1/4smKasSlBi7hZOvNmOxqm4iQ5hve4uWsSlIs6NBH/o
-GU8BBADDinuE+B31B2hCxsRcNiruHEF9Q65vWUC0w32a9ScsyiiESqhwIgs0L/Ey
-ejnn4jAQVlmgfJJLUIggGjLXGBGF7Q7v4uzxH97JeC+OCFV2b0RIyUf37Sn3i/+B
-/BLp250RbLfN5jOJAtVpnbBJSLDjpWzzC6YBXiUXMRrSdEEwWwARAQABwsCDBBgB
-CgAPBQJ/6BlPBQkPCZwAAhsuAKgJEHSimBgePDrrnSAEGQEKAAYFAn/oGU8ACgkQ
-KMGvjkoZ3acysgP9FoulZYO+rmQwjyYE7hZ97v/gdzWb6ScO+m8Jm30Q0J9uKNTK
-wOlTOh6Nrb0q0t1U2apJ//SQV0zxmQmWf1a5pNR0KdhiD3J02+3hwLl5dSoYzkNz
-A9Xzgg1cCbSDF/dgLH+x1ieMBOH91OTZ0flurq2p2lwNoIVclLJNJSbZzONNJwP+
-OYAKvRAWVEi/g1nWGfv0YF6cOP+6cA26vxuJPuGFp/7bwlJ8ALAk6NsQ+qjfonGO
-VsAU6YXQP9Dt1PvLo7pOtZZ/W9NbuPRaFW7sB6EtYFcko9kckYJXZcIOpffTCPHm
-Jrh3+G2j19Lsnomz3YCU4wETLkMwxQPG3WzOeNLwX+U=
-=yV+n
------END PGP PUBLIC KEY BLOCK-----`;
+xcA4BAAAAAEBAgCgONc0J8rfO6cJw5YTP38x1ze2tAYIO7EcmRCNYwMkXngb
+0Qdzg34Q5RW0rNiR56VB6KElPUhePRPVklLFiIvHABEBAAEAAf9qabYMzsz/
+/LeRVZSsTgTljmJTdzd2ambUbpi+vt8MXJsbaWh71vjoLMWSXajaKSPDjVU5
+waFNt9kLqwGGGLqpAQD5ZdMH2XzTq6GU9Ka69iZs6Pbnzwdz59Vc3i8hXlUj
+zQEApHargCTsrtvSrm+hK/pN51/BHAy9lxCAw9f2etx+AeMA/RGrijkFZtYt
+jeWdv/usXL3mgHvEcJv63N5zcEvDX5X4W1bND3Rlc3QxIDxhQGIuY29tPsJ7
+BBABCAAvBQIAAAABBQMAAAU5BgsJBwgDAgkQzcF99nGrkAkEFQgKAgMWAgEC
+GQECGwMCHgEAABAlAfwPehmLZs+gOhOTTaSslqQ50bl/REjmv42Nyr1ZBlQS
+DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
+=/7PI
+-----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
 const plaintext = 'short message\nnext line\n한국어/조선말';
@@ -645,6 +595,8 @@ describe('OpenPGP.js public api tests', function() {
     let publicKey_2000_2008;
     let privateKey_2038_2045;
     let publicKey_2038_2045;
+    let privateKey_1337;
+    let publicKey_1337;
     let privateKey;
     let publicKey;
     let zero_copyVal;
@@ -658,18 +610,18 @@ describe('OpenPGP.js public api tests', function() {
       privateKey = openpgp.key.readArmored(priv_key);
       expect(privateKey.keys).to.have.length(1);
       expect(privateKey.err).to.not.exist;
-      publicKey_2000_2008 = openpgp.key.readArmored(pub_key_2000_2008);
-      expect(publicKey_2000_2008.keys).to.have.length(1);
-      expect(publicKey_2000_2008.err).to.not.exist;
       privateKey_2000_2008 = openpgp.key.readArmored(priv_key_2000_2008);
       expect(privateKey_2000_2008.keys).to.have.length(1);
       expect(privateKey_2000_2008.err).to.not.exist;
-      publicKey_2038_2045 = openpgp.key.readArmored(pub_key_2038_2045);
-      expect(publicKey_2038_2045.keys).to.have.length(1);
-      expect(publicKey_2038_2045.err).to.not.exist;
+      publicKey_2000_2008 = { keys: [ privateKey_2000_2008.keys[0].toPublic() ] };
       privateKey_2038_2045 = openpgp.key.readArmored(priv_key_2038_2045);
       expect(privateKey_2038_2045.keys).to.have.length(1);
       expect(privateKey_2038_2045.err).to.not.exist;
+      publicKey_2038_2045 = { keys: [ privateKey_2038_2045.keys[0].toPublic() ] };
+      privateKey_1337 = openpgp.key.readArmored(priv_key_expires_1337);
+      expect(privateKey_1337.keys).to.have.length(1);
+      expect(privateKey_1337.err).to.not.exist;
+      publicKey_1337 = { keys: [ privateKey_1337.keys[0].toPublic() ] };
       zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
@@ -1539,7 +1491,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data and not armor with detached signatures', function () {
-            const start = Date.now();
+            const start = openpgp.util.normalizeDate();
             const signOpt = {
                 data: plaintext,
                 privateKeys: privateKey.keys,
@@ -1555,301 +1507,182 @@ describe('OpenPGP.js public api tests', function() {
                 return openpgp.verify(verifyOpt);
             }).then(function (verified) {
                 expect(verified.data).to.equal(plaintext);
-                expect(+verified.signatures[0].signature.packets[0].created).to.be.lte(Date.now());
-                expect(+verified.signatures[0].signature.packets[0].created).to.be.gte(start);
+                expect(+verified.signatures[0].signature.packets[0].created).to.be.lte(+openpgp.util.normalizeDate());
+                expect(+verified.signatures[0].signature.packets[0].created).to.be.gte(+start);
                 expect(verified.signatures[0].valid).to.be.true;
                 expect(verified.signatures[0].keyid.toHex()).to.equal(privateKey.keys[0].getSigningKeyPacket().getKeyId().toHex());
                 expect(verified.signatures[0].signature.packets.length).to.equal(1);
             });
         });
 
-          it('should sign and verify cleartext data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const signOpt = {
-                  data: plaintext,
-                  privateKeys: privateKey_2000_2008.keys,
-                  detached: true,
-                  creationDate: past,
-                  armor: false
-              };
-              const verifyOpt = {
-                  publicKeys: publicKey_2000_2008.keys
-              };
-              return openpgp.sign(signOpt).then(function (signed) {
-                  verifyOpt.message = new openpgp.cleartext.CleartextMessage(plaintext);
-                  verifyOpt.signature = signed.signature;
-                  return openpgp.verify(verifyOpt);
-              }).then(function (verified) {
+        it('should sign and verify cleartext data with a date in the past', function () {
+            const past = new Date(2000);
+            const signOpt = {
+                data: plaintext,
+                privateKeys: privateKey_1337.keys,
+                detached: true,
+                date: past,
+                armor: false
+            };
+            const verifyOpt = {
+                publicKeys: publicKey_1337.keys,
+                date: past
+            };
+            return openpgp.sign(signOpt).then(function (signed) {
+                verifyOpt.message = new openpgp.cleartext.CleartextMessage(plaintext);
+                verifyOpt.signature = signed.signature;
+                return openpgp.verify(verifyOpt).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(plaintext);
                   expect(verified.signatures[0].valid).to.be.true;
                   expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, past))
-                      .to.be.not.a('null');
+                      .to.be.not.null;
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
-
-
-          it('should sign and verify binary data with a date in the future', function () {
-              const future = new Date(2040, 5, 5, 5, 5, 5, 0);
-              const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-              const signOpt = {
-                  data,
-                  privateKeys: privateKey_2038_2045.keys,
-                  detached: true,
-                  creationDate: future,
-                  armor: false
-              };
-              const verifyOpt = {
-                  publicKeys: publicKey_2038_2045.keys
-              };
-              return openpgp.sign(signOpt).then(function (signed) {
-                  verifyOpt.message = openpgp.message.fromBinary(data);
-                  verifyOpt.signature = signed.signature;
+                  // now check with expiration checking disabled
+                  verifyOpt.date = null;
                   return openpgp.verify(verifyOpt);
-              }).then(function (verified) {
-                  expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
-                  expect(verified.data).to.equal(data);
-                  expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
-                      .to.be.not.a('null');
-                  expect(verified.signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
-
-          it('should encrypt and decrypt cleartext data with a date in the future', function () {
-              const future = new Date(2040, 5, 5, 5, 5, 5, 0);
-              const encryptOpt = {
-                  data: plaintext,
-                  publicKeys: publicKey_2038_2045.keys,
-                  creationDate: future,
-                  armor: false
-              };
-              const decryptOpt = {
-                  privateKeys: privateKey_2038_2045.keys
-              };
-
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  decryptOpt.message = encrypted.message;
-                  return encrypted.message.decrypt(decryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+future);
-                  expect(packets.getText()).to.equal(plaintext);
-              });
-          });
-
-
-          it('should encrypt and decrypt binary data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-              const encryptOpt = {
-                  data,
-                  publicKeys: publicKey_2000_2008.keys,
-                  creationDate: past,
-                  armor: false
-              };
-              const decryptOpt = {
-                  privateKeys: privateKey_2000_2008.keys
-              };
-
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  decryptOpt.message = encrypted.message;
-                  return encrypted.message.decrypt(decryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+past);
-                  expect(packets.getLiteralData()).to.deep.equal(data);
-              });
-          });
-
-          it('should sign, encrypt and decrypt, verify cleartext data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const encryptOpt = {
-                  data: plaintext,
-                  publicKeys: publicKey_2000_2008.keys,
-                  privateKeys: privateKey_2000_2008.keys,
-                  creationDate: past,
-                  armor: false
-              };
-
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  return encrypted.message.decrypt(encryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+past);
-                  expect(packets.getText()).to.equal(plaintext);
-                  return packets.verify(encryptOpt.publicKeys);
-              }).then(function (signatures) {
-                  expect(+signatures[0].signature.packets[0].created).to.equal(+past);
-                  expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, past))
-                      .to.be.not.a('null');
-                  expect(signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
-
-
-          it('should sign, encrypt and decrypt, verify binary data with a date in the future', function () {
-              const future = new Date(2040, 5, 5, 5, 5, 5, 0);
-              const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-              const encryptOpt = {
-                  data,
-                  publicKeys: publicKey_2038_2045.keys,
-                  privateKeys: privateKey_2038_2045.keys,
-                  creationDate: future,
-                  armor: false
-              };
-
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  return encrypted.message.decrypt(encryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+future);
-                  expect(packets.getLiteralData()).to.deep.equal(data);
-                  return packets.verify(encryptOpt.publicKeys);
-              }).then(function (signatures) {
-                  expect(+signatures[0].signature.packets[0].created).to.equal(+future);
-                  expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, future))
-                      .to.be.not.a('null');
-                  expect(signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
-
-          it('should sign and verify cleartext data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const signOpt = {
-                  data: plaintext,
-                  privateKeys: privateKey_2000_2008.keys,
-                  detached: true,
-                  creationDate: past,
-                  armor: false
-              };
-              const verifyOpt = {
-                  publicKeys: publicKey_2000_2008.keys
-              };
-              return openpgp.sign(signOpt).then(function (signed) {
-                  verifyOpt.message = new openpgp.cleartext.CleartextMessage(plaintext);
-                  verifyOpt.signature = signed.signature;
-                  return openpgp.verify(verifyOpt);
-              }).then(function (verified) {
+                }).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(plaintext);
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, past))
-                      .to.be.not.a('null');
+                  expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, null))
+                      .to.be.not.null;
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
+                });
+            });
+        });
 
-          it('should encrypt and decrypt cleartext data with a date in the future', function () {
-              const future = new Date(2040, 5, 5, 5, 5, 5, 0);
-              const encryptOpt = {
-                  data: plaintext,
-                  publicKeys: publicKey_2038_2045.keys,
-                  creationDate: future,
-                  armor: false
-              };
-              const decryptOpt = {
-                  privateKeys: privateKey_2038_2045.keys
-              };
+        it('should sign and verify binary data with a date in the future', function () {
+            const future = new Date(2040, 5, 5, 5, 5, 5, 0);
+            const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+            const signOpt = {
+                data,
+                privateKeys: privateKey_2038_2045.keys,
+                detached: true,
+                date: future,
+                armor: false
+            };
+            const verifyOpt = {
+                publicKeys: publicKey_2038_2045.keys,
+                date: future
+            };
+            return openpgp.sign(signOpt).then(function (signed) {
+                verifyOpt.message = openpgp.message.fromBinary(data);
+                verifyOpt.signature = signed.signature;
+                return openpgp.verify(verifyOpt);
+            }).then(function (verified) {
+                expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
+                expect(verified.data).to.equal(data);
+                expect(verified.signatures[0].valid).to.be.true;
+                expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
+                    .to.be.not.null;
+                expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            });
+        });
 
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  decryptOpt.message = encrypted.message;
-                  return encrypted.message.decrypt(decryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+future);
-                  expect(packets.getText()).to.equal(plaintext);
-              });
-          });
+        it('should encrypt and decrypt cleartext data with a date in the future', function () {
+            const future = new Date(2040, 5, 5, 5, 5, 5, 0);
+            const encryptOpt = {
+                data: plaintext,
+                publicKeys: publicKey_2038_2045.keys,
+                date: future,
+                armor: false
+            };
+            const decryptOpt = {
+                privateKeys: privateKey_2038_2045.keys,
+                date: future
+            };
 
+            return openpgp.encrypt(encryptOpt).then(function (encrypted) {
+                decryptOpt.message = encrypted.message;
+                return encrypted.message.decrypt(decryptOpt.privateKeys);
+            }).then(function (packets) {
+                const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
+                expect(literals.length).to.equal(1);
+                expect(+literals[0].date).to.equal(+future);
+                expect(packets.getText()).to.equal(plaintext);
+            });
+        });
 
-          it('should encrypt and decrypt binary data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-              const encryptOpt = {
-                  data,
-                  publicKeys: publicKey_2000_2008.keys,
-                  creationDate: past,
-                  armor: false
-              };
-              const decryptOpt = {
-                  privateKeys: privateKey_2000_2008.keys
-              };
+        it('should encrypt and decrypt binary data with a date in the past', function () {
+            const past = new Date(2005, 5, 5, 5, 5, 5, 0);
+            const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+            const encryptOpt = {
+                data,
+                publicKeys: publicKey_2000_2008.keys,
+                date: past,
+                armor: false
+            };
+            const decryptOpt = {
+                privateKeys: privateKey_2000_2008.keys,
+                date: past
+            };
 
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  decryptOpt.message = encrypted.message;
-                  return encrypted.message.decrypt(decryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+past);
-                  expect(packets.getLiteralData()).to.deep.equal(data);
-              });
-          });
+            return openpgp.encrypt(encryptOpt).then(function (encrypted) {
+                decryptOpt.message = encrypted.message;
+                return encrypted.message.decrypt(decryptOpt.privateKeys);
+            }).then(function (packets) {
+                const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
+                expect(literals.length).to.equal(1);
+                expect(+literals[0].date).to.equal(+past);
+                expect(packets.getLiteralData()).to.deep.equal(data);
+            });
+        });
 
-          it('should sign, encrypt and decrypt, verify cleartext data with a date in the past', function () {
-              const past = new Date(2005, 5, 5, 5, 5, 5, 0);
-              const encryptOpt = {
-                  data: plaintext,
-                  publicKeys: publicKey_2000_2008.keys,
-                  privateKeys: privateKey_2000_2008.keys,
-                  creationDate: past,
-                  armor: false
-              };
+        it('should sign, encrypt and decrypt, verify cleartext data with a date in the past', function () {
+            const past = new Date(2005, 5, 5, 5, 5, 5, 0);
+            const encryptOpt = {
+                data: plaintext,
+                publicKeys: publicKey_2000_2008.keys,
+                privateKeys: privateKey_2000_2008.keys,
+                date: past,
+                armor: false
+            };
 
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  return encrypted.message.decrypt(encryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+past);
-                  expect(packets.getText()).to.equal(plaintext);
-                  return packets.verify(encryptOpt.publicKeys);
-              }).then(function (signatures) {
-                  expect(+signatures[0].signature.packets[0].created).to.equal(+past);
-                  expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, past))
-                      .to.be.not.a('null');
-                  expect(signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
+            return openpgp.encrypt(encryptOpt).then(function (encrypted) {
+                return encrypted.message.decrypt(encryptOpt.privateKeys);
+            }).then(function (packets) {
+                const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
+                expect(literals.length).to.equal(1);
+                expect(+literals[0].date).to.equal(+past);
+                expect(packets.getText()).to.equal(plaintext);
+                return packets.verify(encryptOpt.publicKeys, past);
+            }).then(function (signatures) {
+                expect(+signatures[0].signature.packets[0].created).to.equal(+past);
+                expect(signatures[0].valid).to.be.true;
+                expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, past))
+                    .to.be.not.null;
+                expect(signatures[0].signature.packets.length).to.equal(1);
+            });
+        });
 
+        it('should sign, encrypt and decrypt, verify binary data with a date in the future', function () {
+            const future = new Date(2040, 5, 5, 5, 5, 5, 0);
+            const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+            const encryptOpt = {
+                data,
+                publicKeys: publicKey_2038_2045.keys,
+                privateKeys: privateKey_2038_2045.keys,
+                date: future,
+                armor: false
+            };
 
-          it('should sign, encrypt and decrypt, verify binary data with a date in the future', function () {
-              const future = new Date(2040, 5, 5, 5, 5, 5, 0);
-              const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-              const encryptOpt = {
-                  data,
-                  publicKeys: publicKey_2038_2045.keys,
-                  privateKeys: privateKey_2038_2045.keys,
-                  creationDate: future,
-                  armor: false
-              };
-
-              return openpgp.encrypt(encryptOpt).then(function (encrypted) {
-                  return encrypted.message.decrypt(encryptOpt.privateKeys);
-              }).then(function (packets) {
-                  const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
-                  expect(literals.length).to.equal(1);
-                  expect(+literals[0].date).to.equal(+future);
-                  expect(packets.getLiteralData()).to.deep.equal(data);
-                  return packets.verify(encryptOpt.publicKeys);
-              }).then(function (signatures) {
-                  expect(+signatures[0].signature.packets[0].created).to.equal(+future);
-                  expect(signatures[0].valid).to.be.true;
-                  expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, future))
-                      .to.be.not.a('null');
-                  expect(signatures[0].signature.packets.length).to.equal(1);
-              });
-          });
+            return openpgp.encrypt(encryptOpt).then(function (encrypted) {
+                return encrypted.message.decrypt(encryptOpt.privateKeys);
+            }).then(function (packets) {
+                const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
+                expect(literals.length).to.equal(1);
+                expect(+literals[0].date).to.equal(+future);
+                expect(packets.getLiteralData()).to.deep.equal(data);
+                return packets.verify(encryptOpt.publicKeys, future);
+            }).then(function (signatures) {
+                expect(+signatures[0].signature.packets[0].created).to.equal(+future);
+                expect(signatures[0].valid).to.be.true;
+                expect(encryptOpt.privateKeys[0].getSigningKeyPacket(signatures[0].keyid, future))
+                    .to.be.not.null;
+                expect(signatures[0].signature.packets.length).to.equal(1);
+            });
+        });
       });
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
@@ -2072,6 +1905,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
       });
+
     }
 
   });

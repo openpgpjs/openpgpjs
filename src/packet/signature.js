@@ -40,8 +40,9 @@ import type_keyid from '../type/keyid.js';
 
 /**
  * @constructor
+ * @param {Date} date the creation date of the signature
  */
-export default function Signature(date = new Date()) {
+export default function Signature(date=new Date()) {
   this.tag = enums.packet.signature;
   this.version = 4;
   this.signatureType = null;
@@ -52,7 +53,7 @@ export default function Signature(date = new Date()) {
   this.unhashedSubpackets = null;
   this.signedHashValue = null;
 
-  this.created = date;
+  this.created = util.normalizeDate(date);
   this.signatureExpirationTime = null;
   this.signatureNeverExpires = true;
   this.exportable = null;
@@ -661,11 +662,14 @@ Signature.prototype.verify = async function (key, data) {
 
 /**
  * Verifies signature expiration date
+ * @param {Date} date (optional) use the given date for verification instead of the current time
  * @return {Boolean} true if expired
  */
-Signature.prototype.isExpired = function (date = new Date()) {
-  if (!this.signatureNeverExpires) {
-    return +date > (this.created.getTime() + this.signatureExpirationTime*1000);
+Signature.prototype.isExpired = function (date=new Date()) {
+  if (!this.signatureNeverExpires && date !== null) {
+    const expirationTime = this.created.getTime() + this.signatureExpirationTime*1000;
+    const normDate = util.normalizeDate(date);
+    return !(this.created <= normDate && normDate < expirationTime);
   }
   return false;
 };

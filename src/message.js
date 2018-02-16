@@ -239,10 +239,10 @@ Message.prototype.getText = function() {
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date         (optional) the current date of encryption
+ * @param  {Date} date                 (optional) override the creation date of the literal package
  * @return {Message}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard = false, date = new Date()) {
+Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false, date=new Date()) {
   let symAlgo;
   let msg;
   let symEncryptedPacket;
@@ -297,10 +297,10 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard = fal
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                 (optional) the date used to encrypt
+ * @param  {Date} date                 (optional) override the creation date signature
  * @return {Message}                   new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date = new Date()) {
+export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
   const packetlist = new packet.List();
 
   return Promise.resolve().then(async () => {
@@ -362,10 +362,10 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wi
  * Sign the message (the literal data packet of the message)
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
- * @param  {Date} date}                   (optional) the creation date of the signature used for creating a new signature
+ * @param  {Date} date}                   (optional) override the creation time of the signature
  * @return {module:message~Message}       new message with signed content
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date = new Date()) {
+Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date()) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -400,7 +400,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date = n
       throw new Error('Need private key for signing');
     }
     await privateKey.verifyPrimaryUser();
-    const signingKeyPacket = privateKey.getSigningKeyPacket(null, date);
+    const signingKeyPacket = privateKey.getSigningKeyPacket(undefined, date);
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.primaryKey.getKeyId().toHex());
@@ -448,10 +448,10 @@ Message.prototype.compress = function(compression) {
  * Create a detached signature for the message (the literal data packet of the message)
  * @param  {Array<module:key~Key>}           privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} date                       (optional) the creation date to sign the message with
+ * @param  {Date} date                       (optional) override the creation time of the signature
  * @return {module:signature~Signature}      new detached signature of message content
  */
-Message.prototype.signDetached = async function(privateKeys=[], signature=null, date = new Date()) {
+Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date()) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -466,10 +466,10 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {module:packet/literal}           literalDataPacket the literal data packet to sign
  * @param  {Array<module:key~Key>}           privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature to append
- * @param  {Date} date               (optional) the creation date to sign the message with
+ * @param  {Date} date                       (optional) override the creationtime of the signature
  * @return {module:packet/packetlist}        list of signature packets
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date = new Date()) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
   const packetlist = new packet.List();
 
   const literalFormat = enums.write(enums.literal, literalDataPacket.format);
@@ -481,7 +481,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error('Need private key for signing');
     }
     await privateKey.verifyPrimaryUser();
-    const signingKeyPacket = privateKey.getSigningKeyPacket(null, date);
+    const signingKeyPacket = privateKey.getSigningKeyPacket(undefined, date);
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' + privateKey.primaryKey.getKeyId().toHex());
     }
@@ -508,10 +508,10 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
 /**
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
- * @param {Date} date the current date
+ * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-Message.prototype.verify = function(keys, date = new Date()) {
+Message.prototype.verify = function(keys, date=new Date()) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
@@ -525,10 +525,10 @@ Message.prototype.verify = function(keys, date = new Date()) {
  * Verify detached message signature
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Signature} signature
- * @param {Date} date the current date
+ * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-Message.prototype.verifyDetached = function(signature, keys, date = new Date()) {
+Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
@@ -543,10 +543,10 @@ Message.prototype.verifyDetached = function(signature, keys, date = new Date()) 
  * @param {Array<module:packet/signature>} signatureList array of signature packets
  * @param {Array<module:packet/literal>} literalDataList array of literal data packets
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
- * @param {Date} date the current date
+ * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date()) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
     let keyPacket = null;
     await Promise.all(keys.map(async function(key) {
@@ -640,7 +640,7 @@ export function readSignedContent(content, detachedSignature) {
  * @return {module:message~Message} new message object
  * @static
  */
-export function fromText(text, filename, date = new Date()) {
+export function fromText(text, filename, date=new Date()) {
   const literalDataPacket = new packet.Literal(date);
   // text will be converted to UTF8
   literalDataPacket.setText(text);
@@ -660,7 +660,7 @@ export function fromText(text, filename, date = new Date()) {
  * @return {module:message~Message} new message object
  * @static
  */
-export function fromBinary(bytes, filename, date = new Date()) {
+export function fromBinary(bytes, filename, date=new Date()) {
   if (!util.isUint8Array(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
