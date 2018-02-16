@@ -642,8 +642,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify test with expired verification public key and verify_expired_keys set to false', function() {
-    openpgp.config.verify_expired_keys = false;
+  it('Verify test with expired verification public key', function() {
     const pubKey = openpgp.key.readArmored(pub_expired).keys[0];
     const message = openpgp.message.readArmored(msg_sig_expired);
     return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
@@ -655,11 +654,10 @@ describe("Signature", function() {
 
   });
 
-  it('Verify test with expired verification public key and verify_expired_keys set to true', function() {
-    openpgp.config.verify_expired_keys = true;
+  it('Verify test with expired verification public key and disable expiration checks using null date', function() {
     const pubKey = openpgp.key.readArmored(pub_expired).keys[0];
     const message = openpgp.message.readArmored(msg_sig_expired);
-    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+    return openpgp.verify({ publicKeys:[pubKey], message:message, date: null }).then(function(verified) {
       expect(verified).to.exist;
       expect(verified.signatures).to.have.length(1);
       expect(verified.signatures[0].valid).to.be.true;
@@ -668,8 +666,7 @@ describe("Signature", function() {
 
   });
 
-  it('Verify test with expired verification public key and verify_expired_keys set to false', function() {
-    openpgp.config.verify_expired_keys = false;
+  it('Verify test with expired verification public key', function() {
     const pubKey = openpgp.key.readArmored(pub_expired).keys[0];
     const message = openpgp.message.readArmored(msg_sig_expired);
     return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
@@ -681,11 +678,10 @@ describe("Signature", function() {
 
   });
 
-  it('Verify test with expired verification public key and verify_expired_keys set to true', function() {
-    openpgp.config.verify_expired_keys = true;
+  it('Verify test with expired verification public key and disable expiration checks using null date', function() {
     const pubKey = openpgp.key.readArmored(pub_expired).keys[0];
     const message = openpgp.message.readArmored(msg_sig_expired);
-    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+    return openpgp.verify({ publicKeys:[pubKey], message:message, date: null }).then(function(verified) {
       expect(verified).to.exist;
       expect(verified.signatures).to.have.length(1);
       expect(verified.signatures[0].valid).to.be.true;
