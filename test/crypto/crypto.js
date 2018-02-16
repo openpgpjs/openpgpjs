@@ -1,5 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
-const asmCrypto = require('asmcrypto-lite');
+const asmCrypto = require('asmcrypto.js');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));

@@ -18,13 +18,15 @@
 // The GPG4Browsers crypto interface
 
 /**
+ * @requires bn.js
  * @requires type/mpi
  * @requires util
  * @module crypto/random
  */
 
-import type_mpi from '../type/mpi.js';
-import util from '../util.js';
+import BN from 'bn.js';
+import type_mpi from '../type/mpi';
+import util from '../util';
 
 // Do not use util.getNodeCrypto because we need this regardless of use_native setting
 const nodeCrypto = util.detectNode() && require('crypto');
@@ -107,9 +109,9 @@ export default {
 
     let randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
     if (bits % 8 > 0) {
-      randomBits = String.fromCharCode(((2 ** (bits % 8)) - 1) &
-        randomBits.charCodeAt(0)) +
-        randomBits.substring(1);
+      randomBits = String.fromCharCode(
+        ((2 ** (bits % 8)) - 1) & randomBits.charCodeAt(0)
+      ) + randomBits.substring(1);
     }
     const mpi = new type_mpi(randomBits);
     return mpi.toBigInteger();
@@ -126,6 +128,27 @@ export default {
       r = this.getRandomBigInteger(range.bitLength());
     }
     return min.add(r);
+  },
+
+  /**
+   * Create a secure random MPI in specified range
+   * @param {module:type/mpi} min Lower bound, included
+   * @param {module:type/mpi} max Upper bound, excluded
+   * @return {module:BN} Random MPI
+   */
+  getRandomBN: function(min, max) {
+    if (max.cmp(min) <= 0) {
+      throw new Error('Illegal parameter value: max <= min');
+    }
+
+    const modulus = max.sub(min);
+    const length = modulus.byteLength();
+    let r = new BN(this.getRandomBytes(length));
+    // Using a while loop is necessary to avoid bias
+    while (r.cmp(modulus) >= 0) {
+      r = new BN(this.getRandomBytes(length));
+    }
+    return r.iadd(min);
   },
 
   randomBuffer: new RandomBuffer()
