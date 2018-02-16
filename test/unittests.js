@@ -1,3 +1,11 @@
+// Old browser polyfills
+if (typeof Symbol === 'undefined') {
+  require('core-js/fn/symbol');
+}
+if (typeof Promise === 'undefined') {
+  require('core-js/fn/promise');
+}
+
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
@@ -14,7 +22,6 @@
 
       tests();
 
-      //if (typeof window !== 'undefined') { afterEach(function () { window.scrollTo(0, document.body.scrollHeight); }); }
       if (options.afterEach) { afterEach(options.afterEach); }
       if (options.after) { after(options.after); }
     });
