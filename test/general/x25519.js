@@ -151,7 +151,7 @@ describe('X25519 Cryptography', function () {
     load_priv_key('light');
     load_priv_key('night');
     done();
-  }).timeout(15000);
+  });
 
   it('Verify clear signed message', function () {
     const name = 'light';
