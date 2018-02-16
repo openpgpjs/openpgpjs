@@ -41,7 +41,6 @@ import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import util from '../util';
 
-
 function constructParams(types, data) {
   return types.map(function(type, i) {
     if (data && data[i]) {

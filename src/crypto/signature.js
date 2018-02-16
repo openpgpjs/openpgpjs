@@ -27,6 +27,7 @@ export default {
     let s;
     let Q;
     let curve;
+    let signature;
 
     data = util.Uint8Array2str(data);
 
@@ -51,16 +52,15 @@ export default {
       }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        const dsa = new publicKey.dsa();
-        const s1 = msg_MPIs[0].toBigInteger();
-        const s2 = msg_MPIs[1].toBigInteger();
-        const p = publickey_MPIs[0].toBigInteger();
-        const q = publickey_MPIs[1].toBigInteger();
-        const g = publickey_MPIs[2].toBigInteger();
-        const y = publickey_MPIs[3].toBigInteger();
-        m = data;
-        const dopublic = dsa.verify(hash_algo, s1, s2, m, p, q, g, y);
-        return dopublic.compareTo(s1) === 0;
+        const dsa = publicKey.dsa;
+        r = msg_MPIs[0].toBN();
+        s = msg_MPIs[1].toBN();
+        const p = publickey_MPIs[0].toBN();
+        const q = publickey_MPIs[1].toBN();
+        const g = publickey_MPIs[2].toBN();
+        const y = publickey_MPIs[3].toBN();
+        m = util.str2Uint8Array(data);
+        return dsa.verify(hash_algo, r, s, m, p, q, g, y);
       }
       case 19: {
         // ECDSA
@@ -122,15 +122,17 @@ export default {
       }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]
-        const dsa = new publicKey.dsa();
-
-        const p = keyIntegers[0].toBigInteger();
-        const q = keyIntegers[1].toBigInteger();
-        const g = keyIntegers[2].toBigInteger();
-        const x = keyIntegers[4].toBigInteger();
-        m = data;
-        const result = dsa.sign(hash_algo, m, g, p, q, x);
-        return util.str2Uint8Array(result[0].toString() + result[1].toString());
+        const dsa = publicKey.dsa;
+        const p = keyIntegers[0].toBN();
+        const q = keyIntegers[1].toBN();
+        const g = keyIntegers[2].toBN();
+        const x = keyIntegers[4].toBN();
+        m = util.str2Uint8Array(data);
+        signature = dsa.sign(hash_algo, m, g, p, q, x);
+        return util.concatUint8Array([
+          util.Uint8Array2MPI(signature.r.toArrayLike(Uint8Array)),
+          util.Uint8Array2MPI(signature.s.toArrayLike(Uint8Array))
+        ]);
       }
       case 16: {
         // Elgamal (Encrypt-Only) [ELGAMAL] [HAC]

@@ -29,11 +29,13 @@
  * An MPI consists of two pieces: a two-octet scalar that is the length
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
+ * @requires bn.js
  * @requires crypto/public_key/jsbn
  * @requires util
  * @module type/mpi
  */
 
+import BN from 'bn.js';
 import BigInteger from '../crypto/public_key/jsbn';
 import util from '../util';
 
@@ -108,6 +110,10 @@ MPI.prototype.write = function () {
 
 MPI.prototype.toBigInteger = function () {
   return this.data.clone();
+};
+
+MPI.prototype.toBN = function (bn) {
+  return new BN(this.write().slice(2));
 };
 
 MPI.prototype.fromBigInteger = function (bn) {
