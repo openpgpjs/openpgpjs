@@ -452,8 +452,6 @@ Message.prototype.compress = function(compression) {
  * @return {module:signature~Signature}      new detached signature of message content
  */
 Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date()) {
-  const packetlist = new packet.List();
-
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');

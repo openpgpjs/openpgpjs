@@ -677,7 +677,6 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
- * @param {Date} date (optional) use the given date for verification instead of the current time
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Key.prototype.verifyPrimaryUser = async function(keys) {
@@ -957,7 +956,7 @@ SubKey.prototype.toPacketlist = function() {
  * @return {Boolean}
  */
 SubKey.prototype.isValidEncryptionKey = async function(primaryKey, date=new Date()) {
-  if (await this.verify(primaryKey) !== enums.keyStatus.valid) {
+  if (await this.verify(primaryKey, date) !== enums.keyStatus.valid) {
     return false;
   }
   for (let i = 0; i < this.bindingSignatures.length; i++) {
@@ -975,7 +974,7 @@ SubKey.prototype.isValidEncryptionKey = async function(primaryKey, date=new Date
  * @return {Boolean}
  */
 SubKey.prototype.isValidSigningKey = async function(primaryKey, date=new Date()) {
-  if (await this.verify(primaryKey) !== enums.keyStatus.valid) {
+  if (await this.verify(primaryKey, date) !== enums.keyStatus.valid) {
     return false;
   }
   for (let i = 0; i < this.bindingSignatures.length; i++) {
@@ -1290,7 +1289,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     const dataToSign = {};
     dataToSign.userid = userIdPacket;
     dataToSign.key = secretKeyPacket;
-    const signaturePacket = new packet.Signature(new Date(1000));
+    const signaturePacket = new packet.Signature();
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
     signaturePacket.hashAlgorithm = getPreferredHashAlgo(secretKeyPacket);
