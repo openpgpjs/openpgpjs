@@ -24,7 +24,6 @@
  * @module cleartext
  */
 
-import util from './util.js';
 import config from './config';
 import armor from './encoding/armor';
 import enums from './enums';
@@ -72,7 +71,7 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
  * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
-CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date=new Date()) {
+CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date()) {
   return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date));
 };
 
