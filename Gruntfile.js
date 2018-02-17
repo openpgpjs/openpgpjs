@@ -244,7 +244,8 @@ module.exports = function(grunt) {
           maxRetries: 3,
           throttled: 2,
           pollInterval: 4000,
-          statusCheckAttempts: 200,
+          'max-duration': 360,
+          statusCheckAttempts: 200
         }
       }
     },
