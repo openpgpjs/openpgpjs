@@ -345,7 +345,7 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('verify', { message, publicKeys, signature });
+    return asyncProxy.delegate('verify', { message, publicKeys, signature, date });
   }
 
   return Promise.resolve().then(async function() {

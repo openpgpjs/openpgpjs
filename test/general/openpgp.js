@@ -868,7 +868,12 @@ describe('OpenPGP.js public api tests', function() {
 
         beforeEach(function (done) {
           expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
-          privateKey.keys[0].verifyPrimaryUser().then(() => done());
+          Promise.all([
+              privateKey.keys[0].verifyPrimaryUser(),
+              privateKey_2000_2008.keys[0].verifyPrimaryUser(),
+              privateKey_1337.keys[0].verifyPrimaryUser(),
+              privateKey_2038_2045.keys[0].verifyPrimaryUser()
+          ]).then(() => done());
         });
 
         it('should encrypt then decrypt', function () {
@@ -1556,27 +1561,27 @@ describe('OpenPGP.js public api tests', function() {
             const future = new Date(2040, 5, 5, 5, 5, 5, 0);
             const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
             const signOpt = {
-                data,
-                privateKeys: privateKey_2038_2045.keys,
-                detached: true,
-                date: future,
-                armor: false
+              data,
+              privateKeys: privateKey_2038_2045.keys,
+              detached: true,
+              date: future,
+              armor: false
             };
             const verifyOpt = {
-                publicKeys: publicKey_2038_2045.keys,
-                date: future
+              publicKeys: publicKey_2038_2045.keys,
+              date: future
             };
             return openpgp.sign(signOpt).then(function (signed) {
-                verifyOpt.message = openpgp.message.fromBinary(data);
-                verifyOpt.signature = signed.signature;
-                return openpgp.verify(verifyOpt);
+              verifyOpt.message = openpgp.message.fromBinary(data);
+              verifyOpt.signature = signed.signature;
+              return openpgp.verify(verifyOpt);
             }).then(function (verified) {
-                expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
-                expect(verified.data).to.equal(data);
-                expect(verified.signatures[0].valid).to.be.true;
-                expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
-                    .to.be.not.null;
-                expect(verified.signatures[0].signature.packets.length).to.equal(1);
+              expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
+              expect(Array.from(verified.data)).to.deep.equal(Array.from(data));
+              expect(verified.signatures[0].valid).to.be.true;
+              expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
+                  .to.be.not.null;
+              expect(verified.signatures[0].signature.packets.length).to.equal(1);
             });
         });
 

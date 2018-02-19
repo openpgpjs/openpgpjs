@@ -60,7 +60,7 @@ export function clonePackets(options) {
     if (options.message instanceof Message) {
       options.message = options.message.packets;
     } else if (options.message instanceof CleartextMessage) {
-      options.message.signature = options.message.signature.packets;
+      options.message = { text: options.message.text, signature: options.message.signature.packets };
     }
   }
   if (options.signature && (options.signature instanceof Signature)) {
