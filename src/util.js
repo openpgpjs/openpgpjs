@@ -446,6 +446,7 @@ export default {
     }
   },
 
+  // TODO rewrite getLeftNBits to work with Uint8Arrays
   getLeftNBits: function (string, bitcount) {
     const rest = bitcount % 8;
     if (rest === 0) {
