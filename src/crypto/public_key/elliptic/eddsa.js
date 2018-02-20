@@ -26,7 +26,7 @@
 
 import BN from 'bn.js';
 import hash from '../../hash';
-import curves from './curves';
+import { get as curvesGet } from './curves';
 
 /**
  * Sign a message using the provided key
@@ -37,7 +37,7 @@ import curves from './curves';
  * @return {{R: Array, S: Array}}       Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  const curve = curves.get(oid);
+  const curve = curvesGet(oid);
   const key = curve.keyFromSecret(d.toArray('be', 32));
   const signature = await key.sign(m, hash_algo);
   // EdDSA signature params are returned in little-endian format
@@ -54,7 +54,7 @@ async function sign(oid, hash_algo, m, d) {
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  const curve = curves.get(oid);
+  const curve = curvesGet(oid);
   const key = curve.keyFromPublic(Q.toArray('be', 33));
   // EdDSA signature params are expected in little-endian format
   return key.verify(m, {

@@ -25,8 +25,6 @@
 
 import util from '../util.js';
 
-module.exports = OID;
-
 /**
  * @constructor
  */
@@ -79,3 +77,5 @@ OID.fromClone = function (clone) {
   const oid = new OID(clone.oid);
   return oid;
 };
+
+export default OID;

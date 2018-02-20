@@ -24,8 +24,6 @@
 
 import util from '../util';
 
-module.exports = ECDHSymmetricKey;
-
 /**
  * @constructor
  */
@@ -63,3 +61,5 @@ ECDHSymmetricKey.prototype.read = function (input) {
 ECDHSymmetricKey.prototype.write = function () {
   return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);
 };
+
+export default ECDHSymmetricKey;

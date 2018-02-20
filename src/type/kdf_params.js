@@ -24,8 +24,6 @@
 
 import enums from '../enums.js';
 
-module.exports = KDFParams;
-
 /**
  * @constructor
  * @param  {enums.hash}       hash    Hash algorithm
@@ -66,3 +64,5 @@ KDFParams.prototype.write = function () {
 KDFParams.fromClone = function (clone) {
   return new KDFParams(clone.hash, clone.cipher);
 };
+
+export default KDFParams;
