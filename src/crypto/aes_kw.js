@@ -126,7 +126,7 @@ function pack() {
   return new Uint8Array(buffer);
 }
 
-module.exports = {
-  wrap: wrap,
-  unwrap: unwrap
+export default {
+  wrap,
+  unwrap
 };

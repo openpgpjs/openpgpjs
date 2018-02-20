@@ -202,9 +202,10 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
-// TODO convert to export default {...}
-module.exports = {
-  Curve, curves, webCurves, nodeCurves, get, generate, getPreferredHashAlgo
+export default Curve;
+
+export {
+  curves, webCurves, nodeCurves, get, generate, getPreferredHashAlgo
 };
 
 

@@ -30,7 +30,7 @@
  */
 
 import BN from 'bn.js';
-import curves from './curves';
+import { get as curvesGet } from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
 import hash from '../../hash';
@@ -74,7 +74,7 @@ function kdf(hash_algo, X, length, param) {
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
-  const curve = curves.get(oid);
+  const curve = curvesGet(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
   const v = await curve.genKeyPair();
@@ -102,7 +102,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   fingerprint = util.hex2Uint8Array(fingerprint);
-  const curve = curves.get(oid);
+  const curve = curvesGet(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
   V = curve.keyFromPublic(V);
