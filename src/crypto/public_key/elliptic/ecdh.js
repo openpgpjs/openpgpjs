@@ -67,7 +67,7 @@ function kdf(hash_algo, X, length, param) {
  * @param  {module:type/oid} oid          Elliptic curve object identifier
  * @param  {Enums}           cipher_algo  Symmetric cipher to use
  * @param  {Enums}           hash_algo    Hash algorithm to use
- * @param  {Uint8Array}      m            Value derived from session key (RFC 6637)
+ * @param  {module:type/mpi} m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}      Q            Recipient public key
  * @param  {String}          fingerprint  Recipient fingerprint
  * @return {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
@@ -81,7 +81,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   Q = curve.keyFromPublic(Q);
   const S = v.derive(Q);
   const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  const C = aes_kw.wrap(Z, m.toBytes());
+  const C = aes_kw.wrap(Z, m.toString());
   return {
     V: new BN(v.getPublic()),
     C: C

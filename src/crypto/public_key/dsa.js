@@ -86,7 +86,7 @@ export default {
       }
       break;
     }
-    return {r: r.fromRed(), s: s.fromRed()};
+    return { r: r.fromRed(), s: s.fromRed() };
   },
 
   /*

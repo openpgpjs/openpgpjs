@@ -182,7 +182,7 @@ PublicKey.prototype.getFingerprint = function () {
   } else if (this.version === 3) {
     const paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
     for (let i = 0; i < paramCount; i++) {
-      toHash += this.params[i].toBytes();
+      toHash += this.params[i].toString();
     }
     this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
   }

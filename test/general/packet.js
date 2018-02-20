@@ -171,7 +171,7 @@ describe("Packet", function() {
   });
 
   it('Public key encrypted symmetric key packet', function() {
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
@@ -435,7 +435,7 @@ describe("Packet", function() {
     const key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
 
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
@@ -463,7 +463,7 @@ describe("Packet", function() {
   it('Writing and verification of a signature packet.', function() {
     const key = new openpgp.packet.SecretKey();
 
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {

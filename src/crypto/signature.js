@@ -6,7 +6,7 @@
  * @module crypto/signature
 */
 
-import { RSA_RAW } from 'asmcrypto.js';
+// FIXME wrap rsa.js around this
 import publicKey from './public_key';
 import pkcs1 from './pkcs1';
 import util from '../util';
@@ -32,7 +32,7 @@ export default {
         const m = msg_MPIs[0].toUint8Array();
         const n = publickey_MPIs[0].toUint8Array();
         const e = publickey_MPIs[1].toUint8Array();
-        const EM = RSA_RAW.verify(m, [n, e]);
+        const EM = publicKey.rsa.verify(m, n, e);
         const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array2str(data), n.length);
         return util.hexidump(EM) === EM2;
       }
@@ -93,7 +93,8 @@ export default {
         const m = util.hex2Uint8Array(
           '00'+pkcs1.emsa.encode(hash_algo, data, n.length)  // FIXME remove '00'
         );
-        return util.Uint8Array2MPI(RSA_RAW.sign(m, [n, e, d]));
+        const signature = publicKey.rsa.sign(m, n, e, d);
+        return util.Uint8Array2MPI(signature);
       }
       case 17: {
         // DSA (Digital Signature Algorithm) [FIPS186] [HAC]

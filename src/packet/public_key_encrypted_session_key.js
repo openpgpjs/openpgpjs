@@ -134,7 +134,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
     key.params,
     this.encrypted,
     key.fingerprint
-  )).toBytes();
+  )).toString();
 
   let checksum;
   let decoded;

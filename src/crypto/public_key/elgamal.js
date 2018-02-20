@@ -18,39 +18,41 @@
 // ElGamal implementation
 
 /**
- * @requires crypto/public_key/jsbn
+ * @requires bn.js
  * @requires crypto/random
- * @requires util
  * @module crypto/public_key/elgamal
  */
 
-import BigInteger from './jsbn.js';
-import random from '../random.js';
-import util from '../../util.js';
+import BN from 'bn.js';
+import random from '../random';
 
-export default function Elgamal() {
-  function encrypt(m, g, p, y) {
-    //  choose k in {2,...,p-2}
-    const pMinus2 = p.subtract(BigInteger.TWO);
-    let k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
-    k = k.mod(pMinus2).add(BigInteger.ONE);
-    const c = [];
-    c[0] = g.modPow(k, p);
-    c[1] = y.modPow(k, p).multiply(m).mod(p);
-    return c;
+const one = new BN(1);
+
+export default {
+  /*
+   * m, p, g, y are all BN
+   * returns { c1: BN, c2: BN }
+   */
+  encrypt: function(m, p, g, y) {
+    const redp = new BN.red(p);
+    const mred = m.toRed(redp);
+    const gred = g.toRed(redp);
+    const yred = y.toRed(redp);
+    const k = random.getRandomBN(one, p);
+    return {
+      c1: gred.redPow(k).fromRed(),
+      c2: yred.redPow(k).redMul(mred).fromRed()
+    };
+  },
+
+  /*
+   * c1, c2, p, x are all BN
+   * returns BN
+   */
+  decrypt: function(c1, c2, p, x) {
+    const redp = new BN.red(p);
+    const c1red = c1.toRed(redp);
+    const c2red = c2.toRed(redp);
+    return c1red.redPow(x).redInvm().redMul(c2red).fromRed();
   }
-
-  function decrypt(c1, c2, p, x) {
-    util.print_debug("Elgamal Decrypt:\nc1:" + util.hexstrdump(c1.toMPI()) + "\n" +
-      "c2:" + util.hexstrdump(c2.toMPI()) + "\n" +
-      "p:" + util.hexstrdump(p.toMPI()) + "\n" +
-      "x:" + util.hexstrdump(x.toMPI()));
-    return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
-    //var c = c1.pow(x).modInverse(p); // c0^-a mod p
-    //return c.multiply(c2).mod(p);
-  }
-
-  // signing and signature verification using Elgamal is not required by OpenPGP.
-  this.encrypt = encrypt;
-  this.decrypt = decrypt;
-}
+};
