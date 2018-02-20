@@ -32,7 +32,6 @@
  */
 
 import BN from 'bn.js';
-import { RSA_RAW } from 'asmcrypto.js';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -68,18 +67,19 @@ export default {
       switch (algo) {
         case 'rsa_encrypt':
         case 'rsa_encrypt_sign': {
+          const m = data.toUint8Array();
           const n = publicParams[0].toUint8Array();
           const e = publicParams[1].toUint8Array();
-          const m = data.toUint8Array();
-          return constructParams(types, [new BN(RSA_RAW.encrypt(m, [n, e]))]);
+          const res = await publicKey.rsa.encrypt(m, n, e);
+          return constructParams(types, [new BN(res)]);
         }
         case 'elgamal': {
-          const elgamal = new publicKey.elgamal();
-          const p = publicParams[0].toBigInteger();
-          const g = publicParams[1].toBigInteger();
-          const y = publicParams[2].toBigInteger();
-          const m = data.toBigInteger();
-          return constructParams(types, elgamal.encrypt(m, g, p, y));
+          const m = data.toBN();
+          const p = publicParams[0].toBN();
+          const g = publicParams[1].toBN();
+          const y = publicParams[2].toBN();
+          const res = await publicKey.elgamal.encrypt(m, p, g, y);
+          return constructParams(types, [res.c1, res.c2]);
         }
         case 'ecdh': {
           const oid = publicParams[0];
@@ -117,18 +117,14 @@ export default {
           const p = keyIntegers[3].toUint8Array();
           const q = keyIntegers[4].toUint8Array();
           const u = keyIntegers[5].toUint8Array(); // q^-1 mod p
-          const dd = new BN(d);
-          const dp = dd.mod(new BN(p).subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
-          const dq = dd.mod(new BN(q).subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
-          return new BN(RSA_RAW.decrypt(c, [n, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
+          return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
         }
         case 'elgamal': {
-          const elgamal = new publicKey.elgamal();
-          const x = keyIntegers[3].toBigInteger();
-          const c1 = dataIntegers[0].toBigInteger();
-          const c2 = dataIntegers[1].toBigInteger();
-          const p = keyIntegers[0].toBigInteger();
-          return elgamal.decrypt(c1, c2, p, x);
+          const c1 = dataIntegers[0].toBN();
+          const c2 = dataIntegers[1].toBN();
+          const p = keyIntegers[0].toBN();
+          const x = keyIntegers[3].toBN();
+          return publicKey.elgamal.decrypt(c1, c2, p, x);
         }
         case 'ecdh': {
           const oid = keyIntegers[0];
@@ -263,8 +259,7 @@ export default {
       case 'rsa_encrypt':
       case 'rsa_encrypt_sign':
       case 'rsa_sign': {
-        const rsa = new publicKey.rsa();
-        return rsa.generate(bits, "10001").then(function(keyObject) {
+        return publicKey.rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(
             types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
           );

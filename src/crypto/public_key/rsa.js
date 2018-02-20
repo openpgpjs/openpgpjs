@@ -18,6 +18,7 @@
 // RSA implementation
 
 /**
+ * @requires bn.js
  * @requires asmcrypto.js
  * @requires crypto/public_key/jsbn
  * @requires crypto/random
@@ -27,6 +28,7 @@
  */
 
 
+import BN from 'bn.js';
 import { RSA_RAW } from 'asmcrypto.js';
 import BigInteger from './jsbn';
 import random from '../random';
@@ -59,7 +61,7 @@ function unblind(t, n) {
   return t.multiply(unblinder).mod(n);
 }
 
-export default function RSA() {
+export default {
   /**
    * This function uses jsbn Big Num library to decrypt RSA
    * @param m message
@@ -71,7 +73,12 @@ export default function RSA() {
    * @param u RSA u as BigInteger
    * @return {BigInteger} The decrypted value of the message
    */
-  function decrypt(m, n, e, d, p, q, u) {
+  decrypt: function(m, n, e, d, p, q, u) {
+    const dd = new BN(d);
+    const dp = dd.mod(new BN(p).subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
+    const dq = dd.mod(new BN(q).subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
+    return new BN(RSA_RAW.decrypt(m, [n, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
+/*
     if (config.rsa_blinding) {
       m = blind(m, n, e);
     }
@@ -89,53 +96,39 @@ export default function RSA() {
     }
     t = t.multiply(p).add(xp);
 
-//    var t = RSA.decrypt(m, [n, e, d, q, p, dq, dp, u]).slice(1)
-
     if (config.rsa_blinding) {
       t = unblind(t, n);
     }
     return t;
-  }
+*/
+  },
 
   /**
    * encrypt message
    * @param m message as BigInteger
-   * @param e public MPI part as BigInteger
    * @param n public MPI part as BigInteger
+   * @param e public MPI part as BigInteger
    * @return BigInteger
    */
-  function encrypt(m, e, n) {
-    return m.modPowInt(e, n);
-  }
+  encrypt: function(m, n, e) {
+//    return m.modPowInt(e, n);
+    return RSA_RAW.encrypt(m, [n, e]);
+  },
 
   /* Sign and Verify */
-  function sign(m, d, n) {
-    return m.modPow(d, n);
-//    return RSA_RAW.sign(m, [n, e, d]);
-  }
+  sign: function(m, n, e, d) {
+//    return m.modPow(d, n);
+    return RSA_RAW.sign(m, [n, e, d]);
+  },
 
-  function verify(x, e, n) {
-    return x.modPowInt(e, n);
-//    return RSA_RAW.verify(x, [n, e]);
-  }
-
-  // "empty" RSA key constructor
-
-  function KeyObject() {
-    this.n = null;
-    this.e = 0;
-    this.ee = null;
-    this.d = null;
-    this.p = null;
-    this.q = null;
-    this.dmp1 = null;
-    this.dmq1 = null;
-    this.u = null;
-  }
+  verify: function(x, n, e) {
+//    return x.modPowInt(e, n);
+    return RSA_RAW.verify(x, [n, e]);
+  },
 
   // Generate a new random private key B bits long, using public expt E
 
-  function generate(B, E) {
+  generate: function(B, E) {
     const webCrypto = util.getWebCryptoAll();
 
     //
@@ -187,6 +180,20 @@ export default function RSA() {
         }
         return decodeKey(key);
       });
+    }
+
+    // "empty" RSA key constructor
+
+    function KeyObject() {
+      this.n = null;
+      this.e = 0;
+      this.ee = null;
+      this.d = null;
+      this.p = null;
+      this.q = null;
+      this.dmp1 = null;
+      this.dmq1 = null;
+      this.u = null;
     }
 
     function exportKey(keypair) {
@@ -263,11 +270,4 @@ export default function RSA() {
       resolve(key);
     });
   }
-
-  this.encrypt = encrypt;
-  this.decrypt = decrypt;
-  this.verify = verify;
-  this.sign = sign;
-  this.generate = generate;
-  this.keyObject = KeyObject;
-}
+};

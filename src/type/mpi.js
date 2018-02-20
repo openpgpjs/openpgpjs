@@ -44,12 +44,14 @@ import util from '../util';
  */
 export default function MPI(data) {
   /** An implementation dependent integer */
-  if (data instanceof BigInteger) {
+  if (data instanceof BN) {
+    this.fromBN(data);
+  } else if (data instanceof BigInteger) {
     this.fromBigInteger(data);
-  } else if (data instanceof BN) {
-    this.fromBytes(util.Uint8Array2str(data.toArrayLike(Uint8Array)));
+  } else if (util.isUint8Array(data)) {
+    this.fromUint8Array(data);
   } else if (util.isString(data)) {
-    this.fromBytes(data);
+    this.fromString(data);
   } else {
     this.data = null;
   }
@@ -57,8 +59,8 @@ export default function MPI(data) {
 
 /**
  * Parsing function for a mpi ({@link https://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
- * @param {String} input Payload of mpi data
- * @param {String} endian Endianness of the payload; 'be' for big-endian and 'le' for little-endian
+ * @param {Uint8Array} input Payload of mpi data
+ * @param {String} endian Endianness of the payload; 'be' for big-endian or 'le' for little-endian
  * @return {Integer} Length of data read
  */
 MPI.prototype.read = function (bytes, endian='be') {
@@ -81,7 +83,7 @@ MPI.prototype.read = function (bytes, endian='be') {
   const bytelen = Math.ceil(bits / 8);
   let payload = bytes.subarray(2, 2 + bytelen);
   if (endian === 'le') {
-    payload = new Uint8Array(payload).reverse();
+    payload = Uint8Array.from(payload).reverse();
   }
   const raw = util.Uint8Array2str(payload);
   this.fromBytes(raw);
@@ -89,47 +91,58 @@ MPI.prototype.read = function (bytes, endian='be') {
   return 2 + bytelen;
 };
 
-MPI.prototype.fromBytes = function (bytes) {
-  this.data = new BigInteger(util.hexstrdump(bytes), 16);
+/**
+ * Converts the mpi object to a bytes as specified in
+ * {@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
+ * @param {String} endian Endianness of the payload; 'be' for big-endian or 'le' for little-endian
+ * @param {Integer} length Length of the data part of the MPI
+ * @return {Uint8Aray} mpi Byte representation
+ */
+MPI.prototype.write = function (endian, length) {
+  return util.Uint8Array2MPI(this.data.toArrayLike(Uint8Array, endian, length));
 };
 
-MPI.prototype.toBytes = function () {
-  return util.Uint8Array2str(this.toUint8Array());
+MPI.prototype.byteLength = function () {
+  return this.write().length - 2;
 };
 
 MPI.prototype.toUint8Array = function () {
   return this.write().slice(2);
 };
 
-MPI.prototype.byteLength = function () {
-  return this.toBytes().length;
+MPI.prototype.fromUint8Array = function (bytes) {
+  this.data = new BN(bytes);
 };
 
-/**
- * Converts the mpi object to a bytes as specified in {@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
- * @return {Uint8Aray} mpi Byte representation
- */
-MPI.prototype.write = function () {
-  return util.str2Uint8Array(this.data.toMPI());
+MPI.prototype.toString = function () {
+  return util.Uint8Array2str(this.toUint8Array());
 };
 
-MPI.prototype.toBigInteger = function () {
+MPI.prototype.fromString = function (str) {
+  this.data = new BN(util.str2Uint8Array(str));
+};
+
+// TODO remove this
+MPI.prototype.fromBytes = MPI.prototype.fromString;
+
+MPI.prototype.toBN = function () {
   return this.data.clone();
 };
 
-MPI.prototype.toBN = function (bn) {
-  return new BN(this.write().slice(2));
-};
-
-MPI.prototype.fromBigInteger = function (bn) {
+MPI.prototype.fromBN = function (bn) {
   this.data = bn.clone();
 };
 
+MPI.prototype.toBigInteger = function () {
+  return new BigInteger(util.hexidump(this.write()), 16);
+};
+
+MPI.prototype.fromBigInteger = function (bn) {
+  this.data = new BN(bn.toByteArray());
+};
+
 MPI.fromClone = function (clone) {
-  clone.data.copyTo = BigInteger.prototype.copyTo;
-  const bn = new BigInteger();
-  clone.data.copyTo(bn);
-  const mpi = new MPI();
-  mpi.data = bn;
-  return mpi;
+  const bn = new BN();
+  clone.data.copy(bn);
+  return new MPI(bn);
 };
