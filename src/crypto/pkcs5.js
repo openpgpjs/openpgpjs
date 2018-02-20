@@ -48,7 +48,4 @@ function decode(msg) {
   throw new Error('Invalid padding');
 }
 
-export default {
-  encode,
-  decode
-};
+export default { encode, decode };

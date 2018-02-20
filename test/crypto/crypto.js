@@ -381,11 +381,11 @@ describe('API functional testing', function() {
       const RSAUnencryptedData = new openpgp.MPI();
       RSAUnencryptedData.fromBytes(crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
       return crypto.publicKeyEncrypt(
-        "rsa_encrypt_sign", RSApubMPIs, RSAUnencryptedData
+        1, RSApubMPIs, RSAUnencryptedData
       ).then(RSAEncryptedData => {
 
         return crypto.publicKeyDecrypt(
-          "rsa_encrypt_sign", RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
+          1, RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
         ).then(data => {
           data = data.write();
           data = util.Uint8Array2str(data.subarray(2, data.length));
@@ -402,11 +402,11 @@ describe('API functional testing', function() {
       ElgamalUnencryptedData.fromBytes(crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
 
       return crypto.publicKeyEncrypt(
-        "elgamal", ElgamalpubMPIs, ElgamalUnencryptedData
+        16, ElgamalpubMPIs, ElgamalUnencryptedData
       ).then(ElgamalEncryptedData => {
 
         return crypto.publicKeyDecrypt(
-          "elgamal", ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData
+          16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData
         ).then(data => {
           data = data.write();
           data = util.Uint8Array2str(data.subarray(2, data.length));

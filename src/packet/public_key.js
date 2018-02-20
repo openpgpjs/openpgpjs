@@ -85,8 +85,8 @@ PublicKey.prototype.read = function (bytes) {
 
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
-
-    const types = crypto.getPubKeyParamTypes(this.algorithm);
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const types = crypto.getPubKeyParamTypes(algo);
     this.params = crypto.constructParams(types);
 
     const b = bytes.subarray(pos, bytes.length);
@@ -123,10 +123,10 @@ PublicKey.prototype.write = function () {
   if (this.version === 3) {
     arr.push(util.writeNumber(this.expirationTimeV3, 2));
   }
-  arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
-
-  const paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
-
+  // Algorithm-specific params
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  const paramCount = crypto.getPubKeyParamTypes(algo).length;
+  arr.push(new Uint8Array([algo]));
   for (let i = 0; i < paramCount; i++) {
     arr.push(this.params[i].write());
   }
@@ -180,7 +180,8 @@ PublicKey.prototype.getFingerprint = function () {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
-    const paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const paramCount = crypto.getPubKeyParamTypes(algo).length;
     for (let i = 0; i < paramCount; i++) {
       toHash += this.params[i].toString();
     }
@@ -192,7 +193,7 @@ PublicKey.prototype.getFingerprint = function () {
 
 /**
  * Returns algorithm information
- * @return {Promise<Object} An object of the form {algorithm: String, bits:int, curve:String}
+ * @return {Promise<Object>} An object of the form {algorithm: String, bits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
   const result = {};
@@ -209,7 +210,8 @@ PublicKey.prototype.getAlgorithmInfo = function () {
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {
-  const types = crypto.getPubKeyParamTypes(this.algorithm);
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  const types = crypto.getPubKeyParamTypes(algo);
   for (let i = 0; i < types.length; i++) {
     const param = this.params[i];
     this.params[i] = types[i].fromClone(param);

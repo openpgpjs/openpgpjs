@@ -72,13 +72,22 @@ export default {
    * @readonly
    */
   publicKey: {
+    /** RSA (Encrypt or Sign) [HAC] */
     rsa_encrypt_sign: 1,
+    /** RSA (Encrypt only) [HAC] */
     rsa_encrypt: 2,
+    /** RSA (Sign only) [HAC] */
     rsa_sign: 3,
+    /** Elgamal (Encrypt only) [ELGAMAL] [HAC] */
     elgamal: 16,
+    /** DSA (Sign only) [FIPS186] [HAC] */
     dsa: 17,
+    /** ECDH (Encrypt only) [RFC6637] */
     ecdh: 18,
+    /** ECDSA (Sign only) [RFC6637] */
     ecdsa: 19,
+    /** EdDSA (Sign only)
+     * [{@link https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04|Draft RFC}] */
     eddsa: 22
   },
 

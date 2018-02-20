@@ -63,7 +63,6 @@ export default {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    // TODO rewrite getLeftNBits to work with Uint8Arrays
     const h = new BN(
       util.str2Uint8Array(
         util.getLeftNBits(

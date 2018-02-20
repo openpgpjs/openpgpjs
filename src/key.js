@@ -16,21 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires config
- * @requires crypto
  * @requires encoding/armor
+ * @requires crypto
+ * @requires packet
+ * @requires config
  * @requires enums
  * @requires util
- * @requires packet
  * @module key
  */
 
-import config from './config';
-import crypto from './crypto';
 import armor from './encoding/armor';
+import crypto from './crypto';
+import packet from './packet';
+import config from './config';
 import enums from './enums';
 import util from './util';
-import packet from './packet';
 
 /**
  * @class
@@ -209,7 +209,7 @@ Key.prototype.getKeyIds = function() {
 
 /**
  * Returns array containing first key packet for given key ID or all key packets in the case of a wildcard ID
- * @param  {type/keyid>} keyIds
+ * @param  {type/keyid} keyId
  * @return {(module:packet/public_subkey|module:packet/public_key|
  *           module:packet/secret_subkey|module:packet/secret_key|null)}
  */

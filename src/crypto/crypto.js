@@ -19,7 +19,6 @@
 
 /**
  * @requires bn.js
- * @requires asmcrypto.js
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -27,6 +26,7 @@
  * @requires type/kdf_params
  * @requires type/mpi
  * @requires type/oid
+ * @requires enums
  * @requires util
  * @module crypto/crypto
  */
@@ -39,6 +39,7 @@ import type_ecdh_symkey from '../type/ecdh_symkey';
 import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
+import enums from '../enums';
 import util from '../util';
 
 function constructParams(types, data) {
@@ -52,39 +53,41 @@ function constructParams(types, data) {
 
 export default {
   /**
-   * Encrypts data using the specified public key multiprecision integers
-   * and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} publicParams Algorithm dependent params
-   * @param {module:type/mpi} data Data to be encrypted as MPI
-   * @param {String} fingerprint Recipient fingerprint
-   * @return {Array<module:type/mpi|module:type/oid|module:type/kdf_params|module:type/ecdh_symkey>} encrypted session key parameters
+   * Encrypts data using specified algorithm and public key parameters.
+   * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
+   * @param {module:enums.publicKey}        algo        Public key algorithm
+   * @param {Array<module:type/mpi|
+                   module:type/oid|
+                   module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
+   * @param {module:type/mpi}               data        Data to be encrypted as MPI
+   * @param {String}                        fingerprint Recipient fingerprint
+   * @return {Array<module:type/mpi|
+                    module:type/ecdh_symkey>}           encrypted session key parameters
    */
-  publicKeyEncrypt: async function(algo, publicParams, data, fingerprint) {
-    // TODO change algo to return enums
+  publicKeyEncrypt: async function(algo, pub_params, data, fingerprint) {
     const types = this.getEncSessionKeyParamTypes(algo);
     return (async function() {
       switch (algo) {
-        case 'rsa_encrypt':
-        case 'rsa_encrypt_sign': {
+        case enums.publicKey.rsa_encrypt:
+        case enums.publicKey.rsa_encrypt_sign: {
           const m = data.toUint8Array();
-          const n = publicParams[0].toUint8Array();
-          const e = publicParams[1].toUint8Array();
+          const n = pub_params[0].toUint8Array();
+          const e = pub_params[1].toUint8Array();
           const res = await publicKey.rsa.encrypt(m, n, e);
           return constructParams(types, [new BN(res)]);
         }
-        case 'elgamal': {
+        case enums.publicKey.elgamal: {
           const m = data.toBN();
-          const p = publicParams[0].toBN();
-          const g = publicParams[1].toBN();
-          const y = publicParams[2].toBN();
+          const p = pub_params[0].toBN();
+          const g = pub_params[1].toBN();
+          const y = pub_params[2].toBN();
           const res = await publicKey.elgamal.encrypt(m, p, g, y);
           return constructParams(types, [res.c1, res.c2]);
         }
-        case 'ecdh': {
-          const oid = publicParams[0];
-          const kdf_params = publicParams[2];
-          const Q = publicParams[1].toUint8Array();
+        case enums.publicKey.ecdh: {
+          const oid = pub_params[0];
+          const Q = pub_params[1].toUint8Array();
+          const kdf_params = pub_params[2];
           const res = await publicKey.elliptic.ecdh.encrypt(
             oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
           return constructParams(types, [res.V, res.C]);
@@ -96,47 +99,50 @@ export default {
   },
 
   /**
-   * Decrypts data using the specified public key multiprecision integers of the private key,
-   * the specified secretMPIs of the private key and the specified algorithm.
-   * @param {module:enums.publicKey} algo Algorithm to be used (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1})
-   * @param {Array<module:type/mpi|module:type/oid|module:type/kdf_params>} keyIntegers Algorithm dependent params
-   * @param {Array<module:type/mpi|module:type/ecdh_symkey>} dataIntegers encrypted session key parameters
-   * @param {String} fingerprint Recipient fingerprint
-   * @return {module:type/mpi} returns a big integer containing the decrypted data; otherwise null
+   * Decrypts data using specified algorithm and private key parameters.
+   * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
+   * @param {module:enums.publicKey}        algo        Public key algorithm
+   * @param {Array<module:type/mpi|
+                   module:type/oid|
+                   module:type/kdf_params>} key_params  Algorithm-specific public, private key parameters
+   * @param {Array<module:type/mpi|
+                   module:type/ecdh_symkey>}
+                                            data_params encrypted session key parameters
+   * @param {String}                        fingerprint Recipient fingerprint
+   * @return {module:type/mpi}                          An MPI containing the decrypted data
    */
-  publicKeyDecrypt: async function(algo, keyIntegers, dataIntegers, fingerprint) {
-    // TODO change algo to return enums
+  publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
     return new type_mpi(await (async function() {
       switch (algo) {
-        case 'rsa_encrypt_sign':
-        case 'rsa_encrypt': {
-          const c = dataIntegers[0].toUint8Array();
-          const n = keyIntegers[0].toUint8Array(); // pq
-          const e = keyIntegers[1].toUint8Array();
-          const d = keyIntegers[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
-          const p = keyIntegers[3].toUint8Array();
-          const q = keyIntegers[4].toUint8Array();
-          const u = keyIntegers[5].toUint8Array(); // q^-1 mod p
+        case enums.publicKey.rsa_encrypt_sign:
+        case enums.publicKey.rsa_encrypt: {
+          const c = data_params[0].toUint8Array();
+          const n = key_params[0].toUint8Array(); // pq
+          const e = key_params[1].toUint8Array();
+          const d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
+          const p = key_params[3].toUint8Array();
+          const q = key_params[4].toUint8Array();
+          const u = key_params[5].toUint8Array(); // q^-1 mod p
           return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
         }
-        case 'elgamal': {
-          const c1 = dataIntegers[0].toBN();
-          const c2 = dataIntegers[1].toBN();
-          const p = keyIntegers[0].toBN();
-          const x = keyIntegers[3].toBN();
+        case enums.publicKey.elgamal: {
+          const c1 = data_params[0].toBN();
+          const c2 = data_params[1].toBN();
+          const p = key_params[0].toBN();
+          const x = key_params[3].toBN();
           return publicKey.elgamal.decrypt(c1, c2, p, x);
         }
-        case 'ecdh': {
-          const oid = keyIntegers[0];
-          const kdf_params = keyIntegers[2];
-          const V = dataIntegers[0].toUint8Array();
-          const C = dataIntegers[1].data;
-          const d = keyIntegers[3].toUint8Array();
+        case enums.publicKey.ecdh: {
+          const oid = key_params[0];
+          const kdf_params = key_params[2];
+          const V = data_params[0].toUint8Array();
+          const C = data_params[1].data;
+          const d = key_params[3].toUint8Array();
           return publicKey.elliptic.ecdh.decrypt(
             oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
         }
         default:
-          return null;
+          throw new Error('Invalid public key encryption algorithm.');
       }
     }()));
   },
@@ -147,31 +153,31 @@ export default {
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-      case 'rsa_sign':
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsa_sign:
         //   Algorithm-Specific Fields for RSA secret keys:
         //   - multiprecision integer (MPI) of RSA secret exponent d.
         //   - MPI of RSA secret prime value p.
         //   - MPI of RSA secret prime value q (p < q).
         //   - MPI of u, the multiplicative inverse of p, mod q.
         return [type_mpi, type_mpi, type_mpi, type_mpi];
-      case 'elgamal':
+      case enums.publicKey.elgamal:
         // Algorithm-Specific Fields for Elgamal secret keys:
         //   - MPI of Elgamal secret exponent x.
         return [type_mpi];
-      case 'dsa':
+      case enums.publicKey.dsa:
         // Algorithm-Specific Fields for DSA secret keys:
         //   - MPI of DSA secret exponent x.
         return [type_mpi];
-      case 'ecdh':
-      case 'ecdsa':
-      case 'eddsa':
+      case enums.publicKey.ecdh:
+      case enums.publicKey.ecdsa:
+      case enums.publicKey.eddsa:
         // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
         //   - MPI of an integer representing the secret key.
         return [type_mpi];
       default:
-        throw new Error('Unknown algorithm');
+        throw new Error('Invalid public key encryption algorithm.');
     }
   },
 
@@ -184,37 +190,37 @@ export default {
     //       - a multiprecision integer (MPI) of RSA public modulus n;
     //       - an MPI of RSA public encryption exponent e.
     switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-      case 'rsa_sign':
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsa_sign:
         return [type_mpi, type_mpi];
         //   Algorithm-Specific Fields for Elgamal public keys:
         //     - MPI of Elgamal prime p;
         //     - MPI of Elgamal group generator g;
         //     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
-      case 'elgamal':
+      case enums.publicKey.elgamal:
         return [type_mpi, type_mpi, type_mpi];
         //   Algorithm-Specific Fields for DSA public keys:
         //       - MPI of DSA prime p;
         //       - MPI of DSA group order q (q is a prime divisor of p-1);
         //       - MPI of DSA group generator g;
         //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
-      case 'dsa':
+      case enums.publicKey.dsa:
         return [type_mpi, type_mpi, type_mpi, type_mpi];
         //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
-      case 'ecdsa':
-      case 'eddsa':
+      case enums.publicKey.ecdsa:
+      case enums.publicKey.eddsa:
         return [type_oid, type_mpi];
         //   Algorithm-Specific Fields for ECDH public keys:
         //       - OID of curve;
         //       - MPI of EC point representing public key.
         //       - KDF: variable-length field containing KDF parameters.
-      case 'ecdh':
+      case enums.publicKey.ecdh:
         return [type_oid, type_mpi, type_kdf_params];
       default:
-        throw new Error('Unknown algorithm.');
+        throw new Error('Invalid public key encryption algorithm.');
     }
   },
 
@@ -226,24 +232,24 @@ export default {
     switch (algo) {
       //    Algorithm-Specific Fields for RSA encrypted session keys:
       //        - MPI of RSA encrypted value m**e mod n.
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign:
         return [type_mpi];
 
       //    Algorithm-Specific Fields for Elgamal encrypted session keys:
       //        - MPI of Elgamal value g**k mod p
       //        - MPI of Elgamal value m * y**k mod p
-      case 'elgamal':
+      case enums.publicKey.elgamal:
         return [type_mpi, type_mpi];
 
       //    Algorithm-Specific Fields for ECDH encrypted session keys:
       //        - MPI containing the ephemeral key used to establish the shared secret
       //        - ECDH Symmetric Key
-      case 'ecdh':
+      case enums.publicKey.ecdh:
         return [type_mpi, type_ecdh_symkey];
 
       default:
-        throw new Error('Unknown algorithm.');
+        throw new Error('Invalid public key encryption algorithm.');
     }
   },
 
@@ -254,35 +260,39 @@ export default {
    * @return {Array}               The array of parameters
    */
   generateParams: function(algo, bits, oid) {
-    const types = this.getPubKeyParamTypes(algo).concat(this.getPrivKeyParamTypes(algo));
+    const types = [].concat(this.getPubKeyParamTypes(algo), this.getPrivKeyParamTypes(algo));
     switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-      case 'rsa_sign': {
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsa_sign: {
         return publicKey.rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(
             types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
           );
         });
       }
-      case 'ecdsa':
-      case 'eddsa':
+      case enums.publicKey.dsa:
+      case enums.publicKey.elgamal:
+        throw new Error('Unsupported algorithm for key generation.');
+      case enums.publicKey.ecdsa:
+      case enums.publicKey.eddsa:
         return publicKey.elliptic.generate(oid).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
         });
-      case 'ecdh':
+      case enums.publicKey.ecdh:
         return publicKey.elliptic.generate(oid).then(function (keyObject) {
           return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
         });
       default:
-        throw new Error('Unsupported algorithm for key generation.');
+        throw new Error('Invalid public key encryption algorithm.');
     }
   },
 
   /**
-   * generate random byte prefix as string for the specified algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
-   * @return {Uint8Array} Random bytes with length equal to the block
+   * Generates a random byte prefix for the specified algorithm
+   * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+   * @param {module:enums.symmetric} algo Symmetric encryption algorithm
+   * @return {Uint8Array}                 Random bytes with length equal to the block
    * size of the cipher
    */
   getPrefixRandom: function(algo) {

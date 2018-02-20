@@ -15,6 +15,7 @@ import pkcs5 from './pkcs5.js';
 import crypto from './crypto.js';
 import aes_kw from './aes_kw.js';
 
+// TODO move cfb and gcm to cipher
 const mod = {
   /** @see module:crypto/cipher */
   cipher: cipher,
