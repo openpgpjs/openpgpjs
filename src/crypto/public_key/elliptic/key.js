@@ -18,8 +18,8 @@
 // Wrapper for a KeyPair of an Elliptic Curve
 
 /**
+ * @requires bn.js
  * @requires crypto/public_key/elliptic/curves
- * @requires crypto/public_key/jsbn
  * @requires crypto/hash
  * @requires util
  * @requires enums
@@ -29,8 +29,8 @@
  * @module crypto/public_key/elliptic/key
  */
 
+import BN from 'bn.js';
 import { webCurves, nodeCurves } from './curves';
-import BigInteger from '../jsbn';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
@@ -210,8 +210,7 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
 }
 
 async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
-  const signature = ECDSASignature.encode(
-    { r: new BigInteger(util.hexidump(r), 16), s: new BigInteger(util.hexidump(s), 16) }, 'der');
+  const signature = ECDSASignature.encode({ r: new BN(r), s: new BN(s) }, 'der');
   const key = jwkToPem(
     {
       "kty": "EC",

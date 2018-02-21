@@ -37,21 +37,6 @@ export default {
     return Uint8Array.prototype.isPrototypeOf(data);
   },
 
-  isEmailAddress: function(data) {
-    if (!this.isString(data)) {
-      return false;
-    }
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
-    return re.test(data);
-  },
-
-  isUserId: function(data) {
-    if (!this.isString(data)) {
-      return false;
-    }
-    return /</.test(data) && />$/.test(data);
-  },
-
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
@@ -540,25 +525,6 @@ export default {
   },
 
   /**
-   * Converts an IE11 web crypto api result to a promise.
-   *   This is required since IE11 implements an old version of the
-   *   Web Crypto specification that does not use promises.
-   * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call
-   * @param  {String} errmsg   An error message for a specific operation
-   * @return {Promise}         The resulting Promise
-   */
-  promisifyIE11Op: function(cryptoOp, errmsg) {
-    return new Promise(function(resolve, reject) {
-      cryptoOp.onerror = function () {
-        reject(new Error(errmsg));
-      };
-      cryptoOp.oncomplete = function (e) {
-        resolve(e.target.result);
-      };
-    });
-  },
-
-  /**
    * Detect Node.js runtime.
    */
   detectNode: function() {
@@ -600,5 +566,20 @@ export default {
     }
 
     return require('zlib');
+  },
+
+  isEmailAddress: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
+    return re.test(data);
+  },
+
+  isUserId: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    return /</.test(data) && />$/.test(data);
   }
 };
