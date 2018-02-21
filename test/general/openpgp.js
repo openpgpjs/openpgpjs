@@ -1577,7 +1577,7 @@ describe('OpenPGP.js public api tests', function() {
               return openpgp.verify(verifyOpt);
             }).then(function (verified) {
               expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
-              expect(Array.from(verified.data)).to.deep.equal(Array.from(data));
+              expect([].slice.call(verified.data)).to.deep.equal([].slice.call(data));
               expect(verified.signatures[0].valid).to.be.true;
               expect(signOpt.privateKeys[0].getSigningKeyPacket(verified.signatures[0].keyid, future))
                   .to.be.not.null;
