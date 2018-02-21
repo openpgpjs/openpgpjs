@@ -666,8 +666,8 @@ Signature.prototype.verify = async function (key, data) {
  * @return {Boolean} true if expired
  */
 Signature.prototype.isExpired = function (date=new Date()) {
-  if (!this.signatureNeverExpires && date !== null) {
-    const expirationTime = this.created.getTime() + this.signatureExpirationTime*1000;
+  if (date !== null) {
+    const expirationTime = !this.signatureNeverExpires ? this.created.getTime() + this.signatureExpirationTime*1000 : Infinity;
     const normDate = util.normalizeDate(date);
     return !(this.created <= normDate && normDate < expirationTime);
   }

@@ -360,7 +360,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wi
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key~Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date}                   (optional) override the creation time of the signature
  * @return {module:message~Message}       new message with signed content
