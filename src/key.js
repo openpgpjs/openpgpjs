@@ -452,10 +452,14 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
       await this.revocationSignature.verify(this.primaryKey, { key: this.primaryKey }))) {
     return enums.keyStatus.revoked;
   }
-  // check V3 expiration time
-  if (date !== null && this.primaryKey.version === 3 && this.primaryKey.expirationTimeV3 !== 0 &&
-    util.normalizeDate(date) > (this.primaryKey.created.getTime() + this.primaryKey.expirationTimeV3*24*3600*1000)) {
-    return enums.keyStatus.expired;
+  const creationTime = this.primaryKey.created.getTime();
+  const currentTime = util.normalizeDate(date);
+    // check V3 expiration time
+  if (date !== null && this.primaryKey.version === 3) {
+      const expirationTimeV3 = creationTime + (this.primaryKey.expirationTimeV3*24*3600*1000 || Infinity);
+      if (!(creationTime <= currentTime && currentTime < expirationTimeV3)) {
+          return enums.keyStatus.expired;
+      }
   }
   // check for at least one self signature. Self signature of user ID not mandatory
   // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
@@ -469,9 +473,11 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
     return enums.keyStatus.invalid;
   }
   // check V4 expiration time
-  if (date !== null && this.primaryKey.version === 4 && primaryUser.selfCertificate.keyNeverExpires === false &&
-    util.normalizeDate(date) > (this.primaryKey.created.getTime() + primaryUser.selfCertificate.keyExpirationTime*1000)) {
-    return enums.keyStatus.expired;
+  if (date !== null && this.primaryKey.version === 4) {
+    const expirationTime = primaryUser.selfCertificate.keyNeverExpires === false ? creationTime + primaryUser.selfCertificate.keyExpirationTime*1000 : Infinity;
+    if (!(creationTime <= currentTime && currentTime < expirationTime)) {
+        return enums.keyStatus.expired;
+    }
   }
   return enums.keyStatus.valid;
 };
@@ -1001,10 +1007,14 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
       await this.revocationSignature.verify(primaryKey, { key: primaryKey, bind: this.subKey }))) {
     return enums.keyStatus.revoked;
   }
+  const creationTime = this.subKey.created.getTime();
+  const currentTime = util.normalizeDate(date);
   // check V3 expiration time
-  if (date !== null && this.subKey.version === 3 && this.subKey.expirationTimeV3 !== 0 &&
-      util.normalizeDate(date) > (this.subKey.created.getTime() + this.subKey.expirationTimeV3*24*3600*1000)) {
-    return enums.keyStatus.expired;
+  if (currentTime !== null && this.subKey.version === 3) {
+    const expirationTime = creationTime + (this.subKey.expirationTimeV3*24*3600*1000 || Infinity);
+    if (!(creationTime <= currentTime && currentTime < expirationTime)) {
+      return enums.keyStatus.expired;
+    }
   }
   // check subkey binding signatures (at least one valid binding sig needed)
   // TODO replace when Promise.some or Promise.any are implemented
@@ -1019,9 +1029,9 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
       return enums.keyStatus.invalid; // last invalid binding signature
     }
     // check V4 expiration time
-    if (that.subKey.version === 4) {
-      if (date !== null && bindingSignature.keyNeverExpires === false &&
-          util.normalizeDate(date) > (that.subKey.created.getTime() + bindingSignature.keyExpirationTime*1000)) {
+    if (that.subKey.version === 4 && currentTime !== null) {
+      const expirationTime = bindingSignature.keyNeverExpires === false ? (creationTime + bindingSignature.keyExpirationTime*1000) : Infinity;
+      if (!(creationTime <= currentTime && currentTime < expirationTime)) {
         return enums.keyStatus.expired; // last V4 expired binding signature
       }
     }
