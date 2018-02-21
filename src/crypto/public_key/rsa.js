@@ -29,245 +29,181 @@
 
 
 import BN from 'bn.js';
-import { RSA_RAW } from 'asmcrypto.js';
-import BigInteger from './jsbn';
+import { random as asmcrypto_random, RSA, RSA_RAW } from 'asmcrypto.js';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
 
-function SecureRandom() {
-  function nextBytes(byteArray) {
-    for (let n = 0; n < byteArray.length; n++) {
-      byteArray[n] = random.getSecureRandomOctet();
-    }
-  }
-  this.nextBytes = nextBytes;
-}
-
-let blinder = BigInteger.ZERO;
-let unblinder = BigInteger.ZERO;
-
-function blind(m, n, e) {
-  if (unblinder.bitLength() === n.bitLength()) {
-    unblinder = unblinder.square().mod(n);
-  } else {
-    unblinder = random.getRandomBigIntegerInRange(BigInteger.TWO, n);
-  }
-  blinder = unblinder.modInverse(n).modPow(e, n);
-  return m.multiply(blinder).mod(n);
-}
-
-function unblind(t, n) {
-  return t.multiply(unblinder).mod(n);
-}
+const two = new BN(2);
+const zero = new BN(0);
 
 export default {
-  /**
-   * This function uses jsbn Big Num library to decrypt RSA
-   * @param m message
-   * @param n RSA public modulus n as BigInteger
-   * @param e RSA public exponent as BigInteger
-   * @param d RSA d as BigInteger
-   * @param p RSA p as BigInteger
-   * @param q RSA q as BigInteger
-   * @param u RSA u as BigInteger
-   * @return {BigInteger} The decrypted value of the message
+  /** Create signature
+   * @param m message as BN
+   * @param n public MPI part as BN
+   * @param e public MPI part as BN
+   * @param d private MPI part as BN
+   * @return BN
    */
-  decrypt: function(m, n, e, d, p, q, u) {
-    const dd = new BN(d);
-    const dp = dd.mod(new BN(p).subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
-    const dq = dd.mod(new BN(q).subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
-    return new BN(RSA_RAW.decrypt(m, [n, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
-/*
-    if (config.rsa_blinding) {
-      m = blind(m, n, e);
-    }
-    const xp = m.mod(p).modPow(d.mod(p.subtract(BigInteger.ONE)), p);
-    const xq = m.mod(q).modPow(d.mod(q.subtract(BigInteger.ONE)), q);
-    util.print_debug("rsa.js decrypt\nxpn:" + util.hexstrdump(xp.toMPI()) + "\nxqn:" + util.hexstrdump(xq.toMPI()));
-
-    let t = xq.subtract(xp);
-    if (t[0] === 0) {
-      t = xp.subtract(xq);
-      t = t.multiply(u).mod(q);
-      t = q.subtract(t);
-    } else {
-      t = t.multiply(u).mod(q);
-    }
-    t = t.multiply(p).add(xp);
-
-    if (config.rsa_blinding) {
-      t = unblind(t, n);
-    }
-    return t;
-*/
-  },
-
-  /**
-   * encrypt message
-   * @param m message as BigInteger
-   * @param n public MPI part as BigInteger
-   * @param e public MPI part as BigInteger
-   * @return BigInteger
-   */
-  encrypt: function(m, n, e) {
-//    return m.modPowInt(e, n);
-    return RSA_RAW.encrypt(m, [n, e]);
-  },
-
-  /* Sign and Verify */
   sign: function(m, n, e, d) {
-//    return m.modPow(d, n);
+    m = m.toArrayLike(Uint8Array);
+    n = n.toArrayLike(Uint8Array);
+    e = e.toArrayLike(Uint8Array);
+    d = d.toArrayLike(Uint8Array);
     return RSA_RAW.sign(m, [n, e, d]);
   },
 
-  verify: function(x, n, e) {
-//    return x.modPowInt(e, n);
-    return RSA_RAW.verify(x, [n, e]);
+  /**
+   * Verify signature
+   * @param s signature as BN
+   * @param n public MPI part as BN
+   * @param e public MPI part as BN
+   * @return BN
+   */
+  verify: function(s, n, e) {
+    s = s.toArrayLike(Uint8Array);
+    n = n.toArrayLike(Uint8Array);
+    e = e.toArrayLike(Uint8Array);
+    return RSA_RAW.verify(s, [n, e]);
   },
 
-  // Generate a new random private key B bits long, using public expt E
+  /**
+   * Encrypt message
+   * @param m message as BN
+   * @param n public MPI part as BN
+   * @param e public MPI part as BN
+   * @return BN
+   */
+  encrypt: function(m, n, e) {
+    m = m.toArrayLike(Uint8Array);
+    n = n.toArrayLike(Uint8Array);
+    e = e.toArrayLike(Uint8Array);
+    return RSA_RAW.encrypt(m, [n, e]);
+  },
 
-  generate: function(B, E) {
+  /**
+   * Decrypt RSA message
+   * @param m message as BN
+   * @param n RSA public modulus n as BN
+   * @param e RSA public exponent as BN
+   * @param d RSA d as BN
+   * @param p RSA p as BN
+   * @param q RSA q as BN
+   * @param u RSA u as BN
+   * @return {BN} The decrypted value of the message
+   */
+  decrypt: function(m, n, e, d, p, q, u) {
+    let blinder = zero;
+    let unblinder = zero;
+    const nred = new BN.red(n);
+
+    config.rsa_blinding = false; // FIXME
+    if (config.rsa_blinding) {
+      if (unblinder.bitLength() === n.bitLength()) {
+        unblinder = unblinder.sqr().mod(n);
+      } else {
+        unblinder = random.getRandomBN(two, n);
+      }
+      blinder = unblinder.toRed(nred).redInvm().redPow(e).fromRed();
+      m = m.mul(blinder).mod(n);
+    }
+
+    const dq = d.mod(q.subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
+    const dp = d.mod(p.subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
+    const nn = n.toArrayLike(Uint8Array);
+    m = m.toArrayLike(Uint8Array);
+    e = e.toArrayLike(Uint8Array);
+    d = d.toArrayLike(Uint8Array);
+    q = q.toArrayLike(Uint8Array);
+    p = p.toArrayLike(Uint8Array);
+    u = u.toArrayLike(Uint8Array);
+    let result = new BN(RSA_RAW.decrypt(m, [nn, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
+
+    if (config.rsa_blinding) {
+      result = result.mul(unblinder).mod(n);
+    }
+
+    return result;
+  },
+
+  /**
+   * Generate a new random private key B bits long with public exponent E
+   */
+  generate: async function(B, E) {
+    let key;
+    E = new BN(E, 16);
     const webCrypto = util.getWebCryptoAll();
 
-    //
     // Native RSA keygen using Web Crypto
-    //
-
     if (webCrypto) {
-      const Euint32 = new Uint32Array([parseInt(E, 16)]); // get integer of exponent
-      const Euint8 = new Uint8Array(Euint32.buffer); // get bytes of exponent
+      let keyPair;
       let keyGenOpt;
-
-      let keys;
+      const Euint8 = E.toArrayLike(Uint8Array); // get bytes of exponent
       if ((window.crypto && window.crypto.subtle) || window.msCrypto) {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          publicExponent: Euint8, // take three bytes (max 65537)
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
         };
-
-        keys = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-        if (typeof keys.then !== 'function') { // IE11 KeyOperation
-          keys = util.promisifyIE11Op(keys, 'Error generating RSA key pair.');
-        }
-      }
-      else if (window.crypto && window.crypto.webkitSubtle) {
+        keyPair = await webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+      } else if (window.crypto && window.crypto.webkitSubtle) {
         // outdated spec implemented by old Webkit
         keyGenOpt = {
           name: 'RSA-OAEP',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8.subarray(0, 3), // take three bytes (max 65537)
+          publicExponent: Euint8, // take three bytes (max 65537)
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
         };
-        keys = webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
-      }
-      else {
+        keyPair = await webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
+      } else {
         throw new Error('Unknown WebCrypto implementation');
       }
 
-      return keys.then(exportKey).then(function(key) {
-        if (key instanceof ArrayBuffer) {
-          // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
-          return decodeKey(JSON.parse(String.fromCharCode.apply(null, new Uint8Array(key))));
-        }
-        return decodeKey(key);
-      });
-    }
-
-    // "empty" RSA key constructor
-
-    function KeyObject() {
-      this.n = null;
-      this.e = 0;
-      this.ee = null;
-      this.d = null;
-      this.p = null;
-      this.q = null;
-      this.dmp1 = null;
-      this.dmq1 = null;
-      this.u = null;
-    }
-
-    function exportKey(keypair) {
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      let key = webCrypto.exportKey('jwk', keypair.privateKey);
-      if (typeof key.then !== 'function') { // IE11 KeyOperation
-        key = util.promisifyIE11Op(key, 'Error exporting RSA key pair.');
-      }
-      return key;
-    }
+      let jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
 
-    function decodeKey(jwk) {
-      // map JWK parameters to local BigInteger type system
-      const key = new KeyObject();
-      key.n = toBigInteger(jwk.n);
-      key.ee = new BigInteger(E, 16);
-      key.d = toBigInteger(jwk.d);
-      key.p = toBigInteger(jwk.p);
-      key.q = toBigInteger(jwk.q);
+      // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
+      if (jwk instanceof ArrayBuffer) {
+        jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(key)));
+      }
+
+      // map JWK parameters to BN
+      key = {};
+      key.n = b64toBN(jwk.n);
+      key.e = E;
+      key.d = b64toBN(jwk.d);
+      key.p = b64toBN(jwk.p);
+      key.q = b64toBN(jwk.q);
       key.u = key.p.modInverse(key.q);
-
-      function toBigInteger(base64url) {
-        const base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
-        const hex = util.hexstrdump(atob(base64));
-        return new BigInteger(hex, 16);
-      }
-
       return key;
     }
 
-    //
-    // JS code
-    //
+    // TODO use this is ../../encoding/base64.js and ./elliptic/{key,curve}.js
+    function b64toBN(base64url) {
+      const base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
+      const hex = util.hexstrdump(atob(base64));
+      return new BN(hex, 16);
+    }
 
-    return new Promise(function(resolve) {
-      const key = new KeyObject();
-      const rng = new SecureRandom();
-      const qs = B >> 1;
-      key.e = parseInt(E, 16);
-      key.ee = new BigInteger(E, 16);
-
-      for (;;) {
-        for (;;) {
-          key.p = new BigInteger(B - qs, 1, rng);
-          if (key.p.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.p.isProbablePrime(10)) {
-            break;
-          }
-        }
-        for (;;) {
-          key.q = new BigInteger(qs, 1, rng);
-          if (key.q.subtract(BigInteger.ONE).gcd(key.ee).compareTo(BigInteger.ONE) === 0 && key.q.isProbablePrime(10)) {
-            break;
-          }
-        }
-        if (key.p.compareTo(key.q) <= 0) {
-          const t = key.p;
-          key.p = key.q;
-          key.q = t;
-        }
-        const p1 = key.p.subtract(BigInteger.ONE);
-        const q1 = key.q.subtract(BigInteger.ONE);
-        const phi = p1.multiply(q1);
-        if (phi.gcd(key.ee).compareTo(BigInteger.ONE) === 0) {
-          key.n = key.p.multiply(key.q);
-          key.d = key.ee.modInverse(phi);
-          key.dmp1 = key.d.mod(p1);
-          key.dmq1 = key.d.mod(q1);
-          key.u = key.p.modInverse(key.q);
-          break;
-        }
-      }
-
-      resolve(key);
-    });
+    // asmcrypto fallback
+    await asmcrypto_random.seed(await random.getRandomBytes(1024)); // FIXME how much randomness?
+    key = await RSA.generateKey(B, E.toArrayLike(Uint8Array));
+    return {
+      n: key[0],
+      e: key[1],
+      d: key[2],
+      q: key[3],
+      p: key[4],
+      // dq: key[5],
+      // dp: key[6],
+      u: key[7]
+    };
   }
 };

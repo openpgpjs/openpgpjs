@@ -18,7 +18,6 @@
 // The GPG4Browsers crypto interface
 
 /**
- * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -31,7 +30,6 @@
  * @module crypto/crypto
  */
 
-import BN from 'bn.js';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -70,11 +68,11 @@ export default {
       switch (algo) {
         case enums.publicKey.rsa_encrypt:
         case enums.publicKey.rsa_encrypt_sign: {
-          const m = data.toUint8Array();
-          const n = pub_params[0].toUint8Array();
-          const e = pub_params[1].toUint8Array();
+          const m = data.toBN();
+          const n = pub_params[0].toBN();
+          const e = pub_params[1].toBN();
           const res = await publicKey.rsa.encrypt(m, n, e);
-          return constructParams(types, [new BN(res)]);
+          return constructParams(types, [res]);
         }
         case enums.publicKey.elgamal: {
           const m = data.toBN();
@@ -116,13 +114,13 @@ export default {
       switch (algo) {
         case enums.publicKey.rsa_encrypt_sign:
         case enums.publicKey.rsa_encrypt: {
-          const c = data_params[0].toUint8Array();
-          const n = key_params[0].toUint8Array(); // pq
-          const e = key_params[1].toUint8Array();
-          const d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
-          const p = key_params[3].toUint8Array();
-          const q = key_params[4].toUint8Array();
-          const u = key_params[5].toUint8Array(); // q^-1 mod p
+          const c = data_params[0].toBN();
+          const n = key_params[0].toBN(); // n = pq
+          const e = key_params[1].toBN();
+          const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
+          const p = key_params[3].toBN();
+          const q = key_params[4].toBN();
+          const u = key_params[5].toBN(); // q^-1 mod p
           return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
         }
         case enums.publicKey.elgamal: {
@@ -153,28 +151,28 @@ export default {
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
+      //   Algorithm-Specific Fields for RSA secret keys:
+      //       - multiprecision integer (MPI) of RSA secret exponent d.
+      //       - MPI of RSA secret prime value p.
+      //       - MPI of RSA secret prime value q (p < q).
+      //       - MPI of u, the multiplicative inverse of p, mod q.
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_sign:
-        //   Algorithm-Specific Fields for RSA secret keys:
-        //   - multiprecision integer (MPI) of RSA secret exponent d.
-        //   - MPI of RSA secret prime value p.
-        //   - MPI of RSA secret prime value q (p < q).
-        //   - MPI of u, the multiplicative inverse of p, mod q.
         return [type_mpi, type_mpi, type_mpi, type_mpi];
+      //   Algorithm-Specific Fields for Elgamal secret keys:
+      //        - MPI of Elgamal secret exponent x.
       case enums.publicKey.elgamal:
-        // Algorithm-Specific Fields for Elgamal secret keys:
-        //   - MPI of Elgamal secret exponent x.
         return [type_mpi];
+      //   Algorithm-Specific Fields for DSA secret keys:
+      //      - MPI of DSA secret exponent x.
       case enums.publicKey.dsa:
-        // Algorithm-Specific Fields for DSA secret keys:
-        //   - MPI of DSA secret exponent x.
         return [type_mpi];
+      //   Algorithm-Specific Fields for ECDSA or ECDH secret keys:
+      //       - MPI of an integer representing the secret key.
       case enums.publicKey.ecdh:
       case enums.publicKey.ecdsa:
       case enums.publicKey.eddsa:
-        // Algorithm-Specific Fields for ECDSA or ECDH secret keys:
-        //   - MPI of an integer representing the secret key.
         return [type_mpi];
       default:
         throw new Error('Invalid public key encryption algorithm.');
@@ -186,37 +184,37 @@ export default {
    * @return {Array<String>} The array of types
    */
   getPubKeyParamTypes: function(algo) {
-    //   Algorithm-Specific Fields for RSA public keys:
-    //       - a multiprecision integer (MPI) of RSA public modulus n;
-    //       - an MPI of RSA public encryption exponent e.
     switch (algo) {
+      //   Algorithm-Specific Fields for RSA public keys:
+      //       - a multiprecision integer (MPI) of RSA public modulus n;
+      //       - an MPI of RSA public encryption exponent e.
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_sign:
         return [type_mpi, type_mpi];
-        //   Algorithm-Specific Fields for Elgamal public keys:
-        //     - MPI of Elgamal prime p;
-        //     - MPI of Elgamal group generator g;
-        //     - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
+      //   Algorithm-Specific Fields for Elgamal public keys:
+      //       - MPI of Elgamal prime p;
+      //       - MPI of Elgamal group generator g;
+      //       - MPI of Elgamal public key value y (= g**x mod p where x  is secret).
       case enums.publicKey.elgamal:
         return [type_mpi, type_mpi, type_mpi];
-        //   Algorithm-Specific Fields for DSA public keys:
-        //       - MPI of DSA prime p;
-        //       - MPI of DSA group order q (q is a prime divisor of p-1);
-        //       - MPI of DSA group generator g;
-        //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
+      //   Algorithm-Specific Fields for DSA public keys:
+      //       - MPI of DSA prime p;
+      //       - MPI of DSA group order q (q is a prime divisor of p-1);
+      //       - MPI of DSA group generator g;
+      //       - MPI of DSA public-key value y (= g**x mod p where x  is secret).
       case enums.publicKey.dsa:
         return [type_mpi, type_mpi, type_mpi, type_mpi];
-        //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
-        //       - OID of curve;
-        //       - MPI of EC point representing public key.
+      //   Algorithm-Specific Fields for ECDSA/EdDSA public keys:
+      //       - OID of curve;
+      //       - MPI of EC point representing public key.
       case enums.publicKey.ecdsa:
       case enums.publicKey.eddsa:
         return [type_oid, type_mpi];
-        //   Algorithm-Specific Fields for ECDH public keys:
-        //       - OID of curve;
-        //       - MPI of EC point representing public key.
-        //       - KDF: variable-length field containing KDF parameters.
+      //   Algorithm-Specific Fields for ECDH public keys:
+      //       - OID of curve;
+      //       - MPI of EC point representing public key.
+      //       - KDF: variable-length field containing KDF parameters.
       case enums.publicKey.ecdh:
         return [type_oid, type_mpi, type_kdf_params];
       default:
@@ -230,24 +228,22 @@ export default {
    */
   getEncSessionKeyParamTypes: function(algo) {
     switch (algo) {
-      //    Algorithm-Specific Fields for RSA encrypted session keys:
-      //        - MPI of RSA encrypted value m**e mod n.
+      //   Algorithm-Specific Fields for RSA encrypted session keys:
+      //       - MPI of RSA encrypted value m**e mod n.
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign:
         return [type_mpi];
 
-      //    Algorithm-Specific Fields for Elgamal encrypted session keys:
-      //        - MPI of Elgamal value g**k mod p
-      //        - MPI of Elgamal value m * y**k mod p
+      //   Algorithm-Specific Fields for Elgamal encrypted session keys:
+      //       - MPI of Elgamal value g**k mod p
+      //       - MPI of Elgamal value m * y**k mod p
       case enums.publicKey.elgamal:
         return [type_mpi, type_mpi];
-
-      //    Algorithm-Specific Fields for ECDH encrypted session keys:
-      //        - MPI containing the ephemeral key used to establish the shared secret
-      //        - ECDH Symmetric Key
+      //   Algorithm-Specific Fields for ECDH encrypted session keys:
+      //       - MPI containing the ephemeral key used to establish the shared secret
+      //       - ECDH Symmetric Key
       case enums.publicKey.ecdh:
         return [type_mpi, type_ecdh_symkey];
-
       default:
         throw new Error('Invalid public key encryption algorithm.');
     }
@@ -267,7 +263,7 @@ export default {
       case enums.publicKey.rsa_sign: {
         return publicKey.rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(
-            types, [keyObject.n, keyObject.ee, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
+            types, [keyObject.n, keyObject.e, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
           );
         });
       }

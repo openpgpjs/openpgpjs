@@ -26,7 +26,7 @@
 import BN from 'bn.js';
 import random from '../random';
 
-const one = new BN(1);
+const two = new BN(2);
 
 export default {
   /*
@@ -38,7 +38,8 @@ export default {
     const mred = m.toRed(redp);
     const gred = g.toRed(redp);
     const yred = y.toRed(redp);
-    const k = random.getRandomBN(one, p);
+    // TODO confirm this range
+    const k = random.getRandomBN(two, p.subn(1)); // returns in [2, p-2]
     return {
       c1: gred.redPow(k).fromRed(),
       c2: yred.redPow(k).redMul(mred).fromRed()
