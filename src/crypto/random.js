@@ -97,40 +97,6 @@ export default {
   },
 
   /**
-   * Create a secure random big integer of bits length
-   * @param {Integer} bits Bit length of the MPI to create
-   * @return {BigInteger} Resulting big integer
-   */
-  getRandomBigInteger: function(bits) {
-    if (bits < 1) {
-      throw new Error('Illegal parameter value: bits < 1');
-    }
-    const numBytes = Math.floor((bits + 7) / 8);
-
-    let randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
-    if (bits % 8 > 0) {
-      randomBits = String.fromCharCode(
-        ((2 ** (bits % 8)) - 1) & randomBits.charCodeAt(0)
-      ) + randomBits.substring(1);
-    }
-    const mpi = new type_mpi(randomBits);
-    return mpi.toBigInteger();
-  },
-
-  getRandomBigIntegerInRange: function(min, max) {
-    if (max.compareTo(min) <= 0) {
-      throw new Error('Illegal parameter value: max <= min');
-    }
-
-    const range = max.subtract(min);
-    let r = this.getRandomBigInteger(range.bitLength());
-    while (r.compareTo(range) > 0) {
-      r = this.getRandomBigInteger(range.bitLength());
-    }
-    return min.add(r);
-  },
-
-  /**
    * Create a secure random MPI in specified range
    * @param {module:type/mpi} min Lower bound, included
    * @param {module:type/mpi} max Upper bound, excluded

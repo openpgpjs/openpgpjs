@@ -18,8 +18,8 @@
 // A Digital signature algorithm implementation
 
 /**
+ * @requires bn.js
  * @requires crypto/hash
- * @requires crypto/public_key/jsbn
  * @requires crypto/random
  * @requires config
  * @requires util
@@ -28,7 +28,7 @@
 
 import BN from 'bn.js';
 import hash from '../hash';
-import random from '../random.js';
+import random from '../random';
 import config from '../../config';
 import util from '../../util';
 

@@ -20,7 +20,6 @@
 /**
  * @requires bn.js
  * @requires asmcrypto.js
- * @requires crypto/public_key/jsbn
  * @requires crypto/random
  * @requires config
  * @requires util

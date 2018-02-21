@@ -18,16 +18,16 @@
 // Wrapper of an instance of an Elliptic Curve
 
 /**
+ * @requires bn.js
  * @requires crypto/public_key/elliptic/key
- * @requires crypto/public_key/jsbn
  * @requires enums
  * @requires util
  * @module crypto/public_key/elliptic/curve
  */
 
+import BN from 'bn.js';
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
 import KeyPair from './key';
-import BigInteger from '../jsbn';
 import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
@@ -188,8 +188,8 @@ async function generate(curve) {
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
-    Q: new BigInteger(util.hexidump(keyPair.getPublic()), 16),
-    d: new BigInteger(util.hexidump(keyPair.getPrivate()), 16),
+    Q: new BN(keyPair.getPublic()),
+    d: new BN(keyPair.getPrivate()),
     hash: curve.hash,
     cipher: curve.cipher
   };

@@ -30,13 +30,11 @@
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
  * @requires bn.js
- * @requires crypto/public_key/jsbn
  * @requires util
  * @module type/mpi
  */
 
 import BN from 'bn.js';
-import BigInteger from '../crypto/public_key/jsbn';
 import util from '../util';
 
 /**
@@ -46,8 +44,6 @@ export default function MPI(data) {
   /** An implementation dependent integer */
   if (data instanceof BN) {
     this.fromBN(data);
-  } else if (data instanceof BigInteger) {
-    this.fromBigInteger(data);
   } else if (util.isUint8Array(data)) {
     this.fromUint8Array(data);
   } else if (util.isString(data)) {
@@ -131,14 +127,6 @@ MPI.prototype.toBN = function () {
 
 MPI.prototype.fromBN = function (bn) {
   this.data = bn.clone();
-};
-
-MPI.prototype.toBigInteger = function () {
-  return new BigInteger(util.hexidump(this.write()), 16);
-};
-
-MPI.prototype.fromBigInteger = function (bn) {
-  this.data = new BN(bn.toByteArray());
 };
 
 MPI.fromClone = function (clone) {
