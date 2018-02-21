@@ -1,4 +1,5 @@
 /**
+ * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/pkcs1
  * @requires enums
@@ -6,6 +7,7 @@
  * @module crypto/signature
 */
 
+import BN from 'bn.js';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1';
 import enums from '../enums';
@@ -29,11 +31,11 @@ export default {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_sign: {
-        const m = msg_MPIs[0].toUint8Array();
-        const n = pub_MPIs[0].toUint8Array();
-        const e = pub_MPIs[1].toUint8Array();
+        const m = msg_MPIs[0].toBN();
+        const n = pub_MPIs[0].toBN();
+        const e = pub_MPIs[1].toBN();
         const EM = publicKey.rsa.verify(m, n, e);
-        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array2str(data), n.length);
+        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array2str(data), n.byteLength());
         return util.hexidump(EM) === EM2;
       }
       case enums.publicKey.dsa: {
@@ -78,13 +80,11 @@ export default {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_sign: {
-        const n = key_params[0].toUint8Array();
-        const e = key_params[1].toUint8Array();
-        const d = key_params[2].toUint8Array();
+        const n = key_params[0].toBN();
+        const e = key_params[1].toBN();
+        const d = key_params[2].toBN();
         data = util.Uint8Array2str(data);
-        const m = util.hex2Uint8Array(
-          '00'+pkcs1.emsa.encode(hash_algo, data, n.length)  // FIXME remove '00'
-        );
+        const m = new BN(pkcs1.emsa.encode(hash_algo, data, n.byteLength()), 16);
         const signature = publicKey.rsa.sign(m, n, e, d);
         return util.Uint8Array2MPI(signature);
       }

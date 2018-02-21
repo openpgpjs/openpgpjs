@@ -696,6 +696,7 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
       return;
     }
     const dataToVerify = { userid: user.userId || user.userAttribute, key: primaryKey };
+    // TODO: fix the race condition, this should be a forEach
     await Promise.all(user.selfCertifications.map(async function(selfCertification) {
       // skip if certificate is not the most recent
       if ((selfCertification.isPrimaryUserID &&
@@ -703,6 +704,7 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
           (!lastPrimaryUserID && selfCertification.created < lastCreated)) {
         return;
       }
+      // TODO break apart the .verify/isRevoked/isExpired checks
       // skip if certificates is not valid
       if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify)) ||
           (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) ||
@@ -781,6 +783,7 @@ User.prototype.toPacketlist = function() {
  * @return {Boolean} True if the certificate is revoked
  */
 User.prototype.isRevoked = async function(primaryKey, certificate, key) {
+  certificate.revoked = null;
   if (this.revocationCertifications) {
     const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
     // TODO clarify OpenPGP's behavior given an expired revocation signature

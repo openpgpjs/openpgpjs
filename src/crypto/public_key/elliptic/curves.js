@@ -37,22 +37,19 @@ import base64 from '../../../encoding/base64';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
-let webCurves = {};
-let nodeCurves = {};
-webCurves = {
+const nodeCurves = {};
+const webCurves = {
   'p256': 'P-256',
   'p384': 'P-384',
   'p521': 'P-521'
 };
 if (nodeCrypto) {
   const knownCurves = nodeCrypto.getCurves();
-  nodeCurves = {
-    'secp256k1': knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
-    'p256': knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
-    'p384': knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
-    'p521': knownCurves.includes('secp521r1') ? 'secp521r1' : undefined
-    // TODO add more here
-  };
+  nodeCurves.secp256k1 = knownCurves.includes('secp256k1') ? 'secp256k1' : undefined;
+  nodeCurves.p256 = knownCurves.includes('prime256v1') ? 'prime256v1' : undefined;
+  nodeCurves.p384 = knownCurves.includes('secp384r1') ? 'secp384r1' : undefined;
+  nodeCurves.p521 = knownCurves.includes('secp521r1') ? 'secp521r1' : undefined;
+  // TODO add more here
 }
 
 const curves = {

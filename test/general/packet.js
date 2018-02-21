@@ -176,11 +176,9 @@ describe("Packet", function() {
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
 
-      let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
-        const mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
+        return new openpgp.MPI(k);
       });
 
       const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
@@ -439,11 +437,9 @@ describe("Packet", function() {
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
-      let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
-        const mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
+        return new openpgp.MPI(k);
       });
 
       key[0].params = mpi;
@@ -467,11 +463,9 @@ describe("Packet", function() {
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
-        let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+        let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
         mpi = mpi.map(function(k) {
-          const mpi = new openpgp.MPI();
-          mpi.fromBigInteger(k);
-          return mpi;
+          return new openpgp.MPI(k);
         });
 
         key.params = mpi;

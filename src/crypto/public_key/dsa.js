@@ -32,7 +32,7 @@ import random from '../random.js';
 import config from '../../config';
 import util from '../../util';
 
-const one = new BN(1);
+const two = new BN(2);
 const zero = new BN(0);
 
 /*
@@ -73,7 +73,8 @@ export default {
     // signature shall be recalculated. It is extremely unlikely that r = 0
     // or s = 0 if signatures are generated properly.
     while (true) {
-      k = random.getRandomBN(one, q);
+      // TODO confirm this range
+      k = random.getRandomBN(two, q.subn(1)); // returns in [2, q-2]
       r = gred.redPow(k).fromRed().toRed(redq); // (g**k mod p) mod q
       if (zero.cmp(r) === 0) {
         continue;
