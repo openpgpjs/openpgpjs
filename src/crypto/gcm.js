@@ -24,7 +24,7 @@
  * @module crypto/gcm
  */
 
-import { AES_GCM } from 'asmcrypto.js';
+import { AES_GCM } from 'asmcrypto.js/src/aes/gcm/exports';
 import config from '../config';
 import util from '../util';
 

@@ -32,7 +32,7 @@
  * @module packet/sym_encrypted_integrity_protected
  */
 
-import { AES_CFB } from 'asmcrypto.js';
+import { AES_CFB } from 'asmcrypto.js/src/aes/cfb/exports';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';

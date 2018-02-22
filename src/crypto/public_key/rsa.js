@@ -28,7 +28,9 @@
 
 
 import BN from 'bn.js';
-import { random as asmcrypto_random, RSA, RSA_RAW } from 'asmcrypto.js';
+import { RSA } from 'asmcrypto.js/src/rsa/exports-keygen';
+import { RSA_RAW } from 'asmcrypto.js/src/rsa/exports-raw';
+import { random as asmcrypto_random } from 'asmcrypto.js/src/random/exports';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
@@ -137,13 +139,12 @@ export default {
     if (webCrypto) {
       let keyPair;
       let keyGenOpt;
-      const Euint8 = E.toArrayLike(Uint8Array); // get bytes of exponent
       if ((window.crypto && window.crypto.subtle) || window.msCrypto) {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8, // take three bytes (max 65537)
+          publicExponent: E.toArrayLike(Uint8Array), // take three bytes (max 65537) for exponent
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
@@ -154,7 +155,7 @@ export default {
         keyGenOpt = {
           name: 'RSA-OAEP',
           modulusLength: B, // the specified keysize in bits
-          publicExponent: Euint8, // take three bytes (max 65537)
+          publicExponent: E.toArrayLike(Uint8Array), // take three bytes (max 65537) for exponent
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
@@ -170,7 +171,7 @@ export default {
 
       // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
       if (jwk instanceof ArrayBuffer) {
-        jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(key)));
+        jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
       }
 
       // map JWK parameters to BN
@@ -180,7 +181,7 @@ export default {
       key.d = b64toBN(jwk.d);
       key.p = b64toBN(jwk.p);
       key.q = b64toBN(jwk.q);
-      key.u = key.p.modInverse(key.q);
+      key.u = key.p.invm(key.q);
       return key;
     }
 
@@ -195,14 +196,14 @@ export default {
     await asmcrypto_random.seed(await random.getRandomBytes(1024)); // FIXME how much randomness?
     key = await RSA.generateKey(B, E.toArrayLike(Uint8Array));
     return {
-      n: key[0],
-      e: key[1],
-      d: key[2],
-      q: key[3],
-      p: key[4],
-      // dq: key[5],
-      // dp: key[6],
-      u: key[7]
+      n: new BN(key[0]),
+      e: new BN(key[1]),
+      d: new BN(key[2]),
+      q: new BN(key[3]),
+      p: new BN(key[4]),
+      // dq: new BN(key[5]),
+      // dp: new BN(key[6]),
+      u: new BN(key[7])
     };
   }
 };

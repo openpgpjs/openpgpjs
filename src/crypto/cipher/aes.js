@@ -3,7 +3,7 @@
  * @module crypto/cipher/aes
  */
 
-import { AES_ECB } from 'asmcrypto.js';
+import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/exports';
 
 // TODO use webCrypto or nodeCrypto when possible.
 export default function aes(length) {
