@@ -8,7 +8,7 @@
  */
 
 import Rusha from 'rusha';
-import { SHA256 } from 'asmcrypto.js';
+import { SHA256 } from 'asmcrypto.js/src/hash/sha256/exports';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
