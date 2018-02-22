@@ -130,6 +130,7 @@ MPI.prototype.fromBN = function (bn) {
 };
 
 MPI.fromClone = function (clone) {
+  clone.data.copy = BN.prototype.copy;
   const bn = new BN();
   clone.data.copy(bn);
   return new MPI(bn);
