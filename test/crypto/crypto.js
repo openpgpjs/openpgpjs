@@ -378,10 +378,10 @@ describe('API functional testing', function() {
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
       const symmKey = util.Uint8Array2str(crypto.generateSessionKey('aes256'));
-      const RSAUnencryptedData = new openpgp.MPI();
-      RSAUnencryptedData.fromBytes(crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()));
+      const RSAUnencryptedData = crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength())
+      const RSAUnencryptedMPI = new openpgp.MPI(RSAUnencryptedData);
       return crypto.publicKeyEncrypt(
-        1, RSApubMPIs, RSAUnencryptedData
+        1, RSApubMPIs, RSAUnencryptedMPI
       ).then(RSAEncryptedData => {
 
         return crypto.publicKeyDecrypt(
@@ -398,11 +398,11 @@ describe('API functional testing', function() {
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
       const symmKey = util.Uint8Array2str(crypto.generateSessionKey('aes256'));
-      const ElgamalUnencryptedData = new openpgp.MPI();
-      ElgamalUnencryptedData.fromBytes(crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()));
+      const ElgamalUnencryptedData = crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength());
+      const ElgamalUnencryptedMPI = new openpgp.MPI(ElgamalUnencryptedData);
 
       return crypto.publicKeyEncrypt(
-        16, ElgamalpubMPIs, ElgamalUnencryptedData
+        16, ElgamalpubMPIs, ElgamalUnencryptedMPI
       ).then(ElgamalEncryptedData => {
 
         return crypto.publicKeyDecrypt(

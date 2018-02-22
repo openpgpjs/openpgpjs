@@ -129,6 +129,8 @@ export default {
 
   /**
    * Generate a new random private key B bits long with public exponent E
+   * @param {Integer} B RSA bit length
+   * @param {String} E RSA public exponent in hex
    */
   generate: async function(B, E) {
     let key;

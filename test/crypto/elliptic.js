@@ -5,13 +5,6 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-const bin2bi = function (bytes) {
-  const mpi = new openpgp.MPI();
-  bytes = openpgp.util.bin2str(bytes);
-  mpi.fromBytes(bytes);
-  return mpi.toUint8Array(); // FIXME
-};
-
 describe('Elliptic Curve Cryptography', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const key_data = {
@@ -219,9 +212,9 @@ describe('Elliptic Curve Cryptography', function () {
       return ecdsa.verify(
         oid,
         hash,
-        {r: bin2bi(r), s: bin2bi(s)},
+        {r: new Uint8Array(r), s: new Uint8Array(s)},
         message,
-        bin2bi(pub)
+        new Uint8Array(pub)
       );
     };
     const secp256k1_dummy_value = new Uint8Array([
@@ -297,8 +290,8 @@ describe('Elliptic Curve Cryptography', function () {
     it('Sign and verify message', function () {
       const curve = elliptic_curves.get('p521');
       return curve.genKeyPair().then(keyPair => {
-        const keyPublic = bin2bi(keyPair.getPublic());
-        const keyPrivate = bin2bi(keyPair.getPrivate());
+        const keyPublic = new Uint8Array(keyPair.getPublic());
+        const keyPrivate = new Uint8Array(keyPair.getPrivate());
         const oid = curve.oid;
         const message = p384_message;
         return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(signature => {
@@ -321,9 +314,9 @@ describe('Elliptic Curve Cryptography', function () {
           curve.oid,
           cipher,
           hash,
-          bin2bi(ephemeral),
+          new Uint8Array(ephemeral),
           data,
-          bin2bi(priv),
+          new Uint8Array(priv),
           fingerprint
         );
       });
