@@ -95,8 +95,7 @@ export default {
      * @return {String} message, an octet string
      */
     decode: function(EM) {
-      // FIXME
-      // leading zeros truncated by jsbn
+      // leading zeros truncated by bn.js
       if (EM.charCodeAt(0) !== 0) {
         EM = String.fromCharCode(0) + EM;
       }

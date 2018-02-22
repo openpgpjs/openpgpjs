@@ -42,7 +42,7 @@ import util from '../util';
  */
 export default function MPI(data) {
   /** An implementation dependent integer */
-  if (data instanceof BN) {
+  if (BN.isBN(data)) {
     this.fromBN(data);
   } else if (util.isUint8Array(data)) {
     this.fromUint8Array(data);
@@ -54,35 +54,27 @@ export default function MPI(data) {
 }
 
 /**
- * Parsing function for a mpi ({@link https://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
- * @param {Uint8Array} input Payload of mpi data
- * @param {String} endian Endianness of the payload; 'be' for big-endian or 'le' for little-endian
- * @return {Integer} Length of data read
+ * Parsing function for a MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC 4880 3.2}).
+ * @param {Uint8Array} input  Payload of MPI data
+ * @param {String}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
+ * @return {Integer}          Length of data read
  */
 MPI.prototype.read = function (bytes, endian='be') {
   if (util.isString(bytes)) {
     bytes = util.str2Uint8Array(bytes);
+  } else {
+    bytes = util.copyUint8Array(bytes);
   }
 
   const bits = (bytes[0] << 8) | bytes[1];
-
-  // Additional rules:
-  //
-  //    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
-  //
-  //    The length field of an MPI describes the length starting from its
-  //    most significant non-zero bit.  Thus, the MPI [00 02 01] is not
-  //    formed correctly.  It should be [00 01 01].
-
-  // TODO: Verification of this size method! This size calculation as
-  //      specified above is not applicable in JavaScript
   const bytelen = Math.ceil(bits / 8);
-  let payload = bytes.subarray(2, 2 + bytelen);
+  const payload = bytes.subarray(2, 2 + bytelen);
+
   if (endian === 'le') {
-    payload = Uint8Array.from(payload).reverse();
+    payload.reverse();
   }
-  const raw = util.Uint8Array2str(payload);
-  this.fromBytes(raw);
+
+  this.fromUint8Array(payload);
 
   return 2 + bytelen;
 };
@@ -117,9 +109,6 @@ MPI.prototype.toString = function () {
 MPI.prototype.fromString = function (str) {
   this.data = new BN(util.str2Uint8Array(str));
 };
-
-// TODO remove this
-MPI.prototype.fromBytes = MPI.prototype.fromString;
 
 MPI.prototype.toBN = function () {
   return this.data.clone();
