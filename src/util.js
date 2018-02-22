@@ -100,15 +100,18 @@ export default {
 
   readDate: function (bytes) {
     const n = this.readNumber(bytes);
-    const d = new Date();
-    d.setTime(n * 1000);
+    const d = new Date(n * 1000);
     return d;
   },
 
   writeDate: function (time) {
-    const numeric = Math.round(time.getTime() / 1000);
+    const numeric = Math.floor(time.getTime() / 1000);
 
     return this.writeNumber(numeric, 4);
+  },
+
+  normalizeDate: function (time = Date.now()) {
+      return time === null ? time : new Date(Math.floor(+time / 1000) * 1000);
   },
 
   hexdump: function (str) {

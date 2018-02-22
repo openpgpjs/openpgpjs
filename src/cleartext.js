@@ -30,7 +30,6 @@ import enums from './enums';
 import packet from './packet';
 import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
-import { getPreferredHashAlgo } from './key';
 
 /**
  * @class
@@ -68,44 +67,50 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} signature             (optional) any existing detached signature
+ * @param  {Date} date                       (optional) The creation time of the signature that should be created
  * @return {module:message~CleartextMessage} new cleartext message with signed content
  */
-CleartextMessage.prototype.sign = async function(privateKeys) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys));
+CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date()) {
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date));
 };
 
 /**
  * Sign the cleartext message
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} signature             (optional) any existing detached signature
+ * @param  {Date} date                       (optional) The creation time of the signature that should be created
  * @return {module:signature~Signature}      new detached signature of message content
  */
-CleartextMessage.prototype.signDetached = async function(privateKeys) {
+CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date()) {
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date));
 };
 
 /**
  * Verify signatures of cleartext signed message
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
-CleartextMessage.prototype.verify = function(keys) {
-  return this.verifyDetached(this.signature, keys);
+CleartextMessage.prototype.verify = function(keys, date=new Date()) {
+  return this.verifyDetached(this.signature, keys, date);
 };
 
 /**
  * Verify signatures of cleartext signed message
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
  */
-CleartextMessage.prototype.verifyDetached = function(signature, keys) {
+CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new Date()) {
   const signatureList = signature.packets;
   const literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  return createVerificationObjects(signatureList, [literalDataPacket], keys);
+  return createVerificationObjects(signatureList, [literalDataPacket], keys, date);
 };
 
 /**

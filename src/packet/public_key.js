@@ -43,7 +43,7 @@ export default function PublicKey() {
   this.version = 4;
   /** Key creation date.
    * @type {Date} */
-  this.created = new Date();
+  this.created = util.normalizeDate();
   /* Algorithm specific params */
   this.params = [];
   // time in days (V3 only)
