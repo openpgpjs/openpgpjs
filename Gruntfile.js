@@ -52,6 +52,8 @@ module.exports = function(grunt) {
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
+              global: true,
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/, // Only babelify asmcrypto in node_modules
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
@@ -76,6 +78,8 @@ module.exports = function(grunt) {
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
           transform: [
             ["babelify", {
+              global: true,
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/, // Only babelify asmcrypto in node_modules
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
