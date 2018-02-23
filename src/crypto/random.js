@@ -97,7 +97,7 @@ export default {
   },
 
   /**
-   * Create a secure random MPI in specified range
+   * Create a secure random MPI that is greater than or equal to min and less than max.
    * @param {module:type/mpi} min Lower bound, included
    * @param {module:type/mpi} max Upper bound, excluded
    * @return {module:BN} Random MPI
@@ -107,18 +107,19 @@ export default {
       throw new Error('Illegal parameter value: max <= min');
     }
 
+    let r;
     const modulus = max.sub(min);
     const length = modulus.byteLength();
-    let r = new BN(this.getRandomBytes(length));
+
     // Using a while loop is necessary to avoid bias
-    while (r.cmp(modulus) >= 0) {
+    do {
       r = new BN(this.getRandomBytes(length));
-    }
+    } while (r.cmp(modulus) >= 0);
+
     return r.iadd(min);
   },
 
   randomBuffer: new RandomBuffer()
-
 };
 
 /**

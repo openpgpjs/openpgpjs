@@ -20,6 +20,7 @@
 /**
  * @requires bn.js
  * @requires asmcrypto.js
+ * @requires crypto/public_key/prime
  * @requires crypto/random
  * @requires config
  * @requires util
@@ -31,6 +32,7 @@ import BN from 'bn.js';
 import { RSA } from 'asmcrypto.js/src/rsa/exports-keygen';
 import { RSA_RAW } from 'asmcrypto.js/src/rsa/exports-raw';
 import { random as asmcrypto_random } from 'asmcrypto.js/src/random/exports';
+import prime from './prime';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
