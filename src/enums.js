@@ -428,6 +428,23 @@ export default {
     signature: 6
   },
 
+  /** {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.23|RFC4880, section 5.2.3.23}
+   * @enum {Integer}
+   * @readonly
+   */
+  reasonForRevocation: {
+    /** No reason specified (key revocations or cert revocations) */
+    no_reason: 0,
+    /** Key is superseded (key revocations) */
+    key_superseded: 1,
+    /** Key material has been compromised (key revocations) */
+    key_compromised: 2,
+    /** Key is retired and no longer used (key revocations) */
+    key_retired: 3,
+    /** User ID information is no longer valid (cert revocations) */
+    userid_invalid: 32
+  },
+
   /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.2.3.25|RFC4880bis-04, section 5.2.3.25}
    * @enum {Integer}
    * @readonly

@@ -624,9 +624,45 @@ async function mergeSignatures(source, dest, attr, checkFn) {
   }
 }
 
-// TODO
-Key.prototype.revoke = function() {
-
+/**
+ * Revokes the key
+ * @param  {module:key~Key} privateKey decrypted private key for revocation
+ * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
+ * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
+ * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
+ * @param  {Date} date optional, override the creationtime of the revocation signature
+ * @return {module:key~Key} new key with revocation signature
+ */
+Key.prototype.revoke = async function(privateKey, {
+  flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
+  string: reasonForRevocationString=''
+} = {}, date=new Date()) {
+  if (privateKey.isPublic()) {
+    throw new Error('Need private key for revoking');
+  }
+  if (privateKey.primaryKey.getFingerprint() !== this.primaryKey.getFingerprint()) {
+    throw new Error('Private key does not match public key');
+  }
+  await privateKey.verifyPrimaryUser();
+  const signingKeyPacket = privateKey.getSigningKeyPacket();
+  if (!signingKeyPacket) {
+    throw new Error(`Could not find valid signing key packet in key ${
+      privateKey.primaryKey.getKeyId().toHex()}`);
+  }
+  if (!signingKeyPacket.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
+  const dataToSign = { key: this.primaryKey };
+  const signaturePacket = new packet.Signature(date);
+  signaturePacket.signatureType = enums.write(enums.signature, enums.signature.key_revocation);
+  signaturePacket.reasonForRevocationFlag = enums.write(enums.reasonForRevocation, reasonForRevocationFlag);
+  signaturePacket.reasonForRevocationString = reasonForRevocationString;
+  signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+  signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
+  await signaturePacket.sign(signingKeyPacket, dataToSign);
+  const key = new Key(this.toPacketlist());
+  key.revocationSignature = signaturePacket;
+  return key;
 };
 
 /**
@@ -768,7 +804,6 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey);
-    signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
     signaturePacket.sign(signingKeyPacket, dataToSign);
     return signaturePacket;
   }));
