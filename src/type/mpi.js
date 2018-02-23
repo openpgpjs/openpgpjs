@@ -21,8 +21,7 @@
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- * Implementation of type MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})<br/>
- * <br/>
+ * Implementation of type MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})
  * Multiprecision integers (also called MPIs) are unsigned integers used
  * to hold large integers such as the ones used in cryptographic
  * calculations.
@@ -67,7 +66,7 @@ MPI.prototype.read = function (bytes, endian='be') {
   }
 
   const bits = (bytes[0] << 8) | bytes[1];
-  const bytelen = Math.ceil(bits / 8);
+  const bytelen = (bits + 7) >>> 3;
   const payload = bytes.subarray(2, 2 + bytelen);
 
   if (endian === 'le') {
