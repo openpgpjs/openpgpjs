@@ -1448,6 +1448,25 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     });
   });
 
+  it('revoke() - subkey', function(done) {
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    privKey.decrypt('hello world');
+
+    const subKey = pubKey.subKeys[0];
+    subKey.revoke(pubKey.primaryKey, privKey, {
+      flag: openpgp.enums.reasonForRevocation.key_superseded
+    }).then(revKey => {
+      expect(revKey.revocationSignature).to.exist;
+      expect(revKey.revocationSignature.signatureType).to.equal(openpgp.enums.signature.subkey_revocation);
+      expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_superseded);
+      expect(revKey.revocationSignature.reasonForRevocationString).to.equal('');
+
+      expect(subKey.verify(pubKey.primaryKey)).to.eventually.equal(openpgp.enums.keyStatus.valid);
+      expect(revKey.verify(pubKey.primaryKey)).to.eventually.equal(openpgp.enums.keyStatus.revoked).notify(done);
+    });
+  });
+
   it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
     const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1]);

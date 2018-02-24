@@ -1071,6 +1071,49 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
 };
 
 /**
+ * Revokes the subkey
+ * @param  {module:packet/signature} primaryKey primary key used for revocation
+ * @param  {module:key~Key} privateKey decrypted private key for revocation
+ * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
+ * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
+ * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
+ * @param  {Date} date optional, override the creationtime of the revocation signature
+ * @return {module:key~SubKey} new subkey with revocation signature
+ */
+SubKey.prototype.revoke = async function(primaryKey, privateKey, {
+  flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
+  string: reasonForRevocationString=''
+} = {}, date=new Date()) {
+  if (privateKey.isPublic()) {
+    throw new Error('Need private key for revoking');
+  }
+  if (privateKey.primaryKey.getFingerprint() !== primaryKey.getFingerprint()) {
+    throw new Error('Private key does not match public key');
+  }
+  await privateKey.verifyPrimaryUser();
+  const signingKeyPacket = privateKey.getSigningKeyPacket();
+  if (!signingKeyPacket) {
+    throw new Error(`Could not find valid signing key packet in key ${
+      privateKey.primaryKey.getKeyId().toHex()}`);
+  }
+  if (!signingKeyPacket.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
+  const dataToSign = { key: primaryKey, bind: this.subKey };
+  const signaturePacket = new packet.Signature(date);
+  signaturePacket.signatureType = enums.write(enums.signature, enums.signature.subkey_revocation);
+  signaturePacket.reasonForRevocationFlag = enums.write(enums.reasonForRevocation, reasonForRevocationFlag);
+  signaturePacket.reasonForRevocationString = reasonForRevocationString;
+  signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+  signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
+  await signaturePacket.sign(signingKeyPacket, dataToSign);
+  const subKey = new SubKey(this.subKey);
+  subKey.revocationSignature = signaturePacket;
+  await subKey.update(this, primaryKey);
+  return subKey;
+};
+
+/**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
  * @returns {{keys: Array<module:key.Key>,
