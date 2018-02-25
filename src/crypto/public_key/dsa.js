@@ -53,7 +53,6 @@ export default {
     let r;
     let s;
     let t;
-    // TODO benchmark BN.mont vs BN.red
     const redp = new BN.red(p);
     const redq = new BN.red(q);
     const gred = g.toRed(redp);
