@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Algorithms for probabilistic primality testing
+// Algorithms for probabilistic prime generation
 
 /**
  * @requires bn.js
@@ -26,21 +26,32 @@
 import BN from 'bn.js';
 import random from '../random';
 
-function randomProbablePrime(b) {
-  let n;
-  const min = new BN(1).shln(b-1);
-  do {
-    n = random.getRandomBN(min, min.shln(1));
-    if (n.isEven()) {
-      n.iaddn(1); // force odd
+export default {
+  randomProbablePrime, isProbablePrime, fermat, millerRabin
+};
+
+function randomProbablePrime(bits, e) {
+  const min = new BN(1).shln(bits - 1);
+
+  let n = random.getRandomBN(min, min.shln(1));
+  if (n.isEven()) {
+    n.iaddn(1); // force odd
+  }
+
+  while (!isProbablePrime(n, e)) {
+    n.iaddn(2);
+    // If reached the maximum, go back to the minimum.
+    if (n.bitLength() > bits) {
+      n = n.mod(min.shln(1)).iadd(min);
     }
-  } while (!isProbablePrime(n));
-//    this.dAddOffset(2, 0);
-//    if (this.bitLength() > b)
-//      this.subTo(BigInteger.ONE.shiftLeft(b - 1), this);
+  }
+  return n;
 }
 
-function isProbablePrime(n) {
+function isProbablePrime(n, e) {
+  if (e && !n.subn(1).gcd(e).eqn(1)) {
+    return false;
+  }
   if (!fermat(n)) {
     return false;
   }
@@ -54,9 +65,9 @@ function isProbablePrime(n) {
  * Tests whether n is probably prime or not using Fermat's test with b = 2.
  * Fails if b^(n-1) mod n === 1.
  */
-export function fermat(n, b) {
+function fermat(n, b) {
   b = b || new BN(2);
-  return b.toRed(BN.mont(n)).redPow(n.subn(1)).cmpn(1) === 0;
+  return b.toRed(BN.mont(n)).redPow(n.subn(1)).fromRed().cmpn(1) === 0;
 }
 
 
@@ -93,7 +104,7 @@ export function fermat(n, b) {
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
  */
-export function millerRabin(n, k, cb) {
+function millerRabin(n, k, cb) {
   var len = n.bitLength();
   var red = BN.mont(n);
   var rone = new BN(1).toRed(red);
