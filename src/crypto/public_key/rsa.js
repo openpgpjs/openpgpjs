@@ -19,7 +19,6 @@
 
 /**
  * @requires bn.js
- * @requires asmcrypto.js
  * @requires crypto/public_key/prime
  * @requires crypto/random
  * @requires config
@@ -135,7 +134,10 @@ export default {
   /**
    * Generate a new random private key B bits long with public exponent E
    * @param {Integer} B RSA bit length
-   * @param {String} E RSA public exponent in hex
+   * @param {String}  E RSA public exponent in hex string
+   * @return {{n: BN, e: BN, d: BN,
+               p: BN, q: BN, u: BN}} RSA public modulus, RSA public exponent, RSA private exponent,
+                                     RSA private prime p, RSA private prime q, u = q ** -1 mod p
    */
   generate: async function(B, E) {
     let key;
@@ -193,13 +195,13 @@ export default {
     }
 
     while (true) {
-      let p = prime.randomProbablePrime(B - (B >> 1), E);
-      let q = prime.randomProbablePrime(B >> 1, E);
+      // 40 iterations of the Miller-Rabin test
+      // See https://stackoverflow.com/a/6330138 for justification
+      let p = prime.randomProbablePrime(B - (B >> 1), E, 40);
+      let q = prime.randomProbablePrime(B >> 1, E, 40);
 
       if (p.cmp(q) < 0) {
-        const t = p;
-        p = q;
-        q = t;
+        [p, q] = [q, p];
       }
 
       const phi = p.subn(1).mul(q.subn(1));
@@ -214,5 +216,7 @@ export default {
         u: p.invm(q)
       };
     }
-  }
+  },
+
+  prime: prime
 };

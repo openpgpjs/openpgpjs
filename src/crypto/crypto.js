@@ -280,7 +280,7 @@ export default {
           return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
         });
       default:
-        throw new Error('Invalid public key encryption algorithm.');
+        throw new Error('Invalid public key algorithm.');
     }
   },
 

@@ -1,5 +1,4 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
-const AES_CFB = require('asmcrypto.js/asmcrypto.all.js').AES_CFB;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -297,11 +296,7 @@ describe('API functional testing', function() {
           const prefix = util.concatUint8Array([rndm, repeat]);
 
           const symmencData = crypto.cfb.encrypt(rndm, algo, util.str2Uint8Array(plaintext), symmKey, false);
-          const symmencData2 = AES_CFB.encrypt(util.concatUint8Array([prefix, util.str2Uint8Array(plaintext)]), symmKey);
-
-          let decrypted = AES_CFB.decrypt(symmencData, symmKey);
-          decrypted = decrypted.subarray(crypto.cipher[algo].blockSize + 2, decrypted.length);
-          expect(util.Uint8Array2str(symmencData)).to.equal(util.Uint8Array2str(symmencData2));
+          const decrypted = crypto.cfb.decrypt(algo, symmKey, symmencData, false);
 
           const text = util.Uint8Array2str(decrypted);
           expect(text).to.equal(plaintext);

@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Algorithms for probabilistic prime generation
+// Algorithms for probabilistic random prime generation
 
 /**
  * @requires bn.js
@@ -30,7 +30,14 @@ export default {
   randomProbablePrime, isProbablePrime, fermat, millerRabin
 };
 
-function randomProbablePrime(bits, e) {
+/**
+ * Probabilistic random number generator
+ * @param {Integer} bits Bit length of the prime
+ * @param {BN}      e    Optional RSA exponent to check against the prime
+ * @param {Integer} k    Optional number of iterations of Miller-Rabin test
+ * @return BN
+ */
+function randomProbablePrime(bits, e, k) {
   const min = new BN(1).shln(bits - 1);
 
   let n = random.getRandomBN(min, min.shln(1));
@@ -38,7 +45,7 @@ function randomProbablePrime(bits, e) {
     n.iaddn(1); // force odd
   }
 
-  while (!isProbablePrime(n, e)) {
+  while (!isProbablePrime(n, e, k)) {
     n.iaddn(2);
     // If reached the maximum, go back to the minimum.
     if (n.bitLength() > bits) {
@@ -48,14 +55,21 @@ function randomProbablePrime(bits, e) {
   return n;
 }
 
-function isProbablePrime(n, e) {
+/**
+ * Probabilistic primality testing
+ * @param {BN}      n Number to test
+ * @param {BN}      e Optional RSA exponent to check against the prime
+ * @param {Integer} k Optional number of iterations of Miller-Rabin test
+ * @return {boolean}
+ */
+function isProbablePrime(n, e, k) {
   if (e && !n.subn(1).gcd(e).eqn(1)) {
     return false;
   }
   if (!fermat(n)) {
     return false;
   }
-  if (!millerRabin(n)) {
+  if (!millerRabin(n, k)) {
     return false;
   }
   return true;
@@ -64,6 +78,9 @@ function isProbablePrime(n, e) {
 /**
  * Tests whether n is probably prime or not using Fermat's test with b = 2.
  * Fails if b^(n-1) mod n === 1.
+ * @param {BN}      n Number to test
+ * @param {Integer} b Optional Fermat test base
+ * @return {boolean}
  */
 function fermat(n, b) {
   b = b || new BN(2);
@@ -103,33 +120,38 @@ function fermat(n, b) {
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
+ * @param {BN}       n  Number to test
+ * @param {Integer}  k  Optional number of iterations of Miller-Rabin test
+ * @param {Function} cb Optional callback function to call with random witnesses
+ * @return {boolean}
  */
 function millerRabin(n, k, cb) {
-  var len = n.bitLength();
-  var red = BN.mont(n);
-  var rone = new BN(1).toRed(red);
+  const len = n.bitLength();
+  const red = BN.mont(n);
+  const rone = new BN(1).toRed(red);
 
   if (!k)
     k = Math.max(1, (len / 48) | 0);
 
   // Find d and s, (n - 1) = (2 ^ s) * d;
-  var n1 = n.subn(1);
-  for (var s = 0; !n1.testn(s); s++) {}
-  var d = n.shrn(s);
+  const n1 = n.subn(1);
+  let s = 0;
+  while (!n1.testn(s)) { s++; }
+  const d = n.shrn(s);
 
-  var rn1 = n1.toRed(red);
+  const rn1 = n1.toRed(red);
 
-  var prime = true;
   for (; k > 0; k--) {
-    var a = random.getRandomBN(new BN(2), n1);
+    let a = random.getRandomBN(new BN(2), n1);
     if (cb)
       cb(a);
 
-    var x = a.toRed(red).redPow(d);
+    let x = a.toRed(red).redPow(d);
     if (x.cmp(rone) === 0 || x.cmp(rn1) === 0)
       continue;
 
-    for (var i = 1; i < s; i++) {
+    let i;
+    for (i = 1; i < s; i++) {
       x = x.redSqr();
 
       if (x.cmp(rone) === 0)
@@ -142,5 +164,5 @@ function millerRabin(n, k, cb) {
       return false;
   }
 
-  return prime;
+  return true;
 };
