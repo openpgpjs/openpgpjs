@@ -29,9 +29,7 @@
 
 
 import BN from 'bn.js';
-import { RSA } from 'asmcrypto.js/src/rsa/exports-keygen';
 import { RSA_RAW } from 'asmcrypto.js/src/rsa/exports-raw';
-import { random as asmcrypto_random } from 'asmcrypto.js/src/random/exports';
 import prime from './prime';
 import random from '../random';
 import config from '../../config';
@@ -39,6 +37,13 @@ import util from '../../util';
 
 const two = new BN(2);
 const zero = new BN(0);
+
+// TODO use this is ../../encoding/base64.js and ./elliptic/{key,curve}.js
+function b64toBN(base64url) {
+  const base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
+  const hex = util.hexstrdump(atob(base64));
+  return new BN(hex, 16);
+}
 
 export default {
   /** Create signature
@@ -189,25 +194,27 @@ export default {
       return key;
     }
 
-    // TODO use this is ../../encoding/base64.js and ./elliptic/{key,curve}.js
-    function b64toBN(base64url) {
-      const base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
-      const hex = util.hexstrdump(atob(base64));
-      return new BN(hex, 16);
-    }
+    while (true) {
+      let p = prime.randomProbablePrime(B - (B >> 1), E);
+      let q = prime.randomProbablePrime(B >> 1, E);
 
-    // asmcrypto fallback
-    await asmcrypto_random.seed(await random.getRandomBytes(1024)); // FIXME how much randomness?
-    key = await RSA.generateKey(B, E.toArrayLike(Uint8Array));
-    return {
-      n: new BN(key[0]),
-      e: new BN(key[1]),
-      d: new BN(key[2]),
-      q: new BN(key[3]),
-      p: new BN(key[4]),
-      // dq: new BN(key[5]),
-      // dp: new BN(key[6]),
-      u: new BN(key[7])
-    };
+      if (p.cmp(q) < 0) {
+        const t = p;
+        p = q;
+        q = t;
+      }
+
+      const phi = p.subn(1).mul(q.subn(1));
+      return {
+        n: p.mul(q),
+        e: E,
+        d: E.invm(phi),
+        q: q,
+        p: p,
+        // dq: d.mod(q.subn(1)),
+        // dp: d.mod(p.subn(1)),
+        u: p.invm(q)
+      };
+    }
   }
 };
