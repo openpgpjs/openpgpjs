@@ -29,14 +29,12 @@
 
 
 import BN from 'bn.js';
-import { RSA_RAW } from 'asmcrypto.js/src/rsa/exports-raw';
 import prime from './prime';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
 
 const two = new BN(2);
-const zero = new BN(0);
 
 // TODO use this is ../../encoding/base64.js and ./elliptic/{key,curve}.js
 function b64toBN(base64url) {
@@ -54,11 +52,11 @@ export default {
    * @return BN
    */
   sign: function(m, n, e, d) {
-    m = m.toArrayLike(Uint8Array);
-    n = n.toArrayLike(Uint8Array);
-    e = e.toArrayLike(Uint8Array);
-    d = d.toArrayLike(Uint8Array);
-    return RSA_RAW.sign(m, [n, e, d]);
+    if (n.cmp(m) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const nred = new BN.red(n);
+    return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
   /**
@@ -69,10 +67,11 @@ export default {
    * @return BN
    */
   verify: function(s, n, e) {
-    s = s.toArrayLike(Uint8Array);
-    n = n.toArrayLike(Uint8Array);
-    e = e.toArrayLike(Uint8Array);
-    return RSA_RAW.verify(s, [n, e]);
+    if (n.cmp(s) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const nred = new BN.red(n);
+    return s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
   /**
@@ -83,10 +82,11 @@ export default {
    * @return BN
    */
   encrypt: function(m, n, e) {
-    m = m.toArrayLike(Uint8Array);
-    n = n.toArrayLike(Uint8Array);
-    e = e.toArrayLike(Uint8Array);
-    return RSA_RAW.encrypt(m, [n, e]);
+    if (n.cmp(m) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const nred = new BN.red(n);
+    return m.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
   /**
@@ -101,37 +101,35 @@ export default {
    * @return {BN} The decrypted value of the message
    */
   decrypt: function(m, n, e, d, p, q, u) {
-    let blinder = zero;
-    let unblinder = zero;
+    if (n.cmp(m) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const dq = d.mod(q.subn(1)); // d mod (q-1)
+    const dp = d.mod(p.subn(1)); // d mod (p-1)
+    const pred = new BN.red(p);
+    const qred = new BN.red(q);
     const nred = new BN.red(n);
 
-    config.rsa_blinding = false; // FIXME
+    let blinder;
+    let unblinder;
     if (config.rsa_blinding) {
-      if (unblinder.bitLength() === n.bitLength()) {
-        unblinder = unblinder.sqr().mod(n);
-      } else {
-        unblinder = random.getRandomBN(two, n);
-      }
-      blinder = unblinder.toRed(nred).redInvm().redPow(e).fromRed();
-      m = m.mul(blinder).mod(n);
+      unblinder = random.getRandomBN(two, n).toRed(nred);
+      blinder = unblinder.redInvm().redPow(e);
+      m = m.toRed(nred).redMul(blinder).fromRed();
     }
 
-    const dq = d.mod(q.subn(1)).toArrayLike(Uint8Array); // d mod (q-1)
-    const dp = d.mod(p.subn(1)).toArrayLike(Uint8Array); // d mod (p-1)
-    const nn = n.toArrayLike(Uint8Array);
-    m = m.toArrayLike(Uint8Array);
-    e = e.toArrayLike(Uint8Array);
-    d = d.toArrayLike(Uint8Array);
-    q = q.toArrayLike(Uint8Array);
-    p = p.toArrayLike(Uint8Array);
-    u = u.toArrayLike(Uint8Array);
-    let result = new BN(RSA_RAW.decrypt(m, [nn, e, d, q, p, dq, dp, u]).slice(1)); // FIXME remove slice
+    const mp = m.toRed(pred).redPow(dp);
+    const mq = m.toRed(qred).redPow(dq);
+    const t = mq.redSub(mp.fromRed().toRed(qred));
+    const h = u.toRed(qred).redMul(t).fromRed();
+
+    let result = h.mul(p).add(mp).toRed(nred);
 
     if (config.rsa_blinding) {
-      result = result.mul(unblinder).mod(n);
+      result = result.redMul(unblinder);
     }
 
-    return result;
+    return result.toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
   /**
