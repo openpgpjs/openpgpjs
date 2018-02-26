@@ -109,11 +109,15 @@ export default {
 
     let r;
     const modulus = max.sub(min);
-    const length = modulus.byteLength();
+    const bits = modulus.bitLength();
+    const bytes = modulus.byteLength();
 
     // Using a while loop is necessary to avoid bias
     do {
-      r = new BN(this.getRandomBytes(length));
+      r = new BN(this.getRandomBytes(bytes));
+      if (r.bitLength() > bits) {
+        r.ishrn(r.bitLength() - bits);
+      }
     } while (r.cmp(modulus) >= 0);
 
     return r.iadd(min);
