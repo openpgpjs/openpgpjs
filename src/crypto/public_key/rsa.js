@@ -42,6 +42,21 @@ function b64toBN(base64url) {
   return new BN(hex, 16);
 }
 
+// Helper for IE11 KeyOperation objects
+function promisifyIE11Op(keyObj, err) {
+  if (typeof keyObj.then !== 'function') { // IE11 KeyOperation
+    return new Promise(function(resolve, reject) {
+      keyObj.onerror = function () {
+        reject(new Error(err));
+      };
+      keyObj.oncomplete = function (e) {
+        resolve(e.target.result);
+      };
+    });
+  }
+  return keyObj;
+}
+
 export default {
   /** Create signature
    * @param m message as BN
@@ -158,7 +173,8 @@ export default {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
         };
-        keyPair = await webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+        keyPair = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+        keyPair = await promisifyIE11Op(keyPair, 'Error generating RSA key pair.');
       } else if (window.crypto && window.crypto.webkitSubtle) {
         // outdated spec implemented by old Webkit
         keyGenOpt = {
@@ -176,7 +192,8 @@ export default {
 
       // export the generated keys as JsonWebKey (JWK)
       // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-      let jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
+      let jwk = webCrypto.exportKey('jwk', keyPair.privateKey);
+      jwk = await promisifyIE11Op(jwk, 'Error exporting RSA key pair.');
 
       // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
       if (jwk instanceof ArrayBuffer) {
