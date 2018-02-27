@@ -69,6 +69,9 @@ function isProbablePrime(n, e, k) {
   if (!fermat(n)) {
     return false;
   }
+  if (!millerRabin(n, k, () => new BN(lowprimes[Math.random() * lowprimes.length | 0]))) {
+    return false;
+  }
   if (!millerRabin(n, k)) {
     return false;
   }
@@ -86,6 +89,17 @@ function fermat(n, b) {
   b = b || new BN(2);
   return b.toRed(BN.mont(n)).redPow(n.subn(1)).fromRed().cmpn(1) === 0;
 }
+
+const lowprimes = [
+  2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+  73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
+  179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
+  283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409,
+  419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
+  547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659,
+  661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809,
+  811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941,
+  947, 953, 967, 971, 977, 983, 991, 997];
 
 
 // Miller-Rabin - Miller Rabin algorithm for primality test
@@ -120,12 +134,12 @@ function fermat(n, b) {
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
- * @param {BN}       n  Number to test
- * @param {Integer}  k  Optional number of iterations of Miller-Rabin test
- * @param {Function} cb Optional callback function to call with random witnesses
+ * @param {BN}       n Number to test
+ * @param {Integer}  k Optional number of iterations of Miller-Rabin test
+ * @param {Function} w Optional function to generate potential witnesses
  * @return {boolean}
  */
-function millerRabin(n, k, cb) {
+function millerRabin(n, k, rand) {
   const len = n.bitLength();
   const red = BN.mont(n);
   const rone = new BN(1).toRed(red);
@@ -133,18 +147,16 @@ function millerRabin(n, k, cb) {
   if (!k)
     k = Math.max(1, (len / 48) | 0);
 
-  // Find d and s, (n - 1) = (2 ^ s) * d;
   const n1 = n.subn(1);
+  const rn1 = n1.toRed(red);
+
+  // Find d and s, (n - 1) = (2 ^ s) * d;
   let s = 0;
   while (!n1.testn(s)) { s++; }
   const d = n.shrn(s);
 
-  const rn1 = n1.toRed(red);
-
   for (; k > 0; k--) {
-    let a = random.getRandomBN(new BN(2), n1);
-    if (cb)
-      cb(a);
+    let a = rand ? rand() : random.getRandomBN(new BN(2), n1);
 
     let x = a.toRed(red).redPow(d);
     if (x.cmp(rone) === 0 || x.cmp(rn1) === 0)

@@ -211,28 +211,26 @@ export default {
       return key;
     }
 
-    while (true) {
-      // 40 iterations of the Miller-Rabin test
-      // See https://stackoverflow.com/a/6330138 for justification
-      let p = prime.randomProbablePrime(B - (B >> 1), E, 40);
-      let q = prime.randomProbablePrime(B >> 1, E, 40);
+    // RSA keygen fallback using 40 iterations of the Miller-Rabin test
+    // See https://stackoverflow.com/a/6330138 for justification
+    let p = prime.randomProbablePrime(B - (B >> 1), E, 40);
+    let q = prime.randomProbablePrime(B >> 1, E, 40);
 
-      if (p.cmp(q) < 0) {
-        [p, q] = [q, p];
-      }
-
-      const phi = p.subn(1).mul(q.subn(1));
-      return {
-        n: p.mul(q),
-        e: E,
-        d: E.invm(phi),
-        q: q,
-        p: p,
-        // dq: d.mod(q.subn(1)),
-        // dp: d.mod(p.subn(1)),
-        u: p.invm(q)
-      };
+    if (p.cmp(q) < 0) {
+      [p, q] = [q, p];
     }
+
+    const phi = p.subn(1).mul(q.subn(1));
+    return {
+      n: p.mul(q),
+      e: E,
+      d: E.invm(phi),
+      q: q,
+      p: p,
+      // dq: d.mod(q.subn(1)),
+      // dp: d.mod(p.subn(1)),
+      u: p.invm(q)
+    };
   },
 
   prime: prime
