@@ -107,22 +107,14 @@ export default {
       throw new Error('Illegal parameter value: max <= min');
     }
 
-    let r;
-    const diff = max.sub(min);
-    const bits = diff.bitLength();
-    const bytes = diff.byteLength();
+    const modulus = max.sub(min);
+    const bytes = modulus.byteLength();
 
-    // Using a while loop is necessary to avoid bias
-    // TODO consider using 64 extra random bits and taking mod
+    // Using a while loop is necessary to avoid bias introduced by the mod operation.
+    // However, we request 64 extra random bits so that the bias is negligible.
     // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    do {
-      r = new BN(this.getRandomBytes(bytes));
-      if (r.bitLength() > bits) {
-        r.ishrn(r.bitLength() - bits);
-      }
-    } while (r.cmp(diff) >= 0);
-
-    return r.iadd(min);
+    const r = new BN(this.getRandomBytes(bytes + 8));
+    return r.mod(modulus).add(min);
   },
 
   randomBuffer: new RandomBuffer()
