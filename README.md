@@ -240,6 +240,30 @@ var options = {
 openpgp.generateKey(options).then(function(key) {
     var privkey = key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
     var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+    var revocationSignature = key.revocationSignature; // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+});
+```
+
+#### Revoke a key
+
+Using a revocation signature:
+```js
+var options = {
+    key: openpgp.key.readArmored(pubkey).keys[0],
+    revocationSignature: revocationSignature
+};
+```
+
+Using the private key:
+```js
+var options = {
+    key: openpgp.key.readArmored(privkey).keys[0]
+};
+```
+
+```js
+openpgp.revokeKey(options).then(function(key) {
+    var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 });
 ```
 

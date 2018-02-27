@@ -484,6 +484,10 @@ describe('OpenPGP.js public api tests', function() {
               return 'pub_key';
             }
           };
+        },
+        getRevocationCertificate: function() {},
+        removeRevocationCertificate: function() {
+          return this;
         }
       };
       keyGenStub = stub(openpgp.key, 'generate');
@@ -514,6 +518,8 @@ describe('OpenPGP.js public api tests', function() {
           curve: "",
           date: now,
           subkeys: [],
+          revocationCertificate: true,
+          revoked: true,
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
@@ -1854,6 +1860,36 @@ describe('OpenPGP.js public api tests', function() {
                     .to.be.not.null;
                 expect(signatures[0].signature.packets.length).to.equal(1);
             });
+        });
+
+        it.skip('should fail to encrypt with revoked key', function() {
+          return openpgp.revokeKey({
+            key: privateKey.keys[0]
+          }).then(function(revKey) {
+            return openpgp.encrypt({
+              data: plaintext,
+              publicKeys: revKey.publicKey
+            }).then(function(encrypted) {
+              throw new Error('Should not encrypt with revoked key');
+            }).catch(function(error) {
+              expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            });
+          });
+        });
+
+        it.skip('should fail to encrypt with revoked subkey', function() {
+          let clonedKey = privateKey.keys[0].toPublic();
+          return clonedKey.subKeys[0].revoke(clonedKey.primaryKey, privateKey.keys[0]).then(function(revSubKey) {
+            clonedKey.subKeys[0] = revSubKey;
+            return openpgp.encrypt({
+              data: plaintext,
+              publicKeys: clonedKey
+            }).then(function(encrypted) {
+              throw new Error('Should not encrypt with revoked subkey');
+            }).catch(function(error) {
+              expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            });
+          });
         });
       });
 

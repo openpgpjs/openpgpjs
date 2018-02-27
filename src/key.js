@@ -666,6 +666,56 @@ Key.prototype.revoke = async function(privateKey, {
 };
 
 /**
+ * Get revocation certificate from a revoked key.
+ *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
+ * @return {String} armored revocation certificate
+ */
+Key.prototype.getRevocationCertificate = function() {
+  if (this.revocationSignature) {
+    const commentstring = config.commentstring;
+    config.commentstring = 'This is a revocation certificate';
+    try {
+      const packetlist = new packet.List();
+      packetlist.push(this.revocationSignature);
+      return armor.encode(enums.armor.public_key, packetlist.write());
+    } finally {
+      // Restore comment string. armor.encode() shouldn't throw, but just to be sure it's wrapped in a try/finally
+      config.commentstring = commentstring;
+    }
+  }
+};
+
+/**
+ * Applies a revocation certificate to a key
+ * @param  {String} revocationCertificate armored revocation certificate
+ * @return {module:key~Key} new revoked key
+ */
+Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
+  const input = armor.decode(revocationCertificate);
+  if (input.type !== enums.armor.public_key) {
+    throw new Error('Armored text not of type public key');
+  }
+  const packetlist = new packet.List();
+  packetlist.read(input.data);
+  const revocationSignature = packetlist.findPacket(enums.packet.signature);
+  if (!revocationSignature || revocationSignature.signatureType !== enums.signature.key_revocation) {
+    throw new Error('Could not find revocation signature packet');
+  }
+  if (!revocationSignature.issuerKeyId.equals(this.primaryKey.getKeyId())) {
+    throw new Error('Revocation signature does not match key');
+  }
+  if (revocationSignature.isExpired()) {
+    throw new Error('Revocation signature is expired');
+  }
+  if (!await revocationSignature.verify(this.primaryKey, { key: this.primaryKey })) {
+    throw new Error('Could not verify revocation signature');
+  }
+  const key = new Key(this.toPacketlist());
+  key.revocationSignature = revocationSignature;
+  return key;
+};
+
+/**
  * Signs primary user of key
  * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
@@ -1185,6 +1235,7 @@ export function readArmored(armoredText) {
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Boolean} [options.revoked=false] Whether the key should include a revocation signature
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -1266,6 +1317,7 @@ export async function generate(options) {
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *
+ * @param {Boolean} [options.revoked=false] Whether the key should include a revocation signature
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -1415,6 +1467,19 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       packetlist.push(subkeySignaturePacket);
     });
   });
+
+  if (options.revoked) {
+    const dataToSign = {};
+    dataToSign.key = secretKeyPacket;
+    const revocationSignaturePacket = new packet.Signature();
+    revocationSignaturePacket.signatureType = enums.signature.key_revocation;
+    revocationSignaturePacket.reasonForRevocationFlag = enums.reasonForRevocation.no_reason;
+    revocationSignaturePacket.reasonForRevocationString = '';
+    revocationSignaturePacket.publicKeyAlgorithm = options.keyType;
+    revocationSignaturePacket.hashAlgorithm = getPreferredHashAlgo(secretKeyPacket);
+    await revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
+    packetlist.push(revocationSignaturePacket);
+  }
 
   // set passphrase protection
   if (options.passphrase) {

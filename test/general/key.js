@@ -114,6 +114,97 @@ function tests() {
       'hz3tYjKhoFTKEIq3y3Pp',
       '=h/aX',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+      
+  const pub_key_arm4 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG 2.1.15 (GNU/Linux)
+
+mI0EWpoNLAEEAMoO8dfnLvvCze1hjWcr8t1fMdndFQc1fAM7dm6sbqrdlaAz+Dab
+zF3F9UhIOCcABRm+QHyZlgEsoQpHF/7sWflUK1FpoxdORINtIDilukUkMZ0NnIaD
++8pRutdSczPNFvSImSzZNCyLzvDCGMO3+Xeaa6pViSPEeBwhXWJUuHYtABEBAAG0
+IkpvZSBVc2VyIDxqb2UudXNlckBwcm90b25tYWlsLmNvbT6ItwQTAQgAIQUCWpoN
+LAIbAwULCQgHAgYVCAkKCwIEFgIDAQIeAQIXgAAKCRBYtrN4WUnCtoUjBACi6qVb
+noQJ1aOaOyoBZscDIO5XZHZK4L9V9uJJhD9v1qRF5s0PRiG969EwFlvjqIlLiRej
+KSxvE/1rcym4GwBUndku1fMM+weTWHNtRn9+BPzN/4eKZbUbY3fHtlk+Lde3N+CZ
+vrGKS/ICtbtuAfZL0LdzzqnNuBUXlO6EpG5C3riNBFqaDSwBBADDURzGkpTn/FTT
+xHyheai+zTOUmy7N1ViCRPkErIeD606tZf/sKqAnEChfECeZJReYydN1B3O8QOyI
+Ly/rH0DS2bt/6juhknPVGHPUAyNxHmiHYXTUgGPEX1QfusjzBcfIk6vHjYBiRm/I
+u9iwrzCwypA4dWDZSTZuFrVsf4n+twARAQABiJ8EGAEIAAkFAlqaDSwCGwwACgkQ
+WLazeFlJwrZQEAQAuUrp9Qp76CnKqUsUjcVxq7DJBi/lewyGGYSVAFt6/0Xyg/8Y
+TEa/c4Dri/HMOtrfbgjp/doIVaZLOXZYfqRcpy3z0M6BierOPB3D+fdaTfd7gIrQ
+nGHIp2NmbJZnYgl8Ps23qF+LKTa1eE+AmMQYzUHSGuka2lp6OglwWzg/dEw=
+=/vbH
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+  const priv_key_arm4 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: GnuPG 2.1.15 (GNU/Linux)
+
+lQIGBFqaDSwBBADKDvHX5y77ws3tYY1nK/LdXzHZ3RUHNXwDO3ZurG6q3ZWgM/g2
+m8xdxfVISDgnAAUZvkB8mZYBLKEKRxf+7Fn5VCtRaaMXTkSDbSA4pbpFJDGdDZyG
+g/vKUbrXUnMzzRb0iJks2TQsi87wwhjDt/l3mmuqVYkjxHgcIV1iVLh2LQARAQAB
+/gcDAoZ8RULY7umS4fVGPmTuETCnOOTGancXT5r7chKyfFXlyVU4ULvTdLwdFtqx
+Vl9tNyED31nIiRP1CTmZLeaVScNGfVLjo8nvpMZUVopw5UdaFADeVTpwVdtp7ru+
+IgH4ynrRMgMGh7/dgBzIP8WN4w8uBPK5G4bS34NNiREkVoZ3oh4dA/6aeYfW7lVV
+cYRl2F7++AGfqS+FpLsE8KjFU2z8POJjWMN1nYKwjNa+beEO0BFYdUFvMzU7eUHA
+/G0xWAhYvNyuJHE4imgYmCy1OZeawc9h8YGeaQJCh2NTVzaD9HRu0xmz93bNF19q
+bfUZJC7mC6WzKsRXHX0JmzH+9DShUqGnkRl5fMo2UhQMpSxsMT4dU/Ji4q+t96oy
+K6g3DMJr5OtZML3XKxGmdy0CgepkG1aikrC9qLfBgxjqi+uTewcbrS9lAOfrZg4N
+jwt1FLEK8gu7aOeczdW/pFOHOCrX1DnpF81JKJ1a7hz5JRP1m+ffqwm0IkpvZSBV
+c2VyIDxqb2UudXNlckBwcm90b25tYWlsLmNvbT6ItwQTAQgAIQUCWpoNLAIbAwUL
+CQgHAgYVCAkKCwIEFgIDAQIeAQIXgAAKCRBYtrN4WUnCtoUjBACi6qVbnoQJ1aOa
+OyoBZscDIO5XZHZK4L9V9uJJhD9v1qRF5s0PRiG969EwFlvjqIlLiRejKSxvE/1r
+cym4GwBUndku1fMM+weTWHNtRn9+BPzN/4eKZbUbY3fHtlk+Lde3N+CZvrGKS/IC
+tbtuAfZL0LdzzqnNuBUXlO6EpG5C3p0CBgRamg0sAQQAw1EcxpKU5/xU08R8oXmo
+vs0zlJsuzdVYgkT5BKyHg+tOrWX/7CqgJxAoXxAnmSUXmMnTdQdzvEDsiC8v6x9A
+0tm7f+o7oZJz1Rhz1AMjcR5oh2F01IBjxF9UH7rI8wXHyJOrx42AYkZvyLvYsK8w
+sMqQOHVg2Uk2bha1bH+J/rcAEQEAAf4HAwLwNvRIoBFS3OHTIYirkr4sHzSkWFJx
+xDPozovXgCq7BoCXDMaSIQLwZqEfb+SabYtk7nLSnG2Y2mgwb9swZuBZEWuQjZk7
+lX1MvuZ0Ih2QdQSMEJk8sEsMoBGHHdHh/MZO4a27+5B9OceDfnEZZcGSOweUuu1n
+IlgWcgrM40q4S3Mt39FXFgdJWnpd93hAokKDHklUGMdMLw/02dGVRkJmvUp9qdhe
+c2njq9HSeYwqbY2rYgcNsF2ZcCLt9UXA2dOG4X2c2mPfjKuTRZUPxNKh6JfL3mlu
+rBdd/z8gQHoKObyaarVwN3HAbtP0+6Z8a9/wDYj1K9ZCoHuEtKq1qq5J2Ec8+Yzl
+K0Zlcs760LiYUr69CninMrnbDNnAhrYAcyJS42viUADPv9g+CBbyanB4KyE4UNrZ
+BCB296lOEW4v1IZVNrNvqrbka3/p0qqBJiFTh7eT3zXpRNArFZDmLCUEEm53qT1a
+PO/MyYUGTTMRAzTmNTiPiJ8EGAEIAAkFAlqaDSwCGwwACgkQWLazeFlJwrZQEAQA
+uUrp9Qp76CnKqUsUjcVxq7DJBi/lewyGGYSVAFt6/0Xyg/8YTEa/c4Dri/HMOtrf
+bgjp/doIVaZLOXZYfqRcpy3z0M6BierOPB3D+fdaTfd7gIrQnGHIp2NmbJZnYgl8
+Ps23qF+LKTa1eE+AmMQYzUHSGuka2lp6OglwWzg/dEw=
+=mr3M
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+  const revocation_certificate_arm4 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG 2.1.15 (GNU/Linux)
+Comment: This is a revocation certificate
+
+iJ8EIAEIAAkFAlqaDT0CHQAACgkQWLazeFlJwrbOaAP/V38FhBrUy4XYgt8ZX22G
+ov6IFDNoyRKafSuz7Rg+8K8cf+0MAsSi52ueKfsbPxQ+I1vPeaEuEYbwTjtbvM+M
+vZcX+VNYdsc1iZeNaT4ayA+2LrCN/xgFj0nrExHqcZAjgBZ9pvKghAqdK4Zb2Ghb
+7chPiLLNWJCMtL4bo7a1X84=
+=HcWg
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+  const revoked_key_arm4 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG 2.1.15 (GNU/Linux)
+
+mI0EWpoNLAEEAMoO8dfnLvvCze1hjWcr8t1fMdndFQc1fAM7dm6sbqrdlaAz+Dab
+zF3F9UhIOCcABRm+QHyZlgEsoQpHF/7sWflUK1FpoxdORINtIDilukUkMZ0NnIaD
++8pRutdSczPNFvSImSzZNCyLzvDCGMO3+Xeaa6pViSPEeBwhXWJUuHYtABEBAAGI
+nwQgAQgACQUCWpoNPQIdAAAKCRBYtrN4WUnCts5oA/9XfwWEGtTLhdiC3xlfbYai
+/ogUM2jJEpp9K7PtGD7wrxx/7QwCxKLna54p+xs/FD4jW895oS4RhvBOO1u8z4y9
+lxf5U1h2xzWJl41pPhrID7YusI3/GAWPSesTEepxkCOAFn2m8qCECp0rhlvYaFvt
+yE+Iss1YkIy0vhujtrVfzrQiSm9lIFVzZXIgPGpvZS51c2VyQHByb3Rvbm1haWwu
+Y29tPoi3BBMBCAAhBQJamg0sAhsDBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJ
+EFi2s3hZScK2hSMEAKLqpVuehAnVo5o7KgFmxwMg7ldkdkrgv1X24kmEP2/WpEXm
+zQ9GIb3r0TAWW+OoiUuJF6MpLG8T/WtzKbgbAFSd2S7V8wz7B5NYc21Gf34E/M3/
+h4pltRtjd8e2WT4t17c34Jm+sYpL8gK1u24B9kvQt3POqc24FReU7oSkbkLeuI0E
+WpoNLAEEAMNRHMaSlOf8VNPEfKF5qL7NM5SbLs3VWIJE+QSsh4PrTq1l/+wqoCcQ
+KF8QJ5klF5jJ03UHc7xA7IgvL+sfQNLZu3/qO6GSc9UYc9QDI3EeaIdhdNSAY8Rf
+VB+6yPMFx8iTq8eNgGJGb8i72LCvMLDKkDh1YNlJNm4WtWx/if63ABEBAAGInwQY
+AQgACQUCWpoNLAIbDAAKCRBYtrN4WUnCtlAQBAC5Sun1CnvoKcqpSxSNxXGrsMkG
+L+V7DIYZhJUAW3r/RfKD/xhMRr9zgOuL8cw62t9uCOn92ghVpks5dlh+pFynLfPQ
+zoGJ6s48HcP591pN93uAitCcYcinY2ZslmdiCXw+zbeoX4spNrV4T4CYxBjNQdIa
+6RraWno6CXBbOD90TA==
+=8d2d
+-----END PGP PUBLIC KEY BLOCK-----`;
 
   const twoKeys =
        ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -1467,6 +1558,34 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     });
   });
 
+  it('applyRevocationCertificate() should produce the same revoked key as GnuPG', function() {
+    const pubKey = openpgp.key.readArmored(pub_key_arm4).keys[0];
+
+    return pubKey.applyRevocationCertificate(revocation_certificate_arm4).then(revKey => {
+      expect(revKey.armor()).to.equal(openpgp.key.readArmored(revoked_key_arm4).keys[0].armor());
+    });
+  });
+
+  it('getRevocationCertificate() should produce the same revocation certificate as GnuPG', function() {
+    const revKey = openpgp.key.readArmored(revoked_key_arm4).keys[0];
+    const revocationCertificate = revKey.getRevocationCertificate();
+
+    const input = openpgp.armor.decode(revocation_certificate_arm4);
+    const packetlist = new openpgp.packet.List();
+    packetlist.read(input.data);
+    const armored = openpgp.armor.encode(openpgp.enums.armor.public_key, packetlist.write());
+
+    expect(revocationCertificate.replace(/^Comment: .*$/m, '')).to.equal(armored.replace(/^Comment: .*$/m, ''));
+  });
+
+  it('getRevocationCertificate() should have an appropriate comment', function() {
+    const revKey = openpgp.key.readArmored(revoked_key_arm4).keys[0];
+    const revocationCertificate = revKey.getRevocationCertificate();
+
+    expect(revocationCertificate).to.match(/Comment: This is a revocation certificate/);
+    expect(revKey.armor()).not.to.match(/Comment: This is a revocation certificate/);
+  });
+
   it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
     const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1]);
@@ -2009,6 +2128,37 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
       expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+    });
+  });
+
+  it('Revoke generated key with revocation certificate', function() {
+    const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(original) {
+      return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(function(revKey) {
+        revKey = revKey.publicKey;
+        expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignature.reasonForRevocationString).to.equal('');
+        return revKey.verifyPrimaryKey().then(function(status) {
+          expect(status).to.equal(openpgp.enums.keyStatus.revoked);
+        });
+      });
+    });
+  });
+
+  it('Revoke generated key with private key', function() {
+    const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(original) {
+      original.key.decrypt('1234');
+      return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(function(revKey) {
+        revKey = revKey.publicKey;
+        expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignature.reasonForRevocationString).to.equal('Testing key revocation');
+        return revKey.verifyPrimaryKey().then(function(status) {
+          expect(status).to.equal(openpgp.enums.keyStatus.revoked);
+        });
+      });
     });
   });
 
