@@ -696,25 +696,31 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
       return;
     }
     const dataToVerify = { userid: user.userId || user.userAttribute, key: primaryKey };
-    // TODO: fix the race condition, this should be a forEach
-    await Promise.all(user.selfCertifications.map(async function(selfCertification) {
+    // TODO replace when Promise.forEach is implemented
+    for (let i = 0; i < user.selfCertifications.length; i++) {
+      const selfCertification = user.selfCertifications[i];
       // skip if certificate is not the most recent
       if ((selfCertification.isPrimaryUserID &&
            selfCertification.isPrimaryUserID < lastPrimaryUserID) ||
           (!lastPrimaryUserID && selfCertification.created < lastCreated)) {
         return;
       }
-      // TODO break apart the .verify/isRevoked/isExpired checks
-      // skip if certificates is not valid
-      if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify)) ||
-          (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) ||
-          selfCertification.isExpired()) {
+      // skip if certificates is invalid, revoked, or expired
+      // eslint-disable-next-line no-await-in-loop
+      if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify))) {
+        return;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      if (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) {
+        return;
+      }
+      if (selfCertification.isExpired()) {
         return;
       }
       lastPrimaryUserID = selfCertification.isPrimaryUserID;
       lastCreated = selfCertification.created;
       primaryUsers.push(user);
-    }));
+    }
   }));
   const user = primaryUsers.pop();
   const results = !user ? [] : keys ? await user.verifyAllCertifications(primaryKey, keys) :

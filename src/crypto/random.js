@@ -108,17 +108,19 @@ export default {
     }
 
     let r;
-    const modulus = max.sub(min);
-    const bits = modulus.bitLength();
-    const bytes = modulus.byteLength();
+    const diff = max.sub(min);
+    const bits = diff.bitLength();
+    const bytes = diff.byteLength();
 
     // Using a while loop is necessary to avoid bias
+    // TODO consider using 64 extra random bits and taking mod
+    // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
     do {
       r = new BN(this.getRandomBytes(bytes));
       if (r.bitLength() > bits) {
         r.ishrn(r.bitLength() - bits);
       }
-    } while (r.cmp(modulus) >= 0);
+    } while (r.cmp(diff) >= 0);
 
     return r.iadd(min);
   },

@@ -32,7 +32,7 @@ import random from '../random';
 import config from '../../config';
 import util from '../../util';
 
-const two = new BN(2);
+const one = new BN(1);
 const zero = new BN(0);
 
 /*
@@ -72,8 +72,8 @@ export default {
     // signature shall be recalculated. It is extremely unlikely that r = 0
     // or s = 0 if signatures are generated properly.
     while (true) {
-      // TODO confirm this range
-      k = random.getRandomBN(two, q.subn(1)); // returns in [2, q-2]
+      // See Appendix B here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
+      k = random.getRandomBN(one, q); // returns in [1, q-1]
       r = gred.redPow(k).fromRed().toRed(redq); // (g**k mod p) mod q
       if (zero.cmp(r) === 0) {
         continue;

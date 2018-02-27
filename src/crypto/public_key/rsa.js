@@ -213,6 +213,7 @@ export default {
 
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
     // See https://stackoverflow.com/a/6330138 for justification
+    // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
     let p = prime.randomProbablePrime(B - (B >> 1), E, 40);
     let q = prime.randomProbablePrime(B >> 1, E, 40);
 
@@ -225,10 +226,10 @@ export default {
       n: p.mul(q),
       e: E,
       d: E.invm(phi),
-      q: q,
       p: p,
-      // dq: d.mod(q.subn(1)),
+      q: q,
       // dp: d.mod(p.subn(1)),
+      // dq: d.mod(q.subn(1)),
       u: p.invm(q)
     };
   },

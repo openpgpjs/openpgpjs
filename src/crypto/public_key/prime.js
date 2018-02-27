@@ -75,6 +75,8 @@ function isProbablePrime(n, e, k) {
   if (!millerRabin(n, k)) {
     return false;
   }
+  // TODO implement the Lucas test
+  // See Section C.3.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
   return true;
 }
 
@@ -127,16 +129,13 @@ const lowprimes = [
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // Adapted on Jan 2018 from version 4.0.1 at https://github.com/indutny/miller-rabin
-// TODO check this against jsbn's bnpMillerRabin
-// TODO implement fixed base Miller-Rabin; for instance by writing a function that
-// picks a number within the given range from a precomputed list of primes.
 
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
- * @param {BN}       n Number to test
- * @param {Integer}  k Optional number of iterations of Miller-Rabin test
- * @param {Function} w Optional function to generate potential witnesses
+ * @param {BN}       n    Number to test
+ * @param {Integer}  k    Optional number of iterations of Miller-Rabin test
+ * @param {Function} rand Optional function to generate potential witnesses
  * @return {boolean}
  */
 function millerRabin(n, k, rand) {
@@ -159,16 +158,16 @@ function millerRabin(n, k, rand) {
     let a = rand ? rand() : random.getRandomBN(new BN(2), n1);
 
     let x = a.toRed(red).redPow(d);
-    if (x.cmp(rone) === 0 || x.cmp(rn1) === 0)
+    if (x.eq(rone) || x.eq(rn1))
       continue;
 
     let i;
     for (i = 1; i < s; i++) {
       x = x.redSqr();
 
-      if (x.cmp(rone) === 0)
+      if (x.eq(rone))
         return false;
-      if (x.cmp(rn1) === 0)
+      if (x.eq(rn1))
         break;
     }
 
