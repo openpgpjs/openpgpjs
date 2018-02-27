@@ -61,19 +61,13 @@ export default function MPI(data) {
 MPI.prototype.read = function (bytes, endian='be') {
   if (util.isString(bytes)) {
     bytes = util.str2Uint8Array(bytes);
-  } else {
-    bytes = util.copyUint8Array(bytes);
   }
 
   const bits = (bytes[0] << 8) | bytes[1];
   const bytelen = (bits + 7) >>> 3;
   const payload = bytes.subarray(2, 2 + bytelen);
 
-  if (endian === 'le') {
-    payload.reverse();
-  }
-
-  this.fromUint8Array(payload);
+  this.fromUint8Array(payload, endian);
 
   return 2 + bytelen;
 };
@@ -86,40 +80,60 @@ MPI.prototype.read = function (bytes, endian='be') {
  * @return {Uint8Aray} mpi Byte representation
  */
 MPI.prototype.write = function (endian, length) {
-  return util.Uint8Array2MPI(this.data.toArrayLike(Uint8Array, endian, length));
+  return util.Uint8Array2MPI(this.toUint8Array(endian, length));
+};
+
+MPI.prototype.bitLength = function () {
+  return (this.data.length - 1) * 8 + util.nbits(this.data[0]);
 };
 
 MPI.prototype.byteLength = function () {
-  return this.write().length - 2;
+  return this.data.length;
 };
 
 MPI.prototype.toUint8Array = function (endian, length) {
-  return this.write(endian, length).slice(2);
+  endian = endian || 'be';
+  length = length || this.data.length;
+
+  const payload = new Uint8Array(length);
+  const start = length - this.data.length;
+  if (start < 0) {
+    throw new Error('Payload is too large.');
+  }
+
+  payload.set(this.data, start);
+  if (endian === 'le') {
+    payload.reverse();
+  }
+
+  return payload;
 };
 
-MPI.prototype.fromUint8Array = function (bytes) {
-  this.data = new BN(bytes);
+MPI.prototype.fromUint8Array = function (bytes, endian='be') {
+  this.data = new Uint8Array(bytes.length);
+  this.data.set(bytes);
+
+  if (endian === 'le') {
+    this.data.reverse();
+  }
 };
 
 MPI.prototype.toString = function () {
   return util.Uint8Array2str(this.toUint8Array());
 };
 
-MPI.prototype.fromString = function (str) {
-  this.data = new BN(util.str2Uint8Array(str));
+MPI.prototype.fromString = function (str, endian='be') {
+  this.fromUint8Array(util.str2Uint8Array(str), endian);
 };
 
 MPI.prototype.toBN = function () {
-  return this.data.clone();
+  return new BN(this.toUint8Array());
 };
 
 MPI.prototype.fromBN = function (bn) {
-  this.data = bn.clone();
+  this.data = bn.toArrayLike(Uint8Array);
 };
 
 MPI.fromClone = function (clone) {
-  clone.data.copy = BN.prototype.copy;
-  const bn = new BN();
-  clone.data.copy(bn);
-  return new MPI(bn);
+  return new MPI(clone.data);
 };
