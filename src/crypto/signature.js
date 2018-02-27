@@ -55,8 +55,11 @@ export default {
       }
       case enums.publicKey.eddsa: {
         const oid = pub_MPIs[0];
-        const signature = { R: msg_MPIs[0].toBN(), S: msg_MPIs[1].toBN() };
-        const Q = pub_MPIs[1].toBN();
+        // TODO refactor elliptic to accept Uint8Array
+        // EdDSA signature params are expected in little-endian format
+        const signature = { R: Array.from(msg_MPIs[0].toUint8Array('le', 32)),
+                            S: Array.from(msg_MPIs[1].toUint8Array('le', 32)) };
+        const Q = Array.from(pub_MPIs[1].toUint8Array('be', 33));
         return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q);
       }
       default:
@@ -95,8 +98,8 @@ export default {
         const x = key_params[4].toBN();
         const signature = publicKey.dsa.sign(hash_algo, data, g, p, q, x);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.r.toArrayLike(Uint8Array)),
-          util.Uint8Array2MPI(signature.s.toArrayLike(Uint8Array))
+          util.Uint8Array2MPI(signature.r),
+          util.Uint8Array2MPI(signature.s)
         ]);
       }
       case enums.publicKey.elgamal: {
@@ -107,17 +110,17 @@ export default {
         const d = key_params[2].toUint8Array();
         const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.r.toArrayLike(Uint8Array)),
-          util.Uint8Array2MPI(signature.s.toArrayLike(Uint8Array))
+          util.Uint8Array2MPI(signature.r),
+          util.Uint8Array2MPI(signature.s)
         ]);
       }
       case enums.publicKey.eddsa: {
         const oid = key_params[0];
-        const d = key_params[2].toBN();
+        const d = Array.from(key_params[2].toUint8Array('be', 32));
         const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(Uint8Array.from(signature.R)),
-          util.Uint8Array2MPI(Uint8Array.from(signature.S))
+          util.Uint8Array2MPI(signature.R),
+          util.Uint8Array2MPI(signature.S)
         ]);
       }
       default:

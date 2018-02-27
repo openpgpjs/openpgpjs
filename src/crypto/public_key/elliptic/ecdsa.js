@@ -26,7 +26,7 @@
 
 import util from '../../../util';
 import hash from '../../hash';
-import { get as curvesGet } from './curves';
+import { getCurve } from './curves';
 
 /**
  * Sign a message using the provided key
@@ -34,25 +34,29 @@ import { get as curvesGet } from './curves';
  * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}      m          Message to sign
  * @param  {Uint8Array}      d          Private key used to sign the message
- * @return {{r: BN, s: BN}}             Signature of the message
+ * @return {{r: Uint8Array,
+             s: Uint8Array}}            Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  const curve = curvesGet(oid);
+  const curve = getCurve(oid);
   const key = curve.keyFromPrivate(d);
-  return key.sign(m, hash_algo);
+  const signature = await key.sign(m, hash_algo);
+  return { r: signature.r.toArrayLike(Uint8Array),
+           s: signature.s.toArrayLike(Uint8Array) };
 }
 
 /**
  * Verifies if a signature is valid for a message
  * @param  {module:type/oid} oid        Elliptic curve object identifier
  * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
- * @param  {{r: BN, s: BN}}  signature  Signature to verify
+ * @param  {{r: Uint8Array,
+             s: Uint8Array}} signature  Signature to verify
  * @param  {Uint8Array}      m          Message to verify
  * @param  {Uint8Array}      Q          Public key used to verify the message
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  const curve = curvesGet(oid);
+  const curve = getCurve(oid);
   const key = curve.keyFromPublic(Q);
   return key.verify(m, signature, hash_algo);
 }

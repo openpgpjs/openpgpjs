@@ -167,7 +167,7 @@ Curve.prototype.genKeyPair = async function () {
   return new KeyPair(this.curve, keyPair);
 };
 
-function get(oid_or_name) {
+function getCurve(oid_or_name) {
   let name;
   if (OID.prototype.isPrototypeOf(oid_or_name) &&
       enums.curve[oid_or_name.toHex()]) {
@@ -184,7 +184,7 @@ function get(oid_or_name) {
 }
 
 async function generate(curve) {
-  curve = get(curve);
+  curve = getCurve(curve);
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
@@ -202,7 +202,7 @@ function getPreferredHashAlgo(oid) {
 export default Curve;
 
 export {
-  curves, webCurves, nodeCurves, get, generate, getPreferredHashAlgo
+  curves, webCurves, nodeCurves, getCurve, generate, getPreferredHashAlgo
 };
 
 

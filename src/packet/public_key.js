@@ -201,7 +201,7 @@ PublicKey.prototype.getAlgorithmInfo = function () {
   if (this.params[0] instanceof type_mpi) {
     result.bits = this.params[0].byteLength() * 8;
   } else {
-    result.curve = crypto.publicKey.elliptic.get(this.params[0]).name;
+    result.curve = crypto.publicKey.elliptic.getCurve(this.params[0]).name;
   }
   return result;
 };

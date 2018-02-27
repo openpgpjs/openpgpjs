@@ -26,41 +26,40 @@
 
 import BN from 'bn.js';
 import hash from '../../hash';
-import { get as curvesGet } from './curves';
+import { getCurve } from './curves';
 
 /**
  * Sign a message using the provided key
  * @param  {module:type/oid} oid        Elliptic curve object identifier
  * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}      m          Message to sign
- * @param  {BN}              d          Private key used to sign
- * @return {{R: Array, S: Array}}       Signature of the message
+ * @param  {Uint8Array}      d          Private key used to sign
+ * @return {{R: Uint8Array,
+             S: Uint8Array}}            Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  const curve = curvesGet(oid);
-  const key = curve.keyFromSecret(d.toArray('be', 32));
+  const curve = getCurve(oid);
+  const key = curve.keyFromSecret(d);
   const signature = await key.sign(m, hash_algo);
   // EdDSA signature params are returned in little-endian format
-  return { R: signature.Rencoded(), S: signature.Sencoded() };
+  return { R: new Uint8Array(signature.Rencoded()),
+           S: new Uint8Array(signature.Sencoded()) };
 }
 
 /**
  * Verifies if a signature is valid for a message
  * @param  {module:type/oid} oid        Elliptic curve object identifier
  * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
- * @param  {{R: BN, S: BN}}  signature  Signature to verify the message
+ * @param  {{R: Uint8Array,
+             S: Uint8Array}} signature  Signature to verify the message
  * @param  {Uint8Array}      m          Message to verify
- * @param  {BN}              Q          Public key used to verify the message
+ * @param  {Uint8Array}      Q          Public key used to verify the message
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  const curve = curvesGet(oid);
-  const key = curve.keyFromPublic(Q.toArray('be', 33));
-  // EdDSA signature params are expected in little-endian format
-  return key.verify(m, {
-    R: signature.R.toArray('le', 32),
-    S: signature.S.toArray('le', 32)
-  }, hash_algo);
+  const curve = getCurve(oid);
+  const key = curve.keyFromPublic(Q);
+  return key.verify(m, signature, hash_algo);
 }
 
 export default { sign, verify };
