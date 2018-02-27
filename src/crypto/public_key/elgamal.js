@@ -26,7 +26,7 @@
 import BN from 'bn.js';
 import random from '../random';
 
-const two = new BN(2);
+const zero = new BN(0);
 
 export default {
   /*
@@ -38,8 +38,8 @@ export default {
     const mred = m.toRed(redp);
     const gred = g.toRed(redp);
     const yred = y.toRed(redp);
-    // TODO confirm this range
-    const k = random.getRandomBN(two, p.subn(1)); // returns in [2, p-2]
+    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
+    const k = random.getRandomBN(zero, p); // returns in [0, p-1]
     return {
       c1: gred.redPow(k).fromRed(),
       c2: yred.redPow(k).redMul(mred).fromRed()
