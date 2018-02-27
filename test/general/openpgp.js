@@ -2,7 +2,8 @@
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-const sinon = require('sinon');
+const spy = require('sinon/lib/sinon/spy');
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -314,8 +315,8 @@ function withCompression(tests) {
       let decompressSpy;
 
       beforeEach(function () {
-        compressSpy = sinon.spy(openpgp.packet.Compressed.prototype, 'compress');
-        decompressSpy = sinon.spy(openpgp.packet.Compressed.prototype, 'decompress');
+        compressSpy = spy(openpgp.packet.Compressed.prototype, 'compress');
+        decompressSpy = spy(openpgp.packet.Compressed.prototype, 'decompress');
       });
 
       afterEach(function () {
@@ -388,9 +389,9 @@ describe('OpenPGP.js public api tests', function() {
           };
         }
       };
-      keyGenStub = sinon.stub(openpgp.key, 'generate');
+      keyGenStub = stub(openpgp.key, 'generate');
       keyGenStub.returns(resolves(keyObjStub));
-      getWebCryptoAllStub = sinon.stub(openpgp.util, 'getWebCryptoAll');
+      getWebCryptoAllStub = stub(openpgp.util, 'getWebCryptoAll');
     });
 
     afterEach(function() {
@@ -523,7 +524,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.initWorker({
         worker: workerStub
       });
-      const proxyGenStub = sinon.stub(openpgp.getWorker(), 'delegate');
+      const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
 
       openpgp.generateKey();
