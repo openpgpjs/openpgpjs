@@ -93,8 +93,8 @@ MPI.prototype.byteLength = function () {
   return this.write().length - 2;
 };
 
-MPI.prototype.toUint8Array = function () {
-  return this.write().slice(2);
+MPI.prototype.toUint8Array = function (endian, length) {
+  return this.write(endian, length).slice(2);
 };
 
 MPI.prototype.fromUint8Array = function (bytes) {

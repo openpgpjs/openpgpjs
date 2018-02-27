@@ -235,9 +235,9 @@ describe('X25519 Cryptography', function () {
       const hi = firstKey.key;
       const primaryKey = hi.primaryKey;
       const subKey = hi.subKeys[0].subKey;
-      expect(primaryKey.params[0].toHex()).to.equal(elliptic.get('ed25519').oid.toHex());
+      expect(primaryKey.params[0].toHex()).to.equal(elliptic.getCurve('ed25519').oid.toHex());
       expect(primaryKey.algorithm).to.equal('eddsa');
-      expect(subKey.params[0].toHex()).to.equal(elliptic.get('curve25519').oid.toHex());
+      expect(subKey.params[0].toHex()).to.equal(elliptic.getCurve('curve25519').oid.toHex());
       expect(subKey.algorithm).to.equal('ecdh');
 
       // Self Certificate is valid
@@ -255,9 +255,9 @@ describe('X25519 Cryptography', function () {
       };
       return openpgp.generateKey(options).then(function (secondKey) {
         const bye = secondKey.key;
-        expect(bye.primaryKey.params[0].toHex()).to.equal(elliptic.get('ed25519').oid.toHex());
+        expect(bye.primaryKey.params[0].toHex()).to.equal(elliptic.getCurve('ed25519').oid.toHex());
         expect(bye.primaryKey.algorithm).to.equal('eddsa');
-        expect(bye.subKeys[0].subKey.params[0].toHex()).to.equal(elliptic.get('curve25519').oid.toHex());
+        expect(bye.subKeys[0].subKey.params[0].toHex()).to.equal(elliptic.getCurve('curve25519').oid.toHex());
         expect(bye.subKeys[0].subKey.algorithm).to.equal('ecdh');
 
         // Self Certificate is valid
@@ -319,7 +319,7 @@ describe('X25519 Cryptography', function () {
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
     const signature = openpgp.crypto.signature;
-    const curve = elliptic.get('ed25519');
+    const curve = elliptic.getCurve('ed25519');
     const util = openpgp.util;
     function testVector(vector) {
       const S = curve.keyFromSecret(vector.SECRET_KEY);
