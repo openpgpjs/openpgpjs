@@ -16,14 +16,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Wrapper to an OID value<br/>
+ * Wrapper to an OID value
  * <br/>
  * An object identifier type from {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
  * @requires util
+ * @requires enums
  * @module type/oid
  */
 
-import util from '../util.js';
+import util from '../util';
+import enums from '../enums';
 
 /**
  * @constructor
@@ -71,6 +73,19 @@ OID.prototype.write = function () {
  */
 OID.prototype.toHex = function() {
   return util.hexstrdump(this.oid);
+};
+
+/**
+ * If a known curve object identifier, return the canonical name of the curve
+ * @return {string} String with the canonical name of the curve
+ */
+OID.prototype.getName = function() {
+  const hex = this.toHex();
+  if (enums.curve[hex]) {
+    return enums.write(enums.curve, hex);
+  } else {
+    throw new Error('Unknown curve object identifier.');
+  }
 };
 
 OID.fromClone = function (clone) {
