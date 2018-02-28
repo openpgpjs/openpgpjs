@@ -235,7 +235,7 @@ Key.prototype.getUserIds = function() {
   const userids = [];
   for (let i = 0; i < this.users.length; i++) {
     if (this.users[i].userId) {
-      userids.push(util.Uint8Array2str(this.users[i].userId.write()));
+      userids.push(util.Uint8Array_to_str(this.users[i].userId.write()));
     }
   }
   return userids;
@@ -1305,7 +1305,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
 
   await Promise.all(options.userIds.map(async function(userId, index) {
     const userIdPacket = new packet.Userid();
-    userIdPacket.read(util.str2Uint8Array(userId));
+    userIdPacket.read(util.str_to_Uint8Array(userId));
 
     const dataToSign = {};
     dataToSign.userid = userIdPacket;

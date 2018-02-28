@@ -125,7 +125,7 @@ export default {
     encode: function(algo, M, emLen) {
       let i;
       // Apply the hash function to the message M to produce a hash value H
-      const H = util.Uint8Array2str(hash.digest(algo, util.str2Uint8Array(M)));
+      const H = util.Uint8Array_to_str(hash.digest(algo, util.str_to_Uint8Array(M)));
       if (H.length !== hash.getHashByteLength(algo)) {
         throw new Error('Invalid hash length');
       }
@@ -155,7 +155,7 @@ export default {
                PS +
                String.fromCharCode(0x00) +
                T;
-      return util.hexstrdump(EM);
+      return util.str_to_hex(EM);
     }
   }
 };

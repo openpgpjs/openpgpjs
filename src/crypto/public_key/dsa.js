@@ -63,9 +63,9 @@ export default {
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
     const h = new BN(
-      util.str2Uint8Array(
+      util.str_to_Uint8Array(
         util.getLeftNBits(
-          util.Uint8Array2str(hash.digest(hash_algo, m)), q.bitLength())));
+          util.Uint8Array_to_str(hash.digest(hash_algo, m)), q.bitLength())));
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -105,9 +105,9 @@ export default {
     const redp = new BN.red(p);
     const redq = new BN.red(q);
     const h = new BN(
-      util.str2Uint8Array(
+      util.str_to_Uint8Array(
         util.getLeftNBits(
-          util.Uint8Array2str(hash.digest(hash_algo, m)), q.bitLength())));
+          util.Uint8Array_to_str(hash.digest(hash_algo, m)), q.bitLength())));
     const w = s.toRed(redq).redInvm(); // s**-1 mod q
     if (zero.cmp(w) === 0) {
       util.print_debug("invalid DSA Signature");

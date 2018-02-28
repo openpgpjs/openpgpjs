@@ -76,9 +76,9 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   const hashlen = get_hash_len(hash_algorithm);
   const hashfn = get_hash_fn(hash_algorithm);
 
-  const hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+  const hashtext = util.Uint8Array_to_str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
-  const hash = util.Uint8Array2str(hashfn(cleartext));
+  const hash = util.Uint8Array_to_str(hashfn(cleartext));
 
   if (hash !== hashtext) {
     return new Error("Hash mismatch.");

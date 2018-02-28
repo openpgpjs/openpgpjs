@@ -35,8 +35,8 @@ export default {
         const n = pub_MPIs[0].toBN();
         const e = pub_MPIs[1].toBN();
         const EM = publicKey.rsa.verify(m, n, e);
-        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array2str(data), n.byteLength());
-        return util.hexidump(EM) === EM2;
+        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array_to_str(data), n.byteLength());
+        return util.Uint8Array_to_hex(EM) === EM2;
       }
       case enums.publicKey.dsa: {
         const r = msg_MPIs[0].toBN();
@@ -86,10 +86,10 @@ export default {
         const n = key_params[0].toBN();
         const e = key_params[1].toBN();
         const d = key_params[2].toBN();
-        data = util.Uint8Array2str(data);
+        data = util.Uint8Array_to_str(data);
         const m = new BN(pkcs1.emsa.encode(hash_algo, data, n.byteLength()), 16);
         const signature = publicKey.rsa.sign(m, n, e, d);
-        return util.Uint8Array2MPI(signature);
+        return util.Uint8Array_to_MPI(signature);
       }
       case enums.publicKey.dsa: {
         const p = key_params[0].toBN();
@@ -98,8 +98,8 @@ export default {
         const x = key_params[4].toBN();
         const signature = publicKey.dsa.sign(hash_algo, data, g, p, q, x);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.r),
-          util.Uint8Array2MPI(signature.s)
+          util.Uint8Array_to_MPI(signature.r),
+          util.Uint8Array_to_MPI(signature.s)
         ]);
       }
       case enums.publicKey.elgamal: {
@@ -110,8 +110,8 @@ export default {
         const d = key_params[2].toUint8Array();
         const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.r),
-          util.Uint8Array2MPI(signature.s)
+          util.Uint8Array_to_MPI(signature.r),
+          util.Uint8Array_to_MPI(signature.s)
         ]);
       }
       case enums.publicKey.eddsa: {
@@ -119,8 +119,8 @@ export default {
         const d = Array.from(key_params[2].toUint8Array('be', 32));
         const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d);
         return util.concatUint8Array([
-          util.Uint8Array2MPI(signature.R),
-          util.Uint8Array2MPI(signature.S)
+          util.Uint8Array_to_MPI(signature.R),
+          util.Uint8Array_to_MPI(signature.S)
         ]);
       }
       default:

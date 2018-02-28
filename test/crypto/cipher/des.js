@@ -77,12 +77,12 @@ describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', fu
     for (let i = 0; i < testvectors.length; i++) {
       const des = new openpgp.crypto.cipher.tripledes(key);
 
-      const encr = util.bin2str(des.encrypt(testvectors[i][0], key));
+      const encr = util.Uint8Array_to_str(des.encrypt(testvectors[i][0], key));
 
-      expect(encr, 'vector with block ' + util.hexidump(testvectors[i][0]) +
-                   ' and key ' + util.hexstrdump(util.Uint8Array2str(key)) +
-                   ' should be ' + util.hexidump(testvectors[i][1]) +
-                   ' != ' + util.hexidump(encr)).to.be.equal(util.bin2str(testvectors[i][1]));
+      expect(encr, 'vector with block ' + util.Uint8Array_to_hex(testvectors[i][0]) +
+                   ' and key ' + util.str_to_hex(util.Uint8Array_to_str(key)) +
+                   ' should be ' + util.Uint8Array_to_hex(testvectors[i][1]) +
+                   ' != ' + util.Uint8Array_to_hex(encr)).to.be.equal(util.Uint8Array_to_str(testvectors[i][1]));
     }
     done();
   });
@@ -124,18 +124,18 @@ describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', fu
         const encrypted = des.encrypt(thisVectorSet[i][0], padding);
         const decrypted = des.decrypt(encrypted, padding);
 
-        expect(util.bin2str(encrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
-          '] and key [' + util.hexstrdump(util.Uint8Array2str(key)) +
+        expect(util.Uint8Array_to_str(encrypted), 'vector with block [' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
+          '] and key [' + util.str_to_hex(util.Uint8Array_to_str(key)) +
           '] and padding [' + padding +
-          '] should be ' + util.hexidump(thisVectorSet[i][1]) +
-          ' - Actually [' + util.hexidump(encrypted) +
-          ']').to.equal(util.bin2str(thisVectorSet[i][1]));
-        expect(util.bin2str(decrypted), 'vector with block [' + util.hexidump(thisVectorSet[i][0]) +
-          '] and key [' + util.hexstrdump(util.Uint8Array2str(key)) +
+          '] should be ' + util.Uint8Array_to_hex(thisVectorSet[i][1]) +
+          ' - Actually [' + util.Uint8Array_to_hex(encrypted) +
+          ']').to.equal(util.Uint8Array_to_str(thisVectorSet[i][1]));
+        expect(util.Uint8Array_to_str(decrypted), 'vector with block [' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
+          '] and key [' + util.str_to_hex(util.Uint8Array_to_str(key)) +
           '] and padding [' + padding +
-          '] should be ' + util.hexidump(thisVectorSet[i][0]) +
-          ' - Actually [' + util.hexidump(decrypted) +
-          ']').to.equal(util.bin2str(thisVectorSet[i][0]));
+          '] should be ' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
+          ' - Actually [' + util.Uint8Array_to_hex(decrypted) +
+          ']').to.equal(util.Uint8Array_to_str(thisVectorSet[i][0]));
       }
     }
     done();

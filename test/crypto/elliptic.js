@@ -144,7 +144,7 @@ describe('Elliptic Curve Cryptography', function () {
     it('Creating curve from oid', function (done) {
       const oids = ['2A8648CE3D030107', '2B81040022', '2B81040023', '2B8104000A'];
       oids.forEach(function (oid) {
-        expect(new elliptic_curves.Curve(openpgp.util.hex2bin(oid))).to.exist;
+        expect(new elliptic_curves.Curve(openpgp.util.hex_to_str(oid))).to.exist;
       });
       done();
     });
@@ -166,7 +166,7 @@ describe('Elliptic Curve Cryptography', function () {
         expect(keyPair).to.exist;
         const pub = keyPair.getPublic();
         expect(pub).to.exist;
-        expect(openpgp.util.hexidump(pub)).to.equal(openpgp.util.hexidump(pair.pub));
+        expect(openpgp.util.Uint8Array_to_hex(pub)).to.equal(openpgp.util.Uint8Array_to_hex(pair.pub));
       }
       done();
     });
@@ -194,10 +194,10 @@ describe('Elliptic Curve Cryptography', function () {
       const curve = new elliptic_curves.Curve('p256');
       let key1 = curve.keyFromPrivate(key_data.p256.priv);
       let key2 = curve.keyFromPublic(signature_data.pub);
-      const shared1 = openpgp.util.hexidump(key1.derive(key2));
+      const shared1 = openpgp.util.Uint8Array_to_hex(key1.derive(key2));
       key1 = curve.keyFromPublic(key_data.p256.pub);
       key2 = curve.keyFromPrivate(signature_data.priv);
-      const shared2 = openpgp.util.hexidump(key2.derive(key1));
+      const shared2 = openpgp.util.Uint8Array_to_hex(key2.derive(key1));
       expect(shared1).to.equal(shared2);
       done();
     });
@@ -205,7 +205,7 @@ describe('Elliptic Curve Cryptography', function () {
   describe('ECDSA signature', function () {
     const verify_signature = function (oid, hash, r, s, message, pub) {
       if (openpgp.util.isString(message)) {
-        message = openpgp.util.str2Uint8Array(message);
+        message = openpgp.util.str_to_Uint8Array(message);
       } else if (!openpgp.util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
@@ -305,7 +305,7 @@ describe('Elliptic Curve Cryptography', function () {
   describe('ECDH key exchange', function () {
     const decrypt_message = function (oid, hash, cipher, priv, ephemeral, data, fingerprint) {
       if (openpgp.util.isString(data)) {
-        data = openpgp.util.str2Uint8Array(data);
+        data = openpgp.util.str_to_Uint8Array(data);
       } else {
         data = new Uint8Array(data);
       }

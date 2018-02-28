@@ -48,7 +48,7 @@ export default function Userid() {
  * @param {Uint8Array} input payload of a tag 13 packet
  */
 Userid.prototype.read = function (bytes) {
-  this.userid = util.decode_utf8(util.Uint8Array2str(bytes));
+  this.userid = util.decode_utf8(util.Uint8Array_to_str(bytes));
 };
 
 /**
@@ -56,5 +56,5 @@ Userid.prototype.read = function (bytes) {
  * @return {Uint8Array} binary representation
  */
 Userid.prototype.write = function () {
-  return util.str2Uint8Array(util.encode_utf8(this.userid));
+  return util.str_to_Uint8Array(util.encode_utf8(this.userid));
 };

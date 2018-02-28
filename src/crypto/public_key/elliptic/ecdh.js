@@ -46,7 +46,7 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
     oid.write(),
     new Uint8Array([public_algo]),
     kdf_params.write(),
-    util.str2Uint8Array("Anonymous Sender    "),
+    util.str_to_Uint8Array("Anonymous Sender    "),
     fingerprint
   ]);
 }
@@ -73,7 +73,7 @@ function kdf(hash_algo, X, length, param) {
  * @return {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-  fingerprint = util.hex2Uint8Array(fingerprint);
+  fingerprint = util.hex_to_Uint8Array(fingerprint);
   const curve = new Curve(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
@@ -101,7 +101,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @return {Uint8Array}                   Value derived from session
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-  fingerprint = util.hex2Uint8Array(fingerprint);
+  fingerprint = util.hex_to_Uint8Array(fingerprint);
   const curve = new Curve(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);

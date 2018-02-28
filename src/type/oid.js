@@ -37,9 +37,9 @@ function OID(oid) {
   } else if (typeof oid === 'undefined') {
     oid = '';
   } else if (util.isArray(oid)) {
-    oid = util.bin2str(oid);
+    oid = util.Uint8Array_to_str(oid);
   } else if (util.isUint8Array(oid)) {
-    oid = util.Uint8Array2str(oid);
+    oid = util.Uint8Array_to_str(oid);
   }
   this.oid = oid;
 }
@@ -53,7 +53,7 @@ OID.prototype.read = function (input) {
   if (input.length >= 1) {
     const length = input[0];
     if (input.length >= 1+length) {
-      this.oid = util.Uint8Array2str(input.subarray(1, 1+length));
+      this.oid = util.Uint8Array_to_str(input.subarray(1, 1+length));
       return 1+this.oid.length;
     }
   }
@@ -65,7 +65,7 @@ OID.prototype.read = function (input) {
  * @return {Uint8Array} Array with the serialized value the OID
  */
 OID.prototype.write = function () {
-  return util.str2Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
+  return util.str_to_Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
 };
 
 /**
@@ -73,7 +73,7 @@ OID.prototype.write = function () {
  * @return {string} String with the hex value of the OID
  */
 OID.prototype.toHex = function() {
-  return util.hexstrdump(this.oid);
+  return util.str_to_hex(this.oid);
 };
 
 /**
