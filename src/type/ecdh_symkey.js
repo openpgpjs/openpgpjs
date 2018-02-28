@@ -27,7 +27,7 @@ import util from '../util';
 /**
  * @constructor
  */
-function ECDHSymmetricKey(data) {
+export default function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
   } else if (util.isString(data)) {
@@ -65,5 +65,3 @@ ECDHSymmetricKey.prototype.write = function () {
 ECDHSymmetricKey.fromClone = function (clone) {
   return new ECDHSymmetricKey(clone.data);
 };
-
-export default ECDHSymmetricKey;
