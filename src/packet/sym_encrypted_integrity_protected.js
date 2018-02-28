@@ -121,8 +121,8 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted);
   const bytes = decrypted.subarray(0, decrypted.length - 20);
   const tohash = util.concatUint8Array([prefix, bytes]);
-  this.hash = util.Uint8Array2str(crypto.hash.sha1(tohash));
-  const mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
+  this.hash = util.Uint8Array_to_str(crypto.hash.sha1(tohash));
+  const mdc = util.Uint8Array_to_str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');

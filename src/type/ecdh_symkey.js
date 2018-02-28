@@ -31,7 +31,7 @@ export default function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
   } else if (util.isString(data)) {
-    data = util.str2Uint8Array(data);
+    data = util.str_to_Uint8Array(data);
   } else {
     data = new Uint8Array(data);
   }

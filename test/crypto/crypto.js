@@ -231,7 +231,7 @@ describe('API functional testing', function() {
     ElgamalpubMPIs[i].read(ElgamalpubMPIstrs[i]);
   }
 
-  const data = util.str2Uint8Array("foobar");
+  const data = util.str_to_Uint8Array("foobar");
 
   describe('Sign and verify', function () {
     it('RSA', function () {
@@ -256,7 +256,7 @@ describe('API functional testing', function() {
       return crypto.signature.sign(
         17, 2, DSApubMPIs.concat(DSAsecMPIs), data
       ).then(DSAsignedData => {
-        DSAsignedData = util.Uint8Array2str(DSAsignedData);
+        DSAsignedData = util.Uint8Array_to_str(DSAsignedData);
         const DSAmsgMPIs = [];
         DSAmsgMPIs[0] = new openpgp.MPI();
         DSAmsgMPIs[1] = new openpgp.MPI();
@@ -280,8 +280,8 @@ describe('API functional testing', function() {
     function testCFB(plaintext, resync) {
       symmAlgos.forEach(function(algo) {
         const symmKey = crypto.generateSessionKey(algo);
-        const symmencData = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, util.str2Uint8Array(plaintext), symmKey, resync);
-        const text = util.Uint8Array2str(crypto.cfb.decrypt(algo, symmKey, symmencData, resync));
+        const symmencData = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, util.str_to_Uint8Array(plaintext), symmKey, resync);
+        const text = util.Uint8Array_to_str(crypto.cfb.decrypt(algo, symmKey, symmencData, resync));
         expect(text).to.equal(plaintext);
       });
     }
@@ -295,10 +295,10 @@ describe('API functional testing', function() {
           const repeat = new Uint8Array([rndm[rndm.length - 2], rndm[rndm.length - 1]]);
           const prefix = util.concatUint8Array([rndm, repeat]);
 
-          const symmencData = crypto.cfb.encrypt(rndm, algo, util.str2Uint8Array(plaintext), symmKey, false);
+          const symmencData = crypto.cfb.encrypt(rndm, algo, util.str_to_Uint8Array(plaintext), symmKey, false);
           const decrypted = crypto.cfb.decrypt(algo, symmKey, symmencData, false);
 
-          const text = util.Uint8Array2str(decrypted);
+          const text = util.Uint8Array_to_str(decrypted);
           expect(text).to.equal(plaintext);
         }
       });
@@ -312,11 +312,11 @@ describe('API functional testing', function() {
             const iv = crypto.random.getRandomValues(new Uint8Array(crypto.gcm.ivLength));
 
             return crypto.gcm.encrypt(
-              algo, util.str2Uint8Array(plaintext), key, iv
+              algo, util.str_to_Uint8Array(plaintext), key, iv
             ).then(function(ciphertext) {
               return crypto.gcm.decrypt(algo, ciphertext, key, iv);
             }).then(function(decrypted) {
-              const decryptedStr = util.Uint8Array2str(decrypted);
+              const decryptedStr = util.Uint8Array_to_str(decrypted);
               expect(decryptedStr).to.equal(plaintext);
             });
           });
@@ -372,7 +372,7 @@ describe('API functional testing', function() {
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
-      const symmKey = util.Uint8Array2str(crypto.generateSessionKey('aes256'));
+      const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
       const RSAUnencryptedData = crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength())
       const RSAUnencryptedMPI = new openpgp.MPI(RSAUnencryptedData);
       return crypto.publicKeyEncrypt(
@@ -383,7 +383,7 @@ describe('API functional testing', function() {
           1, RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
         ).then(data => {
           data = data.write();
-          data = util.Uint8Array2str(data.subarray(2, data.length));
+          data = util.Uint8Array_to_str(data.subarray(2, data.length));
 
           const result = crypto.pkcs1.eme.decode(data, RSApubMPIs[0].byteLength());
           expect(result).to.equal(symmKey);
@@ -392,7 +392,7 @@ describe('API functional testing', function() {
     });
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
-      const symmKey = util.Uint8Array2str(crypto.generateSessionKey('aes256'));
+      const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
       const ElgamalUnencryptedData = crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength());
       const ElgamalUnencryptedMPI = new openpgp.MPI(ElgamalUnencryptedData);
 
@@ -404,7 +404,7 @@ describe('API functional testing', function() {
           16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData
         ).then(data => {
           data = data.write();
-          data = util.Uint8Array2str(data.subarray(2, data.length));
+          data = util.Uint8Array_to_str(data.subarray(2, data.length));
 
           const result = crypto.pkcs1.eme.decode(data, ElgamalpubMPIs[0].byteLength());
           expect(result).to.equal(symmKey);

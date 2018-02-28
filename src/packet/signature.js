@@ -280,7 +280,7 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.key_expiration_time, util.writeNumber(this.keyExpirationTime, 4)));
   }
   if (this.preferredSymmetricAlgorithms !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.preferredSymmetricAlgorithms));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredSymmetricAlgorithms));
     arr.push(write_sub_packet(sub.preferred_symmetric_algorithms, bytes));
   }
   if (this.revocationKeyClass !== null) {
@@ -300,51 +300,51 @@ Signature.prototype.write_all_sub_packets = function () {
         bytes.push(util.writeNumber(name.length, 2));
         // 2 octets of value length
         bytes.push(util.writeNumber(value.length, 2));
-        bytes.push(util.str2Uint8Array(name + value));
+        bytes.push(util.str_to_Uint8Array(name + value));
         bytes = util.concatUint8Array(bytes);
         arr.push(write_sub_packet(sub.notation_data, bytes));
       }
     }
   }
   if (this.preferredHashAlgorithms !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.preferredHashAlgorithms));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredHashAlgorithms));
     arr.push(write_sub_packet(sub.preferred_hash_algorithms, bytes));
   }
   if (this.preferredCompressionAlgorithms !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.preferredCompressionAlgorithms));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredCompressionAlgorithms));
     arr.push(write_sub_packet(sub.preferred_compression_algorithms, bytes));
   }
   if (this.keyServerPreferences !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.keyServerPreferences));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.keyServerPreferences));
     arr.push(write_sub_packet(sub.key_server_preferences, bytes));
   }
   if (this.preferredKeyServer !== null) {
-    arr.push(write_sub_packet(sub.preferred_key_server, util.str2Uint8Array(this.preferredKeyServer)));
+    arr.push(write_sub_packet(sub.preferred_key_server, util.str_to_Uint8Array(this.preferredKeyServer)));
   }
   if (this.isPrimaryUserID !== null) {
     arr.push(write_sub_packet(sub.primary_user_id, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
   }
   if (this.policyURI !== null) {
-    arr.push(write_sub_packet(sub.policy_uri, util.str2Uint8Array(this.policyURI)));
+    arr.push(write_sub_packet(sub.policy_uri, util.str_to_Uint8Array(this.policyURI)));
   }
   if (this.keyFlags !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.keyFlags));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.keyFlags));
     arr.push(write_sub_packet(sub.key_flags, bytes));
   }
   if (this.signersUserId !== null) {
-    arr.push(write_sub_packet(sub.signers_user_id, util.str2Uint8Array(this.signersUserId)));
+    arr.push(write_sub_packet(sub.signers_user_id, util.str_to_Uint8Array(this.signersUserId)));
   }
   if (this.reasonForRevocationFlag !== null) {
-    bytes = util.str2Uint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
+    bytes = util.str_to_Uint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
     arr.push(write_sub_packet(sub.reason_for_revocation, bytes));
   }
   if (this.features !== null) {
-    bytes = util.str2Uint8Array(util.bin2str(this.features));
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.features));
     arr.push(write_sub_packet(sub.features, bytes));
   }
   if (this.signatureTargetPublicKeyAlgorithm !== null) {
     bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
-    bytes.push(util.str2Uint8Array(this.signatureTargetHash));
+    bytes.push(util.str_to_Uint8Array(this.signatureTargetHash));
     bytes = util.concatUint8Array(bytes);
     arr.push(write_sub_packet(sub.signature_target, bytes));
   }
@@ -459,8 +459,8 @@ Signature.prototype.read_sub_packet = function (bytes) {
         const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
 
-        const name = util.Uint8Array2str(bytes.subarray(mypos, mypos + m));
-        const value = util.Uint8Array2str(bytes.subarray(mypos + m, mypos + m + n));
+        const name = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
+        const value = util.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
 
         this.notation = this.notation || {};
         this.notation[name] = value;
@@ -482,7 +482,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 24:
       // Preferred Key Server
-      this.preferredKeyServer = util.Uint8Array2str(bytes.subarray(mypos, bytes.length));
+      this.preferredKeyServer = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 25:
       // Primary User ID
@@ -490,7 +490,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 26:
       // Policy URI
-      this.policyURI = util.Uint8Array2str(bytes.subarray(mypos, bytes.length));
+      this.policyURI = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 27:
       // Key Flags
@@ -498,12 +498,12 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 28:
       // Signer's User ID
-      this.signersUserId += util.Uint8Array2str(bytes.subarray(mypos, bytes.length));
+      this.signersUserId += util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 29:
       // Reason for Revocation
       this.reasonForRevocationFlag = bytes[mypos++];
-      this.reasonForRevocationString = util.Uint8Array2str(bytes.subarray(mypos, bytes.length));
+      this.reasonForRevocationString = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 30:
       // Features
@@ -517,7 +517,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
 
       const len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
-      this.signatureTargetHash = util.Uint8Array2str(bytes.subarray(mypos, mypos + len));
+      this.signatureTargetHash = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + len));
       break;
     }
     case 32:

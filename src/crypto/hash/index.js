@@ -30,7 +30,7 @@ function node_hash(type) {
 
 function hashjs_hash(hash) {
   return function(data) {
-    return util.str2Uint8Array(util.hex2bin(hash().update(data).digest('hex')));
+    return util.str_to_Uint8Array(util.hex_to_str(hash().update(data).digest('hex')));
   };
 }
 
@@ -51,7 +51,7 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
     md5: md5,
     /** @see module:rusha */
     sha1: function(data) {
-      return util.str2Uint8Array(util.hex2bin(rusha.digest(data)));
+      return util.str_to_Uint8Array(util.hex_to_str(rusha.digest(data)));
     },
     /** @see module:hash.js */
     sha224: hashjs_hash(sha224),

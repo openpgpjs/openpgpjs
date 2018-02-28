@@ -603,7 +603,7 @@ describe("Signature", function() {
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
-    const plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
+    const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey.primaryKey.decrypt('hello world');
@@ -623,7 +623,7 @@ describe("Signature", function() {
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
-    const plaintext = openpgp.util.str2Uint8Array('short message\nnext line\n한국어/조선말');
+    const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
     privKey.primaryKey.decrypt('hello world');

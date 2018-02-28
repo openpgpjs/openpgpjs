@@ -344,21 +344,21 @@ describe('X25519 Cryptography', function () {
       const S = curve.keyFromSecret(vector.SECRET_KEY);
       const P = curve.keyFromPublic('40'+vector.PUBLIC_KEY);
       expect(S.getPublic()).to.deep.equal(P.getPublic());
-      const data = util.str2Uint8Array(vector.MESSAGE);
+      const data = util.str_to_Uint8Array(vector.MESSAGE);
       const keyIntegers = [
         openpgp.OID.fromClone(curve),
-        new openpgp.MPI(util.hex2bin('40'+vector.PUBLIC_KEY)),
-        new openpgp.MPI(util.hex2bin(vector.SECRET_KEY))
+        new openpgp.MPI(util.hex_to_str('40'+vector.PUBLIC_KEY)),
+        new openpgp.MPI(util.hex_to_str(vector.SECRET_KEY))
       ];
       const msg_MPIs = [
-        new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.R).reverse())),
-        new openpgp.MPI(util.Uint8Array2str(util.hex2Uint8Array(vector.SIGNATURE.S).reverse()))
+        new openpgp.MPI(util.Uint8Array_to_str(util.hex_to_Uint8Array(vector.SIGNATURE.R).reverse())),
+        new openpgp.MPI(util.Uint8Array_to_str(util.hex_to_Uint8Array(vector.SIGNATURE.S).reverse()))
       ];
       return Promise.all([
         signature.sign(22, undefined, keyIntegers, data).then(signed => {
           const len = ((signed[0] << 8| signed[1]) + 7) / 8;
-          expect(util.hex2Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
-          expect(util.hex2Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
+          expect(util.hex_to_Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
+          expect(util.hex_to_Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
         }),
         signature.verify(22, undefined, msg_MPIs, keyIntegers, data).then(result => {
           expect(result).to.be.true;
@@ -391,7 +391,7 @@ describe('X25519 Cryptography', function () {
         PUBLIC_KEY:
         ['3d4017c3e843895a92b70aa74d1b7ebc',
          '9c982ccf2ec4968cc0cd55f12af4660c'].join(''),
-        MESSAGE: util.hex2bin('72'),
+        MESSAGE: util.hex_to_str('72'),
         SIGNATURE:
         { R: ['92a009a9f0d4cab8720e820b5f642540',
               'a2b27b5416503f8fb3762223ebdb69da'].join(''),
@@ -408,7 +408,7 @@ describe('X25519 Cryptography', function () {
         PUBLIC_KEY:
         ['fc51cd8e6218a1a38da47ed00230f058',
          '0816ed13ba3303ac5deb911548908025'].join(''),
-        MESSAGE: util.hex2bin('af82'),
+        MESSAGE: util.hex_to_str('af82'),
         SIGNATURE:
         { R: ['6291d657deec24024827e69c3abe01a3',
               '0ce548a284743a445e3680d7db5ac3ac'].join(''),
@@ -425,7 +425,7 @@ describe('X25519 Cryptography', function () {
         PUBLIC_KEY:
         ['278117fc144c72340f67d0f2316e8386',
          'ceffbf2b2428c9c51fef7c597f1d426e'].join(''),
-        MESSAGE: util.hex2bin([
+        MESSAGE: util.hex_to_str([
           '08b8b2b733424243760fe426a4b54908',
           '632110a66c2f6591eabd3345e3e4eb98',
           'fa6e264bf09efe12ee50f8f54e9f77b1',
@@ -507,7 +507,7 @@ describe('X25519 Cryptography', function () {
         PUBLIC_KEY:
         ['ec172b93ad5e563bf4932c70e1245034',
          'c35467ef2efd4d64ebf819683467e2bf'].join(''),
-        MESSAGE: util.hex2bin([
+        MESSAGE: util.hex_to_str([
           'ddaf35a193617abacc417349ae204131',
           '12e6fa4e89a97ea20a9eeee64b55d39a',
           '2192992a274fc1a836ba3c23a3feebbd',

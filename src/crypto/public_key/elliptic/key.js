@@ -23,7 +23,6 @@
  * @requires crypto/hash
  * @requires util
  * @requires enums
- * @requires encoding/base64
  * @requires jwk-to-pem
  * @requires asn1.js
  * @module crypto/public_key/elliptic/key
@@ -34,7 +33,6 @@ import { webCurves, nodeCurves } from './curves';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
-import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -118,9 +116,9 @@ async function webSign(curve, hash_algo, message, keyPair) {
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), true),
-      "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), true),
-      "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray('be', l)), true),
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), true),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), true),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray('be', l)), true),
       "use": "sig",
       "kid": "ECDSA Private Key"
     },
@@ -158,8 +156,8 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(publicKey.getX().toArray('be', l)), true),
-      "y": base64.encode(new Uint8Array(publicKey.getY().toArray('be', l)), true),
+      "x": util.Uint8Array_to_b64(new Uint8Array(publicKey.getX().toArray('be', l)), true),
+      "y": util.Uint8Array_to_b64(new Uint8Array(publicKey.getY().toArray('be', l)), true),
       "use": "sig",
       "kid": "ECDSA Public Key"
     },
@@ -186,13 +184,23 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
 
 
 async function nodeSign(curve, hash_algo, message, keyPair) {
+  console.log({
+      "kty": "EC",
+      "crv": webCurves[curve.name],
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray())),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray())),
+      "use": "sig",
+      "kid": "ECDSA Private Key"
+  });
+
   const key = jwkToPem(
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray())),
-      "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray())),
-      "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray())),
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray())),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray())),
       "use": "sig",
       "kid": "ECDSA Private Key"
     },
@@ -215,8 +223,8 @@ async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(publicKey.getX().toArray())),
-      "y": base64.encode(new Uint8Array(publicKey.getY().toArray())),
+      "x": util.Uint8Array_to_b64(new Uint8Array(publicKey.getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(publicKey.getY().toArray())),
       "use": "sig",
       "kid": "ECDSA Public Key"
     },

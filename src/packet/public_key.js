@@ -159,7 +159,7 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new type_keyid();
   if (this.version === 4) {
-    this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
+    this.keyid.read(util.str_to_Uint8Array(util.hex_to_str(this.getFingerprint()).substr(12, 8)));
   } else if (this.version === 3) {
     const arr = this.params[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
@@ -178,16 +178,16 @@ PublicKey.prototype.getFingerprint = function () {
   let toHash = '';
   if (this.version === 4) {
     toHash = this.writeOld();
-    this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
+    this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
     const algo = enums.write(enums.publicKey, this.algorithm);
     const paramCount = crypto.getPubKeyParamTypes(algo).length;
     for (let i = 0; i < paramCount; i++) {
       toHash += this.params[i].toString();
     }
-    this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
+    this.fingerprint = util.Uint8Array_to_str(crypto.hash.md5(util.str_to_Uint8Array(toHash)));
   }
-  this.fingerprint = util.hexstrdump(this.fingerprint);
+  this.fingerprint = util.str_to_hex(this.fingerprint);
   return this.fingerprint;
 };
 

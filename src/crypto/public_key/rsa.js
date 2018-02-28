@@ -26,21 +26,11 @@
  * @module crypto/public_key/rsa
  */
 
-
 import BN from 'bn.js';
 import prime from './prime';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
-
-const two = new BN(2);
-
-// TODO use this is ../../encoding/base64.js and ./elliptic/{key,curve}.js
-function b64toBN(base64url) {
-  const base64 = base64url.replace(/\-/g, '+').replace(/_/g, '/');
-  const hex = util.hexstrdump(atob(base64));
-  return new BN(hex, 16);
-}
 
 // Helper for IE11 KeyOperation objects
 function promisifyIE11Op(keyObj, err) {
@@ -127,7 +117,7 @@ export default {
     let blinder;
     let unblinder;
     if (config.rsa_blinding) {
-      unblinder = random.getRandomBN(two, n).toRed(nred);
+      unblinder = random.getRandomBN(new BN(2), n).toRed(nred);
       blinder = unblinder.redInvm().redPow(e);
       m = m.toRed(nred).redMul(blinder).fromRed();
     }
@@ -202,11 +192,11 @@ export default {
 
       // map JWK parameters to BN
       key = {};
-      key.n = b64toBN(jwk.n);
+      key.n = new BN(util.b64_to_Uint8Array(jwk.n));
       key.e = E;
-      key.d = b64toBN(jwk.d);
-      key.p = b64toBN(jwk.p);
-      key.q = b64toBN(jwk.q);
+      key.d = new BN(util.b64_to_Uint8Array(jwk.d));
+      key.p = new BN(util.b64_to_Uint8Array(jwk.p));
+      key.q = new BN(util.b64_to_Uint8Array(jwk.q));
       key.u = key.p.invm(key.q);
       return key;
     }

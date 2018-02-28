@@ -8,10 +8,10 @@ const { expect } = chai;
 
 it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {
-    const blowfish = new openpgp.crypto.cipher.blowfish(util.bin2str(key));
-    const result = util.bin2str(blowfish.encrypt(input));
+    const blowfish = new openpgp.crypto.cipher.blowfish(util.Uint8Array_to_str(key));
+    const result = util.Uint8Array_to_str(blowfish.encrypt(input));
 
-    return (util.hexstrdump(result) === util.hexstrdump(util.bin2str(output)));
+    return (util.str_to_hex(result) === util.str_to_hex(util.Uint8Array_to_str(output)));
   }
 
   const testvectors = [[[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x4E,0xF9,0x97,0x45,0x61,0x98,0xDD,0x78]],
@@ -51,9 +51,9 @@ it('Blowfish cipher test with test vectors from https://www.schneier.com/code/ve
 
   for (let i = 0; i < testvectors.length; i++) {
     const res = test_bf(testvectors[i][1],testvectors[i][0],testvectors[i][2]);
-    expect(res, 'vector '+ i + '" with block ' + util.hexidump(testvectors[i][0])+
-                ' and key ' + util.hexidump(testvectors[i][1]) +
-                ' should be ' + util.hexidump(testvectors[i][2]), false);
+    expect(res, 'vector '+ i + '" with block ' + util.Uint8Array_to_hex(testvectors[i][0])+
+                ' and key ' + util.Uint8Array_to_hex(testvectors[i][1]) +
+                ' should be ' + util.Uint8Array_to_hex(testvectors[i][2]), false);
   }
   done();
 });

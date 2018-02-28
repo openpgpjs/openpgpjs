@@ -14,7 +14,7 @@ describe('Oid tests', function() {
       expect(oid).to.exist;
       expect(oid.oid).to.exist;
       expect(oid.oid).to.have.length(data.length);
-      expect(oid.oid).to.equal(openpgp.util.Uint8Array2str(data));
+      expect(oid.oid).to.equal(openpgp.util.Uint8Array_to_str(data));
     });
   });
   it('Reading and writing', function() {
@@ -25,12 +25,12 @@ describe('Oid tests', function() {
       expect(oid.read(data)).to.equal(data.length);
       expect(oid.oid).to.exist;
       expect(oid.oid).to.have.length(data.length-1);
-      expect(oid.oid).to.equal(openpgp.util.Uint8Array2str(data.subarray(1)));
+      expect(oid.oid).to.equal(openpgp.util.Uint8Array_to_str(data.subarray(1)));
       const result = oid.write();
       expect(result).to.exist;
       expect(result).to.have.length(data.length);
       expect(result[0]).to.equal(data.length-1);
-      expect(openpgp.util.Uint8Array2str(result.subarray(1))).to.equal(openpgp.util.Uint8Array2str(data.subarray(1)));
+      expect(openpgp.util.Uint8Array_to_str(result.subarray(1))).to.equal(openpgp.util.Uint8Array_to_str(data.subarray(1)));
     });
   });
 });
