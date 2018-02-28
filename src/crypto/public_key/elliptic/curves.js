@@ -110,25 +110,39 @@ const curves = {
   }
 };
 
-function Curve(name, params) {
+export default function Curve(oid_or_name, params) {
+  if (OID.prototype.isPrototypeOf(oid_or_name) &&
+      enums.curve[oid_or_name.toHex()]) {
+    this.name = oid_or_name.toHex(); // by curve OID
+  } else if (enums.curve[oid_or_name]) {
+    this.name = oid_or_name; // by curve name
+  } else if (enums.curve[util.hexstrdump(oid_or_name)]) {
+    this.name = util.hexstrdump(oid_or_name); // by oid string
+  } else {
+    throw new Error('Not valid curve');
+  }
+  this.name = enums.write(enums.curve, this.name);
+  this.oid = new OID(curves[this.name].oid);
+
+  params = params || curves[this.name];
+
   this.keyType = params.keyType;
   switch (this.keyType) {
     case enums.publicKey.eddsa:
-      this.curve = new EdDSA(name);
+      this.curve = new EdDSA(this.name);
       break;
     case enums.publicKey.ecdsa:
-      this.curve = new EC(name);
+      this.curve = new EC(this.name);
       break;
     default:
       throw new Error('Unknown elliptic key type;');
   }
-  this.name = name;
-  this.oid = new OID(curves[name].oid);
+
   this.hash = params.hash;
   this.cipher = params.cipher;
-  this.node = params.node && curves[name].node;
-  this.web = params.web && curves[name].web;
-  this.payloadSize = curves[name].payloadSize;
+  this.node = params.node && curves[this.name].node;
+  this.web = params.web && curves[this.name].web;
+  this.payloadSize = curves[this.name].payloadSize;
 }
 
 Curve.prototype.keyFromPrivate = function (priv) { // Not for ed25519
@@ -149,48 +163,28 @@ Curve.prototype.genKeyPair = async function () {
     // If browser doesn't support a curve, we'll catch it
     try {
       keyPair = await webGenKeyPair(this.name);
-      return new KeyPair(this.curve, keyPair);
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
   } else if (nodeCrypto && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
-    return new KeyPair(this.curve, keyPair);
   }
 
-  const options = {
-    entropy: util.Uint8Array2str(random.getRandomBytes(32)), // 32 = (192 + 64) / 8
-    entropyEnc: 'string'
-  };
-  // TODO provide randomness to elliptic here
-  const r = await this.curve.genKeyPair(options);
-  const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-  if (this.keyType === enums.publicKey.eddsa) {
-    keyPair = { secret: r.getSecret() };
-  } else {
-    keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+  if (!keyPair || !keyPair.priv) {
+    // elliptic fallback
+    const r = await this.curve.genKeyPair({ entropy: util.Uint8Array2str(random.getRandomBytes(32)) });
+    const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+    if (this.keyType === enums.publicKey.eddsa) {
+      keyPair = { secret: r.getSecret() };
+    } else {
+      keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+    }
   }
   return new KeyPair(this.curve, keyPair);
 };
 
-function getCurve(oid_or_name) {
-  let name;
-  if (OID.prototype.isPrototypeOf(oid_or_name) &&
-      enums.curve[oid_or_name.toHex()]) {
-    name = enums.write(enums.curve, oid_or_name.toHex()); // by curve OID
-    return new Curve(name, curves[name]);
-  } else if (enums.curve[oid_or_name]) {
-    name = enums.write(enums.curve, oid_or_name); // by curve name
-    return new Curve(name, curves[name]);
-  } else if (enums.curve[util.hexstrdump(oid_or_name)]) {
-    name = enums.write(enums.curve, util.hexstrdump(oid_or_name)); // by oid string
-    return new Curve(name, curves[name]);
-  }
-  throw new Error('Not valid curve');
-}
-
 async function generate(curve) {
-  curve = getCurve(curve);
+  curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
@@ -205,10 +199,8 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
-export default Curve;
-
 export {
-  curves, webCurves, nodeCurves, getCurve, generate, getPreferredHashAlgo
+  curves, webCurves, nodeCurves, generate, getPreferredHashAlgo
 };
 
 

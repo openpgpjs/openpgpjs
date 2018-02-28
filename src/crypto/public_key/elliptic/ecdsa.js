@@ -18,15 +18,13 @@
 // Implementation of ECDSA following RFC6637 for Openpgpjs
 
 /**
- * @requires util
  * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/ecdsa
  */
 
-import util from '../../../util';
 import hash from '../../hash';
-import { getCurve } from './curves';
+import Curve from './curves';
 
 /**
  * Sign a message using the provided key
@@ -38,7 +36,7 @@ import { getCurve } from './curves';
              s: Uint8Array}}            Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  const curve = getCurve(oid);
+  const curve = new Curve(oid);
   const key = curve.keyFromPrivate(d);
   const signature = await key.sign(m, hash_algo);
   return { r: signature.r.toArrayLike(Uint8Array),
@@ -56,7 +54,7 @@ async function sign(oid, hash_algo, m, d) {
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  const curve = getCurve(oid);
+  const curve = new Curve(oid);
   const key = curve.keyFromPublic(Q);
   return key.verify(m, signature, hash_algo);
 }

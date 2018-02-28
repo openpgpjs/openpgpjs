@@ -137,21 +137,21 @@ describe('Elliptic Curve Cryptography', function () {
     it('Creating curve with name', function (done) {
       const names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
       names.forEach(function (name) {
-        expect(elliptic_curves.getCurve(name)).to.exist;
+        expect(new elliptic_curves.Curve(name)).to.exist;
       });
       done();
     });
     it('Creating curve from oid', function (done) {
       const oids = ['2A8648CE3D030107', '2B81040022', '2B81040023', '2B8104000A'];
       oids.forEach(function (oid) {
-        expect(elliptic_curves.getCurve(openpgp.util.hex2bin(oid))).to.exist;
+        expect(new elliptic_curves.Curve(openpgp.util.hex2bin(oid))).to.exist;
       });
       done();
     });
     it('Creating KeyPair', function () {
       const names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
       return Promise.all(names.map(function (name) {
-        const curve = elliptic_curves.getCurve(name);
+        const curve = new elliptic_curves.Curve(name);
         return curve.genKeyPair().then(keyPair => {
           expect(keyPair).to.exist;
         });
@@ -160,7 +160,7 @@ describe('Elliptic Curve Cryptography', function () {
     it('Creating KeyPair from data', function (done) {
       for (const name in key_data) {
         const pair = key_data[name];
-        const curve = elliptic_curves.getCurve(name);
+        const curve = new elliptic_curves.Curve(name);
         expect(curve).to.exist;
         const keyPair = curve.keyFromPrivate(pair.priv);
         expect(keyPair).to.exist;
@@ -171,19 +171,19 @@ describe('Elliptic Curve Cryptography', function () {
       done();
     });
     it('Signature verification', function (done) {
-      const curve = elliptic_curves.getCurve('p256');
+      const curve = new elliptic_curves.Curve('p256');
       const key = curve.keyFromPublic(signature_data.pub);
       expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.true;
       done();
     });
     it('Invalid signature', function (done) {
-      const curve = elliptic_curves.getCurve('p256');
+      const curve = new elliptic_curves.Curve('p256');
       const key = curve.keyFromPublic(key_data.p256.pub);
       expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.false;
       done();
     });
     it('Signature generation', function () {
-      const curve = elliptic_curves.getCurve('p256');
+      const curve = new elliptic_curves.Curve('p256');
       let key = curve.keyFromPrivate(key_data.p256.priv);
       return key.sign(signature_data.message, 8).then(signature => {
         key = curve.keyFromPublic(key_data.p256.pub);
@@ -191,7 +191,7 @@ describe('Elliptic Curve Cryptography', function () {
       });
     });
     it('Shared secret generation', function (done) {
-      const curve = elliptic_curves.getCurve('p256');
+      const curve = new elliptic_curves.Curve('p256');
       let key1 = curve.keyFromPrivate(key_data.p256.priv);
       let key2 = curve.keyFromPublic(signature_data.pub);
       const shared1 = openpgp.util.hexidump(key1.derive(key2));
@@ -289,7 +289,7 @@ describe('Elliptic Curve Cryptography', function () {
         .to.eventually.be.true.notify(done);
     });
     it('Sign and verify message', function () {
-      const curve = elliptic_curves.getCurve('p521');
+      const curve = new elliptic_curves.Curve('p521');
       return curve.genKeyPair().then(keyPair => {
         const keyPublic = new Uint8Array(keyPair.getPublic());
         const keyPrivate = new Uint8Array(keyPair.getPrivate());
@@ -310,7 +310,7 @@ describe('Elliptic Curve Cryptography', function () {
         data = new Uint8Array(data);
       }
       return Promise.resolve().then(() => {
-        const curve = elliptic_curves.getCurve(oid);
+        const curve = new elliptic_curves.Curve(oid);
         return elliptic_curves.ecdh.decrypt(
           curve.oid,
           cipher,
