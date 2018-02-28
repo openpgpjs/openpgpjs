@@ -16,15 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the User Attribute Packet (Tag 17)<br/>
- * <br/>
+ * Implementation of the User Attribute Packet (Tag 17)
+ *
  * The User Attribute packet is a variation of the User ID packet.  It
  * is capable of storing more types of data than the User ID packet,
  * which is limited to text.  Like the User ID packet, a User Attribute
  * packet may be certified by the key owner ("self-signed") or any other
  * key owner who cares to certify it.  Except as noted, a User Attribute
  * packet may be used anywhere that a User ID packet may be used.
- * <br/>
+ *
  * While User Attribute packets are not a required part of the OpenPGP
  * standard, implementations SHOULD provide at least enough
  * compatibility to properly handle a certification signature on the

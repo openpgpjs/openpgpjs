@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the User ID Packet (Tag 13)<br/>
- * <br/>
+ * Implementation of the User ID Packet (Tag 13)
+ *
  * A User ID packet consists of UTF-8 text that is intended to represent
  * the name and email address of the key holder.  By convention, it
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no

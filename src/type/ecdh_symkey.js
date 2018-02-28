@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Encoded symmetric key for ECDH<br/>
- * <br/>
+ * Encoded symmetric key for ECDH
+ *
  * @requires util
  * @module type/ecdh_symkey
  */

@@ -16,9 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data
- * Packet (Tag 18)<br/>
- * <br/>
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
  * The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature

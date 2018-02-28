@@ -514,8 +514,10 @@ function getExpirationTime(keyPacket, selfCertificate, defaultValue=null) {
 
 /**
  * Returns primary user and most significant (latest valid) self signature
- * - if multiple users are marked as primary users returns the one with the latest self signature
- * - if no primary user is found returns the user with the latest self signature
+ * - if multiple primary users exist, returns the one with the latest self signature
+ * - otherwise, returns the user with the latest self signature
+ *
+ * NOTE: call verifyPrimaryUser before calling this function.
  * @param  {Date} date use the given date for verification instead of the current time
  * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}|null} The primary user and the self signature
  */

@@ -181,6 +181,7 @@ module.exports = function(grunt) {
       dist: {
         src: ['README.md', 'src'],
         options: {
+          configure: '.jsdocrc.js',
           destination: 'doc',
           recurse: true
         }

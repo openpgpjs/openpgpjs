@@ -16,8 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id ({@link https://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3})<br/>
- * <br/>
+ * Implementation of type key id
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3}:
  * A Key ID is an eight-octet scalar that identifies a key.
  * Implementations SHOULD NOT assume that Key IDs are unique.  The
  * section "Enhanced Key Formats" below describes how Key IDs are
