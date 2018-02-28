@@ -157,8 +157,14 @@ Curve.prototype.genKeyPair = async function () {
     keyPair = await nodeGenKeyPair(this.name);
     return new KeyPair(this.curve, keyPair);
   }
+
+  const options = {
+    entropy: util.Uint8Array2str(random.getRandomBytes(32)), // 32 = (192 + 64) / 8
+    entropyEnc: 'string'
+  };
+  // TODO provide randomness to elliptic here
+  const r = await this.curve.genKeyPair(options);
   const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-  const r = await this.curve.genKeyPair();
   if (this.keyType === enums.publicKey.eddsa) {
     keyPair = { secret: r.getSecret() };
   } else {
