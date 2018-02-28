@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Signature Packet (Tag 2)<br/>
- * <br/>
+ * Implementation of the Signature Packet (Tag 2)
+ *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
  * A Signature packet describes a binding between some public key and
  * some data.  The most common signatures are a signature of a file or a

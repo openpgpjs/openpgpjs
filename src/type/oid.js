@@ -17,8 +17,9 @@
 
 /**
  * Wrapper to an OID value
- * <br/>
- * An object identifier type from {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
+ *
+ * An object identifier type from
+ * {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
  * @requires util
  * @requires enums
  * @module type/oid

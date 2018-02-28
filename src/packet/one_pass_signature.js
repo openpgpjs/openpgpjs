@@ -16,14 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the One-Pass Signature Packets (Tag 4)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}: The One-Pass Signature packet precedes the signed data and contains
+ * Implementation of the One-Pass Signature Packets (Tag 4)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}:
+ * The One-Pass Signature packet precedes the signed data and contains
  * enough information to allow the receiver to begin calculating any
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
-* @requires util
+ * @requires util
  * @requires enums
  * @requires type/keyid
  * @module packet/one_pass_signature

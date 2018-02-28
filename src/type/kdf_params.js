@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type KDF parameters RFC 6637<br/>
- * <br/>
+ * Implementation of type KDF parameters RFC 6637
+ *
  * @requires enums
  * @module type/kdf_params
  */

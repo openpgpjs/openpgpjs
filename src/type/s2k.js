@@ -16,8 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the String-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC4880 3.7})<br/>
- * <br/>
+ * Implementation of the String-to-key specifier
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC4880 3.7}:
  * String-to-key (S2K) specifiers are used to convert passphrase strings
  * into symmetric-key encryption/decryption keys.  They are used in two
  * places, currently: to encrypt the secret part of private keys in the
