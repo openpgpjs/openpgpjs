@@ -338,9 +338,9 @@ describe('X25519 Cryptography', function () {
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
     const signature = openpgp.crypto.signature;
-    const curve = new elliptic.Curve('ed25519');
     const util = openpgp.util;
     function testVector(vector) {
+      const curve = new elliptic.Curve('ed25519');
       const S = curve.keyFromSecret(vector.SECRET_KEY);
       const P = curve.keyFromPublic('40'+vector.PUBLIC_KEY);
       expect(S.getPublic()).to.deep.equal(P.getPublic());

@@ -194,7 +194,7 @@ async function generate(curve) {
   curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
   return {
-    oid: new OID(curve.oid.slice(2)),
+    oid: curve.oid,
     Q: new BN(keyPair.getPublic()),
     d: new BN(keyPair.getPrivate()),
     hash: curve.hash,
