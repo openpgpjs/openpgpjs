@@ -41,7 +41,9 @@ import util from '../util';
  */
 export default function MPI(data) {
   /** An implementation dependent integer */
-  if (BN.isBN(data)) {
+  if (data instanceof MPI) {
+    this.data = data.data;
+  } else if (BN.isBN(data)) {
     this.fromBN(data);
   } else if (util.isUint8Array(data)) {
     this.fromUint8Array(data);

@@ -144,7 +144,7 @@ describe('Elliptic Curve Cryptography', function () {
     it('Creating curve from oid', function (done) {
       const oids = ['2A8648CE3D030107', '2B81040022', '2B81040023', '2B8104000A'];
       oids.forEach(function (oid) {
-        expect(new elliptic_curves.Curve(openpgp.util.hex_to_str(oid))).to.exist;
+        expect(new elliptic_curves.Curve(oid)).to.exist;
       });
       done();
     });
@@ -173,21 +173,25 @@ describe('Elliptic Curve Cryptography', function () {
     it('Signature verification', function (done) {
       const curve = new elliptic_curves.Curve('p256');
       const key = curve.keyFromPublic(signature_data.pub);
-      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.true;
-      done();
+      expect(
+        key.verify(signature_data.message, signature_data.signature, 8)
+      ).to.eventually.be.true.notify(done);
     });
     it('Invalid signature', function (done) {
       const curve = new elliptic_curves.Curve('p256');
       const key = curve.keyFromPublic(key_data.p256.pub);
-      expect(key.verify(signature_data.message, signature_data.signature, 8)).to.eventually.be.false;
-      done();
+      expect(
+        key.verify(signature_data.message, signature_data.signature, 8)
+      ).to.eventually.be.false.notify(done);
     });
     it('Signature generation', function () {
       const curve = new elliptic_curves.Curve('p256');
       let key = curve.keyFromPrivate(key_data.p256.priv);
       return key.sign(signature_data.message, 8).then(signature => {
         key = curve.keyFromPublic(key_data.p256.pub);
-        expect(key.verify(signature_data.message, signature, 8)).to.eventually.be.true;
+        expect(
+          key.verify(signature_data.message, signature, 8)
+        ).to.eventually.be.true;
       });
     });
     it('Shared secret generation', function (done) {
@@ -312,7 +316,7 @@ describe('Elliptic Curve Cryptography', function () {
       return Promise.resolve().then(() => {
         const curve = new elliptic_curves.Curve(oid);
         return elliptic_curves.ecdh.decrypt(
-          curve.oid,
+          new openpgp.OID(curve.oid),
           cipher,
           hash,
           new Uint8Array(ephemeral),

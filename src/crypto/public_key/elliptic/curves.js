@@ -56,7 +56,7 @@ if (nodeCrypto) {
 
 const curves = {
   p256: {
-    oid: util.Uint8Array_to_str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
+    oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
@@ -65,7 +65,7 @@ const curves = {
     payloadSize: 32
   },
   p384: {
-    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x22]),
+    oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
@@ -74,7 +74,7 @@ const curves = {
     payloadSize: 48
   },
   p521: {
-    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x23]),
+    oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
@@ -83,80 +83,83 @@ const curves = {
     payloadSize: 66
   },
   secp256k1: {
-    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
+    oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: false // FIXME when we replace jwk-to-pem or it supports this curve
+    node: nodeCurves.secp256k1
   },
   ed25519: {
-    oid: util.Uint8Array_to_str([0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01]),
+    oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsa,
     hash: enums.hash.sha512,
     payloadSize: 32
   },
   curve25519: {
-    oid: util.Uint8Array_to_str([0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01]),
+    oid: [0x06, 0x08, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128
   },
   brainpoolP256r1: { // TODO 1.3.36.3.3.2.8.1.1.7
-    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07])
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07]
   },
   brainpoolP384r1: { // TODO 1.3.36.3.3.2.8.1.1.11
-    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B])
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B]
   },
   brainpoolP512r1: { // TODO 1.3.36.3.3.2.8.1.1.13
-    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D])
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D]
   }
 };
 
 export default function Curve(oid_or_name, params) {
-  if (OID.prototype.isPrototypeOf(oid_or_name) &&
-      enums.curve[oid_or_name.toHex()]) {
-    this.name = oid_or_name.toHex(); // by curve OID
-  } else if (enums.curve[oid_or_name]) {
-    this.name = oid_or_name; // by curve name
-  } else if (enums.curve[util.str_to_hex(oid_or_name)]) {
-    this.name = util.str_to_hex(oid_or_name); // by oid string
-  } else {
+  try {
+    if (util.isArray(oid_or_name) ||
+        util.isUint8Array(oid_or_name)) {
+      // by oid byte array
+      oid_or_name = new OID(oid_or_name);
+    }
+    if (oid_or_name instanceof OID) {
+      // by curve OID
+      oid_or_name = oid_or_name.getName();
+    }
+    // by curve name or oid string
+    this.name = enums.write(enums.curve, oid_or_name);
+  } catch (err) {
     throw new Error('Not valid curve');
   }
-  this.name = enums.write(enums.curve, this.name);
-  this.oid = new OID(curves[this.name].oid);
-
   params = params || curves[this.name];
 
   this.keyType = params.keyType;
   switch (this.keyType) {
-    case enums.publicKey.eddsa:
-      this.curve = new EdDSA(this.name);
-      break;
     case enums.publicKey.ecdsa:
       this.curve = new EC(this.name);
+      break;
+    case enums.publicKey.eddsa:
+      this.curve = new EdDSA(this.name);
       break;
     default:
       throw new Error('Unknown elliptic key type;');
   }
 
+  this.oid = params.oid;
   this.hash = params.hash;
   this.cipher = params.cipher;
-  this.node = params.node && curves[this.name].node;
-  this.web = params.web && curves[this.name].web;
-  this.payloadSize = curves[this.name].payloadSize;
+  this.node = params.node && curves[this.name];
+  this.web = params.web && curves[this.name];
+  this.payloadSize = params.payloadSize;
 }
 
 Curve.prototype.keyFromPrivate = function (priv) { // Not for ed25519
-  return new KeyPair(this.curve, { priv: priv });
+  return new KeyPair(this, { priv: priv });
 };
 
 Curve.prototype.keyFromSecret = function (secret) { // Only for ed25519
-  return new KeyPair(this.curve, { secret: secret });
+  return new KeyPair(this, { secret: secret });
 };
 
 Curve.prototype.keyFromPublic = function (pub) {
-  return new KeyPair(this.curve, { pub: pub });
+  return new KeyPair(this, { pub: pub });
 };
 
 Curve.prototype.genKeyPair = async function () {
@@ -174,7 +177,9 @@ Curve.prototype.genKeyPair = async function () {
 
   if (!keyPair || !keyPair.priv) {
     // elliptic fallback
-    const r = await this.curve.genKeyPair({ entropy: util.Uint8Array_to_str(random.getRandomBytes(32)) });
+    const r = await this.curve.genKeyPair({
+      entropy: util.Uint8Array_to_str(random.getRandomBytes(32))
+    });
     const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
     if (this.keyType === enums.publicKey.eddsa) {
       keyPair = { secret: r.getSecret() };
@@ -182,14 +187,14 @@ Curve.prototype.genKeyPair = async function () {
       keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
     }
   }
-  return new KeyPair(this.curve, keyPair);
+  return new KeyPair(this, keyPair);
 };
 
 async function generate(curve) {
   curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
   return {
-    oid: curve.oid,
+    oid: new OID(curve.oid.slice(2)),
     Q: new BN(keyPair.getPublic()),
     d: new BN(keyPair.getPrivate()),
     hash: curve.hash,
@@ -230,6 +235,7 @@ async function webGenKeyPair(name) {
 }
 
 async function nodeGenKeyPair(name) {
+  // Note: ECDSA and ECDH key generation is structurally equivalent
   const ecdh = nodeCrypto.createECDH(nodeCurves[name]);
   await ecdh.generateKeys();
 

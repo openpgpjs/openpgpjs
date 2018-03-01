@@ -18,10 +18,12 @@
 /**
  * This object contains utility functions
  * @requires config
+ * @requires encoding/base64
  * @module util
  */
 
 import config from './config';
+import b64 from './encoding/base64';
 
 export default {
 
@@ -157,8 +159,8 @@ export default {
    * @return {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
-    const str = atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
-    return this.str_to_Uint8Array(str);
+//    atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
+    return b64.decode(base64.replace(/\-/g, '+').replace(/_/g, '/'));
   },
 
   /**
@@ -168,8 +170,8 @@ export default {
    * @return {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function (bytes, url) {
-    const base64 = btoa(this.Uint8Array_to_str(bytes));
-    return url ? base64.replace(/\+/g, '-').replace(/\//g, '_') : base64;
+//    btoa(this.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
+    return b64.encode(bytes, url).replace('\n', '');
   },
 
   /**
