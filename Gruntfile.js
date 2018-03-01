@@ -49,11 +49,12 @@ module.exports = function(grunt) {
             standalone: 'openpgp'
           },
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
           transform: [
             ["babelify", {
               global: true,
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/, // Only babelify asmcrypto in node_modules
+              // Only babelify asmcrypto in node_modules
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
@@ -75,11 +76,12 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'jwk-to-pem'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
           transform: [
             ["babelify", {
               global: true,
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/, // Only babelify asmcrypto in node_modules
+              // Only babelify asmcrypto in node_modules
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",

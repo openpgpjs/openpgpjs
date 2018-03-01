@@ -18,8 +18,17 @@
 /**
  * Wrapper to an OID value
  *
- * An object identifier type from
- * {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
+ * {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}:
+ * The sequence of octets in the third column is the result of applying
+ * the Distinguished Encoding Rules (DER) to the ASN.1 Object Identifier
+ * with subsequent truncation.  The truncation removes the two fields of
+ * encoded Object Identifier.  The first omitted field is one octet
+ * representing the Object Identifier tag, and the second omitted field
+ * is the length of the Object Identifier body.  For example, the
+ * complete ASN.1 DER encoding for the NIST P-256 curve OID is "06 08 2A
+ * 86 48 CE 3D 03 01 07", from which the first entry in the table above
+ * is constructed by omitting the first two octets.  Only the truncated
+ * sequence of octets is the valid representation of a curve OID.
  * @requires util
  * @requires enums
  * @module type/oid
@@ -33,15 +42,16 @@ import enums from '../enums';
  */
 function OID(oid) {
   if (oid instanceof OID) {
-    oid = oid.oid;
-  } else if (typeof oid === 'undefined') {
-    oid = '';
-  } else if (util.isArray(oid)) {
-    oid = util.Uint8Array_to_str(oid);
-  } else if (util.isUint8Array(oid)) {
-    oid = util.Uint8Array_to_str(oid);
+    this.oid = oid.oid;
+  } else if (util.isArray(oid) ||
+             util.isUint8Array(oid)) {
+    if (oid[0] === 0x06) { // DER encoded oid byte array
+      oid = oid.slice(2);
+    }
+    this.oid = util.Uint8Array_to_str(oid);
+  } else {
+    this.oid = '';
   }
-  this.oid = oid;
 }
 
 /**

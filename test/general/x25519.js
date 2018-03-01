@@ -524,7 +524,7 @@ describe('X25519 Cryptography', function () {
 
 /* TODO how does GPG2 accept this?
   it('Should handle little-endian parameters in EdDSA', function () {
-    var pubKey = [
+    const pubKey = [
       '-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: OpenPGP.js v3.0.0',
       'Comment: https://openpgpjs.org',
@@ -539,12 +539,12 @@ describe('X25519 Cryptography', function () {
       'Gbm1oe83ZB+0aSp5m34YkpHQNb80y8PGFy7nIexiAA==',
       '=xeG/',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-    var hi = openpgp.key.readArmored(pubKey).keys[0];
+    const hi = openpgp.key.readArmored(pubKey).keys[0];
     return hi.verifyPrimaryUser().then(() => {
-      var results = hi.getPrimaryUser();
+      const results = hi.getPrimaryUser();
       expect(results).to.exist;
       expect(results.user).to.exist;
-      var user = results.user;
+      const user = results.user;
       expect(user.selfCertifications[0].verify(
         hi.primaryKey, {userid: user.userId, key: hi.primaryKey}
       )).to.eventually.be.true;
