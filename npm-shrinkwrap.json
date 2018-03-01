@@ -217,8 +217,10 @@
       "integrity": "sha1-iYUI2iIm84DfkEcoRWhJwVAaSw0=",
       "dev": true
     },
-    "asmcrypto-lite": {
-      "version": "github:openpgpjs/asmcrypto-lite#57ef213b6677d118c1b9668a35c74b6c716a5310"
+    "asmcrypto.js": {
+      "version": "0.22.0",
+      "resolved": "https://registry.npmjs.org/asmcrypto.js/-/asmcrypto.js-0.22.0.tgz",
+      "integrity": "sha512-usgMoyXjMbx/ZPdzTSXExhMPur2FTdz/Vo5PVx2gIaBcdAAJNOFlsdgqveM8Cff7W0v+xrf9BwjOV26JSAF9qA=="
     },
     "asn1": {
       "version": "0.2.3",
@@ -4282,16 +4284,40 @@
         "file-sync-cmp": "0.1.1"
       }
     },
-    "grunt-contrib-uglify": {
-      "version": "3.2.1",
-      "resolved": "https://registry.npmjs.org/grunt-contrib-uglify/-/grunt-contrib-uglify-3.2.1.tgz",
-      "integrity": "sha512-xBPwg8wuA/m+HiSh2uMADuadKEnFQt9N5OhEy35vIl945yG6095oY1H1Og3ucg0wBSOieIBn3raqStvIcwKqHg==",
+    "grunt-contrib-uglify-es": {
+      "version": "3.3.0",
+      "resolved": "https://registry.npmjs.org/grunt-contrib-uglify-es/-/grunt-contrib-uglify-es-3.3.0.tgz",
+      "integrity": "sha1-wV97Ef1BMgPU4MkTf10/r1Wo34A=",
       "dev": true,
       "requires": {
         "chalk": "1.1.3",
         "maxmin": "1.1.0",
-        "uglify-js": "3.2.0",
+        "uglify-es": "3.3.9",
         "uri-path": "1.0.0"
+      },
+      "dependencies": {
+        "commander": {
+          "version": "2.13.0",
+          "resolved": "https://registry.npmjs.org/commander/-/commander-2.13.0.tgz",
+          "integrity": "sha512-MVuS359B+YzaWqjCL/c+22gfryv+mCBPHAv3zyVI2GN8EY6IRP8VwtasXn8jyyhvvq84R4ImN1OKRtcbIasjYA==",
+          "dev": true
+        },
+        "source-map": {
+          "version": "0.6.1",
+          "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
+          "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==",
+          "dev": true
+        },
+        "uglify-es": {
+          "version": "3.3.9",
+          "resolved": "https://registry.npmjs.org/uglify-es/-/uglify-es-3.3.9.tgz",
+          "integrity": "sha512-r+MU0rfv4L/0eeW3xZrd16t4NZfK8Ld4SWVglYBb7ez5uXFWHuVRs6xCTrf1yirs9a4j4Y27nn7SRfO6v67XsQ==",
+          "dev": true,
+          "requires": {
+            "commander": "2.13.0",
+            "source-map": "0.6.1"
+          }
+        }
       }
     },
     "grunt-contrib-watch": {
@@ -4372,12 +4398,6 @@
           }
         }
       }
-    },
-    "grunt-keepalive": {
-      "version": "1.0.0",
-      "resolved": "https://registry.npmjs.org/grunt-keepalive/-/grunt-keepalive-1.0.0.tgz",
-      "integrity": "sha1-ZkyOGFoNnqGvQYoswLs/FfL4vzM=",
-      "dev": true
     },
     "grunt-known-options": {
       "version": "1.1.0",
@@ -5430,28 +5450,6 @@
       "resolved": "https://registry.npmjs.org/just-extend/-/just-extend-1.1.27.tgz",
       "integrity": "sha512-mJVp13Ix6gFo3SBAy9U/kL+oeZqzlYYYLQBwXVBlVzIsZwBqGREnOro24oC/8s8aox+rJhtZ2DiQof++IrkA+g==",
       "dev": true
-    },
-    "jwk-to-pem": {
-      "version": "1.2.6",
-      "resolved": "https://registry.npmjs.org/jwk-to-pem/-/jwk-to-pem-1.2.6.tgz",
-      "integrity": "sha1-1QfOzkAInFJI4J7GgmaiAwqcYyU=",
-      "requires": {
-        "asn1.js": "4.9.2",
-        "elliptic": "github:openpgpjs/elliptic#8b8ee8475b86402b125d4ad3a863a4ccd762e48c",
-        "safe-buffer": "5.1.1"
-      },
-      "dependencies": {
-        "asn1.js": {
-          "version": "4.9.2",
-          "resolved": "https://registry.npmjs.org/asn1.js/-/asn1.js-4.9.2.tgz",
-          "integrity": "sha512-b/OsSjvWEo8Pi8H0zsDd2P6Uqo2TK2pH8gNLSJtNLM2Db0v2QaAZ0pBQJXVjAn4gBuugeVDr7s63ZogpUIwWDg==",
-          "requires": {
-            "bn.js": "4.11.8",
-            "inherits": "2.0.3",
-            "minimalistic-assert": "1.0.0"
-          }
-        }
-      }
     },
     "kind-of": {
       "version": "3.2.2",
@@ -6967,7 +6965,8 @@
     "safe-buffer": {
       "version": "5.1.1",
       "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.1.tgz",
-      "integrity": "sha512-kKvNJn6Mm93gAczWVJg7wH+wGYWNrDHdWvpUmHyEsgCtIwwo3bqPtV4tR5tuPaUhTOo/kvhVwd8XwwOllGYkbg=="
+      "integrity": "sha512-kKvNJn6Mm93gAczWVJg7wH+wGYWNrDHdWvpUmHyEsgCtIwwo3bqPtV4tR5tuPaUhTOo/kvhVwd8XwwOllGYkbg==",
+      "dev": true
     },
     "samsam": {
       "version": "1.3.0",
@@ -7678,24 +7677,6 @@
       "resolved": "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz",
       "integrity": "sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=",
       "dev": true
-    },
-    "uglify-js": {
-      "version": "3.2.0",
-      "resolved": "https://registry.npmjs.org/uglify-js/-/uglify-js-3.2.0.tgz",
-      "integrity": "sha512-L98DlTshoPGnZGF8pr3MoE+CCo6n9joktHNHMPkckeBV8xTVc4CWtC0kGGhQsIvnX2Ug4nXFTAeE7SpTrPX2tg==",
-      "dev": true,
-      "requires": {
-        "commander": "2.12.2",
-        "source-map": "0.6.1"
-      },
-      "dependencies": {
-        "source-map": {
-          "version": "0.6.1",
-          "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
-          "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==",
-          "dev": true
-        }
-      }
     },
     "uglify-to-browserify": {
       "version": "1.0.2",
