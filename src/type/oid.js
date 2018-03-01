@@ -40,15 +40,16 @@ import enums from '../enums';
 /**
  * @constructor
  */
-function OID(oid) {
+export default function OID(oid) {
   if (oid instanceof OID) {
     this.oid = oid.oid;
   } else if (util.isArray(oid) ||
              util.isUint8Array(oid)) {
+    oid = new Uint8Array(oid);
     if (oid[0] === 0x06) { // DER encoded oid byte array
-      oid = oid.slice(2);
+      oid = oid.subarray(2);
     }
-    this.oid = util.Uint8Array_to_str(oid);
+    this.oid = oid;
   } else {
     this.oid = '';
   }
@@ -63,7 +64,7 @@ OID.prototype.read = function (input) {
   if (input.length >= 1) {
     const length = input[0];
     if (input.length >= 1+length) {
-      this.oid = util.Uint8Array_to_str(input.subarray(1, 1+length));
+      this.oid = input.subarray(1, 1+length);
       return 1+this.oid.length;
     }
   }
@@ -75,7 +76,7 @@ OID.prototype.read = function (input) {
  * @return {Uint8Array} Array with the serialized value the OID
  */
 OID.prototype.write = function () {
-  return util.str_to_Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
+  return util.concatUint8Array([new Uint8Array([this.oid.length]), this.oid]);
 };
 
 /**
@@ -83,7 +84,7 @@ OID.prototype.write = function () {
  * @return {string} String with the hex value of the OID
  */
 OID.prototype.toHex = function() {
-  return util.str_to_hex(this.oid);
+  return util.Uint8Array_to_hex(this.oid);
 };
 
 /**
@@ -100,8 +101,5 @@ OID.prototype.getName = function() {
 };
 
 OID.fromClone = function (clone) {
-  const oid = new OID(clone.oid);
-  return oid;
+  return new OID(clone.oid);
 };
-
-export default OID;

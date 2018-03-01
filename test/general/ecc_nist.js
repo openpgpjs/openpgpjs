@@ -29,7 +29,7 @@ describe('Elliptic Curve Cryptography', function () {
         'HLr5fhoGnRots3JSC0j20UQQOKVOXaW3',
         '=VpL9',
         '-----END PGP PUBLIC KEY BLOCK-----'
-].join('\n'),
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js 1.3+secp256k1',
@@ -51,7 +51,7 @@ describe('Elliptic Curve Cryptography', function () {
         '9tFEEDilTl2ltw==',
         '=C3TW',
         '-----END PGP PRIVATE KEY BLOCK-----'
-].join('\n'),
+      ].join('\n'),
       message: 'Shall I hear more, or shall I speak at this?'
     },
     juliet: {
@@ -74,7 +74,7 @@ describe('Elliptic Curve Cryptography', function () {
         '+0kjoUNu6PRIll/jMgTVAXn0Mov6HqJ95A==',
         '=ISmy',
         '-----END PGP PUBLIC KEY BLOCK-----'
-].join('\n'),
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js 1.3+secp256k1',
@@ -96,7 +96,7 @@ describe('Elliptic Curve Cryptography', function () {
         '1QF59DKL+h6ifeQ=',
         '=QvXN',
         '-----END PGP PRIVATE KEY BLOCK-----'
-].join('\n'),
+      ].join('\n'),
       message: 'O Romeo, Romeo! Wherefore art thou Romeo?',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
@@ -111,7 +111,7 @@ describe('Elliptic Curve Cryptography', function () {
         '6yc7nzn1FBYFzMz8aFIA/3FlcIvR+eLvRTVmfiEatB6IU6JviBnzxR1gA/SOdyS2',
         '=GCiR',
         '-----END PGP SIGNATURE-----'
-].join('\n'),
+      ].join('\n'),
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2',
@@ -127,7 +127,7 @@ describe('Elliptic Curve Cryptography', function () {
         'DP/V1yLuBUZuRg==',
         '=GEAB',
         '-----END PGP MESSAGE-----'
-].join('\n')
+      ].join('\n')
     }
   };
   function load_pub_key(name) {

@@ -29,7 +29,7 @@
  */
 
 import BN from 'bn.js';
-import { curves, webCurves, nodeCurves } from './curves';
+import { webCurves, nodeCurves } from './curves';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
@@ -132,9 +132,10 @@ async function webSign(curve, hash_algo, message, keyPair) {
     key,
     message
   ));
+
   return {
-    r: signature.slice(0, len),
-    s: signature.slice(len, len << 1)
+    r: new BN(signature.slice(0, len)),
+    s: new BN(signature.slice(len, len << 1))
   };
 }
 
@@ -159,9 +160,10 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
     ["verify"]
   );
 
-  r = [].concat(Array(len - r.length).fill(0), r);
-  s = [].concat(Array(len - s.length).fill(0), s);
-  const signature = new Uint8Array([].concat(r, s)).buffer;
+  const signature = util.concatUint8Array([
+    new Uint8Array(len - r.length), r,
+    new Uint8Array(len - s.length), s
+  ]).buffer;
 
   return webCrypto.verify(
     {
