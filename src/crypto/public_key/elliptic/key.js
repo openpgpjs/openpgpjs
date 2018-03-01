@@ -47,7 +47,9 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
-      return webSign(this.curve, hash_algo, message, this.keyPair);
+      // need to await to make sure browser succeeds
+      const signature = await webSign(this.curve, hash_algo, message, this.keyPair);
+      return signature;
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
@@ -62,7 +64,9 @@ KeyPair.prototype.verify = async function (message, signature, hash_algo) {
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
-      return webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
+      // need to await to make sure browser succeeds
+      const result = await webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
+      return result;
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
