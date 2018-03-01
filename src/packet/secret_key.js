@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
- * <br/>
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
@@ -76,15 +76,16 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   const hashlen = get_hash_len(hash_algorithm);
   const hashfn = get_hash_fn(hash_algorithm);
 
-  const hashtext = util.Uint8Array2str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+  const hashtext = util.Uint8Array_to_str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
   cleartext = cleartext.subarray(0, cleartext.length - hashlen);
-  const hash = util.Uint8Array2str(hashfn(cleartext));
+  const hash = util.Uint8Array_to_str(hashfn(cleartext));
 
   if (hash !== hashtext) {
     return new Error("Hash mismatch.");
   }
 
-  const types = crypto.getPrivKeyParamTypes(algorithm);
+  const algo = enums.write(enums.publicKey, algorithm);
+  const types = crypto.getPrivKeyParamTypes(algo);
   const params = crypto.constructParams(types);
   let p = 0;
 
@@ -100,7 +101,8 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
 
 function write_cleartext_params(hash_algorithm, algorithm, params) {
   const arr = [];
-  const numPublicParams = crypto.getPubKeyParamTypes(algorithm).length;
+  const algo = enums.write(enums.publicKey, algorithm);
+  const numPublicParams = crypto.getPubKeyParamTypes(algo).length;
 
   for (let i = numPublicParams; i < params.length; i++) {
     arr.push(params[i].write());
@@ -269,8 +271,8 @@ SecretKey.prototype.decrypt = function (passphrase) {
 
 SecretKey.prototype.generate = function (bits, curve) {
   const that = this;
-
-  return crypto.generateParams(that.algorithm, bits, curve).then(function(params) {
+  const algo = enums.write(enums.publicKey, that.algorithm);
+  return crypto.generateParams(algo, bits, curve).then(function(params) {
     that.params = params;
     that.isDecrypted = true;
   });
@@ -283,7 +285,8 @@ SecretKey.prototype.clearPrivateParams = function () {
   if (!this.encrypted) {
     throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
   }
-  this.params = this.params.slice(0, crypto.getPubKeyParamTypes(this.algorithm).length);
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  this.params = this.params.slice(0, crypto.getPubKeyParamTypes(algo).length);
   this.isDecrypted = false;
 };
 
@@ -291,7 +294,8 @@ SecretKey.prototype.clearPrivateParams = function () {
  * Fix custom types after cloning
  */
 SecretKey.prototype.postCloneTypeFix = function() {
-  const types = crypto.getPubKeyParamTypes(this.algorithm).concat(crypto.getPrivKeyParamTypes(this.algorithm));
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  const types = [].concat(crypto.getPubKeyParamTypes(algo), crypto.getPrivKeyParamTypes(algo));
   for (let i = 0; i < this.params.length; i++) {
     const param = this.params[i];
     this.params[i] = types[i].fromClone(param);

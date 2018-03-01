@@ -16,27 +16,30 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Wrapper to an OID value<br/>
- * <br/>
- * An object identifier type from {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
+ * Wrapper to an OID value
+ *
+ * An object identifier type from
+ * {@link https://tools.ietf.org/html/rfc6637#section-11|RFC6637, section 11}.
  * @requires util
+ * @requires enums
  * @module type/oid
  */
 
-import util from '../util.js';
-
-module.exports = OID;
+import util from '../util';
+import enums from '../enums';
 
 /**
  * @constructor
  */
 function OID(oid) {
-  if (typeof oid === 'undefined') {
+  if (oid instanceof OID) {
+    oid = oid.oid;
+  } else if (typeof oid === 'undefined') {
     oid = '';
   } else if (util.isArray(oid)) {
-    oid = util.bin2str(oid);
+    oid = util.Uint8Array_to_str(oid);
   } else if (util.isUint8Array(oid)) {
-    oid = util.Uint8Array2str(oid);
+    oid = util.Uint8Array_to_str(oid);
   }
   this.oid = oid;
 }
@@ -50,7 +53,7 @@ OID.prototype.read = function (input) {
   if (input.length >= 1) {
     const length = input[0];
     if (input.length >= 1+length) {
-      this.oid = util.Uint8Array2str(input.subarray(1, 1+length));
+      this.oid = util.Uint8Array_to_str(input.subarray(1, 1+length));
       return 1+this.oid.length;
     }
   }
@@ -62,7 +65,7 @@ OID.prototype.read = function (input) {
  * @return {Uint8Array} Array with the serialized value the OID
  */
 OID.prototype.write = function () {
-  return util.str2Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
+  return util.str_to_Uint8Array(String.fromCharCode(this.oid.length)+this.oid);
 };
 
 /**
@@ -70,10 +73,25 @@ OID.prototype.write = function () {
  * @return {string} String with the hex value of the OID
  */
 OID.prototype.toHex = function() {
-  return util.hexstrdump(this.oid);
+  return util.str_to_hex(this.oid);
+};
+
+/**
+ * If a known curve object identifier, return the canonical name of the curve
+ * @return {string} String with the canonical name of the curve
+ */
+OID.prototype.getName = function() {
+  const hex = this.toHex();
+  if (enums.curve[hex]) {
+    return enums.write(enums.curve, hex);
+  } else {
+    throw new Error('Unknown curve object identifier.');
+  }
 };
 
 OID.fromClone = function (clone) {
   const oid = new OID(clone.oid);
   return oid;
 };
+
+export default OID;

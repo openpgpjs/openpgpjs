@@ -15,15 +15,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 /**
- * Implementation of the strange "Marker packet" (Tag 10)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
+ * Implementation of the strange "Marker packet" (Tag 10)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}:
+ * An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
  * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
- * the Marker packet.<br/>
- * <br/>
+ * the Marker packet.
+ *
  * Such a packet MUST be ignored when received.
  * @requires enums
  * @module packet/marker

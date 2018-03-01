@@ -393,7 +393,7 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wild
  * Decrypt symmetric session keys with a private key or password. Either a private key or
  *   a password must be specified.
  * @param  {Message} message                 a message object containing the encrypted session key packets
- * @param  {Key|Array<Key} privateKeys      (optional) private keys with decrypted secret key data
+ * @param  {Key|Array<Key>} privateKeys     (optional) private keys with decrypted secret key data
  * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
  * @return {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }

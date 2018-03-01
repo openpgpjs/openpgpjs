@@ -16,21 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires config
- * @requires crypto
  * @requires encoding/armor
+ * @requires crypto
+ * @requires packet
+ * @requires config
  * @requires enums
  * @requires util
- * @requires packet
  * @module key
  */
 
-import config from './config';
-import crypto from './crypto';
 import armor from './encoding/armor';
+import crypto from './crypto';
+import packet from './packet';
+import config from './config';
 import enums from './enums';
 import util from './util';
-import packet from './packet';
 
 /**
  * @class
@@ -209,7 +209,7 @@ Key.prototype.getKeyIds = function() {
 
 /**
  * Returns array containing first key packet for given key ID or all key packets in the case of a wildcard ID
- * @param  {type/keyid>} keyIds
+ * @param  {type/keyid} keyId
  * @return {(module:packet/public_subkey|module:packet/public_key|
  *           module:packet/secret_subkey|module:packet/secret_key|null)}
  */
@@ -235,7 +235,7 @@ Key.prototype.getUserIds = function() {
   const userids = [];
   for (let i = 0; i < this.users.length; i++) {
     if (this.users[i].userId) {
-      userids.push(util.Uint8Array2str(this.users[i].userId.write()));
+      userids.push(util.Uint8Array_to_str(this.users[i].userId.write()));
     }
   }
   return userids;
@@ -514,8 +514,10 @@ function getExpirationTime(keyPacket, selfCertificate, defaultValue=null) {
 
 /**
  * Returns primary user and most significant (latest valid) self signature
- * - if multiple users are marked as primary users returns the one with the latest self signature
- * - if no primary user is found returns the user with the latest self signature
+ * - if multiple primary users exist, returns the one with the latest self signature
+ * - otherwise, returns the user with the latest self signature
+ *
+ * NOTE: call verifyPrimaryUser before calling this function.
  * @param  {Date} date use the given date for verification instead of the current time
  * @return {{user: Array<module:packet/User>, selfCertificate: Array<module:packet/signature>}|null} The primary user and the self signature
  */
@@ -696,23 +698,31 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
       return;
     }
     const dataToVerify = { userid: user.userId || user.userAttribute, key: primaryKey };
-    await Promise.all(user.selfCertifications.map(async function(selfCertification) {
+    // TODO replace when Promise.forEach is implemented
+    for (let i = 0; i < user.selfCertifications.length; i++) {
+      const selfCertification = user.selfCertifications[i];
       // skip if certificate is not the most recent
       if ((selfCertification.isPrimaryUserID &&
            selfCertification.isPrimaryUserID < lastPrimaryUserID) ||
           (!lastPrimaryUserID && selfCertification.created < lastCreated)) {
         return;
       }
-      // skip if certificates is not valid
-      if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify)) ||
-          (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) ||
-          selfCertification.isExpired()) {
+      // skip if certificates is invalid, revoked, or expired
+      // eslint-disable-next-line no-await-in-loop
+      if (!(selfCertification.verified || await selfCertification.verify(primaryKey, dataToVerify))) {
+        return;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      if (selfCertification.revoked || await user.isRevoked(primaryKey, selfCertification)) {
+        return;
+      }
+      if (selfCertification.isExpired()) {
         return;
       }
       lastPrimaryUserID = selfCertification.isPrimaryUserID;
       lastCreated = selfCertification.created;
       primaryUsers.push(user);
-    }));
+    }
   }));
   const user = primaryUsers.pop();
   const results = !user ? [] : keys ? await user.verifyAllCertifications(primaryKey, keys) :
@@ -781,6 +791,7 @@ User.prototype.toPacketlist = function() {
  * @return {Boolean} True if the certificate is revoked
  */
 User.prototype.isRevoked = async function(primaryKey, certificate, key) {
+  certificate.revoked = null;
   if (this.revocationCertifications) {
     const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
     // TODO clarify OpenPGP's behavior given an expired revocation signature
@@ -1294,7 +1305,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
 
   await Promise.all(options.userIds.map(async function(userId, index) {
     const userIdPacket = new packet.Userid();
-    userIdPacket.read(util.str2Uint8Array(userId));
+    userIdPacket.read(util.str_to_Uint8Array(userId));
 
     const dataToSign = {};
     dataToSign.userid = userIdPacket;

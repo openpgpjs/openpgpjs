@@ -18,6 +18,7 @@
 /**
  * @fileoverview This class implements a client for the OpenPGP HTTP Keyserver Protocol (HKP)
  * in order to lookup and upload keys on standard public key servers.
+ * @module hkp
  */
 
 import config from './config';

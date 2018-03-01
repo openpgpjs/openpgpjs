@@ -24,8 +24,8 @@ import util from '../../util.js';
  * @param {String} entree string to hash
  */
 export default function(entree) {
-  const hex = md5(util.Uint8Array2str(entree));
-  const bin = util.str2Uint8Array(util.hex2bin(hex));
+  const hex = md5(util.Uint8Array_to_str(entree));
+  const bin = util.str_to_Uint8Array(util.hex_to_str(hex));
   return bin;
 }
 

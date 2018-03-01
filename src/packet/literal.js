@@ -16,10 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Literal Data Packet (Tag 11)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}: A Literal Data packet contains the body of a message; data that
- * is not to be further interpreted.
+ * Implementation of the Literal Data Packet (Tag 11)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}:
+ * A Literal Data packet contains the body of a message; data that is not to be
+ * further interpreted.
  * @requires enums
  * @requires util
  * @module packet/literal
@@ -49,7 +50,7 @@ Literal.prototype.setText = function(text) {
   // normalize EOL to \r\n
   text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
   // encode UTF8
-  this.data = this.format === 'utf8' ? util.str2Uint8Array(util.encode_utf8(text)) : util.str2Uint8Array(text);
+  this.data = this.format === 'utf8' ? util.str_to_Uint8Array(util.encode_utf8(text)) : util.str_to_Uint8Array(text);
 };
 
 /**
@@ -59,7 +60,7 @@ Literal.prototype.setText = function(text) {
  */
 Literal.prototype.getText = function() {
   // decode UTF8
-  const text = util.decode_utf8(util.Uint8Array2str(this.data));
+  const text = util.decode_utf8(util.Uint8Array_to_str(this.data));
   // normalize EOL to \n
   return text.replace(/\r\n/g, '\n');
 };
@@ -113,7 +114,7 @@ Literal.prototype.read = function(bytes) {
   const format = enums.read(enums.literal, bytes[0]);
 
   const filename_len = bytes[1];
-  this.filename = util.decode_utf8(util.Uint8Array2str(bytes.subarray(2, 2 + filename_len)));
+  this.filename = util.decode_utf8(util.Uint8Array_to_str(bytes.subarray(2, 2 + filename_len)));
 
   this.date = util.readDate(bytes.subarray(2 + filename_len, 2 + filename_len + 4));
 
@@ -128,7 +129,7 @@ Literal.prototype.read = function(bytes) {
  * @return {Uint8Array} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
-  const filename = util.str2Uint8Array(util.encode_utf8(this.filename));
+  const filename = util.str_to_Uint8Array(util.encode_utf8(this.filename));
   const filename_length = new Uint8Array([filename.length]);
 
   const format = new Uint8Array([enums.write(enums.literal, this.format)]);

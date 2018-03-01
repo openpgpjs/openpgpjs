@@ -18,32 +18,24 @@
 // Wrapper for a KeyPair of an Elliptic Curve
 
 /**
+ * @requires bn.js
  * @requires crypto/public_key/elliptic/curves
- * @requires crypto/public_key/jsbn
  * @requires crypto/hash
  * @requires util
  * @requires enums
- * @requires encoding/base64
  * @requires jwk-to-pem
  * @requires asn1.js
  * @module crypto/public_key/elliptic/key
  */
 
-import curves from './curves';
-import BigInteger from '../jsbn';
+import BN from 'bn.js';
+import { webCurves, nodeCurves } from './curves';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
-import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
-const { webCurves } = curves;
 const nodeCrypto = util.getNodeCrypto();
-const { nodeCurves } = curves;
-
-// const webCrypto = util.getWebCrypto();
-// const nodeCrypto = util.getNodeCrypto();
-// const { webCurves, nodeCurves } = curves;
 
 const jwkToPem = nodeCrypto ? require('jwk-to-pem') : undefined;
 const ECDSASignature = nodeCrypto ?
@@ -54,16 +46,13 @@ const ECDSASignature = nodeCrypto ?
         );
       }) : undefined;
 
-function KeyPair(curve, options) {
+export default function KeyPair(curve, options) {
   this.curve = curve;
   this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
   this.keyPair = this.curve.keyPair(options);
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo) {
-  if (util.isString(message)) {
-    message = util.str2Uint8Array(message);
-  }
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
@@ -79,9 +68,6 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo) {
-  if (util.isString(message)) {
-    message = util.str2Uint8Array(message);
-  }
   if (webCrypto && this.curve.web) {
     // If browser doesn't support a curve, we'll catch it
     try {
@@ -115,10 +101,6 @@ KeyPair.prototype.getPrivate = function () {
   return this.keyPair.getPrivate().toArray();
 };
 
-module.exports = {
-  KeyPair: KeyPair
-};
-
 
 //////////////////////////
 //                      //
@@ -134,9 +116,9 @@ async function webSign(curve, hash_algo, message, keyPair) {
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), true),
-      "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), true),
-      "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray('be', l)), true),
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray('be', l)), true),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray('be', l)), true),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray('be', l)), true),
       "use": "sig",
       "kid": "ECDSA Private Key"
     },
@@ -174,8 +156,8 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(publicKey.getX().toArray('be', l)), true),
-      "y": base64.encode(new Uint8Array(publicKey.getY().toArray('be', l)), true),
+      "x": util.Uint8Array_to_b64(new Uint8Array(publicKey.getX().toArray('be', l)), true),
+      "y": util.Uint8Array_to_b64(new Uint8Array(publicKey.getY().toArray('be', l)), true),
       "use": "sig",
       "kid": "ECDSA Public Key"
     },
@@ -202,13 +184,23 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
 
 
 async function nodeSign(curve, hash_algo, message, keyPair) {
+  console.log({
+      "kty": "EC",
+      "crv": webCurves[curve.name],
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray())),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray())),
+      "use": "sig",
+      "kid": "ECDSA Private Key"
+  });
+
   const key = jwkToPem(
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(keyPair.getPublic().getX().toArray())),
-      "y": base64.encode(new Uint8Array(keyPair.getPublic().getY().toArray())),
-      "d": base64.encode(new Uint8Array(keyPair.getPrivate().toArray())),
+      "x": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPublic().getY().toArray())),
+      "d": util.Uint8Array_to_b64(new Uint8Array(keyPair.getPrivate().toArray())),
       "use": "sig",
       "kid": "ECDSA Private Key"
     },
@@ -226,13 +218,13 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
 }
 
 async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
-  const signature = ECDSASignature.encode({ r: new BigInteger(r), s: new BigInteger(s) }, 'der');
+  const signature = ECDSASignature.encode({ r: new BN(r), s: new BN(s) }, 'der');
   const key = jwkToPem(
     {
       "kty": "EC",
       "crv": webCurves[curve.name],
-      "x": base64.encode(new Uint8Array(publicKey.getX().toArray())),
-      "y": base64.encode(new Uint8Array(publicKey.getY().toArray())),
+      "x": util.Uint8Array_to_b64(new Uint8Array(publicKey.getX().toArray())),
+      "y": util.Uint8Array_to_b64(new Uint8Array(publicKey.getY().toArray())),
       "use": "sig",
       "kid": "ECDSA Public Key"
     },

@@ -16,8 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type key id ({@link https://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3})<br/>
- * <br/>
+ * Implementation of type key id
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-3.3|RFC4880 3.3}:
  * A Key ID is an eight-octet scalar that identifies a key.
  * Implementations SHOULD NOT assume that Key IDs are unique.  The
  * section "Enhanced Key Formats" below describes how Key IDs are
@@ -40,15 +41,15 @@ export default function Keyid() {
  * @param {Uint8Array} input Input to read the key id from
  */
 Keyid.prototype.read = function(bytes) {
-  this.bytes = util.Uint8Array2str(bytes.subarray(0, 8));
+  this.bytes = util.Uint8Array_to_str(bytes.subarray(0, 8));
 };
 
 Keyid.prototype.write = function() {
-  return util.str2Uint8Array(this.bytes);
+  return util.str_to_Uint8Array(this.bytes);
 };
 
 Keyid.prototype.toHex = function() {
-  return util.hexstrdump(this.bytes);
+  return util.str_to_hex(this.bytes);
 };
 
 Keyid.prototype.equals = function(keyid) {
@@ -75,7 +76,7 @@ Keyid.fromClone = function (clone) {
 
 Keyid.fromId = function (hex) {
   const keyid = new Keyid();
-  keyid.read(util.str2Uint8Array(util.hex2bin(hex)));
+  keyid.read(util.str_to_Uint8Array(util.hex_to_str(hex)));
   return keyid;
 };
 

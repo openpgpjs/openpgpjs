@@ -16,15 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type KDF parameters RFC 6637<br/>
- * <br/>
+ * Implementation of type KDF parameters RFC 6637
+ *
  * @requires enums
  * @module type/kdf_params
  */
 
 import enums from '../enums.js';
-
-module.exports = KDFParams;
 
 /**
  * @constructor
@@ -66,3 +64,5 @@ KDFParams.prototype.write = function () {
 KDFParams.fromClone = function (clone) {
   return new KDFParams(clone.hash, clone.cipher);
 };
+
+export default KDFParams;

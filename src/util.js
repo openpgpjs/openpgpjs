@@ -37,21 +37,6 @@ export default {
     return Uint8Array.prototype.isPrototypeOf(data);
   },
 
-  isEmailAddress: function(data) {
-    if (!this.isString(data)) {
-      return false;
-    }
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
-    return re.test(data);
-  },
-
-  isUserId: function(data) {
-    if (!this.isString(data)) {
-      return false;
-    }
-    return /</.test(data) && />$/.test(data);
-  },
-
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
@@ -114,32 +99,12 @@ export default {
       return time === null ? time : new Date(Math.floor(+time / 1000) * 1000);
   },
 
-  hexdump: function (str) {
-    const r = [];
-    const e = str.length;
-    let c = 0;
-    let h;
-    let i = 0;
-    while (c < e) {
-      h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) {
-        h = "0" + h;
-      }
-      r.push(" " + h);
-      i++;
-      if (i % 32 === 0) {
-        r.push("\n           ");
-      }
-    }
-    return r.join('');
-  },
-
   /**
-   * Create hexstring from a binary
+   * Create hex string from a binary
    * @param {String} str String to convert
    * @return {String} String containing the hexadecimal values
    */
-  hexstrdump: function (str) {
+  str_to_hex: function (str) {
     if (str === null) {
       return "";
     }
@@ -160,9 +125,9 @@ export default {
   /**
    * Create binary string from a hex encoded string
    * @param {String} str Hex string to convert
-   * @return {String} String containing the binary values
+   * @return {String}
    */
-  hex2bin: function (hex) {
+  hex_to_str: function (hex) {
     let str = '';
     for (let i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
@@ -170,27 +135,68 @@ export default {
     return str;
   },
 
+  /**
+   * Convert a Uint8Array to an MPI-formatted Uint8Array.
+   * Note: the output is **not** an MPI object.
+   * @see {@link module:type/mpi/MPI.fromUint8Array}
+   * @see {@link module:type/mpi/MPI.toUint8Array}
+   * @param {Uint8Array} bin An array of 8-bit integers to convert
+   * @return {Uint8Array} MPI-formatted Uint8Array
+   */
+  Uint8Array_to_MPI: function (bin) {
+    const size = (bin.length - 1) * 8 + this.nbits(bin[0]);
+    const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
+    return this.concatUint8Array([prefix, bin]);
+  },
 
-  hex2Uint8Array: function (hex) {
-    const result = new Uint8Array(hex.length/2);
-    for (let k=0; k<hex.length/2; k++) {
-      result[k] = parseInt(hex.substr(2*k, 2), 16);
+  /**
+   * Convert a Base-64 encoded string an array of 8-bit integer
+   *
+   * Note: accepts both Radix-64 and URL-safe strings
+   * @param {String} base64 Base-64 encoded string to convert
+   * @return {Uint8Array} An array of 8-bit integers
+   */
+  b64_to_Uint8Array: function (base64) {
+    const str = atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
+    return this.str_to_Uint8Array(str);
+  },
+
+  /**
+   * Convert an array of 8-bit integer to a Base-64 encoded string
+   * @param {Uint8Array} bytes An array of 8-bit integers to convert
+   * @param {bool}       url   If true, output is URL-safe
+   * @return {String}          Base-64 encoded string
+   */
+  Uint8Array_to_b64: function (bytes, url) {
+    const base64 = btoa(this.Uint8Array_to_str(bytes));
+    return url ? base64.replace(/\+/g, '-').replace(/\//g, '_') : base64;
+  },
+
+  /**
+   * Convert a hex string to an array of 8-bit integers
+   * @param {String} hex  A hex string to convert
+   * @return {Uint8Array} An array of 8-bit integers
+   */
+  hex_to_Uint8Array: function (hex) {
+    const result = new Uint8Array(hex.length >> 1);
+    for (let k = 0; k < hex.length >> 1; k++) {
+      result[k] = parseInt(hex.substr(k << 1, 2), 16);
     }
     return result;
   },
 
   /**
-   * Creating a hex string from an binary array of integers (0..255)
-   * @param {String} str Array of bytes to convert
+   * Convert an array of 8-bit integers to a hex string
+   * @param {Uint8Array} bytes Array of 8-bit integers to convert
    * @return {String} Hexadecimal representation of the array
    */
-  hexidump: function (str) {
+  Uint8Array_to_hex: function (bytes) {
     const r = [];
-    const e = str.length;
+    const e = bytes.length;
     let c = 0;
     let h;
     while (c < e) {
-      h = str[c++].toString(16);
+      h = bytes[c++].toString(16);
       while (h.length < 2) {
         h = "0" + h;
       }
@@ -199,6 +205,39 @@ export default {
     return r.join('');
   },
 
+  /**
+   * Convert a string to an array of 8-bit integers
+   * @param {String} str String to convert
+   * @return {Uint8Array} An array of 8-bit integers
+   */
+  str_to_Uint8Array: function (str) {
+    if (!this.isString(str)) {
+      throw new Error('str_to_Uint8Array: Data must be in the form of a string');
+    }
+
+    const result = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      result[i] = str.charCodeAt(i);
+    }
+    return result;
+  },
+
+  /**
+   * Convert an array of 8-bit integers to a string
+   * @param {Uint8Array} bytes An array of 8-bit integers to convert
+   * @return {String} String representation of the array
+   */
+  Uint8Array_to_str: function (bytes) {
+    bytes = new Uint8Array(bytes);
+    const result = [];
+    const bs = 1 << 14;
+    const j = bytes.length;
+
+    for (let i = 0; i < j; i += bs) {
+      result.push(String.fromCharCode.apply(String, bytes.subarray(i, i+bs < j ? i+bs : j)));
+    }
+    return result.join('');
+  },
 
   /**
    * Convert a native javascript string to a string of utf8 bytes
@@ -226,128 +265,19 @@ export default {
   },
 
   /**
-   * Convert an array of integers(0.255) to a string
-   * @param {Array<Integer>} bin An array of (binary) integers to convert
-   * @return {String} The string representation of the array
-   */
-  bin2str: function (bin) {
-    const result = [];
-    for (let i = 0; i < bin.length; i++) {
-      result[i] = String.fromCharCode(bin[i]);
-    }
-    return result.join('');
-  },
-
-  /**
-   * Convert a string to an array of integers(0.255)
-   * @param {String} str String to convert
-   * @return {Array<Integer>} An array of (binary) integers
-   */
-  str2bin: function (str) {
-    const result = [];
-    for (let i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-    return result;
-  },
-
-
-  /**
-   * Convert a string to a Uint8Array
-   * @param {String} str String to convert
-   * @return {Uint8Array} The array of (binary) integers
-   */
-  str2Uint8Array: function (str) {
-    if (typeof str !== 'string' && !String.prototype.isPrototypeOf(str)) {
-      throw new Error('str2Uint8Array: Data must be in the form of a string');
-    }
-
-    const result = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-    return result;
-  },
-
-  /**
-   * Convert a Uint8Array to a string. This currently functions
-   * the same as bin2str.
-   * @function module:util.Uint8Array2str
-   * @param {Uint8Array} bin An array of (binary) integers to convert
-   * @return {String} String representation of the array
-   */
-  Uint8Array2str: function (bin) {
-    if (!Uint8Array.prototype.isPrototypeOf(bin)) {
-      throw new Error('Uint8Array2str: Data must be in the form of a Uint8Array');
-    }
-
-    const result = [];
-    const bs = 16384;
-    const j = bin.length;
-
-    for (let i = 0; i < j; i += bs) {
-      result.push(String.fromCharCode.apply(String, bin.subarray(i, i+bs < j ? i+bs : j)));
-    }
-    return result.join('');
-  },
-
-  // returns bit length of the integer x
-  nbits: function (x) {
-    let r = 1;
-    let t = x >>> 16;
-    if (t !== 0) {
-      x = t;
-      r += 16;
-    }
-    t = x >> 8;
-    if (t !== 0) {
-      x = t;
-      r += 8;
-    }
-    t = x >> 4;
-    if (t !== 0) {
-      x = t;
-      r += 4;
-    }
-    t = x >> 2;
-    if (t !== 0) {
-      x = t;
-      r += 2;
-    }
-    t = x >> 1;
-    if (t !== 0) {
-      x = t;
-      r += 1;
-    }
-    return r;
-  },
-
-  /**
-   * Convert a Uint8Array to an MPI array.
-   * @function module:util.Uint8Array2MPI
-   * @param {Uint8Array} bin An array of (binary) integers to convert
-   * @return {Array<Integer>} MPI-formatted array
-   */
-  Uint8Array2MPI: function (bin) {
-    const size = (bin.length - 1) * 8 + this.nbits(bin[0]);
-    return [(size & 0xFF00) >> 8, size & 0xFF].concat(Array.from(bin));
-  },
-
-  /**
    * Concat Uint8arrays
-   * @function module:util.concatUint8Array
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @return {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
     let totalLength = 0;
-    arrays.forEach(function (element) {
-      if (!Uint8Array.prototype.isPrototypeOf(element)) {
+    for (let i = 0; i < arrays.length; i++) {
+      if (!this.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
-      totalLength += element.length;
-    });
+      totalLength += arrays[i].length;
+    }
 
     const result = new Uint8Array(totalLength);
     let pos = 0;
@@ -361,12 +291,11 @@ export default {
 
   /**
    * Deep copy Uint8Array
-   * @function module:util.copyUint8Array
    * @param {Uint8Array} Array to copy
    * @return {Uint8Array} new Uint8Array
    */
   copyUint8Array: function (array) {
-    if (!Uint8Array.prototype.isPrototypeOf(array)) {
+    if (!this.isUint8Array(array)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -377,13 +306,12 @@ export default {
 
   /**
    * Check Uint8Array equality
-   * @function module:util.equalsUint8Array
    * @param {Uint8Array} first array
    * @param {Uint8Array} second array
    * @return {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {
-    if (!Uint8Array.prototype.isPrototypeOf(array1) || !Uint8Array.prototype.isPrototypeOf(array2)) {
+    if (!this.isUint8Array(array1) || !this.isUint8Array(array2)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -435,16 +363,17 @@ export default {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
-   * Different than print_debug because will call hexstrdump iff necessary.
+   * Different than print_debug because will call str_to_hex iff necessary.
    * @param {String} str String of the debug message
    */
   print_debug_hexstr_dump: function (str, strToHex) {
     if (config.debug) {
-      str += this.hexstrdump(strToHex);
+      str += this.str_to_hex(strToHex);
       console.log(str);
     }
   },
 
+  // TODO rewrite getLeftNBits to work with Uint8Arrays
   getLeftNBits: function (string, bitcount) {
     const rest = bitcount % 8;
     if (rest === 0) {
@@ -455,6 +384,37 @@ export default {
     return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
+  // returns bit length of the integer x
+  nbits: function (x) {
+    let r = 1;
+    let t = x >>> 16;
+    if (t !== 0) {
+      x = t;
+      r += 16;
+    }
+    t = x >> 8;
+    if (t !== 0) {
+      x = t;
+      r += 8;
+    }
+    t = x >> 4;
+    if (t !== 0) {
+      x = t;
+      r += 4;
+    }
+    t = x >> 2;
+    if (t !== 0) {
+      x = t;
+      r += 2;
+    }
+    t = x >> 1;
+    if (t !== 0) {
+      x = t;
+      r += 1;
+    }
+    return r;
+  },
+
   /**
    * Shifting a string to n bits right
    * @param {String} value The string to shift
@@ -463,7 +423,7 @@ export default {
    * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
-    const temp = this.str2bin(value);
+    const temp = this.str_to_Uint8Array(value);
     if (bitcount % 8 !== 0) {
       for (let i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
@@ -474,31 +434,7 @@ export default {
     } else {
       return value;
     }
-    return this.bin2str(temp);
-  },
-
-  /**
-   * Return the algorithm type as string
-   * @return {String} String representing the message type
-   */
-  get_hashAlgorithmString: function (algo) {
-    switch (algo) {
-      case 1:
-        return "MD5";
-      case 2:
-        return "SHA1";
-      case 3:
-        return "RIPEMD160";
-      case 8:
-        return "SHA256";
-      case 9:
-        return "SHA384";
-      case 10:
-        return "SHA512";
-      case 11:
-        return "SHA224";
-    }
-    return "unknown";
+    return this.Uint8Array_to_str(temp);
   },
 
   /**
@@ -535,25 +471,6 @@ export default {
         return window.msCrypto.subtle;
       }
     }
-  },
-
-  /**
-   * Converts an IE11 web crypto api result to a promise.
-   *   This is required since IE11 implements an old version of the
-   *   Web Crypto specification that does not use promises.
-   * @param  {Object} cryptoOp The return value of an IE11 web cryptro api call
-   * @param  {String} errmsg   An error message for a specific operation
-   * @return {Promise}         The resulting Promise
-   */
-  promisifyIE11Op: function(cryptoOp, errmsg) {
-    return new Promise(function(resolve, reject) {
-      cryptoOp.onerror = function () {
-        reject(new Error(errmsg));
-      };
-      cryptoOp.oncomplete = function (e) {
-        resolve(e.target.result);
-      };
-    });
   },
 
   /**
@@ -598,5 +515,20 @@ export default {
     }
 
     return require('zlib');
+  },
+
+  isEmailAddress: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
+    return re.test(data);
+  },
+
+  isUserId: function(data) {
+    if (!this.isString(data)) {
+      return false;
+    }
+    return /</.test(data) && />$/.test(data);
   }
 };

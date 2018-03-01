@@ -171,16 +171,14 @@ describe("Packet", function() {
   });
 
   it('Public key encrypted symmetric key packet', function() {
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
 
-      let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
-        const mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
+        return new openpgp.MPI(k);
       });
 
       const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
@@ -206,7 +204,7 @@ describe("Packet", function() {
     });
   });
 
-  it('Secret key packet (reading, unencrypted)', function(done) {
+  it('Secret key packet (reading, unencrypted)', function() {
     const armored_key =
         '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -241,17 +239,14 @@ describe("Packet", function() {
     enc.sessionKeyAlgorithm = 'aes256';
     enc.publicKeyId.bytes = '12345678';
 
-    enc.encrypt(key).then(() => {
-
-      enc.decrypt(key).then(() => {
-
+    return enc.encrypt(key).then(() => {
+      return enc.decrypt(key).then(() => {
         expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
-        done();
       });
     });
   });
 
-  it('Public key encrypted packet (reading, GPG)', function(done) {
+  it('Public key encrypted packet (reading, GPG)', function() {
     const armored_key =
         '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -306,17 +301,16 @@ describe("Packet", function() {
     const msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key).then(() => {
-      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(() => {
+      return msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const text = stringify(msg[1].packets[0].packets[0].data);
 
       expect(text).to.equal('Hello world!');
-      done();
     });
   });
 
-  it('Sym encrypted session key reading/writing', function(done) {
+  it('Sym. encrypted session key reading/writing', function(done) {
     const passphrase = 'hello';
     const algo = 'aes256';
 
@@ -348,7 +342,7 @@ describe("Packet", function() {
     done();
   });
 
-  it('Secret key encryption/decryption test', function(done) {
+  it('Secret key encryption/decryption test', function() {
     const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -369,13 +363,12 @@ describe("Packet", function() {
     const msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key).then(() => {
-      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(() => {
+      return msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const text = stringify(msg[1].packets[0].packets[0].data);
 
       expect(text).to.equal('Hello world!');
-      done();
     });
   });
 
@@ -435,15 +428,13 @@ describe("Packet", function() {
     const key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
 
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
-      let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
-        const mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
+        return new openpgp.MPI(k);
       });
 
       key[0].params = mpi;
@@ -463,15 +454,13 @@ describe("Packet", function() {
   it('Writing and verification of a signature packet.', function() {
     const key = new openpgp.packet.SecretKey();
 
-    const rsa = new openpgp.crypto.publicKey.rsa();
+    const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return rsa.generate(keySize, "10001").then(function(mpiGen) {
-        let mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+        let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
         mpi = mpi.map(function(k) {
-          const mpi = new openpgp.MPI();
-          mpi.fromBigInteger(k);
-          return mpi;
+          return new openpgp.MPI(k);
         });
 
         key.params = mpi;

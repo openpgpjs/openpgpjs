@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
+ * A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The

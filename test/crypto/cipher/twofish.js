@@ -7,7 +7,7 @@ const { expect } = chai;
 
 it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
   function TFencrypt(block, key) {
-    const tf = new openpgp.crypto.cipher.twofish(util.str2Uint8Array(key));
+    const tf = new openpgp.crypto.cipher.twofish(util.str_to_Uint8Array(key));
 
     return tf.encrypt(block);
   }
@@ -36,36 +36,36 @@ it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', 
 
     if (i === 0) {
       blk = start_short;
-      key = util.bin2str(start);
+      key = util.Uint8Array_to_str(start);
       ct = testvectors[0];
-      res = util.bin2str(TFencrypt(blk,key));
-      exp = util.bin2str(ct);
+      res = util.Uint8Array_to_str(TFencrypt(blk,key));
+      exp = util.Uint8Array_to_str(ct);
     } else if (i === 1) {
       blk = testvectors[0];
-      key = util.bin2str(start);
+      key = util.Uint8Array_to_str(start);
       ct = testvectors[1];
-      res = util.bin2str(TFencrypt(blk,key));
-      exp = util.bin2str(ct);
+      res = util.Uint8Array_to_str(TFencrypt(blk,key));
+      exp = util.Uint8Array_to_str(ct);
     } else if (i === 2) {
       blk = testvectors[i-1];
-      key = util.bin2str(testvectors[i-2].concat(start_short));
+      key = util.Uint8Array_to_str(testvectors[i-2].concat(start_short));
       ct = testvectors[i];
-      res = util.bin2str(TFencrypt(blk,key));
-      exp = util.bin2str(ct);
+      res = util.Uint8Array_to_str(TFencrypt(blk,key));
+      exp = util.Uint8Array_to_str(ct);
     } else if (i < 10 || i > 46) {
       blk = testvectors[i-1];
-      key = util.bin2str(testvectors[i-2].concat(testvectors[i-3]));
+      key = util.Uint8Array_to_str(testvectors[i-2].concat(testvectors[i-3]));
       ct = testvectors[i];
-      res = util.bin2str(TFencrypt(blk,key));
-      exp = util.bin2str(ct);
+      res = util.Uint8Array_to_str(TFencrypt(blk,key));
+      exp = util.Uint8Array_to_str(ct);
     } else {
-      testvectors[i] = TFencrypt(testvectors[i-1],util.bin2str(testvectors[i-2].concat(testvectors[i-3])));
+      testvectors[i] = TFencrypt(testvectors[i-1],util.Uint8Array_to_str(testvectors[i-2].concat(testvectors[i-3])));
       continue;
     }
-    expect(res, 'vector with block ' + util.hexidump(blk) +
-                ' with key ' + util.hexstrdump(key) +
-                ' should be ' + util.hexidump(ct) +
-                ' but is ' + util.hexidump(TFencrypt(blk,key))).to.equal(exp);
+    expect(res, 'vector with block ' + util.Uint8Array_to_hex(blk) +
+                ' with key ' + util.str_to_hex(key) +
+                ' should be ' + util.Uint8Array_to_hex(ct) +
+                ' but is ' + util.Uint8Array_to_hex(TFencrypt(blk,key))).to.equal(exp);
   }
   done();
 });

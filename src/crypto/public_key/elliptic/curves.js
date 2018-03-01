@@ -18,46 +18,45 @@
 // Wrapper of an instance of an Elliptic Curve
 
 /**
+ * @requires bn.js
+ * @requires elliptic
  * @requires crypto/public_key/elliptic/key
- * @requires crypto/public_key/jsbn
+ * @requires crypto/random
+ * @requires type/oid
  * @requires enums
  * @requires util
  * @module crypto/public_key/elliptic/curve
  */
 
+import BN from 'bn.js';
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
-import { KeyPair } from './key';
-import BigInteger from '../jsbn';
+import KeyPair from './key';
 import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
-import base64 from '../../../encoding/base64';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
-let webCurves = {};
-let nodeCurves = {};
-webCurves = {
+const nodeCurves = {};
+const webCurves = {
   'p256': 'P-256',
   'p384': 'P-384',
   'p521': 'P-521'
 };
 if (nodeCrypto) {
   const knownCurves = nodeCrypto.getCurves();
-  nodeCurves = {
-    'secp256k1': knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
-    'p256': knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
-    'p384': knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
-    'p521': knownCurves.includes('secp521r1') ? 'secp521r1' : undefined
-    // TODO add more here
-  };
+  nodeCurves.secp256k1 = knownCurves.includes('secp256k1') ? 'secp256k1' : undefined;
+  nodeCurves.p256 = knownCurves.includes('prime256v1') ? 'prime256v1' : undefined;
+  nodeCurves.p384 = knownCurves.includes('secp384r1') ? 'secp384r1' : undefined;
+  nodeCurves.p521 = knownCurves.includes('secp521r1') ? 'secp521r1' : undefined;
+  // TODO add more here
 }
 
 const curves = {
   p256: {
-    oid: util.bin2str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
+    oid: util.Uint8Array_to_str([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]),
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
@@ -66,7 +65,7 @@ const curves = {
     payloadSize: 32
   },
   p384: {
-    oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x22]),
+    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x22]),
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
@@ -75,7 +74,7 @@ const curves = {
     payloadSize: 48
   },
   p521: {
-    oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x23]),
+    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x23]),
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
@@ -84,54 +83,68 @@ const curves = {
     payloadSize: 66
   },
   secp256k1: {
-    oid: util.bin2str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
+    oid: util.Uint8Array_to_str([0x2B, 0x81, 0x04, 0x00, 0x0A]),
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: false // FIXME when we replace jwk-to-pem or it supports this curve
   },
   ed25519: {
-    oid: util.bin2str([0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01]),
+    oid: util.Uint8Array_to_str([0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01]),
     keyType: enums.publicKey.eddsa,
     hash: enums.hash.sha512,
     payloadSize: 32
   },
   curve25519: {
-    oid: util.bin2str([0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01]),
+    oid: util.Uint8Array_to_str([0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01]),
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128
   },
   brainpoolP256r1: { // TODO 1.3.36.3.3.2.8.1.1.7
-    oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07])
+    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07])
   },
   brainpoolP384r1: { // TODO 1.3.36.3.3.2.8.1.1.11
-    oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B])
+    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B])
   },
   brainpoolP512r1: { // TODO 1.3.36.3.3.2.8.1.1.13
-    oid: util.bin2str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D])
+    oid: util.Uint8Array_to_str([0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D])
   }
 };
 
-function Curve(name, params) {
+export default function Curve(oid_or_name, params) {
+  if (OID.prototype.isPrototypeOf(oid_or_name) &&
+      enums.curve[oid_or_name.toHex()]) {
+    this.name = oid_or_name.toHex(); // by curve OID
+  } else if (enums.curve[oid_or_name]) {
+    this.name = oid_or_name; // by curve name
+  } else if (enums.curve[util.str_to_hex(oid_or_name)]) {
+    this.name = util.str_to_hex(oid_or_name); // by oid string
+  } else {
+    throw new Error('Not valid curve');
+  }
+  this.name = enums.write(enums.curve, this.name);
+  this.oid = new OID(curves[this.name].oid);
+
+  params = params || curves[this.name];
+
   this.keyType = params.keyType;
   switch (this.keyType) {
     case enums.publicKey.eddsa:
-      this.curve = new EdDSA(name);
+      this.curve = new EdDSA(this.name);
       break;
     case enums.publicKey.ecdsa:
-      this.curve = new EC(name);
+      this.curve = new EC(this.name);
       break;
     default:
       throw new Error('Unknown elliptic key type;');
   }
-  this.name = name;
-  this.oid = curves[name].oid;
+
   this.hash = params.hash;
   this.cipher = params.cipher;
-  this.node = params.node && curves[name].node;
-  this.web = params.web && curves[name].web;
-  this.payloadSize = curves[name].payloadSize;
+  this.node = params.node && curves[this.name].node;
+  this.web = params.web && curves[this.name].web;
+  this.payloadSize = curves[this.name].payloadSize;
 }
 
 Curve.prototype.keyFromPrivate = function (priv) { // Not for ed25519
@@ -152,47 +165,33 @@ Curve.prototype.genKeyPair = async function () {
     // If browser doesn't support a curve, we'll catch it
     try {
       keyPair = await webGenKeyPair(this.name);
-      return new KeyPair(this.curve, keyPair);
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
   } else if (nodeCrypto && this.node) {
     keyPair = await nodeGenKeyPair(this.name);
-    return new KeyPair(this.curve, keyPair);
   }
-  const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-  const r = await this.curve.genKeyPair();
-  if (this.keyType === enums.publicKey.eddsa) {
-    keyPair = { secret: r.getSecret() };
-  } else {
-    keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+
+  if (!keyPair || !keyPair.priv) {
+    // elliptic fallback
+    const r = await this.curve.genKeyPair({ entropy: util.Uint8Array_to_str(random.getRandomBytes(32)) });
+    const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+    if (this.keyType === enums.publicKey.eddsa) {
+      keyPair = { secret: r.getSecret() };
+    } else {
+      keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+    }
   }
   return new KeyPair(this.curve, keyPair);
 };
 
-function get(oid_or_name) {
-  let name;
-  if (OID.prototype.isPrototypeOf(oid_or_name) &&
-      enums.curve[oid_or_name.toHex()]) {
-    name = enums.write(enums.curve, oid_or_name.toHex()); // by curve OID
-    return new Curve(name, curves[name]);
-  } else if (enums.curve[oid_or_name]) {
-    name = enums.write(enums.curve, oid_or_name); // by curve name
-    return new Curve(name, curves[name]);
-  } else if (enums.curve[util.hexstrdump(oid_or_name)]) {
-    name = enums.write(enums.curve, util.hexstrdump(oid_or_name)); // by oid string
-    return new Curve(name, curves[name]);
-  }
-  throw new Error('Not valid curve');
-}
-
 async function generate(curve) {
-  curve = get(curve);
+  curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
-    Q: new BigInteger(keyPair.getPublic()),
-    d: new BigInteger(keyPair.getPrivate()),
+    Q: new BN(keyPair.getPublic()),
+    d: new BN(keyPair.getPrivate()),
     hash: curve.hash,
     cipher: curve.cipher
   };
@@ -202,14 +201,8 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
-module.exports = {
-  Curve,
-  curves,
-  webCurves,
-  nodeCurves,
-  getPreferredHashAlgo,
-  generate,
-  get
+export {
+  curves, webCurves, nodeCurves, generate, getPreferredHashAlgo
 };
 
 
@@ -229,10 +222,10 @@ async function webGenKeyPair(name) {
 
   return {
     pub: {
-      x: base64.decode(publicKey.x, true),
-      y: base64.decode(publicKey.y, true)
+      x: util.b64_to_Uint8Array(publicKey.x, true),
+      y: util.b64_to_Uint8Array(publicKey.y, true)
     },
-    priv: base64.decode(privateKey.d, true)
+    priv: util.b64_to_Uint8Array(privateKey.d, true)
   };
 }
 

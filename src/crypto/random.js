@@ -18,13 +18,15 @@
 // The GPG4Browsers crypto interface
 
 /**
+ * @requires bn.js
  * @requires type/mpi
  * @requires util
  * @module crypto/random
  */
 
-import type_mpi from '../type/mpi.js';
-import util from '../util.js';
+import BN from 'bn.js';
+import type_mpi from '../type/mpi';
+import util from '../util';
 
 // Do not use util.getNodeCrypto because we need this regardless of use_native setting
 const nodeCrypto = util.detectNode() && require('crypto');
@@ -95,41 +97,27 @@ export default {
   },
 
   /**
-   * Create a secure random big integer of bits length
-   * @param {Integer} bits Bit length of the MPI to create
-   * @return {BigInteger} Resulting big integer
+   * Create a secure random MPI that is greater than or equal to min and less than max.
+   * @param {module:type/mpi} min Lower bound, included
+   * @param {module:type/mpi} max Upper bound, excluded
+   * @return {module:BN} Random MPI
    */
-  getRandomBigInteger: function(bits) {
-    if (bits < 1) {
-      throw new Error('Illegal parameter value: bits < 1');
-    }
-    const numBytes = Math.floor((bits + 7) / 8);
-
-    let randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
-    if (bits % 8 > 0) {
-      randomBits = String.fromCharCode(((2 ** (bits % 8)) - 1) &
-        randomBits.charCodeAt(0)) +
-        randomBits.substring(1);
-    }
-    const mpi = new type_mpi(randomBits);
-    return mpi.toBigInteger();
-  },
-
-  getRandomBigIntegerInRange: function(min, max) {
-    if (max.compareTo(min) <= 0) {
+  getRandomBN: function(min, max) {
+    if (max.cmp(min) <= 0) {
       throw new Error('Illegal parameter value: max <= min');
     }
 
-    const range = max.subtract(min);
-    let r = this.getRandomBigInteger(range.bitLength());
-    while (r.compareTo(range) > 0) {
-      r = this.getRandomBigInteger(range.bitLength());
-    }
-    return min.add(r);
+    const modulus = max.sub(min);
+    const bytes = modulus.byteLength();
+
+    // Using a while loop is necessary to avoid bias introduced by the mod operation.
+    // However, we request 64 extra random bits so that the bias is negligible.
+    // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
+    const r = new BN(this.getRandomBytes(bytes + 8));
+    return r.mod(modulus).add(min);
   },
 
   randomBuffer: new RandomBuffer()
-
 };
 
 /**

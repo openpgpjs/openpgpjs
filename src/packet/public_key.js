@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)<br/>
- * <br/>
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
@@ -85,8 +85,8 @@ PublicKey.prototype.read = function (bytes) {
 
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
-
-    const types = crypto.getPubKeyParamTypes(this.algorithm);
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const types = crypto.getPubKeyParamTypes(algo);
     this.params = crypto.constructParams(types);
 
     const b = bytes.subarray(pos, bytes.length);
@@ -123,10 +123,10 @@ PublicKey.prototype.write = function () {
   if (this.version === 3) {
     arr.push(util.writeNumber(this.expirationTimeV3, 2));
   }
-  arr.push(new Uint8Array([enums.write(enums.publicKey, this.algorithm)]));
-
-  const paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
-
+  // Algorithm-specific params
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  const paramCount = crypto.getPubKeyParamTypes(algo).length;
+  arr.push(new Uint8Array([algo]));
   for (let i = 0; i < paramCount; i++) {
     arr.push(this.params[i].write());
   }
@@ -159,7 +159,7 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new type_keyid();
   if (this.version === 4) {
-    this.keyid.read(util.str2Uint8Array(util.hex2bin(this.getFingerprint()).substr(12, 8)));
+    this.keyid.read(util.str_to_Uint8Array(util.hex_to_str(this.getFingerprint()).substr(12, 8)));
   } else if (this.version === 3) {
     const arr = this.params[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
@@ -178,21 +178,22 @@ PublicKey.prototype.getFingerprint = function () {
   let toHash = '';
   if (this.version === 4) {
     toHash = this.writeOld();
-    this.fingerprint = util.Uint8Array2str(crypto.hash.sha1(toHash));
+    this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
-    const paramCount = crypto.getPubKeyParamTypes(this.algorithm).length;
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const paramCount = crypto.getPubKeyParamTypes(algo).length;
     for (let i = 0; i < paramCount; i++) {
-      toHash += this.params[i].toBytes();
+      toHash += this.params[i].toString();
     }
-    this.fingerprint = util.Uint8Array2str(crypto.hash.md5(util.str2Uint8Array(toHash)));
+    this.fingerprint = util.Uint8Array_to_str(crypto.hash.md5(util.str_to_Uint8Array(toHash)));
   }
-  this.fingerprint = util.hexstrdump(this.fingerprint);
+  this.fingerprint = util.str_to_hex(this.fingerprint);
   return this.fingerprint;
 };
 
 /**
  * Returns algorithm information
- * @return {Promise<Object} An object of the form {algorithm: String, bits:int, curve:String}
+ * @return {Promise<Object>} An object of the form {algorithm: String, bits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
   const result = {};
@@ -200,7 +201,7 @@ PublicKey.prototype.getAlgorithmInfo = function () {
   if (this.params[0] instanceof type_mpi) {
     result.bits = this.params[0].byteLength() * 8;
   } else {
-    result.curve = crypto.publicKey.elliptic.get(this.params[0]).name;
+    result.curve = this.params[0].getName();
   }
   return result;
 };
@@ -209,7 +210,8 @@ PublicKey.prototype.getAlgorithmInfo = function () {
  * Fix custom types after cloning
  */
 PublicKey.prototype.postCloneTypeFix = function() {
-  const types = crypto.getPubKeyParamTypes(this.algorithm);
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  const types = crypto.getPubKeyParamTypes(algo);
   for (let i = 0; i < types.length; i++) {
     const param = this.params[i];
     this.params[i] = types[i].fromClone(param);
