@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
+ * A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -75,7 +76,8 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 
   let i = 10;
 
-  const types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const types = crypto.getEncSessionKeyParamTypes(algo);
   this.encrypted = crypto.constructParams(types);
 
   for (let j = 0; j < types.length; j++) {
@@ -101,23 +103,20 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-  data += util.Uint8Array2str(this.sessionKey);
+  data += util.Uint8Array_to_str(this.sessionKey);
   const checksum = util.calc_checksum(this.sessionKey);
-  data += util.Uint8Array2str(util.writeNumber(checksum, 2));
+  data += util.Uint8Array_to_str(util.writeNumber(checksum, 2));
 
   let toEncrypt;
-  if (this.publicKeyAlgorithm === 'ecdh') {
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  if (algo === enums.publicKey.ecdh) {
     toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
   } else {
     toEncrypt = new type_mpi(crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
   }
 
   this.encrypted = await crypto.publicKeyEncrypt(
-    this.publicKeyAlgorithm,
-    key.params,
-    toEncrypt,
-    key.fingerprint
-  );
+    algo, key.params, toEncrypt, key.fingerprint);
 };
 
 /**
@@ -129,24 +128,21 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * @return {String} The unencrypted session key
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
-  const result = (await crypto.publicKeyDecrypt(
-    this.publicKeyAlgorithm,
-    key.params,
-    this.encrypted,
-    key.fingerprint
-  )).toBytes();
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const result = await crypto.publicKeyDecrypt(
+    algo, key.params, this.encrypted, key.fingerprint);
 
   let checksum;
   let decoded;
-  if (this.publicKeyAlgorithm === 'ecdh') {
-    decoded = crypto.pkcs5.decode(result);
-    checksum = util.readNumber(util.str2Uint8Array(decoded.substr(decoded.length - 2)));
+  if (algo === enums.publicKey.ecdh) {
+    decoded = crypto.pkcs5.decode(result.toString());
+    checksum = util.readNumber(util.str_to_Uint8Array(decoded.substr(decoded.length - 2)));
   } else {
-    decoded = crypto.pkcs1.eme.decode(result);
-    checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
+    decoded = crypto.pkcs1.eme.decode(result.toString());
+    checksum = util.readNumber(result.toUint8Array().slice(result.byteLength() - 2));
   }
 
-  key = util.str2Uint8Array(decoded.substring(1, decoded.length - 2));
+  key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
   if (checksum !== util.calc_checksum(key)) {
     throw new Error('Checksum mismatch');
@@ -161,7 +157,8 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
-  const types = crypto.getEncSessionKeyParamTypes(this.publicKeyAlgorithm);
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const types = crypto.getEncSessionKeyParamTypes(algo);
   for (let i = 0; i < this.encrypted.length; i++) {
     this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
   }

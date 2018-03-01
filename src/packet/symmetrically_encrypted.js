@@ -16,10 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
- * <br/>
- * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
- * with a symmetric-key algorithm. When it has been decrypted, it contains other
+ * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}:
+ * The Symmetrically Encrypted Data packet contains data encrypted with a
+ * symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).

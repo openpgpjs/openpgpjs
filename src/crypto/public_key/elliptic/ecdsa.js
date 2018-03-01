@@ -19,51 +19,44 @@
 
 /**
  * @requires crypto/hash
- * @requires crypto/public_key/jsbn
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/ecdsa
  */
 
 import hash from '../../hash';
-import curves from './curves';
-import BigInteger from '../jsbn';
+import Curve from './curves';
 
 /**
  * Sign a message using the provided key
- * @param  {String}      oid        Elliptic curve for the key
- * @param  {enums.hash}  hash_algo  Hash algorithm used to sign
- * @param  {Uint8Array}  m          Message to sign
- * @param  {BigInteger}  d          Private key used to sign
- * @return {{r: BigInteger, s: BigInteger}}  Signature of the message
+ * @param  {module:type/oid} oid        Elliptic curve object identifier
+ * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
+ * @param  {Uint8Array}      m          Message to sign
+ * @param  {Uint8Array}      d          Private key used to sign the message
+ * @return {{r: Uint8Array,
+             s: Uint8Array}}            Signature of the message
  */
 async function sign(oid, hash_algo, m, d) {
-  const curve = curves.get(oid);
-  const key = curve.keyFromPrivate(d.toByteArray());
+  const curve = new Curve(oid);
+  const key = curve.keyFromPrivate(d);
   const signature = await key.sign(m, hash_algo);
-  return {
-    r: new BigInteger(signature.r.toArray()),
-    s: new BigInteger(signature.s.toArray())
-  };
+  return { r: signature.r.toArrayLike(Uint8Array),
+           s: signature.s.toArrayLike(Uint8Array) };
 }
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {String}      oid        Elliptic curve for the key
- * @param  {enums.hash}  hash_algo  Hash algorithm used in the signature
- * @param  {{r: BigInteger, s: BigInteger}}  signature  Signature to verify
- * @param  {Uint8Array}  m          Message to verify
- * @param  {BigInteger}  Q          Public key used to verify the message
+ * @param  {module:type/oid} oid        Elliptic curve object identifier
+ * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
+ * @param  {{r: Uint8Array,
+             s: Uint8Array}} signature  Signature to verify
+ * @param  {Uint8Array}      m          Message to verify
+ * @param  {Uint8Array}      Q          Public key used to verify the message
  * @return {Boolean}
  */
 async function verify(oid, hash_algo, signature, m, Q) {
-  const curve = curves.get(oid);
-  const key = curve.keyFromPublic(Q.toByteArray());
-  return key.verify(
-    m, { r: signature.r.toByteArray(), s: signature.s.toByteArray() }, hash_algo
-  );
+  const curve = new Curve(oid);
+  const key = curve.keyFromPublic(Q);
+  return key.verify(m, signature, hash_algo);
 }
 
-module.exports = {
-  sign: sign,
-  verify: verify
-};
+export default { sign, verify };

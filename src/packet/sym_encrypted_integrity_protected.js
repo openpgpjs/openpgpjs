@@ -16,25 +16,25 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data
- * Packet (Tag 18)<br/>
- * <br/>
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
  * The Symmetrically Encrypted Integrity Protected Data packet is
  * a variant of the Symmetrically Encrypted Data packet. It is a new feature
  * created for OpenPGP that addresses the problem of detecting a modification to
  * encrypted data. It is used in combination with a Modification Detection Code
  * packet.
+ * @requires asmcrypto.js
  * @requires crypto
- * @requires util
  * @requires enums
+ * @requires util
  * @module packet/sym_encrypted_integrity_protected
  */
 
-import asmCrypto from 'asmcrypto-lite';
-import util from '../util.js';
+import { AES_CFB } from 'asmcrypto.js/src/aes/cfb/exports';
 import crypto from '../crypto';
-import enums from '../enums.js';
+import enums from '../enums';
+import util from '../util';
 
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
@@ -121,8 +121,8 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, this.encrypted);
   const bytes = decrypted.subarray(0, decrypted.length - 20);
   const tohash = util.concatUint8Array([prefix, bytes]);
-  this.hash = util.Uint8Array2str(crypto.hash.sha1(tohash));
-  const mdc = util.Uint8Array2str(decrypted.subarray(decrypted.length - 20, decrypted.length));
+  this.hash = util.Uint8Array_to_str(crypto.hash.sha1(tohash));
+  const mdc = util.Uint8Array_to_str(decrypted.subarray(decrypted.length - 20, decrypted.length));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
@@ -145,7 +145,7 @@ function aesEncrypt(algo, prefix, pt, key) {
   if (nodeCrypto) { // Node crypto library.
     return nodeEncrypt(algo, prefix, pt, key);
   } // asm.js fallback
-  return asmCrypto.AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
+  return AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
 }
 
 function aesDecrypt(algo, ct, key) {
@@ -153,7 +153,7 @@ function aesDecrypt(algo, ct, key) {
   if (nodeCrypto) { // Node crypto library.
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
-    pt = asmCrypto.AES_CFB.decrypt(ct, key);
+    pt = AES_CFB.decrypt(ct, key);
   }
   return pt.subarray(crypto.cipher[algo].blockSize + 2, pt.length); // Remove random prefix
 }

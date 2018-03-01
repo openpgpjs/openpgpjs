@@ -16,24 +16,22 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Encoded symmetric key for ECDH<br/>
- * <br/>
+ * Encoded symmetric key for ECDH
+ *
  * @requires util
  * @module type/ecdh_symkey
  */
 
 import util from '../util';
 
-module.exports = ECDHSymmetricKey;
-
 /**
  * @constructor
  */
-function ECDHSymmetricKey(data) {
+export default function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
   } else if (util.isString(data)) {
-    data = util.str2Uint8Array(data);
+    data = util.str_to_Uint8Array(data);
   } else {
     data = new Uint8Array(data);
   }

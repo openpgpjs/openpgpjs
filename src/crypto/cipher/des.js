@@ -436,7 +436,7 @@ function des_removePadding(message, padding) {
 
 // added by Recurity Labs
 
-function Des(key) {
+function TripleDES(key) {
   this.key = [];
 
   for (let i = 0; i < 3; i++) {
@@ -458,13 +458,12 @@ function Des(key) {
   };
 }
 
-Des.keySize = Des.prototype.keySize = 24;
-Des.blockSize = Des.prototype.blockSize = 8;
+TripleDES.keySize = TripleDES.prototype.keySize = 24;
+TripleDES.blockSize = TripleDES.prototype.blockSize = 8;
 
-// This is "original" DES - Des is actually Triple DES.
-// This is only exported so we can unit test.
+// This is "original" DES
 
-function OriginalDes(key) {
+function DES(key) {
   this.key = key;
 
   this.encrypt = function(block, padding) {
@@ -478,9 +477,4 @@ function OriginalDes(key) {
   };
 }
 
-export default {
-  /** @static */
-  des: Des,
-  /** @static */
-  originalDes: OriginalDes
-};
+export default { DES, TripleDES };

@@ -188,7 +188,7 @@ Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
       if (keyPackets.length > 1) {
         const seen = {};
         keyPackets = keyPackets.filter(function(item) {
-          const k = item.sessionKeyAlgorithm + util.Uint8Array2str(item.sessionKey);
+          const k = item.sessionKeyAlgorithm + util.Uint8Array_to_str(item.sessionKey);
           if (seen.hasOwnProperty(k)) {
             return false;
           }
@@ -622,7 +622,7 @@ export function read(input) {
  */
 export function readSignedContent(content, detachedSignature) {
   const literalDataPacket = new packet.Literal();
-  literalDataPacket.setBytes(util.str2Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
+  literalDataPacket.setBytes(util.str_to_Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
   const packetlist = new packet.List();
   packetlist.push(literalDataPacket);
   const input = armor.decode(detachedSignature).data;
