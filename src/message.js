@@ -583,6 +583,14 @@ Message.prototype.unwrapCompressed = function() {
 };
 
 /**
+ * Append signature to unencrypted message object
+ * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
+ */
+Message.prototype.appendSignature = function(detachedSignature) {
+  this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : armor.decode(detachedSignature).data);
+};
+
+/**
  * Returns ASCII armored text of message
  * @return {String} ASCII armor
  */
@@ -611,21 +619,6 @@ export function readArmored(armoredText) {
  */
 export function read(input) {
   const packetlist = new packet.List();
-  packetlist.read(input);
-  return new Message(packetlist);
-}
-
-/**
- * Create a message object from signed content and a detached armored signature.
- * @param {String} content An 8 bit ascii string containing e.g. a MIME subtree with text nodes or attachments
- * @param {String} detachedSignature The detached ascii armored PGP signature
- */
-export function readSignedContent(content, detachedSignature) {
-  const literalDataPacket = new packet.Literal();
-  literalDataPacket.setBytes(util.str_to_Uint8Array(content), enums.read(enums.literal, enums.literal.binary));
-  const packetlist = new packet.List();
-  packetlist.push(literalDataPacket);
-  const input = armor.decode(detachedSignature).data;
   packetlist.read(input);
   return new Message(packetlist);
 }
