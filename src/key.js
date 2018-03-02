@@ -637,31 +637,16 @@ Key.prototype.revoke = async function(privateKey, {
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
   string: reasonForRevocationString=''
 } = {}, date=new Date()) {
-  if (privateKey.isPublic()) {
-    throw new Error('Need private key for revoking');
-  }
   if (privateKey.primaryKey.getFingerprint() !== this.primaryKey.getFingerprint()) {
     throw new Error('Private key does not match public key');
   }
-  await privateKey.verifyPrimaryUser();
-  const signingKeyPacket = privateKey.getSigningKeyPacket();
-  if (!signingKeyPacket) {
-    throw new Error(`Could not find valid signing key packet in key ${
-      privateKey.primaryKey.getKeyId().toHex()}`);
-  }
-  if (!signingKeyPacket.isDecrypted) {
-    throw new Error('Private key is not decrypted.');
-  }
   const dataToSign = { key: this.primaryKey };
-  const signaturePacket = new packet.Signature(date);
-  signaturePacket.signatureType = enums.write(enums.signature, enums.signature.key_revocation);
-  signaturePacket.reasonForRevocationFlag = enums.write(enums.reasonForRevocation, reasonForRevocationFlag);
-  signaturePacket.reasonForRevocationString = reasonForRevocationString;
-  signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
-  await signaturePacket.sign(signingKeyPacket, dataToSign);
   const key = new Key(this.toPacketlist());
-  key.revocationSignature = signaturePacket;
+  key.revocationSignature = await createSignaturePacket(dataToSign, privateKey, {
+    signatureType: enums.signature.key_revocation,
+    reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+    reasonForRevocationString
+  }, date);
   return key;
 };
 
@@ -833,29 +818,15 @@ User.prototype.toPacketlist = function() {
 User.prototype.sign = async function(primaryKey, privateKeys) {
   const dataToSign = { userid: this.userId || this.userAttribute, key: primaryKey };
   const user = new User(dataToSign.userid);
-  user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
-    if (privateKey.isPublic()) {
-      throw new Error('Need private key for signing');
-    }
+  user.otherCertifications = await Promise.all(privateKeys.map(function(privateKey) {
     if (privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint()) {
       throw new Error('Not implemented for self signing');
     }
-    const signingKeyPacket = await privateKey.getSigningKeyPacket();
-    if (!signingKeyPacket) {
-      throw new Error('Could not find valid signing key packet in key ' +
-                      privateKey.primaryKey.getKeyId().toHex());
-    }
-    if (!signingKeyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
-    }
-    const signaturePacket = new packet.Signature();
-    // Most OpenPGP implementations use generic certification (0x10)
-    signaturePacket.signatureType = enums.write(enums.signature, enums.signature.cert_generic);
-    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey);
-    signaturePacket.sign(signingKeyPacket, dataToSign);
-    return signaturePacket;
+    return createSignaturePacket(dataToSign, privateKey, {
+      // Most OpenPGP implementations use generic certification (0x10)
+      signatureType: enums.signature.cert_generic,
+      keyFlags: [enums.keyFlags.certify_keys | enums.keyFlags.sign_data]
+    });
   }));
   await user.update(this, primaryKey);
   return user;
@@ -882,6 +853,38 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
     }, this.revocationSignatures, certificate, key, date
   );
 };
+
+/**
+ * Create signature packet
+ * @param  {Object}                          dataToSign Contains packets to be signed
+ * @param  {module:key~Key}                  privateKey private key with decrypted secret key data for signing
+ * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
+ * @param  {Date} date                       (optional) override the creationtime of the signature
+ * @param  {Object} userId                   (optional) user ID
+ * @return {module:packet/signature}         signature packet
+ */
+export async function createSignaturePacket(dataToSign, privateKey, signatureProperties, date, userId) {
+  if (privateKey.isPublic()) {
+    throw new Error('Need private key for signing');
+  }
+  await privateKey.verifyPrimaryUser();
+  const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date, userId);
+  if (!signingKeyPacket) {
+    throw new Error(`Could not find valid signing key packet in key ${
+        privateKey.primaryKey.getKeyId().toHex()}`);
+  }
+  if (!signingKeyPacket.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
+  const signaturePacket = new packet.Signature(date);
+  for(const [prop, value] of Object.entries(signatureProperties)) {
+    signaturePacket[prop] = value;
+  }
+  signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, date, userId);
+  await signaturePacket.sign(signingKeyPacket, dataToSign);
+  return signaturePacket;
+}
 
 /**
  * Verifies the user certificate
@@ -1134,31 +1137,16 @@ SubKey.prototype.revoke = async function(primaryKey, privateKey, {
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
   string: reasonForRevocationString=''
 } = {}, date=new Date()) {
-  if (privateKey.isPublic()) {
-    throw new Error('Need private key for revoking');
-  }
   if (privateKey.primaryKey.getFingerprint() !== primaryKey.getFingerprint()) {
     throw new Error('Private key does not match public key');
   }
-  await privateKey.verifyPrimaryUser();
-  const signingKeyPacket = privateKey.getSigningKeyPacket();
-  if (!signingKeyPacket) {
-    throw new Error(`Could not find valid signing key packet in key ${
-      privateKey.primaryKey.getKeyId().toHex()}`);
-  }
-  if (!signingKeyPacket.isDecrypted) {
-    throw new Error('Private key is not decrypted.');
-  }
   const dataToSign = { key: primaryKey, bind: this.subKey };
-  const signaturePacket = new packet.Signature(date);
-  signaturePacket.signatureType = enums.write(enums.signature, enums.signature.subkey_revocation);
-  signaturePacket.reasonForRevocationFlag = enums.write(enums.reasonForRevocation, reasonForRevocationFlag);
-  signaturePacket.reasonForRevocationString = reasonForRevocationString;
-  signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
-  await signaturePacket.sign(signingKeyPacket, dataToSign);
   const subKey = new SubKey(this.subKey);
-  subKey.revocationSignature = signaturePacket;
+  subKey.revocationSignature = await createSignaturePacket(dataToSign, privateKey, {
+    signatureType: enums.signature.subkey_revocation,
+    reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+    reasonForRevocationString
+  }, date);
   await subKey.update(this, primaryKey);
   return subKey;
 };
