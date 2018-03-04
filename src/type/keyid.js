@@ -53,7 +53,7 @@ Keyid.prototype.toHex = function() {
 };
 
 Keyid.prototype.equals = function(keyid) {
-  return this.bytes === keyid.bytes;
+  return keyid.isWildcard() || this.bytes === keyid.bytes;
 };
 
 Keyid.prototype.isNull = function() {

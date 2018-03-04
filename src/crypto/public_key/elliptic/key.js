@@ -234,13 +234,6 @@ const ECDSASignature = nodeCrypto ?
         );
       }) : undefined;
 
-const ECParameters = nodeCrypto ?
-      asn1.define('ECParameters', function() {
-        this.choice({
-          namedCurve: this.objid()
-        });
-      }) : undefined;
-
 const ECPrivateKey = nodeCrypto ?
       asn1.define('ECPrivateKey', function() {
         this.seq().obj(
