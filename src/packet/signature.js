@@ -86,6 +86,7 @@ export default function Signature(date=new Date()) {
   this.embeddedSignature = null;
 
   this.verified = null;
+  this.revoked = null;
 }
 
 /**

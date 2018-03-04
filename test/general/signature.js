@@ -448,8 +448,7 @@ describe("Signature", function() {
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
-    const keyids = esMsg.getEncryptionKeyIds();
-    privKey.decryptKeyPacket(keyids, 'hello world');
+    esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId));
 
     return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
@@ -483,8 +482,7 @@ describe("Signature", function() {
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
-    const keyids = esMsg.getEncryptionKeyIds();
-    privKey.decryptKeyPacket(keyids, 'hello world');
+    esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId));
 
     return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;

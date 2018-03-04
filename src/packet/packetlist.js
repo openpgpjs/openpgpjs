@@ -178,6 +178,19 @@ Packetlist.prototype.some = async function (callback) {
 };
 
 /**
+* Executes the callback function once for each element,
+* returns true if all callbacks returns a truthy value
+*/
+Packetlist.prototype.every = function (callback) {
+  for (let i = 0; i < this.length; i++) {
+    if (!callback(this[i], i, this)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
  * Traverses packet tree and returns first matching packet
  * @param  {module:enums.packet} type The packet type
  * @returns {module:packet/packet|null}
@@ -240,6 +253,7 @@ Packetlist.prototype.concat = function (packetlist) {
       this.push(packetlist[i]);
     }
   }
+  return this;
 };
 
 /**

@@ -1278,10 +1278,11 @@ describe('Key', function() {
     });
   });
 
-  it('Find a valid subkey binding signature among many invalid ones', function(done) {
+  it('Find a valid subkey binding signature among many invalid ones', function() {
     const k = openpgp.key.readArmored(valid_binding_sig_among_many_expired_sigs_pub).keys[0];
-    expect(k.getEncryptionKeyPacket()).to.not.be.null;
-    done();
+    return k.verifyKeyPackets().then(() => {
+      expect(k.getEncryptionKeyPacket()).to.not.be.null;
+    })
   });
 });
 
