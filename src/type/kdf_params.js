@@ -62,7 +62,7 @@ KDFParams.prototype.write = function () {
 };
 
 KDFParams.fromClone = function (clone) {
-  return new KDFParams(clone.hash, clone.cipher);
+  return new KDFParams([clone.hash, clone.cipher]);
 };
 
 export default KDFParams;
