@@ -38,49 +38,7 @@ export default {
    * @return {Uint8Array} Random byte array
    */
   getRandomBytes: function(length) {
-    const result = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      result[i] = this.getSecureRandomOctet();
-    }
-    return result;
-  },
-
-  /**
-   * Return a secure random number in the specified range
-   * @param {Integer} from Min of the random number
-   * @param {Integer} to Max of the random number (max 32bit)
-   * @return {Integer} A secure random number
-   */
-  getSecureRandom: function(from, to) {
-    let randUint = this.getSecureRandomUint();
-    const bits = ((to - from)).toString(2).length;
-    while ((randUint & ((2 ** bits) - 1)) > (to - from)) {
-      randUint = this.getSecureRandomUint();
-    }
-    return from + (Math.abs(randUint & ((2 ** bits) - 1)));
-  },
-
-  getSecureRandomOctet: function() {
-    const buf = new Uint8Array(1);
-    this.getRandomValues(buf);
-    return buf[0];
-  },
-
-  getSecureRandomUint: function() {
-    const buf = new Uint8Array(4);
-    const dv = new DataView(buf.buffer);
-    this.getRandomValues(buf);
-    return dv.getUint32(0);
-  },
-
-  /**
-   * Helper routine which calls platform specific crypto random generator
-   * @param {Uint8Array} buf
-   */
-  getRandomValues: function(buf) {
-    if (!(buf instanceof Uint8Array)) {
-      throw new Error('Invalid type: buf not an Uint8Array');
-    }
+    const buf = new Uint8Array(length);
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
       window.crypto.getRandomValues(buf);
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
@@ -126,15 +84,17 @@ export default {
 function RandomBuffer() {
   this.buffer = null;
   this.size = null;
+  this.callback = null;
 }
 
 /**
  * Initialize buffer
  * @param  {Integer} size size of buffer
  */
-RandomBuffer.prototype.init = function(size) {
+RandomBuffer.prototype.init = function(size, callback) {
   this.buffer = new Uint8Array(size);
   this.size = 0;
+  this.callback = callback;
 };
 
 /**

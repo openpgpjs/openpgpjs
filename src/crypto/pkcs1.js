@@ -54,7 +54,7 @@ function getPkcs1Padding(length) {
   let result = '';
   let randomByte;
   while (result.length < length) {
-    randomByte = random.getSecureRandomOctet();
+    randomByte = random.getRandomBytes(1)[0];
     if (randomByte !== 0) {
       result += String.fromCharCode(randomByte);
     }

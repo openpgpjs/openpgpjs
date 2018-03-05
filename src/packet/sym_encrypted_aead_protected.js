@@ -79,7 +79,7 @@ SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key
  * @return {Promise<undefined>}           Nothing is returned
  */
 SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
-  this.iv = crypto.random.getRandomValues(new Uint8Array(IV_LEN)); // generate new random IV
+  this.iv = crypto.random.getRandomBytes(IV_LEN); // generate new random IV
   return crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv).then(encrypted => {
     this.encrypted = encrypted;
   });

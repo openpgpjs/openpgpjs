@@ -309,7 +309,7 @@ describe('API functional testing', function() {
         if(algo.substr(0,3) === 'aes') {
           it(algo, function() {
             const key = crypto.generateSessionKey(algo);
-            const iv = crypto.random.getRandomValues(new Uint8Array(crypto.gcm.ivLength));
+            const iv = crypto.random.getRandomBytes(crypto.gcm.ivLength);
 
             return crypto.gcm.encrypt(
               algo, util.str_to_Uint8Array(plaintext), key, iv

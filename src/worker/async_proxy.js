@@ -20,7 +20,6 @@ import crypto from '../crypto';
 import packet from '../packet';
 
 const INITIAL_RANDOM_SEED = 50000; // random bytes seeded to worker
-const RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
 
 /**
  * Initializes a new proxy and loads the web worker
@@ -75,7 +74,7 @@ AsyncProxy.prototype.onMessage = function(event) {
       delete this.tasks[msg.id];
       break;
     case 'request-seed':
-      this.seedRandom(RANDOM_SEED_REQUEST);
+      this.seedRandom(msg.amount);
       break;
     default:
       throw new Error('Unknown Worker Event.');
@@ -87,22 +86,8 @@ AsyncProxy.prototype.onMessage = function(event) {
  * @param  {Integer} size Number of bytes to send
  */
 AsyncProxy.prototype.seedRandom = function(size) {
-  const buf = this.getRandomBuffer(size);
+  const buf = crypto.random.getRandomBytes(size);
   this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
-};
-
-/**
- * Get Uint8Array with random numbers
- * @param  {Integer} size Length of buffer
- * @return {Uint8Array}
- */
-AsyncProxy.prototype.getRandomBuffer = function(size) {
-  if (!size) {
-    return null;
-  }
-  const buf = new Uint8Array(size);
-  crypto.random.getRandomValues(buf);
-  return buf;
 };
 
 /**
