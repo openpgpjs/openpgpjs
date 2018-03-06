@@ -363,7 +363,7 @@ describe('OpenPGP.js public api tests', function() {
         postMessage: function() {}
       };
       openpgp.initWorker({
-        worker: workerStub
+        workers: [workerStub]
       });
       expect(openpgp.getWorker()).to.exist;
       openpgp.destroyWorker();
@@ -522,7 +522,7 @@ describe('OpenPGP.js public api tests', function() {
         postMessage: function() {}
       };
       openpgp.initWorker({
-        worker: workerStub
+        workers: [workerStub]
       });
       const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
