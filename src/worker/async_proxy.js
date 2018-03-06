@@ -22,7 +22,7 @@ import packet from '../packet';
 /**
  * Message handling
  */
-function handleMessage(id) {
+function handleMessage(workerId) {
   return function(event) {
     const msg = event.data;
     switch (msg.event) {
@@ -38,10 +38,10 @@ function handleMessage(id) {
           this.tasks[msg.id].resolve(msg.data);
         }
         delete this.tasks[msg.id];
-        this.workers[id].requests--;
+        this.workers[workerId].requests--;
         break;
       case 'request-seed':
-        this.seedRandom(id, msg.amount);
+        this.seedRandom(workerId, msg.amount);
         break;
       default:
         throw new Error('Unknown Worker Event.');
@@ -53,10 +53,9 @@ function handleMessage(id) {
  * Initializes a new proxy and loads the web worker
  * @constructor
  * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
- * @param {Number} n               number of workers to initialize
+ * @param {Number} n               number of workers to initialize if path given
  * @param {Object} config          config The worker configuration
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
- * @return {Promise}
  */
 export default function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
 
@@ -100,9 +99,9 @@ AsyncProxy.prototype.getID = function() {
  * Send message to worker with random data
  * @param  {Integer} size Number of bytes to send
  */
-AsyncProxy.prototype.seedRandom = async function(id, size) {
+AsyncProxy.prototype.seedRandom = async function(workerId, size) {
   const buf = await crypto.random.getRandomBytes(size);
-  this.workers[id].postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
+  this.workers[workerId].postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
 };
 
 /**

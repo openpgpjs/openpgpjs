@@ -68,7 +68,7 @@ export function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {
 
 /**
  * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @return {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
+ * @returns {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
  */
 export function getWorker() {
   return asyncProxy;
@@ -97,7 +97,7 @@ export function destroyWorker() {
  * @param  {String} curve            (optional) elliptic curve for ECC keys: curve25519, p256, p384, p521, or secp256k1
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @return {Promise<Object>}         The generated key object in the form:
+ * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
@@ -134,7 +134,7 @@ export function generateKey({
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @return {Promise<Object>}         The generated key object in the form:
+ * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @static
  */
@@ -164,7 +164,7 @@ export function reformatKey({
  * Unlock a private key with your passphrase.
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
- * @return {Key}                 the unlocked private key
+ * @returns {Promise<Object>}     the unlocked key object in the form: { key:Key }
  */
 export function decryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
@@ -184,7 +184,7 @@ export function decryptKey({ privateKey, passphrase }) {
  * Lock a private key with your passphrase.
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
- * @return {Key}                 the locked private key
+ * @returns {Promise<Object>}     the locked key object in the form: { key:Key }
  */
 export function encryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
@@ -224,7 +224,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                            (optional) override the creation date of the message and the message signature
- * @return {Promise<Object>}                      encrypted (and optionally signed message) in the form:
+ * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
@@ -276,7 +276,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
  * @param  {String} format                    (optional) return data format either as 'utf8' or 'binary'
  * @param  {Signature} signature              (optional) detached signature for verification
  * @param  {Date} date                        (optional) use the given date for verification instead of the current time
- * @return {Promise<Object>}             decrypted and verified message in the form:
+ * @returns {Promise<Object>}             decrypted and verified message in the form:
  *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
  * @static
  */
@@ -315,7 +315,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
  * @param  {Date} date                          (optional) override the creation date signature
- * @return {Promise<Object>}                    signed cleartext in the form:
+ * @returns {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @static
@@ -357,7 +357,7 @@ export function sign({
  * @param  {CleartextMessage} message    cleartext message object with signatures
  * @param  {Signature} signature         (optional) detached signature for verification
  * @param  {Date} date                   (optional) use the given date for verification instead of the current time
- * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
+ * @returns {Promise<Object>}             cleartext with status of verified signatures in the form of:
  *                                       { data:String, signatures: [{ keyid:String, valid:Boolean }] }
  * @static
  */
@@ -393,7 +393,7 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
- * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
+ * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @static
  */
 export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wildcard=false }) {
@@ -416,7 +416,7 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wild
  * @param  {Message} message                 a message object containing the encrypted session key packets
  * @param  {Key|Array<Key>} privateKeys     (optional) private keys with decrypted secret key data
  * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
- * @return {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
+ * @returns {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
  * @static
@@ -505,7 +505,7 @@ function formatUserIds(userIds) {
 /**
  * Normalize parameter to an array if it is not undefined.
  * @param  {Object} param              the parameter to be normalized
- * @return {Array<Object>|undefined}   the resulting array or undefined
+ * @returns {Array<Object>|undefined}   the resulting array or undefined
  */
 function toArray(param) {
   if (param && !util.isArray(param)) {
@@ -519,7 +519,7 @@ function toArray(param) {
  * @param  {String|Uint8Array} data   the payload for the message
  * @param  {String} filename          the literal data packet's filename
  * @param  {Date} date      the creation date of the package
- * @return {Message}                  a message object
+ * @returns {Message}                  a message object
  */
 function createMessage(data, filename, date=new Date()) {
   let msg;
@@ -537,7 +537,7 @@ function createMessage(data, filename, date=new Date()) {
  * Parse the message given a certain format.
  * @param  {Message} message   the message object to be parse
  * @param  {String} format     the output format e.g. 'utf8' or 'binary'
- * @return {Object}            the parse data in the respective format
+ * @returns {Object}            the parse data in the respective format
  */
 function parseMessage(message, format) {
   if (format === 'binary') {
@@ -572,7 +572,7 @@ function onError(message, error) {
 /**
  * Check for AES-GCM support and configuration by the user. Only browsers that
  * implement the current WebCrypto specification support native AES-GCM.
- * @return {Boolean}   If authenticated encryption should be used
+ * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
   return util.getWebCrypto() && config.aead_protect;

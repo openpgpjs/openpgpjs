@@ -151,7 +151,7 @@ SecretKey.prototype.read = function (bytes) {
 };
 
 /** Creates an OpenPGP key packet for the given key.
-  * @return {String} A string of bytes containing the secret key OpenPGP packet
+  * @returns {String} A string of bytes containing the secret key OpenPGP packet
   */
 SecretKey.prototype.write = function () {
   const arr = [this.writePublicKey()];
@@ -172,11 +172,12 @@ SecretKey.prototype.write = function () {
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
+ * @returns {Promise<Boolean>}
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
   if (this.isDecrypted && !passphrase) {
     this.encrypted = null;
-    return;
+    return false;
   } else if (!passphrase) {
     throw new Error('The key must be decrypted before removing passphrase protection.');
   }
@@ -195,6 +196,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
 
   this.encrypted = util.concatUint8Array(arr);
+  return true;
 };
 
 function produceEncryptionKey(s2k, passphrase, algorithm) {
@@ -209,10 +211,8 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @link module:packet/secret_key.isDecrypted should be
  * false otherwise a call to this function is not needed
  *
- * @param {String} str_passphrase The passphrase for this private key
- * as string
- * @return {Boolean} True if the passphrase was correct or param already
- *                   decrypted; false if not
+ * @param {String} passphrase The passphrase for this private key as string
+ * @returns {Promise<Boolean>}
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
   if (this.isDecrypted) {
@@ -267,6 +267,8 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   this.params = this.params.concat(privParams);
   this.isDecrypted = true;
   this.encrypted = null;
+
+  return true;
 };
 
 SecretKey.prototype.generate = function (bits, curve) {

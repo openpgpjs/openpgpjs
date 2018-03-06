@@ -102,10 +102,9 @@ SymEncryptedSessionKey.prototype.write = function() {
 };
 
 /**
- * Decrypts the session key (only for public key encrypted session key
- * packets (tag 1)
- *
- * @return {Uint8Array} The unencrypted session key
+ * Decrypts the session key
+ * @param {String} passphrase The passphrase in string form
+ * @return {Promise<Boolean}
  */
 SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
@@ -123,8 +122,14 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
     this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
     this.sessionKey = decrypted.subarray(1, decrypted.length);
   }
+  return true;
 };
 
+/**
+ * Encrypts the session key
+ * @param {String} passphrase The passphrase in string form
+ * @return {Promise<Boolean}
+ */
 SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
@@ -146,6 +151,7 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
 
   this.encrypted = crypto.cfb.normalEncrypt(algo, key, private_key, null);
+  return true;
 };
 
 /**

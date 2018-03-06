@@ -79,7 +79,7 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * Encrypt the payload in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @return {Promise}
+ * @return {Promise<Boolean>}
  */
 SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
   const bytes = this.packets.write();
@@ -98,13 +98,14 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
     this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
   }
+  return true;
 };
 
 /**
  * Decrypts the encrypted data contained in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @return {Promise}
+ * @return {Promise<Boolean>}
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   let decrypted;

@@ -54,13 +54,11 @@ SymmetricallyEncrypted.prototype.write = function () {
 };
 
 /**
- * Symmetrically decrypt the packet data
- *
+ * Decrypt the symmetrically-encrypted packet data
  * @param {module:enums.symmetric} sessionKeyAlgorithm
  *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
- * @param {String} key
- *             Key as string with the corresponding length to the
- *            algorithm
+ * @param {Uint8Array} key    The key of cipher blocksize length to be used
+ * @returns {Promise<Boolean>}
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
@@ -73,13 +71,20 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
   }
   this.packets.read(decrypted);
 
-  return Promise.resolve();
+  return true;
 };
 
+/**
+ * Encrypt the symmetrically-encrypted packet data
+ * @param {module:enums.symmetric} sessionKeyAlgorithm
+ *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * @param {Uint8Array} key    The key of cipher blocksize length to be used
+ * @returns {Promise<Boolean>}
+ */
 SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
 
   this.encrypted = crypto.cfb.encrypt(await crypto.getPrefixRandom(algo), algo, data, key, true);
 
-  return Promise.resolve();
+  return true;
 };
