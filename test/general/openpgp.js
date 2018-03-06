@@ -896,25 +896,6 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt then decrypt', function () {
-          const encOpt = {
-            data: plaintext,
-            publicKeys: publicKey.keys
-          };
-          const decOpt = {
-            privateKeys: privateKey.keys
-          };
-          return openpgp.encrypt(encOpt).then(function (encrypted) {
-            expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
-            decOpt.message = openpgp.message.readArmored(encrypted.data);
-            return openpgp.decrypt(decOpt);
-          }).then(function (decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures).to.exist;
-            expect(decrypted.signatures.length).to.equal(0);
-          });
-        });
-
         it('should encrypt then decrypt with multiple private keys', function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
           privKeyDE.decrypt(passphrase);
@@ -1001,9 +982,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt using custom session key and decrypt using session key', function () {
+        it('should encrypt using custom session key and decrypt using session key', async function () {
           const sessionKey = {
-            data: openpgp.crypto.generateSessionKey('aes256'),
+            data: await openpgp.crypto.generateSessionKey('aes256'),
             algorithm: 'aes256'
           };
           const encOpt = {

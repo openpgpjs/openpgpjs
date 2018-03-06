@@ -19,8 +19,6 @@ import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
 
-const INITIAL_RANDOM_SEED = 50000; // random bytes seeded to worker
-
 /**
  * Initializes a new proxy and loads the web worker
  * @constructor
@@ -35,7 +33,6 @@ export default function AsyncProxy({ path='openpgp.worker.js', worker, config } 
   this.worker.onerror = e => {
     throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
   };
-  this.seedRandom(INITIAL_RANDOM_SEED);
 
   if (config) {
     this.worker.postMessage({ event:'configure', config });

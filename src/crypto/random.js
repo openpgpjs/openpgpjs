@@ -37,7 +37,7 @@ export default {
    * @param {Integer} length Length in bytes to generate
    * @return {Uint8Array} Random byte array
    */
-  getRandomBytes: function(length) {
+  getRandomBytes: async function(length) {
     const buf = new Uint8Array(length);
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
       window.crypto.getRandomValues(buf);
@@ -47,7 +47,7 @@ export default {
       const bytes = nodeCrypto.randomBytes(buf.length);
       buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
-      this.randomBuffer.get(buf);
+      await this.randomBuffer.get(buf);
     } else {
       throw new Error('No secure random number generator available.');
     }
@@ -60,7 +60,7 @@ export default {
    * @param {module:type/mpi} max Upper bound, excluded
    * @return {module:BN} Random MPI
    */
-  getRandomBN: function(min, max) {
+  getRandomBN: async function(min, max) {
     if (max.cmp(min) <= 0) {
       throw new Error('Illegal parameter value: max <= min');
     }
@@ -71,7 +71,7 @@ export default {
     // Using a while loop is necessary to avoid bias introduced by the mod operation.
     // However, we request 64 extra random bits so that the bias is negligible.
     // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    const r = new BN(this.getRandomBytes(bytes + 8));
+    const r = new BN(await this.getRandomBytes(bytes + 8));
     return r.mod(modulus).add(min);
   },
 
@@ -121,7 +121,7 @@ RandomBuffer.prototype.set = function(buf) {
  * Take numbers out of buffer and copy to array
  * @param {Uint8Array} buf the destination array
  */
-RandomBuffer.prototype.get = function(buf) {
+RandomBuffer.prototype.get = async function(buf) {
   if (!this.buffer) {
     throw new Error('RandomBuffer is not initialized');
   }
@@ -129,7 +129,12 @@ RandomBuffer.prototype.get = function(buf) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
   if (this.size < buf.length) {
-    throw new Error('Random number buffer depleted');
+    if (!this.callback) {
+      throw new Error('Random number buffer depleted');
+    }
+    // Wait for random bytes from main context, then try again
+    await this.callback();
+    return this.get(buf);
   }
   for (let i = 0; i < buf.length; i++) {
     buf[i] = this.buffer[--this.size];

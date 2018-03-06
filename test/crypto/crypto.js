@@ -278,19 +278,19 @@ describe('API functional testing', function() {
     });
 
     function testCFB(plaintext, resync) {
-      symmAlgos.forEach(function(algo) {
-        const symmKey = crypto.generateSessionKey(algo);
-        const symmencData = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, util.str_to_Uint8Array(plaintext), symmKey, resync);
+      symmAlgos.forEach(async function(algo) {
+        const symmKey = await crypto.generateSessionKey(algo);
+        const symmencData = crypto.cfb.encrypt(await crypto.getPrefixRandom(algo), algo, util.str_to_Uint8Array(plaintext), symmKey, resync);
         const text = util.Uint8Array_to_str(crypto.cfb.decrypt(algo, symmKey, symmencData, resync));
         expect(text).to.equal(plaintext);
       });
     }
 
     function testAESCFB(plaintext) {
-      symmAlgos.forEach(function(algo) {
+      symmAlgos.forEach(async function(algo) {
         if(algo.substr(0,3) === 'aes') {
-          const symmKey = crypto.generateSessionKey(algo);
-          const rndm = crypto.getPrefixRandom(algo);
+          const symmKey = await crypto.generateSessionKey(algo);
+          const rndm = await crypto.getPrefixRandom(algo);
 
           const repeat = new Uint8Array([rndm[rndm.length - 2], rndm[rndm.length - 1]]);
           const prefix = util.concatUint8Array([rndm, repeat]);
@@ -307,9 +307,9 @@ describe('API functional testing', function() {
     function testAESGCM(plaintext) {
       symmAlgos.forEach(function(algo) {
         if(algo.substr(0,3) === 'aes') {
-          it(algo, function() {
-            const key = crypto.generateSessionKey(algo);
-            const iv = crypto.random.getRandomBytes(crypto.gcm.ivLength);
+          it(algo, async function() {
+            const key = await crypto.generateSessionKey(algo);
+            const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
 
             return crypto.gcm.encrypt(
               algo, util.str_to_Uint8Array(plaintext), key, iv
