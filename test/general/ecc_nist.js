@@ -202,7 +202,6 @@ describe('Elliptic Curve Cryptography', function () {
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = load_pub_key('juliet');
-    expect(await romeoPrivate.decrypt(data.romeo.pass)).to.be.true;
     const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
 
     const message = openpgp.message.readArmored(encrypted.data);

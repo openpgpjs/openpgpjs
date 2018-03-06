@@ -184,7 +184,6 @@ describe('X25519 Cryptography', function () {
   it('Decrypt and verify message', async function () {
     const light = load_pub_key('light');
     const night = await load_priv_key('night');
-    expect(await night.decrypt(data.night.pass)).to.be.true;
     const msg = openpgp.message.readArmored(data.night.message_encrypted);
     const result = await openpgp.decrypt({ privateKeys: night, publicKeys: [light], message: msg });
 
@@ -198,7 +197,6 @@ describe('X25519 Cryptography', function () {
   it('Encrypt and sign message', async function () {
     const nightPublic = load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
-    expect(await lightPrivate.decrypt(data.light.pass)).to.be.true;
     const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: data.light.message + "\n" });
 
     const message = openpgp.message.readArmored(encrypted.data);

@@ -216,7 +216,7 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
   if (this.isDecrypted) {
-    return true;
+    throw new Error('Key packet is already decrypted.');
   }
 
   let i = 0;

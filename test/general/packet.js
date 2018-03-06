@@ -141,7 +141,7 @@ describe("Packet", function() {
     });
   });
 
-  it('Sym encrypted session key with a compressed packet', function(done) {
+  it('Sym encrypted session key with a compressed packet', async function() {
     const msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -156,16 +156,16 @@ describe("Packet", function() {
     const parsed = new openpgp.packet.List();
     parsed.read(msgbytes);
 
-    parsed[0].decrypt('test');
+    return parsed[0].decrypt('test').then(() => {
+      const key = parsed[0].sessionKey;
+      return parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key).then(() => {
+        const compressed = parsed[1].packets[0];
 
-    const key = parsed[0].sessionKey;
-    parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key);
-    const compressed = parsed[1].packets[0];
+        const result = stringify(compressed.packets[0].data);
 
-    const result = stringify(compressed.packets[0].data);
-
-    expect(result).to.equal('Hello world!\n');
-    done();
+        expect(result).to.equal('Hello world!\n');
+      });
+    });
   });
 
   it('Public key encrypted symmetric key packet', function() {
@@ -187,13 +187,13 @@ describe("Packet", function() {
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      enc.encrypt({ params: mpi }).then(() => {
+      return enc.encrypt({ params: mpi }).then(() => {
 
         msg.push(enc);
 
         msg2.read(msg.write());
 
-        msg2[0].decrypt({ params: mpi }).then(() => {
+        return msg2[0].decrypt({ params: mpi }).then(() => {
 
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
@@ -299,8 +299,8 @@ describe("Packet", function() {
     const msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    return msg[0].decrypt(key).then(() => {
-      return msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const text = stringify(msg[1].packets[0].packets[0].data);
 
@@ -339,7 +339,7 @@ describe("Packet", function() {
     expect(stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  it('Secret key encryption/decryption test', function() {
+  it('Secret key encryption/decryption test', async function() {
     const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -355,13 +355,13 @@ describe("Packet", function() {
     let key = new openpgp.packet.List();
     key.read(openpgp.armor.decode(armored_key).data);
     key = key[3];
-    key.decrypt('test');
+    await key.decrypt('test');
 
     const msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    return msg[0].decrypt(key).then(() => {
-      return msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const text = stringify(msg[1].packets[0].packets[0].data);
 
@@ -386,7 +386,7 @@ describe("Packet", function() {
     ]);
   });
 
-  it('Reading a signed, encrypted message.', function(done) {
+  it('Reading a signed, encrypted message.', async function() {
     const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
@@ -405,19 +405,19 @@ describe("Packet", function() {
 
     const key = new openpgp.packet.List();
     key.read(openpgp.armor.decode(armored_key).data);
-    key[3].decrypt('test');
+    await key[3].decrypt('test');
 
     const msg = new openpgp.packet.List();
     msg.read(openpgp.armor.decode(armored_msg).data);
 
-    msg[0].decrypt(key[3]).then(() => {
-      msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key[3]).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const payload = msg[1].packets[0].packets;
 
       expect(payload[2].verify(
         key[0], payload[1]
-      )).to.eventually.be.true.notify(done);
+      )).to.eventually.be.true;
     });
   });
 
@@ -428,7 +428,7 @@ describe("Packet", function() {
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return rsa.generate(keySize, "10001").then(function(mpiGen) {
+    return rsa.generate(keySize, "10001").then(async function(mpiGen) {
       let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
         return new openpgp.MPI(k);
@@ -436,13 +436,13 @@ describe("Packet", function() {
 
       key[0].params = mpi;
       key[0].algorithm = "rsa_sign";
-      key[0].encrypt('hello');
+      await key[0].encrypt('hello');
 
       const raw = key.write();
 
       const key2 = new openpgp.packet.List();
       key2.read(raw);
-      key2[0].decrypt('hello');
+      await key2[0].decrypt('hello');
 
       expect(key[0].params.toString()).to.equal(key2[0].params.toString());
     });

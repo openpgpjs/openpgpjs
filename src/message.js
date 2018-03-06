@@ -138,7 +138,8 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
  * Decrypt encrypted session keys either with private keys or passwords.
  * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords   (optional) passwords used to decrypt
- * @returns {Promise{Array<{ data:Uint8Array, algorithm:String }>}} array of object with potential sessionKey, algorithm pairs
+ * @returns {Promise<Array<{ data:      Uint8Array,
+                             algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
  */
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
@@ -162,6 +163,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
       throw new Error('No public key encrypted session key packet found.');
     }
     await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
+      // TODO improve this
       const privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
         return acc.concat(privateKey.getKeyPackets(keyPacket.publicKeyId));
       }, new packet.List());
@@ -534,11 +536,12 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
 
 /**
  * Create list of objects containing signer's keyid and validity of signature
- * @param {Array<module:packet/signature>} signatureList array of signature packets
- * @param {Array<module:packet/literal>} literalDataList array of literal data packets
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:packet/signature>} signatureList   array of signature packets
+ * @param {Array<module:packet/literal>}   literalDataList array of literal data packets
+ * @param {Array<module:key~Key>}          keys            array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Promise{Array<({keyid: module:type/keyid, valid: Boolean})>}} list of signer's keyid and validity of signature
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+                            valid: Boolean}>>} list of signer's keyid and validity of signature
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {

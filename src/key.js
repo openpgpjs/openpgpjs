@@ -529,9 +529,10 @@ Key.prototype.getPrimaryUser = function(date=new Date()) {
  * Update key with new components from specified key with same key ID:
  * users, subkeys, certificates are merged into the destination key,
  * duplicates and expired signatures are ignored.
+ *
  * If the specified key is a private key and the destination key is public,
  * the destination key is transformed to a private key.
- * @param  {module:key~Key} key source key to merge
+ * @param  {module:key~Key} key Source key to merge
  */
 Key.prototype.update = async function(key) {
   const that = this;
@@ -903,8 +904,9 @@ User.prototype.verify = async function(primaryKey) {
 
 /**
  * Update user with new components from specified user
- * @param  {module:key~User} user source user to merge
- * @param  {module:packet/signature} primaryKey primary key used for validation
+ * @param  {module:key~User}             user       Source user to merge
+ * @param  {module:packet/secret_key|
+            module:packet/secret_subkey} primaryKey primary key used for validation
  */
 User.prototype.update = async function(user, primaryKey) {
   const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
@@ -1037,8 +1039,9 @@ SubKey.prototype.getExpirationTime = function() {
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key~SubKey} subKey source subkey to merge
- * @param  {module:packet/signature} primaryKey primary key used for validation
+ * @param  {module:key~SubKey}           subKey     Source subkey to merge
+ * @param  {module:packet/secret_key|
+            module:packet/secret_subkey} primaryKey primary key used for validation
  */
 SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
@@ -1226,7 +1229,12 @@ export async function reformat(options) {
     throw new Error('Only RSA Encrypt or Sign supported');
   }
 
-  if (!options.privateKey.decrypt()) {
+  try {
+    const isDecrypted = options.privateKey.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
+    if (!isDecrypted) {
+      await options.privateKey.decrypt();
+    }
+  } catch (err) {
     throw new Error('Key not decrypted');
   }
 

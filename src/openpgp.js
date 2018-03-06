@@ -371,8 +371,10 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.data = CleartextMessage.prototype.isPrototypeOf(message) ? message.getText() : message.getLiteralData();
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
+    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    result.signatures = signature ?
+      await message.verifyDetached(signature, publicKeys, date) :
+      await message.verify(publicKeys, date);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
@@ -462,12 +464,12 @@ function checkData(data, name) {
   }
 }
 function checkMessage(message) {
-  if (!messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message');
   }
 }
 function checkCleartextOrMessage(message) {
-  if (!CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!(message instanceof CleartextMessage) && !(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }

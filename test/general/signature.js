@@ -688,16 +688,18 @@ describe("Signature", function() {
 
   });
 
-  it('Verify primary key revocation signature', function(done) {
+  // TODO add test with multiple revocation signatures
+  it('Verify primary key revocation signatures', function(done) {
     const pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
-    expect(pubKey.revocationSignature.verify(
+    expect(pubKey.revocationSignatures[0].verify(
       pubKey.primaryKey, {key: pubKey.primaryKey}
     )).to.eventually.be.true.notify(done);
   });
 
-  it('Verify subkey revocation signature', function(done) {
+  // TODO add test with multiple revocation signatures
+  it('Verify subkey revocation signatures', function(done) {
     const pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
-    expect(pubKey.subKeys[0].revocationSignature.verify(
+    expect(pubKey.subKeys[0].revocationSignatures[0].verify(
       pubKey.primaryKey, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].subKey}
     )).to.eventually.be.true.notify(done);
   });

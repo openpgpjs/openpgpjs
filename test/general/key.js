@@ -769,7 +769,7 @@ describe('Key', function() {
 
     const pubKey = pubKeys.keys[0];
     // remove subkeys
-    pubKey.subKeys = null;
+    pubKey.subKeys = [];
     // primary key has only key flags for signing
     const keyPacket = pubKey.getEncryptionKeyPacket();
     expect(keyPacket).to.not.exist;
@@ -798,13 +798,13 @@ describe('Key', function() {
     )()).to.be.rejectedWith('Key update method: fingerprints of keys not equal').notify(done);
   });
 
-  it('update() - merge revocation signature', function(done) {
+  it('update() - merge revocation signatures', function(done) {
     const source = openpgp.key.readArmored(pub_revoked).keys[0];
     const dest = openpgp.key.readArmored(pub_revoked).keys[0];
-    expect(source.revocationSignature).to.exist;
-    dest.revocationSignature = null;
+    expect(source.revocationSignatures).to.exist;
+    dest.revocationSignatures = [];
     dest.update(source).then(() => {
-      expect(dest.revocationSignature).to.exist.and.be.an.instanceof(openpgp.packet.Signature);
+      expect(dest.revocationSignatures[0]).to.exist.and.be.an.instanceof(openpgp.packet.Signature);
       done();
     });
   });
@@ -821,18 +821,18 @@ describe('Key', function() {
     });
   });
 
-  it('update() - merge user - other and revocation certification', function(done) {
+  it('update() - merge user - other and certification revocation signatures', function(done) {
     const source = openpgp.key.readArmored(pub_sig_test).keys[0];
     const dest = openpgp.key.readArmored(pub_sig_test).keys[0];
     expect(source.users[1].otherCertifications).to.exist;
-    expect(source.users[1].revocationCertifications).to.exist;
-    dest.users[1].otherCertifications = null;
-    dest.users[1].revocationCertifications.pop();
+    expect(source.users[1].revocationSignatures).to.exist;
+    dest.users[1].otherCertifications = [];
+    dest.users[1].revocationSignatures.pop();
     dest.update(source).then(() => {
       expect(dest.users[1].otherCertifications).to.exist.and.to.have.length(1);
       expect(dest.users[1].otherCertifications[0].signature).to.equal(source.users[1].otherCertifications[0].signature);
-      expect(dest.users[1].revocationCertifications).to.exist.and.to.have.length(2);
-      expect(dest.users[1].revocationCertifications[1].signature).to.equal(source.users[1].revocationCertifications[1].signature);
+      expect(dest.users[1].revocationSignatures).to.exist.and.to.have.length(2);
+      expect(dest.users[1].revocationSignatures[1].signature).to.equal(source.users[1].revocationSignatures[1].signature);
       done();
     });
   });
@@ -851,15 +851,14 @@ describe('Key', function() {
     });
   });
 
-  it('update() - merge subkey - revocation signature', function(done) {
+  it('update() - merge subkey - revocation signature', function() {
     const source = openpgp.key.readArmored(pub_sig_test).keys[0];
     const dest = openpgp.key.readArmored(pub_sig_test).keys[0];
-    expect(source.subKeys[0].revocationSignature).to.exist;
-    dest.subKeys[0].revocationSignature = null;
-    dest.update(source).then(() => {
-      expect(dest.subKeys[0].revocationSignature).to.exist;
-      expect(dest.subKeys[0].revocationSignature.signature).to.equal(dest.subKeys[0].revocationSignature.signature);
-      done();
+    expect(source.subKeys[0].revocationSignatures).to.exist;
+    dest.subKeys[0].revocationSignatures = [];
+    return dest.update(source).then(() => {
+      expect(dest.subKeys[0].revocationSignatures).to.exist;
+      expect(dest.subKeys[0].revocationSignatures[0].signature).to.equal(dest.subKeys[0].revocationSignatures[0].signature);
     });
   });
 
@@ -886,8 +885,8 @@ describe('Key', function() {
   it('update() - merge private key into public key - no subkeys', function() {
     const source = openpgp.key.readArmored(priv_key_rsa).keys[0];
     const dest = openpgp.key.readArmored(twoKeys).keys[0];
-    source.subKeys = null;
-    dest.subKeys = null;
+    source.subKeys = [];
+    dest.subKeys = [];
     expect(dest.isPublic()).to.be.true;
     return dest.update(source).then(() => {
       expect(dest.isPrivate()).to.be.true;
@@ -905,7 +904,7 @@ describe('Key', function() {
   it('update() - merge private key into public key - mismatch throws error', function(done) {
     const source = openpgp.key.readArmored(priv_key_rsa).keys[0];
     const dest = openpgp.key.readArmored(twoKeys).keys[0];
-    source.subKeys = null;
+    source.subKeys = [];
     expect(dest.subKeys).to.exist;
     expect(dest.isPublic()).to.be.true;
     expect(dest.update.bind(dest, source)())
