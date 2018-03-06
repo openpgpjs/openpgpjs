@@ -153,7 +153,7 @@ Key.prototype.toPacketlist = function() {
 Key.prototype.getSubkeyPackets = function(keyId=null) {
   const packets = new packet.List();
   this.subKeys.forEach(subKey => {
-    if (!keyId || subKey.subKey.getKeyId().equals(keyId)) {
+    if (!keyId || subKey.subKey.getKeyId().equals(keyId, true)) {
       packets.push(subKey.subKey);
     }
   });
@@ -168,7 +168,7 @@ Key.prototype.getSubkeyPackets = function(keyId=null) {
  */
 Key.prototype.getKeyPackets = function(keyId=null) {
   const packets = new packet.List();
-  if (!keyId || this.primaryKey.getKeyId().equals(keyId)) {
+  if (!keyId || this.primaryKey.getKeyId().equals(keyId, true)) {
     packets.push(this.primaryKey);
   }
   packets.concat(this.getSubkeyPackets(keyId));
@@ -288,7 +288,7 @@ Key.prototype.getSigningKeyPacket = function (keyId=null, date=new Date()) {
       }
     }
   }
-  // TODO throw descriptive error
+  // TODO how to throw descriptive error?
   return null;
 };
 
@@ -334,7 +334,7 @@ Key.prototype.getEncryptionKeyPacket = function(keyId, date=new Date()) {
       isValidEncryptionKeyPacket(this.primaryKey, primaryUser.selfCertificate, date)) {
     return this.primaryKey;
   }
-  // TODO throw descriptive error
+  // TODO how to throw descriptive error?
   return null;
 };
 
@@ -1064,9 +1064,10 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
     }
     for (let i = 0; i < that.bindingSignatures.length; i++) {
       if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
-        // TODO check which one is more recent
-        that.bindingSignatures[i] = srcBindSig;
-        return false;
+        if (srcBindSig.created < that.bindingSignatures[i].created) {
+          that.bindingSignatures[i] = srcBindSig;
+          return false;
+        }
       }
     }
     return true;
@@ -1378,7 +1379,6 @@ async function isDataRevoked(primaryKey, dataToVerify, revocations, signature, k
     return false;
   }));
   // TODO further verify that this is the signature that should be revoked
-  // In particular, if signature.issuerKeyId is a wildcard, any revocation signature will revoke it
   if (signature) {
     signature.revoked = revocationKeyIds.some(keyId => keyId.equals(signature.issuerKeyId)) ? true :
       signature.revoked;
