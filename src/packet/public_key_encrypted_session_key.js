@@ -112,7 +112,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   if (algo === enums.publicKey.ecdh) {
     toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
   } else {
-    toEncrypt = new type_mpi(crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
+    toEncrypt = new type_mpi(await crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
   }
 
   this.encrypted = await crypto.publicKeyEncrypt(

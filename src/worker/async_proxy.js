@@ -85,8 +85,8 @@ AsyncProxy.prototype.onMessage = function(event) {
  * Send message to worker with random data
  * @param  {Integer} size Number of bytes to send
  */
-AsyncProxy.prototype.seedRandom = function(size) {
-  const buf = crypto.random.getRandomBytes(size);
+AsyncProxy.prototype.seedRandom = async function(size) {
+  const buf = await crypto.random.getRandomBytes(size);
   this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
 };
 

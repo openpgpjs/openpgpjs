@@ -142,7 +142,7 @@ describe('Elliptic Curve Cryptography', function () {
     data[name].pub_key = pub.keys[0];
     return data[name].pub_key;
   }
-  function load_priv_key(name) {
+  async function load_priv_key(name) {
     if (data[name].priv_key) {
       return data[name].priv_key;
     }
@@ -151,7 +151,7 @@ describe('Elliptic Curve Cryptography', function () {
     expect(pk.err).to.not.exist;
     expect(pk.keys).to.have.length(1);
     expect(pk.keys[0].primaryKey.getKeyId().toHex()).to.equal(data[name].id);
-    expect(pk.keys[0].decrypt(data[name].pass)).to.be.true;
+    expect(await pk.keys[0].decrypt(data[name].pass)).to.be.true;
     data[name].priv_key = pk.keys[0];
     return data[name].priv_key;
   }
@@ -160,10 +160,10 @@ describe('Elliptic Curve Cryptography', function () {
     load_pub_key('juliet');
     done();
   });
-  it('Load private key', function (done) {
-    load_priv_key('romeo');
-    load_priv_key('juliet');
-    done();
+  it('Load private key', async function () {
+    await load_priv_key('romeo');
+    await load_priv_key('juliet');
+    return true;
   });
   it('Verify clear signed message', function () {
     const pub = load_pub_key('juliet');
@@ -175,52 +175,45 @@ describe('Elliptic Curve Cryptography', function () {
       expect(result.signatures[0].valid).to.be.true;
     });
   });
-  it('Sign message', function () {
-    const romeo = load_priv_key('romeo');
-    return openpgp.sign({privateKeys: [romeo], data: data.romeo.message + "\n"}).then(function (signed) {
-      const romeo = load_pub_key('romeo');
-      const msg = openpgp.cleartext.readArmored(signed.data);
-      return openpgp.verify({publicKeys: [romeo], message: msg}).then(function (result) {
-        expect(result).to.exist;
-        expect(result.data.trim()).to.equal(data.romeo.message);
-        expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.be.true;
-      });
-    });
+  it('Sign message', async function () {
+    const romeoPrivate = await load_priv_key('romeo');
+    const signed = await openpgp.sign({privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+    const romeoPublic = load_pub_key('romeo');
+    const msg = openpgp.cleartext.readArmored(signed.data);
+    const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
+
+    expect(result).to.exist;
+    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.signatures).to.have.length(1);
+    expect(result.signatures[0].valid).to.be.true;
   });
-  it('Decrypt and verify message', function () {
+  it('Decrypt and verify message', async function () {
     const juliet = load_pub_key('juliet');
-    const romeo = load_priv_key('romeo');
+    const romeo = await load_priv_key('romeo');
     const msg = openpgp.message.readArmored(data.juliet.message_encrypted);
-    return openpgp.decrypt(
-      {privateKeys: romeo, publicKeys: [juliet], message: msg}
-    ).then(function (result) {
-      expect(result).to.exist;
-      // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
-      expect(result.data.trim()).to.equal(data.juliet.message);
-      expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
-    });
+    const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
+
+    expect(result).to.exist;
+    // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
+    expect(result.data.trim()).to.equal(data.juliet.message);
+    expect(result.signatures).to.have.length(1);
+    expect(result.signatures[0].valid).to.be.true;
   });
-  it('Encrypt and sign message', function () {
-    const romeo = load_priv_key('romeo');
-    const juliet = load_pub_key('juliet');
-    expect(romeo.decrypt(data.romeo.pass)).to.be.true;
-    return openpgp.encrypt(
-      {publicKeys: [juliet], privateKeys: [romeo], data: data.romeo.message + "\n"}
-    ).then(function (encrypted) {
-      const message = openpgp.message.readArmored(encrypted.data);
-      const romeo = load_pub_key('romeo');
-      const juliet = load_priv_key('juliet');
-      return openpgp.decrypt(
-        {privateKeys: juliet, publicKeys: [romeo], message: message}
-      ).then(function (result) {
-        expect(result).to.exist;
-        expect(result.data.trim()).to.equal(data.romeo.message);
-        expect(result.signatures).to.have.length(1);
-        expect(result.signatures[0].valid).to.be.true;
-      });
-    });
+  it('Encrypt and sign message', async function () {
+    const romeoPrivate = await load_priv_key('romeo');
+    const julietPublic = load_pub_key('juliet');
+    expect(await romeoPrivate.decrypt(data.romeo.pass)).to.be.true;
+    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+
+    const message = openpgp.message.readArmored(encrypted.data);
+    const romeoPublic = load_pub_key('romeo');
+    const julietPrivate = await load_priv_key('juliet');
+    const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
+
+    expect(result).to.exist;
+    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.signatures).to.have.length(1);
+    expect(result.signatures[0].valid).to.be.true;
   });
   it('Generate key', function () {
     const options = {

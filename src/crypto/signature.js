@@ -34,7 +34,7 @@ export default {
         const m = msg_MPIs[0].toBN();
         const n = pub_MPIs[0].toBN();
         const e = pub_MPIs[1].toBN();
-        const EM = publicKey.rsa.verify(m, n, e);
+        const EM = await publicKey.rsa.verify(m, n, e);
         const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array_to_str(data), n.byteLength());
         return util.Uint8Array_to_hex(EM) === EM2;
       }
@@ -88,7 +88,7 @@ export default {
         const d = key_params[2].toBN();
         data = util.Uint8Array_to_str(data);
         const m = new BN(pkcs1.emsa.encode(hash_algo, data, n.byteLength()), 16);
-        const signature = publicKey.rsa.sign(m, n, e, d);
+        const signature = await publicKey.rsa.sign(m, n, e, d);
         return util.Uint8Array_to_MPI(signature);
       }
       case enums.publicKey.dsa: {
@@ -96,7 +96,7 @@ export default {
         const q = key_params[1].toBN();
         const g = key_params[2].toBN();
         const x = key_params[4].toBN();
-        const signature = publicKey.dsa.sign(hash_algo, data, g, p, q, x);
+        const signature = await publicKey.dsa.sign(hash_algo, data, g, p, q, x);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.r),
           util.Uint8Array_to_MPI(signature.s)

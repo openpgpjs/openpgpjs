@@ -380,35 +380,32 @@ Key.prototype.getEncryptionKeyPacket = function(keyId, date=new Date()) {
  * Encrypts all secret key and subkey packets
  * @param  {String} passphrase
  */
-Key.prototype.encrypt = function(passphrase) {
+Key.prototype.encrypt = async function(passphrase) {
   if (!this.isPrivate()) {
     throw new Error("Nothing to encrypt in a public key");
   }
 
   const keys = this.getAllKeyPackets();
-  for (let i = 0; i < keys.length; i++) {
-    keys[i].encrypt(passphrase);
-    keys[i].clearPrivateParams();
-  }
+  await Promise.all(keys.map(async function(packet) {
+    await packet.encrypt(passphrase);
+    await packet.clearPrivateParams();
+    return packet;
+  }));
+  return true;
 };
 
 /**
  * Decrypts all secret key and subkey packets
  * @param  {String} passphrase
- * @return {Boolean} true if all key and subkey packets decrypted successfully
+ * @return {Promise<Boolean>} true if all key and subkey packets decrypted successfully
  */
-Key.prototype.decrypt = function(passphrase) {
-  if (this.isPrivate()) {
-    const keys = this.getAllKeyPackets();
-    for (let i = 0; i < keys.length; i++) {
-      const success = keys[i].decrypt(passphrase);
-      if (!success) {
-        return false;
-      }
-    }
-  } else {
+Key.prototype.decrypt = async function(passphrase) {
+  if (!this.isPrivate()) {
     throw new Error("Nothing to decrypt in a public key");
   }
+
+  const keys = this.getAllKeyPackets();
+  await Promise.all(keys.map(packet => packet.decrypt(passphrase)));
   return true;
 };
 
@@ -1254,46 +1251,48 @@ export function generate(options) {
  * @return {module:key~Key}
  * @static
  */
-export function reformat(options) {
+export async function reformat(options) {
   let secretKeyPacket;
   let secretSubkeyPacket;
-  return Promise.resolve().then(() => {
-    options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-    if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-      throw new Error('Only RSA Encrypt or Sign supported');
-    }
 
-    if (!options.privateKey.decrypt()) {
-      throw new Error('Key not decrypted');
-    }
+  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
+  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) { // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
+    throw new Error('Only RSA Encrypt or Sign supported');
+  }
 
-    if (!options.passphrase) { // Key without passphrase is unlocked by definition
-      options.unlocked = true;
+  try {
+    await options.privateKey.decrypt();
+  }
+  catch(err) {
+    throw new Error('Key not decrypted');
+  }
+
+  if (!options.passphrase) { // Key without passphrase is unlocked by definition
+    options.unlocked = true;
+  }
+  if (util.isString(options.userIds)) {
+    options.userIds = [options.userIds];
+  }
+  const packetlist = options.privateKey.toPacketlist();
+  for (let i = 0; i < packetlist.length; i++) {
+    if (packetlist[i].tag === enums.packet.secretKey) {
+      secretKeyPacket = packetlist[i];
+      options.keyType = secretKeyPacket.algorithm;
+    } else if (packetlist[i].tag === enums.packet.secretSubkey) {
+      secretSubkeyPacket = packetlist[i];
+      options.subkeyType = secretSubkeyPacket.algorithm;
     }
-    if (util.isString(options.userIds)) {
-      options.userIds = [options.userIds];
-    }
-    const packetlist = options.privateKey.toPacketlist();
-    for (let i = 0; i < packetlist.length; i++) {
-      if (packetlist[i].tag === enums.packet.secretKey) {
-        secretKeyPacket = packetlist[i];
-        options.keyType = secretKeyPacket.algorithm;
-      } else if (packetlist[i].tag === enums.packet.secretSubkey) {
-        secretSubkeyPacket = packetlist[i];
-        options.subkeyType = secretSubkeyPacket.algorithm;
-      }
-    }
-    if (!secretKeyPacket) {
-      throw new Error('Key does not contain a secret key packet');
-    }
-    return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
-  });
+  }
+  if (!secretKeyPacket) {
+    throw new Error('Key does not contain a secret key packet');
+  }
+  return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
 }
 
 async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
   // set passphrase protection
   if (options.passphrase) {
-    secretKeyPacket.encrypt(options.passphrase);
+    await secretKeyPacket.encrypt(options.passphrase);
     if (secretSubkeyPacket) {
       secretSubkeyPacket.encrypt(options.passphrase);
     }

@@ -55,7 +55,7 @@ describe("Packet", function() {
       '=KXkj\n' +
       '-----END PGP PRIVATE KEY BLOCK-----';
 
-  it('Symmetrically encrypted packet', function(done) {
+  it('Symmetrically encrypted packet', async function() {
     const message = new openpgp.packet.List();
 
     const literal = new openpgp.packet.Literal();
@@ -68,18 +68,17 @@ describe("Packet", function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
 
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
     const msg2 = new openpgp.packet.List();
     msg2.read(message.write());
     msg2[0].ignore_mdc_error = true;
-    msg2[0].decrypt(algo, key);
+    await msg2[0].decrypt(algo, key);
 
     expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
-    done();
   });
 
-  it('Symmetrically encrypted packet - MDC error for modern cipher', function() {
+  it('Symmetrically encrypted packet - MDC error for modern cipher', async function() {
     const message = new openpgp.packet.List();
 
     const literal = new openpgp.packet.Literal();
@@ -87,19 +86,19 @@ describe("Packet", function() {
 
     const enc = new openpgp.packet.SymmetricallyEncrypted();
     message.push(enc);
-    enc.packets.push(literal);
+    await enc.packets.push(literal);
 
     const key = '12345678901234567890123456789012';
     const algo = 'aes256';
 
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
     const msg2 = new openpgp.packet.List();
     msg2.read(message.write());
-    expect(msg2[0].decrypt.bind(msg2[0], algo, key)).to.throw('Decryption failed due to missing MDC in combination with modern cipher.');
+    expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC in combination with modern cipher.');
   });
 
-  it('Sym. encrypted integrity protected packet', function(done) {
+  it('Sym. encrypted integrity protected packet', async function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
 
@@ -110,15 +109,14 @@ describe("Packet", function() {
     msg.push(enc);
     literal.setText('Hello world!');
     enc.packets.push(literal);
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
     const msg2 = new openpgp.packet.List();
     msg2.read(msg.write());
 
-    msg2[0].decrypt(algo, key);
+    await msg2[0].decrypt(algo, key);
 
     expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
-    done();
   });
 
   it('Sym. encrypted AEAD protected packet', function() {
@@ -310,7 +308,7 @@ describe("Packet", function() {
     });
   });
 
-  it('Sym. encrypted session key reading/writing', function(done) {
+  it('Sym. encrypted session key reading/writing', async function() {
     const passphrase = 'hello';
     const algo = 'aes256';
 
@@ -323,23 +321,22 @@ describe("Packet", function() {
     msg.push(enc);
 
     key_enc.sessionKeyAlgorithm = algo;
-    key_enc.decrypt(passphrase);
+    await key_enc.encrypt(passphrase);
 
     const key = key_enc.sessionKey;
 
     literal.setText('Hello world!');
     enc.packets.push(literal);
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
     const msg2 = new openpgp.packet.List();
     msg2.read(msg.write());
 
-    msg2[0].decrypt(passphrase);
+    await msg2[0].decrypt(passphrase);
     const key2 = msg2[0].sessionKey;
-    msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+    await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
 
     expect(stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
-    done();
   });
 
   it('Secret key encryption/decryption test', function() {

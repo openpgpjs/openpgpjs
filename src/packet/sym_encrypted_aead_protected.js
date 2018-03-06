@@ -66,10 +66,8 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * @param  {Uint8Array} key               The session key used to encrypt the payload
  * @return {Promise<undefined>}           Nothing is returned
  */
-SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  return crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv).then(decrypted => {
-    this.packets.read(decrypted);
-  });
+SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+  this.packets.read(await crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv));
 };
 
 /**
@@ -78,9 +76,7 @@ SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key
  * @param  {Uint8Array} key               The session key used to encrypt the payload
  * @return {Promise<undefined>}           Nothing is returned
  */
-SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
-  this.iv = crypto.random.getRandomBytes(IV_LEN); // generate new random IV
-  return crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv).then(encrypted => {
-    this.encrypted = encrypted;
-  });
+SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
+  this.iv = await crypto.random.getRandomBytes(IV_LEN); // generate new random IV
+  this.encrypted = await crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv);
 };

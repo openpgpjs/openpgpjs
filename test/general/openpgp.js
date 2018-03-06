@@ -635,12 +635,12 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.aead_protect = aead_protectVal;
     });
 
-    it('Decrypting key with wrong passphrase returns false', function () {
-      expect(privateKey.keys[0].decrypt('wrong passphrase')).to.be.false;
+    it('Decrypting key with wrong passphrase rejected', function () {
+      expect(privateKey.keys[0].decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
     });
 
-    it('Decrypting key with correct passphrase returns true', function () {
-      expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
+    it('Decrypting key with correct passphrase returns true', async function () {
+      expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
     });
 
     tryTests('CFB mode (asm.js)', tests, {
@@ -719,7 +719,7 @@ describe('OpenPGP.js public api tests', function() {
             privateKey: privateKey.keys[0],
             passphrase: 'incorrect'
           }).catch(function(error){
-            expect(error.message).to.match(/Invalid passphrase/);
+            expect(error.message).to.match(/Incorrect key passphrase/);
           });
         });
       });
@@ -727,9 +727,10 @@ describe('OpenPGP.js public api tests', function() {
       describe('encryptSessionKey, decryptSessionKeys', function() {
         const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
-        beforeEach(function(done) {
-          expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
-          privateKey.keys[0].verifyPrimaryUser().then(() => done());
+        beforeEach(async function() {
+          expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
+          await privateKey.keys[0].verifyPrimaryUser();
+          return true;
         });
 
         it('should encrypt with public key', function() {
@@ -867,14 +868,13 @@ describe('OpenPGP.js public api tests', function() {
           '=6XMW\r\n' +
           '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
 
-        beforeEach(function (done) {
-          expect(privateKey.keys[0].decrypt(passphrase)).to.be.true;
-          Promise.all([
-              privateKey.keys[0].verifyPrimaryUser(),
-              privateKey_2000_2008.keys[0].verifyPrimaryUser(),
-              privateKey_1337.keys[0].verifyPrimaryUser(),
-              privateKey_2038_2045.keys[0].verifyPrimaryUser()
-          ]).then(() => done());
+        beforeEach( async function () {
+          expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
+          await privateKey.keys[0].verifyPrimaryUser();
+          await privateKey_2000_2008.keys[0].verifyPrimaryUser();
+          await privateKey_1337.keys[0].verifyPrimaryUser();
+          await privateKey_2038_2045.keys[0].verifyPrimaryUser();
+          return true;
         });
 
         it('should encrypt then decrypt', function () {

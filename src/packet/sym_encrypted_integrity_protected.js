@@ -81,9 +81,9 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
  * @return {Promise}
  */
-SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
+SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
   const bytes = this.packets.write();
-  const prefixrandom = crypto.getPrefixRandom(sessionKeyAlgorithm);
+  const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   const prefix = util.concatUint8Array([prefixrandom, repeat]);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
@@ -98,8 +98,6 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
     this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
   }
-
-  return Promise.resolve();
 };
 
 /**
@@ -108,7 +106,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = function (sessionKeyAlgorithm
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
  * @return {Promise}
  */
-SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
+SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, this.encrypted, key);

@@ -62,7 +62,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  *             Key as string with the corresponding length to the
  *            algorithm
  */
-SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
+SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
   // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
   if (!this.ignore_mdc_error &&
@@ -76,10 +76,10 @@ SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
   return Promise.resolve();
 };
 
-SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
+SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
 
-  this.encrypted = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, data, key, true);
+  this.encrypted = crypto.cfb.encrypt(await crypto.getPrefixRandom(algo), algo, data, key, true);
 
   return Promise.resolve();
 };
