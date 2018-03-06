@@ -50,7 +50,7 @@ function tests() {
   describe('Random number pipeline', function() {
     it('Random number buffer automatically reseeded', function() {
       const worker = new Worker('../dist/openpgp.worker.js');
-      const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', worker });
+      const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', workers: [worker] });
 
       return wProxy.delegate('encrypt', { publicKeys:[pubKey], data:plaintext });
     });
