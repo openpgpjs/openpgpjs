@@ -107,9 +107,12 @@ module.exports = function(grunt) {
           transform: [
             ["babelify", {
               global: true,
+              // Only babelify chai-as-promised in node_modules
+              only: /^(?:.*\/node_modules\/chai-as-promised\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
+                        "transform-runtime",
                         "transform-remove-strict-mode"],
               ignore: ['*.min.js'],
               presets: ["env"]

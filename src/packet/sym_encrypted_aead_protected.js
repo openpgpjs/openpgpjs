@@ -64,23 +64,21 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * Decrypt the encrypted payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
- * @return {Promise<undefined>}           Nothing is returned
+ * @return {Promise<Boolean>}
  */
-SymEncryptedAEADProtected.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  return crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv).then(decrypted => {
-    this.packets.read(decrypted);
-  });
+SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+  this.packets.read(await crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv));
+  return true;
 };
 
 /**
  * Encrypt the packet list payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
- * @return {Promise<undefined>}           Nothing is returned
+ * @return {Promise<Boolean>}
  */
-SymEncryptedAEADProtected.prototype.encrypt = function (sessionKeyAlgorithm, key) {
-  this.iv = crypto.random.getRandomValues(new Uint8Array(IV_LEN)); // generate new random IV
-  return crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv).then(encrypted => {
-    this.encrypted = encrypted;
-  });
+SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
+  this.iv = await crypto.random.getRandomBytes(IV_LEN); // generate new random IV
+  this.encrypted = await crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv);
+  return true;
 };

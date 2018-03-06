@@ -178,7 +178,7 @@ Curve.prototype.genKeyPair = async function () {
   if (!keyPair || !keyPair.priv) {
     // elliptic fallback
     const r = await this.curve.genKeyPair({
-      entropy: util.Uint8Array_to_str(random.getRandomBytes(32))
+      entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
     });
     const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
     if (this.keyType === enums.publicKey.eddsa) {

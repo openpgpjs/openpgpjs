@@ -33,13 +33,13 @@ export default {
    * m, p, g, y are all BN
    * returns { c1: BN, c2: BN }
    */
-  encrypt: function(m, p, g, y) {
+  encrypt: async function(m, p, g, y) {
     const redp = new BN.red(p);
     const mred = m.toRed(redp);
     const gred = g.toRed(redp);
     const yred = y.toRed(redp);
     // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
-    const k = random.getRandomBN(zero, p); // returns in [0, p-1]
+    const k = await random.getRandomBN(zero, p); // returns in [0, p-1]
     return {
       c1: gred.redPow(k).fromRed(),
       c2: yred.redPow(k).redMul(mred).fromRed()
@@ -50,7 +50,7 @@ export default {
    * c1, c2, p, x are all BN
    * returns BN
    */
-  decrypt: function(c1, c2, p, x) {
+  decrypt: async function(c1, c2, p, x) {
     const redp = new BN.red(p);
     const c1red = c1.toRed(redp);
     const c2red = c2.toRed(redp);

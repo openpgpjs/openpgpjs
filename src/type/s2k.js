@@ -46,7 +46,7 @@ export default function S2K() {
   /** Eight bytes of salt in a binary string.
    * @type {String}
    */
-  this.salt = crypto.random.getRandomBytes(8);
+  this.salt = null;
 }
 
 S2K.prototype.get_count = function () {

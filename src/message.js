@@ -55,7 +55,7 @@ export function Message(packetlist) {
 
 /**
  * Returns the key IDs of the keys to which the session key is encrypted
- * @return {Array<module:type/keyid>} array of keyid objects
+ * @returns {Array<module:type/keyid>} array of keyid objects
  */
 Message.prototype.getEncryptionKeyIds = function() {
   const keyIds = [];
@@ -68,7 +68,7 @@ Message.prototype.getEncryptionKeyIds = function() {
 
 /**
  * Returns the key IDs of the keys that signed the message
- * @return {Array<module:type/keyid>} array of keyid objects
+ * @returns {Array<module:type/keyid>} array of keyid objects
  */
 Message.prototype.getSigningKeyIds = function() {
   const keyIds = [];
@@ -93,7 +93,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
  * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
- * @return {Message}             new message with decrypted content
+ * @returns {Promise<Message>}             new message with decrypted content
  */
 Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) {
   const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
@@ -105,7 +105,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
   );
 
   if (symEncryptedPacketlist.length === 0) {
-    return;
+    return this;
   }
 
   const symEncryptedPacket = symEncryptedPacketlist[0];
@@ -138,74 +138,73 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
  * Decrypt encrypted session keys either with private keys or passwords.
  * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords   (optional) passwords used to decrypt
- * @return {Array<{ data:Uint8Array, algorithm:String }>} array of object with potential sessionKey, algorithm pairs
+ * @returns {Promise{Array<{ data:Uint8Array, algorithm:String }>}} array of object with potential sessionKey, algorithm pairs
  */
-Message.prototype.decryptSessionKeys = function(privateKeys, passwords) {
+Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
-  return Promise.resolve().then(async () => {
-    if (passwords) {
-      const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-      if (!symESKeyPacketlist) {
-        throw new Error('No symmetrically encrypted session key packet found.');
-      }
-      await Promise.all(symESKeyPacketlist.map(async function(packet) {
-        await Promise.all(passwords.map(async function(password) {
-          try {
-            await packet.decrypt(password);
-            keyPackets.push(packet);
-          } catch (err) {}
-        }));
-      }));
 
-    } else if (privateKeys) {
-      const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-      if (!pkESKeyPacketlist) {
-        throw new Error('No public key encrypted session key packet found.');
-      }
-      await Promise.all(pkESKeyPacketlist.map(async function(packet) {
-        const privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
-          return acc.concat(privateKey.getKeyPackets(packet.publicKeyId));
-        }, []);
-        await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
-          if (!privateKeyPacket) {
-           return;
-          }
-          if (!privateKeyPacket.isDecrypted) {
-            throw new Error('Private key is not decrypted.');
-          }
-          try {
-            await packet.decrypt(privateKeyPacket);
-            keyPackets.push(packet);
-          } catch (err) {}
-        }));
+  if (passwords) {
+    const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
+    if (!symESKeyPacketlist) {
+      throw new Error('No symmetrically encrypted session key packet found.');
+    }
+    await Promise.all(symESKeyPacketlist.map(async function(packet) {
+      await Promise.all(passwords.map(async function(password) {
+        try {
+          await packet.decrypt(password);
+          keyPackets.push(packet);
+        } catch (err) {}
       }));
-    } else {
-      throw new Error('No key or password specified.');
-    }
-  }).then(() => {
-    if (keyPackets.length) {
-      // Return only unique session keys
-      if (keyPackets.length > 1) {
-        const seen = {};
-        keyPackets = keyPackets.filter(function(item) {
-          const k = item.sessionKeyAlgorithm + util.Uint8Array_to_str(item.sessionKey);
-          if (seen.hasOwnProperty(k)) {
-            return false;
-          }
-          seen[k] = true;
-          return true;
-        });
-      }
+    }));
 
-      return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
+  } else if (privateKeys) {
+    const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+    if (!pkESKeyPacketlist) {
+      throw new Error('No public key encrypted session key packet found.');
     }
-    throw new Error('Session key decryption failed.');
-  });
+    await Promise.all(pkESKeyPacketlist.map(async function(packet) {
+      const privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
+        return acc.concat(privateKey.getKeyPackets(packet.publicKeyId));
+      }, []);
+      await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
+        if (!privateKeyPacket) {
+         return;
+        }
+        if (!privateKeyPacket.isDecrypted) {
+          throw new Error('Private key is not decrypted.');
+        }
+        try {
+          await packet.decrypt(privateKeyPacket);
+          keyPackets.push(packet);
+        } catch (err) {}
+      }));
+    }));
+  } else {
+    throw new Error('No key or password specified.');
+  }
+
+  if (keyPackets.length) {
+    // Return only unique session keys
+    if (keyPackets.length > 1) {
+      const seen = {};
+      keyPackets = keyPackets.filter(function(item) {
+        const k = item.sessionKeyAlgorithm + util.Uint8Array_to_str(item.sessionKey);
+        if (seen.hasOwnProperty(k)) {
+          return false;
+        }
+        seen[k] = true;
+        return true;
+      });
+    }
+
+    return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
+  }
+  throw new Error('Session key decryption failed.');
 };
 
 /**
  * Get literal data that is the body of the message
- * @return {(Uint8Array|null)} literal body of the message as Uint8Array
+ * @returns {(Uint8Array|null)} literal body of the message as Uint8Array
  */
 Message.prototype.getLiteralData = function() {
   const literal = this.packets.findPacket(enums.packet.literal);
@@ -214,7 +213,7 @@ Message.prototype.getLiteralData = function() {
 
 /**
  * Get filename from literal data packet
- * @return {(String|null)} filename of literal data packet as string
+ * @returns {(String|null)} filename of literal data packet as string
  */
 Message.prototype.getFilename = function() {
   const literal = this.packets.findPacket(enums.packet.literal);
@@ -223,7 +222,7 @@ Message.prototype.getFilename = function() {
 
 /**
  * Get literal data as text
- * @return {(String|null)} literal body of the message interpreted as text
+ * @returns {(String|null)} literal body of the message interpreted as text
  */
 Message.prototype.getText = function() {
   const literal = this.packets.findPacket(enums.packet.literal);
@@ -240,54 +239,52 @@ Message.prototype.getText = function() {
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
- * @return {Message}                   new message with encrypted content
+ * @returns {Promise<Message>}                   new message with encrypted content
  */
-Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false, date=new Date()) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date()) {
   let symAlgo;
-  let msg;
   let symEncryptedPacket;
-  return Promise.resolve().then(async () => {
-    if (sessionKey) {
-      if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
-        throw new Error('Invalid session key for encryption.');
-      }
-      symAlgo = sessionKey.algorithm;
-      sessionKey = sessionKey.data;
-    } else if (keys && keys.length) {
-      symAlgo = enums.read(enums.symmetric, getPreferredSymAlgo(keys));
-    } else if (passwords && passwords.length) {
-      symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
-    } else {
-      throw new Error('No keys, passwords, or session key provided.');
+
+  if (sessionKey) {
+    if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
+      throw new Error('Invalid session key for encryption.');
     }
+    symAlgo = sessionKey.algorithm;
+    sessionKey = sessionKey.data;
+  } else if (keys && keys.length) {
+    symAlgo = enums.read(enums.symmetric, getPreferredSymAlgo(keys));
+  } else if (passwords && passwords.length) {
+    symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
+  } else {
+    throw new Error('No keys, passwords, or session key provided.');
+  }
 
-    if (!sessionKey) {
-      sessionKey = crypto.generateSessionKey(symAlgo);
+  if (!sessionKey) {
+    sessionKey = await crypto.generateSessionKey(symAlgo);
+  }
+
+  const msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard, date);
+
+  if (config.aead_protect) {
+    symEncryptedPacket = new packet.SymEncryptedAEADProtected();
+  } else if (config.integrity_protect) {
+    symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
+  } else {
+    symEncryptedPacket = new packet.SymmetricallyEncrypted();
+  }
+  symEncryptedPacket.packets = this.packets;
+
+  await symEncryptedPacket.encrypt(symAlgo, sessionKey);
+
+  msg.packets.push(symEncryptedPacket);
+  symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
+  return {
+    message: msg,
+    sessionKey: {
+      data: sessionKey,
+      algorithm: symAlgo
     }
-
-    msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard, date);
-
-    if (config.aead_protect) {
-      symEncryptedPacket = new packet.SymEncryptedAEADProtected();
-    } else if (config.integrity_protect) {
-      symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
-    } else {
-      symEncryptedPacket = new packet.SymmetricallyEncrypted();
-    }
-    symEncryptedPacket.packets = this.packets;
-
-    return symEncryptedPacket.encrypt(symAlgo, sessionKey);
-  }).then(() => {
-    msg.packets.push(symEncryptedPacket);
-    symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
-    return {
-      message: msg,
-      sessionKey: {
-        data: sessionKey,
-        algorithm: symAlgo
-      }
-    };
-  });
+  };
 };
 
 /**
@@ -298,64 +295,64 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date signature
- * @return {Message}                   new message with encrypted content
+ * @returns {Promise<Message>}          new message with encrypted content
  */
-export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
+export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
   const packetlist = new packet.List();
 
-  return Promise.resolve().then(async () => {
-    if (publicKeys) {
-      const results = await Promise.all(publicKeys.map(async function(key) {
-        await key.verifyPrimaryUser();
-        const encryptionKeyPacket = key.getEncryptionKeyPacket(undefined, date);
-        if (!encryptionKeyPacket) {
-          throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+  if (publicKeys) {
+    const results = await Promise.all(publicKeys.map(async function(key) {
+      await key.verifyPrimaryUser();
+      const encryptionKeyPacket = key.getEncryptionKeyPacket(undefined, date);
+      if (!encryptionKeyPacket) {
+        throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+      }
+      const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
+      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
+      pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+      pkESKeyPacket.sessionKey = sessionKey;
+      pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
+      await pkESKeyPacket.encrypt(encryptionKeyPacket);
+      delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
+      return pkESKeyPacket;
+    }));
+    packetlist.concat(results);
+  }
+
+  if (passwords) {
+    const testDecrypt = async function(keyPacket, password) {
+      try {
+        await keyPacket.decrypt(password);
+        return 1;
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    const sum = (accumulator, currentValue) => accumulator + currentValue;
+
+    const encryptPassword = async function(sessionKey, symAlgo, password) {
+      const symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
+      symEncryptedSessionKeyPacket.sessionKey = sessionKey;
+      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
+      await symEncryptedSessionKeyPacket.encrypt(password);
+
+      if (config.password_collision_check) {
+        const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
+        if (results.reduce(sum) !== 1) {
+          return encryptPassword(sessionKey, symAlgo, password);
         }
-        const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-        pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
-        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
-        pkESKeyPacket.sessionKey = sessionKey;
-        pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
-        await pkESKeyPacket.encrypt(encryptionKeyPacket);
-        delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
-        return pkESKeyPacket;
-      }));
-      packetlist.concat(results);
-    }
+      }
 
-    if (passwords) {
-      const testDecrypt = async function(keyPacket, password) {
-        try {
-          await keyPacket.decrypt(password);
-          return 1;
-        } catch (e) {
-          return 0;
-        }
-      };
+      delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
+      return symEncryptedSessionKeyPacket;
+    };
 
-      const sum = (accumulator, currentValue) => accumulator + currentValue;
+    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, pwd)));
+    packetlist.concat(results);
+  }
 
-      const encryptPassword = async function(sessionKey, symAlgo, password) {
-        const symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
-        symEncryptedSessionKeyPacket.sessionKey = sessionKey;
-        symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
-        await symEncryptedSessionKeyPacket.encrypt(password);
-
-        if (config.password_collision_check) {
-          const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
-          if (results.reduce(sum) !== 1) {
-            return encryptPassword(sessionKey, symAlgo, password);
-          }
-        }
-
-        delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
-        return symEncryptedSessionKeyPacket;
-      };
-
-      const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, pwd)));
-      packetlist.concat(results);
-    }
-  }).then(() => new Message(packetlist));
+  return new Message(packetlist);
 }
 
 /**
@@ -363,7 +360,7 @@ export function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wi
  * @param  {Array<module:key~Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date}                   (optional) override the creation time of the signature
- * @return {module:message~Message}       new message with signed content
+ * @returns {Promise<Message>}             new message with signed content
  */
 Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date()) {
   const packetlist = new packet.List();
@@ -427,7 +424,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
 /**
  * Compresses the message (the literal and -if signed- signature data packets of the message)
  * @param  {module:enums.compression}   compression     compression algorithm to be used
- * @return {module:message~Message}       new message with compressed content
+ * @returns {module:message~Message}       new message with compressed content
  */
 Message.prototype.compress = function(compression) {
   if (compression === enums.compression.uncompressed) {
@@ -446,10 +443,10 @@ Message.prototype.compress = function(compression) {
 
 /**
  * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>}           privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} date                       (optional) override the creation time of the signature
- * @return {module:signature~Signature}      new detached signature of message content
+ * @param  {Array<module:key~Key>}               privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} signature                 (optional) any existing detached signature
+ * @param  {Date} date                           (optional) override the creation time of the signature
+ * @returns {Promise<module:signature~Signature>} new detached signature of message content
  */
 Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date()) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -461,11 +458,11 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
 
 /**
  * Create signature packets for the message
- * @param  {module:packet/literal}           literalDataPacket the literal data packet to sign
- * @param  {Array<module:key~Key>}           privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature             (optional) any existing detached signature to append
- * @param  {Date} date                       (optional) override the creationtime of the signature
- * @return {module:packet/packetlist}        list of signature packets
+ * @param  {module:packet/literal}             literalDataPacket the literal data packet to sign
+ * @param  {Array<module:key~Key>}             privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} signature               (optional) any existing detached signature to append
+ * @param  {Date} date                         (optional) override the creationtime of the signature
+ * @returns {Promise<module:packet/packetlist>} list of signature packets
  */
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
   const packetlist = new packet.List();
@@ -507,7 +504,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @returns {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Message.prototype.verify = function(keys, date=new Date()) {
   const msg = this.unwrapCompressed();
@@ -524,7 +521,7 @@ Message.prototype.verify = function(keys, date=new Date()) {
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Signature} signature
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @returns {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
   const msg = this.unwrapCompressed();
@@ -542,7 +539,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  * @param {Array<module:packet/literal>} literalDataList array of literal data packets
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @returns {Promise{Array<({keyid: module:type/keyid, valid: Boolean})>}} list of signer's keyid and validity of signature
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
@@ -572,7 +569,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
 
 /**
  * Unwrap compressed message
- * @return {module:message~Message} message Content of compressed message
+ * @returns {module:message~Message} message Content of compressed message
  */
 Message.prototype.unwrapCompressed = function() {
   const compressed = this.packets.filterByTag(enums.packet.compressed);
@@ -592,7 +589,7 @@ Message.prototype.appendSignature = function(detachedSignature) {
 
 /**
  * Returns ASCII armored text of message
- * @return {String} ASCII armor
+ * @returns {String} ASCII armor
  */
 Message.prototype.armor = function() {
   return armor.encode(enums.armor.message, this.packets.write());
@@ -601,7 +598,7 @@ Message.prototype.armor = function() {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @return {module:message~Message} new message object
+ * @returns {module:message~Message} new message object
  * @static
  */
 export function readArmored(armoredText) {
@@ -614,7 +611,7 @@ export function readArmored(armoredText) {
 /**
  * reads an OpenPGP message as byte array and returns a message object
  * @param {Uint8Array} input   binary message
- * @return {Message}           new message object
+ * @returns {Message}           new message object
  * @static
  */
 export function read(input) {
@@ -628,7 +625,7 @@ export function read(input) {
  * @param {String} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @return {module:message~Message} new message object
+ * @returns {module:message~Message} new message object
  * @static
  */
 export function fromText(text, filename, date=new Date()) {
@@ -648,7 +645,7 @@ export function fromText(text, filename, date=new Date()) {
  * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @return {module:message~Message} new message object
+ * @returns {module:message~Message} new message object
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date()) {

@@ -81,7 +81,7 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   const hash = util.Uint8Array_to_str(hashfn(cleartext));
 
   if (hash !== hashtext) {
-    return new Error("Hash mismatch.");
+    return new Error("Incorrect key passphrase");
   }
 
   const algo = enums.write(enums.publicKey, algorithm);
@@ -151,7 +151,7 @@ SecretKey.prototype.read = function (bytes) {
 };
 
 /** Creates an OpenPGP key packet for the given key.
-  * @return {String} A string of bytes containing the secret key OpenPGP packet
+  * @returns {String} A string of bytes containing the secret key OpenPGP packet
   */
 SecretKey.prototype.write = function () {
   const arr = [this.writePublicKey()];
@@ -172,21 +172,23 @@ SecretKey.prototype.write = function () {
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
+ * @returns {Promise<Boolean>}
  */
-SecretKey.prototype.encrypt = function (passphrase) {
+SecretKey.prototype.encrypt = async function (passphrase) {
   if (this.isDecrypted && !passphrase) {
     this.encrypted = null;
-    return;
+    return false;
   } else if (!passphrase) {
     throw new Error('The key must be decrypted before removing passphrase protection.');
   }
 
   const s2k = new type_s2k();
+  s2k.salt = await crypto.random.getRandomBytes(8);
   const symmetric = 'aes256';
   const cleartext = write_cleartext_params('sha1', this.algorithm, this.params);
   const key = produceEncryptionKey(s2k, passphrase, symmetric);
   const blockLen = crypto.cipher[symmetric].blockSize;
-  const iv = crypto.random.getRandomBytes(blockLen);
+  const iv = await crypto.random.getRandomBytes(blockLen);
 
   const arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
   arr.push(s2k.write());
@@ -194,6 +196,7 @@ SecretKey.prototype.encrypt = function (passphrase) {
   arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
 
   this.encrypted = util.concatUint8Array(arr);
+  return true;
 };
 
 function produceEncryptionKey(s2k, passphrase, algorithm) {
@@ -208,12 +211,10 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @link module:packet/secret_key.isDecrypted should be
  * false otherwise a call to this function is not needed
  *
- * @param {String} str_passphrase The passphrase for this private key
- * as string
- * @return {Boolean} True if the passphrase was correct or param already
- *                   decrypted; false if not
+ * @param {String} passphrase The passphrase for this private key as string
+ * @returns {Promise<Boolean>}
  */
-SecretKey.prototype.decrypt = function (passphrase) {
+SecretKey.prototype.decrypt = async function (passphrase) {
   if (this.isDecrypted) {
     return true;
   }
@@ -261,11 +262,12 @@ SecretKey.prototype.decrypt = function (passphrase) {
 
   const privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
   if (privParams instanceof Error) {
-    return false;
+    throw privParams;
   }
   this.params = this.params.concat(privParams);
   this.isDecrypted = true;
   this.encrypted = null;
+
   return true;
 };
 
