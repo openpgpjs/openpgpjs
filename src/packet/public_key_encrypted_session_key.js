@@ -67,7 +67,7 @@ export default function PublicKeyEncryptedSessionKey() {
  * @param {Integer} position Position to start reading from the input string
  * @param {Integer} len Length of the packet or the remaining length of
  *            input at position
- * @return {module:packet/public_key_encrypted_session_key} Object representation
+ * @returns {module:packet/public_key_encrypted_session_key} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
@@ -88,7 +88,7 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
 /**
  * Create a string representation of a tag 1 packet
  *
- * @return {Uint8Array} The Uint8Array representation
+ * @returns {Uint8Array} The Uint8Array representation
  */
 PublicKeyEncryptedSessionKey.prototype.write = function () {
   const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
@@ -100,6 +100,11 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
   return util.concatUint8Array(arr);
 };
 
+/**
+ * Encrypt session key packet
+ * @param {module:packet/public_key} key Public key
+ * @returns {Promise<Boolean>}
+ */
 PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
@@ -117,6 +122,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
 
   this.encrypted = await crypto.publicKeyEncrypt(
     algo, key.params, toEncrypt, key.fingerprint);
+  return true;
 };
 
 /**
@@ -125,7 +131,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  *
  * @param {module:packet/secret_key} key
  *            Private key with secret params unlocked
- * @return {String} The unencrypted session key
+ * @returns {Promise<Boolean>}
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
@@ -150,6 +156,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
     this.sessionKey = key;
     this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded.charCodeAt(0));
   }
+  return true;
 };
 
 /**
