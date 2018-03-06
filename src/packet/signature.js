@@ -211,6 +211,7 @@ Signature.prototype.write = function () {
  * Signs provided data. This needs to be done prior to serialization.
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
+ * @returns {Promise<Boolean>}
  */
 Signature.prototype.sign = async function (key, data) {
   const signatureType = enums.write(enums.signature, this.signatureType);
@@ -247,6 +248,7 @@ Signature.prototype.sign = async function (key, data) {
   this.signature = await crypto.signature.sign(
     publicKeyAlgorithm, hashAlgorithm, key.params, toHash
   );
+  return true;
 };
 
 /**
@@ -615,7 +617,7 @@ Signature.prototype.calculateTrailer = function () {
  * @param {String|Object} data data which on the signature applies
  * @param {module:packet/public_subkey|module:packet/public_key|
  *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
- * @return {boolean} True if message is verified, else false.
+ * @return {Promise<Boolean>} True if message is verified, else false.
  */
 Signature.prototype.verify = async function (key, data) {
   const signatureType = enums.write(enums.signature, this.signatureType);

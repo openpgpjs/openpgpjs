@@ -55,7 +55,7 @@ export default {
    * @param d private MPI part as BN
    * @return BN
    */
-  sign: function(m, n, e, d) {
+  sign: async function(m, n, e, d) {
     if (n.cmp(m) <= 0) {
       throw new Error('Data too large.');
     }
@@ -70,7 +70,7 @@ export default {
    * @param e public MPI part as BN
    * @return BN
    */
-  verify: function(s, n, e) {
+  verify: async function(s, n, e) {
     if (n.cmp(s) <= 0) {
       throw new Error('Data too large.');
     }
@@ -85,7 +85,7 @@ export default {
    * @param e public MPI part as BN
    * @return BN
    */
-  encrypt: function(m, n, e) {
+  encrypt: async function(m, n, e) {
     if (n.cmp(m) <= 0) {
       throw new Error('Data too large.');
     }
@@ -104,7 +104,7 @@ export default {
    * @param u RSA u as BN
    * @return {BN} The decrypted value of the message
    */
-  decrypt: function(m, n, e, d, p, q, u) {
+  decrypt: async function(m, n, e, d, p, q, u) {
     if (n.cmp(m) <= 0) {
       throw new Error('Data too large.');
     }
@@ -117,7 +117,7 @@ export default {
     let blinder;
     let unblinder;
     if (config.rsa_blinding) {
-      unblinder = random.getRandomBN(new BN(2), n).toRed(nred);
+      unblinder = (await random.getRandomBN(new BN(2), n)).toRed(nred);
       blinder = unblinder.redInvm().redPow(e);
       m = m.toRed(nred).redMul(blinder).fromRed();
     }
@@ -204,8 +204,8 @@ export default {
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
     // See https://stackoverflow.com/a/6330138 for justification
     // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-    let p = prime.randomProbablePrime(B - (B >> 1), E, 40);
-    let q = prime.randomProbablePrime(B >> 1, E, 40);
+    let p = await prime.randomProbablePrime(B - (B >> 1), E, 40);
+    let q = await prime.randomProbablePrime(B >> 1, E, 40);
 
     if (p.cmp(q) < 0) {
       [p, q] = [q, p];

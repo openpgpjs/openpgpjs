@@ -12,9 +12,9 @@ describe('Random Buffer', function() {
     expect(randomBuffer).to.exist;
   });
 
-  it('Throw error if not initialized', function () {
+  it('Throw error if not initialized', async function () {
     expect(randomBuffer.set.bind(randomBuffer)).to.throw('RandomBuffer is not initialized');
-    expect(randomBuffer.get.bind(randomBuffer)).to.throw('RandomBuffer is not initialized');
+    await expect(randomBuffer.get(new Uint8Array(1))).to.eventually.be.rejectedWith('RandomBuffer is not initialized');
   });
 
   it('Initialization', function () {
@@ -56,13 +56,13 @@ describe('Random Buffer', function() {
     expect(randomBuffer.size).to.equal(1);
   });
 
-  it('Get Method', function () {
+  it('Get Method', async function () {
     randomBuffer.init(5);
     let buf = new Uint8Array(5);
     buf[0] = 1; buf[1] = 2; buf[2] = 5; buf[3] = 7; buf[4] = 8;
     randomBuffer.set(buf);
     buf = new Uint32Array(2);
-    expect(randomBuffer.get.bind(randomBuffer, buf)).to.throw('Invalid type: buf not an Uint8Array');
+    await expect(randomBuffer.get(buf)).to.eventually.be.rejectedWith('Invalid type: buf not an Uint8Array');
     buf = new Uint8Array(2);
     randomBuffer.get(buf);
     expect(equal(randomBuffer.buffer, [1,2,5,0,0])).to.be.true;
@@ -74,6 +74,6 @@ describe('Random Buffer', function() {
     expect(buf).to.to.have.property('1', 2);
     expect(equal(randomBuffer.buffer, [1,0,0,0,0])).to.be.true;
     expect(randomBuffer.size).to.equal(1);
-    expect(function() { randomBuffer.get(buf); }).to.throw('Random number buffer depleted');
+    await expect(randomBuffer.get(buf)).to.eventually.be.rejectedWith('Random number buffer depleted');
   });
 });

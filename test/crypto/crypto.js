@@ -278,19 +278,19 @@ describe('API functional testing', function() {
     });
 
     function testCFB(plaintext, resync) {
-      symmAlgos.forEach(function(algo) {
-        const symmKey = crypto.generateSessionKey(algo);
-        const symmencData = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, util.str_to_Uint8Array(plaintext), symmKey, resync);
+      symmAlgos.forEach(async function(algo) {
+        const symmKey = await crypto.generateSessionKey(algo);
+        const symmencData = crypto.cfb.encrypt(await crypto.getPrefixRandom(algo), algo, util.str_to_Uint8Array(plaintext), symmKey, resync);
         const text = util.Uint8Array_to_str(crypto.cfb.decrypt(algo, symmKey, symmencData, resync));
         expect(text).to.equal(plaintext);
       });
     }
 
     function testAESCFB(plaintext) {
-      symmAlgos.forEach(function(algo) {
+      symmAlgos.forEach(async function(algo) {
         if(algo.substr(0,3) === 'aes') {
-          const symmKey = crypto.generateSessionKey(algo);
-          const rndm = crypto.getPrefixRandom(algo);
+          const symmKey = await crypto.generateSessionKey(algo);
+          const rndm = await crypto.getPrefixRandom(algo);
 
           const repeat = new Uint8Array([rndm[rndm.length - 2], rndm[rndm.length - 1]]);
           const prefix = util.concatUint8Array([rndm, repeat]);
@@ -307,9 +307,9 @@ describe('API functional testing', function() {
     function testAESGCM(plaintext) {
       symmAlgos.forEach(function(algo) {
         if(algo.substr(0,3) === 'aes') {
-          it(algo, function() {
-            const key = crypto.generateSessionKey(algo);
-            const iv = crypto.random.getRandomValues(new Uint8Array(crypto.gcm.ivLength));
+          it(algo, async function() {
+            const key = await crypto.generateSessionKey(algo);
+            const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
 
             return crypto.gcm.encrypt(
               algo, util.str_to_Uint8Array(plaintext), key, iv
@@ -373,11 +373,10 @@ describe('API functional testing', function() {
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
       const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
-      const RSAUnencryptedData = crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength())
-      const RSAUnencryptedMPI = new openpgp.MPI(RSAUnencryptedData);
-      return crypto.publicKeyEncrypt(
-        1, RSApubMPIs, RSAUnencryptedMPI
-      ).then(RSAEncryptedData => {
+      return crypto.pkcs1.eme.encode(symmKey, RSApubMPIs[0].byteLength()).then(RSAUnencryptedData => {
+        const RSAUnencryptedMPI = new openpgp.MPI(RSAUnencryptedData);
+        return crypto.publicKeyEncrypt(1, RSApubMPIs, RSAUnencryptedMPI);
+      }).then(RSAEncryptedData => {
 
         return crypto.publicKeyDecrypt(
           1, RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
@@ -393,12 +392,10 @@ describe('API functional testing', function() {
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
       const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
-      const ElgamalUnencryptedData = crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength());
-      const ElgamalUnencryptedMPI = new openpgp.MPI(ElgamalUnencryptedData);
-
-      return crypto.publicKeyEncrypt(
-        16, ElgamalpubMPIs, ElgamalUnencryptedMPI
-      ).then(ElgamalEncryptedData => {
+      return crypto.pkcs1.eme.encode(symmKey, ElgamalpubMPIs[0].byteLength()).then(ElgamalUnencryptedData => {
+        const ElgamalUnencryptedMPI = new openpgp.MPI(ElgamalUnencryptedData);
+        return crypto.publicKeyEncrypt(16, ElgamalpubMPIs, ElgamalUnencryptedMPI);
+      }).then(ElgamalEncryptedData => {
 
         return crypto.publicKeyDecrypt(
           16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData

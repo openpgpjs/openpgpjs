@@ -37,50 +37,8 @@ export default {
    * @param {Integer} length Length in bytes to generate
    * @return {Uint8Array} Random byte array
    */
-  getRandomBytes: function(length) {
-    const result = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      result[i] = this.getSecureRandomOctet();
-    }
-    return result;
-  },
-
-  /**
-   * Return a secure random number in the specified range
-   * @param {Integer} from Min of the random number
-   * @param {Integer} to Max of the random number (max 32bit)
-   * @return {Integer} A secure random number
-   */
-  getSecureRandom: function(from, to) {
-    let randUint = this.getSecureRandomUint();
-    const bits = ((to - from)).toString(2).length;
-    while ((randUint & ((2 ** bits) - 1)) > (to - from)) {
-      randUint = this.getSecureRandomUint();
-    }
-    return from + (Math.abs(randUint & ((2 ** bits) - 1)));
-  },
-
-  getSecureRandomOctet: function() {
-    const buf = new Uint8Array(1);
-    this.getRandomValues(buf);
-    return buf[0];
-  },
-
-  getSecureRandomUint: function() {
-    const buf = new Uint8Array(4);
-    const dv = new DataView(buf.buffer);
-    this.getRandomValues(buf);
-    return dv.getUint32(0);
-  },
-
-  /**
-   * Helper routine which calls platform specific crypto random generator
-   * @param {Uint8Array} buf
-   */
-  getRandomValues: function(buf) {
-    if (!(buf instanceof Uint8Array)) {
-      throw new Error('Invalid type: buf not an Uint8Array');
-    }
+  getRandomBytes: async function(length) {
+    const buf = new Uint8Array(length);
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
       window.crypto.getRandomValues(buf);
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
@@ -89,7 +47,7 @@ export default {
       const bytes = nodeCrypto.randomBytes(buf.length);
       buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
-      this.randomBuffer.get(buf);
+      await this.randomBuffer.get(buf);
     } else {
       throw new Error('No secure random number generator available.');
     }
@@ -102,7 +60,7 @@ export default {
    * @param {module:type/mpi} max Upper bound, excluded
    * @return {module:BN} Random MPI
    */
-  getRandomBN: function(min, max) {
+  getRandomBN: async function(min, max) {
     if (max.cmp(min) <= 0) {
       throw new Error('Illegal parameter value: max <= min');
     }
@@ -113,7 +71,7 @@ export default {
     // Using a while loop is necessary to avoid bias introduced by the mod operation.
     // However, we request 64 extra random bits so that the bias is negligible.
     // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    const r = new BN(this.getRandomBytes(bytes + 8));
+    const r = new BN(await this.getRandomBytes(bytes + 8));
     return r.mod(modulus).add(min);
   },
 
@@ -126,15 +84,17 @@ export default {
 function RandomBuffer() {
   this.buffer = null;
   this.size = null;
+  this.callback = null;
 }
 
 /**
  * Initialize buffer
  * @param  {Integer} size size of buffer
  */
-RandomBuffer.prototype.init = function(size) {
+RandomBuffer.prototype.init = function(size, callback) {
   this.buffer = new Uint8Array(size);
   this.size = 0;
+  this.callback = callback;
 };
 
 /**
@@ -161,7 +121,7 @@ RandomBuffer.prototype.set = function(buf) {
  * Take numbers out of buffer and copy to array
  * @param {Uint8Array} buf the destination array
  */
-RandomBuffer.prototype.get = function(buf) {
+RandomBuffer.prototype.get = async function(buf) {
   if (!this.buffer) {
     throw new Error('RandomBuffer is not initialized');
   }
@@ -169,7 +129,12 @@ RandomBuffer.prototype.get = function(buf) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
   if (this.size < buf.length) {
-    throw new Error('Random number buffer depleted');
+    if (!this.callback) {
+      throw new Error('Random number buffer depleted');
+    }
+    // Wait for random bytes from main context, then try again
+    await this.callback();
+    return this.get(buf);
   }
   for (let i = 0; i < buf.length; i++) {
     buf[i] = this.buffer[--this.size];
