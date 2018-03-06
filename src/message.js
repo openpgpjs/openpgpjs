@@ -536,12 +536,13 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
 
 /**
  * Create list of objects containing signer's keyid and validity of signature
- * @param {Array<module:packet/signature>} signatureList   array of signature packets
- * @param {Array<module:packet/literal>}   literalDataList array of literal data packets
- * @param {Array<module:key~Key>}          keys            array of keys to verify signatures
- * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+ * @param {Array<module:packet/signature>} signatureList array of signature packets
+ * @param {Array<module:packet/literal>} literalDataList array of literal data packets
+ * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Date} date Verify the signature against the given date,
+ *                    i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid,
-                            valid: Boolean}>>} list of signer's keyid and validity of signature
+ *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
