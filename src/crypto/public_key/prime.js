@@ -27,7 +27,7 @@ import BN from 'bn.js';
 import random from '../random';
 
 export default {
-  randomProbablePrime, isProbablePrime, fermat, millerRabin, division_test
+  randomProbablePrime, isProbablePrime, fermat, millerRabin, divisionTest
 };
 
 /**
@@ -51,7 +51,7 @@ async function randomProbablePrime(bits, e, k) {
   let n = await random.getRandomBN(min, min.shln(1));
   let i = n.mod(thirty).toNumber();
 
-  do  {
+  do {
       n.iaddn(adds[i]);
       i = (i + adds[i]) % adds.length;
       // If reached the maximum, go back to the minimum.
@@ -74,7 +74,7 @@ async function isProbablePrime(n, e, k) {
   if (e && !n.subn(1).gcd(e).eqn(1)) {
     return false;
   }
-  if (!division_test(n)) {
+  if (!divisionTest(n)) {
     return false;
   }
   if (!fermat(n)) {
@@ -100,7 +100,7 @@ function fermat(n, b) {
   return b.toRed(BN.mont(n)).redPow(n.subn(1)).fromRed().cmpn(1) === 0;
 }
 
-function division_test(n) {
+function divisionTest(n) {
   return small_primes.every(m => {
     return n.modn(m) !== 0;
   });
@@ -186,7 +186,8 @@ const small_primes = [
   4733, 4751, 4759, 4783, 4787, 4789, 4793, 4799,
   4801, 4813, 4817, 4831, 4861, 4871, 4877, 4889,
   4903, 4909, 4919, 4931, 4933, 4937, 4943, 4951,
-  4957, 4967, 4969, 4973, 4987, 4993, 4999];
+  4957, 4967, 4969, 4973, 4987, 4993, 4999
+];
 
 
 // Miller-Rabin - Miller Rabin algorithm for primality test
@@ -231,8 +232,9 @@ async function millerRabin(n, k, rand) {
   const red = BN.mont(n);
   const rone = new BN(1).toRed(red);
 
-  if (!k)
+  if (!k) {
     k = Math.max(1, (len / 48) | 0);
+  }
 
   const n1 = n.subn(1);
   const rn1 = n1.toRed(red);
@@ -244,25 +246,29 @@ async function millerRabin(n, k, rand) {
 
   for (; k > 0; k--) {
     // eslint-disable-next-line no-await-in-loop
-    let a = rand ? rand() : await random.getRandomBN(new BN(2), n1);
+    const a = rand ? rand() : await random.getRandomBN(new BN(2), n1);
 
     let x = a.toRed(red).redPow(d);
-    if (x.eq(rone) || x.eq(rn1))
+    if (x.eq(rone) || x.eq(rn1)) {
       continue;
+    }
 
     let i;
     for (i = 1; i < s; i++) {
       x = x.redSqr();
 
-      if (x.eq(rone))
+      if (x.eq(rone)) {
         return false;
-      if (x.eq(rn1))
+      }
+      if (x.eq(rn1)) {
         break;
+      }
     }
 
-    if (i === s)
+    if (i === s) {
       return false;
+    }
   }
 
   return true;
-};
+}
