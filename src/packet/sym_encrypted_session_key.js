@@ -104,7 +104,7 @@ SymEncryptedSessionKey.prototype.write = function() {
 /**
  * Decrypts the session key
  * @param {String} passphrase The passphrase in string form
- * @return {Promise<Boolean}
+ * @return {Promise<Boolean>}
  */
 SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
@@ -128,7 +128,7 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
 /**
  * Encrypts the session key
  * @param {String} passphrase The passphrase in string form
- * @return {Promise<Boolean}
+ * @return {Promise<Boolean>}
  */
 SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?

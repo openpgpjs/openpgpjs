@@ -53,6 +53,7 @@ Keyid.prototype.toHex = function() {
 };
 
 Keyid.prototype.equals = function(keyid) {
+  // Note: checks if keyid is a wildcard, but doesn't check "this".
   return keyid.isWildcard() || this.bytes === keyid.bytes;
 };
 
