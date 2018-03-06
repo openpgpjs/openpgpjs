@@ -39,20 +39,27 @@ export default {
  */
 async function randomProbablePrime(bits, e, k) {
   const min = new BN(1).shln(bits - 1);
+  const thirty = new BN(30);
+  /*
+   * We can avoid any multiples of 3 and 5 by looking at n mod 30
+   * n mod 30 = 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
+   * the next possible prime is mod 30:
+   *            1  7  7  7  7  7  7 11 11 11 11 13 13 17 17 17 17 19 19 23 23 23 23 29 29 29 29 29 29 1
+   */
+  const adds = [1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2];
 
   let n = await random.getRandomBN(min, min.shln(1));
-  if (n.isEven()) {
-    n.iaddn(1); // force odd
-  }
+  let i = n.mod(thirty).toNumber();
 
-  // eslint-disable-next-line no-await-in-loop
-  while (!await isProbablePrime(n, e, k)) {
-    n.iaddn(2);
-    // If reached the maximum, go back to the minimum.
-    if (n.bitLength() > bits) {
-      n = n.mod(min.shln(1)).iadd(min);
-    }
-  }
+  do  {
+      n.iaddn(adds[i]);
+      i = (i + adds[i]) % adds.length;
+      // If reached the maximum, go back to the minimum.
+      if (n.bitLength() > bits) {
+          n = n.mod(min.shln(1)).iadd(min);
+      }
+      // eslint-disable-next-line no-await-in-loop
+  } while (!await isProbablePrime(n, e, k));
   return n;
 }
 
