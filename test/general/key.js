@@ -1037,26 +1037,24 @@ describe('Key', function() {
     });
   });
 
-  it('Encrypt key with new passphrase', function() {
+  it('Encrypt key with new passphrase', async function() {
     const userId = 'test <a@b.com>';
     const opt = {numBits: 512, userIds: userId, passphrase: 'passphrase'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    return openpgp.generateKey(opt).then(function(key) {
-      key = key.key;
-      const armor1 = key.armor();
-      const armor2 = key.armor();
-      expect(armor1).to.equal(armor2);
-      expect(key.decrypt('passphrase')).to.be.true;
-      expect(key.primaryKey.isDecrypted).to.be.true;
-      key.encrypt('new_passphrase');
-      expect(key.primaryKey.isDecrypted).to.be.false;
-      expect(key.decrypt('passphrase')).to.be.false;
-      expect(key.primaryKey.isDecrypted).to.be.false;
-      expect(key.decrypt('new_passphrase')).to.be.true;
-      expect(key.primaryKey.isDecrypted).to.be.true;
-      const armor3 = key.armor();
-      expect(armor3).to.not.equal(armor1);
-    });
+    const key = (await openpgp.generateKey(opt)).key;
+    const armor1 = key.armor();
+    const armor2 = key.armor();
+    expect(armor1).to.equal(armor2);
+    expect(await key.decrypt('passphrase')).to.be.true;
+    expect(key.primaryKey.isDecrypted).to.be.true;
+    await key.encrypt('new_passphrase');
+    expect(key.primaryKey.isDecrypted).to.be.false;
+    await expect(key.decrypt('passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
+    expect(key.primaryKey.isDecrypted).to.be.false;
+    expect(await key.decrypt('new_passphrase')).to.be.true;
+    expect(key.primaryKey.isDecrypted).to.be.true;
+    const armor3 = key.armor();
+    expect(armor3).to.not.equal(armor1);
   });
 
   it('Generate key - ensure keyExpirationTime works', function() {
@@ -1268,7 +1266,7 @@ describe('Key', function() {
     });
   });
 
-  it('Throw user friendly error when reformatting encrypted key', function() {
+  it('Reject with user-friendly error when reformatting encrypted key', function() {
     const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(original) {

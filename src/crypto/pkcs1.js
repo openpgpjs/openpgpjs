@@ -50,13 +50,15 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
  * @param  {Integer} length Length of the padding in bytes
  * @return {String}        Padding as string
  */
-function getPkcs1Padding(length) {
+async function getPkcs1Padding(length) {
   let result = '';
-  let randomByte;
   while (result.length < length) {
-    randomByte = random.getRandomBytes(1)[0];
-    if (randomByte !== 0) {
-      result += String.fromCharCode(randomByte);
+    // eslint-disable-next-line no-await-in-loop
+    const randomBytes = await random.getRandomBytes(length - result.length);
+    for (let i = 0; i < randomBytes.length; i++) {
+      if (randomBytes[i] !== 0) {
+        result += String.fromCharCode(randomBytes[i]);
+      }
     }
   }
   return result;
@@ -69,9 +71,9 @@ export default {
      * create a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
      * @param {String} M message to be encoded
      * @param {Integer} k the length in octets of the key modulus
-     * @return {String} EME-PKCS1 padded message
+     * @return {Promise<String>} EME-PKCS1 padded message
      */
-    encode: function(M, k) {
+    encode: async function(M, k) {
       const mLen = M.length;
       // length checking
       if (mLen > k - 11) {
@@ -79,15 +81,14 @@ export default {
       }
       // Generate an octet string PS of length k - mLen - 3 consisting of
       // pseudo-randomly generated nonzero octets
-      const PS = getPkcs1Padding(k - mLen - 3);
+      const PS = await getPkcs1Padding(k - mLen - 3);
       // Concatenate PS, the message M, and other padding to form an
       // encoded message EM of length k octets as EM = 0x00 || 0x02 || PS || 0x00 || M.
-      const EM = String.fromCharCode(0) +
-               String.fromCharCode(2) +
-               PS +
-               String.fromCharCode(0) +
-               M;
-      return EM;
+      return String.fromCharCode(0) +
+             String.fromCharCode(2) +
+             PS +
+             String.fromCharCode(0) +
+             M;
     },
     /**
      * decodes a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})

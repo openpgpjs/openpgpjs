@@ -37,15 +37,16 @@ export default {
  * @param {Integer} k    Optional number of iterations of Miller-Rabin test
  * @return BN
  */
-function randomProbablePrime(bits, e, k) {
+async function randomProbablePrime(bits, e, k) {
   const min = new BN(1).shln(bits - 1);
 
-  let n = random.getRandomBN(min, min.shln(1));
+  let n = await random.getRandomBN(min, min.shln(1));
   if (n.isEven()) {
     n.iaddn(1); // force odd
   }
 
-  while (!isProbablePrime(n, e, k)) {
+  // eslint-disable-next-line no-await-in-loop
+  while (!await isProbablePrime(n, e, k)) {
     n.iaddn(2);
     // If reached the maximum, go back to the minimum.
     if (n.bitLength() > bits) {
@@ -62,17 +63,17 @@ function randomProbablePrime(bits, e, k) {
  * @param {Integer} k Optional number of iterations of Miller-Rabin test
  * @return {boolean}
  */
-function isProbablePrime(n, e, k) {
+async function isProbablePrime(n, e, k) {
   if (e && !n.subn(1).gcd(e).eqn(1)) {
     return false;
   }
   if (!fermat(n)) {
     return false;
   }
-  if (!millerRabin(n, k, () => new BN(lowprimes[Math.random() * lowprimes.length | 0]))) {
+  if (!await millerRabin(n, k, () => new BN(lowprimes[Math.random() * lowprimes.length | 0]))) {
     return false;
   }
-  if (!millerRabin(n, k)) {
+  if (!await millerRabin(n, k)) {
     return false;
   }
   // TODO implement the Lucas test
@@ -138,7 +139,7 @@ const lowprimes = [
  * @param {Function} rand Optional function to generate potential witnesses
  * @return {boolean}
  */
-function millerRabin(n, k, rand) {
+async function millerRabin(n, k, rand) {
   const len = n.bitLength();
   const red = BN.mont(n);
   const rone = new BN(1).toRed(red);
@@ -155,7 +156,8 @@ function millerRabin(n, k, rand) {
   const d = n.shrn(s);
 
   for (; k > 0; k--) {
-    let a = rand ? rand() : random.getRandomBN(new BN(2), n1);
+    // eslint-disable-next-line no-await-in-loop
+    let a = rand ? rand() : await random.getRandomBN(new BN(2), n1);
 
     let x = a.toRed(red).redPow(d);
     if (x.eq(rone) || x.eq(rn1))

@@ -179,6 +179,26 @@ export function decryptKey({ privateKey, passphrase }) {
   }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
+/**
+ * Lock a private key with your passphrase.
+ * @param  {Key} privateKey      the private key that is to be decrypted
+ * @param  {String} passphrase   the user's passphrase chosen during key generation
+ * @return {Key}                 the locked private key
+ */
+export function encryptKey({ privateKey, passphrase }) {
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('encryptKey', { privateKey, passphrase });
+  }
+
+  return Promise.resolve().then(async function() {
+    await privateKey.encrypt(passphrase);
+
+    return {
+      key: privateKey
+    };
+  }).catch(onError.bind(null, 'Error decrypting private key'));
+}
+
 
 ///////////////////////////////////////////
 //                                       //

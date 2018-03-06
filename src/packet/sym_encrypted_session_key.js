@@ -52,7 +52,7 @@ export default function SymEncryptedSessionKey() {
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
   this.encrypted = null;
-  this.s2k = new type_s2k();
+  this.s2k = null;
 }
 
 /**
@@ -73,6 +73,7 @@ SymEncryptedSessionKey.prototype.read = function(bytes) {
   const algo = enums.read(enums.symmetric, bytes[1]);
 
   // A string-to-key (S2K) specifier, length as defined above.
+  this.s2k = new type_s2k();
   const s2klength = this.s2k.read(bytes.subarray(2, bytes.length));
 
   // Optionally, the encrypted session key itself, which is decrypted
@@ -106,7 +107,7 @@ SymEncryptedSessionKey.prototype.write = function() {
  *
  * @return {Uint8Array} The unencrypted session key
  */
-SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
+SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
@@ -124,12 +125,15 @@ SymEncryptedSessionKey.prototype.decrypt = function(passphrase) {
   }
 };
 
-SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
+SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
 
   this.sessionKeyEncryptionAlgorithm = algo;
+
+  this.s2k = new type_s2k();
+  this.s2k.salt = await crypto.random.getRandomBytes(8);
 
   const length = crypto.cipher[algo].keySize;
   const key = this.s2k.produce_key(passphrase, length);
@@ -137,7 +141,7 @@ SymEncryptedSessionKey.prototype.encrypt = function(passphrase) {
   const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
 
   if (this.sessionKey === null) {
-    this.sessionKey = crypto.getRandomBytes(crypto.cipher[this.sessionKeyAlgorithm].keySize);
+    this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
   }
   const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
 

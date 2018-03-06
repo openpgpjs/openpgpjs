@@ -48,7 +48,7 @@ export default {
    * g, p, q, x are all BN
    * returns { r: BN, s: BN }
    */
-  sign: function(hash_algo, m, g, p, q, x) {
+  sign: async function(hash_algo, m, g, p, q, x) {
     let k;
     let r;
     let s;
@@ -73,7 +73,8 @@ export default {
     // or s = 0 if signatures are generated properly.
     while (true) {
       // See Appendix B here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-      k = random.getRandomBN(one, q); // returns in [1, q-1]
+      // eslint-disable-next-line no-await-in-loop
+      k = await random.getRandomBN(one, q); // returns in [1, q-1]
       r = gred.redPow(k).fromRed().toRed(redq); // (g**k mod p) mod q
       if (zero.cmp(r) === 0) {
         continue;
@@ -96,7 +97,7 @@ export default {
    * p, q, g, y are all BN
    * returns BN
    */
-  verify: function(hash_algo, r, s, m, p, q, g, y) {
+  verify: async function(hash_algo, r, s, m, p, q, g, y) {
     if (zero.ucmp(r) >= 0 || r.ucmp(q) >= 0 ||
         zero.ucmp(s) >= 0 || s.ucmp(q) >= 0) {
       util.print_debug("invalid DSA Signature");

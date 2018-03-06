@@ -262,7 +262,7 @@ Message.prototype.encrypt = function(keys, passwords, sessionKey, wildcard=false
     }
 
     if (!sessionKey) {
-      sessionKey = crypto.generateSessionKey(symAlgo);
+      sessionKey = await crypto.generateSessionKey(symAlgo);
     }
 
     msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard, date);
