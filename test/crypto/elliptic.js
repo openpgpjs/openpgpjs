@@ -192,9 +192,9 @@ describe('Elliptic Curve Cryptography', function () {
     it('Signature generation', function () {
       const curve = new elliptic_curves.Curve('p256');
       let key = curve.keyFromPrivate(key_data.p256.priv);
-      return key.sign(signature_data.message, 8).then(signature => {
+      return key.sign(signature_data.message, 8).then(async signature => {
         key = curve.keyFromPublic(key_data.p256.pub);
-        expect(
+        await expect(
           key.verify(signature_data.message, signature, 8)
         ).to.eventually.be.true;
       });
@@ -302,8 +302,8 @@ describe('Elliptic Curve Cryptography', function () {
         const keyPrivate = new Uint8Array(keyPair.getPrivate());
         const oid = curve.oid;
         const message = p384_message;
-        return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(signature => {
-          expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic))
+        return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate).then(async signature => {
+          await expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic))
             .to.eventually.be.true;
         });
       });

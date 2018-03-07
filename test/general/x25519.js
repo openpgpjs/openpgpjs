@@ -217,7 +217,7 @@ describe('X25519 Cryptography', function () {
         userIds: {name: "Hi", email: "hi@hel.lo"},
         curve: "ed25519"
       };
-      return openpgp.generateKey(options).then(function (firstKey) {
+      return openpgp.generateKey(options).then(async function (firstKey) {
         expect(firstKey).to.exist;
         expect(firstKey.privateKeyArmored).to.exist;
         expect(firstKey.publicKeyArmored).to.exist;
@@ -236,10 +236,10 @@ describe('X25519 Cryptography', function () {
 
         // Self Certificate is valid
         const user = hi.users[0];
-        expect(user.selfCertifications[0].verify(
+        await expect(user.selfCertifications[0].verify(
           primaryKey, { userid: user.userId, key: primaryKey }
         )).to.eventually.be.true;
-        expect(user.verifyCertificate(
+        await expect(user.verifyCertificate(
           primaryKey, user.selfCertifications[0], [hi.toPublic()]
         )).to.eventually.equal(openpgp.enums.keyStatus.valid);
 
@@ -247,7 +247,7 @@ describe('X25519 Cryptography', function () {
           userIds: { name: "Bye", email: "bye@good.bye" },
           curve: "curve25519"
         };
-        return openpgp.generateKey(options).then(function (secondKey) {
+        return openpgp.generateKey(options).then(async function (secondKey) {
           const bye = secondKey.key;
           expect(bye.primaryKey.params[0].getName()).to.equal('ed25519');
           expect(bye.primaryKey.algorithm).to.equal('eddsa');
@@ -256,10 +256,10 @@ describe('X25519 Cryptography', function () {
 
           // Self Certificate is valid
           const user = bye.users[0];
-          expect(user.selfCertifications[0].verify(
+          await expect(user.selfCertifications[0].verify(
             bye.primaryKey, { userid: user.userId, key: bye.primaryKey }
           )).to.eventually.be.true;
-          expect(user.verifyCertificate(
+          await expect(user.verifyCertificate(
             bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
           )).to.eventually.equal(openpgp.enums.keyStatus.valid);
 
@@ -531,17 +531,15 @@ describe('X25519 Cryptography', function () {
       '=xeG/',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
     const hi = openpgp.key.readArmored(pubKey).keys[0];
-    return hi.verifyPrimaryUser().then(() => {
-      const results = hi.getPrimaryUser();
-      expect(results).to.exist;
-      expect(results.user).to.exist;
-      const user = results.user;
-      expect(user.selfCertifications[0].verify(
-        hi.primaryKey, {userid: user.userId, key: hi.primaryKey}
-      )).to.eventually.be.true;
-      expect(user.verifyCertificate(
-        hi.primaryKey, user.selfCertifications[0], [hi]
-      )).to.eventually.equal(openpgp.enums.keyStatus.valid);
-    });
+    const results = hi.getPrimaryUser();
+    expect(results).to.exist;
+    expect(results.user).to.exist;
+    const user = results.user;
+    expect(user.selfCertifications[0].verify(
+      hi.primaryKey, {userid: user.userId, key: hi.primaryKey}
+    )).to.eventually.be.true;
+    expect(user.verifyCertificate(
+      hi.primaryKey, user.selfCertifications[0], [hi]
+    )).to.eventually.equal(openpgp.enums.keyStatus.valid);
   }); */
 });

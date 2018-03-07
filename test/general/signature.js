@@ -324,11 +324,11 @@ describe("Signature", function() {
       '=Q4tk',
       '-----END PGP MESSAGE-----'].join('\n');
 
-  it('Testing signature checking on CAST5-enciphered message', function() {
+  it('Testing signature checking on CAST5-enciphered message', async function() {
     const priv_key = openpgp.key.readArmored(priv_key_arm1).keys[0];
     const pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
     const msg = openpgp.message.readArmored(msg_arm1);
-    priv_key.decrypt("abcd");
+    await priv_key.decrypt("abcd");
     return openpgp.decrypt({ privateKeys: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
       expect(decrypted.signatures[0].valid).to.be.true;
@@ -336,7 +336,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Testing GnuPG stripped-key extensions', function() {
+  it('Testing GnuPG stripped-key extensions', async function() {
     // exercises the GnuPG s2k type 1001 extension:
     // the secrets on the primary key have been stripped.
     const priv_key_gnupg_ext = openpgp.key.readArmored(
@@ -369,7 +369,7 @@ describe("Signature", function() {
     const pub_key = openpgp.key.readArmored(pub_key_arm1).keys[0];
     const msg = openpgp.message.readArmored(msg_arm1);
 
-    priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
+    await priv_key_gnupg_ext.subKeys[0].subKey.decrypt("abcd");
     return msg.decrypt([priv_key_gnupg_ext]).then(function(msg) {
       return msg.verify([pub_key]).then(verified => {
         expect(verified).to.exist;
@@ -426,7 +426,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', function() {
+  it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', async function() {
     const msg_armor =
       ['-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -448,7 +448,7 @@ describe("Signature", function() {
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
-    esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId));
+    await Promise.all(esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId)));
 
     return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
@@ -459,7 +459,7 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decrypt', function() {
+  it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decrypt', async function() {
     const msg_armor =
       ['-----BEGIN PGP MESSAGE-----',
         'Version: Encryption Desktop 10.3.0 (Build 9307)',
@@ -482,7 +482,7 @@ describe("Signature", function() {
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
 
-    esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId));
+    await Promise.all(esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId)));
 
     return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
       expect(decrypted.data).to.exist;
@@ -580,11 +580,11 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', function() {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', async function() {
     const plaintext = 'short message\nnext line\n한국어/조선말';
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.primaryKey.decrypt('hello world');
+    await privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -600,11 +600,11 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', function() {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', async function() {
     const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.primaryKey.decrypt('hello world');
+    await privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -620,11 +620,11 @@ describe("Signature", function() {
     });
   });
 
-  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', function() {
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', async function() {
     const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.primaryKey.decrypt('hello world');
+    await privKey.primaryKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
 
@@ -786,11 +786,11 @@ describe("Signature", function() {
     });
   });
 
-  it('Detached signature signing and verification', function() {
+  it('Detached signature signing and verification', async function() {
     const msg = openpgp.message.fromText('hello');
     const pubKey2 = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey2 = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey2.decrypt('hello world');
+    await privKey2.decrypt('hello world');
 
     const opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys

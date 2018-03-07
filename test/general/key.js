@@ -810,15 +810,14 @@ describe('Key', function() {
     });
   });
 
-  it('update() - merge user', function(done) {
+  it('update() - merge user', function() {
     const source = openpgp.key.readArmored(pub_sig_test).keys[0];
     const dest = openpgp.key.readArmored(pub_sig_test).keys[0];
     expect(source.users[1]).to.exist;
     dest.users.pop();
-    dest.update(source).then(() => {
+    return dest.update(source).then(() => {
       expect(dest.users[1]).to.exist;
       expect(dest.users[1].userId).to.equal(source.users[1].userId);
-      done();
     });
   });
 
@@ -912,18 +911,17 @@ describe('Key', function() {
       .to.be.rejectedWith('Cannot update public key with private key if subkey mismatch').notify(done);
   });
 
-  it('update() - merge subkey binding signatures', function(done) {
+  it('update() - merge subkey binding signatures', async function() {
     const source = openpgp.key.readArmored(pgp_desktop_pub).keys[0];
     const dest = openpgp.key.readArmored(pgp_desktop_priv).keys[0];
     expect(source.subKeys[0].bindingSignatures[0]).to.exist;
-    expect(source.subKeys[0].verify(source.primaryKey))
+    await expect(source.subKeys[0].verify(source.primaryKey))
       .to.eventually.equal(openpgp.enums.keyStatus.valid);
     expect(dest.subKeys[0].bindingSignatures[0]).to.not.exist;
-    dest.update(source).then(() => {
+    return dest.update(source).then(async () => {
       expect(dest.subKeys[0].bindingSignatures[0]).to.exist;
-      expect(dest.subKeys[0].verify(source.primaryKey))
+      await expect(dest.subKeys[0].verify(source.primaryKey))
         .to.eventually.equal(openpgp.enums.keyStatus.valid);
-      done();
     });
   });
 
@@ -1217,12 +1215,12 @@ describe('Key', function() {
       opt.privateKey = key;
       opt.userIds = [userId2, userId3];
       opt.passphrase = '123';
-      return openpgp.reformatKey(opt).then(function(newKey) {
+      return openpgp.reformatKey(opt).then(async function(newKey) {
         newKey = newKey.key;
         expect(newKey.users.length).to.equal(2);
         expect(newKey.users[0].userId.userid).to.equal(userId2);
         expect(newKey.primaryKey.isDecrypted).to.be.false;
-        newKey.decrypt('123');
+        await newKey.decrypt('123');
         expect(newKey.primaryKey.isDecrypted).to.be.true;
       });
     });

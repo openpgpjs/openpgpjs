@@ -431,7 +431,7 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
     return enums.keyStatus.no_self_cert;
   }
   // check for valid, unrevoked, unexpired self signature
-  const { user, selfCertification } = await this.getPrimaryUser(date);
+  const { user, selfCertification } = await this.getPrimaryUser(date) || {};
   if (!user) {
     return enums.keyStatus.invalid;
   }
@@ -469,21 +469,41 @@ Key.prototype.getExpirationTime = async function() {
  * @returns {{user: Array<module:packet/User>, selfCertification: Array<module:packet/signature>}|null} The primary user and the self signature
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
-  // FIXME
-  await this.verifyPrimaryUser();
+  const { primaryKey } = this;
   let primaryUsers = [];
-  this.users.forEach((user, i) => {
+  let lastCreated = null;
+  let lastPrimaryUserID = null;
+  // TODO replace when Promise.forEach is implemented
+  for (let i = 0; i < this.users.length; i++) {
+    const user = this.users[i];
     if (!user.userId) {
       return;
     }
-    user.selfCertifications.forEach(cert => {
-      // only consider already validated certificates
-      if (!cert.verified || cert.revoked || cert.isExpired(date)) {
-        return;
+    const dataToVerify = { userid: user.userId , key: primaryKey };
+    for (let j = 0; j < user.selfCertifications.length; j++) {
+      const cert = user.selfCertifications[j];
+      // skip if certificate is not the most recent
+      if ((cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID) ||
+          (!lastPrimaryUserID && cert.created < lastCreated)) {
+        continue;
       }
+      // skip if certificates is invalid, revoked, or expired
+      // eslint-disable-next-line no-await-in-loop
+      if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
+        continue;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
+        continue;
+      }
+      if (cert.isExpired(date)) {
+        continue;
+      }
+      lastPrimaryUserID = cert.isPrimaryUserID;
+      lastCreated = cert.created;
       primaryUsers.push({ index: i, user: user, selfCertification: cert });
-    });
-  });
+    }
+  }
   // sort by primary user flag and signature creation time
   primaryUsers = primaryUsers.sort(function(a, b) {
     const A = a.selfCertification;
@@ -630,42 +650,12 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
  */
 Key.prototype.verifyPrimaryUser = async function(keys) {
-  const { primaryKey } = this;
-  const primaryUsers = [];
-  let lastCreated = null;
-  let lastPrimaryUserID = null;
-  await Promise.all(this.users.map(async function(user) {
-    if (!user.userId && !user.userAttribute) {
-      return;
-    }
-    const dataToVerify = { userid: user.userId || user.userAttribute, key: primaryKey };
-    // TODO replace when Promise.forEach is implemented
-    for (let i = 0; i < user.selfCertifications.length; i++) {
-      const cert = user.selfCertifications[i];
-      // skip if certificate is not the most recent
-      if ((cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID) ||
-          (!lastPrimaryUserID && cert.created < lastCreated)) {
-        return;
-      }
-      // skip if certificates is invalid, revoked, or expired
-      // eslint-disable-next-line no-await-in-loop
-      if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
-        return;
-      }
-      // eslint-disable-next-line no-await-in-loop
-      if (cert.revoked || await user.isRevoked(primaryKey, cert)) {
-        return;
-      }
-      if (cert.isExpired()) {
-        return;
-      }
-      lastPrimaryUserID = cert.isPrimaryUserID;
-      lastCreated = cert.created;
-      primaryUsers.push(user);
-    }
-  }));
-  const user = primaryUsers.pop();
-  const results = !user ? [] : keys ? await user.verifyAllCertifications(primaryKey, keys) :
+  const primaryKey = this.primaryKey;
+  const { user } = await this.getPrimaryUser() || {};
+  if (!user) {
+    throw new Error('Could not find primary user');
+  }
+  const results = keys ? await user.verifyAllCertifications(primaryKey, keys) :
     [{ keyid: primaryKey.keyid, valid: await user.verify(primaryKey) === enums.keyStatus.valid }];
   return results;
 };
