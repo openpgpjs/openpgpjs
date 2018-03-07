@@ -1283,5 +1283,14 @@ describe('Key', function() {
       expect(k.getEncryptionKeyPacket()).to.not.be.null;
     })
   });
+
+  it('Reject encryption with revoked subkey', function() {
+    const key = openpgp.key.readArmored(pub_revoked).keys[0];
+    return openpgp.encrypt({publicKeys: [key], data: 'random data'}).then(() => {
+      throw new Error('encryptSessionKey should not encrypt with revoked public key');
+    }).catch(function(error) {
+      expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+    });
+  });
 });
 

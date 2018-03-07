@@ -302,11 +302,12 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
   const packetlist = new packet.List();
 
   if (publicKeys) {
-    const results = await Promise.all(publicKeys.map(async function(key) {
-      await key.verifyKeyPackets(undefined, date);
-      const encryptionKeyPacket = key.getEncryptionKeyPacket(undefined, date);
+    const results = await Promise.all(publicKeys.map(async function(publicKey) {
+      await publicKey.verifyKeyPackets(undefined, date);
+      const encryptionKeyPacket = publicKey.getEncryptionKeyPacket(undefined, date);
       if (!encryptionKeyPacket) {
-        throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+        throw new Error('Could not find valid key packet for encryption in key ' +
+                        publicKey.primaryKey.getKeyId().toHex());
       }
       const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
       pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
