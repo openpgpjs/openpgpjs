@@ -57,6 +57,7 @@ async function randomProbablePrime(bits, e, k) {
       // If reached the maximum, go back to the minimum.
       if (n.bitLength() > bits) {
           n = n.mod(min.shln(1)).iadd(min);
+          i = n.mod(thirty).toNumber();
       }
       // eslint-disable-next-line no-await-in-loop
   } while (!await isProbablePrime(n, e, k));
