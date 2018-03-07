@@ -635,8 +635,8 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.aead_protect = aead_protectVal;
     });
 
-    it('Decrypting key with wrong passphrase rejected', function () {
-      expect(privateKey.keys[0].decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
+    it('Decrypting key with wrong passphrase rejected', async function () {
+      await expect(privateKey.keys[0].decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
     });
 
     it('Decrypting key with correct passphrase returns true', async function () {
@@ -891,9 +891,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt then decrypt with multiple private keys', function () {
+        it('should encrypt then decrypt with multiple private keys', async function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
 
           const encOpt = {
             data: plaintext,
@@ -933,9 +933,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt then decrypt with wildcard with multiple private keys', function () {
+        it('should encrypt then decrypt with wildcard with multiple private keys', async function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
 
           const encOpt = {
             data: plaintext,
@@ -1123,9 +1123,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', function () {
+        it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', async function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
 
           const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
 
@@ -1321,9 +1321,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt and decrypt/verify both signatures when signed with two private keys', function () {
+        it('should encrypt and decrypt/verify both signatures when signed with two private keys', async function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
 
           const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
 
@@ -1376,9 +1376,9 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should sign and verify cleartext data with multiple private keys', function () {
+        it('should sign and verify cleartext data with multiple private keys', async function () {
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
 
           const signOpt = {
             data: plaintext,
@@ -1688,10 +1688,10 @@ describe('OpenPGP.js public api tests', function() {
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
 
-        it('round trip test', function () {
+        it('round trip test', async function () {
           const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
           const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
-          privKeyDE.decrypt(passphrase);
+          await privKeyDE.decrypt(passphrase);
           return openpgp.encrypt({
             publicKeys: pubKeyDE,
             privateKeys: privKeyDE,
@@ -1765,9 +1765,9 @@ describe('OpenPGP.js public api tests', function() {
             '=IkKW',
             '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-        it('Decrypt message', function() {
+        it('Decrypt message', async function() {
           const privKey = openpgp.key.readArmored(priv_key).keys[0];
-          privKey.decrypt('1234');
+          await privKey.decrypt('1234');
           const message = openpgp.message.readArmored(pgp_msg);
 
           return openpgp.decrypt({ privateKeys:privKey, message:message }).then(function(decrypted) {

@@ -95,7 +95,7 @@ describe("Packet", function() {
 
     const msg2 = new openpgp.packet.List();
     msg2.read(message.write());
-    expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC in combination with modern cipher.');
+    await expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC in combination with modern cipher.');
   });
 
   it('Sym. encrypted integrity protected packet', async function() {
@@ -415,7 +415,7 @@ describe("Packet", function() {
 
       const payload = msg[1].packets[0].packets;
 
-      expect(payload[2].verify(
+      await expect(payload[2].verify(
         key[0], payload[1]
       )).to.eventually.be.true;
     });
@@ -473,7 +473,7 @@ describe("Packet", function() {
         signature.publicKeyAlgorithm = 'rsa_sign';
         signature.signatureType = 'binary';
 
-        signature.sign(key, literal).then(() => {
+        signature.sign(key, literal).then(async () => {
 
           signed.push(literal);
           signed.push(signature);
@@ -483,8 +483,8 @@ describe("Packet", function() {
           const signed2 = new openpgp.packet.List();
           signed2.read(raw);
 
-          expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true;
-          });
+          await expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true;
+        });
     });
   });
 });
