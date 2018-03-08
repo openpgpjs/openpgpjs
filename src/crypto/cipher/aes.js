@@ -6,7 +6,7 @@
 import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/exports';
 
 // TODO use webCrypto or nodeCrypto when possible.
-export default function aes(length) {
+function aes(length) {
   const c = function(key) {
     this.key = Uint8Array.from(key);
 
@@ -26,3 +26,5 @@ export default function aes(length) {
 
   return c;
 }
+
+export default aes;

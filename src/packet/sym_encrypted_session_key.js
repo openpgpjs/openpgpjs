@@ -45,7 +45,7 @@ import crypto from '../crypto';
 /**
  * @constructor
  */
-export default function SymEncryptedSessionKey() {
+function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
   this.version = 4;
   this.sessionKey = null;
@@ -63,7 +63,7 @@ export default function SymEncryptedSessionKey() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @return {module:packet/sym_encrypted_session_key} Object representation
+ * @returns {module:packet/sym_encrypted_session_key} Object representation
  */
 SymEncryptedSessionKey.prototype.read = function(bytes) {
   // A one-octet version number. The only currently defined version is 4.
@@ -104,7 +104,8 @@ SymEncryptedSessionKey.prototype.write = function() {
 /**
  * Decrypts the session key
  * @param {String} passphrase The passphrase in string form
- * @return {Promise<Boolean>}
+ * @returns {Promise<Boolean>}
+ * @async
  */
 SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
@@ -128,7 +129,8 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
 /**
  * Encrypts the session key
  * @param {String} passphrase The passphrase in string form
- * @return {Promise<Boolean>}
+ * @returns {Promise<Boolean>}
+ * @async
  */
 SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
@@ -160,3 +162,5 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
 SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.s2k = type_s2k.fromClone(this.s2k);
 };
+
+export default SymEncryptedSessionKey;

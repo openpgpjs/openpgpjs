@@ -1,29 +1,5 @@
 module.exports = function(grunt) {
 
-  var lintFiles = [
-    'src/config/**/*.js',
-    'src/crypto/cipher/aes.js',
-    'src/crypto/cipher/blowfish.js',
-    'src/crypto/cipher/cast5.js',
-    'src/crypto/cipher/des.js',
-    'src/crypto/cipher/index.js',
-    'src/crypto/hash/index.js',
-    'src/crypto/hash/md5.js',
-    'src/crypto/public_key/dsa.js',
-    'src/crypto/public_key/elgamal.js',
-    'src/crypto/public_key/index.js',
-    'src/crypto/public_key/rsa.js',
-    'src/crypto/public_key/elliptic/*.js',
-    'src/crypto/*.js',
-    'src/encoding/**/*.js',
-    'src/hkp/**/*.js',
-    'src/keyring/**/*.js',
-    'src/packet/**/*.js',
-    'src/type/**/*.js',
-    'src/worker/**/*.js',
-    'src/*.js'
-  ]; // add more over time ... goal should be 100% coverage
-
   var version = grunt.option('release');
   var fs = require('fs');
   var browser_capabilities;
@@ -179,7 +155,7 @@ module.exports = function(grunt) {
       }
     },
     eslint: {
-      target: lintFiles,
+      target: ['src/**/*.js'],
       options: { configFile: '.eslintrc.js' }
     },
     jsdoc: {

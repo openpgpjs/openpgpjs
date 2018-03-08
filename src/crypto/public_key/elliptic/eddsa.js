@@ -15,9 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of EdDSA following RFC4880bis-03 for OpenPGP
-
 /**
+ * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @requires bn.js
  * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curves
@@ -34,8 +33,9 @@ import Curve from './curves';
  * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}      m          Message to sign
  * @param  {Uint8Array}      d          Private key used to sign
- * @return {{R: Uint8Array,
-             S: Uint8Array}}            Signature of the message
+ * @returns {{R: Uint8Array,
+ *            S: Uint8Array}}            Signature of the message
+ * @async
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = new Curve(oid);
@@ -54,7 +54,8 @@ async function sign(oid, hash_algo, m, d) {
              S: Uint8Array}} signature  Signature to verify the message
  * @param  {Uint8Array}      m          Message to verify
  * @param  {Uint8Array}      Q          Public key used to verify the message
- * @return {Boolean}
+ * @returns {Boolean}
+ * @async
  */
 async function verify(oid, hash_algo, signature, m, Q) {
   const curve = new Curve(oid);

@@ -16,19 +16,23 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  * @requires config
  * @requires key
  * @requires util
  * @module keyring/localstore
- * @param {String} prefix prefix for itemnames in localstore
  */
 
 import config from '../config';
 import { readArmored } from '../key';
 import util from '../util';
 
-export default function LocalStore(prefix) {
+/**
+ * The class that deals with storage of the keyring.
+ * Currently the only option is to use HTML5 local storage.
+ * @constructor
+ * @param {String} prefix prefix for itemnames in localstore
+ */
+function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
   this.publicKeysItem = prefix + this.publicKeysItem;
   this.privateKeysItem = prefix + this.privateKeysItem;
@@ -47,7 +51,7 @@ LocalStore.prototype.privateKeysItem = 'private-keys';
 
 /**
  * Load the public keys from HTML5 local storage.
- * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key~Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPublic = function () {
   return loadKeys(this.storage, this.publicKeysItem);
@@ -55,7 +59,7 @@ LocalStore.prototype.loadPublic = function () {
 
 /**
  * Load the private keys from HTML5 local storage.
- * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key~Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPrivate = function () {
   return loadKeys(this.storage, this.privateKeysItem);
@@ -107,3 +111,5 @@ function storeKeys(storage, itemname, keys) {
     storage.removeItem(itemname);
   }
 }
+
+export default LocalStore;

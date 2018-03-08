@@ -40,7 +40,7 @@ import enums from '../enums';
 /**
  * @constructor
  */
-export default function OID(oid) {
+function OID(oid) {
   if (oid instanceof OID) {
     this.oid = oid.oid;
   } else if (util.isArray(oid) ||
@@ -58,7 +58,7 @@ export default function OID(oid) {
 /**
  * Method to read an OID object
  * @param  {Uint8Array}  input  Where to read the OID from
- * @return {Number}             Number of read bytes
+ * @returns {Number}             Number of read bytes
  */
 OID.prototype.read = function (input) {
   if (input.length >= 1) {
@@ -73,7 +73,7 @@ OID.prototype.read = function (input) {
 
 /**
  * Serialize an OID object
- * @return {Uint8Array} Array with the serialized value the OID
+ * @returns {Uint8Array} Array with the serialized value the OID
  */
 OID.prototype.write = function () {
   return util.concatUint8Array([new Uint8Array([this.oid.length]), this.oid]);
@@ -81,7 +81,7 @@ OID.prototype.write = function () {
 
 /**
  * Serialize an OID object as a hex string
- * @return {string} String with the hex value of the OID
+ * @returns {string} String with the hex value of the OID
  */
 OID.prototype.toHex = function() {
   return util.Uint8Array_to_hex(this.oid);
@@ -89,7 +89,7 @@ OID.prototype.toHex = function() {
 
 /**
  * If a known curve object identifier, return the canonical name of the curve
- * @return {string} String with the canonical name of the curve
+ * @returns {string} String with the canonical name of the curve
  */
 OID.prototype.getName = function() {
   const hex = this.toHex();
@@ -103,3 +103,5 @@ OID.prototype.getName = function() {
 OID.fromClone = function (clone) {
   return new OID(clone.oid);
 };
+
+export default OID;

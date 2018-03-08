@@ -33,7 +33,7 @@ import enums from '../enums.js';
  * @param {Date} date the creation date of the literal package
  * @constructor
  */
-export default function Literal(date=new Date()) {
+function Literal(date=new Date()) {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
   this.date = util.normalizeDate(date);
@@ -56,7 +56,7 @@ Literal.prototype.setText = function(text) {
 /**
  * Returns literal data packets as native JavaScript string
  * with normalized end of line to \n
- * @return {String} literal data as text
+ * @returns {String} literal data as text
  */
 Literal.prototype.getText = function() {
   // decode UTF8
@@ -107,7 +107,7 @@ Literal.prototype.getFilename = function() {
  * Parsing function for a literal data packet (tag 11).
  *
  * @param {Uint8Array} input Payload of a tag 11 packet
- * @return {module:packet/literal} object representation
+ * @returns {module:packet/literal} object representation
  */
 Literal.prototype.read = function(bytes) {
   // - A one-octet field that describes how the data is formatted.
@@ -126,7 +126,7 @@ Literal.prototype.read = function(bytes) {
 /**
  * Creates a string representation of the packet
  *
- * @return {Uint8Array} Uint8Array representation of the packet
+ * @returns {Uint8Array} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
   const filename = util.str_to_Uint8Array(util.encode_utf8(this.filename));
@@ -138,3 +138,5 @@ Literal.prototype.write = function() {
 
   return util.concatUint8Array([format, filename_length, filename, date, data]);
 };
+
+export default Literal;

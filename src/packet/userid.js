@@ -34,7 +34,7 @@ import enums from '../enums.js';
 /**
  * @constructor
  */
-export default function Userid() {
+function Userid() {
   this.tag = enums.packet.userid;
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
@@ -53,8 +53,10 @@ Userid.prototype.read = function (bytes) {
 
 /**
  * Creates a binary representation of the user id packet
- * @return {Uint8Array} binary representation
+ * @returns {Uint8Array} binary representation
  */
 Userid.prototype.write = function () {
   return util.str_to_Uint8Array(util.encode_utf8(this.userid));
 };
+
+export default Userid;

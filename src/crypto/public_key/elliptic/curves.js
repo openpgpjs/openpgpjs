@@ -15,16 +15,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Wrapper of an instance of an Elliptic Curve
-
 /**
+ * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @requires bn.js
  * @requires elliptic
  * @requires crypto/public_key/elliptic/key
  * @requires crypto/random
- * @requires type/oid
  * @requires enums
  * @requires util
+ * @requires type/oid
  * @module crypto/public_key/elliptic/curve
  */
 
@@ -112,7 +111,10 @@ const curves = {
   }
 };
 
-export default function Curve(oid_or_name, params) {
+/**
+ * @constructor
+ */
+function Curve(oid_or_name, params) {
   try {
     if (util.isArray(oid_or_name) ||
         util.isUint8Array(oid_or_name)) {
@@ -206,10 +208,11 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
+export default Curve;
+
 export {
   curves, webCurves, nodeCurves, generate, getPreferredHashAlgo
 };
-
 
 //////////////////////////
 //                      //

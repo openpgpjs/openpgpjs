@@ -20,7 +20,7 @@
 /**
  * Add pkcs5 padding to a text.
  * @param  {String}  msg  Text to add padding
- * @return {String}       Text with padding added
+ * @returns {String}       Text with padding added
  */
 function encode(msg) {
   const c = 8 - (msg.length % 8);
@@ -31,7 +31,7 @@ function encode(msg) {
 /**
  * Remove pkcs5 padding from a string.
  * @param  {String}  msg  Text to remove padding from
- * @return {String}       Text with padding removed
+ * @returns {String}       Text with padding removed
  */
 function decode(msg) {
   const len = msg.length;

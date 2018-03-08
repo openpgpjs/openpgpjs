@@ -111,7 +111,7 @@ function addheader() {
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
  * @param {String} data Data to create a CRC-24 checksum for
- * @return {String} Base64 encoded checksum
+ * @returns {String} Base64 encoded checksum
  */
 function getCheckSum(data) {
   const c = createcrc24(data);
@@ -124,7 +124,7 @@ function getCheckSum(data) {
  * given base64 encoded checksum
  * @param {String} data Data to create a CRC-24 checksum for
  * @param {String} checksum Base64 encoded checksum
- * @return {Boolean} True if the given checksum is correct; otherwise false
+ * @returns {Boolean} True if the given checksum is correct; otherwise false
  */
 function verifyCheckSum(data, checksum) {
   const c = getCheckSum(data);
@@ -134,7 +134,7 @@ function verifyCheckSum(data, checksum) {
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
  * @param {String} data Data to create a CRC-24 checksum for
- * @return {Integer} The CRC-24 checksum as number
+ * @returns {Integer} The CRC-24 checksum as number
  */
 const crc_table = [
   0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139,

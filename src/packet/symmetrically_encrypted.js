@@ -36,7 +36,7 @@ import config from '../config';
 /**
  * @constructor
  */
-export default function SymmetricallyEncrypted() {
+function SymmetricallyEncrypted() {
   this.tag = enums.packet.symmetricallyEncrypted;
   this.encrypted = null;
   /** Decrypted packets contained within.
@@ -59,6 +59,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
+ * @async
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
@@ -80,6 +81,7 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
  *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
+ * @async
  */
 SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
@@ -88,3 +90,5 @@ SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
 
   return true;
 };
+
+export default SymmetricallyEncrypted;

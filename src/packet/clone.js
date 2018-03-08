@@ -41,7 +41,7 @@ import util from '../util';
 /**
  * Create a packetlist from the correspoding object types.
  * @param  {Object} options   the object passed to and from the web worker
- * @return {Object}           a mutated version of the options optject
+ * @returns {Object}           a mutated version of the options optject
  */
 export function clonePackets(options) {
   if (options.publicKeys) {
@@ -89,7 +89,7 @@ function verificationObjectToClone(verObject) {
  * Creates an object with the correct prototype from a corresponding packetlist.
  * @param  {Object} options   the object passed to and from the web worker
  * @param  {String} method    the public api function name to be delegated to the worker
- * @return {Object}           a mutated version of the options optject
+ * @returns {Object}           a mutated version of the options optject
  */
 export function parseClonedPackets(options) {
   if (options.publicKeys) {

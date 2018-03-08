@@ -38,7 +38,7 @@ import type_mpi from '../type/mpi';
 /**
  * @constructor
  */
-export default function PublicKey() {
+function PublicKey() {
   this.tag = enums.packet.publicKey;
   this.version = 4;
   /** Key creation date.
@@ -64,7 +64,7 @@ export default function PublicKey() {
  * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
  * called by read_tag&lt;num&gt;
  * @param {Uint8Array} bytes Input array to read the packet from
- * @return {Object} This object with attributes set by the parser
+ * @returns {Object} This object with attributes set by the parser
  */
 PublicKey.prototype.read = function (bytes) {
   let pos = 0;
@@ -113,7 +113,7 @@ PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
 /**
  * Same as write_private_key, but has less information because of
  * public key.
- * @return {Uint8Array} OpenPGP packet body contents,
+ * @returns {Uint8Array} OpenPGP packet body contents,
  */
 PublicKey.prototype.write = function () {
   const arr = [];
@@ -151,7 +151,7 @@ PublicKey.prototype.writeOld = function () {
 
 /**
  * Calculates the key id of the key
- * @return {String} A 8 byte key id
+ * @returns {String} A 8 byte key id
  */
 PublicKey.prototype.getKeyId = function () {
   if (this.keyid) {
@@ -169,7 +169,7 @@ PublicKey.prototype.getKeyId = function () {
 
 /**
  * Calculates the fingerprint of the key
- * @return {String} A string containing the fingerprint in lowercase hex
+ * @returns {String} A string containing the fingerprint in lowercase hex
  */
 PublicKey.prototype.getFingerprint = function () {
   if (this.fingerprint) {
@@ -193,7 +193,7 @@ PublicKey.prototype.getFingerprint = function () {
 
 /**
  * Returns algorithm information
- * @return {Promise<Object>} An object of the form {algorithm: String, bits:int, curve:String}
+ * @returns {Promise<Object>} An object of the form {algorithm: String, bits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
   const result = {};
@@ -220,3 +220,5 @@ PublicKey.prototype.postCloneTypeFix = function() {
     this.keyid = type_keyid.fromClone(this.keyid);
   }
 };
+
+export default PublicKey;

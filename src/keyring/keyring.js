@@ -16,23 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
  * @requires key
  * @requires keyring/localstore
  * @module keyring/keyring
- * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 
 import { readArmored } from '../key';
 import LocalStore from './localstore';
 
 /**
- * Initialization routine for the keyring. This method reads the
- * keyring from HTML5 local storage and initializes this instance.
+ * Initialization routine for the keyring.
+ * This method reads the keyring from HTML5 local storage and initializes this instance.
  * @constructor
  * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
-export default function Keyring(storeHandler) {
+function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new LocalStore();
   this.publicKeys = new KeyArray(this.storeHandler.loadPublic());
   this.privateKeys = new KeyArray(this.storeHandler.loadPrivate());
@@ -59,7 +57,7 @@ Keyring.prototype.clear = function() {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @return {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key~Key>|null} keys found or null
  */
 Keyring.prototype.getKeysForId = function (keyId, deep) {
   let result = [];
@@ -72,7 +70,7 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
  * Removes keys having the specified key id from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @return {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key~Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
   let result = [];
@@ -83,7 +81,7 @@ Keyring.prototype.removeKeysForId = function (keyId) {
 
 /**
  * Get all public and private keys
- * @return {Array<module:key~Key>} all keys
+ * @returns {Array<module:key~Key>} all keys
  */
 Keyring.prototype.getAllKeys = function () {
   return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -100,7 +98,7 @@ function KeyArray(keys) {
 /**
  * Searches all keys in the KeyArray matching the address or address part of the user ids
  * @param {String} email email address to search for
- * @return {Array<module:key~Key>} The public keys associated with provided email address.
+ * @returns {Array<module:key~Key>} The public keys associated with provided email address.
  */
 KeyArray.prototype.getForAddress = function(email) {
   const results = [];
@@ -117,7 +115,7 @@ KeyArray.prototype.getForAddress = function(email) {
  * @private
  * @param {String} email email address to search for
  * @param {module:key~Key} key The key to be checked.
- * @return {Boolean} True if the email address is defined in the specified key
+ * @returns {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
   email = email.toLowerCase();
@@ -140,7 +138,7 @@ function emailCheck(email, key) {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
- * @return {Boolean} True if keypacket has the specified keyid
+ * @returns {Boolean} True if keypacket has the specified keyid
  */
 function keyIdCheck(keyId, keypacket) {
   if (keyId.length === 16) {
@@ -154,7 +152,7 @@ function keyIdCheck(keyId, keypacket) {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @return {module:key~Key|null} key found or null
+ * @returns {module:key~Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (let i = 0; i < this.keys.length; i++) {
@@ -175,28 +173,31 @@ KeyArray.prototype.getForId = function (keyId, deep) {
 /**
  * Imports a key from an ascii armored message
  * @param {String} armored message to read the keys/key from
- * @return {Array<Error>|null} array of error objects or null
+ * @returns {Promise<Array<Error>|null>} array of error objects or null
+ * @async
  */
-KeyArray.prototype.importKey = function (armored) {
+KeyArray.prototype.importKey = async function (armored) {
   const imported = readArmored(armored);
   const that = this;
-  imported.keys.forEach(async function(key) {
+  for (let i = 0; i < imported.keys.length; i++) {
+    const key = imported.keys[i];
     // check if key already in key array
     const keyidHex = key.primaryKey.getKeyId().toHex();
     const keyFound = that.getForId(keyidHex);
     if (keyFound) {
+      // eslint-disable-next-line no-await-in-loop
       await keyFound.update(key);
     } else {
       that.push(key);
     }
-  });
+  }
   return imported.err ? imported.err : null;
 };
 
 /**
  * Add key to KeyArray
  * @param {module:key~Key} key The key that will be added to the keyring
- * @return {Number} The new length of the KeyArray
+ * @returns {Number} The new length of the KeyArray
  */
 KeyArray.prototype.push = function (key) {
   return this.keys.push(key);
@@ -206,7 +207,7 @@ KeyArray.prototype.push = function (key) {
  * Removes a key with the specified keyid from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @return {module:key~Key|null} The key object which has been removed or null
+ * @returns {module:key~Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (let i = 0; i < this.keys.length; i++) {
@@ -216,3 +217,5 @@ KeyArray.prototype.removeForId = function (keyId) {
   }
   return null;
 };
+
+export default Keyring;

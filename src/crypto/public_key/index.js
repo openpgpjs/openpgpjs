@@ -1,8 +1,9 @@
 /**
- * @requires crypto/public_key/dsa
- * @requires crypto/public_key/elgamal
- * @requires crypto/public_key/elliptic
- * @requires crypto/public_key/rsa
+ * @fileoverview Asymmetric cryptography functions
+ * @see module:crypto/public_key/dsa
+ * @see module:crypto/public_key/elgamal
+ * @see module:crypto/public_key/elliptic
+ * @see module:crypto/public_key/rsa
  * @module crypto/public_key
  */
 

@@ -37,7 +37,7 @@ import type_keyid from '../type/keyid.js';
 /**
  * @constructor
  */
-export default function OnePassSignature() {
+function OnePassSignature() {
   this.tag = enums.packet.onePassSignature; // The packet type
   this.version = null; // A one-octet version number.  The current version is 3.
   this.type = null; // A one-octet signature type.  Signature types are described in {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
@@ -50,7 +50,7 @@ export default function OnePassSignature() {
 /**
  * parsing function for a one-pass signature packet (tag 4).
  * @param {Uint8Array} bytes payload of a tag 4 packet
- * @return {module:packet/one_pass_signature} object representation
+ * @returns {module:packet/one_pass_signature} object representation
  */
 OnePassSignature.prototype.read = function (bytes) {
   let mypos = 0;
@@ -82,7 +82,7 @@ OnePassSignature.prototype.read = function (bytes) {
 
 /**
  * creates a string representation of a one-pass signature packet
- * @return {Uint8Array} a Uint8Array representation of a one-pass signature packet
+ * @returns {Uint8Array} a Uint8Array representation of a one-pass signature packet
  */
 OnePassSignature.prototype.write = function () {
   const start = new Uint8Array([3, enums.write(enums.signature, this.type),
@@ -100,3 +100,5 @@ OnePassSignature.prototype.write = function () {
 OnePassSignature.prototype.postCloneTypeFix = function() {
   this.signingKeyId = type_keyid.fromClone(this.signingKeyId);
 };
+
+export default OnePassSignature;

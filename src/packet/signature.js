@@ -42,7 +42,7 @@ import type_keyid from '../type/keyid.js';
  * @constructor
  * @param {Date} date the creation date of the signature
  */
-export default function Signature(date=new Date()) {
+function Signature(date=new Date()) {
   this.tag = enums.packet.signature;
   this.version = 4;
   this.signatureType = null;
@@ -94,7 +94,7 @@ export default function Signature(date=new Date()) {
  * @param {String} bytes payload of a tag 2 packet
  * @param {Integer} position position to start reading from the bytes string
  * @param {Integer} len length of the packet or the remaining length of bytes at position
- * @return {module:packet/signature} object representation
+ * @returns {module:packet/signature} object representation
  */
 Signature.prototype.read = function (bytes) {
   let i = 0;
@@ -213,6 +213,7 @@ Signature.prototype.write = function () {
  * @param {module:packet/secret_key} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  * @returns {Promise<Boolean>}
+ * @async
  */
 Signature.prototype.sign = async function (key, data) {
   const signatureType = enums.write(enums.signature, this.signatureType);
@@ -254,7 +255,7 @@ Signature.prototype.sign = async function (key, data) {
 
 /**
  * Creates string of bytes with all subpacket data
- * @return {String} a string-representation of a all subpacket data
+ * @returns {String} a string-representation of a all subpacket data
  */
 Signature.prototype.write_all_sub_packets = function () {
   const sub = enums.signatureSubpacket;
@@ -366,7 +367,7 @@ Signature.prototype.write_all_sub_packets = function () {
  * @param {Integer} type subpacket signature type. Signature types as described
  * in {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
  * @param {String} data data to be included
- * @return {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * @returns {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
  */
 function write_sub_packet(type, data) {
   const arr = [];
@@ -618,7 +619,8 @@ Signature.prototype.calculateTrailer = function () {
  * @param {String|Object} data data which on the signature applies
  * @param {module:packet/public_subkey|module:packet/public_key|
  *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
- * @return {Promise<Boolean>} True if message is verified, else false.
+ * @returns {Promise<Boolean>} True if message is verified, else false.
+ * @async
  */
 Signature.prototype.verify = async function (key, data) {
   const signatureType = enums.write(enums.signature, this.signatureType);
@@ -664,7 +666,7 @@ Signature.prototype.verify = async function (key, data) {
 /**
  * Verifies signature expiration date
  * @param {Date} date (optional) use the given date for verification instead of the current time
- * @return {Boolean} true if expired
+ * @returns {Boolean} true if expired
  */
 Signature.prototype.isExpired = function (date=new Date()) {
   const normDate = util.normalizeDate(date);
@@ -681,3 +683,5 @@ Signature.prototype.isExpired = function (date=new Date()) {
 Signature.prototype.postCloneTypeFix = function() {
   this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };
+
+export default Signature;

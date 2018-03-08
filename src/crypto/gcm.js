@@ -42,7 +42,7 @@ const ALGO = 'AES-GCM';
  * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
  * @param  {Uint8Array} key         The encryption key
  * @param  {Uint8Array} iv          The initialization vector (12 bytes)
- * @return {Promise<Uint8Array>}    The ciphertext output
+ * @returns {Promise<Uint8Array>}    The ciphertext output
  */
 function encrypt(cipher, plaintext, key, iv) {
   if (cipher.substr(0, 3) !== 'aes') {
@@ -63,7 +63,7 @@ function encrypt(cipher, plaintext, key, iv) {
  * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
  * @param  {Uint8Array} key          The encryption key
  * @param  {Uint8Array} iv           The initialization vector (12 bytes)
- * @return {Promise<Uint8Array>}     The plaintext output
+ * @returns {Promise<Uint8Array>}     The plaintext output
  */
 function decrypt(cipher, ciphertext, key, iv) {
   if (cipher.substr(0, 3) !== 'aes') {

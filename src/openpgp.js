@@ -99,6 +99,7 @@ export function destroyWorker() {
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @async
  * @static
  */
 
@@ -136,6 +137,7 @@ export function generateKey({
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @async
  * @static
  */
 export function reformatKey({
@@ -165,6 +167,7 @@ export function reformatKey({
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
  * @returns {Promise<Object>}     the unlocked key object in the form: { key:Key }
+ * @async
  */
 export function decryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
@@ -185,6 +188,7 @@ export function decryptKey({ privateKey, passphrase }) {
  * @param  {Key} privateKey      the private key that is to be decrypted
  * @param  {String} passphrase   the user's passphrase chosen during key generation
  * @returns {Promise<Object>}     the locked key object in the form: { key:Key }
+ * @async
  */
 export function encryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
@@ -227,6 +231,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @async
  * @static
  */
 export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date()}) {
@@ -278,6 +283,7 @@ export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, 
  * @param  {Date} date                        (optional) use the given date for verification instead of the current time
  * @returns {Promise<Object>}             decrypted and verified message in the form:
  *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
+ * @async
  * @static
  */
 export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', signature=null, date=new Date() }) {
@@ -318,6 +324,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @returns {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @async
  * @static
  */
 export function sign({
@@ -359,6 +366,7 @@ export function sign({
  * @param  {Date} date                   (optional) use the given date for verification instead of the current time
  * @returns {Promise<Object>}             cleartext with status of verified signatures in the form of:
  *                                       { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ * @async
  * @static
  */
 export function verify({ message, publicKeys, signature=null, date=new Date() }) {
@@ -396,6 +404,7 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
  * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
+ * @async
  * @static
  */
 export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wildcard=false }) {
@@ -421,6 +430,7 @@ export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wild
  * @returns {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
+ * @async
  * @static
  */
 export function decryptSessionKeys({ message, privateKeys, passwords }) {

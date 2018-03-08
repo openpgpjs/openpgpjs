@@ -21,7 +21,7 @@
  * @module config/config
  */
 
-import enums from '../enums.js';
+import enums from '../enums';
 
 export default {
   /** @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash} */

@@ -27,7 +27,7 @@ import util from '../util';
 /**
  * @constructor
  */
-export default function ECDHSymmetricKey(data) {
+function ECDHSymmetricKey(data) {
   if (typeof data === 'undefined') {
     data = new Uint8Array([]);
   } else if (util.isString(data)) {
@@ -41,7 +41,7 @@ export default function ECDHSymmetricKey(data) {
 /**
  * Read an ECDHSymmetricKey from an Uint8Array
  * @param  {Uint8Array}  input  Where to read the encoded symmetric key from
- * @return {Number}             Number of read bytes
+ * @returns {Number}             Number of read bytes
  */
 ECDHSymmetricKey.prototype.read = function (input) {
   if (input.length >= 1) {
@@ -56,7 +56,7 @@ ECDHSymmetricKey.prototype.read = function (input) {
 
 /**
  * Write an ECDHSymmetricKey as an Uint8Array
- * @return  {Uint8Array}  An array containing the value
+ * @returns  {Uint8Array}  An array containing the value
  */
 ECDHSymmetricKey.prototype.write = function () {
   return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);
@@ -65,3 +65,5 @@ ECDHSymmetricKey.prototype.write = function () {
 ECDHSymmetricKey.fromClone = function (clone) {
   return new ECDHSymmetricKey(clone.data);
 };
+
+export default ECDHSymmetricKey;

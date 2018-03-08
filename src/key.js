@@ -263,8 +263,9 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {(module:packet/secret_subkey|
-             module:packet/secret_key|null)} key packet or null if no signing key has been found
+ * @returns {Promise<module:packet/secret_subkey|
+                     module:packet/secret_key|null>} key packet or null if no signing key has been found
+ * @async
  */
 Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date()) {
   const primaryKey = this.primaryKey;
@@ -305,10 +306,11 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
- * @returns {(module:packet/public_subkey|
- *            module:packet/secret_subkey|
- *            module:packet/secret_key|
- *            module:packet/public_key|null)} key packet or null if no encryption key has been found
+ * @returns {Promise<module:packet/public_subkey|
+ *                   module:packet/secret_subkey|
+ *                   module:packet/secret_key|
+ *                   module:packet/public_key|null>} key packet or null if no encryption key has been found
+ * @async
  */
 Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
   const primaryKey = this.primaryKey;
@@ -340,6 +342,7 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
  * @param  {module:type/keyid} keyId
  * @param  {String} passphrase
  * @returns {Promise<Array<module:packet/secret_key|module:packet/secret_subkey>>}
+ * @async
  */
 Key.prototype.encrypt = async function(passphrase, keyId=null) {
   if (!this.isPrivate()) {
@@ -358,6 +361,7 @@ Key.prototype.encrypt = async function(passphrase, keyId=null) {
  * @param  {String} passphrase
  * @param  {module:type/keyid} keyId
  * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
+ * @async
  */
 Key.prototype.decrypt = async function(passphrase, keyId=null) {
   if (!this.isPrivate()) {
@@ -380,6 +384,7 @@ Key.prototype.decrypt = async function(passphrase, keyId=null) {
  *          module:packet/secret_key} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
+ * @async
  */
 Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
   return isDataRevoked(
@@ -394,6 +399,7 @@ Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
  * @param  {type/keyid} keyId
  * @param  {Date}       date  Use the given date instead of the current time
  * @returns {Promise<module:packet/packetlist>}
+ * @async
  */
 Key.prototype.verifyKeyPackets = async function(keyId=null, date=new Date()) {
   const packets = new packet.List();
@@ -418,6 +424,7 @@ Key.prototype.verifyKeyPackets = async function(keyId=null, date=new Date()) {
  * and valid self signature
  * @param {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<module:enums.keyStatus>} The status of the primary key
+ * @async
  */
 Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
   const primaryKey = this.primaryKey;
@@ -446,7 +453,8 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
 
 /**
  * Returns the expiration time of the primary key or Infinity if key does not expire
- * @returns {Date}
+ * @returns {Promise<Date>}
+ * @async
  */
 Key.prototype.getExpirationTime = async function() {
   if (this.primaryKey.version === 3) {
@@ -466,7 +474,9 @@ Key.prototype.getExpirationTime = async function() {
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {{user: Array<module:packet/User>, selfCertification: Array<module:packet/signature>}|null} The primary user and the self signature
+ * @returns {Promise<{user: Array<module:packet/User>,
+ *                    selfCertification: Array<module:packet/signature>}|undefined>} The primary user and the self signature
+ * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
   const { primaryKey } = this;
@@ -615,6 +625,7 @@ Key.prototype.revoke = function() {
  * Signs primary user of key
  * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
  * @returns {Promise<module:key~Key>} new public key with new certificate signature
+ * @async
  */
 Key.prototype.signPrimaryUser = async function(privateKeys) {
   const { index, user } = await this.getPrimaryUser() || {};
@@ -631,6 +642,7 @@ Key.prototype.signPrimaryUser = async function(privateKeys) {
  * Signs all users of key
  * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
  * @returns {Promise<module:key~Key>} new public key with new certificate signature
+ * @async
  */
 Key.prototype.signAllUsers = async function(privateKeys) {
   const that = this;
@@ -648,6 +660,7 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
+ * @async
  */
 Key.prototype.verifyPrimaryUser = async function(keys) {
   const primaryKey = this.primaryKey;
@@ -668,6 +681,7 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
  * @returns {Promise<Array<{userid: String,
  *                          keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
+ * @async
  */
 Key.prototype.verifyAllUsers = async function(keys) {
   const results = [];
@@ -720,6 +734,7 @@ User.prototype.toPacketlist = function() {
  *          module:packet/public_key} primaryKey  The primary key packet
  * @param  {Array<module:key~Key>}    privateKeys Decrypted private keys for signing
  * @returns {Promise<module:key~Key>}             New user with new certificate signatures
+ * @async
  */
 User.prototype.sign = async function(primaryKey, privateKeys) {
   const dataToSign = { userid: this.userId || this.userAttribute, key: primaryKey };
@@ -764,6 +779,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
  *          module:packet/secret_key} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
+ * @async
  */
 User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new Date()) {
   return isDataRevoked(
@@ -782,6 +798,7 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @param  {Array<module:key~Key>}    keys        Array of keys to verify certificate signatures
  * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}     status of the certificate
+ * @async
  */
 User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date=new Date()) {
   const that = this;
@@ -811,6 +828,7 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
  * @param  {Array<module:key~Key>}    keys       Array of keys to verify certificate signatures
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
+ * @async
  */
 User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
   const that = this;
@@ -830,6 +848,7 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
  * @param  {module:packet/secret_key|
  *          module:packet/public_key} primaryKey The primary key packet
  * @returns {Promise<module:enums.keyStatus>}    Status of user
+ * @async
  */
 User.prototype.verify = async function(primaryKey) {
   if (!this.selfCertifications.length) {
@@ -911,6 +930,7 @@ SubKey.prototype.toPacketlist = function() {
  *          module:packet/secret_key} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the binding signature is revoked
+ * @async
  */
 SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new Date()) {
   return isDataRevoked(
@@ -928,6 +948,7 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
  *          module:packet/public_key} primaryKey The primary key packet
  * @param  {Date}                     date       Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
+ * @async
  */
 SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
   const that = this;
@@ -1021,7 +1042,8 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
- * @returns {{keys: Array<module:key~Key>, err: (Array<Error>|null)}} result object with key and error arrays
+ * @returns {{keys: Array<module:key~Key>,
+ *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
 export function read(data) {
@@ -1055,7 +1077,7 @@ export function read(data) {
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
  * @returns {{keys: Array<module:key~Key>,
-             err: (Array<Error>|null)}} result object with key and error arrays
+ *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
 export function readArmored(armoredText) {
@@ -1083,7 +1105,8 @@ export function readArmored(armoredText) {
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
- * @returns {module:key~Key}
+ * @returns {Promise<module:key~Key>}
+ * @async
  * @static
  */
 export function generate(options) {
@@ -1159,6 +1182,7 @@ export function generate(options) {
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
  * @returns {Promise<module:key~Key>}
+ * @async
  * @static
  */
 export async function reformat(options) {
@@ -1304,6 +1328,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
  *          module:packet/secret_key} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
+ * @async
  */
 async function isDataRevoked(primaryKey, dataToVerify, revocations, signature, key, date=new Date()) {
   key = key || primaryKey;
@@ -1353,7 +1378,8 @@ function getExpirationTime(keyPacket, signature) {
 /**
  * Returns the preferred signature hash algorithm of a key
  * @param  {object} key
- * @returns {String}
+ * @returns {Promise<String>}
+ * @async
  */
 export async function getPreferredHashAlgo(key) {
   let hash_algo = config.prefer_hash_algorithm;
@@ -1387,7 +1413,8 @@ export async function getPreferredHashAlgo(key) {
 /**
  * Returns the preferred symmetric algorithm for a set of keys
  * @param  {Array<module:key~Key>} keys Set of keys
- * @returns {enums.symmetric}   Preferred symmetric algorithm
+ * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
+ * @async
  */
 export async function getPreferredSymAlgo(keys) {
   const prioMap = {};

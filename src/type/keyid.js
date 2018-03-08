@@ -32,7 +32,7 @@ import util from '../util.js';
 /**
  * @constructor
  */
-export default function Keyid() {
+function Keyid() {
   this.bytes = '';
 }
 
@@ -90,3 +90,5 @@ Keyid.wildcard = function () {
   keyid.read(new Uint8Array(8));
   return keyid;
 };
+
+export default Keyid;

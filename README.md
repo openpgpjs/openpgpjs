@@ -112,7 +112,7 @@ openpgp.encrypt(options).then(function(ciphertext) {
 ```js
 options = {
     message: openpgp.message.read(encrypted), // parse encrypted bytes
-    password: 'secret stuff',                 // decrypt with password
+    passwords: ['secret stuff'],              // decrypt with password
     format: 'binary'                          // output as Uint8Array
 };
 
@@ -131,12 +131,12 @@ var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK---
 var passphrase = 'secret passphrase'; //what the privKey is encrypted with
 
 var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
-privKeyObj.decrypt(passphrase);
+await privKeyObj.decrypt(passphrase);
 
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
     publicKeys: openpgp.key.readArmored(pubkey).keys,  // for encryption
-    privateKeys: privKeyObj // for signing (optional)
+    privateKeys: [privKeyObj]                          // for signing (optional)
 };
 
 openpgp.encrypt(options).then(function(ciphertext) {
@@ -148,7 +148,7 @@ openpgp.encrypt(options).then(function(ciphertext) {
 options = {
     message: openpgp.message.readArmored(encrypted),     // parse armored message
     publicKeys: openpgp.key.readArmored(pubkey).keys,    // for verification (optional)
-    privateKey: privKeyObj // for decryption
+    privateKeys: [privKeyObj]                            // for decryption
 };
 
 openpgp.decrypt(options).then(function(plaintext) {
@@ -171,9 +171,7 @@ options = {
     compression: openpgp.enums.compression.zip   // compress the data with zip
 };
 
-openpgp.encrypt(options).then(function(ciphertext) {
-    // use ciphertext
-});
+ciphertext = await openpgp.encrypt(options);     // use ciphertext
 ```
 
 Or, override the config to enable compression:
@@ -200,10 +198,15 @@ var options = {
 ```
 
 ECC keys:
+
+Possible values for curve are curve25519, ed25519, p256, p384, p521, or secp256k1.
+Note that options both curve25519 and ed25519 generate a primary key for signing using Ed25519
+and a subkey for encryption using Curve25519.
+
 ```js
 var options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
-    curve: "ed25519",                                         // ECC curve (curve25519, p256, p384, p521, or secp256k1)
+    curve: "ed25519",                                         // ECC curve name
     passphrase: 'super long and hard to guess secret'         // protects the private key
 };
 ```
@@ -249,13 +252,13 @@ var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK---
 var passphrase = 'secret passphrase'; //what the privKey is encrypted with
 
 var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
-privKeyObj.decrypt(passphrase);
+await privKeyObj.decrypt(passphrase);
 ```
 
 ```js
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
-    privateKeys: privKeyObj // for signing
+    privateKeys: [privKeyObj]                          // for signing
 };
 
 openpgp.sign(options).then(function(signed) {
@@ -287,13 +290,13 @@ var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK---
 var passphrase = 'secret passphrase'; //what the privKey is encrypted with
 
 var privKeyObj = openpgp.key.readArmored(privkey).keys[0];
-privKeyObj.decrypt(passphrase);
+await privKeyObj.decrypt(passphrase);
 ```
 
 ```js
 options = {
     data: 'Hello, World!',                             // input as String (or Uint8Array)
-    privateKeys: privKeyObj, // for signing
+    privateKeys: [privKeyObj],                         // for signing
     detached: true
 };
 

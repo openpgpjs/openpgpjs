@@ -35,7 +35,8 @@ export default {
   /**
    * Retrieve secure random byte array of the specified length
    * @param {Integer} length Length in bytes to generate
-   * @return {Uint8Array} Random byte array
+   * @returns {Uint8Array} Random byte array
+   * @async
    */
   getRandomBytes: async function(length) {
     const buf = new Uint8Array(length);
@@ -58,7 +59,8 @@ export default {
    * Create a secure random MPI that is greater than or equal to min and less than max.
    * @param {module:type/mpi} min Lower bound, included
    * @param {module:type/mpi} max Upper bound, excluded
-   * @return {module:BN} Random MPI
+   * @returns {module:BN} Random MPI
+   * @async
    */
   getRandomBN: async function(min, max) {
     if (max.cmp(min) <= 0) {

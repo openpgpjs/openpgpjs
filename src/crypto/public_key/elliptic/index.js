@@ -15,13 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Function to access Elliptic Curve Cryptography
-
 /**
- * @requires crypto/public_key/elliptic/curve
- * @requires crypto/public_key/elliptic/ecdh
- * @requires crypto/public_key/elliptic/ecdsa
- * @requires crypto/public_key/elliptic/eddsa
+ * @fileoverview Functions to access Elliptic Curve Cryptography
+ * @see module:crypto/public_key/elliptic/curve
+ * @see module:crypto/public_key/elliptic/ecdh
+ * @see module:crypto/public_key/elliptic/ecdsa
+ * @see module:crypto/public_key/elliptic/eddsa
  * @module crypto/public_key/elliptic
  */
 

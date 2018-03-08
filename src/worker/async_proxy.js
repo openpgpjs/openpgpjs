@@ -57,7 +57,7 @@ function handleMessage(workerId) {
  * @param {Object} config          config The worker configuration
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  */
-export default function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
+function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
 
   if (workers.length) {
     this.workers = workers;
@@ -89,7 +89,7 @@ export default function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = 
 
 /**
  * Get new request ID
- * @return {integer}          New unique request ID
+ * @returns {integer}          New unique request ID
 */
 AsyncProxy.prototype.getID = function() {
   return this.currentID++;
@@ -117,7 +117,7 @@ AsyncProxy.prototype.terminate = function() {
  * Generic proxy function that handles all commands from the public api.
  * @param  {String} method    the public api function to be delegated to the worker thread
  * @param  {Object} options   the api function's options
- * @return {Promise}          see the corresponding public api functions for their return types
+ * @returns {Promise}          see the corresponding public api functions for their return types
  */
 AsyncProxy.prototype.delegate = function(method, options) {
 
@@ -140,3 +140,5 @@ AsyncProxy.prototype.delegate = function(method, options) {
     this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject };
   });
 };
+
+export default AsyncProxy;

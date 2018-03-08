@@ -1,8 +1,5 @@
 /* eslint-disable callback-return */
 /**
- * This class represents a list of openpgp packets.
- * Take care when iterating over it - the packets themselves
- * are stored as numerical indices.
  * @requires util
  * @requires enums
  * @requires packet
@@ -17,14 +14,19 @@ import enums from '../enums.js';
 import config from '../config';
 
 /**
+ * This class represents a list of openpgp packets.
+ * Take care when iterating over it - the packets themselves
+ * are stored as numerical indices.
  * @constructor
  */
-export default function Packetlist() {
-  /** The number of packets contained within the list.
+function Packetlist() {
+  /**
+   * The number of packets contained within the list.
    * @readonly
    * @type {Integer} */
   this.length = 0;
 }
+
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
  * @param {Uint8Array} A Uint8Array of bytes.
@@ -106,8 +108,8 @@ Packetlist.prototype.pop = function() {
 };
 
 /**
-* Creates a new PacketList with all packets that pass the test implemented by the provided function.
-*/
+ * Creates a new PacketList with all packets that pass the test implemented by the provided function.
+ */
 Packetlist.prototype.filter = function (callback) {
   const filtered = new Packetlist();
 
@@ -121,8 +123,8 @@ Packetlist.prototype.filter = function (callback) {
 };
 
 /**
-* Creates a new PacketList with all packets from the given types
-*/
+ * Creates a new PacketList with all packets from the given types
+ */
 Packetlist.prototype.filterByTag = function (...args) {
   const filtered = new Packetlist();
   const that = this;
@@ -139,8 +141,8 @@ Packetlist.prototype.filterByTag = function (...args) {
 };
 
 /**
-* Executes the provided callback once for each element
-*/
+ * Executes the provided callback once for each element
+ */
 Packetlist.prototype.forEach = function (callback) {
   for (let i = 0; i < this.length; i++) {
     callback(this[i], i, this);
@@ -148,9 +150,9 @@ Packetlist.prototype.forEach = function (callback) {
 };
 
 /**
-* Returns an array containing return values of callback
-* on each element
-*/
+ * Returns an array containing return values of callback
+ * on each element
+ */
 Packetlist.prototype.map = function (callback) {
   const packetArray = [];
 
@@ -162,11 +164,12 @@ Packetlist.prototype.map = function (callback) {
 };
 
 /**
-* Executes the callback function once for each element
-* until it finds one where callback returns a truthy value
-* @param  {Function} callback
-* @returns {Promise<Boolean>}
-*/
+ * Executes the callback function once for each element
+ * until it finds one where callback returns a truthy value
+ * @param  {Function} callback
+ * @returns {Promise<Boolean>}
+ * @async
+ */
 Packetlist.prototype.some = async function (callback) {
   for (let i = 0; i < this.length; i++) {
     // eslint-disable-next-line no-await-in-loop
@@ -178,9 +181,9 @@ Packetlist.prototype.some = async function (callback) {
 };
 
 /**
-* Executes the callback function once for each element,
-* returns true if all callbacks returns a truthy value
-*/
+ * Executes the callback function once for each element,
+ * returns true if all callbacks returns a truthy value
+ */
 Packetlist.prototype.every = function (callback) {
   for (let i = 0; i < this.length; i++) {
     if (!callback(this[i], i, this)) {
@@ -274,3 +277,5 @@ Packetlist.fromStructuredClone = function(packetlistClone) {
   }
   return packetlist;
 };
+
+export default Packetlist;

@@ -1,5 +1,11 @@
 /**
+ * @fileoverview Provides access to all cryptographic primitives used in OpenPGP.js
  * @see module:crypto/crypto
+ * @see module:crypto/signature
+ * @see module:crypto/public_key
+ * @see module:crypto/cipher
+ * @see module:crypto/random
+ * @see module:crypto/hash
  * @module crypto
  */
 
@@ -11,9 +17,9 @@ import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
 import pkcs1 from './pkcs1';
-import pkcs5 from './pkcs5.js';
-import crypto from './crypto.js';
-import aes_kw from './aes_kw.js';
+import pkcs5 from './pkcs5';
+import crypto from './crypto';
+import aes_kw from './aes_kw';
 
 // TODO move cfb and gcm to cipher
 const mod = {

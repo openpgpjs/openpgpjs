@@ -94,6 +94,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
  * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
  * @returns {Promise<Message>}             new message with decrypted content
+ * @async
  */
 Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) {
   const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
@@ -140,6 +141,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
  * @param  {Array<String>} passwords   (optional) passwords used to decrypt
  * @returns {Promise<Array<{ data:      Uint8Array,
                              algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
+ * @async
  */
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
@@ -241,6 +243,7 @@ Message.prototype.getText = function() {
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @returns {Promise<Message>}                   new message with encrypted content
+ * @async
  */
 Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date()) {
   let symAlgo;
@@ -297,6 +300,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date signature
  * @returns {Promise<Message>}          new message with encrypted content
+ * @async
  */
 export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
   const packetlist = new packet.List();
@@ -361,6 +365,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date}                   (optional) override the creation time of the signature
  * @returns {Promise<Message>}             new message with signed content
+ * @async
  */
 Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date()) {
   const packetlist = new packet.List();
@@ -446,6 +451,7 @@ Message.prototype.compress = function(compression) {
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
  * @returns {Promise<module:signature~Signature>} new detached signature of message content
+ * @async
  */
 Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date()) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -462,6 +468,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @returns {Promise<module:packet/packetlist>} list of signature packets
+ * @async
  */
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
   const packetlist = new packet.List();
@@ -503,7 +510,8 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * Verify message signatures
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
+ * @async
  */
 Message.prototype.verify = function(keys, date=new Date()) {
   const msg = this.unwrapCompressed();
@@ -520,7 +528,8 @@ Message.prototype.verify = function(keys, date=new Date()) {
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Signature} signature
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
+ * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
+ * @async
  */
 Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
   const msg = this.unwrapCompressed();
@@ -541,6 +550,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  *                    i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @async
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {

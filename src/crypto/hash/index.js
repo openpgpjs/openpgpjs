@@ -1,4 +1,5 @@
 /**
+ * @fileoverview Hashing functions
  * @requires rusha
  * @requires asmcrypto.js
  * @requires hash.js
@@ -81,7 +82,7 @@ export default {
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Uint8Array} data Data to be hashed
-   * @return {Uint8Array} hash value
+   * @returns {Uint8Array} hash value
    */
   digest: function(algo, data) {
     switch (algo) {
@@ -114,7 +115,7 @@ export default {
   /**
    * Returns the hash size in bytes of the specified hash algorithm type
    * @param {module:enums.hash} algo Hash algorithm type (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
-   * @return {Integer} Size in bytes of the resulting hash
+   * @returns {Integer} Size in bytes of the resulting hash
    */
   getHashByteLength: function(algo) {
     switch (algo) {

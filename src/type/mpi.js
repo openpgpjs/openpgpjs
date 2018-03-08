@@ -39,7 +39,7 @@ import util from '../util';
 /**
  * @constructor
  */
-export default function MPI(data) {
+function MPI(data) {
   /** An implementation dependent integer */
   if (data instanceof MPI) {
     this.data = data.data;
@@ -58,7 +58,7 @@ export default function MPI(data) {
  * Parsing function for a MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC 4880 3.2}).
  * @param {Uint8Array} input  Payload of MPI data
  * @param {String}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
- * @return {Integer}          Length of data read
+ * @returns {Integer}          Length of data read
  */
 MPI.prototype.read = function (bytes, endian='be') {
   if (util.isString(bytes)) {
@@ -79,7 +79,7 @@ MPI.prototype.read = function (bytes, endian='be') {
  * {@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
  * @param {String} endian Endianness of the payload; 'be' for big-endian or 'le' for little-endian
  * @param {Integer} length Length of the data part of the MPI
- * @return {Uint8Aray} mpi Byte representation
+ * @returns {Uint8Aray} mpi Byte representation
  */
 MPI.prototype.write = function (endian, length) {
   return util.Uint8Array_to_MPI(this.toUint8Array(endian, length));
@@ -139,3 +139,5 @@ MPI.prototype.fromBN = function (bn) {
 MPI.fromClone = function (clone) {
   return new MPI(clone.data);
 };
+
+export default MPI;

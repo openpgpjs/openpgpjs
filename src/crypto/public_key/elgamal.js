@@ -29,9 +29,14 @@ import random from '../random';
 const zero = new BN(0);
 
 export default {
-  /*
-   * m, p, g, y are all BN
-   * returns { c1: BN, c2: BN }
+  /**
+   * ElGamal Encryption function
+   * @param {BN} m
+   * @param {BN} p
+   * @param {BN} g
+   * @param {BN} y
+   * @returns {{ c1: BN, c2: BN }}
+   * @async
    */
   encrypt: async function(m, p, g, y) {
     const redp = new BN.red(p);
@@ -46,9 +51,14 @@ export default {
     };
   },
 
-  /*
-   * c1, c2, p, x are all BN
-   * returns BN
+  /**
+   * ElGamal Encryption function
+   * @param {BN} c1
+   * @param {BN} c2
+   * @param {BN} p
+   * @param {BN} x
+   * @returns BN
+   * @async
    */
   decrypt: async function(c1, c2, p, x) {
     const redp = new BN.red(p);

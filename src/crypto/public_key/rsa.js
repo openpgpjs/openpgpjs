@@ -53,7 +53,8 @@ export default {
    * @param n public MPI part as BN
    * @param e public MPI part as BN
    * @param d private MPI part as BN
-   * @return BN
+   * @returns BN
+   * @async
    */
   sign: async function(m, n, e, d) {
     if (n.cmp(m) <= 0) {
@@ -68,7 +69,8 @@ export default {
    * @param s signature as BN
    * @param n public MPI part as BN
    * @param e public MPI part as BN
-   * @return BN
+   * @returns BN
+   * @async
    */
   verify: async function(s, n, e) {
     if (n.cmp(s) <= 0) {
@@ -83,7 +85,8 @@ export default {
    * @param m message as BN
    * @param n public MPI part as BN
    * @param e public MPI part as BN
-   * @return BN
+   * @returns BN
+   * @async
    */
   encrypt: async function(m, n, e) {
     if (n.cmp(m) <= 0) {
@@ -102,7 +105,8 @@ export default {
    * @param p RSA p as BN
    * @param q RSA q as BN
    * @param u RSA u as BN
-   * @return {BN} The decrypted value of the message
+   * @returns {BN} The decrypted value of the message
+   * @async
    */
   decrypt: async function(m, n, e, d, p, q, u) {
     if (n.cmp(m) <= 0) {
@@ -140,9 +144,10 @@ export default {
    * Generate a new random private key B bits long with public exponent E
    * @param {Integer} B RSA bit length
    * @param {String}  E RSA public exponent in hex string
-   * @return {{n: BN, e: BN, d: BN,
-               p: BN, q: BN, u: BN}} RSA public modulus, RSA public exponent, RSA private exponent,
-                                     RSA private prime p, RSA private prime q, u = q ** -1 mod p
+   * @returns {{n: BN, e: BN, d: BN,
+   *            p: BN, q: BN, u: BN}} RSA public modulus, RSA public exponent, RSA private exponent,
+   *                                  RSA private prime p, RSA private prime q, u = q ** -1 mod p
+   * @async
    */
   generate: async function(B, E) {
     let key;
