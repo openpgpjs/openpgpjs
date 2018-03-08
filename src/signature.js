@@ -16,16 +16,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires crypto
- * @requires encoding/armor
  * @requires enums
  * @requires packet
+ * @requires encoding/armor
  * @module signature
  */
 
 import packet from './packet';
-import enums from './enums.js';
-import armor from './encoding/armor.js';
+import enums from './enums';
+import armor from './encoding/armor';
 
 /**
  * @class
@@ -43,7 +42,7 @@ export function Signature(packetlist) {
 
 /**
  * Returns ASCII armored text of signature
- * @return {String} ASCII armor
+ * @returns {String} ASCII armor
  */
 Signature.prototype.armor = function() {
   return armor.encode(enums.armor.signature, this.packets.write());
@@ -52,7 +51,7 @@ Signature.prototype.armor = function() {
 /**
  * reads an OpenPGP armored signature and returns a signature object
  * @param {String} armoredText text to be parsed
- * @return {Signature} new signature object
+ * @returns {Signature} new signature object
  * @static
  */
 export function readArmored(armoredText) {
@@ -63,7 +62,7 @@ export function readArmored(armoredText) {
 /**
  * reads an OpenPGP signature as byte array and returns a signature object
  * @param {Uint8Array} input   binary signature
- * @return {Signature}         new signature object
+ * @returns {Signature}         new signature object
  * @static
  */
 export function read(input) {

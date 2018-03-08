@@ -37,7 +37,7 @@ import crypto from '../crypto';
 /**
  * @constructor
  */
-export default function S2K() {
+function S2K() {
   /** @type {module:enums.hash} */
   this.algorithm = 'sha256';
   /** @type {module:enums.s2k} */
@@ -59,7 +59,7 @@ S2K.prototype.get_count = function () {
 /**
  * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
  * @param {String} input Payload of string-to-key specifier
- * @return {Integer} Actual length of the object
+ * @returns {Integer} Actual length of the object
  */
 S2K.prototype.read = function (bytes) {
   let i = 0;
@@ -108,7 +108,7 @@ S2K.prototype.read = function (bytes) {
 
 /**
  * Serializes s2k information
- * @return {Uint8Array} binary representation of s2k
+ * @returns {Uint8Array} binary representation of s2k
  */
 S2K.prototype.write = function () {
   const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
@@ -136,7 +136,7 @@ S2K.prototype.write = function () {
  * Produces a key using the specified passphrase and the defined
  * hashAlgorithm
  * @param {String} passphrase Passphrase containing user input
- * @return {Uint8Array} Produced key with a length corresponding to
+ * @returns {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
@@ -203,3 +203,5 @@ S2K.fromClone = function (clone) {
   s2k.salt = clone.salt;
   return s2k;
 };
+
+export default S2K;

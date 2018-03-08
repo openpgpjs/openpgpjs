@@ -38,7 +38,6 @@ import { createVerificationObjects, createSignaturePackets } from './message';
  * @param  {String}     text       The cleartext of the signed message
  * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
  */
-
 export function CleartextMessage(text, signature) {
   if (!(this instanceof CleartextMessage)) {
     return new CleartextMessage(text, signature);
@@ -53,7 +52,7 @@ export function CleartextMessage(text, signature) {
 
 /**
  * Returns the key IDs of the keys that signed the cleartext message
- * @return {Array<module:type/keyid>} array of keyid objects
+ * @returns {Array<module:type/keyid>} array of keyid objects
  */
 CleartextMessage.prototype.getSigningKeyIds = function() {
   const keyIds = [];
@@ -69,7 +68,8 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @return {module:message~CleartextMessage} new cleartext message with signed content
+ * @returns {Promise<module:message~CleartextMessage>} new cleartext message with signed content
+ * @async
  */
 CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date()) {
   return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date));
@@ -80,7 +80,8 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature=null, da
  * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @return {module:signature~Signature}      new detached signature of message content
+ * @returns {Promise<module:signature~Signature>}      new detached signature of message content
+ * @async
  */
 CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date()) {
   const literalDataPacket = new packet.Literal();
@@ -93,7 +94,8 @@ CleartextMessage.prototype.signDetached = async function(privateKeys, signature=
  * Verify signatures of cleartext signed message
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
+ * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @async
  */
 CleartextMessage.prototype.verify = function(keys, date=new Date()) {
   return this.verifyDetached(this.signature, keys, date);
@@ -103,7 +105,8 @@ CleartextMessage.prototype.verify = function(keys, date=new Date()) {
  * Verify signatures of cleartext signed message
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @return {Array<{keyid: module:type/keyid, valid: Boolean}>} list of signer's keyid and validity of signature
+ * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @async
  */
 CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new Date()) {
   const signatureList = signature.packets;
@@ -115,7 +118,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new D
 
 /**
  * Get cleartext
- * @return {String} cleartext of message
+ * @returns {String} cleartext of message
  */
 CleartextMessage.prototype.getText = function() {
   // normalize end of line to \n
@@ -124,7 +127,7 @@ CleartextMessage.prototype.getText = function() {
 
 /**
  * Returns ASCII armored text of cleartext signed message
- * @return {String} ASCII armor
+ * @returns {String} ASCII armor
  */
 CleartextMessage.prototype.armor = function() {
   let hashes = this.signature.packets.map(function(packet) {
@@ -143,7 +146,7 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @return {module:cleartext~CleartextMessage} new cleartext message object
+ * @returns {module:cleartext~CleartextMessage} new cleartext message object
  * @static
  */
 export function readArmored(armoredText) {

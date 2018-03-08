@@ -24,7 +24,8 @@ export default {
    * @param {Array<module:type/mpi>} msg_MPIs  Algorithm-specific signature parameters
    * @param {Array<module:type/mpi>} pub_MPIs  Algorithm-specific public key parameters
    * @param {Uint8Array}             data      Data for which the signature was created
-   * @return {Boolean}                         True if signature is valid
+   * @returns {Boolean}                         True if signature is valid
+   * @async
    */
   verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data) {
     switch (algo) {
@@ -45,7 +46,7 @@ export default {
         const q = pub_MPIs[1].toBN();
         const g = pub_MPIs[2].toBN();
         const y = pub_MPIs[3].toBN();
-        return publicKey.dsa.verify(hash_algo, r, s, data, p, q, g, y);
+        return publicKey.dsa.verify(hash_algo, r, s, data, g, p, q, y);
       }
       case enums.publicKey.ecdsa: {
         const oid = pub_MPIs[0];
@@ -76,7 +77,8 @@ export default {
    * @param {module:enums.hash}      hash_algo  Hash algorithm
    * @param {Array<module:type/mpi>} key_params Algorithm-specific public and private key parameters
    * @param {Uint8Array}             data       Data to be signed
-   * @return {Uint8Array}                       Signature
+   * @returns {Uint8Array}                       Signature
+   * @async
    */
   sign: async function(algo, hash_algo, key_params, data) {
     switch (algo) {

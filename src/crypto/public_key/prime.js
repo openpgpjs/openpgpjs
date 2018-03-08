@@ -15,9 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Algorithms for probabilistic random prime generation
-
 /**
+ * @fileoverview Algorithms for probabilistic random prime generation
  * @requires bn.js
  * @requires crypto/random
  * @module crypto/public_key/prime
@@ -35,7 +34,8 @@ export default {
  * @param {Integer} bits Bit length of the prime
  * @param {BN}      e    Optional RSA exponent to check against the prime
  * @param {Integer} k    Optional number of iterations of Miller-Rabin test
- * @return BN
+ * @returns BN
+ * @async
  */
 async function randomProbablePrime(bits, e, k) {
   const min = new BN(1).shln(bits - 1);
@@ -69,7 +69,8 @@ async function randomProbablePrime(bits, e, k) {
  * @param {BN}      n Number to test
  * @param {BN}      e Optional RSA exponent to check against the prime
  * @param {Integer} k Optional number of iterations of Miller-Rabin test
- * @return {boolean}
+ * @returns {boolean}
+ * @async
  */
 async function isProbablePrime(n, e, k) {
   if (e && !n.subn(1).gcd(e).eqn(1)) {
@@ -94,7 +95,7 @@ async function isProbablePrime(n, e, k) {
  * Fails if b^(n-1) mod n === 1.
  * @param {BN}      n Number to test
  * @param {Integer} b Optional Fermat test base
- * @return {boolean}
+ * @returns {boolean}
  */
 function fermat(n, b) {
   b = b || new BN(2);
@@ -226,7 +227,8 @@ const small_primes = [
  * @param {BN}       n    Number to test
  * @param {Integer}  k    Optional number of iterations of Miller-Rabin test
  * @param {Function} rand Optional function to generate potential witnesses
- * @return {boolean}
+ * @returns {boolean}
+ * @async
  */
 async function millerRabin(n, k, rand) {
   const len = n.bitLength();

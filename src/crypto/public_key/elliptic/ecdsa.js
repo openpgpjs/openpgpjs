@@ -15,9 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of ECDSA following RFC6637 for Openpgpjs
-
 /**
+ * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
  * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curves
  * @module crypto/public_key/elliptic/ecdsa
@@ -32,8 +31,9 @@ import Curve from './curves';
  * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
  * @param  {Uint8Array}      m          Message to sign
  * @param  {Uint8Array}      d          Private key used to sign the message
- * @return {{r: Uint8Array,
-             s: Uint8Array}}            Signature of the message
+ * @returns {{r: Uint8Array,
+ *            s: Uint8Array}}            Signature of the message
+ * @async
  */
 async function sign(oid, hash_algo, m, d) {
   const curve = new Curve(oid);
@@ -51,7 +51,8 @@ async function sign(oid, hash_algo, m, d) {
              s: Uint8Array}} signature  Signature to verify
  * @param  {Uint8Array}      m          Message to verify
  * @param  {Uint8Array}      Q          Public key used to verify the message
- * @return {Boolean}
+ * @returns {Boolean}
+ * @async
  */
 async function verify(oid, hash_algo, signature, m, Q) {
   const curve = new Curve(oid);

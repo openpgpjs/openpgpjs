@@ -34,7 +34,7 @@ import enums from '../enums.js';
 /**
  * @constructor
  */
-export default function Marker() {
+function Marker() {
   this.tag = enums.packet.marker;
 }
 
@@ -47,7 +47,7 @@ export default function Marker() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @return {module:packet/marker} Object representation
+ * @returns {module:packet/marker} Object representation
  */
 Marker.prototype.read = function (bytes) {
   if (bytes[0] === 0x50 && // P
@@ -58,3 +58,5 @@ Marker.prototype.read = function (bytes) {
   // marker packet does not contain "PGP"
   return false;
 };
+
+export default Marker;

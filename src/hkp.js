@@ -29,7 +29,7 @@ import config from './config';
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
  *   the protocol to use e.g. https://pgp.mit.edu
  */
-export default function HKP(keyServerBaseUrl) {
+function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || config.keyserver;
   this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
 }
@@ -39,7 +39,8 @@ export default function HKP(keyServerBaseUrl) {
  * @param  {String}   options.keyID   The long public key ID.
  * @param  {String}   options.query   This can be any part of the key user ID such as name
  *   or email address.
- * @return {Promise<String>}          The ascii armored public key.
+ * @returns {Promise<String>}          The ascii armored public key.
+ * @async
  */
 HKP.prototype.lookup = function(options) {
   let uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=';
@@ -68,7 +69,8 @@ HKP.prototype.lookup = function(options) {
 /**
  * Upload a public key to the server.
  * @param  {String}   publicKeyArmored  An ascii armored public key to be uploaded.
- * @return {Promise}
+ * @returns {Promise}
+ * @async
  */
 HKP.prototype.upload = function(publicKeyArmored) {
   const uri = this._baseUrl + '/pks/add';
@@ -82,3 +84,5 @@ HKP.prototype.upload = function(publicKeyArmored) {
     body: 'keytext=' + encodeURIComponent(publicKeyArmored)
   });
 };
+
+export default HKP;

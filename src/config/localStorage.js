@@ -1,12 +1,12 @@
 /**
- * This object storing and retrieving configuration from HTML5 local storage.
  * @module config/localStorage
  */
 
 /**
+ * This object is used for storing and retrieving configuration from HTML5 local storage.
  * @constructor
  */
-export default function LocalStorage() {}
+function LocalStorage() {}
 
 /**
  * Reads the config out of the HTML5 local storage
@@ -30,3 +30,5 @@ LocalStorage.prototype.read = function () {
 LocalStorage.prototype.write = function () {
   window.localStorage.setItem("config", JSON.stringify(this.config));
 };
+
+export default LocalStorage;

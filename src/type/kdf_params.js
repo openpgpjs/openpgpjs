@@ -16,8 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of type KDF parameters RFC 6637
+ * Implementation of type KDF parameters
  *
+ * {@link https://tools.ietf.org/html/rfc6637#section-7|RFC 6637 7}:
+ * A key derivation function (KDF) is necessary to implement the EC
+ * encryption.  The Concatenation Key Derivation Function (Approved
+ * Alternative 1) [NIST-SP800-56A] with the KDF hash function that is
+ * SHA2-256 [FIPS-180-3] or stronger is REQUIRED.
  * @requires enums
  * @module type/kdf_params
  */
@@ -42,7 +47,7 @@ function KDFParams(data) {
 /**
  * Read KDFParams from an Uint8Array
  * @param  {Uint8Array}  input  Where to read the KDFParams from
- * @return {Number}             Number of read bytes
+ * @returns {Number}             Number of read bytes
  */
 KDFParams.prototype.read = function (input) {
   if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
@@ -55,7 +60,7 @@ KDFParams.prototype.read = function (input) {
 
 /**
  * Write KDFParams to an Uint8Array
- * @return  {Uint8Array}  Array with the KDFParams value
+ * @returns  {Uint8Array}  Array with the KDFParams value
  */
 KDFParams.prototype.write = function () {
   return new Uint8Array([3, 1, this.hash, this.cipher]);

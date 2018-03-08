@@ -59,8 +59,9 @@ export default {
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
    * @param {module:type/mpi}               data        Data to be encrypted as MPI
    * @param {String}                        fingerprint Recipient fingerprint
-   * @return {Array<module:type/mpi|
-                    module:type/ecdh_symkey>}           encrypted session key parameters
+   * @returns {Array<module:type/mpi|
+   *                 module:type/ecdh_symkey>}          encrypted session key parameters
+   * @async
    */
   publicKeyEncrypt: async function(algo, pub_params, data, fingerprint) {
     const types = this.getEncSessionKeyParamTypes(algo);
@@ -107,7 +108,8 @@ export default {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @return {module:type/mpi}                          An MPI containing the decrypted data
+   * @returns {module:type/mpi}                         An MPI containing the decrypted data
+   * @async
    */
   publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
     return new type_mpi(await (async function() {
@@ -147,7 +149,7 @@ export default {
 
   /** Returns the types comprising the private key of an algorithm
    * @param {String} algo The public key algorithm
-   * @return {Array<String>} The array of types
+   * @returns {Array<String>} The array of types
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
@@ -181,7 +183,7 @@ export default {
 
   /** Returns the types comprising the public key of an algorithm
    * @param {String} algo The public key algorithm
-   * @return {Array<String>} The array of types
+   * @returns {Array<String>} The array of types
    */
   getPubKeyParamTypes: function(algo) {
     switch (algo) {
@@ -224,7 +226,7 @@ export default {
 
   /** Returns the types comprising the encrypted session key of an algorithm
    * @param {String} algo The public key algorithm
-   * @return {Array<String>} The array of types
+   * @returns {Array<String>} The array of types
    */
   getEncSessionKeyParamTypes: function(algo) {
     switch (algo) {
@@ -253,7 +255,8 @@ export default {
    * @param {String}          algo The public key algorithm
    * @param {Integer}         bits Bit length for RSA keys
    * @param {module:type/oid} oid  Object identifier for ECC keys
-   * @return {Array}               The array of parameters
+   * @returns {Array}              The array of parameters
+   * @async
    */
   generateParams: function(algo, bits, oid) {
     const types = [].concat(this.getPubKeyParamTypes(algo), this.getPrivKeyParamTypes(algo));
@@ -288,8 +291,8 @@ export default {
    * Generates a random byte prefix for the specified algorithm
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
    * @param {module:enums.symmetric} algo Symmetric encryption algorithm
-   * @return {Uint8Array}                 Random bytes with length equal to the block
-   * size of the cipher
+   * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher
+   * @async
    */
   getPrefixRandom: function(algo) {
     return random.getRandomBytes(cipher[algo].blockSize);
@@ -297,8 +300,10 @@ export default {
 
   /**
    * Generating a session key for the specified symmetric algorithm
-   * @param {module:enums.symmetric} algo Algorithm to use (see {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2})
-   * @return {Uint8Array} Random bytes as a string to be used as a key
+   * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+   * @param {module:enums.symmetric} algo Symmetric encryption algorithm
+   * @returns {Uint8Array}                Random bytes as a string to be used as a key
+   * @async
    */
   generateSessionKey: function(algo) {
     return random.getRandomBytes(cipher[algo].keySize);

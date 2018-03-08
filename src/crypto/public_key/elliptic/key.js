@@ -15,15 +15,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Wrapper for a KeyPair of an Elliptic Curve
-
 /**
+ * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
  * @requires crypto/public_key/elliptic/curves
  * @requires crypto/hash
  * @requires util
  * @requires enums
- * @requires jwk-to-pem
  * @requires asn1.js
  * @module crypto/public_key/elliptic/key
  */
@@ -37,7 +35,10 @@ import enums from '../../../enums';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
-export default function KeyPair(curve, options) {
+/**
+ * @constructor
+ */
+function KeyPair(curve, options) {
   this.curve = curve;
   this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
   this.keyPair = this.curve.curve.keyPair(options);
@@ -97,6 +98,7 @@ KeyPair.prototype.getPrivate = function () {
   return this.keyPair.getPrivate().toArray();
 };
 
+export default KeyPair;
 
 //////////////////////////
 //                      //
@@ -223,6 +225,9 @@ async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
     return false;
   }
 }
+
+// Originally written by Owen Smith https://github.com/omsmith
+// Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
 
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 

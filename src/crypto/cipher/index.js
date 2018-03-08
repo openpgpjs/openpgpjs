@@ -1,4 +1,5 @@
 /**
+ * @fileoverview Symmetric cryptography functions
  * @requires crypto/cipher/aes
  * @requires crypto/cipher/des
  * @requires crypto/cipher/cast5

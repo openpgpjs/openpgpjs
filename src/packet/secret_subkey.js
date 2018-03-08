@@ -28,10 +28,12 @@ import enums from '../enums.js';
  * @constructor
  * @extends module:packet/secret_key
  */
-export default function SecretSubkey() {
+function SecretSubkey() {
   secretKey.call(this);
   this.tag = enums.packet.secretSubkey;
 }
 
 SecretSubkey.prototype = new secretKey();
 SecretSubkey.prototype.constructor = SecretSubkey;
+
+export default SecretSubkey;

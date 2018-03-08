@@ -49,7 +49,7 @@ import crypto from '../crypto';
 /**
  * @constructor
  */
-export default function PublicKeyEncryptedSessionKey() {
+function PublicKeyEncryptedSessionKey() {
   this.tag = enums.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
 
@@ -104,6 +104,7 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
  * Encrypt session key packet
  * @param {module:packet/public_key} key Public key
  * @returns {Promise<Boolean>}
+ * @async
  */
 PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
@@ -132,6 +133,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * @param {module:packet/secret_key} key
  *            Private key with secret params unlocked
  * @returns {Promise<Boolean>}
+ * @async
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
@@ -170,3 +172,5 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
     this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
   }
 };
+
+export default PublicKeyEncryptedSessionKey;

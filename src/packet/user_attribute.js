@@ -43,7 +43,7 @@ import enums from '../enums.js';
 /**
  * @constructor
  */
-export default function UserAttribute() {
+function UserAttribute() {
   this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }
@@ -65,7 +65,7 @@ UserAttribute.prototype.read = function(bytes) {
 
 /**
  * Creates a binary representation of the user attribute packet
- * @return {Uint8Array} string representation
+ * @returns {Uint8Array} string representation
  */
 UserAttribute.prototype.write = function() {
   const arr = [];
@@ -79,7 +79,7 @@ UserAttribute.prototype.write = function() {
 /**
  * Compare for equality
  * @param  {module:user_attribute~UserAttribute} usrAttr
- * @return {Boolean}         true if equal
+ * @returns {Boolean}         true if equal
  */
 UserAttribute.prototype.equals = function(usrAttr) {
   if (!usrAttr || !(usrAttr instanceof UserAttribute)) {
@@ -89,3 +89,5 @@ UserAttribute.prototype.equals = function(usrAttr) {
     return attr === usrAttr.attributes[index];
   });
 };
+
+export default UserAttribute;

@@ -15,9 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Key encryption and decryption for RFC 6637 ECDH
-
 /**
+ * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @requires crypto/public_key/elliptic/curves
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -70,7 +69,8 @@ function kdf(hash_algo, X, length, param) {
  * @param  {module:type/mpi} m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}      Q            Recipient public key
  * @param  {String}          fingerprint  Recipient fingerprint
- * @return {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
+ * @returns {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
+ * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   fingerprint = util.hex_to_Uint8Array(fingerprint);
@@ -98,7 +98,8 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {Uint8Array}      C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}      d            Recipient private key
  * @param  {String}          fingerprint  Recipient fingerprint
- * @return {Uint8Array}                   Value derived from session
+ * @returns {Uint8Array}                   Value derived from session
+ * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   fingerprint = util.hex_to_Uint8Array(fingerprint);

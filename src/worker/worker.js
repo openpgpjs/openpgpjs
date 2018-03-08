@@ -32,7 +32,7 @@ var MIN_SIZE_RANDOM_REQUEST = 20000;
 
 /**
  * Handle random buffer exhaustion by requesting more random bytes from the main window
- * @return {Promise<Object>}  Empty promise whose resolution indicates that the buffer has been refilled
+ * @returns {Promise<Object>}  Empty promise whose resolution indicates that the buffer has been refilled
  */
 function randomCallback() {
 

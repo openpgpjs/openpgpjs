@@ -28,10 +28,12 @@ import enums from '../enums.js';
  * @constructor
  * @extends module:packet/public_key
  */
-export default function PublicSubkey() {
+function PublicSubkey() {
   publicKey.call(this);
   this.tag = enums.packet.publicSubkey;
 }
 
 PublicSubkey.prototype = new publicKey();
 PublicSubkey.prototype.constructor = PublicSubkey;
+
+export default PublicSubkey;

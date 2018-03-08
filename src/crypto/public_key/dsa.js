@@ -42,11 +42,16 @@ const zero = new BN(0);
 */
 
 export default {
-  /*
-   * hash_algo is integer
-   * m is string
-   * g, p, q, x are all BN
-   * returns { r: BN, s: BN }
+  /**
+   * DSA Sign function
+   * @param {Integer} hash_algo
+   * @param {String} m
+   * @param {BN} g
+   * @param {BN} p
+   * @param {BN} q
+   * @param {BN} x
+   * @returns {{ r: BN, s: BN }}
+   * @async
    */
   sign: async function(hash_algo, m, g, p, q, x) {
     let k;
@@ -90,14 +95,20 @@ export default {
              s: s.toArrayLike(Uint8Array) };
   },
 
-  /*
-   * hash_algo is integer
-   * r, s are both BN
-   * m is string
-   * p, q, g, y are all BN
-   * returns BN
+  /**
+   * DSA Verify function
+   * @param {Integer} hash_algo
+   * @param {BN} r
+   * @param {BN} s
+   * @param {String} m
+   * @param {BN} g
+   * @param {BN} p
+   * @param {BN} q
+   * @param {BN} y
+   * @returns BN
+   * @async
    */
-  verify: async function(hash_algo, r, s, m, p, q, g, y) {
+  verify: async function(hash_algo, r, s, m, g, p, q, y) {
     if (zero.ucmp(r) >= 0 || r.ucmp(q) >= 0 ||
         zero.ucmp(s) >= 0 || s.ucmp(q) >= 0) {
       util.print_debug("invalid DSA Signature");

@@ -42,7 +42,7 @@ import type_keyid from '../type/keyid.js';
  * @constructor
  * @extends module:packet/public_key
  */
-export default function SecretKey() {
+function SecretKey() {
   publicKey.call(this);
   this.tag = enums.packet.secretKey;
   // encrypted secret-key data
@@ -173,6 +173,7 @@ SecretKey.prototype.write = function () {
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
  * @returns {Promise<Boolean>}
+ * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
   if (this.isDecrypted && !passphrase) {
@@ -213,6 +214,7 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  *
  * @param {String} passphrase The passphrase for this private key as string
  * @returns {Promise<Boolean>}
+ * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
   if (this.isDecrypted) {
@@ -306,3 +308,5 @@ SecretKey.prototype.postCloneTypeFix = function() {
     this.keyid = type_keyid.fromClone(this.keyid);
   }
 };
+
+export default SecretKey;

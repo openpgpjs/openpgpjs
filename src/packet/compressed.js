@@ -89,7 +89,7 @@ if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
 /**
  * @constructor
  */
-export default function Compressed() {
+function Compressed() {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -130,7 +130,7 @@ Compressed.prototype.read = function (bytes) {
 
 /**
  * Return the compressed packet.
- * @return {String} binary compressed packet
+ * @returns {String} binary compressed packet
  */
 Compressed.prototype.write = function () {
   if (this.compressed === null) {
@@ -165,3 +165,5 @@ Compressed.prototype.compress = function () {
 
   this.compressed = compress_fns[this.algorithm](this.packets.write());
 };
+
+export default Compressed;

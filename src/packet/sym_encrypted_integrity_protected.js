@@ -44,7 +44,7 @@ const VERSION = 1; // A one-octet version number of the data packet.
 /**
  * @constructor
  */
-export default function SymEncryptedIntegrityProtected() {
+function SymEncryptedIntegrityProtected() {
   this.tag = enums.packet.symEncryptedIntegrityProtected;
   this.version = VERSION;
   /** The encrypted payload. */
@@ -79,7 +79,8 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * Encrypt the payload in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @return {Promise<Boolean>}
+ * @returns {Promise<Boolean>}
+ * @async
  */
 SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
   const bytes = this.packets.write();
@@ -105,7 +106,8 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * Decrypts the encrypted data contained in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @return {Promise<Boolean>}
+ * @returns {Promise<Boolean>}
+ * @async
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   let decrypted;
@@ -131,6 +133,8 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 
   return true;
 };
+
+export default SymEncryptedIntegrityProtected;
 
 
 //////////////////////////

@@ -40,7 +40,7 @@ export default {
    *  IV should be used or not. The encrypteddatapacket uses the
    *  "old" style with a resync. Encryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @return {Uint8Array} encrypted data
+   * @returns {Uint8Array} encrypted data
    */
   encrypt: function(prefixrandom, cipherfn, plaintext, key, resync) {
     cipherfn = new cipher[cipherfn](key);
@@ -133,7 +133,7 @@ export default {
    * @param {Uint8Array} key Uint8Array representation of key to be used to check the mdc
    * This will be passed to the cipherfn
    * @param {Uint8Array} ciphertext The encrypted data
-   * @return {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
+   * @returns {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
    */
   mdc: function(cipherfn, key, ciphertext) {
     cipherfn = new cipher[cipherfn](key);
@@ -175,7 +175,7 @@ export default {
    *  IV should be used or not. The encrypteddatapacket uses the
    *  "old" style with a resync. Decryption within an
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @return {Uint8Array} the plaintext data
+   * @returns {Uint8Array} the plaintext data
    */
 
   decrypt: function(cipherfn, key, ciphertext, resync) {

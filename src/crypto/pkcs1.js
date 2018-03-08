@@ -48,7 +48,8 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
  * Create padding with secure random data
  * @private
  * @param  {Integer} length Length of the padding in bytes
- * @return {String}        Padding as string
+ * @returns {String}        Padding as string
+ * @async
  */
 async function getPkcs1Padding(length) {
   let result = '';
@@ -71,7 +72,8 @@ export default {
      * create a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
      * @param {String} M message to be encoded
      * @param {Integer} k the length in octets of the key modulus
-     * @return {Promise<String>} EME-PKCS1 padded message
+     * @returns {Promise<String>} EME-PKCS1 padded message
+     * @async
      */
     encode: async function(M, k) {
       const mLen = M.length;
@@ -93,7 +95,7 @@ export default {
     /**
      * decodes a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
      * @param {String} EM encoded message, an octet string
-     * @return {String} message, an octet string
+     * @returns {String} message, an octet string
      */
     decode: function(EM) {
       // leading zeros truncated by bn.js

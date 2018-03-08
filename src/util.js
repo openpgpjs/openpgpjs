@@ -43,7 +43,7 @@ const util = {
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
    * @param  {Object} obj           the options object to be passed to the web worker
-   * @return {Array<ArrayBuffer>}   an array of binary data to be passed
+   * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
     if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
@@ -104,7 +104,7 @@ const util = {
   /**
    * Create hex string from a binary
    * @param {String} str String to convert
-   * @return {String} String containing the hexadecimal values
+   * @returns {String} String containing the hexadecimal values
    */
   str_to_hex: function (str) {
     if (str === null) {
@@ -127,7 +127,7 @@ const util = {
   /**
    * Create binary string from a hex encoded string
    * @param {String} str Hex string to convert
-   * @return {String}
+   * @returns {String}
    */
   hex_to_str: function (hex) {
     let str = '';
@@ -143,7 +143,7 @@ const util = {
    * @see {@link module:type/mpi/MPI.fromUint8Array}
    * @see {@link module:type/mpi/MPI.toUint8Array}
    * @param {Uint8Array} bin An array of 8-bit integers to convert
-   * @return {Uint8Array} MPI-formatted Uint8Array
+   * @returns {Uint8Array} MPI-formatted Uint8Array
    */
   Uint8Array_to_MPI: function (bin) {
     const size = (bin.length - 1) * 8 + util.nbits(bin[0]);
@@ -156,7 +156,7 @@ const util = {
    *
    * Note: accepts both Radix-64 and URL-safe strings
    * @param {String} base64 Base-64 encoded string to convert
-   * @return {Uint8Array} An array of 8-bit integers
+   * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
 //    atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
@@ -167,7 +167,7 @@ const util = {
    * Convert an array of 8-bit integer to a Base-64 encoded string
    * @param {Uint8Array} bytes An array of 8-bit integers to convert
    * @param {bool}       url   If true, output is URL-safe
-   * @return {String}          Base-64 encoded string
+   * @returns {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function (bytes, url) {
 //    btoa(util.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
@@ -177,7 +177,7 @@ const util = {
   /**
    * Convert a hex string to an array of 8-bit integers
    * @param {String} hex  A hex string to convert
-   * @return {Uint8Array} An array of 8-bit integers
+   * @returns {Uint8Array} An array of 8-bit integers
    */
   hex_to_Uint8Array: function (hex) {
     const result = new Uint8Array(hex.length >> 1);
@@ -190,7 +190,7 @@ const util = {
   /**
    * Convert an array of 8-bit integers to a hex string
    * @param {Uint8Array} bytes Array of 8-bit integers to convert
-   * @return {String} Hexadecimal representation of the array
+   * @returns {String} Hexadecimal representation of the array
    */
   Uint8Array_to_hex: function (bytes) {
     const r = [];
@@ -210,7 +210,7 @@ const util = {
   /**
    * Convert a string to an array of 8-bit integers
    * @param {String} str String to convert
-   * @return {Uint8Array} An array of 8-bit integers
+   * @returns {Uint8Array} An array of 8-bit integers
    */
   str_to_Uint8Array: function (str) {
     if (!util.isString(str)) {
@@ -227,7 +227,7 @@ const util = {
   /**
    * Convert an array of 8-bit integers to a string
    * @param {Uint8Array} bytes An array of 8-bit integers to convert
-   * @return {String} String representation of the array
+   * @returns {String} String representation of the array
    */
   Uint8Array_to_str: function (bytes) {
     bytes = new Uint8Array(bytes);
@@ -244,7 +244,7 @@ const util = {
   /**
    * Convert a native javascript string to a string of utf8 bytes
    * @param {String} str The string to convert
-   * @return {String} A valid squence of utf8 bytes
+   * @returns {String} A valid squence of utf8 bytes
    */
   encode_utf8: function (str) {
     return unescape(encodeURIComponent(str));
@@ -253,7 +253,7 @@ const util = {
   /**
    * Convert a string of utf8 bytes to a native javascript string
    * @param {String} utf8 A valid squence of utf8 bytes
-   * @return {String} A native javascript string
+   * @returns {String} A native javascript string
    */
   decode_utf8: function (utf8) {
     if (typeof utf8 !== 'string') {
@@ -269,7 +269,7 @@ const util = {
   /**
    * Concat Uint8arrays
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
-   * @return {Uint8array} Concatenated array
+   * @returns {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
     let totalLength = 0;
@@ -294,7 +294,7 @@ const util = {
   /**
    * Deep copy Uint8Array
    * @param {Uint8Array} Array to copy
-   * @return {Uint8Array} new Uint8Array
+   * @returns {Uint8Array} new Uint8Array
    */
   copyUint8Array: function (array) {
     if (!util.isUint8Array(array)) {
@@ -310,7 +310,7 @@ const util = {
    * Check Uint8Array equality
    * @param {Uint8Array} first array
    * @param {Uint8Array} second array
-   * @return {Boolean} equality
+   * @returns {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {
     if (!util.isUint8Array(array1) || !util.isUint8Array(array2)) {
@@ -333,7 +333,7 @@ const util = {
    * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
    * @param {Uint8Array} Uint8Array to create a sum of
-   * @return {Integer} An integer containing the sum of all character
+   * @returns {Integer} An integer containing the sum of all character
    * codes % 65535
    */
   calc_checksum: function (text) {
@@ -422,7 +422,7 @@ const util = {
    * @param {String} value The string to shift
    * @param {Integer} bitcount Amount of bits to shift (MUST be smaller
    * than 9)
-   * @return {String} Resulting string.
+   * @returns {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
     const temp = util.str_to_Uint8Array(value);
@@ -443,7 +443,7 @@ const util = {
    * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
    * be deactivated with config.use_native
-   * @return {Object}   The SubtleCrypto api or 'undefined'
+   * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
     if (!config.use_native) {
@@ -458,7 +458,7 @@ const util = {
    * implementations of the spec e.g IE11 and Safari 8/9. The default
    * configuration is to use the api when available. But it can be deactivated
    * with config.use_native
-   * @return {Object}   The SubtleCrypto api or 'undefined'
+   * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCryptoAll: function() {
     if (!config.use_native) {
@@ -485,7 +485,7 @@ const util = {
   /**
    * Get native Node.js crypto api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.use_native
-   * @return {Object}   The crypto module or 'undefined'
+   * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
     if (!util.detectNode() || !config.use_native) {
@@ -498,7 +498,7 @@ const util = {
   /**
    * Get native Node.js Buffer constructor. This should be used since
    * Buffer is not available under browserify.
-   * @return {Function}   The Buffer constructor or 'undefined'
+   * @returns {Function}   The Buffer constructor or 'undefined'
    */
   getNodeBuffer: function() {
     if (!util.detectNode()) {

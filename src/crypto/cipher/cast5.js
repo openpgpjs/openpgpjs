@@ -597,7 +597,7 @@ function OpenpgpSymencCast5() {
   );
 }
 
-export default function Cast5(key) {
+function Cast5(key) {
   this.cast5 = new OpenpgpSymencCast5();
   this.cast5.setKey(key);
 
@@ -608,3 +608,5 @@ export default function Cast5(key) {
 
 Cast5.blockSize = Cast5.prototype.blockSize = 8;
 Cast5.keySize = Cast5.prototype.keySize = 16;
+
+export default Cast5;

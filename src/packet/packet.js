@@ -52,7 +52,7 @@ export default {
    * string
    *
    * @param {Integer} length The length to encode
-   * @return {Uint8Array} String with openpgp length representation
+   * @returns {Uint8Array} String with openpgp length representation
    */
   writeSimpleLength: function(length) {
     if (length < 192) {
@@ -73,7 +73,7 @@ export default {
    *
    * @param {Integer} tag_type Tag type
    * @param {Integer} length Length of the payload
-   * @return {String} String of the header
+   * @returns {String} String of the header
    */
   writeHeader: function(tag_type, length) {
     /* we're only generating v4 packet headers here */
@@ -86,7 +86,7 @@ export default {
    *
    * @param {Integer} tag_type Tag type
    * @param {Integer} length Length of the payload
-   * @return {String} String of the header
+   * @returns {String} String of the header
    */
   writeOldHeader: function(tag_type, length) {
     if (length < 256) {
@@ -103,7 +103,7 @@ export default {
    * @param {String} input Input stream as string
    * @param {integer} position Position to start parsing
    * @param {integer} len Length of the input from position on
-   * @return {Object} Returns a parsed module:packet/packet
+   * @returns {Object} Returns a parsed module:packet/packet
    */
   read: function(input, position, len) {
     // some sanity checks
