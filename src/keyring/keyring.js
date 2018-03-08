@@ -161,7 +161,7 @@ KeyArray.prototype.getForId = function (keyId, deep) {
     if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
       return this.keys[i];
     }
-    if (deep && this.keys[i].subKeys) {
+    if (deep && this.keys[i].subKeys.length) {
       for (let j = 0; j < this.keys[i].subKeys.length; j++) {
         if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
           return this.keys[i];

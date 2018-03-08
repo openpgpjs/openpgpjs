@@ -155,8 +155,7 @@ export function readArmored(armoredText) {
   packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
-  const newMessage = new CleartextMessage(input.text, signature);
-  return newMessage;
+  return new CleartextMessage(input.text, signature);
 }
 
 /**
