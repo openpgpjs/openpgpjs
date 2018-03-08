@@ -25,7 +25,7 @@
 import config from './config';
 import b64 from './encoding/base64';
 
-export default {
+const util = {
 
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
@@ -48,7 +48,7 @@ export default {
   getTransferables: function(obj) {
     if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       const transferables = [];
-      this.collectBuffers(obj, transferables);
+      util.collectBuffers(obj, transferables);
       return transferables.length ? transferables : undefined;
     }
   },
@@ -57,13 +57,13 @@ export default {
     if (!obj) {
       return;
     }
-    if (this.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
+    if (util.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
       collection.push(obj.buffer);
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
       for (const key in obj) { // recursively search all children
-        this.collectBuffers(obj[key], collection);
+        util.collectBuffers(obj[key], collection);
       }
     }
   },
@@ -86,7 +86,7 @@ export default {
   },
 
   readDate: function (bytes) {
-    const n = this.readNumber(bytes);
+    const n = util.readNumber(bytes);
     const d = new Date(n * 1000);
     return d;
   },
@@ -94,7 +94,7 @@ export default {
   writeDate: function (time) {
     const numeric = Math.floor(time.getTime() / 1000);
 
-    return this.writeNumber(numeric, 4);
+    return util.writeNumber(numeric, 4);
   },
 
   normalizeDate: function (time = Date.now()) {
@@ -146,9 +146,9 @@ export default {
    * @return {Uint8Array} MPI-formatted Uint8Array
    */
   Uint8Array_to_MPI: function (bin) {
-    const size = (bin.length - 1) * 8 + this.nbits(bin[0]);
+    const size = (bin.length - 1) * 8 + util.nbits(bin[0]);
     const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
-    return this.concatUint8Array([prefix, bin]);
+    return util.concatUint8Array([prefix, bin]);
   },
 
   /**
@@ -170,7 +170,7 @@ export default {
    * @return {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function (bytes, url) {
-//    btoa(this.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
+//    btoa(util.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
     return b64.encode(bytes, url).replace('\n', '');
   },
 
@@ -213,7 +213,7 @@ export default {
    * @return {Uint8Array} An array of 8-bit integers
    */
   str_to_Uint8Array: function (str) {
-    if (!this.isString(str)) {
+    if (!util.isString(str)) {
       throw new Error('str_to_Uint8Array: Data must be in the form of a string');
     }
 
@@ -274,7 +274,7 @@ export default {
   concatUint8Array: function (arrays) {
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
-      if (!this.isUint8Array(arrays[i])) {
+      if (!util.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
@@ -297,7 +297,7 @@ export default {
    * @return {Uint8Array} new Uint8Array
    */
   copyUint8Array: function (array) {
-    if (!this.isUint8Array(array)) {
+    if (!util.isUint8Array(array)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -313,7 +313,7 @@ export default {
    * @return {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {
-    if (!this.isUint8Array(array1) || !this.isUint8Array(array2)) {
+    if (!util.isUint8Array(array1) || !util.isUint8Array(array2)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -370,7 +370,7 @@ export default {
    */
   print_debug_hexstr_dump: function (str, strToHex) {
     if (config.debug) {
-      str += this.str_to_hex(strToHex);
+      str += util.str_to_hex(strToHex);
       console.log(str);
     }
   },
@@ -383,7 +383,7 @@ export default {
     }
     const bytes = (bitcount - rest) / 8 + 1;
     const result = string.substring(0, bytes);
-    return this.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
+    return util.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
   // returns bit length of the integer x
@@ -425,7 +425,7 @@ export default {
    * @return {String} Resulting string.
    */
   shiftRight: function (value, bitcount) {
-    const temp = this.str_to_Uint8Array(value);
+    const temp = util.str_to_Uint8Array(value);
     if (bitcount % 8 !== 0) {
       for (let i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
@@ -436,7 +436,7 @@ export default {
     } else {
       return value;
     }
-    return this.Uint8Array_to_str(temp);
+    return util.Uint8Array_to_str(temp);
   },
 
   /**
@@ -488,7 +488,7 @@ export default {
    * @return {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!this.detectNode() || !config.use_native) {
+    if (!util.detectNode() || !config.use_native) {
       return;
     }
 
@@ -501,7 +501,7 @@ export default {
    * @return {Function}   The Buffer constructor or 'undefined'
    */
   getNodeBuffer: function() {
-    if (!this.detectNode()) {
+    if (!util.detectNode()) {
       return;
     }
 
@@ -512,7 +512,7 @@ export default {
   },
 
   getNodeZlib: function() {
-    if (!this.detectNode() || !config.use_native) {
+    if (!util.detectNode() || !config.use_native) {
       return;
     }
 
@@ -520,7 +520,7 @@ export default {
   },
 
   isEmailAddress: function(data) {
-    if (!this.isString(data)) {
+    if (!util.isString(data)) {
       return false;
     }
     const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
@@ -528,9 +528,11 @@ export default {
   },
 
   isUserId: function(data) {
-    if (!this.isString(data)) {
+    if (!util.isString(data)) {
       return false;
     }
     return /</.test(data) && />$/.test(data);
   }
 };
+
+export default util;
