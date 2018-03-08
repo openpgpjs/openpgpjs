@@ -52,8 +52,13 @@ Keyid.prototype.toHex = function() {
   return util.str_to_hex(this.bytes);
 };
 
-Keyid.prototype.equals = function(keyid) {
-  return this.bytes === keyid.bytes;
+/**
+ * Checks equality of Key ID's
+ * @param {Keyid} keyid
+ * @param {Boolean} matchWildcard Indicates whether to check if either keyid is a wildcard
+ */
+Keyid.prototype.equals = function(keyid, matchWildcard=false) {
+  return (matchWildcard && (keyid.isWildcard() || this.isWildcard())) || this.bytes === keyid.bytes;
 };
 
 Keyid.prototype.isNull = function() {

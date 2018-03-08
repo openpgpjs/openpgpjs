@@ -138,7 +138,8 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
  * Decrypt encrypted session keys either with private keys or passwords.
  * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords   (optional) passwords used to decrypt
- * @returns {Promise{Array<{ data:Uint8Array, algorithm:String }>}} array of object with potential sessionKey, algorithm pairs
+ * @returns {Promise<Array<{ data:      Uint8Array,
+                             algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
  */
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
@@ -148,24 +149,24 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
     if (!symESKeyPacketlist) {
       throw new Error('No symmetrically encrypted session key packet found.');
     }
-    await Promise.all(symESKeyPacketlist.map(async function(packet) {
+    await Promise.all(symESKeyPacketlist.map(async function(keyPacket) {
       await Promise.all(passwords.map(async function(password) {
         try {
-          await packet.decrypt(password);
-          keyPackets.push(packet);
+          await keyPacket.decrypt(password);
+          keyPackets.push(keyPacket);
         } catch (err) {}
       }));
     }));
-
   } else if (privateKeys) {
     const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
     if (!pkESKeyPacketlist) {
       throw new Error('No public key encrypted session key packet found.');
     }
-    await Promise.all(pkESKeyPacketlist.map(async function(packet) {
+    await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
+      // TODO improve this
       const privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
-        return acc.concat(privateKey.getKeyPackets(packet.publicKeyId));
-      }, []);
+        return acc.concat(privateKey.getKeyPackets(keyPacket.publicKeyId));
+      }, new packet.List());
       await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
         if (!privateKeyPacket) {
          return;
@@ -174,8 +175,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           throw new Error('Private key is not decrypted.');
         }
         try {
-          await packet.decrypt(privateKeyPacket);
-          keyPackets.push(packet);
+          await keyPacket.decrypt(privateKeyPacket);
+          keyPackets.push(keyPacket);
         } catch (err) {}
       }));
     }));
@@ -252,7 +253,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     symAlgo = sessionKey.algorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, getPreferredSymAlgo(keys));
+    symAlgo = enums.read(enums.symmetric, await getPreferredSymAlgo(keys));
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
   } else {
@@ -301,11 +302,11 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
   const packetlist = new packet.List();
 
   if (publicKeys) {
-    const results = await Promise.all(publicKeys.map(async function(key) {
-      await key.verifyPrimaryUser();
-      const encryptionKeyPacket = key.getEncryptionKeyPacket(undefined, date);
+    const results = await Promise.all(publicKeys.map(async function(publicKey) {
+      const encryptionKeyPacket = await publicKey.getEncryptionKeyPacket(undefined, date);
       if (!encryptionKeyPacket) {
-        throw new Error('Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+        throw new Error('Could not find valid key packet for encryption in key ' +
+                        publicKey.primaryKey.getKeyId().toHex());
       }
       const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
       pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
@@ -318,7 +319,6 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
     }));
     packetlist.concat(results);
   }
-
   if (passwords) {
     const testDecrypt = async function(keyPacket, password) {
       try {
@@ -396,15 +396,14 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    await privateKey.verifyPrimaryUser();
-    const signingKeyPacket = privateKey.getSigningKeyPacket(undefined, date);
+    const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date);
     if (!signingKeyPacket) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.primaryKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = getPreferredHashAlgo(privateKey);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -475,10 +474,10 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    await privateKey.verifyPrimaryUser();
-    const signingKeyPacket = privateKey.getSigningKeyPacket(undefined, date);
+    const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date);
     if (!signingKeyPacket) {
-      throw new Error('Could not find valid key packet for signing in key ' + privateKey.primaryKey.getKeyId().toHex());
+      throw new Error('Could not find valid key packet for signing in key ' +
+                      privateKey.primaryKey.getKeyId().toHex());
     }
     if (!signingKeyPacket.isDecrypted) {
       throw new Error('Private key is not decrypted.');
@@ -486,7 +485,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     const signaturePacket = new packet.Signature(date);
     signaturePacket.signatureType = signatureType;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = getPreferredHashAlgo(privateKey);
+    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey);
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     return signaturePacket;
   })).then(signatureList => {
@@ -538,22 +537,22 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  * @param {Array<module:packet/signature>} signatureList array of signature packets
  * @param {Array<module:packet/literal>} literalDataList array of literal data packets
  * @param {Array<module:key~Key>} keys array of keys to verify signatures
- * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Promise{Array<({keyid: module:type/keyid, valid: Boolean})>}} list of signer's keyid and validity of signature
+ * @param {Date} date Verify the signature against the given date,
+ *                    i.e. check signature creation time < date < expiration time
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
     let keyPacket = null;
     await Promise.all(keys.map(async function(key) {
-      await key.verifyPrimaryUser();
       // Look for the unique key packet that matches issuerKeyId of signature
-      const result = key.getSigningKeyPacket(signature.issuerKeyId, date);
+      const result = await key.getSigningKeyPacket(signature.issuerKeyId, date);
       if (result) {
         keyPacket = result;
       }
     }));
 
-    // Look for the unique key packet that matches issuerKeyId of signature
     const verifiedSig = {
       keyid: signature.issuerKeyId,
       valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
