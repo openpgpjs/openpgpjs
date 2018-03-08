@@ -445,8 +445,8 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
 };
 
 /**
- * Returns the expiration time of the primary key or null if key does not expire
- * @returns {Date|null}
+ * Returns the expiration time of the primary key or Infinity if key does not expire
+ * @returns {Date}
  */
 Key.prototype.getExpirationTime = async function() {
   if (this.primaryKey.version === 3) {
@@ -960,8 +960,8 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
 };
 
 /**
- * Returns the expiration time of the subkey or null if key does not expire
- * @returns {Date|null}
+ * Returns the expiration time of the subkey or Infinity if key does not expire
+ * @returns {Date}
  */
 SubKey.prototype.getExpirationTime = function() {
   let highest;
