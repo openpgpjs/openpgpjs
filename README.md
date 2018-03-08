@@ -45,16 +45,17 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Performance
 
-* Version 3.0.0 of the library introduces support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available or [Elliptic](https://github.com/indutny/elliptic) otherwise. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported: ("Yes*" means "when available")
+* Version 3.0.0 of the library introduces support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available or [Elliptic](https://github.com/indutny/elliptic) otherwise. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported (* = when available):
 
->| Curve      | Encryption | Signature | Elliptic | NodeCrypto | WebCrypto |
->|:---------- |:----------:|:---------:|:--------:|:----------:|:---------:|
->| p256       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
->| p384       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
->| p521       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
->| secp256k1  | ECDH       | ECDSA     | Yes      | Yes*       | No        |
->| curve25519 | ECDH       | N/A       | Yes      | No         | No        |
->| ed25519    | N/A        | EdDSA     | Yes      | No         | No        |
+
+    | Curve      | Encryption | Signature | Elliptic | NodeCrypto | WebCrypto |
+    |:---------- |:----------:|:---------:|:--------:|:----------:|:---------:|
+    | p256       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | p384       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | p521       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | secp256k1  | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+    | curve25519 | ECDH       | N/A       | Yes      | No         | No        |
+    | ed25519    | N/A        | EdDSA     | Yes      | No         | No        |
 
 * Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
 
