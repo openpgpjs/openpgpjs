@@ -1,6 +1,5 @@
 /**
  * @requires enums
- * @module packet/all_packets
  */
 
 import enums from '../enums.js';
@@ -43,6 +42,8 @@ export { default as Trust } from './trust.js';
 
 /**
  * Allocate a new packet
+ * @function newPacketFromTag
+ * @memberof module:packet
  * @param {String} tag property name from {@link module:enums.packet}
  * @returns {Object} new packet object with type based on tag
  */
@@ -52,7 +53,9 @@ export function newPacketFromTag(tag) {
 
 /**
  * Allocate a new packet from structured packet clone
- * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
+ * @see {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
+ * @function fromStructuredClone
+ * @memberof module:packet
  * @param {Object} packetClone packet clone
  * @returns {Object} new packet object with data from packet clone
  */
@@ -74,6 +77,7 @@ export function fromStructuredClone(packetClone) {
  * Convert tag name to class name
  * @param {String} tag property name from {@link module:enums.packet}
  * @returns {String}
+ * @private
  */
 function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);

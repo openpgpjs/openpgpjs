@@ -16,6 +16,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires type/keyid
+ * @requires enums
+ * @requires util
+*/
+
+import type_keyid from '../type/keyid';
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Implementation of the One-Pass Signature Packets (Tag 4)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}:
@@ -24,27 +34,41 @@
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
- * @requires util
- * @requires enums
- * @requires type/keyid
- * @module packet/one_pass_signature
-*/
-
-import util from '../util.js';
-import enums from '../enums.js';
-import type_keyid from '../type/keyid.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function OnePassSignature() {
-  this.tag = enums.packet.onePassSignature; // The packet type
-  this.version = null; // A one-octet version number.  The current version is 3.
-  this.type = null; // A one-octet signature type.  Signature types are described in {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
-  this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4})
-  this.publicKeyAlgorithm = null; // A one-octet number describing the public-key algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1})
-  this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
-  this.flags = null; //  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
+  this.tag = enums.packet.onePassSignature;
+  /** A one-octet version number.  The current version is 3. */
+  this.version = null;
+  /**
+   * A one-octet signature type.
+   * Signature types are described in
+   * {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
+   */
+  this.type = null;
+  /**
+   * A one-octet number describing the hash algorithm used.
+   * @see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4}
+   */
+  this.hashAlgorithm = null;
+  /**
+   * A one-octet number describing the public-key algorithm used.
+   * @see {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1}
+   */
+  this.publicKeyAlgorithm = null;
+  /** An eight-octet number holding the Key ID of the signing key. */
+  this.signingKeyId = null;
+   /**
+    * A one-octet number holding a flag showing whether the signature is nested.
+    * A zero value indicates that the next packet is another One-Pass Signature packet
+    * that describes another signature to be applied to the same message data.
+    */
+  this.flags = null;
 }
 
 /**

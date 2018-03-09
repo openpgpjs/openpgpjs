@@ -16,19 +16,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
- * The Symmetrically Encrypted Integrity Protected Data packet is
- * a variant of the Symmetrically Encrypted Data packet. It is a new feature
- * created for OpenPGP that addresses the problem of detecting a modification to
- * encrypted data. It is used in combination with a Modification Detection Code
- * packet.
  * @requires asmcrypto.js
  * @requires crypto
  * @requires enums
  * @requires util
- * @module packet/sym_encrypted_integrity_protected
  */
 
 import { AES_CFB } from 'asmcrypto.js/src/aes/cfb/exports';
@@ -42,6 +33,15 @@ const Buffer = util.getNodeBuffer();
 const VERSION = 1; // A one-octet version number of the data packet.
 
 /**
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
+ * The Symmetrically Encrypted Integrity Protected Data packet is
+ * a variant of the Symmetrically Encrypted Data packet. It is a new feature
+ * created for OpenPGP that addresses the problem of detecting a modification to
+ * encrypted data. It is used in combination with a Modification Detection Code
+ * packet.
+ * @memberof module:packet
  * @constructor
  */
 function SymEncryptedIntegrityProtected() {

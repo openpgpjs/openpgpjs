@@ -22,7 +22,7 @@
  * @module packet/packet
  */
 
-import util from '../util.js';
+import util from '../util';
 
 export default {
   readSimpleLength: function(bytes) {

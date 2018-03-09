@@ -16,77 +16,27 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires pako
+ * @requires config
+ * @requires enums
+ * @requires util
+ * @requires compression/bzip2
+ */
+
+import pako from 'pako';
+import config from '../config';
+import enums from '../enums';
+import util from '../util';
+import Bzip2 from '../compression/bzip2.build.js';
+
+/**
  * Implementation of the Compressed Data Packet (Tag 8)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}:
  * The Compressed Data packet contains compressed data.  Typically,
  * this packet is found as the contents of an encrypted packet, or following
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
- * @requires compression/zlib
- * @requires compression/rawinflate
- * @requires compression/rawdeflate
- * @requires compression/bzip2
- * @requires enums
- * @requires util
- * @module packet/compressed
- */
-
-import pako from 'pako';
-import config from '../config';
-import enums from '../enums.js';
-import util from '../util.js';
-import Bzip2 from '../compression/bzip2.build.js';
-
-const nodeZlib = util.getNodeZlib();
-const Buffer = util.getNodeBuffer();
-
-function node_zlib(func, options = {}) {
-  return function (data) {
-    return func(data, options);
-  };
-}
-
-function pako_zlib(constructor, options = {}) {
-  return function(data) {
-      const obj = new constructor(options);
-      obj.push(data, true);
-      return obj.result;
-  };
-}
-
-let compress_fns;
-let decompress_fns;
-if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
-  compress_fns = {
-    // eslint-disable-next-line no-sync
-    zip: node_zlib(nodeZlib.deflateRawSync, { level: config.deflate_level }),
-    // eslint-disable-next-line no-sync
-    zlib: node_zlib(nodeZlib.deflateSync, { level: config.deflate_level }),
-    bzip2: Bzip2.compressFile
-  };
-
-  decompress_fns = {
-    // eslint-disable-next-line no-sync
-    zip: node_zlib(nodeZlib.inflateRawSync),
-    // eslint-disable-next-line no-sync
-    zlib: node_zlib(nodeZlib.inflateSync),
-    bzip2: Bzip2.decompressFile
-  };
-} else { // Use JS fallbacks
-  compress_fns = {
-    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
-    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level }),
-    bzip2: Bzip2.compressFile
-  };
-
-  decompress_fns = {
-    zip: pako_zlib(pako.Inflate, { raw: true }),
-    zlib: pako_zlib(pako.Inflate),
-    bzip2: Bzip2.decompressFile
-  };
-}
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function Compressed() {
@@ -167,3 +117,59 @@ Compressed.prototype.compress = function () {
 };
 
 export default Compressed;
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+const nodeZlib = util.getNodeZlib();
+const Buffer = util.getNodeBuffer();
+
+function node_zlib(func, options = {}) {
+  return function (data) {
+    return func(data, options);
+  };
+}
+
+function pako_zlib(constructor, options = {}) {
+  return function(data) {
+      const obj = new constructor(options);
+      obj.push(data, true);
+      return obj.result;
+  };
+}
+
+let compress_fns;
+let decompress_fns;
+if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
+  compress_fns = {
+    // eslint-disable-next-line no-sync
+    zip: node_zlib(nodeZlib.deflateRawSync, { level: config.deflate_level }),
+    // eslint-disable-next-line no-sync
+    zlib: node_zlib(nodeZlib.deflateSync, { level: config.deflate_level }),
+    bzip2: Bzip2.compressFile
+  };
+
+  decompress_fns = {
+    // eslint-disable-next-line no-sync
+    zip: node_zlib(nodeZlib.inflateRawSync),
+    // eslint-disable-next-line no-sync
+    zlib: node_zlib(nodeZlib.inflateSync),
+    bzip2: Bzip2.decompressFile
+  };
+} else { // Use JS fallbacks
+  compress_fns = {
+    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
+    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level }),
+    bzip2: Bzip2.compressFile
+  };
+
+  decompress_fns = {
+    zip: pako_zlib(pako.Inflate, { raw: true }),
+    zlib: pako_zlib(pako.Inflate),
+    bzip2: Bzip2.decompressFile
+  };
+}

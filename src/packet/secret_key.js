@@ -16,34 +16,35 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * FIXME
  * Implementation of the Key Material Packet (Tag 5,6,7,14)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
- * @requires crypto
- * @requires enums
  * @requires packet/public_key
  * @requires type/keyid
  * @requires type/s2k
+ * @requires crypto
+ * @requires enums
  * @requires util
- * @module packet/secret_key
  */
 
-import publicKey from './public_key.js';
-import enums from '../enums.js';
-import util from '../util.js';
-import crypto from '../crypto';
-import type_s2k from '../type/s2k.js';
+import publicKey from './public_key';
 import type_keyid from '../type/keyid.js';
+import type_s2k from '../type/s2k';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
 
 /**
  * A Secret-Key packet contains all the information that is found in a
  * Public-Key packet, including the public-key material, but also
  * includes the secret-key material after all the public-key fields.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/public_key
+ * @extends module:packet.PublicKey
  */
 function SecretKey() {
   publicKey.call(this);

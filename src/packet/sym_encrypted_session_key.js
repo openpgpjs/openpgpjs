@@ -16,6 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires type/s2k
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
+import type_s2k from '../type/s2k';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Public-Key Encrypted Session Key Packets (Tag 1)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
@@ -30,19 +42,7 @@
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
- * @requires util
- * @requires crypto
- * @requires enums
- * @requires type/s2k
- * @module packet/sym_encrypted_session_key
- */
-
-import util from '../util.js';
-import type_s2k from '../type/s2k.js';
-import enums from '../enums.js';
-import crypto from '../crypto';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function SymEncryptedSessionKey() {
