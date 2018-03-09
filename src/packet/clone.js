@@ -26,14 +26,14 @@ import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';
 import { Signature } from '../signature';
-import Packetlist from './packetlist';
+import List from './packetlist';
 import type_keyid from '../type/keyid';
 import util from '../util';
 
 
 //////////////////////////////
 //                          //
-//   Packetlist --> Clone   //
+//   List --> Clone   //
 //                          //
 //////////////////////////////
 
@@ -80,7 +80,7 @@ function verificationObjectToClone(verObject) {
 
 //////////////////////////////
 //                          //
-//   Clone --> Packetlist   //
+//   Clone --> List   //
 //                          //
 //////////////////////////////
 
@@ -119,17 +119,17 @@ export function parseClonedPackets(options) {
 }
 
 function packetlistCloneToKey(clone) {
-  const packetlist = Packetlist.fromStructuredClone(clone);
+  const packetlist = List.fromStructuredClone(clone);
   return new Key(packetlist);
 }
 
 function packetlistCloneToMessage(clone) {
-  const packetlist = Packetlist.fromStructuredClone(clone);
+  const packetlist = List.fromStructuredClone(clone);
   return new Message(packetlist);
 }
 
 function packetlistCloneToCleartextMessage(clone) {
-  const packetlist = Packetlist.fromStructuredClone(clone.signature);
+  const packetlist = List.fromStructuredClone(clone.signature);
   return new CleartextMessage(clone.text, new Signature(packetlist));
 }
 
@@ -145,6 +145,6 @@ function packetlistCloneToSignature(clone) {
     //signature is armored
     return clone;
   }
-  const packetlist = Packetlist.fromStructuredClone(clone);
+  const packetlist = List.fromStructuredClone(clone);
   return new Signature(packetlist);
 }

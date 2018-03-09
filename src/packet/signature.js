@@ -16,29 +16,29 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires packet/packet
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
+import packet from './packet';
+import type_keyid from '../type/keyid.js';
+import type_mpi from '../type/mpi.js';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Implementation of the Signature Packet (Tag 2)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
  * A Signature packet describes a binding between some public key and
  * some data.  The most common signatures are a signature of a file or a
  * block of text, and a signature that is a certification of a User ID.
- * @requires crypto
- * @requires enums
- * @requires packet/packet
- * @requires type/keyid
- * @requires type/mpi
- * @requires util
- * @module packet/signature
- */
-
-import util from '../util.js';
-import packet from './packet.js';
-import enums from '../enums.js';
-import crypto from '../crypto';
-import type_mpi from '../type/mpi.js';
-import type_keyid from '../type/keyid.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  * @param {Date} date the creation date of the signature
  */
@@ -363,11 +363,13 @@ Signature.prototype.write_all_sub_packets = function () {
 };
 
 /**
- * creates a string representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
- * @param {Integer} type subpacket signature type. Signature types as described
- * in {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
+ * Creates a string representation of a sub signature packet
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC4880 5.2.3.1}
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 5.2.3.2}
+ * @param {Integer} type subpacket signature type.
  * @param {String} data data to be included
- * @returns {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * @returns {String} a string-representation of a sub signature packet
+ * @private
  */
 function write_sub_packet(type, data) {
   const arr = [];

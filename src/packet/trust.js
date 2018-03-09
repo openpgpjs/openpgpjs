@@ -1,4 +1,10 @@
 /**
+ * @requires enums
+ */
+
+import enums from '../enums';
+
+/**
  * Implementation of the Trust Packet (Tag 12)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.10|RFC4880 5.10}:
@@ -12,13 +18,7 @@
  * Trust packets SHOULD NOT be emitted to output streams that are
  * transferred to other users, and they SHOULD be ignored on any input
  * other than local keyring files.
- * @requires enums
- * @module packet/trust
- */
-
-import enums from '../enums.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function Trust() {

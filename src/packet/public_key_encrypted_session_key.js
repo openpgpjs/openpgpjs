@@ -16,6 +16,22 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires type/ecdh_symkey
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
+import type_ecdh_symkey from '../type/ecdh_symkey';
+import type_keyid from '../type/keyid';
+import type_mpi from '../type/mpi';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Public-Key Encrypted Session Key Packets (Tag 1)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
@@ -30,23 +46,7 @@
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
- * @requires crypto
- * @requires enums
- * @requires type/ecdh_symkey
- * @requires type/keyid
- * @requires type/mpi
- * @requires util
- * @module packet/public_key_encrypted_session_key
- */
-
-import type_keyid from '../type/keyid.js';
-import util from '../util.js';
-import type_ecdh_symkey from '../type/ecdh_symkey.js';
-import type_mpi from '../type/mpi.js';
-import enums from '../enums.js';
-import crypto from '../crypto';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function PublicKeyEncryptedSessionKey() {

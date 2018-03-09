@@ -16,6 +16,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires enums
+ * @requires util
+ */
+
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Implementation of the User ID Packet (Tag 13)
  *
  * A User ID packet consists of UTF-8 text that is intended to represent
@@ -23,15 +31,7 @@
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID.
- * @requires util
- * @requires enums
- * @module packet/userid
- */
-
-import util from '../util.js';
-import enums from '../enums.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function Userid() {

@@ -16,6 +16,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires packet
+ * @requires enums
+ * @requires util
+ */
+
+import packet from './packet';
+import enums from '../enums';
+import util from '../util';
+
+/**
  * Implementation of the User Attribute Packet (Tag 17)
  *
  * The User Attribute packet is a variation of the User ID packet.  It
@@ -31,16 +41,7 @@
  * User Attribute packet.  A simple way to do this is by treating the
  * User Attribute packet as a User ID packet with opaque contents, but
  * an implementation may use any method desired.
- * module packet/user_attribute
- * @requires enums
- * @module packet/user_attribute
- */
-
-import util from '../util.js';
-import packet from './packet.js';
-import enums from '../enums.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function UserAttribute() {

@@ -16,28 +16,30 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * FIXME
  * Implementation of the Key Material Packet (Tag 5,6,7,14)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
  * A key material packet contains all the information about a public or
  * private key.  There are four variants of this packet type, and two
  * major versions.  Consequently, this section is complex.
+ * @requires type/keyid
+ * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util
- * @requires type/keyid
- * @module packet/public_key
  */
 
+import type_keyid from '../type/keyid';
+import type_mpi from '../type/mpi';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import type_keyid from '../type/keyid';
-import type_mpi from '../type/mpi';
 
 /**
  * A Public-Key packet starts a series of packets that forms an OpenPGP
  * key (sometimes called an OpenPGP certificate).
+ * @memberof module:packet
  * @constructor
  */
 function PublicKey() {

@@ -16,15 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Authenticated Encryption with
- * Additional Data (AEAD) Protected Data Packet
- *
- * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
- * AEAD Protected Data Packet
  * @requires crypto
  * @requires enums
  * @requires util
- * @module packet/sym_encrypted_aead_protected
  */
 
 import crypto from '../crypto';
@@ -35,6 +29,12 @@ const VERSION = 1; // A one-octet version number of the data packet.
 const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
 
 /**
+ * Implementation of the Symmetrically Encrypted Authenticated Encryption with
+ * Additional Data (AEAD) Protected Data Packet
+ *
+ * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
+ * AEAD Protected Data Packet
+ * @memberof module:packet
  * @constructor
  */
 function SymEncryptedAEADProtected() {

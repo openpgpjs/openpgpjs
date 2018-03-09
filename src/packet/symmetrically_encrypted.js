@@ -16,6 +16,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires config
+ * @requires crypto
+ * @requires enums
+ */
+
+import config from '../config';
+import crypto from '../crypto';
+import enums from '../enums';
+
+/**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
  *
  * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}:
@@ -24,16 +34,7 @@
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).
- * @requires crypto
- * @requires enums
- * @module packet/symmetrically_encrypted
- */
-
-import crypto from '../crypto';
-import enums from '../enums.js';
-import config from '../config';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
 function SymmetricallyEncrypted() {

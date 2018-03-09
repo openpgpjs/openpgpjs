@@ -1,30 +1,32 @@
 /* eslint-disable callback-return */
 /**
  * @fileoverview Provides a class for representing lists of OpenPGP packets.
- * @requires util
- * @requires enums
- * @requires packet
+ * @requires packet/all_packets
  * @requires packet/packet
- * @module packet/packetlist
+ * @requires config
+ * @requires enums
+ * @requires util
  */
 
-import util from '../util';
-import packetParser from './packet.js';
-import * as packets from './all_packets.js';
-import enums from '../enums.js';
+import * as packets from './all_packets';
+import packetParser from './packet';
 import config from '../config';
+import enums from '../enums';
+import util from '../util';
 
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
+ * @memberof module:packet
  * @constructor
  */
-function Packetlist() {
+function List() {
   /**
    * The number of packets contained within the list.
    * @readonly
-   * @type {Integer} */
+   * @type {Integer}
+   */
   this.length = 0;
 }
 
@@ -32,7 +34,7 @@ function Packetlist() {
  * Reads a stream of binary data and interprents it as a list of packets.
  * @param {Uint8Array} A Uint8Array of bytes.
  */
-Packetlist.prototype.read = function (bytes) {
+List.prototype.read = function (bytes) {
   let i = 0;
 
   while (i < bytes.length) {
@@ -65,7 +67,7 @@ Packetlist.prototype.read = function (bytes) {
  * class instance.
  * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
-Packetlist.prototype.write = function () {
+List.prototype.write = function () {
   const arr = [];
 
   for (let i = 0; i < this.length; i++) {
@@ -80,13 +82,14 @@ Packetlist.prototype.write = function () {
 /**
  * Adds a packet to the list. This is the only supported method of doing so;
  * writing to packetlist[i] directly will result in an error.
+ * @param {Object} packet Packet to push
  */
-Packetlist.prototype.push = function (packet) {
+List.prototype.push = function (packet) {
   if (!packet) {
     return;
   }
 
-  packet.packets = packet.packets || new Packetlist();
+  packet.packets = packet.packets || new List();
 
   this[this.length] = packet;
   this.length++;
@@ -96,7 +99,7 @@ Packetlist.prototype.push = function (packet) {
  * Remove a packet from the list and return it.
  * @returns {Object}   The packet that was removed
  */
-Packetlist.prototype.pop = function() {
+List.prototype.pop = function() {
   if (this.length === 0) {
     return;
   }
@@ -111,8 +114,8 @@ Packetlist.prototype.pop = function() {
 /**
  * Creates a new PacketList with all packets that pass the test implemented by the provided function.
  */
-Packetlist.prototype.filter = function (callback) {
-  const filtered = new Packetlist();
+List.prototype.filter = function (callback) {
+  const filtered = new List();
 
   for (let i = 0; i < this.length; i++) {
     if (callback(this[i], i, this)) {
@@ -126,8 +129,8 @@ Packetlist.prototype.filter = function (callback) {
 /**
  * Creates a new PacketList with all packets from the given types
  */
-Packetlist.prototype.filterByTag = function (...args) {
-  const filtered = new Packetlist();
+List.prototype.filterByTag = function (...args) {
+  const filtered = new List();
   const that = this;
 
   const handle = tag => packetType => tag === packetType;
@@ -144,7 +147,7 @@ Packetlist.prototype.filterByTag = function (...args) {
 /**
  * Executes the provided callback once for each element
  */
-Packetlist.prototype.forEach = function (callback) {
+List.prototype.forEach = function (callback) {
   for (let i = 0; i < this.length; i++) {
     callback(this[i], i, this);
   }
@@ -154,7 +157,7 @@ Packetlist.prototype.forEach = function (callback) {
  * Returns an array containing return values of callback
  * on each element
  */
-Packetlist.prototype.map = function (callback) {
+List.prototype.map = function (callback) {
   const packetArray = [];
 
   for (let i = 0; i < this.length; i++) {
@@ -171,7 +174,7 @@ Packetlist.prototype.map = function (callback) {
  * @returns {Promise<Boolean>}
  * @async
  */
-Packetlist.prototype.some = async function (callback) {
+List.prototype.some = async function (callback) {
   for (let i = 0; i < this.length; i++) {
     // eslint-disable-next-line no-await-in-loop
     if (await callback(this[i], i, this)) {
@@ -185,7 +188,7 @@ Packetlist.prototype.some = async function (callback) {
  * Executes the callback function once for each element,
  * returns true if all callbacks returns a truthy value
  */
-Packetlist.prototype.every = function (callback) {
+List.prototype.every = function (callback) {
   for (let i = 0; i < this.length; i++) {
     if (!callback(this[i], i, this)) {
       return false;
@@ -199,7 +202,7 @@ Packetlist.prototype.every = function (callback) {
  * @param  {module:enums.packet} type The packet type
  * @returns {module:packet/packet|null}
  */
-Packetlist.prototype.findPacket = function (type) {
+List.prototype.findPacket = function (type) {
   const packetlist = this.filterByTag(type);
   if (packetlist.length) {
     return packetlist[0];
@@ -220,7 +223,7 @@ Packetlist.prototype.findPacket = function (type) {
 /**
  * Returns array of found indices by tag
  */
-Packetlist.prototype.indexOfTag = function (...args) {
+List.prototype.indexOfTag = function (...args) {
   const tagIndex = [];
   const that = this;
 
@@ -237,11 +240,11 @@ Packetlist.prototype.indexOfTag = function (...args) {
 /**
  * Returns slice of packetlist
  */
-Packetlist.prototype.slice = function (begin, end) {
+List.prototype.slice = function (begin, end) {
   if (!end) {
     end = this.length;
   }
-  const part = new Packetlist();
+  const part = new List();
   for (let i = begin; i < end; i++) {
     part.push(this[i]);
   }
@@ -251,7 +254,7 @@ Packetlist.prototype.slice = function (begin, end) {
 /**
  * Concatenates packetlist or array of packets
  */
-Packetlist.prototype.concat = function (packetlist) {
+List.prototype.concat = function (packetlist) {
   if (packetlist) {
     for (let i = 0; i < packetlist.length; i++) {
       this.push(packetlist[i]);
@@ -266,17 +269,17 @@ Packetlist.prototype.concat = function (packetlist) {
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */
-Packetlist.fromStructuredClone = function(packetlistClone) {
-  const packetlist = new Packetlist();
+List.fromStructuredClone = function(packetlistClone) {
+  const packetlist = new List();
   for (let i = 0; i < packetlistClone.length; i++) {
     packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
     if (packetlist[i].packets.length !== 0) {
       packetlist[i].packets = this.fromStructuredClone(packetlist[i].packets);
     } else {
-      packetlist[i].packets = new Packetlist();
+      packetlist[i].packets = new List();
     }
   }
   return packetlist;
 };
 
-export default Packetlist;
+export default List;
