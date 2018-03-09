@@ -18,6 +18,7 @@
 // The GPG4Browsers crypto interface
 
 /**
+ * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @requires bn.js
  * @requires type/mpi
  * @requires util

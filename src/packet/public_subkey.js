@@ -25,6 +25,11 @@ import publicKey from './public_key.js';
 import enums from '../enums.js';
 
 /**
+ * A Public-Subkey packet (tag 14) has exactly the same format as a
+ * Public-Key packet, but denotes a subkey.  One or more subkeys may be
+ * associated with a top-level key.  By convention, the top-level key
+ * provides signature services, and the subkeys provide encryption
+ * services.
  * @constructor
  * @extends module:packet/public_key
  */

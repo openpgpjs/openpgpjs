@@ -1,5 +1,8 @@
 /**
- * @fileoverview Hashing functions
+ * @fileoverview Provides an interface to hashing functions available in Node.js or external libraries.
+ * @see {@link https://github.com/srijs/rusha|Rusha}
+ * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+ * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @requires rusha
  * @requires asmcrypto.js
  * @requires hash.js
@@ -31,7 +34,7 @@ function node_hash(type) {
 
 function hashjs_hash(hash) {
   return function(data) {
-    return util.str_to_Uint8Array(util.hex_to_str(hash().update(data).digest('hex')));
+    return util.hex_to_Uint8Array(hash().update(data).digest('hex'));
   };
 }
 
@@ -48,34 +51,34 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
   };
 } else { // Use JS fallbacks
   hash_fns = {
-    /** @see module:./md5 */
     md5: md5,
-    /** @see module:rusha */
     sha1: function(data) {
-      return util.str_to_Uint8Array(util.hex_to_str(rusha.digest(data)));
+      return util.hex_to_Uint8Array(rusha.digest(data));
     },
-    /** @see module:hash.js */
     sha224: hashjs_hash(sha224),
-    /** @see module:asmcrypto */
     sha256: SHA256.bytes,
-    /** @see module:hash.js */
     sha384: hashjs_hash(sha384),
     // TODO, benchmark this vs asmCrypto's SHA512
-    /** @see module:hash.js */
     sha512: hashjs_hash(sha512),
-    /** @see module:hash.js */
     ripemd: hashjs_hash(ripemd160)
   };
 }
 
 export default {
 
+  /** @see module:md5 */
   md5: hash_fns.md5,
+  /** @see rusha */
   sha1: hash_fns.sha1,
+  /** @see hash.js */
   sha224: hash_fns.sha224,
+  /** @see asmCrypto */
   sha256: hash_fns.sha256,
+  /** @see hash.js */
   sha384: hash_fns.sha384,
+  /** @see hash.js */
   sha512: hash_fns.sha512,
+  /** @see hash.js */
   ripemd: hash_fns.ripemd,
 
   /**

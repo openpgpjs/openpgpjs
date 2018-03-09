@@ -1,6 +1,5 @@
 /**
  * @requires asmcrypto.js
- * @module crypto/cipher/aes
  */
 
 import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/exports';

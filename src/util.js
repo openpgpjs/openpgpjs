@@ -23,9 +23,10 @@
  */
 
 import config from './config';
+import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
 
-const util = {
+export default {
 
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
@@ -534,5 +535,3 @@ const util = {
     return /</.test(data) && />$/.test(data);
   }
 };
-
-export default util;

@@ -27,8 +27,8 @@ import cipher from './cipher';
 export default {
 
   /**
-   * This function encrypts a given with the specified prefixrandom
-   * using the specified blockcipher to encrypt a message
+   * This function encrypts a given plaintext with the specified prefixrandom
+   * using the specified blockcipher
    * @param {Uint8Array} prefixrandom random bytes of block_size length
    *  to be used in prefixing the data
    * @param {String} cipherfn the algorithm cipher class to encrypt
@@ -163,9 +163,9 @@ export default {
     result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
     return result;
   },
+
   /**
-   * This function decrypts a given plaintext using the specified
-   * blockcipher to decrypt a message
+   * This function decrypts a given ciphertext using the specified blockcipher
    * @param {String} cipherfn the algorithm cipher class to decrypt
    *  data in one block_size encryption, {@link module:crypto/cipher}.
    * @param {Uint8Array} key Uint8Array representation of key to be used to decrypt the ciphertext.
@@ -177,7 +177,6 @@ export default {
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
    * @returns {Uint8Array} the plaintext data
    */
-
   decrypt: function(cipherfn, key, ciphertext, resync) {
     cipherfn = new cipher[cipherfn](key);
     const block_size = cipherfn.blockSize;

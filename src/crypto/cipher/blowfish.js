@@ -3,10 +3,6 @@
  * Originally written by nklein software (nklein.com)
  */
 
-/**
- *  @module crypto/cipher/blowfish
- */
-
 /*
  * Javascript implementation based on Bruce Schneier's reference implementation.
  *
@@ -387,7 +383,6 @@ Blowfish.prototype.init = function(key) {
 };
 
 // added by Recurity Labs
-
 function BF(key) {
   this.bf = new Blowfish();
   this.bf.init(key);

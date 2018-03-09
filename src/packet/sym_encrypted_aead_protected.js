@@ -21,17 +21,21 @@
  *
  * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
  * AEAD Protected Data Packet
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ * @module packet/sym_encrypted_aead_protected
  */
 
-import util from '../util';
 import crypto from '../crypto';
 import enums from '../enums';
+import util from '../util';
 
 const VERSION = 1; // A one-octet version number of the data packet.
 const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
 
 /**
- * @class
+ * @constructor
  */
 function SymEncryptedAEADProtected() {
   this.tag = enums.packet.symEncryptedAEADProtected;

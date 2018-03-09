@@ -39,6 +39,9 @@ import type_s2k from '../type/s2k.js';
 import type_keyid from '../type/keyid.js';
 
 /**
+ * A Secret-Key packet contains all the information that is found in a
+ * Public-Key packet, including the public-key material, but also
+ * includes the secret-key material after all the public-key fields.
  * @constructor
  * @extends module:packet/public_key
  */

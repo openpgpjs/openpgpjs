@@ -19,6 +19,15 @@
 /* eslint-disable no-var */
 /* eslint-disable vars-on-top */
 
+/**
+ * @fileoverview Provides functions for communicating with workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/async_proxy
+ * @module worker/worker
+ */
+
 self.window = {}; // to make UMD bundles work
 
 importScripts('openpgp.js');

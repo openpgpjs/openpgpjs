@@ -15,7 +15,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
+/**
+ * @fileoverview Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
+ * @see module:crypto/public_key/elliptic/ecdh
+ * @requires crypto/cipher
+ * @requires util
+ * @module crypto/aes_kw
+ */
 
 import cipher from './cipher';
 import util from '../util';
@@ -127,6 +133,21 @@ function pack() {
 }
 
 export default {
+  /**
+   * AES key wrap
+   * @function
+   * @param {String} key
+   * @param {String} data
+   * @returns {Uint8Array}
+   */
   wrap,
+  /**
+   * AES key unwrap
+   * @function
+   * @param {String} key
+   * @param {String} data
+   * @returns {Uint8Array}
+   * @throws {Error}
+   */
   unwrap
 };
