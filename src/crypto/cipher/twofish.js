@@ -1,3 +1,5 @@
+/* eslint-disable no-mixed-operators */
+
 /* Modified by Recurity Labs GmbH
  *
  * Cipher.js
@@ -17,12 +19,6 @@
  *     All rights for these routines are reserved to Michiel van Everdingen.
  *
  */
-
-/**
- * @module crypto/cipher/twofish
- */
-
- /* eslint-disable no-mixed-operators */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Math
@@ -339,20 +335,11 @@ function createTwofish() {
 
 function TF(key) {
   this.tf = createTwofish();
-  this.tf.open(toArray(key), 0);
+  this.tf.open(Array.from(key), 0);
 
   this.encrypt = function(block) {
-    return this.tf.encrypt(toArray(block), 0);
+    return this.tf.encrypt(Array.from(block), 0);
   };
-}
-
-function toArray(typedArray) {
-  // Array.apply([], typedArray) does not work in PhantomJS 1.9
-  const result = [];
-  for (let i = 0; i < typedArray.length; i++) {
-    result[i] = typedArray[i];
-  }
-  return result;
 }
 
 TF.keySize = TF.prototype.keySize = 32;

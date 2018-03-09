@@ -81,7 +81,7 @@ Keyid.fromClone = function (clone) {
 
 Keyid.fromId = function (hex) {
   const keyid = new Keyid();
-  keyid.read(util.str_to_Uint8Array(util.hex_to_str(hex)));
+  keyid.read(util.hex_to_Uint8Array(hex));
   return keyid;
 };
 

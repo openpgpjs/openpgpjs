@@ -16,66 +16,124 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * This object contains global configuration values.
+ * Global configuration values.
  * @requires enums
- * @module config/config
  */
 
 import enums from '../enums';
 
 export default {
-  /** @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash} */
+  /**
+   * @memberof module:config
+   * @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash}
+   */
   prefer_hash_algorithm: enums.hash.sha256,
-  /** @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric} */
+  /**
+   * @memberof module:config
+   * @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric}
+   */
   encryption_cipher: enums.symmetric.aes256,
-  /** @property {Integer} compression Default compression algorithm {@link module:enums.compression} */
+  /**
+   * @memberof module:config
+   * @property {Integer} compression Default compression algorithm {@link module:enums.compression}
+   */
   compression: enums.compression.uncompressed,
-  /** @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9 */
+  /**
+   * @memberof module:config
+   * @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9
+   */
   deflate_level: 6,
 
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * @memberof module:config
    * @property {Boolean} aead_protect
    */
   aead_protect:             false,
   /** Use integrity protection for symmetric encryption
-   * @property {Boolean} integrity_protect */
+   * @memberof module:config
+   * @property {Boolean} integrity_protect
+   */
   integrity_protect:        true,
-  /** @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected */
+  /**
+   * @memberof module:config
+   * @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected
+   */
   ignore_mdc_error:         false,
-  /** @property {Boolean} checksum_required Do not throw error when armor is missing a checksum */
+  /**
+   * @memberof module:config
+   * @property {Boolean} checksum_required Do not throw error when armor is missing a checksum
+   */
   checksum_required:        false,
-  /** @property {Boolean} rsa_blinding */
+  /**
+   * @memberof module:config
+   * @property {Boolean} rsa_blinding
+   */
   rsa_blinding:             true,
-  /** Work-around for rare GPG decryption bug when encrypting with multiple passwords
-   * Slower and slightly less secure
+  /**
+   * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
+   * **Slower and slightly less secure**
+   * @memberof module:config
    * @property {Boolean} password_collision_check
    */
   password_collision_check: false,
-  /** @property {Boolean} revocations_expire If true, expired revocation signatures are ignored */
+  /**
+   * @memberof module:config
+   * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
+   */
   revocations_expire:       false,
 
-  /** @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available */
+  /**
+   * @memberof module:config
+   * @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available
+   */
   use_native:               true,
-  /** @property {Boolean} Use transferable objects between the Web Worker and main thread */
+  /**
+   * @memberof module:config
+   * @property {Boolean} Use transferable objects between the Web Worker and main thread
+   */
   zero_copy:                false,
-  /** @property {Boolean} debug If enabled, debug messages will be printed */
+  /**
+   * @memberof module:config
+   * @property {Boolean} debug If enabled, debug messages will be printed
+   */
   debug:                    false,
-  /** @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error */
+  /**
+   * @memberof module:config
+   * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error
+   */
   tolerant:                 true,
 
-  /** @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages */
+  /**
+   * @memberof module:config
+   * @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages
+   */
   show_version: true,
-  /** @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages */
+  /**
+   * @memberof module:config
+   * @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages
+   */
   show_comment: true,
-  /** @property {String} versionstring A version string to be included in armored messages */
+  /**
+   * @memberof module:config
+   * @property {String} versionstring A version string to be included in armored messages
+   */
   versionstring: "OpenPGP.js VERSION",
-  /** @property {String} commentstring A comment string to be included in armored messages */
+  /**
+   * @memberof module:config
+   * @property {String} commentstring A comment string to be included in armored messages
+   */
   commentstring: "https://openpgpjs.org",
 
-  /** @property {String} keyserver */
+  /**
+   * @memberof module:config
+   * @property {String} keyserver
+   */
   keyserver:     "https://keyserver.ubuntu.com",
-  /** @property {String} node_store */
+  /**
+   * @memberof module:config
+   * @property {String} node_store
+   */
   node_store:    "./openpgp.store"
 };

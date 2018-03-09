@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview Functions for reading and writing packets
  * @requires enums
  * @requires util
  * @module packet/packet

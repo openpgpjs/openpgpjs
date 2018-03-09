@@ -1,6 +1,6 @@
 /**
  * @requires enums
- * @module packet
+ * @module packet/all_packets
  */
 
 import enums from '../enums.js';

@@ -1,5 +1,6 @@
 /* eslint-disable callback-return */
 /**
+ * @fileoverview Provides a class for representing lists of OpenPGP packets.
  * @requires util
  * @requires enums
  * @requires packet

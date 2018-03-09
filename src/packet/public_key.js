@@ -36,6 +36,8 @@ import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
 
 /**
+ * A Public-Key packet starts a series of packets that forms an OpenPGP
+ * key (sometimes called an OpenPGP certificate).
  * @constructor
  */
 function PublicKey() {
@@ -159,7 +161,7 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new type_keyid();
   if (this.version === 4) {
-    this.keyid.read(util.str_to_Uint8Array(util.hex_to_str(this.getFingerprint()).substr(12, 8)));
+    this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(12, 20));
   } else if (this.version === 3) {
     const arr = this.params[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));

@@ -25,6 +25,8 @@ import secretKey from './secret_key.js';
 import enums from '../enums.js';
 
 /**
+ * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
+ * Key packet and has exactly the same format.
  * @constructor
  * @extends module:packet/secret_key
  */

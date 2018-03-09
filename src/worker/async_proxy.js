@@ -15,6 +15,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @fileoverview Provides functions for maintaining browser workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/worker
+ * @requires util
+ * @requires crypto
+ * @requires packet
+ * @module worker/async_proxy
+ */
+
 import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
@@ -98,6 +110,7 @@ AsyncProxy.prototype.getID = function() {
 /**
  * Send message to worker with random data
  * @param  {Integer} size Number of bytes to send
+ * @async
  */
 AsyncProxy.prototype.seedRandom = async function(workerId, size) {
   const buf = await crypto.random.getRandomBytes(size);
@@ -118,6 +131,7 @@ AsyncProxy.prototype.terminate = function() {
  * @param  {String} method    the public api function to be delegated to the worker thread
  * @param  {Object} options   the api function's options
  * @returns {Promise}          see the corresponding public api functions for their return types
+ * @async
  */
 AsyncProxy.prototype.delegate = function(method, options) {
 

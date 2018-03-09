@@ -15,21 +15,75 @@ import twofish from './twofish';
 import blowfish from './blowfish';
 
 export default {
-  /** @see module:crypto/cipher/aes */
+  /**
+   * AES-128 encryption and decryption (ID 7)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes128: aes(128),
+  /**
+   * AES-128 Block Cipher (ID 8)
+   * @function
+   * @param {String} key 192-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes192: aes(192),
+  /**
+   * AES-128 Block Cipher (ID 9)
+   * @function
+   * @param {String} key 256-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes256: aes(256),
-  /** @see module:crypto/cipher/des~DES */
+  // Not in OpenPGP specifications
   des: des.DES,
-  /** @see module:crypto/cipher/des~TripleDES */
+  /**
+   * Triple DES Block Cipher (ID 2)
+   * @function
+   * @param {String} key 192-bit key
+   * @see {@link https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-67r2.pdf|NIST SP 800-67}
+   * @returns {Object}
+   */
   tripledes: des.TripleDES,
-  /** @see module:crypto/cipher/cast5 */
+  /**
+   * CAST-128 Block Cipher (ID 3)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://tools.ietf.org/html/rfc2144|The CAST-128 Encryption Algorithm}
+   * @returns {Object}
+   */
   cast5: cast5,
-  /** @see module:crypto/cipher/twofish */
+  /**
+   * Twofish Block Cipher (ID 10)
+   * @function
+   * @param {String} key 256-bit key
+   * @see {@link https://tools.ietf.org/html/rfc4880#ref-TWOFISH|TWOFISH}
+   * @returns {Object}
+   */
   twofish: twofish,
-  /** @see module:crypto/cipher/blowfish */
+  /**
+   * Blowfish Block Cipher (ID 4)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://tools.ietf.org/html/rfc4880#ref-BLOWFISH|BLOWFISH}
+   * @returns {Object}
+   */
   blowfish: blowfish,
-  /** Not implemented */
+  /**
+   * Not implemented
+   * @function
+   * @throws {Error}
+   */
   idea: function() {
     throw new Error('IDEA symmetric-key algorithm not implemented');
   }

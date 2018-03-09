@@ -18,6 +18,8 @@
 // The GPG4Browsers crypto interface
 
 /**
+ * @fileoverview Provides functions for asymmetric encryption and decryption as
+ * well as key generation and parameter handling for all public-key cryptosystems.
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random

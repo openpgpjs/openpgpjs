@@ -14,8 +14,6 @@
 
 // CAST5 constructor
 
-/** @module crypto/cipher/cast5 */
-
 function OpenpgpSymencCast5() {
   this.BlockSize = 8;
   this.KeySize = 16;

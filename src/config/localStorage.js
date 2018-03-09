@@ -1,4 +1,5 @@
 /**
+ * @fileoverview Provides functions for storing and retrieving configuration from HTML5 local storage.
  * @module config/localStorage
  */
 

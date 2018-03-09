@@ -15,7 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Functions to add and remove PKCS5 padding
+/**
+ * @fileoverview Functions to add and remove PKCS5 padding
+ * @see module:packet/public_key_encrypted_session_key
+ * @module crypto/pkcs5
+ */
 
 /**
  * Add pkcs5 padding to a text.

@@ -21,10 +21,6 @@
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
 
-/**
- * @module crypto/cipher/des
- */
-
 function des(keys, message, encrypt, mode, iv, padding) {
   //declaring this locally speeds things up a bit
   const spfunction1 = new Array(

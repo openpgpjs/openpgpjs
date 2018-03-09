@@ -49,11 +49,11 @@ function promisifyIE11Op(keyObj, err) {
 
 export default {
   /** Create signature
-   * @param m message as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @param d private MPI part as BN
-   * @returns BN
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @param {BN} d RSA private exponent
+   * @returns {BN} RSA Signature
    * @async
    */
   sign: async function(m, n, e, d) {
@@ -66,10 +66,10 @@ export default {
 
   /**
    * Verify signature
-   * @param s signature as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @returns BN
+   * @param {BN} s signature
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @returns {BN}
    * @async
    */
   verify: async function(s, n, e) {
@@ -82,10 +82,10 @@ export default {
 
   /**
    * Encrypt message
-   * @param m message as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @returns BN
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @returns {BN} RSA Ciphertext
    * @async
    */
   encrypt: async function(m, n, e) {
@@ -98,14 +98,14 @@ export default {
 
   /**
    * Decrypt RSA message
-   * @param m message as BN
-   * @param n RSA public modulus n as BN
-   * @param e RSA public exponent as BN
-   * @param d RSA d as BN
-   * @param p RSA p as BN
-   * @param q RSA q as BN
-   * @param u RSA u as BN
-   * @returns {BN} The decrypted value of the message
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @param {BN} d RSA private exponent
+   * @param {BN} p RSA private prime p
+   * @param {BN} q RSA private prime q
+   * @param {BN} u RSA private inverse of prime q
+   * @returns {BN} RSA Plaintext
    * @async
    */
   decrypt: async function(m, n, e, d, p, q, u) {
@@ -141,7 +141,11 @@ export default {
   },
 
   /**
-   * Generate a new random private key B bits long with public exponent E
+   * Generate a new random private key B bits long with public exponent E.
+   *
+   * When possible, webCrypto is used. Otherwise, primes are generated using
+   * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
+   * @see module:crypto/public_key/prime
    * @param {Integer} B RSA bit length
    * @param {String}  E RSA public exponent in hex string
    * @returns {{n: BN, e: BN, d: BN,

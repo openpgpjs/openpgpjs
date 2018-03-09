@@ -1,4 +1,5 @@
 /**
+ * @fileoverview Provides functions for asymmetric signing and signature verification
  * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/pkcs1
@@ -24,7 +25,7 @@ export default {
    * @param {Array<module:type/mpi>} msg_MPIs  Algorithm-specific signature parameters
    * @param {Array<module:type/mpi>} pub_MPIs  Algorithm-specific public key parameters
    * @param {Uint8Array}             data      Data for which the signature was created
-   * @returns {Boolean}                         True if signature is valid
+   * @returns {Boolean}                        True if signature is valid
    * @async
    */
   verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data) {
@@ -77,7 +78,7 @@ export default {
    * @param {module:enums.hash}      hash_algo  Hash algorithm
    * @param {Array<module:type/mpi>} key_params Algorithm-specific public and private key parameters
    * @param {Uint8Array}             data       Data to be signed
-   * @returns {Uint8Array}                       Signature
+   * @returns {Uint8Array}                      Signature
    * @async
    */
   sign: async function(algo, hash_algo, key_params, data) {
