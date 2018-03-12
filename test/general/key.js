@@ -773,7 +773,7 @@ describe('Key', function() {
     const pubKey = pubKeys.keys[0];
     expect(pubKey).to.exist;
 
-    const packetlist = new openpgp.packet.Packetlist();
+    const packetlist = new openpgp.packet.List();
 
     packetlist.read(openpgp.armor.decode(pub_sig_test).data);
 
