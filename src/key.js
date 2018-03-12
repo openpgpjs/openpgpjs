@@ -278,10 +278,11 @@ Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date())
     for (let i = 0; i < this.subKeys.length; i++) {
       if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        await this.subKeys[i].verify(primaryKey, date);
-        for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-          if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-            return this.subKeys[i].subKey;
+        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
+            if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
+              return this.subKeys[i].subKey;
+            }
           }
         }
       }
@@ -321,10 +322,11 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
     for (let i = 0; i < this.subKeys.length; i++) {
       if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        await this.subKeys[i].verify(primaryKey, date);
-        for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-          if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-            return this.subKeys[i].subKey;
+        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
+            if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
+              return this.subKeys[i].subKey;
+            }
           }
         }
       }
