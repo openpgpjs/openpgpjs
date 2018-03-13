@@ -1,8 +1,8 @@
 /**
  * @fileoverview OpenPGP packet types
  * @see module:packet/all_packets
- * @see module:packet/packetlist
  * @see module:packet/clone
+ * @see module:packet.List
  * @module packet
  */
 

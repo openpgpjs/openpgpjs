@@ -35,8 +35,8 @@ import { createVerificationObjects, createSignaturePackets } from './message';
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link https://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String}     text       The cleartext of the signed message
- * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
+ * @param  {String}           text       The cleartext of the signed message
+ * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
  */
 export function CleartextMessage(text, signature) {
   if (!(this instanceof CleartextMessage)) {
@@ -65,10 +65,10 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
 
 /**
  * Sign the cleartext message
- * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @returns {Promise<module:message~CleartextMessage>} new cleartext message with signed content
+ * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
 CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date()) {
@@ -77,10 +77,10 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature=null, da
 
 /**
  * Sign the cleartext message
- * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @returns {Promise<module:signature~Signature>}      new detached signature of message content
+ * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
 CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date()) {
@@ -92,7 +92,7 @@ CleartextMessage.prototype.signDetached = async function(privateKeys, signature=
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
@@ -103,7 +103,7 @@ CleartextMessage.prototype.verify = function(keys, date=new Date()) {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
@@ -146,7 +146,7 @@ CleartextMessage.prototype.armor = function() {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @returns {module:cleartext~CleartextMessage} new cleartext message object
+ * @returns {module:cleartext.CleartextMessage} new cleartext message object
  * @static
  */
 export function readArmored(armoredText) {
@@ -163,9 +163,9 @@ export function readArmored(armoredText) {
 
 /**
  * Compare hash algorithm specified in the armor header with signatures
- * @private
  * @param  {Array<String>} headers    Armor headers
- * @param  {module:packet/packetlist} packetlist The packetlist with signature packets
+ * @param  {module:packet.List} packetlist The packetlist with signature packets
+ * @private
  */
 function verifyHeaders(headers, packetlist) {
   const checkHashAlgos = function(hashAlgos) {

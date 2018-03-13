@@ -94,7 +94,7 @@ function Signature(date=new Date()) {
  * @param {String} bytes payload of a tag 2 packet
  * @param {Integer} position position to start reading from the bytes string
  * @param {Integer} len length of the packet or the remaining length of bytes at position
- * @returns {module:packet/signature} object representation
+ * @returns {module:packet.Signature} object representation
  */
 Signature.prototype.read = function (bytes) {
   let i = 0;
@@ -210,7 +210,7 @@ Signature.prototype.write = function () {
 
 /**
  * Signs provided data. This needs to be done prior to serialization.
- * @param {module:packet/secret_key} key private key used to sign the message.
+ * @param {module:packet.SecretKey} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  * @returns {Promise<Boolean>}
  * @async
@@ -619,8 +619,8 @@ Signature.prototype.calculateTrailer = function () {
 /**
  * verifys the signature packet. Note: not signature types are implemented
  * @param {String|Object} data data which on the signature applies
- * @param {module:packet/public_subkey|module:packet/public_key|
- *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
+ * @param {module:packet.PublicSubkey|module:packet.PublicKey|
+ *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */

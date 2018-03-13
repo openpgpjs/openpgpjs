@@ -16,6 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview The openpgp base module should provide all of the functionality
+ * to consume the openpgp.js library. All additional classes are documented
+ * for extending and developing on top of the base library.
  * @requires message
  * @requires cleartext
  * @requires key
@@ -26,10 +29,12 @@
  * @module openpgp
  */
 
+// This file intentionally has two separate file overviews so that
+// a reference to this module appears at the end of doc/index.html.
+
 /**
- * @fileoverview The openpgp base module should provide all of the functionality
- * to consume the openpgp.js library. All additional classes are documented
- * for extending and developing on top of the base library.
+ * @fileoverview To view the full API documentation, start from
+ * {@link module:openpgp}
  */
 
 import * as messageLib from './message';
@@ -68,7 +73,7 @@ export function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {
 
 /**
  * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @returns {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
+ * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
  */
 export function getWorker() {
   return asyncProxy;

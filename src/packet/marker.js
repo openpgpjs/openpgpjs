@@ -47,7 +47,7 @@ function Marker() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/marker} Object representation
+ * @returns {module:packet.Marker} Object representation
  */
 Marker.prototype.read = function (bytes) {
   if (bytes[0] === 0x50 && // P

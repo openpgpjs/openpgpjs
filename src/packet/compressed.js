@@ -47,7 +47,7 @@ function Compressed() {
   this.tag = enums.packet.compressed;
   /**
    * List of packets
-   * @type {module:packet/packetlist}
+   * @type {module:packet.List}
    */
   this.packets = null;
   /**

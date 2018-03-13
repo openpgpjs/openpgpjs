@@ -63,11 +63,11 @@ function handleMessage(workerId) {
 
 /**
  * Initializes a new proxy and loads the web worker
- * @constructor
  * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
  * @param {Number} n               number of workers to initialize if path given
  * @param {Object} config          config The worker configuration
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
+ * @constructor
  */
 function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
 

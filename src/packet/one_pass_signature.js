@@ -74,7 +74,7 @@ function OnePassSignature() {
 /**
  * parsing function for a one-pass signature packet (tag 4).
  * @param {Uint8Array} bytes payload of a tag 4 packet
- * @returns {module:packet/one_pass_signature} object representation
+ * @returns {module:packet.OnePassSignature} object representation
  */
 OnePassSignature.prototype.read = function (bytes) {
   let mypos = 0;

@@ -38,11 +38,24 @@ import enums from '../enums';
  * @constructor
  */
 function SymmetricallyEncrypted() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = enums.packet.symmetricallyEncrypted;
+  /**
+   * Encrypted secret-key data
+   */
   this.encrypted = null;
-  /** Decrypted packets contained within.
-   * @type {module:packet/packetlist} */
+  /**
+   * Decrypted packets contained within.
+   * @type {module:packet.List}
+   */
   this.packets = null;
+  /**
+   * When true, decrypt fails if message is not integrity protected
+   * @see module:config.ignore_mdc_error
+   */
   this.ignore_mdc_error = config.ignore_mdc_error;
 }
 
@@ -56,8 +69,8 @@ SymmetricallyEncrypted.prototype.write = function () {
 
 /**
  * Decrypt the symmetrically-encrypted packet data
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
  * @async
@@ -78,8 +91,8 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
 
 /**
  * Encrypt the symmetrically-encrypted packet data
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
  * @async

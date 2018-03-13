@@ -18,7 +18,7 @@
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @requires crypto/hash
  * @requires util
  * @requires enums
