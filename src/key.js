@@ -268,19 +268,21 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  */
 Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date()) {
   const primaryKey = this.primaryKey;
-  const primaryUser = await this.getPrimaryUser(date);
-  if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-      isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date) &&
-      await this.verifyPrimaryKey(date)) {
-    return primaryKey;
-  }
-  for (let i = 0; i < this.subKeys.length; i++) {
-    if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.subKeys[i].verify(primaryKey, date);
-      for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-        if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-          return this.subKeys[i].subKey;
+  if (await this.verifyPrimaryKey(date) === enums.keyStatus.valid) {
+    const primaryUser = await this.getPrimaryUser(date);
+    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
+      return primaryKey;
+    }
+    for (let i = 0; i < this.subKeys.length; i++) {
+      if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
+        // eslint-disable-next-line no-await-in-loop
+        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
+            if (isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
+              return this.subKeys[i].subKey;
+            }
+          }
         }
       }
     }
@@ -313,25 +315,27 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  */
 Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
   const primaryKey = this.primaryKey;
-  // V4: by convention subkeys are preferred for encryption service
-  // V3: keys MUST NOT have subkeys
-  for (let i = 0; i < this.subKeys.length; i++) {
-    if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.subKeys[i].verify(primaryKey, date);
-      for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
-        if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-          return this.subKeys[i].subKey;
+  if (await this.verifyPrimaryKey(date) === enums.keyStatus.valid) {
+    // V4: by convention subkeys are preferred for encryption service
+    // V3: keys MUST NOT have subkeys
+    for (let i = 0; i < this.subKeys.length; i++) {
+      if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
+        // eslint-disable-next-line no-await-in-loop
+        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          for (let j = 0; j < this.subKeys[i].bindingSignatures.length; j++) {
+            if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
+              return this.subKeys[i].subKey;
+            }
+          }
         }
       }
     }
-  }
-  // if no valid subkey for encryption, evaluate primary key
-  const primaryUser = await this.getPrimaryUser(date);
-  if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-      isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date) &&
-      await this.verifyPrimaryKey(date)) {
-    return primaryKey;
+    // if no valid subkey for encryption, evaluate primary key
+    const primaryUser = await this.getPrimaryUser(date);
+    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+        isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
+      return primaryKey;
+    }
   }
   return null;
 };
@@ -389,33 +393,6 @@ Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
   return isDataRevoked(
     this.primaryKey, { key: this.primaryKey }, this.revocationSignatures, signature, key, date
   );
-};
-
-/**
- * Returns a packetlist containing all verified public or private key packets matching keyId.
- * If keyId is not present, returns all verified key packets starting with the primary key.
- * Verification is in the context of given date.
- * @param  {type/keyid} keyId
- * @param  {Date}       date  Use the given date instead of the current time
- * @returns {Promise<module:packet/packetlist>}
- * @async
- */
-Key.prototype.verifyKeyPackets = async function(keyId=null, date=new Date()) {
-  const packets = new packet.List();
-  const { primaryKey } = this;
-  if (await this.verifyPrimaryKey(date)) {
-    if (!keyId || primaryKey.getKeyId().equals(keyId)) {
-      packets.push(primaryKey);
-    }
-  }
-  await Promise.all(this.subKeys.map(async subKey => {
-    if (!keyId || subKey.subKey.getKeyId().equals(keyId)) {
-      if (await subKey.verify(primaryKey, date)) {
-        packets.push(subKey.subKey);
-      }
-    }
-  }));
-  return packets;
 };
 
 /**
