@@ -56,7 +56,7 @@ describe('Key', function() {
         '=w6wd',
         '-----END PGP PUBLIC KEY BLOCK-----'].join("\n");
 
-  const pub_revoked =
+  const pub_revoked_subkeys =
       ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: GnuPG v2.0.19 (GNU/Linux)',
       '',
@@ -107,6 +107,46 @@ describe('Key', function() {
       'pMiJM+NJAQ==',
       '=ok+o',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+
+  const pub_revoked_with_cert =
+      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+      'Comment: GPGTools - https://gpgtools.org',
+      '',
+      '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',
+      'onCOcv4DKguN2w==',
+      '=OqO3',
+      '-----END PGP PUBLIC KEY BLOCK----'].join('\n');
 
   const pub_v3 =
       ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -771,7 +811,6 @@ describe('Key', function() {
     // remove subkeys
     pubKey.subKeys = [];
     // primary key has only key flags for signing
-    await pubKey.verifyKeyPackets();
     const keyPacket = await pubKey.getEncryptionKeyPacket();
     expect(keyPacket).to.not.exist;
   });
@@ -800,8 +839,8 @@ describe('Key', function() {
   });
 
   it('update() - merge revocation signatures', function(done) {
-    const source = openpgp.key.readArmored(pub_revoked).keys[0];
-    const dest = openpgp.key.readArmored(pub_revoked).keys[0];
+    const source = openpgp.key.readArmored(pub_revoked_subkeys).keys[0];
+    const dest = openpgp.key.readArmored(pub_revoked_subkeys).keys[0];
     expect(source.revocationSignatures).to.exist;
     dest.revocationSignatures = [];
     dest.update(source).then(() => {
@@ -1261,12 +1300,20 @@ describe('Key', function() {
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {
     const key = openpgp.key.readArmored(valid_binding_sig_among_many_expired_sigs_pub).keys[0];
-    await key.verifyKeyPackets();
     expect(await key.getEncryptionKeyPacket()).to.not.be.null;
   });
 
   it('Reject encryption with revoked subkey', function() {
-    const key = openpgp.key.readArmored(pub_revoked).keys[0];
+    const key = openpgp.key.readArmored(pub_revoked_subkeys).keys[0];
+    return openpgp.encrypt({publicKeys: [key], data: 'random data'}).then(() => {
+      throw new Error('encryptSessionKey should not encrypt with revoked public key');
+    }).catch(function(error) {
+      expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+    });
+  });
+
+  it('Reject encryption with key revoked with appended revocation cert', function() {
+    const key = openpgp.key.readArmored(pub_revoked_with_cert).keys[0];
     return openpgp.encrypt({publicKeys: [key], data: 'random data'}).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
@@ -1274,4 +1321,3 @@ describe('Key', function() {
     });
   });
 });
-
