@@ -16,13 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * FIXME
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
  * @requires packet/public_key
  * @requires type/keyid
  * @requires type/s2k
@@ -48,10 +41,18 @@ import util from '../util';
  */
 function SecretKey() {
   publicKey.call(this);
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = enums.packet.secretKey;
-  // encrypted secret-key data
+  /**
+   * Encrypted secret-key data
+   */
   this.encrypted = null;
-  // indicator if secret-key data is available in decrypted form
+  /**
+   * Indicator if secret-key data is available in decrypted form
+   */
   this.isDecrypted = false;
 }
 
@@ -123,7 +124,8 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
 // 5.5.3.  Secret-Key Packet Formats
 
 /**
- * Internal parser for private keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
+ * Internal parser for private keys as specified in
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
 SecretKey.prototype.read = function (bytes) {
@@ -154,9 +156,10 @@ SecretKey.prototype.read = function (bytes) {
   }
 };
 
-/** Creates an OpenPGP key packet for the given key.
-  * @returns {String} A string of bytes containing the secret key OpenPGP packet
-  */
+/**
+ * Creates an OpenPGP key packet for the given key.
+ * @returns {String} A string of bytes containing the secret key OpenPGP packet
+ */
 SecretKey.prototype.write = function () {
   const arr = [this.writePublicKey()];
 
@@ -171,7 +174,8 @@ SecretKey.prototype.write = function () {
 };
 
 
-/** Encrypt the payload. By default, we use aes256 and iterated, salted string
+/**
+ * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isDecrypted === true)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
@@ -213,9 +217,8 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
 
 /**
  * Decrypts the private key params which are needed to use the key.
- * @link module:packet/secret_key.isDecrypted should be
- * false otherwise a call to this function is not needed
- *
+ * {@link module:packet.SecretKey.isDecrypted} should be false, as
+ * otherwise calls to this function will throw an error.
  * @param {String} passphrase The passphrase for this private key as string
  * @returns {Promise<Boolean>}
  * @async

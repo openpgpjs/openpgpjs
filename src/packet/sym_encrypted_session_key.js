@@ -63,7 +63,7 @@ function SymEncryptedSessionKey() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/sym_encrypted_session_key} Object representation
+ * @returns {module:packet.SymEncryptedSessionKey} Object representation
  */
 SymEncryptedSessionKey.prototype.read = function(bytes) {
   // A one-octet version number. The only currently defined version is 4.

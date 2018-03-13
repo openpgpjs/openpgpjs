@@ -58,7 +58,7 @@ Keyring.prototype.clear = function() {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @returns {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.getKeysForId = function (keyId, deep) {
   let result = [];
@@ -71,7 +71,7 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
  * Removes keys having the specified key id from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @returns {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
   let result = [];
@@ -82,7 +82,7 @@ Keyring.prototype.removeKeysForId = function (keyId) {
 
 /**
  * Get all public and private keys
- * @returns {Array<module:key~Key>} all keys
+ * @returns {Array<module:key.Key>} all keys
  */
 Keyring.prototype.getAllKeys = function () {
   return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -90,7 +90,7 @@ Keyring.prototype.getAllKeys = function () {
 
 /**
  * Array of keys
- * @param {Array<module:key~Key>} keys The keys to store in this array
+ * @param {Array<module:key.Key>} keys The keys to store in this array
  */
 function KeyArray(keys) {
   this.keys = keys;
@@ -99,7 +99,7 @@ function KeyArray(keys) {
 /**
  * Searches all keys in the KeyArray matching the address or address part of the user ids
  * @param {String} email email address to search for
- * @returns {Array<module:key~Key>} The public keys associated with provided email address.
+ * @returns {Array<module:key.Key>} The public keys associated with provided email address.
  */
 KeyArray.prototype.getForAddress = function(email) {
   const results = [];
@@ -115,7 +115,7 @@ KeyArray.prototype.getForAddress = function(email) {
  * Checks a key to see if it matches the specified email address
  * @private
  * @param {String} email email address to search for
- * @param {module:key~Key} key The key to be checked.
+ * @param {module:key.Key} key The key to be checked.
  * @returns {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
@@ -138,7 +138,7 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
+ * @param {module:packet.SecretKey|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
  * @returns {Boolean} True if keypacket has the specified keyid
  */
 function keyIdCheck(keyId, keypacket) {
@@ -153,7 +153,7 @@ function keyIdCheck(keyId, keypacket) {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @returns {module:key~Key|null} key found or null
+ * @returns {module:key.Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (let i = 0; i < this.keys.length; i++) {
@@ -197,7 +197,7 @@ KeyArray.prototype.importKey = async function (armored) {
 
 /**
  * Add key to KeyArray
- * @param {module:key~Key} key The key that will be added to the keyring
+ * @param {module:key.Key} key The key that will be added to the keyring
  * @returns {Number} The new length of the KeyArray
  */
 KeyArray.prototype.push = function (key) {
@@ -208,7 +208,7 @@ KeyArray.prototype.push = function (key) {
  * Removes a key with the specified keyid from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @returns {module:key~Key|null} The key object which has been removed or null
+ * @returns {module:key.Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (let i = 0; i < this.keys.length; i++) {

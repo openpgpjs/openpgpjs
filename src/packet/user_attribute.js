@@ -79,7 +79,7 @@ UserAttribute.prototype.write = function() {
 
 /**
  * Compare for equality
- * @param  {module:user_attribute~UserAttribute} usrAttr
+ * @param  {module:packet.UserAttribute} usrAttr
  * @returns {Boolean}         true if equal
  */
 UserAttribute.prototype.equals = function(usrAttr) {

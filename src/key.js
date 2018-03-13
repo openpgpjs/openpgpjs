@@ -36,9 +36,8 @@ import util from './util';
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {module:packet/packetlist} packetlist The packets that form this key
+ * @param  {module:packet.List} packetlist The packets that form this key
  */
-
 export function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
@@ -57,7 +56,7 @@ export function Key(packetlist) {
 
 /**
  * Transforms packetlist to structured key data
- * @param  {module:packet/packetlist} packetlist The packets that form a key
+ * @param  {module:packet.List} packetlist The packets that form a key
  */
 Key.prototype.packetlist2structure = function(packetlist) {
   let user;
@@ -132,7 +131,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
 
 /**
  * Transforms structured key data to packetlist
- * @returns {module:packet/packetlist} The packets that form a key
+ * @returns {module:packet.List} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
   const packetlist = new packet.List();
@@ -148,7 +147,7 @@ Key.prototype.toPacketlist = function() {
  * Returns packetlist containing all public or private subkey packets matching keyId;
  * If keyId is not present, returns all subkey packets.
  * @param  {type/keyid} keyId
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 Key.prototype.getSubkeyPackets = function(keyId=null) {
   const packets = new packet.List();
@@ -164,7 +163,7 @@ Key.prototype.getSubkeyPackets = function(keyId=null) {
  * Returns a packetlist containing all public or private key packets matching keyId.
  * If keyId is not present, returns all key packets starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 Key.prototype.getKeyPackets = function(keyId=null) {
   const packets = new packet.List();
@@ -211,7 +210,7 @@ Key.prototype.isPrivate = function() {
 
 /**
  * Returns key as public key (shallow copy)
- * @returns {module:key~Key} new public Key
+ * @returns {module:key.Key} new public Key
  */
 Key.prototype.toPublic = function() {
   const packetlist = new packet.List();
@@ -263,8 +262,8 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<module:packet/secret_subkey|
-                     module:packet/secret_key|null>} key packet or null if no signing key has been found
+ * @returns {Promise<module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
  * @async
  */
 Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date()) {
@@ -306,10 +305,10 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
- * @returns {Promise<module:packet/public_subkey|
- *                   module:packet/secret_subkey|
- *                   module:packet/secret_key|
- *                   module:packet/public_key|null>} key packet or null if no encryption key has been found
+ * @returns {Promise<module:packet.PublicSubkey|
+ *                   module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|
+ *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
  * @async
  */
 Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
@@ -341,7 +340,7 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
  * Encrypts all secret key and subkey packets matching keyId
  * @param  {module:type/keyid} keyId
  * @param  {String} passphrase
- * @returns {Promise<Array<module:packet/secret_key|module:packet/secret_subkey>>}
+ * @returns {Promise<Array<module:packet.SecretKey|module:packet.SecretSubkey>>}
  * @async
  */
 Key.prototype.encrypt = async function(passphrase, keyId=null) {
@@ -376,12 +375,12 @@ Key.prototype.decrypt = async function(passphrase, keyId=null) {
 
 /**
  * Checks if a signature on a key is revoked
- * @param  {module:packet/secret_key|
- * @param  {module:packet/signature}  signature    The signature to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ * @param  {module:packet.Signature}  signature    The signature to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
@@ -474,8 +473,8 @@ Key.prototype.getExpirationTime = async function() {
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<{user: Array<module:packet/User>,
- *                    selfCertification: Array<module:packet/signature>}|undefined>} The primary user and the self signature
+ * @returns {Promise<{user: Array<module:key.User>,
+ *                    selfCertification: Array<module:packet.Signature>}>} The primary user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
@@ -530,7 +529,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
  *
  * If the specified key is a private key and the destination key is public,
  * the destination key is transformed to a private key.
- * @param  {module:key~Key} key Source key to merge
+ * @param  {module:key.Key} key Source key to merge
  */
 Key.prototype.update = async function(key) {
   const that = this;
@@ -623,8 +622,8 @@ Key.prototype.revoke = function() {
 
 /**
  * Signs primary user of key
- * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
- * @returns {Promise<module:key~Key>} new public key with new certificate signature
+ * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+ * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
 Key.prototype.signPrimaryUser = async function(privateKeys) {
@@ -640,8 +639,8 @@ Key.prototype.signPrimaryUser = async function(privateKeys) {
 
 /**
  * Signs all users of key
- * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
- * @returns {Promise<module:key~Key>} new public key with new certificate signature
+ * @param  {Array<module:key.Key>} privateKeys decrypted private keys for signing
+ * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
 Key.prototype.signAllUsers = async function(privateKeys) {
@@ -657,7 +656,7 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  * Verifies primary user of key
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
- * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
  * @async
@@ -677,7 +676,7 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
  * Verifies all users of key
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
- * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
  * @returns {Promise<Array<{userid: String,
  *                          keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
@@ -717,7 +716,7 @@ function User(userPacket) {
 
 /**
  * Transforms structured user data to packetlist
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 User.prototype.toPacketlist = function() {
   const packetlist = new packet.List();
@@ -730,10 +729,10 @@ User.prototype.toPacketlist = function() {
 
 /**
  * Signs user
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey  The primary key packet
- * @param  {Array<module:key~Key>}    privateKeys Decrypted private keys for signing
- * @returns {Promise<module:key~Key>}             New user with new certificate signatures
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+ * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
  */
 User.prototype.sign = async function(primaryKey, privateKeys) {
@@ -770,13 +769,13 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
 
 /**
  * Checks if a given certificate of the user is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey    The primary key packet
- * @param  {module:packet/signature}  certificate   The certificate to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey    The primary key packet
+ * @param  {module:packet.Signature}  certificate   The certificate to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
@@ -792,10 +791,10 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
 
 /**
  * Verifies the user certificate
- * @param  {module:packet/secret_key|
-            module:packet/public_key} primaryKey  The primary key packet
- * @param  {module:packet/signature}  certificate A certificate of this user
- * @param  {Array<module:key~Key>}    keys        Array of keys to verify certificate signatures
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {module:packet.Signature}  certificate A certificate of this user
+ * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
  * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}     status of the certificate
  * @async
@@ -823,9 +822,9 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
 
 /**
  * Verifies all user certificates
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
- * @param  {Array<module:key~Key>}    keys       Array of keys to verify certificate signatures
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
  * @async
@@ -845,8 +844,8 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
 /**
  * Verify User. Checks for existence of self signatures, revocation signatures
  * and validity of self signature
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
  * @returns {Promise<module:enums.keyStatus>}    Status of user
  * @async
  */
@@ -876,9 +875,9 @@ User.prototype.verify = async function(primaryKey) {
 
 /**
  * Update user with new components from specified user
- * @param  {module:key~User}             user       Source user to merge
- * @param  {module:packet/secret_key|
-            module:packet/secret_subkey} primaryKey primary key used for validation
+ * @param  {module:key.User}             user       Source user to merge
+ * @param  {module:packet.SecretKey|
+ *          module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 User.prototype.update = async function(user, primaryKey) {
   const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
@@ -909,7 +908,7 @@ function SubKey(subKeyPacket) {
 
 /**
  * Transforms structured subkey data to packetlist
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 SubKey.prototype.toPacketlist = function() {
   const packetlist = new packet.List();
@@ -921,13 +920,13 @@ SubKey.prototype.toPacketlist = function() {
 
 /**
  * Checks if a binding signature of a subkey is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey    The primary key packet
- * @param  {module:packet/signature}  signature     The binding signature to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey    The primary key packet
+ * @param  {module:packet.Signature}  signature     The binding signature to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the binding signature is revoked
  * @async
@@ -944,8 +943,8 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Date}                     date       Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
  * @async
@@ -1000,9 +999,9 @@ SubKey.prototype.getExpirationTime = function() {
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key~SubKey}           subKey     Source subkey to merge
- * @param  {module:packet/secret_key|
-            module:packet/secret_subkey} primaryKey primary key used for validation
+ * @param  {module:key.SubKey}           subKey     Source subkey to merge
+ * @param  {module:packet.SecretKey|
+            module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
@@ -1042,7 +1041,7 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
- * @returns {{keys: Array<module:key~Key>,
+ * @returns {{keys: Array<module:key.Key>,
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
@@ -1076,7 +1075,7 @@ export function read(data) {
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @returns {{keys: Array<module:key~Key>,
+ * @returns {{keys: Array<module:key.Key>,
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
@@ -1097,15 +1096,18 @@ export function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ *                             To indicate what type of key to make.
  *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
- * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
-                                                     If array is used, the first userId is set as primary user Id
+ * @param {String|Array<String>}  options.userIds
+ *                             Assumes already in form of "User Name <username@email.com>"
+ *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
- * @returns {Promise<module:key~Key>}
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
@@ -1174,14 +1176,16 @@ export function generate(options) {
 
 /**
  * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
- * @param {module:key~Key} options.privateKey   The private key to reformat
+ * @param {module:key.Key} options.privateKey   The private key to reformat
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
- * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
-                                                     If array is used, the first userId is set as primary user Id
+ * @param {String|Array<String>}  options.userIds
+ *                             Assumes already in form of "User Name <username@email.com>"
+ *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
- * @returns {Promise<module:key~Key>}
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
@@ -1317,15 +1321,15 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
 
 /**
  * Checks if a given certificate or binding signature is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key}       primaryKey   The primary key packet
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey}       primaryKey   The primary key packet
  * @param  {Object}                         dataToVerify The data to check
- * @param  {Array<module:packet/signature>} revocations  The revocation signatures to check
- * @param  {module:packet/signature}        signature    The certificate or signature to check
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key packet to check the signature
+ * @param  {Array<module:packet.Signature>} revocations  The revocation signatures to check
+ * @param  {module:packet.Signature}        signature    The certificate or signature to check
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async
@@ -1412,7 +1416,7 @@ export async function getPreferredHashAlgo(key) {
 
 /**
  * Returns the preferred symmetric algorithm for a set of keys
- * @param  {Array<module:key~Key>} keys Set of keys
+ * @param  {Array<module:key.Key>} keys Set of keys
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */

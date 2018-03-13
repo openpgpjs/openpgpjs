@@ -19,7 +19,7 @@
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @requires bn.js
  * @requires crypto/hash
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/eddsa
  */
 
@@ -29,10 +29,10 @@ import Curve from './curves';
 
 /**
  * Sign a message using the provided key
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
- * @param  {Uint8Array}      m          Message to sign
- * @param  {Uint8Array}      d          Private key used to sign
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used to sign
+ * @param  {Uint8Array}        m         Message to sign
+ * @param  {Uint8Array}        d         Private key used to sign
  * @returns {{R: Uint8Array,
  *            S: Uint8Array}}            Signature of the message
  * @async
@@ -48,12 +48,12 @@ async function sign(oid, hash_algo, m, d) {
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used in the signature
  * @param  {{R: Uint8Array,
-             S: Uint8Array}} signature  Signature to verify the message
- * @param  {Uint8Array}      m          Message to verify
- * @param  {Uint8Array}      Q          Public key used to verify the message
+             S: Uint8Array}}   signature Signature to verify the message
+ * @param  {Uint8Array}        m         Message to verify
+ * @param  {Uint8Array}        Q         Public key used to verify the message
  * @returns {Boolean}
  * @async
  */

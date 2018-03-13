@@ -19,7 +19,7 @@
  * @fileoverview Provides EME-PKCS1-v1_5 encoding and decoding and EMSA-PKCS1-v1_5 encoding function
  * @see module:crypto/public_key/rsa
  * @see module:crypto/public_key/elliptic/ecdh
- * @see module:packet/public_key_encrypted_session_key
+ * @see module:packet.PublicKeyEncryptedSessionKey
  * @requires crypto/random
  * @requires crypto/hash
  * @requires util

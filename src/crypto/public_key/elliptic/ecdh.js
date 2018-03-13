@@ -17,7 +17,7 @@
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
  * @requires crypto/hash
@@ -63,13 +63,13 @@ function kdf(hash_algo, X, length, param) {
 /**
  * Encrypt and wrap a session key
  *
- * @param  {module:type/oid} oid          Elliptic curve object identifier
- * @param  {Enums}           cipher_algo  Symmetric cipher to use
- * @param  {Enums}           hash_algo    Hash algorithm to use
- * @param  {module:type/mpi} m            Value derived from session key (RFC 6637)
- * @param  {Uint8Array}      Q            Recipient public key
- * @param  {String}          fingerprint  Recipient fingerprint
- * @returns {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {{V: BN, C: BN}}                     Returns ephemeral key and encoded session key
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
@@ -91,14 +91,14 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
 /**
  * Decrypt and unwrap the value derived from session key
  *
- * @param  {module:type/oid} oid          Elliptic curve object identifier
- * @param  {Enums}           cipher_algo  Symmetric cipher to use
- * @param  {Enums}           hash_algo    Hash algorithm to use
- * @param  {BN}              V            Public part of ephemeral key
- * @param  {Uint8Array}      C            Encrypted and wrapped value derived from session key
- * @param  {Uint8Array}      d            Recipient private key
- * @param  {String}          fingerprint  Recipient fingerprint
- * @returns {Uint8Array}                   Value derived from session
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Uint8Array}                         Value derived from session
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {

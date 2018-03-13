@@ -52,7 +52,7 @@ LocalStore.prototype.privateKeysItem = 'private-keys';
 
 /**
  * Load the public keys from HTML5 local storage.
- * @returns {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPublic = function () {
   return loadKeys(this.storage, this.publicKeysItem);
@@ -60,7 +60,7 @@ LocalStore.prototype.loadPublic = function () {
 
 /**
  * Load the private keys from HTML5 local storage.
- * @returns {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPrivate = function () {
   return loadKeys(this.storage, this.privateKeysItem);
@@ -86,7 +86,7 @@ function loadKeys(storage, itemname) {
 /**
  * Saves the current state of the public keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
 LocalStore.prototype.storePublic = function (keys) {
   storeKeys(this.storage, this.publicKeysItem, keys);
@@ -95,7 +95,7 @@ LocalStore.prototype.storePublic = function (keys) {
 /**
  * Saves the current state of the private keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
 LocalStore.prototype.storePrivate = function (keys) {
   storeKeys(this.storage, this.privateKeysItem, keys);

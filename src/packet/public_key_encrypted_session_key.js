@@ -67,7 +67,7 @@ function PublicKeyEncryptedSessionKey() {
  * @param {Integer} position Position to start reading from the input string
  * @param {Integer} len Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/public_key_encrypted_session_key} Object representation
+ * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
@@ -102,7 +102,7 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 
 /**
  * Encrypt session key packet
- * @param {module:packet/public_key} key Public key
+ * @param {module:packet.PublicKey} key Public key
  * @returns {Promise<Boolean>}
  * @async
  */
@@ -130,7 +130,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * Decrypts the session key (only for public key encrypted session key
  * packets (tag 1)
  *
- * @param {module:packet/secret_key} key
+ * @param {module:packet.SecretKey} key
  *            Private key with secret params unlocked
  * @returns {Promise<Boolean>}
  * @async

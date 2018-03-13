@@ -16,13 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * FIXME
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
  * @requires type/keyid
  * @requires type/mpi
  * @requires crypto
@@ -37,20 +30,43 @@ import enums from '../enums';
 import util from '../util';
 
 /**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.
+ *
  * A Public-Key packet starts a series of packets that forms an OpenPGP
  * key (sometimes called an OpenPGP certificate).
  * @memberof module:packet
  * @constructor
  */
 function PublicKey() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = enums.packet.publicKey;
+  /**
+   * Packet version
+   * @type {Integer}
+   */
   this.version = 4;
-  /** Key creation date.
-   * @type {Date} */
+  /**
+   * Key creation date.
+   * @type {Date}
+   */
   this.created = util.normalizeDate();
-  /* Algorithm specific params */
+  /**
+   * Algorithm specific params
+   * @type {Array<Object>}
+   */
   this.params = [];
-  // time in days (V3 only)
+  /**
+   * Time until expiration in days (V3 only)
+   * @type {Integer}
+   */
   this.expirationTimeV3 = 0;
   /**
    * Fingerprint in lowercase hex
@@ -110,7 +126,7 @@ PublicKey.prototype.read = function (bytes) {
 
 /**
  * Alias of read()
- * @see module:packet/public_key~PublicKey#read
+ * @see module:packet.PublicKey#read
  */
 PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
 
@@ -140,7 +156,7 @@ PublicKey.prototype.write = function () {
 
 /**
  * Alias of write()
- * @see module:packet/public_key~PublicKey#write
+ * @see module:packet.PublicKey#write
  */
 PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 

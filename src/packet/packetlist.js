@@ -1,6 +1,5 @@
 /* eslint-disable callback-return */
 /**
- * @fileoverview Provides a class for representing lists of OpenPGP packets.
  * @requires packet/all_packets
  * @requires packet/packet
  * @requires config

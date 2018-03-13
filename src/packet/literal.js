@@ -107,7 +107,7 @@ Literal.prototype.getFilename = function() {
  * Parsing function for a literal data packet (tag 11).
  *
  * @param {Uint8Array} input Payload of a tag 11 packet
- * @returns {module:packet/literal} object representation
+ * @returns {module:packet.Literal} object representation
  */
 Literal.prototype.read = function(bytes) {
   // - A one-octet field that describes how the data is formatted.

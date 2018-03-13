@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires encoding/armor
+ * @requires type/keyid
  * @requires config
  * @requires crypto
- * @requires encoding/armor
  * @requires enums
  * @requires util
  * @requires packet
@@ -27,13 +28,13 @@
  * @module message
  */
 
+import armor from './encoding/armor';
+import type_keyid from './type/keyid';
 import config from './config';
 import crypto from './crypto';
-import armor from './encoding/armor';
 import enums from './enums';
 import util from './util';
 import packet from './packet';
-import type_keyid from './type/keyid';
 import { Signature } from './signature';
 import { getPreferredHashAlgo, getPreferredSymAlgo } from './key';
 
@@ -42,7 +43,7 @@ import { getPreferredHashAlgo, getPreferredSymAlgo } from './key';
  * @class
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
- * @param  {module:packet/packetlist} packetlist The packets that form this message
+ * @param  {module:packet.List} packetlist The packets that form this message
  * See {@link https://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
@@ -361,7 +362,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>}        privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date}                   (optional) override the creation time of the signature
  * @returns {Promise<Message>}             new message with signed content
@@ -428,7 +429,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
 /**
  * Compresses the message (the literal and -if signed- signature data packets of the message)
  * @param  {module:enums.compression}   compression     compression algorithm to be used
- * @returns {module:message~Message}       new message with compressed content
+ * @returns {module:message.Message}       new message with compressed content
  */
 Message.prototype.compress = function(compression) {
   if (compression === enums.compression.uncompressed) {
@@ -447,10 +448,10 @@ Message.prototype.compress = function(compression) {
 
 /**
  * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>}               privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
- * @returns {Promise<module:signature~Signature>} new detached signature of message content
+ * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
 Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date()) {
@@ -463,11 +464,11 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
 
 /**
  * Create signature packets for the message
- * @param  {module:packet/literal}             literalDataPacket the literal data packet to sign
- * @param  {Array<module:key~Key>}             privateKeys private keys with decrypted secret key data for signing
+ * @param  {module:packet.Literal}             literalDataPacket the literal data packet to sign
+ * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
- * @returns {Promise<module:packet/packetlist>} list of signature packets
+ * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
@@ -508,7 +509,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
 
 /**
  * Verify message signatures
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
@@ -525,7 +526,7 @@ Message.prototype.verify = function(keys, date=new Date()) {
 
 /**
  * Verify detached message signature
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Signature} signature
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
@@ -543,9 +544,9 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
 
 /**
  * Create list of objects containing signer's keyid and validity of signature
- * @param {Array<module:packet/signature>} signatureList array of signature packets
- * @param {Array<module:packet/literal>} literalDataList array of literal data packets
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:packet.Signature>} signatureList array of signature packets
+ * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid,
@@ -578,7 +579,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
 
 /**
  * Unwrap compressed message
- * @returns {module:message~Message} message Content of compressed message
+ * @returns {module:message.Message} message Content of compressed message
  */
 Message.prototype.unwrapCompressed = function() {
   const compressed = this.packets.filterByTag(enums.packet.compressed);
@@ -607,7 +608,7 @@ Message.prototype.armor = function() {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 export function readArmored(armoredText) {
@@ -634,7 +635,7 @@ export function read(input) {
  * @param {String} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 export function fromText(text, filename, date=new Date()) {
@@ -654,7 +655,7 @@ export function fromText(text, filename, date=new Date()) {
  * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date()) {

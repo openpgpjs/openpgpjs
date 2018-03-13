@@ -16,22 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires enums
- * @requires packet
  * @requires encoding/armor
+ * @requires packet
+ * @requires enums
  * @module signature
  */
 
+import armor from './encoding/armor';
 import packet from './packet';
 import enums from './enums';
-import armor from './encoding/armor';
 
 /**
  * @class
  * @classdesc Class that represents an OpenPGP signature.
- * @param  {module:packet/packetlist} packetlist The signature packets
+ * @param  {module:packet.List} packetlist The signature packets
  */
-
 export function Signature(packetlist) {
   if (!(this instanceof Signature)) {
     return new Signature(packetlist);
