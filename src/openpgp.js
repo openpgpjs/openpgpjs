@@ -99,7 +99,9 @@ export function destroyWorker() {
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
- * @param  {String} curve            (optional) elliptic curve for ECC keys: curve25519, p256, p384, p521, or secp256k1
+ * @param  {String} curve            (optional) elliptic curve for ECC keys:
+ *                                              curve25519, p256, p384, p521, secp256k1,
+ *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @returns {Promise<Object>}         The generated key object in the form:

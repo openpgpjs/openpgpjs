@@ -48,14 +48,17 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 * Version 3.0.0 of the library introduces support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available or [Elliptic](https://github.com/indutny/elliptic) otherwise. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported (* = when available):
 
 
-    | Curve      | Encryption | Signature | Elliptic | NodeCrypto | WebCrypto |
-    |:---------- |:----------:|:---------:|:--------:|:----------:|:---------:|
-    | p256       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
-    | p384       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
-    | p521       | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
-    | secp256k1  | ECDH       | ECDSA     | Yes      | Yes*       | No        |
-    | curve25519 | ECDH       | N/A       | Yes      | No         | No        |
-    | ed25519    | N/A        | EdDSA     | Yes      | No         | No        |
+    | Curve           | Encryption | Signature | Elliptic | NodeCrypto | WebCrypto |
+    |:--------------- |:----------:|:---------:|:--------:|:----------:|:---------:|
+    | p256            | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | p384            | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | p521            | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
+    | secp256k1       | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+    | curve25519      | ECDH       | N/A       | Yes      | No (TODO)  | No        |
+    | ed25519         | N/A        | EdDSA     | Yes      | No (TODO)  | No        |
+    | brainpoolP256r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
+    | brainpoolP384r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
+    | brainpoolP512r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
 
 * Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
 
@@ -199,8 +202,9 @@ var options = {
 
 ECC keys:
 
-Possible values for curve are curve25519, ed25519, p256, p384, p521, or secp256k1.
-Note that options both curve25519 and ed25519 generate a primary key for signing using Ed25519
+Possible values for curve are: `curve25519`, `ed25519`, `p256`, `p384`, `p521`, `secp256k1`,
+`brainpoolP256r1`, `brainpoolP384r1`, or `brainpoolP512r1`.
+Note that options both `curve25519` and `ed25519` generate a primary key for signing using Ed25519
 and a subkey for encryption using Curve25519.
 
 ```js
