@@ -14283,6 +14283,67 @@ defineCurve('ed25519', {
   ]
 });
 
+// https://tools.ietf.org/html/rfc5639#section-3.4
+defineCurve('brainpoolP256r1', {
+  type: 'short',
+  prime: null,
+  p: 'A9FB57DB A1EEA9BC 3E660A90 9D838D72 6E3BF623 D5262028 2013481D 1F6E5377',
+  a: '7D5A0975 FC2C3057 EEF67530 417AFFE7 FB8055C1 26DC5C6C E94A4B44 F330B5D9',
+  b: '26DC5C6C E94A4B44 F330B5D9 BBD77CBF 95841629 5CF7E1CE 6BCCDC18 FF8C07B6',
+  n: 'A9FB57DB A1EEA9BC 3E660A90 9D838D71 8C397AA3 B561A6F7 901E0E82 974856A7',
+  hash: hash.sha256, // or 384, or 512
+  gRed: false,
+  g: [
+    '8BD2AEB9CB7E57CB2C4B482FFC81B7AFB9DE27E1E3BD23C23A4453BD9ACE3262',
+    '547EF835C3DAC4FD97F8461A14611DC9C27745132DED8E545C1D54C72F046997'
+  ]
+});
+
+// https://tools.ietf.org/html/rfc5639#section-3.6
+defineCurve('brainpoolP384r1', {
+  type: 'short',
+  prime: null,
+  p: '8CB91E82 A3386D28 0F5D6F7E 50E641DF 152F7109 ED5456B4 12B1DA19 7FB71123' +
+    'ACD3A729 901D1A71 87470013 3107EC53',
+  a: '7BC382C6 3D8C150C 3C72080A CE05AFA0 C2BEA28E 4FB22787 139165EF BA91F90F' +
+    '8AA5814A 503AD4EB 04A8C7DD 22CE2826',
+  b: '04A8C7DD 22CE2826 8B39B554 16F0447C 2FB77DE1 07DCD2A6 2E880EA5 3EEB62D5' +
+    '7CB43902 95DBC994 3AB78696 FA504C11',
+  n: '8CB91E82 A3386D28 0F5D6F7E 50E641DF 152F7109 ED5456B3 1F166E6C AC0425A7' +
+    'CF3AB6AF 6B7FC310 3B883202 E9046565',
+  hash: hash.sha384, // or 512
+  gRed: false,
+  g: [
+    '1D1C64F068CF45FFA2A63A81B7C13F6B8847A3E77EF14FE3DB7FCAFE0CBD10' +
+      'E8E826E03436D646AAEF87B2E247D4AF1E',
+    '8ABE1D7520F9C2A45CB1EB8E95CFD55262B70B29FEEC5864E19C054FF99129' +
+      '280E4646217791811142820341263C5315'
+  ]
+});
+
+// https://tools.ietf.org/html/rfc5639#section-3.7
+defineCurve('brainpoolP512r1', {
+  type: 'short',
+  prime: null,
+  p: 'AADD9DB8 DBE9C48B 3FD4E6AE 33C9FC07 CB308DB3 B3C9D20E D6639CCA 70330871' +
+    '7D4D9B00 9BC66842 AECDA12A E6A380E6 2881FF2F 2D82C685 28AA6056 583A48F3',
+  a: '7830A331 8B603B89 E2327145 AC234CC5 94CBDD8D 3DF91610 A83441CA EA9863BC' +
+    '2DED5D5A A8253AA1 0A2EF1C9 8B9AC8B5 7F1117A7 2BF2C7B9 E7C1AC4D 77FC94CA',
+  b: '3DF91610 A83441CA EA9863BC 2DED5D5A A8253AA1 0A2EF1C9 8B9AC8B5 7F1117A7' +
+    '2BF2C7B9 E7C1AC4D 77FC94CA DC083E67 984050B7 5EBAE5DD 2809BD63 8016F723',
+  n: 'AADD9DB8 DBE9C48B 3FD4E6AE 33C9FC07 CB308DB3 B3C9D20E D6639CCA 70330870' +
+    '553E5C41 4CA92619 41866119 7FAC1047 1DB1D381 085DDADD B5879682 9CA90069',
+  hash: hash.sha512,
+  gRed: false,
+  g: [
+    '81AEE4BDD82ED9645A21322E9C4C6A9385ED9F70B5D916C1B43B62EEF4D009' +
+      '8EFF3B1F78E2D0D48D50D1687B93B97D5F7C6D5047406A5E688B352209BCB9F822',
+    '7DDE385D566332ECC0EABFA9CF7822FDF209F70024A57B1AA000C55B881F81' +
+      '11B2DCDE494A5F485E5BCA4BD88A2763AED1CA2B2FA8F0540678CD1E0F3AD80892'
+  ]
+});
+
+// https://en.bitcoin.it/wiki/Secp256k1
 var pre;
 try {
   pre = _dereq_('./precomputed/secp256k1');
@@ -16080,9 +16141,9 @@ module.exports={
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "github:openpgpjs/elliptic#8b8ee8475b86402b125d4ad3a863a4ccd762e48c",
+  "_resolved": "github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
   "_spec": "elliptic@github:openpgpjs/elliptic",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
+  "_where": "/Users/bbutler/Projects/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -16133,7 +16194,7 @@ module.exports={
   "name": "elliptic",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/indutny/elliptic.git"
+    "url": "git@github.com:indutny/elliptic"
   },
   "scripts": {
     "jscs": "jscs benchmarks/*.js lib/*.js lib/**/*.js lib/**/**/*.js test/index.js",
@@ -26643,8 +26704,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @class
  * @classdesc Class that represents an OpenPGP cleartext signed message.
  * See {@link https://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String}     text       The cleartext of the signed message
- * @param  {module:signature} signature       The detached signature or an empty signature if message not yet signed
+ * @param  {String}           text       The cleartext of the signed message
+ * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -26699,10 +26760,10 @@ CleartextMessage.prototype.getSigningKeyIds = function () {
 
 /**
  * Sign the cleartext message
- * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @returns {Promise<module:message~CleartextMessage>} new cleartext message with signed content
+ * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
 CleartextMessage.prototype.sign = function () {
@@ -26737,10 +26798,10 @@ CleartextMessage.prototype.sign = function () {
 
 /**
  * Sign the cleartext message
- * @param  {Array<module:key~Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @returns {Promise<module:signature~Signature>}      new detached signature of message content
+ * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
 CleartextMessage.prototype.signDetached = function () {
@@ -26779,7 +26840,7 @@ CleartextMessage.prototype.signDetached = function () {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
@@ -26792,7 +26853,7 @@ CleartextMessage.prototype.verify = function (keys) {
 
 /**
  * Verify signatures of cleartext signed message
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
@@ -26838,7 +26899,7 @@ CleartextMessage.prototype.armor = function () {
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String} armoredText text to be parsed
- * @returns {module:cleartext~CleartextMessage} new cleartext message object
+ * @returns {module:cleartext.CleartextMessage} new cleartext message object
  * @static
  */
 function readArmored(armoredText) {
@@ -26855,9 +26916,9 @@ function readArmored(armoredText) {
 
 /**
  * Compare hash algorithm specified in the armor header with signatures
- * @private
  * @param  {Array<String>} headers    Armor headers
- * @param  {module:packet/packetlist} packetlist The packetlist with signature packets
+ * @param  {module:packet.List} packetlist The packetlist with signature packets
+ * @private
  */
 function verifyHeaders(headers, packetlist) {
   var checkHashAlgos = function checkHashAlgos(hashAlgos) {
@@ -27590,59 +27651,118 @@ var _enums2 = _interopRequireDefault(_enums);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = {
-  /** @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash} */
+  /**
+   * @memberof module:config
+   * @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash}
+   */
   prefer_hash_algorithm: _enums2.default.hash.sha256,
-  /** @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric} */
+  /**
+   * @memberof module:config
+   * @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric}
+   */
   encryption_cipher: _enums2.default.symmetric.aes256,
-  /** @property {Integer} compression Default compression algorithm {@link module:enums.compression} */
+  /**
+   * @memberof module:config
+   * @property {Integer} compression Default compression algorithm {@link module:enums.compression}
+   */
   compression: _enums2.default.compression.uncompressed,
-  /** @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9 */
+  /**
+   * @memberof module:config
+   * @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9
+   */
   deflate_level: 6,
 
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * @memberof module:config
    * @property {Boolean} aead_protect
    */
   aead_protect: false,
   /** Use integrity protection for symmetric encryption
-   * @property {Boolean} integrity_protect */
+   * @memberof module:config
+   * @property {Boolean} integrity_protect
+   */
   integrity_protect: true,
-  /** @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected */
+  /**
+   * @memberof module:config
+   * @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected
+   */
   ignore_mdc_error: false,
-  /** @property {Boolean} checksum_required Do not throw error when armor is missing a checksum */
+  /**
+   * @memberof module:config
+   * @property {Boolean} checksum_required Do not throw error when armor is missing a checksum
+   */
   checksum_required: false,
-  /** @property {Boolean} rsa_blinding */
+  /**
+   * @memberof module:config
+   * @property {Boolean} rsa_blinding
+   */
   rsa_blinding: true,
-  /** Work-around for rare GPG decryption bug when encrypting with multiple passwords
-   * Slower and slightly less secure
+  /**
+   * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
+   * **Slower and slightly less secure**
+   * @memberof module:config
    * @property {Boolean} password_collision_check
    */
   password_collision_check: false,
-  /** @property {Boolean} revocations_expire If true, expired revocation signatures are ignored */
+  /**
+   * @memberof module:config
+   * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
+   */
   revocations_expire: false,
 
-  /** @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available */
+  /**
+   * @memberof module:config
+   * @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available
+   */
   use_native: true,
-  /** @property {Boolean} Use transferable objects between the Web Worker and main thread */
+  /**
+   * @memberof module:config
+   * @property {Boolean} Use transferable objects between the Web Worker and main thread
+   */
   zero_copy: false,
-  /** @property {Boolean} debug If enabled, debug messages will be printed */
+  /**
+   * @memberof module:config
+   * @property {Boolean} debug If enabled, debug messages will be printed
+   */
   debug: false,
-  /** @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error */
+  /**
+   * @memberof module:config
+   * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error
+   */
   tolerant: true,
 
-  /** @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages */
+  /**
+   * @memberof module:config
+   * @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages
+   */
   show_version: true,
-  /** @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages */
+  /**
+   * @memberof module:config
+   * @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages
+   */
   show_comment: true,
-  /** @property {String} versionstring A version string to be included in armored messages */
-  versionstring: "OpenPGP.js v3.0.0",
-  /** @property {String} commentstring A comment string to be included in armored messages */
+  /**
+   * @memberof module:config
+   * @property {String} versionstring A version string to be included in armored messages
+   */
+  versionstring: "OpenPGP.js v3.0.1",
+  /**
+   * @memberof module:config
+   * @property {String} commentstring A comment string to be included in armored messages
+   */
   commentstring: "https://openpgpjs.org",
 
-  /** @property {String} keyserver */
+  /**
+   * @memberof module:config
+   * @property {String} keyserver
+   */
   keyserver: "https://keyserver.ubuntu.com",
-  /** @property {String} node_store */
+  /**
+   * @memberof module:config
+   * @property {String} node_store
+   */
   node_store: "./openpgp.store"
 }; // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -27662,9 +27782,8 @@ exports.default = {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * This object contains global configuration values.
+ * Global configuration values.
  * @requires enums
- * @module config/config
  */
 
 },{"../enums":337}],306:[function(_dereq_,module,exports){
@@ -27719,7 +27838,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
+/**
+ * @fileoverview Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
+ * @see module:crypto/public_key/elliptic/ecdh
+ * @requires crypto/cipher
+ * @requires util
+ * @module crypto/aes_kw
+ */
 
 function wrap(key, data) {
   var aes = new _cipher2.default["aes" + key.length * 8](key);
@@ -27830,7 +27955,22 @@ function pack() {
 }
 
 exports.default = {
+  /**
+   * AES key wrap
+   * @function
+   * @param {String} key
+   * @param {String} data
+   * @returns {Uint8Array}
+   */
   wrap: wrap,
+  /**
+   * AES key unwrap
+   * @function
+   * @param {String} key
+   * @param {String} data
+   * @returns {Uint8Array}
+   * @throws {Error}
+   */
   unwrap: unwrap
 };
 
@@ -27850,8 +27990,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 exports.default = {
 
   /**
-   * This function encrypts a given with the specified prefixrandom
-   * using the specified blockcipher to encrypt a message
+   * This function encrypts a given plaintext with the specified prefixrandom
+   * using the specified blockcipher
    * @param {Uint8Array} prefixrandom random bytes of block_size length
    *  to be used in prefixing the data
    * @param {String} cipherfn the algorithm cipher class to encrypt
@@ -27985,9 +28125,9 @@ exports.default = {
     result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
     return result;
   },
+
   /**
-   * This function decrypts a given plaintext using the specified
-   * blockcipher to decrypt a message
+   * This function decrypts a given ciphertext using the specified blockcipher
    * @param {String} cipherfn the algorithm cipher class to decrypt
    *  data in one block_size encryption, {@link module:crypto/cipher}.
    * @param {Uint8Array} key Uint8Array representation of key to be used to decrypt the ciphertext.
@@ -27999,7 +28139,6 @@ exports.default = {
    *  encryptedintegrityprotecteddata packet is not resyncing the IV.
    * @returns {Uint8Array} the plaintext data
    */
-
   decrypt: function decrypt(cipherfn, key, ciphertext, resync) {
     cipherfn = new _cipher2.default[cipherfn](key);
     var block_size = cipherfn.blockSize;
@@ -28198,7 +28337,6 @@ function aes(length) {
   return c;
 } /**
    * @requires asmcrypto.js
-   * @module crypto/cipher/aes
    */
 
 exports.default = aes;
@@ -28212,10 +28350,6 @@ Object.defineProperty(exports, "__esModule", {
 /* Modified by Recurity Labs GmbH
  *
  * Originally written by nklein software (nklein.com)
- */
-
-/**
- *  @module crypto/cipher/blowfish
  */
 
 /*
@@ -28413,7 +28547,6 @@ Blowfish.prototype.init = function (key) {
 };
 
 // added by Recurity Labs
-
 function BF(key) {
   this.bf = new Blowfish();
   this.bf.init(key);
@@ -28449,8 +28582,6 @@ Object.defineProperty(exports, "__esModule", {
 
 
 // CAST5 constructor
-
-/** @module crypto/cipher/cast5 */
 
 function OpenpgpSymencCast5() {
   this.BlockSize = 8;
@@ -28808,10 +28939,6 @@ Object.defineProperty(exports, "__esModule", {
 
 //des
 //this takes the key, the message, and whether to encrypt or decrypt
-
-/**
- * @module crypto/cipher/des
- */
 
 function des(keys, message, encrypt, mode, iv, padding) {
   //declaring this locally speeds things up a bit
@@ -29194,21 +29321,75 @@ var _blowfish2 = _interopRequireDefault(_blowfish);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = {
-  /** @see module:crypto/cipher/aes */
+  /**
+   * AES-128 encryption and decryption (ID 7)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes128: (0, _aes2.default)(128),
+  /**
+   * AES-128 Block Cipher (ID 8)
+   * @function
+   * @param {String} key 192-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes192: (0, _aes2.default)(192),
+  /**
+   * AES-128 Block Cipher (ID 9)
+   * @function
+   * @param {String} key 256-bit key
+   * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+   * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
+   * @returns {Object}
+   * @requires asmcrypto.js
+   */
   aes256: (0, _aes2.default)(256),
-  /** @see module:crypto/cipher/des~DES */
+  // Not in OpenPGP specifications
   des: _des2.default.DES,
-  /** @see module:crypto/cipher/des~TripleDES */
+  /**
+   * Triple DES Block Cipher (ID 2)
+   * @function
+   * @param {String} key 192-bit key
+   * @see {@link https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-67r2.pdf|NIST SP 800-67}
+   * @returns {Object}
+   */
   tripledes: _des2.default.TripleDES,
-  /** @see module:crypto/cipher/cast5 */
+  /**
+   * CAST-128 Block Cipher (ID 3)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://tools.ietf.org/html/rfc2144|The CAST-128 Encryption Algorithm}
+   * @returns {Object}
+   */
   cast5: _cast2.default,
-  /** @see module:crypto/cipher/twofish */
+  /**
+   * Twofish Block Cipher (ID 10)
+   * @function
+   * @param {String} key 256-bit key
+   * @see {@link https://tools.ietf.org/html/rfc4880#ref-TWOFISH|TWOFISH}
+   * @returns {Object}
+   */
   twofish: _twofish2.default,
-  /** @see module:crypto/cipher/blowfish */
+  /**
+   * Blowfish Block Cipher (ID 4)
+   * @function
+   * @param {String} key 128-bit key
+   * @see {@link https://tools.ietf.org/html/rfc4880#ref-BLOWFISH|BLOWFISH}
+   * @returns {Object}
+   */
   blowfish: _blowfish2.default,
-  /** Not implemented */
+  /**
+   * Not implemented
+   * @function
+   * @throws {Error}
+   */
   idea: function idea() {
     throw new Error('IDEA symmetric-key algorithm not implemented');
   }
@@ -29228,6 +29409,15 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _from = _dereq_("babel-runtime/core-js/array/from");
+
+var _from2 = _interopRequireDefault(_from);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/* eslint-disable no-mixed-operators */
+
 /* Modified by Recurity Labs GmbH
  *
  * Cipher.js
@@ -29247,12 +29437,6 @@ Object.defineProperty(exports, "__esModule", {
  *     All rights for these routines are reserved to Michiel van Everdingen.
  *
  */
-
-/**
- * @module crypto/cipher/twofish
- */
-
-/* eslint-disable no-mixed-operators */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Math
@@ -29533,20 +29717,11 @@ function createTwofish() {
 
 function TF(key) {
   this.tf = createTwofish();
-  this.tf.open(toArray(key), 0);
+  this.tf.open((0, _from2.default)(key), 0);
 
   this.encrypt = function (block) {
-    return this.tf.encrypt(toArray(block), 0);
+    return this.tf.encrypt((0, _from2.default)(block), 0);
   };
-}
-
-function toArray(typedArray) {
-  // Array.apply([], typedArray) does not work in PhantomJS 1.9
-  var result = [];
-  for (var i = 0; i < typedArray.length; i++) {
-    result[i] = typedArray[i];
-  }
-  return result;
 }
 
 TF.keySize = TF.prototype.keySize = 32;
@@ -29554,7 +29729,7 @@ TF.blockSize = TF.prototype.blockSize = 16;
 
 exports.default = TF;
 
-},{}],315:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":16}],315:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29634,6 +29809,8 @@ function constructParams(types, data) {
 // The GPG4Browsers crypto interface
 
 /**
+ * @fileoverview Provides functions for asymmetric encryption and decryption as
+ * well as key generation and parameter handling for all public-key cryptosystems.
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -30183,7 +30360,10 @@ var _util2 = _interopRequireDefault(_util);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * @fileoverview Hashing functions
+ * @fileoverview Provides an interface to hashing functions available in Node.js or external libraries.
+ * @see {@link https://github.com/srijs/rusha|Rusha}
+ * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
+ * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @requires rusha
  * @requires asmcrypto.js
  * @requires hash.js
@@ -30206,7 +30386,7 @@ function node_hash(type) {
 
 function hashjs_hash(hash) {
   return function (data) {
-    return _util2.default.str_to_Uint8Array(_util2.default.hex_to_str(hash().update(data).digest('hex')));
+    return _util2.default.hex_to_Uint8Array(hash().update(data).digest('hex'));
   };
 }
 
@@ -30225,34 +30405,34 @@ if (nodeCrypto) {
 } else {
   // Use JS fallbacks
   hash_fns = {
-    /** @see module:./md5 */
     md5: _md2.default,
-    /** @see module:rusha */
     sha1: function sha1(data) {
-      return _util2.default.str_to_Uint8Array(_util2.default.hex_to_str(rusha.digest(data)));
+      return _util2.default.hex_to_Uint8Array(rusha.digest(data));
     },
-    /** @see module:hash.js */
     sha224: hashjs_hash(_2.default),
-    /** @see module:asmcrypto */
     sha256: _exports.SHA256.bytes,
-    /** @see module:hash.js */
     sha384: hashjs_hash(_4.default),
     // TODO, benchmark this vs asmCrypto's SHA512
-    /** @see module:hash.js */
     sha512: hashjs_hash(_6.default),
-    /** @see module:hash.js */
     ripemd: hashjs_hash(_ripemd.ripemd160)
   };
 }
 
 exports.default = {
 
+  /** @see module:md5 */
   md5: hash_fns.md5,
+  /** @see rusha */
   sha1: hash_fns.sha1,
+  /** @see hash.js */
   sha224: hash_fns.sha224,
+  /** @see asmCrypto */
   sha256: hash_fns.sha256,
+  /** @see hash.js */
   sha384: hash_fns.sha384,
+  /** @see hash.js */
   sha512: hash_fns.sha512,
+  /** @see hash.js */
   ripemd: hash_fns.ripemd,
 
   /**
@@ -30335,10 +30515,7 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * MD5 hash
- * @param {String} entree string to hash
- */
+// MD5 Digest
 function md5(entree) {
   var digest = md51(_util2.default.Uint8Array_to_str(entree));
   return _util2.default.hex_to_Uint8Array(hex(digest));
@@ -30358,7 +30535,6 @@ function md5(entree) {
 
 /**
  * @requires util
- * @module crypto/hash/md5
  */
 
 function md5cycle(x, k) {
@@ -30700,6 +30876,16 @@ var getPkcs1Padding = function () {
   };
 }();
 
+/**
+ * Create a EME-PKCS1-v1_5 padded message
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1}
+ * @param {String} M message to be encoded
+ * @param {Integer} k the length in octets of the key modulus
+ * @returns {Promise<String>} EME-PKCS1 padded message
+ * @async
+ */
+
+
 var _random = _dereq_('./random');
 
 var _random2 = _interopRequireDefault(_random);
@@ -30714,10 +30900,10 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * ASN1 object identifiers for hashes (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2})
- */
-var hash_headers = []; // GPG4Browsers - An OpenPGP implementation in javascript
+/** @namespace */
+var eme = {};
+/** @namespace */
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -30735,133 +30921,133 @@ var hash_headers = []; // GPG4Browsers - An OpenPGP implementation in javascript
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * PKCS1 encoding
+ * @fileoverview Provides EME-PKCS1-v1_5 encoding and decoding and EMSA-PKCS1-v1_5 encoding function
+ * @see module:crypto/public_key/rsa
+ * @see module:crypto/public_key/elliptic/ecdh
+ * @see module:packet.PublicKeyEncryptedSessionKey
  * @requires crypto/random
  * @requires crypto/hash
  * @requires util
  * @module crypto/pkcs1
  */
 
+var emsa = {};
+
+/**
+ * ASN1 object identifiers for hashes
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.2}
+ */
+var hash_headers = [];
 hash_headers[1] = [0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04, 0x10];
 hash_headers[2] = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14];
 hash_headers[3] = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x24, 0x03, 0x02, 0x01, 0x05, 0x00, 0x04, 0x14];
 hash_headers[8] = [0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20];
 hash_headers[9] = [0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30];
 hash_headers[10] = [0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40];
-hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1C];exports.default = {
-  eme: {
-    /**
-     * create a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1})
-     * @param {String} M message to be encoded
-     * @param {Integer} k the length in octets of the key modulus
-     * @returns {Promise<String>} EME-PKCS1 padded message
-     * @async
-     */
-    encode: function () {
-      var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(M, k) {
-        var mLen, PS;
-        return _regenerator2.default.wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                mLen = M.length;
-                // length checking
+hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1C];eme.encode = function () {
+  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(M, k) {
+    var mLen, PS;
+    return _regenerator2.default.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            mLen = M.length;
+            // length checking
 
-                if (!(mLen > k - 11)) {
-                  _context2.next = 3;
-                  break;
-                }
-
-                throw new Error('Message too long');
-
-              case 3:
-                _context2.next = 5;
-                return getPkcs1Padding(k - mLen - 3);
-
-              case 5:
-                PS = _context2.sent;
-                return _context2.abrupt('return', String.fromCharCode(0) + String.fromCharCode(2) + PS + String.fromCharCode(0) + M);
-
-              case 7:
-              case 'end':
-                return _context2.stop();
+            if (!(mLen > k - 11)) {
+              _context2.next = 3;
+              break;
             }
-          }
-        }, _callee2, this);
-      }));
 
-      function encode(_x2, _x3) {
-        return _ref2.apply(this, arguments);
-      }
+            throw new Error('Message too long');
 
-      return encode;
-    }(),
-    /**
-     * decodes a EME-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2})
-     * @param {String} EM encoded message, an octet string
-     * @returns {String} message, an octet string
-     */
-    decode: function decode(EM) {
-      // leading zeros truncated by bn.js
-      if (EM.charCodeAt(0) !== 0) {
-        EM = String.fromCharCode(0) + EM;
-      }
-      var firstOct = EM.charCodeAt(0);
-      var secondOct = EM.charCodeAt(1);
-      var i = 2;
-      while (EM.charCodeAt(i) !== 0 && i < EM.length) {
-        i++;
-      }
-      var psLen = i - 2;
-      var separator = EM.charCodeAt(i++);
-      if (firstOct === 0 && secondOct === 2 && psLen >= 8 && separator === 0) {
-        return EM.substr(i);
-      }
-      throw new Error('Decryption error');
-    }
-  },
+          case 3:
+            _context2.next = 5;
+            return getPkcs1Padding(k - mLen - 3);
 
-  emsa: {
-    /**
-     * create a EMSA-PKCS1-v1_5 padding (See {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3})
-     * @param {Integer} algo Hash algorithm type used
-     * @param {String} M message to be encoded
-     * @param {Integer} emLen intended length in octets of the encoded message
-     * @returns {String} encoded message
-     */
-    encode: function encode(algo, M, emLen) {
-      var i = void 0;
-      // Apply the hash function to the message M to produce a hash value H
-      var H = _util2.default.Uint8Array_to_str(_hash2.default.digest(algo, _util2.default.str_to_Uint8Array(M)));
-      if (H.length !== _hash2.default.getHashByteLength(algo)) {
-        throw new Error('Invalid hash length');
+          case 5:
+            PS = _context2.sent;
+            return _context2.abrupt('return', String.fromCharCode(0) + String.fromCharCode(2) + PS + String.fromCharCode(0) + M);
+
+          case 7:
+          case 'end':
+            return _context2.stop();
+        }
       }
-      // produce an ASN.1 DER value for the hash function used.
-      // Let T be the full hash prefix
-      var T = '';
-      for (i = 0; i < hash_headers[algo].length; i++) {
-        T += String.fromCharCode(hash_headers[algo][i]);
-      }
-      // add hash value to prefix
-      T += H;
-      // and let tLen be the length in octets of T
-      var tLen = T.length;
-      if (emLen < tLen + 11) {
-        throw new Error('Intended encoded message length too short');
-      }
-      // an octet string PS consisting of emLen - tLen - 3 octets with hexadecimal value 0xFF
-      // The length of PS will be at least 8 octets
-      var PS = '';
-      for (i = 0; i < emLen - tLen - 3; i++) {
-        PS += String.fromCharCode(0xff);
-      }
-      // Concatenate PS, the hash prefix T, and other padding to form the
-      // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || T.
-      var EM = String.fromCharCode(0x00) + String.fromCharCode(0x01) + PS + String.fromCharCode(0x00) + T;
-      return _util2.default.str_to_hex(EM);
-    }
+    }, _callee2, this);
+  }));
+
+  return function (_x2, _x3) {
+    return _ref2.apply(this, arguments);
+  };
+}();
+
+/**
+ * Decode a EME-PKCS1-v1_5 padded message
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2}
+ * @param {String} EM encoded message, an octet string
+ * @returns {String} message, an octet string
+ */
+eme.decode = function (EM) {
+  // leading zeros truncated by bn.js
+  if (EM.charCodeAt(0) !== 0) {
+    EM = String.fromCharCode(0) + EM;
   }
+  var firstOct = EM.charCodeAt(0);
+  var secondOct = EM.charCodeAt(1);
+  var i = 2;
+  while (EM.charCodeAt(i) !== 0 && i < EM.length) {
+    i++;
+  }
+  var psLen = i - 2;
+  var separator = EM.charCodeAt(i++);
+  if (firstOct === 0 && secondOct === 2 && psLen >= 8 && separator === 0) {
+    return EM.substr(i);
+  }
+  throw new Error('Decryption error');
 };
+
+/**
+ * Create a EMSA-PKCS1-v1_5 padded message
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3}
+ * @param {Integer} algo Hash algorithm type used
+ * @param {String} M message to be encoded
+ * @param {Integer} emLen intended length in octets of the encoded message
+ * @returns {String} encoded message
+ */
+emsa.encode = function (algo, M, emLen) {
+  var i = void 0;
+  // Apply the hash function to the message M to produce a hash value H
+  var H = _util2.default.Uint8Array_to_str(_hash2.default.digest(algo, _util2.default.str_to_Uint8Array(M)));
+  if (H.length !== _hash2.default.getHashByteLength(algo)) {
+    throw new Error('Invalid hash length');
+  }
+  // produce an ASN.1 DER value for the hash function used.
+  // Let T be the full hash prefix
+  var T = '';
+  for (i = 0; i < hash_headers[algo].length; i++) {
+    T += String.fromCharCode(hash_headers[algo][i]);
+  }
+  // add hash value to prefix
+  T += H;
+  // and let tLen be the length in octets of T
+  var tLen = T.length;
+  if (emLen < tLen + 11) {
+    throw new Error('Intended encoded message length too short');
+  }
+  // an octet string PS consisting of emLen - tLen - 3 octets with hexadecimal value 0xFF
+  // The length of PS will be at least 8 octets
+  var PS = '';
+  for (i = 0; i < emLen - tLen - 3; i++) {
+    PS += String.fromCharCode(0xff);
+  }
+  // Concatenate PS, the hash prefix T, and other padding to form the
+  // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || T.
+  var EM = String.fromCharCode(0x00) + String.fromCharCode(0x01) + PS + String.fromCharCode(0x00) + T;
+  return _util2.default.str_to_hex(EM);
+};
+
+exports.default = { eme: eme, emsa: emsa };
 
 },{"../util":376,"./hash":317,"./random":333,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],321:[function(_dereq_,module,exports){
 'use strict';
@@ -30886,7 +31072,11 @@ Object.defineProperty(exports, "__esModule", {
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Functions to add and remove PKCS5 padding
+/**
+ * @fileoverview Functions to add and remove PKCS5 padding
+ * @see module:packet.PublicKeyEncryptedSessionKey
+ * @module crypto/pkcs5
+ */
 
 /**
  * Add pkcs5 padding to a text.
@@ -31727,13 +31917,13 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 /**
  * Encrypt and wrap a session key
  *
- * @param  {module:type/oid} oid          Elliptic curve object identifier
- * @param  {Enums}           cipher_algo  Symmetric cipher to use
- * @param  {Enums}           hash_algo    Hash algorithm to use
- * @param  {module:type/mpi} m            Value derived from session key (RFC 6637)
- * @param  {Uint8Array}      Q            Recipient public key
- * @param  {String}          fingerprint  Recipient fingerprint
- * @returns {{V: BN, C: BN}}               Returns ephemeral key and encoded session key
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {{V: BN, C: BN}}                     Returns ephemeral key and encoded session key
  * @async
  */
 var encrypt = function () {
@@ -31779,14 +31969,14 @@ var encrypt = function () {
 /**
  * Decrypt and unwrap the value derived from session key
  *
- * @param  {module:type/oid} oid          Elliptic curve object identifier
- * @param  {Enums}           cipher_algo  Symmetric cipher to use
- * @param  {Enums}           hash_algo    Hash algorithm to use
- * @param  {BN}              V            Public part of ephemeral key
- * @param  {Uint8Array}      C            Encrypted and wrapped value derived from session key
- * @param  {Uint8Array}      d            Recipient private key
- * @param  {String}          fingerprint  Recipient fingerprint
- * @returns {Uint8Array}                   Value derived from session
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Uint8Array}                         Value derived from session
  * @async
  */
 
@@ -31886,7 +32076,7 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
  * @requires crypto/hash
@@ -31918,10 +32108,10 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 /**
  * Sign a message using the provided key
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
- * @param  {Uint8Array}      m          Message to sign
- * @param  {Uint8Array}      d          Private key used to sign the message
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used to sign
+ * @param  {Uint8Array}        m         Message to sign
+ * @param  {Uint8Array}        d         Private key used to sign the message
  * @returns {{r: Uint8Array,
  *            s: Uint8Array}}            Signature of the message
  * @async
@@ -31946,7 +32136,7 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 /**
  * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
  * @requires crypto/hash
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/ecdsa
  */
 
@@ -31982,12 +32172,12 @@ var sign = function () {
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used in the signature
  * @param  {{r: Uint8Array,
-             s: Uint8Array}} signature  Signature to verify
- * @param  {Uint8Array}      m          Message to verify
- * @param  {Uint8Array}      Q          Public key used to verify the message
+             s: Uint8Array}}   signature Signature to verify
+ * @param  {Uint8Array}        m         Message to verify
+ * @param  {Uint8Array}        Q         Public key used to verify the message
  * @returns {Boolean}
  * @async
  */
@@ -32046,10 +32236,10 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 /**
  * Sign a message using the provided key
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used to sign
- * @param  {Uint8Array}      m          Message to sign
- * @param  {Uint8Array}      d          Private key used to sign
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used to sign
+ * @param  {Uint8Array}        m         Message to sign
+ * @param  {Uint8Array}        d         Private key used to sign
  * @returns {{R: Uint8Array,
  *            S: Uint8Array}}            Signature of the message
  * @async
@@ -32086,12 +32276,12 @@ var sign = function () {
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {module:type/oid} oid        Elliptic curve object identifier
- * @param  {enums.hash}      hash_algo  Hash algorithm used in the signature
+ * @param  {module:type/oid}   oid       Elliptic curve object identifier
+ * @param  {module:enums.hash} hash_algo Hash algorithm used in the signature
  * @param  {{R: Uint8Array,
-             S: Uint8Array}} signature  Signature to verify the message
- * @param  {Uint8Array}      m          Message to verify
- * @param  {Uint8Array}      Q          Public key used to verify the message
+             S: Uint8Array}}   signature Signature to verify the message
+ * @param  {Uint8Array}        m         Message to verify
+ * @param  {Uint8Array}        Q         Public key used to verify the message
  * @returns {Boolean}
  * @async
  */
@@ -32116,7 +32306,7 @@ var sign = function () {
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @requires bn.js
  * @requires crypto/hash
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/eddsa
  */
 
@@ -32462,7 +32652,7 @@ var webCrypto = _util2.default.getWebCrypto(); // OpenPGP.js - An OpenPGP implem
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
- * @requires crypto/public_key/elliptic/curves
+ * @requires crypto/public_key/elliptic/curve
  * @requires crypto/hash
  * @requires util
  * @requires enums
@@ -32654,26 +32844,25 @@ var _dsa2 = _interopRequireDefault(_dsa);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/** @see module:crypto/public_key/elliptic */
 /**
  * @fileoverview Asymmetric cryptography functions
- * @see module:crypto/public_key/dsa
- * @see module:crypto/public_key/elgamal
- * @see module:crypto/public_key/elliptic
- * @see module:crypto/public_key/rsa
+ * @requires crypto/public_key/dsa
+ * @requires crypto/public_key/elgamal
+ * @requires crypto/public_key/elliptic
+ * @requires crypto/public_key/rsa
  * @module crypto/public_key
  */
 
-/** @see module:crypto/public_key/rsa */
 exports.default = {
+  /** @see module:crypto/public_key/rsa */
   rsa: _rsa2.default,
+  /** @see module:crypto/public_key/elgamal */
   elgamal: _elgamal2.default,
+  /** @see module:crypto/public_key/elliptic */
   elliptic: _elliptic2.default,
+  /** @see module:crypto/public_key/dsa */
   dsa: _dsa2.default
 };
-/** @see module:crypto/public_key/dsa */
-
-/** @see module:crypto/public_key/elgamal */
 
 },{"./dsa":322,"./elgamal":323,"./elliptic":328,"./rsa":332}],331:[function(_dereq_,module,exports){
 'use strict';
@@ -33130,11 +33319,11 @@ function promisifyIE11Op(keyObj, err) {
 
 exports.default = {
   /** Create signature
-   * @param m message as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @param d private MPI part as BN
-   * @returns BN
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @param {BN} d RSA private exponent
+   * @returns {BN} RSA Signature
    * @async
    */
   sign: function () {
@@ -33172,10 +33361,10 @@ exports.default = {
 
   /**
    * Verify signature
-   * @param s signature as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @returns BN
+   * @param {BN} s signature
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @returns {BN}
    * @async
    */
   verify: function () {
@@ -33213,10 +33402,10 @@ exports.default = {
 
   /**
    * Encrypt message
-   * @param m message as BN
-   * @param n public MPI part as BN
-   * @param e public MPI part as BN
-   * @returns BN
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @returns {BN} RSA Ciphertext
    * @async
    */
   encrypt: function () {
@@ -33254,14 +33443,14 @@ exports.default = {
 
   /**
    * Decrypt RSA message
-   * @param m message as BN
-   * @param n RSA public modulus n as BN
-   * @param e RSA public exponent as BN
-   * @param d RSA d as BN
-   * @param p RSA p as BN
-   * @param q RSA q as BN
-   * @param u RSA u as BN
-   * @returns {BN} The decrypted value of the message
+   * @param {BN} m message
+   * @param {BN} n RSA public modulus
+   * @param {BN} e RSA public exponent
+   * @param {BN} d RSA private exponent
+   * @param {BN} p RSA private prime p
+   * @param {BN} q RSA private prime q
+   * @param {BN} u RSA private inverse of prime q
+   * @returns {BN} RSA Plaintext
    * @async
    */
   decrypt: function () {
@@ -33334,7 +33523,11 @@ exports.default = {
   }(),
 
   /**
-   * Generate a new random private key B bits long with public exponent E
+   * Generate a new random private key B bits long with public exponent E.
+   *
+   * When possible, webCrypto is used. Otherwise, primes are generated using
+   * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
+   * @see module:crypto/public_key/prime
    * @param {Integer} B RSA bit length
    * @param {String}  E RSA public exponent in hex string
    * @returns {{n: BN, e: BN, d: BN,
@@ -33544,6 +33737,7 @@ var nodeCrypto = _util2.default.detectNode() && _dereq_('crypto'); // GPG4Browse
 // The GPG4Browsers crypto interface
 
 /**
+ * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @requires bn.js
  * @requires type/mpi
  * @requires util
@@ -33845,7 +34039,7 @@ exports.default = {
    * @param {Array<module:type/mpi>} msg_MPIs  Algorithm-specific signature parameters
    * @param {Array<module:type/mpi>} pub_MPIs  Algorithm-specific public key parameters
    * @param {Uint8Array}             data      Data for which the signature was created
-   * @returns {Boolean}                         True if signature is valid
+   * @returns {Boolean}                        True if signature is valid
    * @async
    */
   verify: function () {
@@ -33924,7 +34118,7 @@ exports.default = {
    * @param {module:enums.hash}      hash_algo  Hash algorithm
    * @param {Array<module:type/mpi>} key_params Algorithm-specific public and private key parameters
    * @param {Uint8Array}             data       Data to be signed
-   * @returns {Uint8Array}                       Signature
+   * @returns {Uint8Array}                      Signature
    * @async
    */
   sign: function () {
@@ -34006,6 +34200,7 @@ exports.default = {
     return sign;
   }()
 }; /**
+    * @fileoverview Provides functions for asymmetric signing and signature verification
     * @requires bn.js
     * @requires crypto/public_key
     * @requires crypto/pkcs1
@@ -35364,73 +35559,73 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  * @param  {Function} checkFn optional, signature only merged if true
  */
 var mergeSignatures = function () {
-  var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(source, dest, attr, checkFn) {
-    return _regenerator2.default.wrap(function _callee19$(_context19) {
+  var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(source, dest, attr, checkFn) {
+    return _regenerator2.default.wrap(function _callee17$(_context17) {
       while (1) {
-        switch (_context19.prev = _context19.next) {
+        switch (_context17.prev = _context17.next) {
           case 0:
             source = source[attr];
 
             if (!source) {
-              _context19.next = 8;
+              _context17.next = 8;
               break;
             }
 
             if (dest[attr].length) {
-              _context19.next = 6;
+              _context17.next = 6;
               break;
             }
 
             dest[attr] = source;
-            _context19.next = 8;
+            _context17.next = 8;
             break;
 
           case 6:
-            _context19.next = 8;
+            _context17.next = 8;
             return _promise2.default.all(source.map(function () {
-              var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(sourceSig) {
-                return _regenerator2.default.wrap(function _callee18$(_context18) {
+              var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(sourceSig) {
+                return _regenerator2.default.wrap(function _callee16$(_context16) {
                   while (1) {
-                    switch (_context18.prev = _context18.next) {
+                    switch (_context16.prev = _context16.next) {
                       case 0:
-                        _context18.t1 = !sourceSig.isExpired();
+                        _context16.t1 = !sourceSig.isExpired();
 
-                        if (!_context18.t1) {
-                          _context18.next = 8;
+                        if (!_context16.t1) {
+                          _context16.next = 8;
                           break;
                         }
 
-                        _context18.t2 = !checkFn;
+                        _context16.t2 = !checkFn;
 
-                        if (_context18.t2) {
-                          _context18.next = 7;
+                        if (_context16.t2) {
+                          _context16.next = 7;
                           break;
                         }
 
-                        _context18.next = 6;
+                        _context16.next = 6;
                         return checkFn(sourceSig);
 
                       case 6:
-                        _context18.t2 = _context18.sent;
+                        _context16.t2 = _context16.sent;
 
                       case 7:
-                        _context18.t1 = _context18.t2;
+                        _context16.t1 = _context16.t2;
 
                       case 8:
-                        _context18.t0 = _context18.t1;
+                        _context16.t0 = _context16.t1;
 
-                        if (!_context18.t0) {
-                          _context18.next = 11;
+                        if (!_context16.t0) {
+                          _context16.next = 11;
                           break;
                         }
 
-                        _context18.t0 = !dest[attr].some(function (destSig) {
+                        _context16.t0 = !dest[attr].some(function (destSig) {
                           return _util2.default.equalsUint8Array(destSig.signature, sourceSig.signature);
                         });
 
                       case 11:
-                        if (!_context18.t0) {
-                          _context18.next = 13;
+                        if (!_context16.t0) {
+                          _context16.next = 13;
                           break;
                         }
 
@@ -35438,27 +35633,27 @@ var mergeSignatures = function () {
 
                       case 13:
                       case 'end':
-                        return _context18.stop();
+                        return _context16.stop();
                     }
                   }
-                }, _callee18, this);
+                }, _callee16, this);
               }));
 
-              return function (_x32) {
-                return _ref20.apply(this, arguments);
+              return function (_x29) {
+                return _ref18.apply(this, arguments);
               };
             }()));
 
           case 8:
           case 'end':
-            return _context19.stop();
+            return _context17.stop();
         }
       }
-    }, _callee19, this);
+    }, _callee17, this);
   }));
 
-  return function mergeSignatures(_x28, _x29, _x30, _x31) {
-    return _ref19.apply(this, arguments);
+  return function mergeSignatures(_x25, _x26, _x27, _x28) {
+    return _ref17.apply(this, arguments);
   };
 }();
 
@@ -35467,23 +35662,25 @@ var mergeSignatures = function () {
 
 /**
  * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
- * @param {module:key~Key} options.privateKey   The private key to reformat
+ * @param {module:key.Key} options.privateKey   The private key to reformat
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
- * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
-                                                     If array is used, the first userId is set as primary user Id
+ * @param {String|Array<String>}  options.userIds
+ *                             Assumes already in form of "User Name <username@email.com>"
+ *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
- * @returns {Promise<module:key~Key>}
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
 var reformat = exports.reformat = function () {
-  var _ref44 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee41(options) {
+  var _ref42 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(options) {
     var secretKeyPacket, secretSubkeyPacket, isDecrypted, packetlist, i;
-    return _regenerator2.default.wrap(function _callee41$(_context41) {
+    return _regenerator2.default.wrap(function _callee39$(_context39) {
       while (1) {
-        switch (_context41.prev = _context41.next) {
+        switch (_context39.prev = _context39.next) {
           case 0:
             secretKeyPacket = void 0;
             secretSubkeyPacket = void 0;
@@ -35492,33 +35689,33 @@ var reformat = exports.reformat = function () {
             // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
 
             if (!(options.keyType !== _enums2.default.publicKey.rsa_encrypt_sign)) {
-              _context41.next = 5;
+              _context39.next = 5;
               break;
             }
 
             throw new Error('Only RSA Encrypt or Sign supported');
 
           case 5:
-            _context41.prev = 5;
+            _context39.prev = 5;
             isDecrypted = options.privateKey.getKeyPackets().every(function (keyPacket) {
               return keyPacket.isDecrypted;
             });
 
             if (isDecrypted) {
-              _context41.next = 10;
+              _context39.next = 10;
               break;
             }
 
-            _context41.next = 10;
+            _context39.next = 10;
             return options.privateKey.decrypt();
 
           case 10:
-            _context41.next = 15;
+            _context39.next = 15;
             break;
 
           case 12:
-            _context41.prev = 12;
-            _context41.t0 = _context41['catch'](5);
+            _context39.prev = 12;
+            _context39.t0 = _context39['catch'](5);
             throw new Error('Key not decrypted');
 
           case 15:
@@ -35543,50 +35740,50 @@ var reformat = exports.reformat = function () {
             }
 
             if (secretKeyPacket) {
-              _context41.next = 21;
+              _context39.next = 21;
               break;
             }
 
             throw new Error('Key does not contain a secret key packet');
 
           case 21:
-            return _context41.abrupt('return', wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options));
+            return _context39.abrupt('return', wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options));
 
           case 22:
           case 'end':
-            return _context41.stop();
+            return _context39.stop();
         }
       }
-    }, _callee41, this, [[5, 12]]);
+    }, _callee39, this, [[5, 12]]);
   }));
 
-  return function reformat(_x68) {
-    return _ref44.apply(this, arguments);
+  return function reformat(_x65) {
+    return _ref42.apply(this, arguments);
   };
 }();
 
 var wrapKeyObject = function () {
-  var _ref45 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee43(secretKeyPacket, secretSubkeyPacket, options) {
+  var _ref43 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee41(secretKeyPacket, secretSubkeyPacket, options) {
     var packetlist, dataToSign, subkeySignaturePacket;
-    return _regenerator2.default.wrap(function _callee43$(_context43) {
+    return _regenerator2.default.wrap(function _callee41$(_context41) {
       while (1) {
-        switch (_context43.prev = _context43.next) {
+        switch (_context41.prev = _context41.next) {
           case 0:
             if (!options.passphrase) {
-              _context43.next = 6;
+              _context41.next = 6;
               break;
             }
 
-            _context43.next = 3;
+            _context41.next = 3;
             return secretKeyPacket.encrypt(options.passphrase);
 
           case 3:
             if (!secretSubkeyPacket) {
-              _context43.next = 6;
+              _context41.next = 6;
               break;
             }
 
-            _context43.next = 6;
+            _context41.next = 6;
             return secretSubkeyPacket.encrypt(options.passphrase);
 
           case 6:
@@ -35595,13 +35792,13 @@ var wrapKeyObject = function () {
 
             packetlist.push(secretKeyPacket);
 
-            _context43.next = 10;
+            _context41.next = 10;
             return _promise2.default.all(options.userIds.map(function () {
-              var _ref46 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee42(userId, index) {
+              var _ref44 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(userId, index) {
                 var userIdPacket, dataToSign, signaturePacket;
-                return _regenerator2.default.wrap(function _callee42$(_context42) {
+                return _regenerator2.default.wrap(function _callee40$(_context40) {
                   while (1) {
-                    switch (_context42.prev = _context42.next) {
+                    switch (_context40.prev = _context40.next) {
                       case 0:
                         userIdPacket = new _packet2.default.Userid();
 
@@ -35615,11 +35812,11 @@ var wrapKeyObject = function () {
 
                         signaturePacket.signatureType = _enums2.default.signature.cert_generic;
                         signaturePacket.publicKeyAlgorithm = options.keyType;
-                        _context42.next = 10;
+                        _context40.next = 10;
                         return getPreferredHashAlgo(secretKeyPacket);
 
                       case 10:
-                        signaturePacket.hashAlgorithm = _context42.sent;
+                        signaturePacket.hashAlgorithm = _context40.sent;
 
                         signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
                         signaturePacket.preferredSymmetricAlgorithms = [];
@@ -35648,27 +35845,27 @@ var wrapKeyObject = function () {
                           signaturePacket.keyExpirationTime = options.keyExpirationTime;
                           signaturePacket.keyNeverExpires = false;
                         }
-                        _context42.next = 30;
+                        _context40.next = 30;
                         return signaturePacket.sign(secretKeyPacket, dataToSign);
 
                       case 30:
-                        return _context42.abrupt('return', { userIdPacket: userIdPacket, signaturePacket: signaturePacket });
+                        return _context40.abrupt('return', { userIdPacket: userIdPacket, signaturePacket: signaturePacket });
 
                       case 31:
                       case 'end':
-                        return _context42.stop();
+                        return _context40.stop();
                     }
                   }
-                }, _callee42, this);
+                }, _callee40, this);
               }));
 
-              return function (_x72, _x73) {
-                return _ref46.apply(this, arguments);
+              return function (_x69, _x70) {
+                return _ref44.apply(this, arguments);
               };
             }())).then(function (list) {
-              list.forEach(function (_ref47) {
-                var userIdPacket = _ref47.userIdPacket,
-                    signaturePacket = _ref47.signaturePacket;
+              list.forEach(function (_ref45) {
+                var userIdPacket = _ref45.userIdPacket,
+                    signaturePacket = _ref45.signaturePacket;
 
                 packetlist.push(userIdPacket);
                 packetlist.push(signaturePacket);
@@ -35677,7 +35874,7 @@ var wrapKeyObject = function () {
 
           case 10:
             if (!secretSubkeyPacket) {
-              _context43.next = 26;
+              _context41.next = 26;
               break;
             }
 
@@ -35689,18 +35886,18 @@ var wrapKeyObject = function () {
 
             subkeySignaturePacket.signatureType = _enums2.default.signature.subkey_binding;
             subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
-            _context43.next = 19;
+            _context41.next = 19;
             return getPreferredHashAlgo(secretSubkeyPacket);
 
           case 19:
-            subkeySignaturePacket.hashAlgorithm = _context43.sent;
+            subkeySignaturePacket.hashAlgorithm = _context41.sent;
 
             subkeySignaturePacket.keyFlags = [_enums2.default.keyFlags.encrypt_communication | _enums2.default.keyFlags.encrypt_storage];
             if (options.keyExpirationTime > 0) {
               subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
               subkeySignaturePacket.keyNeverExpires = false;
             }
-            _context43.next = 24;
+            _context41.next = 24;
             return subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
           case 24:
@@ -35717,32 +35914,32 @@ var wrapKeyObject = function () {
               }
             }
 
-            return _context43.abrupt('return', new Key(packetlist));
+            return _context41.abrupt('return', new Key(packetlist));
 
           case 28:
           case 'end':
-            return _context43.stop();
+            return _context41.stop();
         }
       }
-    }, _callee43, this);
+    }, _callee41, this);
   }));
 
-  return function wrapKeyObject(_x69, _x70, _x71) {
-    return _ref45.apply(this, arguments);
+  return function wrapKeyObject(_x66, _x67, _x68) {
+    return _ref43.apply(this, arguments);
   };
 }();
 
 /**
  * Checks if a given certificate or binding signature is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key}       primaryKey   The primary key packet
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey}       primaryKey   The primary key packet
  * @param  {Object}                         dataToVerify The data to check
- * @param  {Array<module:packet/signature>} revocations  The revocation signatures to check
- * @param  {module:packet/signature}        signature    The certificate or signature to check
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key packet to check the signature
+ * @param  {Array<module:packet.Signature>} revocations  The revocation signatures to check
+ * @param  {module:packet.Signature}        signature    The certificate or signature to check
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async
@@ -35750,96 +35947,96 @@ var wrapKeyObject = function () {
 
 
 var isDataRevoked = function () {
-  var _ref48 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee45(primaryKey, dataToVerify, revocations, signature, key) {
+  var _ref46 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee43(primaryKey, dataToVerify, revocations, signature, key) {
     var date = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : new Date();
     var normDate, revocationKeyIds;
-    return _regenerator2.default.wrap(function _callee45$(_context45) {
+    return _regenerator2.default.wrap(function _callee43$(_context43) {
       while (1) {
-        switch (_context45.prev = _context45.next) {
+        switch (_context43.prev = _context43.next) {
           case 0:
             key = key || primaryKey;
             normDate = _util2.default.normalizeDate(date);
             revocationKeyIds = [];
-            _context45.next = 5;
+            _context43.next = 5;
             return _promise2.default.all(revocations.map(function () {
-              var _ref49 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee44(revocationSignature) {
-                return _regenerator2.default.wrap(function _callee44$(_context44) {
+              var _ref47 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee42(revocationSignature) {
+                return _regenerator2.default.wrap(function _callee42$(_context42) {
                   while (1) {
-                    switch (_context44.prev = _context44.next) {
+                    switch (_context42.prev = _context42.next) {
                       case 0:
-                        _context44.t0 = !(_config2.default.revocations_expire && revocationSignature.isExpired(normDate));
+                        _context42.t0 = !(_config2.default.revocations_expire && revocationSignature.isExpired(normDate));
 
-                        if (!_context44.t0) {
-                          _context44.next = 8;
+                        if (!_context42.t0) {
+                          _context42.next = 8;
                           break;
                         }
 
-                        _context44.t1 = revocationSignature.verified;
+                        _context42.t1 = revocationSignature.verified;
 
-                        if (_context44.t1) {
-                          _context44.next = 7;
+                        if (_context42.t1) {
+                          _context42.next = 7;
                           break;
                         }
 
-                        _context44.next = 6;
+                        _context42.next = 6;
                         return revocationSignature.verify(key, dataToVerify);
 
                       case 6:
-                        _context44.t1 = _context44.sent;
+                        _context42.t1 = _context42.sent;
 
                       case 7:
-                        _context44.t0 = _context44.t1;
+                        _context42.t0 = _context42.t1;
 
                       case 8:
-                        if (!_context44.t0) {
-                          _context44.next = 11;
+                        if (!_context42.t0) {
+                          _context42.next = 11;
                           break;
                         }
 
                         // TODO get an identifier of the revoked object instead
                         revocationKeyIds.push(revocationSignature.issuerKeyId);
-                        return _context44.abrupt('return', true);
+                        return _context42.abrupt('return', true);
 
                       case 11:
-                        return _context44.abrupt('return', false);
+                        return _context42.abrupt('return', false);
 
                       case 12:
                       case 'end':
-                        return _context44.stop();
+                        return _context42.stop();
                     }
                   }
-                }, _callee44, this);
+                }, _callee42, this);
               }));
 
-              return function (_x80) {
-                return _ref49.apply(this, arguments);
+              return function (_x77) {
+                return _ref47.apply(this, arguments);
               };
             }()));
 
           case 5:
             if (!signature) {
-              _context45.next = 8;
+              _context43.next = 8;
               break;
             }
 
             signature.revoked = revocationKeyIds.some(function (keyId) {
               return keyId.equals(signature.issuerKeyId);
             }) ? true : signature.revoked;
-            return _context45.abrupt('return', signature.revoked);
+            return _context43.abrupt('return', signature.revoked);
 
           case 8:
-            return _context45.abrupt('return', revocationKeyIds.length > 0);
+            return _context43.abrupt('return', revocationKeyIds.length > 0);
 
           case 9:
           case 'end':
-            return _context45.stop();
+            return _context43.stop();
         }
       }
-    }, _callee45, this);
+    }, _callee43, this);
   }));
 
-  return function isDataRevoked(_x74, _x75, _x76, _x77, _x78) {
-    return _ref48.apply(this, arguments);
+  return function isDataRevoked(_x71, _x72, _x73, _x74, _x75) {
+    return _ref46.apply(this, arguments);
   };
 }();
 
@@ -35850,26 +36047,26 @@ var isDataRevoked = function () {
  * @async
  */
 var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
-  var _ref50 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee46(key) {
+  var _ref48 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee44(key) {
     var hash_algo, pref_algo, primaryUser, _primaryUser$selfCert;
 
-    return _regenerator2.default.wrap(function _callee46$(_context46) {
+    return _regenerator2.default.wrap(function _callee44$(_context44) {
       while (1) {
-        switch (_context46.prev = _context46.next) {
+        switch (_context44.prev = _context44.next) {
           case 0:
             hash_algo = _config2.default.prefer_hash_algorithm;
             pref_algo = hash_algo;
 
             if (!(key instanceof Key)) {
-              _context46.next = 8;
+              _context44.next = 8;
               break;
             }
 
-            _context46.next = 5;
+            _context44.next = 5;
             return key.getPrimaryUser();
 
           case 5:
-            primaryUser = _context46.sent;
+            primaryUser = _context44.sent;
 
             if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
               _primaryUser$selfCert = (0, _slicedToArray3.default)(primaryUser.selfCertification.preferredHashAlgorithms, 1);
@@ -35893,57 +36090,57 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
                     pref_algo = _crypto2.default.publicKey.elliptic.getPreferredHashAlgo(key.params[0]);
                 }
             }
-            return _context46.abrupt('return', _crypto2.default.hash.getHashByteLength(hash_algo) <= _crypto2.default.hash.getHashByteLength(pref_algo) ? pref_algo : hash_algo);
+            return _context44.abrupt('return', _crypto2.default.hash.getHashByteLength(hash_algo) <= _crypto2.default.hash.getHashByteLength(pref_algo) ? pref_algo : hash_algo);
 
           case 10:
           case 'end':
-            return _context46.stop();
+            return _context44.stop();
         }
       }
-    }, _callee46, this);
+    }, _callee44, this);
   }));
 
-  return function getPreferredHashAlgo(_x82) {
-    return _ref50.apply(this, arguments);
+  return function getPreferredHashAlgo(_x79) {
+    return _ref48.apply(this, arguments);
   };
 }();
 
 /**
  * Returns the preferred symmetric algorithm for a set of keys
- * @param  {Array<module:key~Key>} keys Set of keys
+ * @param  {Array<module:key.Key>} keys Set of keys
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
 
 
 var getPreferredSymAlgo = exports.getPreferredSymAlgo = function () {
-  var _ref51 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee48(keys) {
+  var _ref49 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee46(keys) {
     var prioMap, prefAlgo, algo;
-    return _regenerator2.default.wrap(function _callee48$(_context48) {
+    return _regenerator2.default.wrap(function _callee46$(_context46) {
       while (1) {
-        switch (_context48.prev = _context48.next) {
+        switch (_context46.prev = _context46.next) {
           case 0:
             prioMap = {};
-            _context48.next = 3;
+            _context46.next = 3;
             return _promise2.default.all(keys.map(function () {
-              var _ref52 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee47(key) {
+              var _ref50 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee45(key) {
                 var primaryUser;
-                return _regenerator2.default.wrap(function _callee47$(_context47) {
+                return _regenerator2.default.wrap(function _callee45$(_context45) {
                   while (1) {
-                    switch (_context47.prev = _context47.next) {
+                    switch (_context45.prev = _context45.next) {
                       case 0:
-                        _context47.next = 2;
+                        _context45.next = 2;
                         return key.getPrimaryUser();
 
                       case 2:
-                        primaryUser = _context47.sent;
+                        primaryUser = _context45.sent;
 
                         if (!(!primaryUser || !primaryUser.selfCertification.preferredSymmetricAlgorithms)) {
-                          _context47.next = 5;
+                          _context45.next = 5;
                           break;
                         }
 
-                        return _context47.abrupt('return', _config2.default.encryption_cipher);
+                        return _context45.abrupt('return', _config2.default.encryption_cipher);
 
                       case 5:
                         primaryUser.selfCertification.preferredSymmetricAlgorithms.forEach(function (algo, index) {
@@ -35954,14 +36151,14 @@ var getPreferredSymAlgo = exports.getPreferredSymAlgo = function () {
 
                       case 6:
                       case 'end':
-                        return _context47.stop();
+                        return _context45.stop();
                     }
                   }
-                }, _callee47, this);
+                }, _callee45, this);
               }));
 
-              return function (_x84) {
-                return _ref52.apply(this, arguments);
+              return function (_x81) {
+                return _ref50.apply(this, arguments);
               };
             }()));
 
@@ -35978,18 +36175,18 @@ var getPreferredSymAlgo = exports.getPreferredSymAlgo = function () {
                 }
               } catch (e) {}
             }
-            return _context48.abrupt('return', prefAlgo.algo);
+            return _context46.abrupt('return', prefAlgo.algo);
 
           case 6:
           case 'end':
-            return _context48.stop();
+            return _context46.stop();
         }
       }
-    }, _callee48, this);
+    }, _callee46, this);
   }));
 
-  return function getPreferredSymAlgo(_x83) {
-    return _ref51.apply(this, arguments);
+  return function getPreferredSymAlgo(_x80) {
+    return _ref49.apply(this, arguments);
   };
 }();
 
@@ -36028,9 +36225,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {module:packet/packetlist} packetlist The packets that form this key
+ * @param  {module:packet.List} packetlist The packets that form this key
  */
-
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -36076,7 +36272,7 @@ function Key(packetlist) {
 
 /**
  * Transforms packetlist to structured key data
- * @param  {module:packet/packetlist} packetlist The packets that form a key
+ * @param  {module:packet.List} packetlist The packets that form a key
  */
 Key.prototype.packetlist2structure = function (packetlist) {
   var user = void 0;
@@ -36151,7 +36347,7 @@ Key.prototype.packetlist2structure = function (packetlist) {
 
 /**
  * Transforms structured key data to packetlist
- * @returns {module:packet/packetlist} The packets that form a key
+ * @returns {module:packet.List} The packets that form a key
  */
 Key.prototype.toPacketlist = function () {
   var packetlist = new _packet2.default.List();
@@ -36171,7 +36367,7 @@ Key.prototype.toPacketlist = function () {
  * Returns packetlist containing all public or private subkey packets matching keyId;
  * If keyId is not present, returns all subkey packets.
  * @param  {type/keyid} keyId
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 Key.prototype.getSubkeyPackets = function () {
   var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -36189,7 +36385,7 @@ Key.prototype.getSubkeyPackets = function () {
  * Returns a packetlist containing all public or private key packets matching keyId.
  * If keyId is not present, returns all key packets starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 Key.prototype.getKeyPackets = function () {
   var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -36242,7 +36438,7 @@ Key.prototype.isPrivate = function () {
 
 /**
  * Returns key as public key (shallow copy)
- * @returns {module:key~Key} new public Key
+ * @returns {module:key.Key} new public Key
  */
 Key.prototype.toPublic = function () {
   var packetlist = new _packet2.default.List();
@@ -36290,8 +36486,8 @@ function isValidSigningKeyPacket(keyPacket, signature) {
  * Returns first key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<module:packet/secret_subkey|
-                     module:packet/secret_key|null>} key packet or null if no signing key has been found
+ * @returns {Promise<module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
  * @async
  */
 Key.prototype.getSigningKeyPacket = function () {
@@ -36305,25 +36501,24 @@ Key.prototype.getSigningKeyPacket = function () {
           case 0:
             primaryKey = this.primaryKey;
             _context.next = 3;
-            return this.getPrimaryUser(date);
+            return this.verifyPrimaryKey(date);
 
           case 3:
-            primaryUser = _context.sent;
-            _context.t0 = primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date);
+            _context.t0 = _context.sent;
+            _context.t1 = _enums2.default.keyStatus.valid;
 
-            if (!_context.t0) {
-              _context.next = 9;
+            if (!(_context.t0 === _context.t1)) {
+              _context.next = 29;
               break;
             }
 
             _context.next = 8;
-            return this.verifyPrimaryKey(date);
+            return this.getPrimaryUser(date);
 
           case 8:
-            _context.t0 = _context.sent;
+            primaryUser = _context.sent;
 
-          case 9:
-            if (!_context.t0) {
+            if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
               _context.next = 11;
               break;
             }
@@ -36335,12 +36530,12 @@ Key.prototype.getSigningKeyPacket = function () {
 
           case 12:
             if (!(i < this.subKeys.length)) {
-              _context.next = 26;
+              _context.next = 29;
               break;
             }
 
             if (!(!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
-              _context.next = 23;
+              _context.next = 26;
               break;
             }
 
@@ -36348,35 +36543,43 @@ Key.prototype.getSigningKeyPacket = function () {
             return this.subKeys[i].verify(primaryKey, date);
 
           case 16:
+            _context.t2 = _context.sent;
+            _context.t3 = _enums2.default.keyStatus.valid;
+
+            if (!(_context.t2 === _context.t3)) {
+              _context.next = 26;
+              break;
+            }
+
             j = 0;
 
-          case 17:
+          case 20:
             if (!(j < this.subKeys[i].bindingSignatures.length)) {
-              _context.next = 23;
+              _context.next = 26;
               break;
             }
 
             if (!isValidSigningKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-              _context.next = 20;
+              _context.next = 23;
               break;
             }
 
             return _context.abrupt('return', this.subKeys[i].subKey);
 
-          case 20:
+          case 23:
             j++;
-            _context.next = 17;
+            _context.next = 20;
             break;
 
-          case 23:
+          case 26:
             i++;
             _context.next = 12;
             break;
 
-          case 26:
+          case 29:
             return _context.abrupt('return', null);
 
-          case 27:
+          case 30:
           case 'end':
             return _context.stop();
         }
@@ -36400,10 +36603,10 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
- * @returns {Promise<module:packet/public_subkey|
- *                   module:packet/secret_subkey|
- *                   module:packet/secret_key|
- *                   module:packet/public_key|null>} key packet or null if no encryption key has been found
+ * @returns {Promise<module:packet.PublicSubkey|
+ *                   module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|
+ *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
  * @async
  */
 Key.prototype.getEncryptionKeyPacket = function () {
@@ -36415,82 +36618,86 @@ Key.prototype.getEncryptionKeyPacket = function () {
         switch (_context2.prev = _context2.next) {
           case 0:
             primaryKey = this.primaryKey;
-            // V4: by convention subkeys are preferred for encryption service
-            // V3: keys MUST NOT have subkeys
+            _context2.next = 3;
+            return this.verifyPrimaryKey(date);
+
+          case 3:
+            _context2.t0 = _context2.sent;
+            _context2.t1 = _enums2.default.keyStatus.valid;
+
+            if (!(_context2.t0 === _context2.t1)) {
+              _context2.next = 29;
+              break;
+            }
 
             i = 0;
 
-          case 2:
+          case 7:
             if (!(i < this.subKeys.length)) {
-              _context2.next = 16;
+              _context2.next = 24;
               break;
             }
 
             if (!(!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
-              _context2.next = 13;
+              _context2.next = 21;
               break;
             }
 
-            _context2.next = 6;
+            _context2.next = 11;
             return this.subKeys[i].verify(primaryKey, date);
 
-          case 6:
+          case 11:
+            _context2.t2 = _context2.sent;
+            _context2.t3 = _enums2.default.keyStatus.valid;
+
+            if (!(_context2.t2 === _context2.t3)) {
+              _context2.next = 21;
+              break;
+            }
+
             j = 0;
 
-          case 7:
+          case 15:
             if (!(j < this.subKeys[i].bindingSignatures.length)) {
-              _context2.next = 13;
+              _context2.next = 21;
               break;
             }
 
             if (!isValidEncryptionKeyPacket(this.subKeys[i].subKey, this.subKeys[i].bindingSignatures[j], date)) {
-              _context2.next = 10;
+              _context2.next = 18;
               break;
             }
 
             return _context2.abrupt('return', this.subKeys[i].subKey);
 
-          case 10:
+          case 18:
             j++;
+            _context2.next = 15;
+            break;
+
+          case 21:
+            i++;
             _context2.next = 7;
             break;
 
-          case 13:
-            i++;
-            _context2.next = 2;
-            break;
-
-          case 16:
-            _context2.next = 18;
+          case 24:
+            _context2.next = 26;
             return this.getPrimaryUser(date);
 
-          case 18:
+          case 26:
             primaryUser = _context2.sent;
-            _context2.t0 = primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date);
 
-            if (!_context2.t0) {
-              _context2.next = 24;
-              break;
-            }
-
-            _context2.next = 23;
-            return this.verifyPrimaryKey(date);
-
-          case 23:
-            _context2.t0 = _context2.sent;
-
-          case 24:
-            if (!_context2.t0) {
-              _context2.next = 26;
+            if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
+              _context2.next = 29;
               break;
             }
 
             return _context2.abrupt('return', primaryKey);
 
-          case 26:
+          case 29:
             return _context2.abrupt('return', null);
 
-          case 27:
+          case 30:
           case 'end':
             return _context2.stop();
         }
@@ -36507,7 +36714,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
  * Encrypts all secret key and subkey packets matching keyId
  * @param  {module:type/keyid} keyId
  * @param  {String} passphrase
- * @returns {Promise<Array<module:packet/secret_key|module:packet/secret_subkey>>}
+ * @returns {Promise<Array<module:packet.SecretKey|module:packet.SecretSubkey>>}
  * @async
  */
 Key.prototype.encrypt = function () {
@@ -36633,12 +36840,12 @@ Key.prototype.decrypt = function () {
 
 /**
  * Checks if a signature on a key is revoked
- * @param  {module:packet/secret_key|
- * @param  {module:packet/signature}  signature    The signature to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ * @param  {module:packet.Signature}  signature    The signature to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
@@ -36666,86 +36873,92 @@ Key.prototype.isRevoked = function () {
 }();
 
 /**
- * Returns a packetlist containing all verified public or private key packets matching keyId.
- * If keyId is not present, returns all verified key packets starting with the primary key.
- * Verification is in the context of given date.
- * @param  {type/keyid} keyId
- * @param  {Date}       date  Use the given date instead of the current time
- * @returns {Promise<module:packet/packetlist>}
+ * Verify primary key. Checks for revocation signatures, expiration time
+ * and valid self signature
+ * @param {Date} date (optional) use the given date for verification instead of the current time
+ * @returns {Promise<module:enums.keyStatus>} The status of the primary key
  * @async
  */
-Key.prototype.verifyKeyPackets = function () {
-  var _ref8 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9() {
-    var _this = this;
+Key.prototype.verifyPrimaryKey = function () {
+  var _ref8 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8() {
+    var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
 
-    var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
-    var packets, primaryKey;
-    return _regenerator2.default.wrap(function _callee9$(_context9) {
+    var primaryKey, _ref9, user, selfCertification, currentTime;
+
+    return _regenerator2.default.wrap(function _callee8$(_context8) {
       while (1) {
-        switch (_context9.prev = _context9.next) {
+        switch (_context8.prev = _context8.next) {
           case 0:
-            packets = new _packet2.default.List();
             primaryKey = this.primaryKey;
-            _context9.next = 4;
-            return this.verifyPrimaryKey(date);
+            // check for key revocation signatures
 
-          case 4:
-            if (!_context9.sent) {
-              _context9.next = 6;
+            _context8.next = 3;
+            return this.isRevoked(null, null, date);
+
+          case 3:
+            if (!_context8.sent) {
+              _context8.next = 5;
               break;
             }
 
-            if (!keyId || primaryKey.getKeyId().equals(keyId)) {
-              packets.push(primaryKey);
+            return _context8.abrupt('return', _enums2.default.keyStatus.revoked);
+
+          case 5:
+            if (this.users.some(function (user) {
+              return user.userId && user.selfCertifications.length;
+            })) {
+              _context8.next = 7;
+              break;
             }
 
-          case 6:
-            _context9.next = 8;
-            return _promise2.default.all(this.subKeys.map(function () {
-              var _ref9 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8(subKey) {
-                return _regenerator2.default.wrap(function _callee8$(_context8) {
-                  while (1) {
-                    switch (_context8.prev = _context8.next) {
-                      case 0:
-                        if (!(!keyId || subKey.subKey.getKeyId().equals(keyId))) {
-                          _context8.next = 5;
-                          break;
-                        }
+            return _context8.abrupt('return', _enums2.default.keyStatus.no_self_cert);
 
-                        _context8.next = 3;
-                        return subKey.verify(primaryKey, date);
-
-                      case 3:
-                        if (!_context8.sent) {
-                          _context8.next = 5;
-                          break;
-                        }
-
-                        packets.push(subKey.subKey);
-
-                      case 5:
-                      case 'end':
-                        return _context8.stop();
-                    }
-                  }
-                }, _callee8, _this);
-              }));
-
-              return function (_x20) {
-                return _ref9.apply(this, arguments);
-              };
-            }()));
-
-          case 8:
-            return _context9.abrupt('return', packets);
+          case 7:
+            _context8.next = 9;
+            return this.getPrimaryUser(date);
 
           case 9:
+            _context8.t0 = _context8.sent;
+
+            if (_context8.t0) {
+              _context8.next = 12;
+              break;
+            }
+
+            _context8.t0 = {};
+
+          case 12:
+            _ref9 = _context8.t0;
+            user = _ref9.user;
+            selfCertification = _ref9.selfCertification;
+
+            if (user) {
+              _context8.next = 17;
+              break;
+            }
+
+            return _context8.abrupt('return', _enums2.default.keyStatus.invalid);
+
+          case 17:
+            // check for expiration time
+            currentTime = _util2.default.normalizeDate(date);
+
+            if (!(primaryKey.version === 3 && isDataExpired(primaryKey, null, date) || primaryKey.version === 4 && isDataExpired(primaryKey, selfCertification, date))) {
+              _context8.next = 20;
+              break;
+            }
+
+            return _context8.abrupt('return', _enums2.default.keyStatus.expired);
+
+          case 20:
+            return _context8.abrupt('return', _enums2.default.keyStatus.valid);
+
+          case 21:
           case 'end':
-            return _context9.stop();
+            return _context8.stop();
         }
       }
-    }, _callee9, this);
+    }, _callee8, this);
   }));
 
   return function () {
@@ -36754,145 +36967,51 @@ Key.prototype.verifyKeyPackets = function () {
 }();
 
 /**
- * Verify primary key. Checks for revocation signatures, expiration time
- * and valid self signature
- * @param {Date} date (optional) use the given date for verification instead of the current time
- * @returns {Promise<module:enums.keyStatus>} The status of the primary key
- * @async
- */
-Key.prototype.verifyPrimaryKey = function () {
-  var _ref10 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10() {
-    var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
-
-    var primaryKey, _ref11, user, selfCertification, currentTime;
-
-    return _regenerator2.default.wrap(function _callee10$(_context10) {
-      while (1) {
-        switch (_context10.prev = _context10.next) {
-          case 0:
-            primaryKey = this.primaryKey;
-            // check for key revocation signatures
-
-            _context10.next = 3;
-            return this.isRevoked(null, null, date);
-
-          case 3:
-            if (!_context10.sent) {
-              _context10.next = 5;
-              break;
-            }
-
-            return _context10.abrupt('return', _enums2.default.keyStatus.revoked);
-
-          case 5:
-            if (this.users.some(function (user) {
-              return user.userId && user.selfCertifications.length;
-            })) {
-              _context10.next = 7;
-              break;
-            }
-
-            return _context10.abrupt('return', _enums2.default.keyStatus.no_self_cert);
-
-          case 7:
-            _context10.next = 9;
-            return this.getPrimaryUser(date);
-
-          case 9:
-            _context10.t0 = _context10.sent;
-
-            if (_context10.t0) {
-              _context10.next = 12;
-              break;
-            }
-
-            _context10.t0 = {};
-
-          case 12:
-            _ref11 = _context10.t0;
-            user = _ref11.user;
-            selfCertification = _ref11.selfCertification;
-
-            if (user) {
-              _context10.next = 17;
-              break;
-            }
-
-            return _context10.abrupt('return', _enums2.default.keyStatus.invalid);
-
-          case 17:
-            // check for expiration time
-            currentTime = _util2.default.normalizeDate(date);
-
-            if (!(primaryKey.version === 3 && isDataExpired(primaryKey, null, date) || primaryKey.version === 4 && isDataExpired(primaryKey, selfCertification, date))) {
-              _context10.next = 20;
-              break;
-            }
-
-            return _context10.abrupt('return', _enums2.default.keyStatus.expired);
-
-          case 20:
-            return _context10.abrupt('return', _enums2.default.keyStatus.valid);
-
-          case 21:
-          case 'end':
-            return _context10.stop();
-        }
-      }
-    }, _callee10, this);
-  }));
-
-  return function () {
-    return _ref10.apply(this, arguments);
-  };
-}();
-
-/**
  * Returns the expiration time of the primary key or Infinity if key does not expire
  * @returns {Promise<Date>}
  * @async
  */
-Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11() {
+Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9() {
   var primaryUser;
-  return _regenerator2.default.wrap(function _callee11$(_context11) {
+  return _regenerator2.default.wrap(function _callee9$(_context9) {
     while (1) {
-      switch (_context11.prev = _context11.next) {
+      switch (_context9.prev = _context9.next) {
         case 0:
           if (!(this.primaryKey.version === 3)) {
-            _context11.next = 2;
+            _context9.next = 2;
             break;
           }
 
-          return _context11.abrupt('return', getExpirationTime(this.primaryKey));
+          return _context9.abrupt('return', getExpirationTime(this.primaryKey));
 
         case 2:
           if (!(this.primaryKey.version === 4)) {
-            _context11.next = 9;
+            _context9.next = 9;
             break;
           }
 
-          _context11.next = 5;
+          _context9.next = 5;
           return this.getPrimaryUser();
 
         case 5:
-          primaryUser = _context11.sent;
+          primaryUser = _context9.sent;
 
           if (primaryUser) {
-            _context11.next = 8;
+            _context9.next = 8;
             break;
           }
 
-          return _context11.abrupt('return', null);
+          return _context9.abrupt('return', null);
 
         case 8:
-          return _context11.abrupt('return', getExpirationTime(this.primaryKey, primaryUser.selfCertification));
+          return _context9.abrupt('return', getExpirationTime(this.primaryKey, primaryUser.selfCertification));
 
         case 9:
         case 'end':
-          return _context11.stop();
+          return _context9.stop();
       }
     }
-  }, _callee11, this);
+  }, _callee9, this);
 }));
 
 /**
@@ -36900,17 +37019,17 @@ Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<{user: Array<module:packet/User>,
- *                    selfCertification: Array<module:packet/signature>}|undefined>} The primary user and the self signature
+ * @returns {Promise<{user: Array<module:key.User>,
+ *                    selfCertification: Array<module:packet.Signature>}>} The primary user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = function () {
-  var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12() {
+  var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10() {
     var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
     var primaryKey, primaryUsers, lastCreated, lastPrimaryUserID, i, user, dataToVerify, j, cert;
-    return _regenerator2.default.wrap(function _callee12$(_context12) {
+    return _regenerator2.default.wrap(function _callee10$(_context10) {
       while (1) {
-        switch (_context12.prev = _context12.next) {
+        switch (_context10.prev = _context10.next) {
           case 0:
             primaryKey = this.primaryKey;
             primaryUsers = [];
@@ -36922,18 +37041,18 @@ Key.prototype.getPrimaryUser = function () {
 
           case 5:
             if (!(i < this.users.length)) {
-              _context12.next = 40;
+              _context10.next = 40;
               break;
             }
 
             user = this.users[i];
 
             if (user.userId) {
-              _context12.next = 9;
+              _context10.next = 9;
               break;
             }
 
-            return _context12.abrupt('return');
+            return _context10.abrupt('return');
 
           case 9:
             dataToVerify = { userid: user.userId, key: primaryKey };
@@ -36941,7 +37060,7 @@ Key.prototype.getPrimaryUser = function () {
 
           case 11:
             if (!(j < user.selfCertifications.length)) {
-              _context12.next = 37;
+              _context10.next = 37;
               break;
             }
 
@@ -36949,63 +37068,63 @@ Key.prototype.getPrimaryUser = function () {
             // skip if certificate is not the most recent
 
             if (!(cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID || !lastPrimaryUserID && cert.created < lastCreated)) {
-              _context12.next = 15;
+              _context10.next = 15;
               break;
             }
 
-            return _context12.abrupt('continue', 34);
+            return _context10.abrupt('continue', 34);
 
           case 15:
-            _context12.t0 = cert.verified;
+            _context10.t0 = cert.verified;
 
-            if (_context12.t0) {
-              _context12.next = 20;
+            if (_context10.t0) {
+              _context10.next = 20;
               break;
             }
 
-            _context12.next = 19;
+            _context10.next = 19;
             return cert.verify(primaryKey, dataToVerify);
 
           case 19:
-            _context12.t0 = _context12.sent;
+            _context10.t0 = _context10.sent;
 
           case 20:
-            if (_context12.t0) {
-              _context12.next = 22;
+            if (_context10.t0) {
+              _context10.next = 22;
               break;
             }
 
-            return _context12.abrupt('continue', 34);
+            return _context10.abrupt('continue', 34);
 
           case 22:
-            _context12.t1 = cert.revoked;
+            _context10.t1 = cert.revoked;
 
-            if (_context12.t1) {
-              _context12.next = 27;
+            if (_context10.t1) {
+              _context10.next = 27;
               break;
             }
 
-            _context12.next = 26;
+            _context10.next = 26;
             return user.isRevoked(primaryKey, cert, null, date);
 
           case 26:
-            _context12.t1 = _context12.sent;
+            _context10.t1 = _context10.sent;
 
           case 27:
-            if (!_context12.t1) {
-              _context12.next = 29;
+            if (!_context10.t1) {
+              _context10.next = 29;
               break;
             }
 
-            return _context12.abrupt('continue', 34);
+            return _context10.abrupt('continue', 34);
 
           case 29:
             if (!cert.isExpired(date)) {
-              _context12.next = 31;
+              _context10.next = 31;
               break;
             }
 
-            return _context12.abrupt('continue', 34);
+            return _context10.abrupt('continue', 34);
 
           case 31:
             lastPrimaryUserID = cert.isPrimaryUserID;
@@ -37014,12 +37133,12 @@ Key.prototype.getPrimaryUser = function () {
 
           case 34:
             j++;
-            _context12.next = 11;
+            _context10.next = 11;
             break;
 
           case 37:
             i++;
-            _context12.next = 5;
+            _context10.next = 5;
             break;
 
           case 40:
@@ -37029,18 +37148,18 @@ Key.prototype.getPrimaryUser = function () {
               var B = b.selfCertification;
               return B.isPrimaryUserID - A.isPrimaryUserID || B.created - A.created;
             });
-            return _context12.abrupt('return', primaryUsers.pop());
+            return _context10.abrupt('return', primaryUsers.pop());
 
           case 42:
           case 'end':
-            return _context12.stop();
+            return _context10.stop();
         }
       }
-    }, _callee12, this);
+    }, _callee10, this);
   }));
 
   return function () {
-    return _ref13.apply(this, arguments);
+    return _ref11.apply(this, arguments);
   };
 }();
 
@@ -37051,33 +37170,33 @@ Key.prototype.getPrimaryUser = function () {
  *
  * If the specified key is a private key and the destination key is public,
  * the destination key is transformed to a private key.
- * @param  {module:key~Key} key Source key to merge
+ * @param  {module:key.Key} key Source key to merge
  */
 Key.prototype.update = function () {
-  var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(key) {
+  var _ref12 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(key) {
     var that, equal;
-    return _regenerator2.default.wrap(function _callee17$(_context17) {
+    return _regenerator2.default.wrap(function _callee15$(_context15) {
       while (1) {
-        switch (_context17.prev = _context17.next) {
+        switch (_context15.prev = _context15.next) {
           case 0:
             that = this;
-            _context17.next = 3;
+            _context15.next = 3;
             return key.verifyPrimaryKey();
 
           case 3:
-            _context17.t0 = _context17.sent;
-            _context17.t1 = _enums2.default.keyStatus.invalid;
+            _context15.t0 = _context15.sent;
+            _context15.t1 = _enums2.default.keyStatus.invalid;
 
-            if (!(_context17.t0 === _context17.t1)) {
-              _context17.next = 7;
+            if (!(_context15.t0 === _context15.t1)) {
+              _context15.next = 7;
               break;
             }
 
-            return _context17.abrupt('return');
+            return _context15.abrupt('return');
 
           case 7:
             if (!(this.primaryKey.getFingerprint() !== key.primaryKey.getFingerprint())) {
-              _context17.next = 9;
+              _context15.next = 9;
               break;
             }
 
@@ -37085,7 +37204,7 @@ Key.prototype.update = function () {
 
           case 9:
             if (!(this.isPublic() && key.isPrivate())) {
-              _context17.next = 14;
+              _context15.next = 14;
               break;
             }
 
@@ -37097,7 +37216,7 @@ Key.prototype.update = function () {
             });
 
             if (equal) {
-              _context17.next = 13;
+              _context15.next = 13;
               break;
             }
 
@@ -37107,19 +37226,78 @@ Key.prototype.update = function () {
             this.primaryKey = key.primaryKey;
 
           case 14:
-            _context17.next = 16;
+            _context15.next = 16;
             return mergeSignatures(key, this, 'revocationSignatures', function (srcRevSig) {
               return isDataRevoked(that.primaryKey, that, [srcRevSig], null, key.primaryKey);
             });
 
           case 16:
-            _context17.next = 18;
+            _context15.next = 18;
             return mergeSignatures(key, this, 'directSignatures');
 
           case 18:
-            _context17.next = 20;
+            _context15.next = 20;
             return _promise2.default.all(key.users.map(function () {
-              var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(srcUser) {
+              var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(srcUser) {
+                var found;
+                return _regenerator2.default.wrap(function _callee12$(_context12) {
+                  while (1) {
+                    switch (_context12.prev = _context12.next) {
+                      case 0:
+                        found = false;
+                        _context12.next = 3;
+                        return _promise2.default.all(that.users.map(function () {
+                          var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11(dstUser) {
+                            return _regenerator2.default.wrap(function _callee11$(_context11) {
+                              while (1) {
+                                switch (_context11.prev = _context11.next) {
+                                  case 0:
+                                    if (!(srcUser.userId && srcUser.userId.userid === dstUser.userId.userid || srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))) {
+                                      _context11.next = 4;
+                                      break;
+                                    }
+
+                                    _context11.next = 3;
+                                    return dstUser.update(srcUser, that.primaryKey);
+
+                                  case 3:
+                                    found = true;
+
+                                  case 4:
+                                  case 'end':
+                                    return _context11.stop();
+                                }
+                              }
+                            }, _callee11, this);
+                          }));
+
+                          return function (_x22) {
+                            return _ref14.apply(this, arguments);
+                          };
+                        }()));
+
+                      case 3:
+                        if (!found) {
+                          that.users.push(srcUser);
+                        }
+
+                      case 4:
+                      case 'end':
+                        return _context12.stop();
+                    }
+                  }
+                }, _callee12, this);
+              }));
+
+              return function (_x21) {
+                return _ref13.apply(this, arguments);
+              };
+            }()));
+
+          case 20:
+            _context15.next = 22;
+            return _promise2.default.all(key.subKeys.map(function () {
+              var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(srcSubKey) {
                 var found;
                 return _regenerator2.default.wrap(function _callee14$(_context14) {
                   while (1) {
@@ -37127,19 +37305,19 @@ Key.prototype.update = function () {
                       case 0:
                         found = false;
                         _context14.next = 3;
-                        return _promise2.default.all(that.users.map(function () {
-                          var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(dstUser) {
+                        return _promise2.default.all(that.subKeys.map(function () {
+                          var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(dstSubKey) {
                             return _regenerator2.default.wrap(function _callee13$(_context13) {
                               while (1) {
                                 switch (_context13.prev = _context13.next) {
                                   case 0:
-                                    if (!(srcUser.userId && srcUser.userId.userid === dstUser.userId.userid || srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))) {
+                                    if (!(srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint())) {
                                       _context13.next = 4;
                                       break;
                                     }
 
                                     _context13.next = 3;
-                                    return dstUser.update(srcUser, that.primaryKey);
+                                    return dstSubKey.update(srcSubKey, that.primaryKey);
 
                                   case 3:
                                     found = true;
@@ -37152,67 +37330,8 @@ Key.prototype.update = function () {
                             }, _callee13, this);
                           }));
 
-                          return function (_x25) {
+                          return function (_x24) {
                             return _ref16.apply(this, arguments);
-                          };
-                        }()));
-
-                      case 3:
-                        if (!found) {
-                          that.users.push(srcUser);
-                        }
-
-                      case 4:
-                      case 'end':
-                        return _context14.stop();
-                    }
-                  }
-                }, _callee14, this);
-              }));
-
-              return function (_x24) {
-                return _ref15.apply(this, arguments);
-              };
-            }()));
-
-          case 20:
-            _context17.next = 22;
-            return _promise2.default.all(key.subKeys.map(function () {
-              var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(srcSubKey) {
-                var found;
-                return _regenerator2.default.wrap(function _callee16$(_context16) {
-                  while (1) {
-                    switch (_context16.prev = _context16.next) {
-                      case 0:
-                        found = false;
-                        _context16.next = 3;
-                        return _promise2.default.all(that.subKeys.map(function () {
-                          var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(dstSubKey) {
-                            return _regenerator2.default.wrap(function _callee15$(_context15) {
-                              while (1) {
-                                switch (_context15.prev = _context15.next) {
-                                  case 0:
-                                    if (!(srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint())) {
-                                      _context15.next = 4;
-                                      break;
-                                    }
-
-                                    _context15.next = 3;
-                                    return dstSubKey.update(srcSubKey, that.primaryKey);
-
-                                  case 3:
-                                    found = true;
-
-                                  case 4:
-                                  case 'end':
-                                    return _context15.stop();
-                                }
-                              }
-                            }, _callee15, this);
-                          }));
-
-                          return function (_x27) {
-                            return _ref18.apply(this, arguments);
                           };
                         }()));
 
@@ -37223,61 +37342,164 @@ Key.prototype.update = function () {
 
                       case 4:
                       case 'end':
-                        return _context16.stop();
+                        return _context14.stop();
                     }
                   }
-                }, _callee16, this);
+                }, _callee14, this);
               }));
 
-              return function (_x26) {
-                return _ref17.apply(this, arguments);
+              return function (_x23) {
+                return _ref15.apply(this, arguments);
               };
             }()));
 
           case 22:
           case 'end':
-            return _context17.stop();
+            return _context15.stop();
         }
       }
-    }, _callee17, this);
+    }, _callee15, this);
   }));
 
-  return function (_x23) {
-    return _ref14.apply(this, arguments);
+  return function (_x20) {
+    return _ref12.apply(this, arguments);
   };
 }();Key.prototype.revoke = function () {};
 
 /**
  * Signs primary user of key
- * @param  {Array<module:key~Key>} privateKey decrypted private keys for signing
- * @returns {Promise<module:key~Key>} new public key with new certificate signature
+ * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+ * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
 Key.prototype.signPrimaryUser = function () {
-  var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(privateKeys) {
-    var _ref22, index, user, userSign, key;
+  var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(privateKeys) {
+    var _ref20, index, user, userSign, key;
+
+    return _regenerator2.default.wrap(function _callee18$(_context18) {
+      while (1) {
+        switch (_context18.prev = _context18.next) {
+          case 0:
+            _context18.next = 2;
+            return this.getPrimaryUser();
+
+          case 2:
+            _context18.t0 = _context18.sent;
+
+            if (_context18.t0) {
+              _context18.next = 5;
+              break;
+            }
+
+            _context18.t0 = {};
+
+          case 5:
+            _ref20 = _context18.t0;
+            index = _ref20.index;
+            user = _ref20.user;
+
+            if (user) {
+              _context18.next = 10;
+              break;
+            }
+
+            throw new Error('Could not find primary user');
+
+          case 10:
+            _context18.next = 12;
+            return user.sign(this.primaryKey, privateKeys);
+
+          case 12:
+            userSign = _context18.sent;
+            key = new Key(this.toPacketlist());
+
+            key.users[index] = userSign;
+            return _context18.abrupt('return', key);
+
+          case 16:
+          case 'end':
+            return _context18.stop();
+        }
+      }
+    }, _callee18, this);
+  }));
+
+  return function (_x30) {
+    return _ref19.apply(this, arguments);
+  };
+}();
+
+/**
+ * Signs all users of key
+ * @param  {Array<module:key.Key>} privateKeys decrypted private keys for signing
+ * @returns {Promise<module:key.Key>} new public key with new certificate signature
+ * @async
+ */
+Key.prototype.signAllUsers = function () {
+  var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(privateKeys) {
+    var that, key;
+    return _regenerator2.default.wrap(function _callee19$(_context19) {
+      while (1) {
+        switch (_context19.prev = _context19.next) {
+          case 0:
+            that = this;
+            key = new Key(this.toPacketlist());
+            _context19.next = 4;
+            return _promise2.default.all(this.users.map(function (user) {
+              return user.sign(that.primaryKey, privateKeys);
+            }));
+
+          case 4:
+            key.users = _context19.sent;
+            return _context19.abrupt('return', key);
+
+          case 6:
+          case 'end':
+            return _context19.stop();
+        }
+      }
+    }, _callee19, this);
+  }));
+
+  return function (_x31) {
+    return _ref21.apply(this, arguments);
+  };
+}();
+
+/**
+ * Verifies primary user of key
+ * - if no arguments are given, verifies the self certificates;
+ * - otherwise, verifies all certificates signed with given keys.
+ * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
+ * @async
+ */
+Key.prototype.verifyPrimaryUser = function () {
+  var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(keys) {
+    var primaryKey, _ref23, user, results;
 
     return _regenerator2.default.wrap(function _callee20$(_context20) {
       while (1) {
         switch (_context20.prev = _context20.next) {
           case 0:
-            _context20.next = 2;
+            primaryKey = this.primaryKey;
+            _context20.next = 3;
             return this.getPrimaryUser();
 
-          case 2:
+          case 3:
             _context20.t0 = _context20.sent;
 
             if (_context20.t0) {
-              _context20.next = 5;
+              _context20.next = 6;
               break;
             }
 
             _context20.t0 = {};
 
-          case 5:
-            _ref22 = _context20.t0;
-            index = _ref22.index;
-            user = _ref22.user;
+          case 6:
+            _ref23 = _context20.t0;
+            user = _ref23.user;
 
             if (user) {
               _context20.next = 10;
@@ -37287,17 +37509,39 @@ Key.prototype.signPrimaryUser = function () {
             throw new Error('Could not find primary user');
 
           case 10:
-            _context20.next = 12;
-            return user.sign(this.primaryKey, privateKeys);
+            if (!keys) {
+              _context20.next = 16;
+              break;
+            }
 
-          case 12:
-            userSign = _context20.sent;
-            key = new Key(this.toPacketlist());
+            _context20.next = 13;
+            return user.verifyAllCertifications(primaryKey, keys);
 
-            key.users[index] = userSign;
-            return _context20.abrupt('return', key);
+          case 13:
+            _context20.t1 = _context20.sent;
+            _context20.next = 24;
+            break;
 
           case 16:
+            _context20.t2 = primaryKey.keyid;
+            _context20.next = 19;
+            return user.verify(primaryKey);
+
+          case 19:
+            _context20.t3 = _context20.sent;
+            _context20.t4 = _enums2.default.keyStatus.valid;
+            _context20.t5 = _context20.t3 === _context20.t4;
+            _context20.t6 = {
+              keyid: _context20.t2,
+              valid: _context20.t5
+            };
+            _context20.t1 = [_context20.t6];
+
+          case 24:
+            results = _context20.t1;
+            return _context20.abrupt('return', results);
+
+          case 26:
           case 'end':
             return _context20.stop();
         }
@@ -37305,133 +37549,8 @@ Key.prototype.signPrimaryUser = function () {
     }, _callee20, this);
   }));
 
-  return function (_x33) {
-    return _ref21.apply(this, arguments);
-  };
-}();
-
-/**
- * Signs all users of key
- * @param  {Array<module:key~Key>} privateKeys decrypted private keys for signing
- * @returns {Promise<module:key~Key>} new public key with new certificate signature
- * @async
- */
-Key.prototype.signAllUsers = function () {
-  var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(privateKeys) {
-    var that, key;
-    return _regenerator2.default.wrap(function _callee21$(_context21) {
-      while (1) {
-        switch (_context21.prev = _context21.next) {
-          case 0:
-            that = this;
-            key = new Key(this.toPacketlist());
-            _context21.next = 4;
-            return _promise2.default.all(this.users.map(function (user) {
-              return user.sign(that.primaryKey, privateKeys);
-            }));
-
-          case 4:
-            key.users = _context21.sent;
-            return _context21.abrupt('return', key);
-
-          case 6:
-          case 'end':
-            return _context21.stop();
-        }
-      }
-    }, _callee21, this);
-  }));
-
-  return function (_x34) {
-    return _ref23.apply(this, arguments);
-  };
-}();
-
-/**
- * Verifies primary user of key
- * - if no arguments are given, verifies the self certificates;
- * - otherwise, verifies all certificates signed with given keys.
- * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
- * @returns {Promise<Array<{keyid: module:type/keyid,
- *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
- * @async
- */
-Key.prototype.verifyPrimaryUser = function () {
-  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(keys) {
-    var primaryKey, _ref25, user, results;
-
-    return _regenerator2.default.wrap(function _callee22$(_context22) {
-      while (1) {
-        switch (_context22.prev = _context22.next) {
-          case 0:
-            primaryKey = this.primaryKey;
-            _context22.next = 3;
-            return this.getPrimaryUser();
-
-          case 3:
-            _context22.t0 = _context22.sent;
-
-            if (_context22.t0) {
-              _context22.next = 6;
-              break;
-            }
-
-            _context22.t0 = {};
-
-          case 6:
-            _ref25 = _context22.t0;
-            user = _ref25.user;
-
-            if (user) {
-              _context22.next = 10;
-              break;
-            }
-
-            throw new Error('Could not find primary user');
-
-          case 10:
-            if (!keys) {
-              _context22.next = 16;
-              break;
-            }
-
-            _context22.next = 13;
-            return user.verifyAllCertifications(primaryKey, keys);
-
-          case 13:
-            _context22.t1 = _context22.sent;
-            _context22.next = 24;
-            break;
-
-          case 16:
-            _context22.t2 = primaryKey.keyid;
-            _context22.next = 19;
-            return user.verify(primaryKey);
-
-          case 19:
-            _context22.t3 = _context22.sent;
-            _context22.t4 = _enums2.default.keyStatus.valid;
-            _context22.t5 = _context22.t3 === _context22.t4;
-            _context22.t6 = {
-              keyid: _context22.t2,
-              valid: _context22.t5
-            };
-            _context22.t1 = [_context22.t6];
-
-          case 24:
-            results = _context22.t1;
-            return _context22.abrupt('return', results);
-
-          case 26:
-          case 'end':
-            return _context22.stop();
-        }
-      }
-    }, _callee22, this);
-  }));
-
-  return function (_x35) {
-    return _ref24.apply(this, arguments);
+  return function (_x32) {
+    return _ref22.apply(this, arguments);
   };
 }();
 
@@ -37439,59 +37558,59 @@ Key.prototype.verifyPrimaryUser = function () {
  * Verifies all users of key
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
- * @param  {Array<module:key~Key>} keys array of keys to verify certificate signatures
+ * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
  * @returns {Promise<Array<{userid: String,
  *                          keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
  * @async
  */
 Key.prototype.verifyAllUsers = function () {
-  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(keys) {
+  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(keys) {
     var results, primaryKey;
-    return _regenerator2.default.wrap(function _callee24$(_context24) {
+    return _regenerator2.default.wrap(function _callee22$(_context22) {
       while (1) {
-        switch (_context24.prev = _context24.next) {
+        switch (_context22.prev = _context22.next) {
           case 0:
             results = [];
             primaryKey = this.primaryKey;
-            _context24.next = 4;
+            _context22.next = 4;
             return _promise2.default.all(this.users.map(function () {
-              var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(user) {
+              var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(user) {
                 var signatures;
-                return _regenerator2.default.wrap(function _callee23$(_context23) {
+                return _regenerator2.default.wrap(function _callee21$(_context21) {
                   while (1) {
-                    switch (_context23.prev = _context23.next) {
+                    switch (_context21.prev = _context21.next) {
                       case 0:
                         if (!keys) {
-                          _context23.next = 6;
+                          _context21.next = 6;
                           break;
                         }
 
-                        _context23.next = 3;
+                        _context21.next = 3;
                         return user.verifyAllCertifications(primaryKey, keys);
 
                       case 3:
-                        _context23.t0 = _context23.sent;
-                        _context23.next = 14;
+                        _context21.t0 = _context21.sent;
+                        _context21.next = 14;
                         break;
 
                       case 6:
-                        _context23.t1 = primaryKey.keyid;
-                        _context23.next = 9;
+                        _context21.t1 = primaryKey.keyid;
+                        _context21.next = 9;
                         return user.verify(primaryKey);
 
                       case 9:
-                        _context23.t2 = _context23.sent;
-                        _context23.t3 = _enums2.default.keyStatus.valid;
-                        _context23.t4 = _context23.t2 === _context23.t3;
-                        _context23.t5 = {
-                          keyid: _context23.t1,
-                          valid: _context23.t4
+                        _context21.t2 = _context21.sent;
+                        _context21.t3 = _enums2.default.keyStatus.valid;
+                        _context21.t4 = _context21.t2 === _context21.t3;
+                        _context21.t5 = {
+                          keyid: _context21.t1,
+                          valid: _context21.t4
                         };
-                        _context23.t0 = [_context23.t5];
+                        _context21.t0 = [_context21.t5];
 
                       case 14:
-                        signatures = _context23.t0;
+                        signatures = _context21.t0;
 
                         signatures.forEach(function (signature) {
                           results.push({
@@ -37503,30 +37622,30 @@ Key.prototype.verifyAllUsers = function () {
 
                       case 16:
                       case 'end':
-                        return _context23.stop();
+                        return _context21.stop();
                     }
                   }
-                }, _callee23, this);
+                }, _callee21, this);
               }));
 
-              return function (_x37) {
-                return _ref27.apply(this, arguments);
+              return function (_x34) {
+                return _ref25.apply(this, arguments);
               };
             }()));
 
           case 4:
-            return _context24.abrupt('return', results);
+            return _context22.abrupt('return', results);
 
           case 5:
           case 'end':
-            return _context24.stop();
+            return _context22.stop();
         }
       }
-    }, _callee24, this);
+    }, _callee22, this);
   }));
 
-  return function (_x36) {
-    return _ref26.apply(this, arguments);
+  return function (_x33) {
+    return _ref24.apply(this, arguments);
   };
 }();
 
@@ -37547,7 +37666,7 @@ function User(userPacket) {
 
 /**
  * Transforms structured user data to packetlist
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 User.prototype.toPacketlist = function () {
   var packetlist = new _packet2.default.List();
@@ -37560,31 +37679,31 @@ User.prototype.toPacketlist = function () {
 
 /**
  * Signs user
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey  The primary key packet
- * @param  {Array<module:key~Key>}    privateKeys Decrypted private keys for signing
- * @returns {Promise<module:key~Key>}             New user with new certificate signatures
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+ * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
  */
 User.prototype.sign = function () {
-  var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(primaryKey, privateKeys) {
+  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(primaryKey, privateKeys) {
     var dataToSign, user;
-    return _regenerator2.default.wrap(function _callee26$(_context26) {
+    return _regenerator2.default.wrap(function _callee24$(_context24) {
       while (1) {
-        switch (_context26.prev = _context26.next) {
+        switch (_context24.prev = _context24.next) {
           case 0:
             dataToSign = { userid: this.userId || this.userAttribute, key: primaryKey };
             user = new User(dataToSign.userid);
-            _context26.next = 4;
+            _context24.next = 4;
             return _promise2.default.all(privateKeys.map(function () {
-              var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(privateKey) {
+              var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(privateKey) {
                 var signingKeyPacket, signaturePacket;
-                return _regenerator2.default.wrap(function _callee25$(_context25) {
+                return _regenerator2.default.wrap(function _callee23$(_context23) {
                   while (1) {
-                    switch (_context25.prev = _context25.next) {
+                    switch (_context23.prev = _context23.next) {
                       case 0:
                         if (!privateKey.isPublic()) {
-                          _context25.next = 2;
+                          _context23.next = 2;
                           break;
                         }
 
@@ -37592,21 +37711,21 @@ User.prototype.sign = function () {
 
                       case 2:
                         if (!(privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint())) {
-                          _context25.next = 4;
+                          _context23.next = 4;
                           break;
                         }
 
                         throw new Error('Not implemented for self signing');
 
                       case 4:
-                        _context25.next = 6;
+                        _context23.next = 6;
                         return privateKey.getSigningKeyPacket();
 
                       case 6:
-                        signingKeyPacket = _context25.sent;
+                        signingKeyPacket = _context23.sent;
 
                         if (signingKeyPacket) {
-                          _context25.next = 9;
+                          _context23.next = 9;
                           break;
                         }
 
@@ -37614,7 +37733,7 @@ User.prototype.sign = function () {
 
                       case 9:
                         if (signingKeyPacket.isDecrypted) {
-                          _context25.next = 11;
+                          _context23.next = 11;
                           break;
                         }
 
@@ -37627,76 +37746,206 @@ User.prototype.sign = function () {
                         signaturePacket.signatureType = _enums2.default.write(_enums2.default.signature, _enums2.default.signature.cert_generic);
                         signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
                         signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-                        _context25.next = 17;
+                        _context23.next = 17;
                         return getPreferredHashAlgo(privateKey);
 
                       case 17:
-                        signaturePacket.hashAlgorithm = _context25.sent;
+                        signaturePacket.hashAlgorithm = _context23.sent;
 
                         signaturePacket.signingKeyId = signingKeyPacket.getKeyId();
                         signaturePacket.sign(signingKeyPacket, dataToSign);
-                        return _context25.abrupt('return', signaturePacket);
+                        return _context23.abrupt('return', signaturePacket);
 
                       case 21:
                       case 'end':
-                        return _context25.stop();
+                        return _context23.stop();
                     }
                   }
-                }, _callee25, this);
+                }, _callee23, this);
               }));
 
-              return function (_x40) {
-                return _ref29.apply(this, arguments);
+              return function (_x37) {
+                return _ref27.apply(this, arguments);
               };
             }()));
 
           case 4:
-            user.otherCertifications = _context26.sent;
-            _context26.next = 7;
+            user.otherCertifications = _context24.sent;
+            _context24.next = 7;
             return user.update(this, primaryKey);
 
           case 7:
-            return _context26.abrupt('return', user);
+            return _context24.abrupt('return', user);
 
           case 8:
           case 'end':
-            return _context26.stop();
+            return _context24.stop();
         }
       }
-    }, _callee26, this);
+    }, _callee24, this);
   }));
 
-  return function (_x38, _x39) {
-    return _ref28.apply(this, arguments);
+  return function (_x35, _x36) {
+    return _ref26.apply(this, arguments);
   };
 }();
 
 /**
  * Checks if a given certificate of the user is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey    The primary key packet
- * @param  {module:packet/signature}  certificate   The certificate to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey    The primary key packet
+ * @param  {module:packet.Signature}  certificate   The certificate to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
  */
 User.prototype.isRevoked = function () {
-  var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27(primaryKey, certificate, key) {
+  var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(primaryKey, certificate, key) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
-    return _regenerator2.default.wrap(function _callee27$(_context27) {
+    return _regenerator2.default.wrap(function _callee25$(_context25) {
       while (1) {
-        switch (_context27.prev = _context27.next) {
+        switch (_context25.prev = _context25.next) {
           case 0:
-            return _context27.abrupt('return', isDataRevoked(primaryKey, {
+            return _context25.abrupt('return', isDataRevoked(primaryKey, {
               key: primaryKey,
               userid: this.userId || this.userAttribute
             }, this.revocationSignatures, certificate, key, date));
 
           case 1:
+          case 'end':
+            return _context25.stop();
+        }
+      }
+    }, _callee25, this);
+  }));
+
+  return function (_x38, _x39, _x40) {
+    return _ref28.apply(this, arguments);
+  };
+}();
+
+/**
+ * Verifies the user certificate
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {module:packet.Signature}  certificate A certificate of this user
+ * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
+ * @param  {Date}                     date        Use the given date instead of the current time
+ * @returns {Promise<module:enums.keyStatus>}     status of the certificate
+ * @async
+ */
+User.prototype.verifyCertificate = function () {
+  var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27(primaryKey, certificate, keys) {
+    var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
+    var that, keyid, dataToVerify, results;
+    return _regenerator2.default.wrap(function _callee27$(_context27) {
+      while (1) {
+        switch (_context27.prev = _context27.next) {
+          case 0:
+            that = this;
+            keyid = certificate.issuerKeyId;
+            dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+            _context27.next = 5;
+            return _promise2.default.all(keys.map(function () {
+              var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(key) {
+                var keyPacket;
+                return _regenerator2.default.wrap(function _callee26$(_context26) {
+                  while (1) {
+                    switch (_context26.prev = _context26.next) {
+                      case 0:
+                        if (key.getKeyIds().some(function (id) {
+                          return id.equals(keyid);
+                        })) {
+                          _context26.next = 2;
+                          break;
+                        }
+
+                        return _context26.abrupt('return');
+
+                      case 2:
+                        _context26.next = 4;
+                        return key.getSigningKeyPacket(keyid, date);
+
+                      case 4:
+                        keyPacket = _context26.sent;
+                        _context26.t0 = certificate.revoked;
+
+                        if (_context26.t0) {
+                          _context26.next = 10;
+                          break;
+                        }
+
+                        _context26.next = 9;
+                        return that.isRevoked(primaryKey, certificate, keyPacket);
+
+                      case 9:
+                        _context26.t0 = _context26.sent;
+
+                      case 10:
+                        if (!_context26.t0) {
+                          _context26.next = 12;
+                          break;
+                        }
+
+                        return _context26.abrupt('return', _enums2.default.keyStatus.revoked);
+
+                      case 12:
+                        _context26.t1 = certificate.verified;
+
+                        if (_context26.t1) {
+                          _context26.next = 17;
+                          break;
+                        }
+
+                        _context26.next = 16;
+                        return certificate.verify(keyPacket, dataToVerify);
+
+                      case 16:
+                        _context26.t1 = _context26.sent;
+
+                      case 17:
+                        if (_context26.t1) {
+                          _context26.next = 19;
+                          break;
+                        }
+
+                        return _context26.abrupt('return', _enums2.default.keyStatus.invalid);
+
+                      case 19:
+                        if (!certificate.isExpired()) {
+                          _context26.next = 21;
+                          break;
+                        }
+
+                        return _context26.abrupt('return', _enums2.default.keyStatus.expired);
+
+                      case 21:
+                        return _context26.abrupt('return', _enums2.default.keyStatus.valid);
+
+                      case 22:
+                      case 'end':
+                        return _context26.stop();
+                    }
+                  }
+                }, _callee26, this);
+              }));
+
+              return function (_x46) {
+                return _ref30.apply(this, arguments);
+              };
+            }()));
+
+          case 5:
+            results = _context27.sent;
+            return _context27.abrupt('return', results.find(function (result) {
+              return result !== undefined;
+            }));
+
+          case 7:
           case 'end':
             return _context27.stop();
         }
@@ -37704,110 +37953,47 @@ User.prototype.isRevoked = function () {
     }, _callee27, this);
   }));
 
-  return function (_x41, _x42, _x43) {
-    return _ref30.apply(this, arguments);
+  return function (_x42, _x43, _x44) {
+    return _ref29.apply(this, arguments);
   };
 }();
 
 /**
- * Verifies the user certificate
- * @param  {module:packet/secret_key|
-            module:packet/public_key} primaryKey  The primary key packet
- * @param  {module:packet/signature}  certificate A certificate of this user
- * @param  {Array<module:key~Key>}    keys        Array of keys to verify certificate signatures
- * @param  {Date}                     date        Use the given date instead of the current time
- * @returns {Promise<module:enums.keyStatus>}     status of the certificate
+ * Verifies all user certificates
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
  * @async
  */
-User.prototype.verifyCertificate = function () {
-  var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(primaryKey, certificate, keys) {
-    var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
-    var that, keyid, dataToVerify, results;
+User.prototype.verifyAllCertifications = function () {
+  var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(primaryKey, keys) {
+    var that, certifications;
     return _regenerator2.default.wrap(function _callee29$(_context29) {
       while (1) {
         switch (_context29.prev = _context29.next) {
           case 0:
             that = this;
-            keyid = certificate.issuerKeyId;
-            dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
-            _context29.next = 5;
-            return _promise2.default.all(keys.map(function () {
-              var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(key) {
-                var keyPacket;
+            certifications = this.selfCertifications.concat(this.otherCertifications);
+            return _context29.abrupt('return', _promise2.default.all(certifications.map(function () {
+              var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(certification) {
+                var status;
                 return _regenerator2.default.wrap(function _callee28$(_context28) {
                   while (1) {
                     switch (_context28.prev = _context28.next) {
                       case 0:
-                        if (key.getKeyIds().some(function (id) {
-                          return id.equals(keyid);
-                        })) {
-                          _context28.next = 2;
-                          break;
-                        }
-
-                        return _context28.abrupt('return');
+                        _context28.next = 2;
+                        return that.verifyCertificate(primaryKey, certification, keys);
 
                       case 2:
-                        _context28.next = 4;
-                        return key.getSigningKeyPacket(keyid, date);
+                        status = _context28.sent;
+                        return _context28.abrupt('return', {
+                          keyid: certification.issuerKeyId,
+                          valid: status === undefined ? null : status === _enums2.default.keyStatus.valid
+                        });
 
                       case 4:
-                        keyPacket = _context28.sent;
-                        _context28.t0 = certificate.revoked;
-
-                        if (_context28.t0) {
-                          _context28.next = 10;
-                          break;
-                        }
-
-                        _context28.next = 9;
-                        return that.isRevoked(primaryKey, certificate, keyPacket);
-
-                      case 9:
-                        _context28.t0 = _context28.sent;
-
-                      case 10:
-                        if (!_context28.t0) {
-                          _context28.next = 12;
-                          break;
-                        }
-
-                        return _context28.abrupt('return', _enums2.default.keyStatus.revoked);
-
-                      case 12:
-                        _context28.t1 = certificate.verified;
-
-                        if (_context28.t1) {
-                          _context28.next = 17;
-                          break;
-                        }
-
-                        _context28.next = 16;
-                        return certificate.verify(keyPacket, dataToVerify);
-
-                      case 16:
-                        _context28.t1 = _context28.sent;
-
-                      case 17:
-                        if (_context28.t1) {
-                          _context28.next = 19;
-                          break;
-                        }
-
-                        return _context28.abrupt('return', _enums2.default.keyStatus.invalid);
-
-                      case 19:
-                        if (!certificate.isExpired()) {
-                          _context28.next = 21;
-                          break;
-                        }
-
-                        return _context28.abrupt('return', _enums2.default.keyStatus.expired);
-
-                      case 21:
-                        return _context28.abrupt('return', _enums2.default.keyStatus.valid);
-
-                      case 22:
                       case 'end':
                         return _context28.stop();
                     }
@@ -37818,15 +38004,9 @@ User.prototype.verifyCertificate = function () {
               return function (_x49) {
                 return _ref32.apply(this, arguments);
               };
-            }()));
+            }())));
 
-          case 5:
-            results = _context29.sent;
-            return _context29.abrupt('return', results.find(function (result) {
-              return result !== undefined;
-            }));
-
-          case 7:
+          case 3:
           case 'end':
             return _context29.stop();
         }
@@ -37834,47 +38014,101 @@ User.prototype.verifyCertificate = function () {
     }, _callee29, this);
   }));
 
-  return function (_x45, _x46, _x47) {
+  return function (_x47, _x48) {
     return _ref31.apply(this, arguments);
   };
 }();
 
 /**
- * Verifies all user certificates
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
- * @param  {Array<module:key~Key>}    keys       Array of keys to verify certificate signatures
- * @returns {Promise<Array<{keyid: module:type/keyid,
- *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
+ * Verify User. Checks for existence of self signatures, revocation signatures
+ * and validity of self signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @returns {Promise<module:enums.keyStatus>}    Status of user
  * @async
  */
-User.prototype.verifyAllCertifications = function () {
-  var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31(primaryKey, keys) {
-    var that, certifications;
+User.prototype.verify = function () {
+  var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31(primaryKey) {
+    var that, dataToVerify, results;
     return _regenerator2.default.wrap(function _callee31$(_context31) {
       while (1) {
         switch (_context31.prev = _context31.next) {
           case 0:
+            if (this.selfCertifications.length) {
+              _context31.next = 2;
+              break;
+            }
+
+            return _context31.abrupt('return', _enums2.default.keyStatus.no_self_cert);
+
+          case 2:
             that = this;
-            certifications = this.selfCertifications.concat(this.otherCertifications);
-            return _context31.abrupt('return', _promise2.default.all(certifications.map(function () {
-              var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(certification) {
-                var status;
+            dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+            // TODO replace when Promise.some or Promise.any are implemented
+
+            _context31.t0 = [_enums2.default.keyStatus.invalid];
+            _context31.next = 7;
+            return _promise2.default.all(this.selfCertifications.map(function () {
+              var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(selfCertification) {
                 return _regenerator2.default.wrap(function _callee30$(_context30) {
                   while (1) {
                     switch (_context30.prev = _context30.next) {
                       case 0:
-                        _context30.next = 2;
-                        return that.verifyCertificate(primaryKey, certification, keys);
+                        _context30.t0 = selfCertification.revoked;
 
-                      case 2:
-                        status = _context30.sent;
-                        return _context30.abrupt('return', {
-                          keyid: certification.issuerKeyId,
-                          valid: status === undefined ? null : status === _enums2.default.keyStatus.valid
-                        });
+                        if (_context30.t0) {
+                          _context30.next = 5;
+                          break;
+                        }
+
+                        _context30.next = 4;
+                        return that.isRevoked(primaryKey, selfCertification);
 
                       case 4:
+                        _context30.t0 = _context30.sent;
+
+                      case 5:
+                        if (!_context30.t0) {
+                          _context30.next = 7;
+                          break;
+                        }
+
+                        return _context30.abrupt('return', _enums2.default.keyStatus.revoked);
+
+                      case 7:
+                        _context30.t1 = selfCertification.verified;
+
+                        if (_context30.t1) {
+                          _context30.next = 12;
+                          break;
+                        }
+
+                        _context30.next = 11;
+                        return selfCertification.verify(primaryKey, dataToVerify);
+
+                      case 11:
+                        _context30.t1 = _context30.sent;
+
+                      case 12:
+                        if (_context30.t1) {
+                          _context30.next = 14;
+                          break;
+                        }
+
+                        return _context30.abrupt('return', _enums2.default.keyStatus.invalid);
+
+                      case 14:
+                        if (!selfCertification.isExpired()) {
+                          _context30.next = 16;
+                          break;
+                        }
+
+                        return _context30.abrupt('return', _enums2.default.keyStatus.expired);
+
+                      case 16:
+                        return _context30.abrupt('return', _enums2.default.keyStatus.valid);
+
+                      case 17:
                       case 'end':
                         return _context30.stop();
                     }
@@ -37882,12 +38116,19 @@ User.prototype.verifyAllCertifications = function () {
                 }, _callee30, this);
               }));
 
-              return function (_x52) {
+              return function (_x51) {
                 return _ref34.apply(this, arguments);
               };
-            }())));
+            }()));
 
-          case 3:
+          case 7:
+            _context31.t1 = _context31.sent;
+            results = _context31.t0.concat.call(_context31.t0, _context31.t1);
+            return _context31.abrupt('return', results.some(function (status) {
+              return status === _enums2.default.keyStatus.valid;
+            }) ? _enums2.default.keyStatus.valid : results.pop());
+
+          case 10:
           case 'end':
             return _context31.stop();
         }
@@ -37895,101 +38136,37 @@ User.prototype.verifyAllCertifications = function () {
     }, _callee31, this);
   }));
 
-  return function (_x50, _x51) {
+  return function (_x50) {
     return _ref33.apply(this, arguments);
   };
 }();
 
 /**
- * Verify User. Checks for existence of self signatures, revocation signatures
- * and validity of self signature
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
- * @returns {Promise<module:enums.keyStatus>}    Status of user
- * @async
+ * Update user with new components from specified user
+ * @param  {module:key.User}             user       Source user to merge
+ * @param  {module:packet.SecretKey|
+ *          module:packet.SecretSubkey} primaryKey primary key used for validation
  */
-User.prototype.verify = function () {
-  var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33(primaryKey) {
-    var that, dataToVerify, results;
+User.prototype.update = function () {
+  var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33(user, primaryKey) {
+    var dataToVerify;
     return _regenerator2.default.wrap(function _callee33$(_context33) {
       while (1) {
         switch (_context33.prev = _context33.next) {
           case 0:
-            if (this.selfCertifications.length) {
-              _context33.next = 2;
-              break;
-            }
-
-            return _context33.abrupt('return', _enums2.default.keyStatus.no_self_cert);
-
-          case 2:
-            that = this;
             dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
-            // TODO replace when Promise.some or Promise.any are implemented
+            // self signatures
 
-            _context33.t0 = [_enums2.default.keyStatus.invalid];
-            _context33.next = 7;
-            return _promise2.default.all(this.selfCertifications.map(function () {
-              var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32(selfCertification) {
+            _context33.next = 3;
+            return mergeSignatures(user, this, 'selfCertifications', function () {
+              var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32(srcSelfSig) {
                 return _regenerator2.default.wrap(function _callee32$(_context32) {
                   while (1) {
                     switch (_context32.prev = _context32.next) {
                       case 0:
-                        _context32.t0 = selfCertification.revoked;
+                        return _context32.abrupt('return', srcSelfSig.verified || srcSelfSig.verify(primaryKey, dataToVerify));
 
-                        if (_context32.t0) {
-                          _context32.next = 5;
-                          break;
-                        }
-
-                        _context32.next = 4;
-                        return that.isRevoked(primaryKey, selfCertification);
-
-                      case 4:
-                        _context32.t0 = _context32.sent;
-
-                      case 5:
-                        if (!_context32.t0) {
-                          _context32.next = 7;
-                          break;
-                        }
-
-                        return _context32.abrupt('return', _enums2.default.keyStatus.revoked);
-
-                      case 7:
-                        _context32.t1 = selfCertification.verified;
-
-                        if (_context32.t1) {
-                          _context32.next = 12;
-                          break;
-                        }
-
-                        _context32.next = 11;
-                        return selfCertification.verify(primaryKey, dataToVerify);
-
-                      case 11:
-                        _context32.t1 = _context32.sent;
-
-                      case 12:
-                        if (_context32.t1) {
-                          _context32.next = 14;
-                          break;
-                        }
-
-                        return _context32.abrupt('return', _enums2.default.keyStatus.invalid);
-
-                      case 14:
-                        if (!selfCertification.isExpired()) {
-                          _context32.next = 16;
-                          break;
-                        }
-
-                        return _context32.abrupt('return', _enums2.default.keyStatus.expired);
-
-                      case 16:
-                        return _context32.abrupt('return', _enums2.default.keyStatus.valid);
-
-                      case 17:
+                      case 1:
                       case 'end':
                         return _context32.stop();
                     }
@@ -38000,16 +38177,19 @@ User.prototype.verify = function () {
               return function (_x54) {
                 return _ref36.apply(this, arguments);
               };
-            }()));
+            }());
+
+          case 3:
+            _context33.next = 5;
+            return mergeSignatures(user, this, 'otherCertifications');
+
+          case 5:
+            _context33.next = 7;
+            return mergeSignatures(user, this, 'revocationSignatures', function (srcRevSig) {
+              return isDataRevoked(primaryKey, dataToVerify, [srcRevSig]);
+            });
 
           case 7:
-            _context33.t1 = _context33.sent;
-            results = _context33.t0.concat.call(_context33.t0, _context33.t1);
-            return _context33.abrupt('return', results.some(function (status) {
-              return status === _enums2.default.keyStatus.valid;
-            }) ? _enums2.default.keyStatus.valid : results.pop());
-
-          case 10:
           case 'end':
             return _context33.stop();
         }
@@ -38017,69 +38197,8 @@ User.prototype.verify = function () {
     }, _callee33, this);
   }));
 
-  return function (_x53) {
+  return function (_x52, _x53) {
     return _ref35.apply(this, arguments);
-  };
-}();
-
-/**
- * Update user with new components from specified user
- * @param  {module:key~User}             user       Source user to merge
- * @param  {module:packet/secret_key|
-            module:packet/secret_subkey} primaryKey primary key used for validation
- */
-User.prototype.update = function () {
-  var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(user, primaryKey) {
-    var dataToVerify;
-    return _regenerator2.default.wrap(function _callee35$(_context35) {
-      while (1) {
-        switch (_context35.prev = _context35.next) {
-          case 0:
-            dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
-            // self signatures
-
-            _context35.next = 3;
-            return mergeSignatures(user, this, 'selfCertifications', function () {
-              var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(srcSelfSig) {
-                return _regenerator2.default.wrap(function _callee34$(_context34) {
-                  while (1) {
-                    switch (_context34.prev = _context34.next) {
-                      case 0:
-                        return _context34.abrupt('return', srcSelfSig.verified || srcSelfSig.verify(primaryKey, dataToVerify));
-
-                      case 1:
-                      case 'end':
-                        return _context34.stop();
-                    }
-                  }
-                }, _callee34, this);
-              }));
-
-              return function (_x57) {
-                return _ref38.apply(this, arguments);
-              };
-            }());
-
-          case 3:
-            _context35.next = 5;
-            return mergeSignatures(user, this, 'otherCertifications');
-
-          case 5:
-            _context35.next = 7;
-            return mergeSignatures(user, this, 'revocationSignatures', function (srcRevSig) {
-              return isDataRevoked(primaryKey, dataToVerify, [srcRevSig]);
-            });
-
-          case 7:
-          case 'end':
-            return _context35.stop();
-        }
-      }
-    }, _callee35, this);
-  }));
-
-  return function (_x55, _x56) {
-    return _ref37.apply(this, arguments);
   };
 }();
 
@@ -38098,7 +38217,7 @@ function SubKey(subKeyPacket) {
 
 /**
  * Transforms structured subkey data to packetlist
- * @returns {module:packet/packetlist}
+ * @returns {module:packet.List}
  */
 SubKey.prototype.toPacketlist = function () {
   var packetlist = new _packet2.default.List();
@@ -38110,30 +38229,155 @@ SubKey.prototype.toPacketlist = function () {
 
 /**
  * Checks if a binding signature of a subkey is revoked
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey    The primary key packet
- * @param  {module:packet/signature}  signature     The binding signature to verify
- * @param  {module:packet/public_subkey|
- *          module:packet/secret_subkey|
- *          module:packet/public_key|
- *          module:packet/secret_key} key, optional The key to verify the signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey    The primary key packet
+ * @param  {module:packet.Signature}  signature     The binding signature to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the binding signature is revoked
  * @async
  */
 SubKey.prototype.isRevoked = function () {
-  var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(primaryKey, signature, key) {
+  var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(primaryKey, signature, key) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
-    return _regenerator2.default.wrap(function _callee36$(_context36) {
+    return _regenerator2.default.wrap(function _callee34$(_context34) {
       while (1) {
-        switch (_context36.prev = _context36.next) {
+        switch (_context34.prev = _context34.next) {
           case 0:
-            return _context36.abrupt('return', isDataRevoked(primaryKey, {
+            return _context34.abrupt('return', isDataRevoked(primaryKey, {
               key: primaryKey,
               bind: this.subKey
             }, this.revocationSignatures, signature, key, date));
 
           case 1:
+          case 'end':
+            return _context34.stop();
+        }
+      }
+    }, _callee34, this);
+  }));
+
+  return function (_x55, _x56, _x57) {
+    return _ref37.apply(this, arguments);
+  };
+}();
+
+/**
+ * Verify subkey. Checks for revocation signatures, expiration time
+ * and valid binding signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Date}                     date       Use the given date instead of the current time
+ * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
+ * @async
+ */
+SubKey.prototype.verify = function () {
+  var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(primaryKey) {
+    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
+    var that, dataToVerify, results;
+    return _regenerator2.default.wrap(function _callee36$(_context36) {
+      while (1) {
+        switch (_context36.prev = _context36.next) {
+          case 0:
+            that = this;
+            dataToVerify = { key: primaryKey, bind: this.subKey };
+            // check for V3 expiration time
+
+            if (!(this.subKey.version === 3 && isDataExpired(this.subKey, null, date))) {
+              _context36.next = 4;
+              break;
+            }
+
+            return _context36.abrupt('return', _enums2.default.keyStatus.expired);
+
+          case 4:
+            _context36.t0 = [_enums2.default.keyStatus.invalid];
+            _context36.next = 7;
+            return _promise2.default.all(this.bindingSignatures.map(function () {
+              var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(bindingSignature) {
+                return _regenerator2.default.wrap(function _callee35$(_context35) {
+                  while (1) {
+                    switch (_context35.prev = _context35.next) {
+                      case 0:
+                        _context35.t0 = bindingSignature.verified;
+
+                        if (_context35.t0) {
+                          _context35.next = 5;
+                          break;
+                        }
+
+                        _context35.next = 4;
+                        return bindingSignature.verify(primaryKey, dataToVerify);
+
+                      case 4:
+                        _context35.t0 = _context35.sent;
+
+                      case 5:
+                        if (_context35.t0) {
+                          _context35.next = 7;
+                          break;
+                        }
+
+                        return _context35.abrupt('return', _enums2.default.keyStatus.invalid);
+
+                      case 7:
+                        _context35.t1 = bindingSignature.revoked;
+
+                        if (_context35.t1) {
+                          _context35.next = 12;
+                          break;
+                        }
+
+                        _context35.next = 11;
+                        return that.isRevoked(primaryKey, bindingSignature, null, date);
+
+                      case 11:
+                        _context35.t1 = _context35.sent;
+
+                      case 12:
+                        if (!_context35.t1) {
+                          _context35.next = 14;
+                          break;
+                        }
+
+                        return _context35.abrupt('return', _enums2.default.keyStatus.revoked);
+
+                      case 14:
+                        if (!bindingSignature.isExpired(date)) {
+                          _context35.next = 16;
+                          break;
+                        }
+
+                        return _context35.abrupt('return', _enums2.default.keyStatus.expired);
+
+                      case 16:
+                        return _context35.abrupt('return', _enums2.default.keyStatus.valid);
+
+                      case 17:
+                      case 'end':
+                        return _context35.stop();
+                    }
+                  }
+                }, _callee35, this);
+              }));
+
+              return function (_x61) {
+                return _ref39.apply(this, arguments);
+              };
+            }() // found a binding signature that passed all checks
+            ));
+
+          case 7:
+            _context36.t1 = _context36.sent;
+            results = _context36.t0.concat.call(_context36.t0, _context36.t1);
+            return _context36.abrupt('return', results.some(function (status) {
+              return status === _enums2.default.keyStatus.valid;
+            }) ? _enums2.default.keyStatus.valid : results.pop());
+
+          case 10:
           case 'end':
             return _context36.stop();
         }
@@ -38141,133 +38385,8 @@ SubKey.prototype.isRevoked = function () {
     }, _callee36, this);
   }));
 
-  return function (_x58, _x59, _x60) {
-    return _ref39.apply(this, arguments);
-  };
-}();
-
-/**
- * Verify subkey. Checks for revocation signatures, expiration time
- * and valid binding signature
- * @param  {module:packet/secret_key|
- *          module:packet/public_key} primaryKey The primary key packet
- * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
- * @async
- */
-SubKey.prototype.verify = function () {
-  var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(primaryKey) {
-    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
-    var that, dataToVerify, results;
-    return _regenerator2.default.wrap(function _callee38$(_context38) {
-      while (1) {
-        switch (_context38.prev = _context38.next) {
-          case 0:
-            that = this;
-            dataToVerify = { key: primaryKey, bind: this.subKey };
-            // check for V3 expiration time
-
-            if (!(this.subKey.version === 3 && isDataExpired(this.subKey, null, date))) {
-              _context38.next = 4;
-              break;
-            }
-
-            return _context38.abrupt('return', _enums2.default.keyStatus.expired);
-
-          case 4:
-            _context38.t0 = [_enums2.default.keyStatus.invalid];
-            _context38.next = 7;
-            return _promise2.default.all(this.bindingSignatures.map(function () {
-              var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(bindingSignature) {
-                return _regenerator2.default.wrap(function _callee37$(_context37) {
-                  while (1) {
-                    switch (_context37.prev = _context37.next) {
-                      case 0:
-                        _context37.t0 = bindingSignature.verified;
-
-                        if (_context37.t0) {
-                          _context37.next = 5;
-                          break;
-                        }
-
-                        _context37.next = 4;
-                        return bindingSignature.verify(primaryKey, dataToVerify);
-
-                      case 4:
-                        _context37.t0 = _context37.sent;
-
-                      case 5:
-                        if (_context37.t0) {
-                          _context37.next = 7;
-                          break;
-                        }
-
-                        return _context37.abrupt('return', _enums2.default.keyStatus.invalid);
-
-                      case 7:
-                        _context37.t1 = bindingSignature.revoked;
-
-                        if (_context37.t1) {
-                          _context37.next = 12;
-                          break;
-                        }
-
-                        _context37.next = 11;
-                        return that.isRevoked(primaryKey, bindingSignature, null, date);
-
-                      case 11:
-                        _context37.t1 = _context37.sent;
-
-                      case 12:
-                        if (!_context37.t1) {
-                          _context37.next = 14;
-                          break;
-                        }
-
-                        return _context37.abrupt('return', _enums2.default.keyStatus.revoked);
-
-                      case 14:
-                        if (!bindingSignature.isExpired(date)) {
-                          _context37.next = 16;
-                          break;
-                        }
-
-                        return _context37.abrupt('return', _enums2.default.keyStatus.expired);
-
-                      case 16:
-                        return _context37.abrupt('return', _enums2.default.keyStatus.valid);
-
-                      case 17:
-                      case 'end':
-                        return _context37.stop();
-                    }
-                  }
-                }, _callee37, this);
-              }));
-
-              return function (_x64) {
-                return _ref41.apply(this, arguments);
-              };
-            }() // found a binding signature that passed all checks
-            ));
-
-          case 7:
-            _context38.t1 = _context38.sent;
-            results = _context38.t0.concat.call(_context38.t0, _context38.t1);
-            return _context38.abrupt('return', results.some(function (status) {
-              return status === _enums2.default.keyStatus.valid;
-            }) ? _enums2.default.keyStatus.valid : results.pop());
-
-          case 10:
-          case 'end':
-            return _context38.stop();
-        }
-      }
-    }, _callee38, this);
-  }));
-
-  return function (_x62) {
-    return _ref40.apply(this, arguments);
+  return function (_x59) {
+    return _ref38.apply(this, arguments);
   };
 }();
 
@@ -38291,34 +38410,34 @@ SubKey.prototype.getExpirationTime = function () {
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key~SubKey}           subKey     Source subkey to merge
- * @param  {module:packet/secret_key|
-            module:packet/secret_subkey} primaryKey primary key used for validation
+ * @param  {module:key.SubKey}           subKey     Source subkey to merge
+ * @param  {module:packet.SecretKey|
+            module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 SubKey.prototype.update = function () {
-  var _ref42 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(subKey, primaryKey) {
+  var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(subKey, primaryKey) {
     var that, dataToVerify;
-    return _regenerator2.default.wrap(function _callee40$(_context40) {
+    return _regenerator2.default.wrap(function _callee38$(_context38) {
       while (1) {
-        switch (_context40.prev = _context40.next) {
+        switch (_context38.prev = _context38.next) {
           case 0:
-            _context40.next = 2;
+            _context38.next = 2;
             return subKey.verify(primaryKey);
 
           case 2:
-            _context40.t0 = _context40.sent;
-            _context40.t1 = _enums2.default.keyStatus.invalid;
+            _context38.t0 = _context38.sent;
+            _context38.t1 = _enums2.default.keyStatus.invalid;
 
-            if (!(_context40.t0 === _context40.t1)) {
-              _context40.next = 6;
+            if (!(_context38.t0 === _context38.t1)) {
+              _context38.next = 6;
               break;
             }
 
-            return _context40.abrupt('return');
+            return _context38.abrupt('return');
 
           case 6:
             if (!(this.subKey.getFingerprint() !== subKey.subKey.getFingerprint())) {
-              _context40.next = 8;
+              _context38.next = 8;
               break;
             }
 
@@ -38332,101 +38451,101 @@ SubKey.prototype.update = function () {
             // update missing binding signatures
             that = this;
             dataToVerify = { key: primaryKey, bind: that.subKey };
-            _context40.next = 13;
+            _context38.next = 13;
             return mergeSignatures(subKey, this, 'bindingSignatures', function () {
-              var _ref43 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(srcBindSig) {
+              var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(srcBindSig) {
                 var i;
-                return _regenerator2.default.wrap(function _callee39$(_context39) {
+                return _regenerator2.default.wrap(function _callee37$(_context37) {
                   while (1) {
-                    switch (_context39.prev = _context39.next) {
+                    switch (_context37.prev = _context37.next) {
                       case 0:
-                        _context39.t0 = srcBindSig.verified;
+                        _context37.t0 = srcBindSig.verified;
 
-                        if (_context39.t0) {
-                          _context39.next = 5;
+                        if (_context37.t0) {
+                          _context37.next = 5;
                           break;
                         }
 
-                        _context39.next = 4;
+                        _context37.next = 4;
                         return srcBindSig.verify(primaryKey, dataToVerify);
 
                       case 4:
-                        _context39.t0 = _context39.sent;
+                        _context37.t0 = _context37.sent;
 
                       case 5:
-                        if (_context39.t0) {
-                          _context39.next = 7;
+                        if (_context37.t0) {
+                          _context37.next = 7;
                           break;
                         }
 
-                        return _context39.abrupt('return', false);
+                        return _context37.abrupt('return', false);
 
                       case 7:
                         i = 0;
 
                       case 8:
                         if (!(i < that.bindingSignatures.length)) {
-                          _context39.next = 16;
+                          _context37.next = 16;
                           break;
                         }
 
                         if (!that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
-                          _context39.next = 13;
+                          _context37.next = 13;
                           break;
                         }
 
                         if (!(srcBindSig.created < that.bindingSignatures[i].created)) {
-                          _context39.next = 13;
+                          _context37.next = 13;
                           break;
                         }
 
                         that.bindingSignatures[i] = srcBindSig;
-                        return _context39.abrupt('return', false);
+                        return _context37.abrupt('return', false);
 
                       case 13:
                         i++;
-                        _context39.next = 8;
+                        _context37.next = 8;
                         break;
 
                       case 16:
-                        return _context39.abrupt('return', true);
+                        return _context37.abrupt('return', true);
 
                       case 17:
                       case 'end':
-                        return _context39.stop();
+                        return _context37.stop();
                     }
                   }
-                }, _callee39, this);
+                }, _callee37, this);
               }));
 
-              return function (_x67) {
-                return _ref43.apply(this, arguments);
+              return function (_x64) {
+                return _ref41.apply(this, arguments);
               };
             }());
 
           case 13:
-            _context40.next = 15;
+            _context38.next = 15;
             return mergeSignatures(subKey, this, 'revocationSignatures', function (srcRevSig) {
               return isDataRevoked(primaryKey, dataToVerify, [srcRevSig]);
             });
 
           case 15:
           case 'end':
-            return _context40.stop();
+            return _context38.stop();
         }
       }
-    }, _callee40, this);
+    }, _callee38, this);
   }));
 
-  return function (_x65, _x66) {
-    return _ref42.apply(this, arguments);
+  return function (_x62, _x63) {
+    return _ref40.apply(this, arguments);
   };
 }();
 
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
- * @returns {{keys: Array<module:key~Key>,
+ * @returns {{keys: Array<module:key.Key>,
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
@@ -38460,7 +38579,7 @@ function read(data) {
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String} armoredText text to be parsed
- * @returns {{keys: Array<module:key~Key>,
+ * @returns {{keys: Array<module:key.Key>,
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
@@ -38481,15 +38600,18 @@ function readArmored(armoredText) {
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]    to indicate what type of key to make.
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ *                             To indicate what type of key to make.
  *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.numBits    number of bits for the key creation.
- * @param {String|Array<String>}  options.userIds    assumes already in form of "User Name <username@email.com>"
-                                                     If array is used, the first userId is set as primary user Id
+ * @param {String|Array<String>}  options.userIds
+ *                             Assumes already in form of "User Name <username@email.com>"
+ *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
- * @param {Number} [options.keyExpirationTime=0] The number of seconds after the key creation time that the key expires
- * @returns {Promise<module:key~Key>}
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
@@ -38575,7 +38697,7 @@ function getExpirationTime(keyPacket, signature) {
   }
   // check V4 expiration time
   if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
-    expirationTime = signature.created.getTime() + signature.keyExpirationTime * 1000;
+    expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime * 1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
@@ -38654,6 +38776,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview Provides the Keyring class
  * @requires key
  * @requires keyring/localstore
  * @module keyring/keyring
@@ -38686,7 +38809,7 @@ Keyring.prototype.clear = function () {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @returns {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.getKeysForId = function (keyId, deep) {
   var result = [];
@@ -38699,7 +38822,7 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
  * Removes keys having the specified key id from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @returns {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
   var result = [];
@@ -38710,7 +38833,7 @@ Keyring.prototype.removeKeysForId = function (keyId) {
 
 /**
  * Get all public and private keys
- * @returns {Array<module:key~Key>} all keys
+ * @returns {Array<module:key.Key>} all keys
  */
 Keyring.prototype.getAllKeys = function () {
   return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -38718,7 +38841,7 @@ Keyring.prototype.getAllKeys = function () {
 
 /**
  * Array of keys
- * @param {Array<module:key~Key>} keys The keys to store in this array
+ * @param {Array<module:key.Key>} keys The keys to store in this array
  */
 function KeyArray(keys) {
   this.keys = keys;
@@ -38727,7 +38850,7 @@ function KeyArray(keys) {
 /**
  * Searches all keys in the KeyArray matching the address or address part of the user ids
  * @param {String} email email address to search for
- * @returns {Array<module:key~Key>} The public keys associated with provided email address.
+ * @returns {Array<module:key.Key>} The public keys associated with provided email address.
  */
 KeyArray.prototype.getForAddress = function (email) {
   var results = [];
@@ -38743,7 +38866,7 @@ KeyArray.prototype.getForAddress = function (email) {
  * Checks a key to see if it matches the specified email address
  * @private
  * @param {String} email email address to search for
- * @param {module:key~Key} key The key to be checked.
+ * @param {module:key.Key} key The key to be checked.
  * @returns {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
@@ -38766,7 +38889,7 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
+ * @param {module:packet.SecretKey|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
  * @returns {Boolean} True if keypacket has the specified keyid
  */
 function keyIdCheck(keyId, keypacket) {
@@ -38781,7 +38904,7 @@ function keyIdCheck(keyId, keypacket) {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @returns {module:key~Key|null} key found or null
+ * @returns {module:key.Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (var i = 0; i < this.keys.length; i++) {
@@ -38866,7 +38989,7 @@ KeyArray.prototype.importKey = function () {
 
 /**
  * Add key to KeyArray
- * @param {module:key~Key} key The key that will be added to the keyring
+ * @param {module:key.Key} key The key that will be added to the keyring
  * @returns {Number} The new length of the KeyArray
  */
 KeyArray.prototype.push = function (key) {
@@ -38877,7 +39000,7 @@ KeyArray.prototype.push = function (key) {
  * Removes a key with the specified keyid from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @returns {module:key~Key|null} The key object which has been removed or null
+ * @returns {module:key.Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (var i = 0; i < this.keys.length; i++) {
@@ -38951,6 +39074,7 @@ function LocalStore(prefix) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview Provides the LocalStore class
  * @requires config
  * @requires key
  * @requires util
@@ -38962,7 +39086,7 @@ LocalStore.prototype.privateKeysItem = 'private-keys';
 
 /**
  * Load the public keys from HTML5 local storage.
- * @returns {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPublic = function () {
   return loadKeys(this.storage, this.publicKeysItem);
@@ -38970,7 +39094,7 @@ LocalStore.prototype.loadPublic = function () {
 
 /**
  * Load the private keys from HTML5 local storage.
- * @returns {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
 LocalStore.prototype.loadPrivate = function () {
   return loadKeys(this.storage, this.privateKeysItem);
@@ -38996,7 +39120,7 @@ function loadKeys(storage, itemname) {
 /**
  * Saves the current state of the public keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
 LocalStore.prototype.storePublic = function (keys) {
   storeKeys(this.storage, this.publicKeysItem, keys);
@@ -39005,7 +39129,7 @@ LocalStore.prototype.storePublic = function (keys) {
 /**
  * Saves the current state of the private keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
 LocalStore.prototype.storePrivate = function (keys) {
   storeKeys(this.storage, this.privateKeysItem, keys);
@@ -39254,7 +39378,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
 
 /**
  * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>}        privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date}                   (optional) override the creation time of the signature
  * @returns {Promise<Message>}             new message with signed content
@@ -39264,11 +39388,11 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
 
 /**
  * Create signature packets for the message
- * @param  {module:packet/literal}             literalDataPacket the literal data packet to sign
- * @param  {Array<module:key~Key>}             privateKeys private keys with decrypted secret key data for signing
+ * @param  {module:packet.Literal}             literalDataPacket the literal data packet to sign
+ * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
- * @returns {Promise<module:packet/packetlist>} list of signature packets
+ * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
 var createSignaturePackets = exports.createSignaturePackets = function () {
@@ -39377,7 +39501,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
 
 /**
  * Verify message signatures
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
@@ -39386,9 +39510,9 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
 
 /**
  * Create list of objects containing signer's keyid and validity of signature
- * @param {Array<module:packet/signature>} signatureList array of signature packets
- * @param {Array<module:packet/literal>} literalDataList array of literal data packets
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:packet.Signature>} signatureList array of signature packets
+ * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<{keyid: module:type/keyid,
@@ -39501,7 +39625,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
 
 /**
  * Unwrap compressed message
- * @returns {module:message~Message} message Content of compressed message
+ * @returns {module:message.Message} message Content of compressed message
  */
 
 
@@ -39511,6 +39635,14 @@ exports.read = read;
 exports.fromText = fromText;
 exports.fromBinary = fromBinary;
 
+var _armor = _dereq_('./encoding/armor');
+
+var _armor2 = _interopRequireDefault(_armor);
+
+var _keyid = _dereq_('./type/keyid');
+
+var _keyid2 = _interopRequireDefault(_keyid);
+
 var _config = _dereq_('./config');
 
 var _config2 = _interopRequireDefault(_config);
@@ -39518,10 +39650,6 @@ var _config2 = _interopRequireDefault(_config);
 var _crypto = _dereq_('./crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
-
-var _armor = _dereq_('./encoding/armor');
-
-var _armor2 = _interopRequireDefault(_armor);
 
 var _enums = _dereq_('./enums');
 
@@ -39535,10 +39663,6 @@ var _packet = _dereq_('./packet');
 
 var _packet2 = _interopRequireDefault(_packet);
 
-var _keyid = _dereq_('./type/keyid');
-
-var _keyid2 = _interopRequireDefault(_keyid);
-
 var _signature = _dereq_('./signature');
 
 var _key = _dereq_('./key');
@@ -39549,7 +39673,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @class
  * @classdesc Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
- * @param  {module:packet/packetlist} packetlist The packets that form this message
+ * @param  {module:packet.List} packetlist The packets that form this message
  * See {@link https://tools.ietf.org/html/rfc4880#section-11.3}
  */
 
@@ -39582,9 +39706,10 @@ function Message(packetlist) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires encoding/armor
+ * @requires type/keyid
  * @requires config
  * @requires crypto
- * @requires encoding/armor
  * @requires enums
  * @requires util
  * @requires packet
@@ -40246,7 +40371,7 @@ Message.prototype.encrypt = function () {
 /**
  * Compresses the message (the literal and -if signed- signature data packets of the message)
  * @param  {module:enums.compression}   compression     compression algorithm to be used
- * @returns {module:message~Message}       new message with compressed content
+ * @returns {module:message.Message}       new message with compressed content
  */
 Message.prototype.compress = function (compression) {
   if (compression === _enums2.default.compression.uncompressed) {
@@ -40265,10 +40390,10 @@ Message.prototype.compress = function (compression) {
 
 /**
  * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key~Key>}               privateKeys private keys with decrypted secret key data for signing
+ * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
- * @returns {Promise<module:signature~Signature>} new detached signature of message content
+ * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
 Message.prototype.signDetached = function () {
@@ -40324,7 +40449,7 @@ Message.prototype.signDetached = function () {
 
 /**
  * Verify detached message signature
- * @param {Array<module:key~Key>} keys array of keys to verify signatures
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Signature} signature
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
@@ -40367,7 +40492,7 @@ Message.prototype.armor = function () {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String} armoredText text to be parsed
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 function readArmored(armoredText) {
@@ -40394,7 +40519,7 @@ function read(input) {
  * @param {String} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 function fromText(text, filename) {
@@ -40416,7 +40541,7 @@ function fromText(text, filename) {
  * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
- * @returns {module:message~Message} new message object
+ * @returns {module:message.Message} new message object
  * @static
  */
 function fromBinary(bytes, filename) {
@@ -40515,6 +40640,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview The openpgp base module should provide all of the functionality
+ * to consume the openpgp.js library. All additional classes are documented
+ * for extending and developing on top of the base library.
  * @requires message
  * @requires cleartext
  * @requires key
@@ -40525,10 +40653,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @module openpgp
  */
 
+// This file intentionally has two separate file overviews so that
+// a reference to this module appears at the end of doc/index.html.
+
 /**
- * @fileoverview The openpgp base module should provide all of the functionality
- * to consume the openpgp.js library. All additional classes are documented
- * for extending and developing on top of the base library.
+ * @fileoverview To view the full API documentation, start from
+ * {@link module:openpgp}
  */
 
 if (typeof window !== 'undefined') {
@@ -40567,7 +40697,7 @@ function initWorker() {
 
 /**
  * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @returns {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
+ * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
  */
 function getWorker() {
   return asyncProxy;
@@ -41548,6 +41678,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /**
  * Allocate a new packet
+ * @function newPacketFromTag
+ * @memberof module:packet
  * @param {String} tag property name from {@link module:enums.packet}
  * @returns {Object} new packet object with type based on tag
  */
@@ -41557,7 +41689,9 @@ function newPacketFromTag(tag) {
 
 /**
  * Allocate a new packet from structured packet clone
- * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
+ * @see {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
+ * @function fromStructuredClone
+ * @memberof module:packet
  * @param {Object} packetClone packet clone
  * @returns {Object} new packet object with data from packet clone
  */
@@ -41579,6 +41713,7 @@ function fromStructuredClone(packetClone) {
  * Convert tag name to class name
  * @param {String} tag property name from {@link module:enums.packet}
  * @returns {String}
+ * @private
  */
 function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
@@ -41617,7 +41752,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 //////////////////////////////
 //                          //
-//   Packetlist --> Clone   //
+//   List --> Clone   //
 //                          //
 //////////////////////////////
 
@@ -41692,7 +41827,7 @@ function verificationObjectToClone(verObject) {
 
 //////////////////////////////
 //                          //
-//   Clone --> Packetlist   //
+//   Clone --> List   //
 //                          //
 //////////////////////////////
 
@@ -41776,11 +41911,11 @@ var _config = _dereq_('../config');
 
 var _config2 = _interopRequireDefault(_config);
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
-var _util = _dereq_('../util.js');
+var _util = _dereq_('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
@@ -41790,7 +41925,45 @@ var _bzip2Build2 = _interopRequireDefault(_bzip2Build);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var nodeZlib = _util2.default.getNodeZlib(); // GPG4Browsers - An OpenPGP implementation in javascript
+/**
+ * Implementation of the Compressed Data Packet (Tag 8)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}:
+ * The Compressed Data packet contains compressed data.  Typically,
+ * this packet is found as the contents of an encrypted packet, or following
+ * a Signature or One-Pass Signature packet, and contains a literal data packet.
+ * @memberof module:packet
+ * @constructor
+ */
+function Compressed() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
+  this.tag = _enums2.default.packet.compressed;
+  /**
+   * List of packets
+   * @type {module:packet.List}
+   */
+  this.packets = null;
+  /**
+   * Compression algorithm
+   * @type {compression}
+   */
+  this.algorithm = 'zip';
+
+  /**
+   * Compressed packet data
+   * @type {String}
+   */
+  this.compressed = null;
+}
+
+/**
+ * Parsing function for the packet.
+ * @param {String} bytes Payload of a tag 8 packet
+ */
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -41808,21 +41981,70 @@ var nodeZlib = _util2.default.getNodeZlib(); // GPG4Browsers - An OpenPGP implem
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Compressed Data Packet (Tag 8)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}:
- * The Compressed Data packet contains compressed data.  Typically,
- * this packet is found as the contents of an encrypted packet, or following
- * a Signature or One-Pass Signature packet, and contains a literal data packet.
- * @requires compression/zlib
- * @requires compression/rawinflate
- * @requires compression/rawdeflate
- * @requires compression/bzip2
+ * @requires pako
+ * @requires config
  * @requires enums
  * @requires util
- * @module packet/compressed
+ * @requires compression/bzip2
  */
 
+Compressed.prototype.read = function (bytes) {
+  // One octet that gives the algorithm used to compress the packet.
+  this.algorithm = _enums2.default.read(_enums2.default.compression, bytes[0]);
+
+  // Compressed data, which makes up the remainder of the packet.
+  this.compressed = bytes.subarray(1, bytes.length);
+
+  this.decompress();
+};
+
+/**
+ * Return the compressed packet.
+ * @returns {String} binary compressed packet
+ */
+Compressed.prototype.write = function () {
+  if (this.compressed === null) {
+    this.compress();
+  }
+
+  return _util2.default.concatUint8Array([new Uint8Array([_enums2.default.write(_enums2.default.compression, this.algorithm)]), this.compressed]);
+};
+
+/**
+ * Decompression method for decompressing the compressed data
+ * read by read_packet
+ */
+Compressed.prototype.decompress = function () {
+
+  if (!decompress_fns[this.algorithm]) {
+    throw new Error("Compression algorithm unknown :" + this.algorithm);
+  }
+
+  this.packets.read(decompress_fns[this.algorithm](this.compressed));
+};
+
+/**
+ * Compress the packet data (member decompressedData)
+ */
+Compressed.prototype.compress = function () {
+
+  if (!compress_fns[this.algorithm]) {
+    throw new Error("Compression algorithm unknown :" + this.algorithm);
+  }
+
+  this.compressed = compress_fns[this.algorithm](this.packets.write());
+};
+
+exports.default = Compressed;
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+var nodeZlib = _util2.default.getNodeZlib();
 var Buffer = _util2.default.getNodeBuffer();
 
 function node_zlib(func) {
@@ -41877,102 +42099,22 @@ if (nodeZlib) {
   };
 }
 
-/**
- * @constructor
- */
-function Compressed() {
-  /**
-   * Packet type
-   * @type {module:enums.packet}
-   */
-  this.tag = _enums2.default.packet.compressed;
-  /**
-   * List of packets
-   * @type {module:packet/packetlist}
-   */
-  this.packets = null;
-  /**
-   * Compression algorithm
-   * @type {compression}
-   */
-  this.algorithm = 'zip';
-
-  /**
-   * Compressed packet data
-   * @type {String}
-   */
-  this.compressed = null;
-}
-
-/**
- * Parsing function for the packet.
- * @param {String} bytes Payload of a tag 8 packet
- */
-Compressed.prototype.read = function (bytes) {
-  // One octet that gives the algorithm used to compress the packet.
-  this.algorithm = _enums2.default.read(_enums2.default.compression, bytes[0]);
-
-  // Compressed data, which makes up the remainder of the packet.
-  this.compressed = bytes.subarray(1, bytes.length);
-
-  this.decompress();
-};
-
-/**
- * Return the compressed packet.
- * @returns {String} binary compressed packet
- */
-Compressed.prototype.write = function () {
-  if (this.compressed === null) {
-    this.compress();
-  }
-
-  return _util2.default.concatUint8Array([new Uint8Array([_enums2.default.write(_enums2.default.compression, this.algorithm)]), this.compressed]);
-};
-
-/**
- * Decompression method for decompressing the compressed data
- * read by read_packet
- */
-Compressed.prototype.decompress = function () {
-
-  if (!decompress_fns[this.algorithm]) {
-    throw new Error("Compression algorithm unknown :" + this.algorithm);
-  }
-
-  this.packets.read(decompress_fns[this.algorithm](this.compressed));
-};
-
-/**
- * Compress the packet data (member decompressedData)
- */
-Compressed.prototype.compress = function () {
-
-  if (!compress_fns[this.algorithm]) {
-    throw new Error("Compression algorithm unknown :" + this.algorithm);
-  }
-
-  this.compressed = compress_fns[this.algorithm](this.packets.write());
-};
-
-exports.default = Compressed;
-
-},{"../compression/bzip2.build.js":304,"../config":306,"../enums.js":337,"../util.js":376,"pako":282}],349:[function(_dereq_,module,exports){
+},{"../compression/bzip2.build.js":304,"../config":306,"../enums":337,"../util":376,"pako":282}],349:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _all_packets = _dereq_('./all_packets.js');
+var _all_packets = _dereq_('./all_packets');
 
 var packets = _interopRequireWildcard(_all_packets);
 
-var _clone = _dereq_('./clone.js');
+var _clone = _dereq_('./clone');
 
 var clone = _interopRequireWildcard(_clone);
 
-var _packetlist = _dereq_('./packetlist.js');
+var _packetlist = _dereq_('./packetlist');
 
 var _packetlist2 = _interopRequireDefault(_packetlist);
 
@@ -41981,15 +42123,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 var mod = {
-  /** @see module:packet/packetlist */
   List: _packetlist2.default,
-  /** @see module:packet/clone */
   clone: clone
 }; /**
     * @fileoverview OpenPGP packet types
     * @see module:packet/all_packets
-    * @see module:packet/packetlist
     * @see module:packet/clone
+    * @see module:packet.List
     * @module packet
     */
 
@@ -41999,25 +42139,31 @@ for (var i in packets) {
 
 exports.default = mod;
 
-},{"./all_packets.js":346,"./clone.js":347,"./packetlist.js":354}],350:[function(_dereq_,module,exports){
+},{"./all_packets":346,"./clone":347,"./packetlist":354}],350:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the Literal Data Packet (Tag 11)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}:
+ * A Literal Data packet contains the body of a message; data that is not to be
+ * further interpreted.
  * @param {Date} date the creation date of the literal package
+ * @memberof module:packet
  * @constructor
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -42038,14 +42184,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Literal Data Packet (Tag 11)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}:
- * A Literal Data packet contains the body of a message; data that is not to be
- * further interpreted.
  * @requires enums
  * @requires util
- * @module packet/literal
  */
 
 function Literal() {
@@ -42120,7 +42260,7 @@ Literal.prototype.getFilename = function () {
  * Parsing function for a literal data packet (tag 11).
  *
  * @param {Uint8Array} input Payload of a tag 11 packet
- * @returns {module:packet/literal} object representation
+ * @returns {module:packet.Literal} object representation
  */
 Literal.prototype.read = function (bytes) {
   // - A one-octet field that describes how the data is formatted.
@@ -42154,20 +42294,30 @@ Literal.prototype.write = function () {
 
 exports.default = Literal;
 
-},{"../enums.js":337,"../util.js":376}],351:[function(_dereq_,module,exports){
+},{"../enums":337,"../util":376}],351:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the strange "Marker packet" (Tag 10)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}:
+ * An experimental version of PGP used this packet as the Literal
+ * packet, but no released version of PGP generated Literal packets with this
+ * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
+ * the Marker packet.
+ *
+ * Such a packet MUST be ignored when received.
+ * @memberof module:packet
  * @constructor
  */
 function Marker() {
@@ -42183,7 +42333,7 @@ function Marker() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/marker} Object representation
+ * @returns {module:packet.Marker} Object representation
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -42203,17 +42353,7 @@ function Marker() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the strange "Marker packet" (Tag 10)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}:
- * An experimental version of PGP used this packet as the Literal
- * packet, but no released version of PGP generated Literal packets with this
- * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
- * the Marker packet.
- *
- * Such a packet MUST be ignored when received.
  * @requires enums
- * @module packet/marker
  */
 
 Marker.prototype.read = function (bytes) {
@@ -42229,44 +42369,77 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums.js":337}],352:[function(_dereq_,module,exports){
+},{"../enums":337}],352:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _util = _dereq_('../util.js');
+var _keyid = _dereq_('../type/keyid');
 
-var _util2 = _interopRequireDefault(_util);
+var _keyid2 = _interopRequireDefault(_keyid);
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
-var _keyid = _dereq_('../type/keyid.js');
+var _util = _dereq_('../util');
 
-var _keyid2 = _interopRequireDefault(_keyid);
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the One-Pass Signature Packets (Tag 4)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}:
+ * The One-Pass Signature packet precedes the signed data and contains
+ * enough information to allow the receiver to begin calculating any
+ * hashes needed to verify the signature.  It allows the Signature
+ * packet to be placed at the end of the message, so that the signer
+ * can compute the entire signed message in one pass.
+ * @memberof module:packet
  * @constructor
  */
 function OnePassSignature() {
-  this.tag = _enums2.default.packet.onePassSignature; // The packet type
-  this.version = null; // A one-octet version number.  The current version is 3.
-  this.type = null; // A one-octet signature type.  Signature types are described in {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
-  this.hashAlgorithm = null; // A one-octet number describing the hash algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4})
-  this.publicKeyAlgorithm = null; // A one-octet number describing the public-key algorithm used. (See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1})
-  this.signingKeyId = null; // An eight-octet number holding the Key ID of the signing key.
-  this.flags = null; //  A one-octet number holding a flag showing whether the signature is nested.  A zero value indicates that the next packet is another One-Pass Signature packet that describes another signature to be applied to the same message data.
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
+  this.tag = _enums2.default.packet.onePassSignature;
+  /** A one-octet version number.  The current version is 3. */
+  this.version = null;
+  /**
+   * A one-octet signature type.
+   * Signature types are described in
+   * {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
+   */
+  this.type = null;
+  /**
+   * A one-octet number describing the hash algorithm used.
+   * @see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4}
+   */
+  this.hashAlgorithm = null;
+  /**
+   * A one-octet number describing the public-key algorithm used.
+   * @see {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1}
+   */
+  this.publicKeyAlgorithm = null;
+  /** An eight-octet number holding the Key ID of the signing key. */
+  this.signingKeyId = null;
+  /**
+   * A one-octet number holding a flag showing whether the signature is nested.
+   * A zero value indicates that the next packet is another One-Pass Signature packet
+   * that describes another signature to be applied to the same message data.
+   */
+  this.flags = null;
 }
 
 /**
  * parsing function for a one-pass signature packet (tag 4).
  * @param {Uint8Array} bytes payload of a tag 4 packet
- * @returns {module:packet/one_pass_signature} object representation
+ * @returns {module:packet.OnePassSignature} object representation
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -42286,18 +42459,9 @@ function OnePassSignature() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the One-Pass Signature Packets (Tag 4)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.4|RFC4880 5.4}:
- * The One-Pass Signature packet precedes the signed data and contains
- * enough information to allow the receiver to begin calculating any
- * hashes needed to verify the signature.  It allows the Signature
- * packet to be placed at the end of the message, so that the signer
- * can compute the entire signed message in one pass.
- * @requires util
- * @requires enums
  * @requires type/keyid
- * @module packet/one_pass_signature
+ * @requires enums
+ * @requires util
 */
 
 OnePassSignature.prototype.read = function (bytes) {
@@ -42349,7 +42513,7 @@ OnePassSignature.prototype.postCloneTypeFix = function () {
 
 exports.default = OnePassSignature;
 
-},{"../enums.js":337,"../type/keyid.js":372,"../util.js":376}],353:[function(_dereq_,module,exports){
+},{"../enums":337,"../type/keyid":372,"../util":376}],353:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42360,7 +42524,7 @@ var _slicedToArray2 = _dereq_("babel-runtime/helpers/slicedToArray");
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
-var _util = _dereq_("../util.js");
+var _util = _dereq_("../util");
 
 var _util2 = _interopRequireDefault(_util);
 
@@ -42604,12 +42768,13 @@ exports.default = {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview Functions for reading and writing packets
  * @requires enums
  * @requires util
  * @module packet/packet
  */
 
-},{"../util.js":376,"babel-runtime/helpers/slicedToArray":33}],354:[function(_dereq_,module,exports){
+},{"../util":376,"babel-runtime/helpers/slicedToArray":33}],354:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42624,25 +42789,25 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _util = _dereq_('../util');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _packet = _dereq_('./packet.js');
-
-var _packet2 = _interopRequireDefault(_packet);
-
-var _all_packets = _dereq_('./all_packets.js');
+var _all_packets = _dereq_('./all_packets');
 
 var packets = _interopRequireWildcard(_all_packets);
 
-var _enums = _dereq_('../enums.js');
+var _packet = _dereq_('./packet');
 
-var _enums2 = _interopRequireDefault(_enums);
+var _packet2 = _interopRequireDefault(_packet);
 
 var _config = _dereq_('../config');
 
 var _config2 = _interopRequireDefault(_config);
+
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -42652,13 +42817,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
+ * @memberof module:packet
  * @constructor
  */
-function Packetlist() {
+function List() {
   /**
    * The number of packets contained within the list.
    * @readonly
-   * @type {Integer} */
+   * @type {Integer}
+   */
   this.length = 0;
 }
 
@@ -42668,14 +42835,14 @@ function Packetlist() {
  */
 /* eslint-disable callback-return */
 /**
- * @requires util
- * @requires enums
- * @requires packet
+ * @requires packet/all_packets
  * @requires packet/packet
- * @module packet/packetlist
+ * @requires config
+ * @requires enums
+ * @requires util
  */
 
-Packetlist.prototype.read = function (bytes) {
+List.prototype.read = function (bytes) {
   var i = 0;
 
   while (i < bytes.length) {
@@ -42705,7 +42872,7 @@ Packetlist.prototype.read = function (bytes) {
  * class instance.
  * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
-Packetlist.prototype.write = function () {
+List.prototype.write = function () {
   var arr = [];
 
   for (var i = 0; i < this.length; i++) {
@@ -42720,13 +42887,14 @@ Packetlist.prototype.write = function () {
 /**
  * Adds a packet to the list. This is the only supported method of doing so;
  * writing to packetlist[i] directly will result in an error.
+ * @param {Object} packet Packet to push
  */
-Packetlist.prototype.push = function (packet) {
+List.prototype.push = function (packet) {
   if (!packet) {
     return;
   }
 
-  packet.packets = packet.packets || new Packetlist();
+  packet.packets = packet.packets || new List();
 
   this[this.length] = packet;
   this.length++;
@@ -42736,7 +42904,7 @@ Packetlist.prototype.push = function (packet) {
  * Remove a packet from the list and return it.
  * @returns {Object}   The packet that was removed
  */
-Packetlist.prototype.pop = function () {
+List.prototype.pop = function () {
   if (this.length === 0) {
     return;
   }
@@ -42751,8 +42919,8 @@ Packetlist.prototype.pop = function () {
 /**
  * Creates a new PacketList with all packets that pass the test implemented by the provided function.
  */
-Packetlist.prototype.filter = function (callback) {
-  var filtered = new Packetlist();
+List.prototype.filter = function (callback) {
+  var filtered = new List();
 
   for (var i = 0; i < this.length; i++) {
     if (callback(this[i], i, this)) {
@@ -42766,8 +42934,8 @@ Packetlist.prototype.filter = function (callback) {
 /**
  * Creates a new PacketList with all packets from the given types
  */
-Packetlist.prototype.filterByTag = function () {
-  var filtered = new Packetlist();
+List.prototype.filterByTag = function () {
+  var filtered = new List();
   var that = this;
 
   var handle = function handle(tag) {
@@ -42792,7 +42960,7 @@ Packetlist.prototype.filterByTag = function () {
 /**
  * Executes the provided callback once for each element
  */
-Packetlist.prototype.forEach = function (callback) {
+List.prototype.forEach = function (callback) {
   for (var i = 0; i < this.length; i++) {
     callback(this[i], i, this);
   }
@@ -42802,7 +42970,7 @@ Packetlist.prototype.forEach = function (callback) {
  * Returns an array containing return values of callback
  * on each element
  */
-Packetlist.prototype.map = function (callback) {
+List.prototype.map = function (callback) {
   var packetArray = [];
 
   for (var i = 0; i < this.length; i++) {
@@ -42819,7 +42987,7 @@ Packetlist.prototype.map = function (callback) {
  * @returns {Promise<Boolean>}
  * @async
  */
-Packetlist.prototype.some = function () {
+List.prototype.some = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(callback) {
     var i;
     return _regenerator2.default.wrap(function _callee$(_context) {
@@ -42870,7 +43038,7 @@ Packetlist.prototype.some = function () {
  * Executes the callback function once for each element,
  * returns true if all callbacks returns a truthy value
  */
-Packetlist.prototype.every = function (callback) {
+List.prototype.every = function (callback) {
   for (var i = 0; i < this.length; i++) {
     if (!callback(this[i], i, this)) {
       return false;
@@ -42884,7 +43052,7 @@ Packetlist.prototype.every = function (callback) {
  * @param  {module:enums.packet} type The packet type
  * @returns {module:packet/packet|null}
  */
-Packetlist.prototype.findPacket = function (type) {
+List.prototype.findPacket = function (type) {
   var packetlist = this.filterByTag(type);
   if (packetlist.length) {
     return packetlist[0];
@@ -42905,7 +43073,7 @@ Packetlist.prototype.findPacket = function (type) {
 /**
  * Returns array of found indices by tag
  */
-Packetlist.prototype.indexOfTag = function () {
+List.prototype.indexOfTag = function () {
   var tagIndex = [];
   var that = this;
 
@@ -42930,11 +43098,11 @@ Packetlist.prototype.indexOfTag = function () {
 /**
  * Returns slice of packetlist
  */
-Packetlist.prototype.slice = function (begin, end) {
+List.prototype.slice = function (begin, end) {
   if (!end) {
     end = this.length;
   }
-  var part = new Packetlist();
+  var part = new List();
   for (var i = begin; i < end; i++) {
     part.push(this[i]);
   }
@@ -42944,7 +43112,7 @@ Packetlist.prototype.slice = function (begin, end) {
 /**
  * Concatenates packetlist or array of packets
  */
-Packetlist.prototype.concat = function (packetlist) {
+List.prototype.concat = function (packetlist) {
   if (packetlist) {
     for (var i = 0; i < packetlist.length; i++) {
       this.push(packetlist[i]);
@@ -42959,27 +43127,35 @@ Packetlist.prototype.concat = function (packetlist) {
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */
-Packetlist.fromStructuredClone = function (packetlistClone) {
-  var packetlist = new Packetlist();
+List.fromStructuredClone = function (packetlistClone) {
+  var packetlist = new List();
   for (var i = 0; i < packetlistClone.length; i++) {
     packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
     if (packetlist[i].packets.length !== 0) {
       packetlist[i].packets = this.fromStructuredClone(packetlist[i].packets);
     } else {
-      packetlist[i].packets = new Packetlist();
+      packetlist[i].packets = new List();
     }
   }
   return packetlist;
 };
 
-exports.default = Packetlist;
+exports.default = List;
 
-},{"../config":306,"../enums.js":337,"../util":376,"./all_packets.js":346,"./packet.js":353,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],355:[function(_dereq_,module,exports){
+},{"../config":306,"../enums":337,"../util":376,"./all_packets":346,"./packet":353,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],355:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _keyid = _dereq_('../type/keyid');
+
+var _keyid2 = _interopRequireDefault(_keyid);
+
+var _mpi = _dereq_('../type/mpi');
+
+var _mpi2 = _interopRequireDefault(_mpi);
 
 var _crypto = _dereq_('../crypto');
 
@@ -42993,28 +43169,46 @@ var _util = _dereq_('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
-var _keyid = _dereq_('../type/keyid');
-
-var _keyid2 = _interopRequireDefault(_keyid);
-
-var _mpi = _dereq_('../type/mpi');
-
-var _mpi2 = _interopRequireDefault(_mpi);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the Key Material Packet (Tag 5,6,7,14)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
+ * A key material packet contains all the information about a public or
+ * private key.  There are four variants of this packet type, and two
+ * major versions.
+ *
+ * A Public-Key packet starts a series of packets that forms an OpenPGP
+ * key (sometimes called an OpenPGP certificate).
+ * @memberof module:packet
  * @constructor
  */
 function PublicKey() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = _enums2.default.packet.publicKey;
+  /**
+   * Packet version
+   * @type {Integer}
+   */
   this.version = 4;
-  /** Key creation date.
-   * @type {Date} */
+  /**
+   * Key creation date.
+   * @type {Date}
+   */
   this.created = _util2.default.normalizeDate();
-  /* Algorithm specific params */
+  /**
+   * Algorithm specific params
+   * @type {Array<Object>}
+   */
   this.params = [];
-  // time in days (V3 only)
+  /**
+   * Time until expiration in days (V3 only)
+   * @type {Integer}
+   */
   this.expirationTimeV3 = 0;
   /**
    * Fingerprint in lowercase hex
@@ -43052,17 +43246,11 @@ function PublicKey() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
+ * @requires type/keyid
+ * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util
- * @requires type/keyid
- * @module packet/public_key
  */
 
 PublicKey.prototype.read = function (bytes) {
@@ -43105,7 +43293,7 @@ PublicKey.prototype.read = function (bytes) {
 
 /**
  * Alias of read()
- * @see module:packet/public_key~PublicKey#read
+ * @see module:packet.PublicKey#read
  */
 PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
 
@@ -43135,7 +43323,7 @@ PublicKey.prototype.write = function () {
 
 /**
  * Alias of write()
- * @see module:packet/public_key~PublicKey#write
+ * @see module:packet.PublicKey#write
  */
 PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 
@@ -43158,7 +43346,7 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new _keyid2.default();
   if (this.version === 4) {
-    this.keyid.read(_util2.default.str_to_Uint8Array(_util2.default.hex_to_str(this.getFingerprint()).substr(12, 8)));
+    this.keyid.read(_util2.default.hex_to_Uint8Array(this.getFingerprint()).subarray(12, 20));
   } else if (this.version === 3) {
     var arr = this.params[0].write();
     this.keyid.read(arr.subarray(arr.length - 8, arr.length));
@@ -43237,33 +43425,48 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _keyid = _dereq_('../type/keyid.js');
-
-var _keyid2 = _interopRequireDefault(_keyid);
-
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _ecdh_symkey = _dereq_('../type/ecdh_symkey.js');
+var _ecdh_symkey = _dereq_('../type/ecdh_symkey');
 
 var _ecdh_symkey2 = _interopRequireDefault(_ecdh_symkey);
 
-var _mpi = _dereq_('../type/mpi.js');
+var _keyid = _dereq_('../type/keyid');
+
+var _keyid2 = _interopRequireDefault(_keyid);
+
+var _mpi = _dereq_('../type/mpi');
 
 var _mpi2 = _interopRequireDefault(_mpi);
-
-var _enums = _dereq_('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
 
 var _crypto = _dereq_('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
 
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
+ * A Public-Key Encrypted Session Key packet holds the session key
+ * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
+ * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
+ * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
+ * message is encrypted with the session key, and the session key is itself
+ * encrypted and stored in the Encrypted Session Key packet(s). The
+ * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
+ * Session Key packet for each OpenPGP key to which the message is encrypted.
+ * The recipient of the message finds a session key that is encrypted to their
+ * public key, decrypts the session key, and then uses the session key to
+ * decrypt the message.
+ * @memberof module:packet
  * @constructor
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -43284,27 +43487,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
- * A Public-Key Encrypted Session Key packet holds the session key
- * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
- * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
- * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
- * message is encrypted with the session key, and the session key is itself
- * encrypted and stored in the Encrypted Session Key packet(s). The
- * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
- * Session Key packet for each OpenPGP key to which the message is encrypted.
- * The recipient of the message finds a session key that is encrypted to their
- * public key, decrypts the session key, and then uses the session key to
- * decrypt the message.
- * @requires crypto
- * @requires enums
  * @requires type/ecdh_symkey
  * @requires type/keyid
  * @requires type/mpi
+ * @requires crypto
+ * @requires enums
  * @requires util
- * @module packet/public_key_encrypted_session_key
  */
 
 function PublicKeyEncryptedSessionKey() {
@@ -43325,7 +43513,7 @@ function PublicKeyEncryptedSessionKey() {
  * @param {Integer} position Position to start reading from the input string
  * @param {Integer} len Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/public_key_encrypted_session_key} Object representation
+ * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
@@ -43360,7 +43548,7 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 
 /**
  * Encrypt session key packet
- * @param {module:packet/public_key} key Public key
+ * @param {module:packet.PublicKey} key Public key
  * @returns {Promise<Boolean>}
  * @async
  */
@@ -43425,7 +43613,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function () {
  * Decrypts the session key (only for public key encrypted session key
  * packets (tag 1)
  *
- * @param {module:packet/secret_key} key
+ * @param {module:packet.SecretKey} key
  *            Private key with secret params unlocked
  * @returns {Promise<Boolean>}
  * @async
@@ -43497,26 +43685,32 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":319,"../enums.js":337,"../type/ecdh_symkey.js":370,"../type/keyid.js":372,"../type/mpi.js":373,"../util.js":376,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],357:[function(_dereq_,module,exports){
+},{"../crypto":319,"../enums":337,"../type/ecdh_symkey":370,"../type/keyid":372,"../type/mpi":373,"../util":376,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],357:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _public_key = _dereq_('./public_key.js');
+var _public_key = _dereq_('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * A Public-Subkey packet (tag 14) has exactly the same format as a
+ * Public-Key packet, but denotes a subkey.  One or more subkeys may be
+ * associated with a top-level key.  By convention, the top-level key
+ * provides signature services, and the subkeys provide encryption
+ * services.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/public_key
+ * @extends module:packet.PublicKey
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -43538,7 +43732,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * @requires packet/public_key
  * @requires enums
- * @module packet/public_subkey
  */
 
 function PublicSubkey() {
@@ -43551,7 +43744,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums.js":337,"./public_key.js":355}],358:[function(_dereq_,module,exports){
+},{"../enums":337,"./public_key":355}],358:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43566,35 +43759,39 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _public_key = _dereq_('./public_key.js');
+var _public_key = _dereq_('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
-
-var _enums = _dereq_('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
-
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _crypto = _dereq_('../crypto');
-
-var _crypto2 = _interopRequireDefault(_crypto);
-
-var _s2k = _dereq_('../type/s2k.js');
-
-var _s2k2 = _interopRequireDefault(_s2k);
 
 var _keyid = _dereq_('../type/keyid.js');
 
 var _keyid2 = _interopRequireDefault(_keyid);
 
+var _s2k = _dereq_('../type/s2k');
+
+var _s2k2 = _interopRequireDefault(_s2k);
+
+var _crypto = _dereq_('../crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * A Secret-Key packet contains all the information that is found in a
+ * Public-Key packet, including the public-key material, but also
+ * includes the secret-key material after all the public-key fields.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/public_key
+ * @extends module:packet.PublicKey
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -43614,27 +43811,28 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Key Material Packet (Tag 5,6,7,14)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.5|RFC4480 5.5}:
- * A key material packet contains all the information about a public or
- * private key.  There are four variants of this packet type, and two
- * major versions.  Consequently, this section is complex.
- * @requires crypto
- * @requires enums
  * @requires packet/public_key
  * @requires type/keyid
  * @requires type/s2k
+ * @requires crypto
+ * @requires enums
  * @requires util
- * @module packet/secret_key
  */
 
 function SecretKey() {
   _public_key2.default.call(this);
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = _enums2.default.packet.secretKey;
-  // encrypted secret-key data
+  /**
+   * Encrypted secret-key data
+   */
   this.encrypted = null;
-  // indicator if secret-key data is available in decrypted form
+  /**
+   * Indicator if secret-key data is available in decrypted form
+   */
   this.isDecrypted = false;
 }
 
@@ -43705,7 +43903,8 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
 // 5.5.3.  Secret-Key Packet Formats
 
 /**
- * Internal parser for private keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
+ * Internal parser for private keys as specified in
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
 SecretKey.prototype.read = function (bytes) {
@@ -43735,9 +43934,10 @@ SecretKey.prototype.read = function (bytes) {
   }
 };
 
-/** Creates an OpenPGP key packet for the given key.
-  * @returns {String} A string of bytes containing the secret key OpenPGP packet
-  */
+/**
+ * Creates an OpenPGP key packet for the given key.
+ * @returns {String} A string of bytes containing the secret key OpenPGP packet
+ */
 SecretKey.prototype.write = function () {
   var arr = [this.writePublicKey()];
 
@@ -43751,7 +43951,8 @@ SecretKey.prototype.write = function () {
   return _util2.default.concatUint8Array(arr);
 };
 
-/** Encrypt the payload. By default, we use aes256 and iterated, salted string
+/**
+ * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isDecrypted === true)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
@@ -43826,9 +44027,8 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
 
 /**
  * Decrypts the private key params which are needed to use the key.
- * @link module:packet/secret_key.isDecrypted should be
- * false otherwise a call to this function is not needed
- *
+ * {@link module:packet.SecretKey.isDecrypted} should be false, as
+ * otherwise calls to this function will throw an error.
  * @param {String} passphrase The passphrase for this private key as string
  * @returns {Promise<Boolean>}
  * @async
@@ -43952,26 +44152,29 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":319,"../enums.js":337,"../type/keyid.js":372,"../type/s2k.js":375,"../util.js":376,"./public_key.js":355,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],359:[function(_dereq_,module,exports){
+},{"../crypto":319,"../enums":337,"../type/keyid.js":372,"../type/s2k":375,"../util":376,"./public_key":355,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],359:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _secret_key = _dereq_('./secret_key.js');
+var _secret_key = _dereq_('./secret_key');
 
 var _secret_key2 = _interopRequireDefault(_secret_key);
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
+ * Key packet and has exactly the same format.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/secret_key
+ * @extends module:packet.SecretKey
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -43993,7 +44196,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * @requires packet/secret_key
  * @requires enums
- * @module packet/secret_subkey
  */
 
 function SecretSubkey() {
@@ -44006,7 +44208,7 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums.js":337,"./secret_key.js":358}],360:[function(_dereq_,module,exports){
+},{"../enums":337,"./secret_key":358}],360:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44021,33 +44223,40 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _packet2 = _dereq_('./packet.js');
+var _packet2 = _dereq_('./packet');
 
 var _packet3 = _interopRequireDefault(_packet2);
-
-var _enums = _dereq_('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
-
-var _crypto = _dereq_('../crypto');
-
-var _crypto2 = _interopRequireDefault(_crypto);
-
-var _mpi = _dereq_('../type/mpi.js');
-
-var _mpi2 = _interopRequireDefault(_mpi);
 
 var _keyid = _dereq_('../type/keyid.js');
 
 var _keyid2 = _interopRequireDefault(_keyid);
 
+var _mpi = _dereq_('../type/mpi.js');
+
+var _mpi2 = _interopRequireDefault(_mpi);
+
+var _crypto = _dereq_('../crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the Signature Packet (Tag 2)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
+ * A Signature packet describes a binding between some public key and
+ * some data.  The most common signatures are a signature of a file or a
+ * block of text, and a signature that is a certification of a User ID.
+ * @memberof module:packet
  * @constructor
  * @param {Date} date the creation date of the signature
  */
@@ -44069,19 +44278,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Signature Packet (Tag 2)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.2|RFC4480 5.2}:
- * A Signature packet describes a binding between some public key and
- * some data.  The most common signatures are a signature of a file or a
- * block of text, and a signature that is a certification of a User ID.
- * @requires crypto
- * @requires enums
  * @requires packet/packet
  * @requires type/keyid
  * @requires type/mpi
+ * @requires crypto
+ * @requires enums
  * @requires util
- * @module packet/signature
  */
 
 function Signature() {
@@ -44138,7 +44340,7 @@ function Signature() {
  * @param {String} bytes payload of a tag 2 packet
  * @param {Integer} position position to start reading from the bytes string
  * @param {Integer} len length of the packet or the remaining length of bytes at position
- * @returns {module:packet/signature} object representation
+ * @returns {module:packet.Signature} object representation
  */
 Signature.prototype.read = function (bytes) {
   var i = 0;
@@ -44251,7 +44453,7 @@ Signature.prototype.write = function () {
 
 /**
  * Signs provided data. This needs to be done prior to serialization.
- * @param {module:packet/secret_key} key private key used to sign the message.
+ * @param {module:packet.SecretKey} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  * @returns {Promise<Boolean>}
  * @async
@@ -44429,11 +44631,13 @@ Signature.prototype.write_all_sub_packets = function () {
 };
 
 /**
- * creates a string representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
- * @param {Integer} type subpacket signature type. Signature types as described
- * in {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 Section 5.2.3.2}
+ * Creates a string representation of a sub signature packet
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC4880 5.2.3.1}
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 5.2.3.2}
+ * @param {Integer} type subpacket signature type.
  * @param {String} data data to be included
- * @returns {String} a string-representation of a sub signature packet (See {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC 4880 5.2.3.1})
+ * @returns {String} a string-representation of a sub signature packet
+ * @private
  */
 function write_sub_packet(type, data) {
   var arr = [];
@@ -44678,8 +44882,8 @@ Signature.prototype.calculateTrailer = function () {
 /**
  * verifys the signature packet. Note: not signature types are implemented
  * @param {String|Object} data data which on the signature applies
- * @param {module:packet/public_subkey|module:packet/public_key|
- *         module:packet/secret_subkey|module:packet/secret_key} key the public key to verify the signature
+ * @param {module:packet.PublicSubkey|module:packet.PublicKey|
+ *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
@@ -44765,7 +44969,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":319,"../enums.js":337,"../type/keyid.js":372,"../type/mpi.js":373,"../util.js":376,"./packet.js":353,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],361:[function(_dereq_,module,exports){
+},{"../crypto":319,"../enums":337,"../type/keyid.js":372,"../type/mpi.js":373,"../util":376,"./packet":353,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],361:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44780,10 +44984,6 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _util = _dereq_('../util');
-
-var _util2 = _interopRequireDefault(_util);
-
 var _crypto = _dereq_('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
@@ -44791,6 +44991,10 @@ var _crypto2 = _interopRequireDefault(_crypto);
 var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -44813,17 +45017,21 @@ var VERSION = 1; // A one-octet version number of the data packet.
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Authenticated Encryption with
- * Additional Data (AEAD) Protected Data Packet
- *
- * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
- * AEAD Protected Data Packet
+ * @requires crypto
+ * @requires enums
+ * @requires util
  */
 
 var IV_LEN = _crypto2.default.gcm.ivLength; // currently only AES-GCM is supported
 
 /**
- * @class
+ * Implementation of the Symmetrically Encrypted Authenticated Encryption with
+ * Additional Data (AEAD) Protected Data Packet
+ *
+ * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
+ * AEAD Protected Data Packet
+ * @memberof module:packet
+ * @constructor
  */
 function SymEncryptedAEADProtected() {
   this.tag = _enums2.default.packet.symEncryptedAEADProtected;
@@ -44983,19 +45191,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
- * The Symmetrically Encrypted Integrity Protected Data packet is
- * a variant of the Symmetrically Encrypted Data packet. It is a new feature
- * created for OpenPGP that addresses the problem of detecting a modification to
- * encrypted data. It is used in combination with a Modification Detection Code
- * packet.
  * @requires asmcrypto.js
  * @requires crypto
  * @requires enums
  * @requires util
- * @module packet/sym_encrypted_integrity_protected
  */
 
 var nodeCrypto = _util2.default.getNodeCrypto();
@@ -45004,6 +45203,15 @@ var Buffer = _util2.default.getNodeBuffer();
 var VERSION = 1; // A one-octet version number of the data packet.
 
 /**
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
+ * The Symmetrically Encrypted Integrity Protected Data packet is
+ * a variant of the Symmetrically Encrypted Data packet. It is a new feature
+ * created for OpenPGP that addresses the problem of detecting a modification to
+ * encrypted data. It is used in combination with a Modification Detection Code
+ * packet.
+ * @memberof module:packet
  * @constructor
  */
 function SymEncryptedIntegrityProtected() {
@@ -45211,25 +45419,40 @@ var _slicedToArray2 = _dereq_('babel-runtime/helpers/slicedToArray');
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _s2k = _dereq_('../type/s2k.js');
+var _s2k = _dereq_('../type/s2k');
 
 var _s2k2 = _interopRequireDefault(_s2k);
-
-var _enums = _dereq_('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
 
 var _crypto = _dereq_('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
 
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
+ * A Public-Key Encrypted Session Key packet holds the session key
+ * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
+ * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
+ * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
+ * message is encrypted with the session key, and the session key is itself
+ * encrypted and stored in the Encrypted Session Key packet(s). The
+ * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
+ * Session Key packet for each OpenPGP key to which the message is encrypted.
+ * The recipient of the message finds a session key that is encrypted to their
+ * public key, decrypts the session key, and then uses the session key to
+ * decrypt the message.
+ * @memberof module:packet
  * @constructor
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -45250,25 +45473,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
- * A Public-Key Encrypted Session Key packet holds the session key
- * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
- * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
- * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
- * message is encrypted with the session key, and the session key is itself
- * encrypted and stored in the Encrypted Session Key packet(s). The
- * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
- * Session Key packet for each OpenPGP key to which the message is encrypted.
- * The recipient of the message finds a session key that is encrypted to their
- * public key, decrypts the session key, and then uses the session key to
- * decrypt the message.
- * @requires util
+ * @requires type/s2k
  * @requires crypto
  * @requires enums
- * @requires type/s2k
- * @module packet/sym_encrypted_session_key
+ * @requires util
  */
 
 function SymEncryptedSessionKey() {
@@ -45289,7 +45497,7 @@ function SymEncryptedSessionKey() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet/sym_encrypted_session_key} Object representation
+ * @returns {module:packet.SymEncryptedSessionKey} Object representation
  */
 SymEncryptedSessionKey.prototype.read = function (bytes) {
 
@@ -45438,7 +45646,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../crypto":319,"../enums.js":337,"../type/s2k.js":375,"../util.js":376,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/helpers/slicedToArray":33,"babel-runtime/regenerator":35}],364:[function(_dereq_,module,exports){
+},{"../crypto":319,"../enums":337,"../type/s2k":375,"../util":376,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/helpers/slicedToArray":33,"babel-runtime/regenerator":35}],364:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45453,29 +45661,51 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var _crypto = _dereq_('../crypto');
-
-var _crypto2 = _interopRequireDefault(_crypto);
-
-var _enums = _dereq_('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
-
 var _config = _dereq_('../config');
 
 var _config2 = _interopRequireDefault(_config);
 
+var _crypto = _dereq_('../crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _enums = _dereq_('../enums');
+
+var _enums2 = _interopRequireDefault(_enums);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}:
+ * The Symmetrically Encrypted Data packet contains data encrypted with a
+ * symmetric-key algorithm. When it has been decrypted, it contains other
+ * packets (usually a literal data packet or compressed data packet, but in
+ * theory other Symmetrically Encrypted Data packets or sequences of packets
+ * that form whole OpenPGP messages).
+ * @memberof module:packet
  * @constructor
  */
 function SymmetricallyEncrypted() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = _enums2.default.packet.symmetricallyEncrypted;
+  /**
+   * Encrypted secret-key data
+   */
   this.encrypted = null;
-  /** Decrypted packets contained within.
-   * @type {module:packet/packetlist} */
+  /**
+   * Decrypted packets contained within.
+   * @type {module:packet.List}
+   */
   this.packets = null;
+  /**
+   * When true, decrypt fails if message is not integrity protected
+   * @see module:config.ignore_mdc_error
+   */
   this.ignore_mdc_error = _config2.default.ignore_mdc_error;
 } // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -45495,17 +45725,9 @@ function SymmetricallyEncrypted() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}:
- * The Symmetrically Encrypted Data packet contains data encrypted with a
- * symmetric-key algorithm. When it has been decrypted, it contains other
- * packets (usually a literal data packet or compressed data packet, but in
- * theory other Symmetrically Encrypted Data packets or sequences of packets
- * that form whole OpenPGP messages).
+ * @requires config
  * @requires crypto
  * @requires enums
- * @module packet/symmetrically_encrypted
  */
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
@@ -45518,8 +45740,8 @@ SymmetricallyEncrypted.prototype.write = function () {
 
 /**
  * Decrypt the symmetrically-encrypted packet data
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
  * @async
@@ -45561,8 +45783,8 @@ SymmetricallyEncrypted.prototype.decrypt = function () {
 
 /**
  * Encrypt the symmetrically-encrypted packet data
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
  * @param {Uint8Array} key    The key of cipher blocksize length to be used
  * @returns {Promise<Boolean>}
  * @async
@@ -45602,20 +45824,34 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":306,"../crypto":319,"../enums.js":337,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],365:[function(_dereq_,module,exports){
+},{"../config":306,"../crypto":319,"../enums":337,"babel-runtime/helpers/asyncToGenerator":28,"babel-runtime/regenerator":35}],365:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the Trust Packet (Tag 12)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.10|RFC4880 5.10}:
+ * The Trust packet is used only within keyrings and is not normally
+ * exported.  Trust packets contain data that record the user's
+ * specifications of which key holders are trustworthy introducers,
+ * along with other information that implementing software uses for
+ * trust information.  The format of Trust packets is defined by a given
+ * implementation.
+ *
+ * Trust packets SHOULD NOT be emitted to output streams that are
+ * transferred to other users, and they SHOULD be ignored on any input
+ * other than local keyring files.
+ * @memberof module:packet
  * @constructor
  */
 function Trust() {
@@ -45629,35 +45865,50 @@ function Trust() {
  */
 /**
  * @requires enums
- * @module packet/trust
  */
 
 Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums.js":337}],366:[function(_dereq_,module,exports){
+},{"../enums":337}],366:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _packet = _dereq_('./packet.js');
+var _packet = _dereq_('./packet');
 
 var _packet2 = _interopRequireDefault(_packet);
 
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the User Attribute Packet (Tag 17)
+ *
+ * The User Attribute packet is a variation of the User ID packet.  It
+ * is capable of storing more types of data than the User ID packet,
+ * which is limited to text.  Like the User ID packet, a User Attribute
+ * packet may be certified by the key owner ("self-signed") or any other
+ * key owner who cares to certify it.  Except as noted, a User Attribute
+ * packet may be used anywhere that a User ID packet may be used.
+ *
+ * While User Attribute packets are not a required part of the OpenPGP
+ * standard, implementations SHOULD provide at least enough
+ * compatibility to properly handle a certification signature on the
+ * User Attribute packet.  A simple way to do this is by treating the
+ * User Attribute packet as a User ID packet with opaque contents, but
+ * an implementation may use any method desired.
+ * @memberof module:packet
  * @constructor
  */
 function UserAttribute() {
@@ -45687,24 +45938,9 @@ function UserAttribute() {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the User Attribute Packet (Tag 17)
- *
- * The User Attribute packet is a variation of the User ID packet.  It
- * is capable of storing more types of data than the User ID packet,
- * which is limited to text.  Like the User ID packet, a User Attribute
- * packet may be certified by the key owner ("self-signed") or any other
- * key owner who cares to certify it.  Except as noted, a User Attribute
- * packet may be used anywhere that a User ID packet may be used.
- *
- * While User Attribute packets are not a required part of the OpenPGP
- * standard, implementations SHOULD provide at least enough
- * compatibility to properly handle a certification signature on the
- * User Attribute packet.  A simple way to do this is by treating the
- * User Attribute packet as a User ID packet with opaque contents, but
- * an implementation may use any method desired.
- * module packet/user_attribute
+ * @requires packet
  * @requires enums
- * @module packet/user_attribute
+ * @requires util
  */
 
 UserAttribute.prototype.read = function (bytes) {
@@ -45733,7 +45969,7 @@ UserAttribute.prototype.write = function () {
 
 /**
  * Compare for equality
- * @param  {module:user_attribute~UserAttribute} usrAttr
+ * @param  {module:packet.UserAttribute} usrAttr
  * @returns {Boolean}         true if equal
  */
 UserAttribute.prototype.equals = function (usrAttr) {
@@ -45747,24 +45983,32 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums.js":337,"../util.js":376,"./packet.js":353}],367:[function(_dereq_,module,exports){
+},{"../enums":337,"../util":376,"./packet":353}],367:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _util = _dereq_('../util.js');
-
-var _util2 = _interopRequireDefault(_util);
-
-var _enums = _dereq_('../enums.js');
+var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
+
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * Implementation of the User ID Packet (Tag 13)
+ *
+ * A User ID packet consists of UTF-8 text that is intended to represent
+ * the name and email address of the key holder.  By convention, it
+ * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
+ * restrictions on its content.  The packet length in the header
+ * specifies the length of the User ID.
+ * @memberof module:packet
  * @constructor
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -45785,16 +46029,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the User ID Packet (Tag 13)
- *
- * A User ID packet consists of UTF-8 text that is intended to represent
- * the name and email address of the key holder.  By convention, it
- * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
- * restrictions on its content.  The packet length in the header
- * specifies the length of the User ID.
- * @requires util
  * @requires enums
- * @module packet/userid
+ * @requires util
  */
 
 function Userid() {
@@ -45824,7 +46060,7 @@ Userid.prototype.write = function () {
 
 exports.default = Userid;
 
-},{"../enums.js":337,"../util.js":376}],368:[function(_dereq_,module,exports){
+},{"../enums":337,"../util":376}],368:[function(_dereq_,module,exports){
 'use strict';
 
 var _symbol = _dereq_('babel-runtime/core-js/symbol');
@@ -45881,6 +46117,10 @@ exports.Signature = Signature;
 exports.readArmored = readArmored;
 exports.read = read;
 
+var _armor = _dereq_('./encoding/armor');
+
+var _armor2 = _interopRequireDefault(_armor);
+
 var _packet = _dereq_('./packet');
 
 var _packet2 = _interopRequireDefault(_packet);
@@ -45889,18 +46129,13 @@ var _enums = _dereq_('./enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
-var _armor = _dereq_('./encoding/armor');
-
-var _armor2 = _interopRequireDefault(_armor);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * @class
  * @classdesc Class that represents an OpenPGP signature.
- * @param  {module:packet/packetlist} packetlist The signature packets
+ * @param  {module:packet.List} packetlist The signature packets
  */
-
 function Signature(packetlist) {
   if (!(this instanceof Signature)) {
     return new Signature(packetlist);
@@ -45930,9 +46165,9 @@ function Signature(packetlist) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires enums
- * @requires packet
  * @requires encoding/armor
+ * @requires packet
+ * @requires enums
  * @module signature
  */
 
@@ -46226,7 +46461,7 @@ Keyid.fromClone = function (clone) {
 
 Keyid.fromId = function (hex) {
   var keyid = new Keyid();
-  keyid.read(_util2.default.str_to_Uint8Array(_util2.default.hex_to_str(hex)));
+  keyid.read(_util2.default.hex_to_Uint8Array(hex));
   return keyid;
 };
 
@@ -46755,37 +46990,17 @@ var _config = _dereq_('./config');
 
 var _config2 = _interopRequireDefault(_config);
 
+var _util = _dereq_('./util');
+
+var _util2 = _interopRequireDefault(_util);
+
 var _base = _dereq_('./encoding/base64');
 
 var _base2 = _interopRequireDefault(_base);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * This object contains utility functions
- * @requires config
- * @requires encoding/base64
- * @module util
- */
-
-var util = {
+exports.default = {
 
   isString: function isString(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
@@ -46808,7 +47023,7 @@ var util = {
   getTransferables: function getTransferables(obj) {
     if (_config2.default.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       var transferables = [];
-      util.collectBuffers(obj, transferables);
+      _util2.default.collectBuffers(obj, transferables);
       return transferables.length ? transferables : undefined;
     }
   },
@@ -46817,14 +47032,14 @@ var util = {
     if (!obj) {
       return;
     }
-    if (util.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
+    if (_util2.default.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
       collection.push(obj.buffer);
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
       for (var key in obj) {
         // recursively search all children
-        util.collectBuffers(obj[key], collection);
+        _util2.default.collectBuffers(obj[key], collection);
       }
     }
   },
@@ -46847,7 +47062,7 @@ var util = {
   },
 
   readDate: function readDate(bytes) {
-    var n = util.readNumber(bytes);
+    var n = _util2.default.readNumber(bytes);
     var d = new Date(n * 1000);
     return d;
   },
@@ -46855,7 +47070,7 @@ var util = {
   writeDate: function writeDate(time) {
     var numeric = Math.floor(time.getTime() / 1000);
 
-    return util.writeNumber(numeric, 4);
+    return _util2.default.writeNumber(numeric, 4);
   },
 
   normalizeDate: function normalizeDate() {
@@ -46909,9 +47124,9 @@ var util = {
    * @returns {Uint8Array} MPI-formatted Uint8Array
    */
   Uint8Array_to_MPI: function Uint8Array_to_MPI(bin) {
-    var size = (bin.length - 1) * 8 + util.nbits(bin[0]);
+    var size = (bin.length - 1) * 8 + _util2.default.nbits(bin[0]);
     var prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
-    return util.concatUint8Array([prefix, bin]);
+    return _util2.default.concatUint8Array([prefix, bin]);
   },
 
   /**
@@ -46976,7 +47191,7 @@ var util = {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   str_to_Uint8Array: function str_to_Uint8Array(str) {
-    if (!util.isString(str)) {
+    if (!_util2.default.isString(str)) {
       throw new Error('str_to_Uint8Array: Data must be in the form of a string');
     }
 
@@ -47037,7 +47252,7 @@ var util = {
   concatUint8Array: function concatUint8Array(arrays) {
     var totalLength = 0;
     for (var i = 0; i < arrays.length; i++) {
-      if (!util.isUint8Array(arrays[i])) {
+      if (!_util2.default.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
 
@@ -47060,7 +47275,7 @@ var util = {
    * @returns {Uint8Array} new Uint8Array
    */
   copyUint8Array: function copyUint8Array(array) {
-    if (!util.isUint8Array(array)) {
+    if (!_util2.default.isUint8Array(array)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -47076,7 +47291,7 @@ var util = {
    * @returns {Boolean} equality
    */
   equalsUint8Array: function equalsUint8Array(array1, array2) {
-    if (!util.isUint8Array(array1) || !util.isUint8Array(array2)) {
+    if (!_util2.default.isUint8Array(array1) || !_util2.default.isUint8Array(array2)) {
       throw new Error('Data must be in the form of a Uint8Array');
     }
 
@@ -47133,7 +47348,7 @@ var util = {
    */
   print_debug_hexstr_dump: function print_debug_hexstr_dump(str, strToHex) {
     if (_config2.default.debug) {
-      str += util.str_to_hex(strToHex);
+      str += _util2.default.str_to_hex(strToHex);
       console.log(str);
     }
   },
@@ -47146,7 +47361,7 @@ var util = {
     }
     var bytes = (bitcount - rest) / 8 + 1;
     var result = string.substring(0, bytes);
-    return util.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
+    return _util2.default.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
   // returns bit length of the integer x
@@ -47188,7 +47403,7 @@ var util = {
    * @returns {String} Resulting string.
    */
   shiftRight: function shiftRight(value, bitcount) {
-    var temp = util.str_to_Uint8Array(value);
+    var temp = _util2.default.str_to_Uint8Array(value);
     if (bitcount % 8 !== 0) {
       for (var i = temp.length - 1; i >= 0; i--) {
         temp[i] >>= bitcount % 8;
@@ -47199,7 +47414,7 @@ var util = {
     } else {
       return value;
     }
-    return util.Uint8Array_to_str(temp);
+    return _util2.default.Uint8Array_to_str(temp);
   },
 
   /**
@@ -47251,7 +47466,7 @@ var util = {
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function getNodeCrypto() {
-    if (!util.detectNode() || !_config2.default.use_native) {
+    if (!_util2.default.detectNode() || !_config2.default.use_native) {
       return;
     }
 
@@ -47264,7 +47479,7 @@ var util = {
    * @returns {Function}   The Buffer constructor or 'undefined'
    */
   getNodeBuffer: function getNodeBuffer() {
-    if (!util.detectNode()) {
+    if (!_util2.default.detectNode()) {
       return;
     }
 
@@ -47275,7 +47490,7 @@ var util = {
   },
 
   getNodeZlib: function getNodeZlib() {
-    if (!util.detectNode() || !_config2.default.use_native) {
+    if (!_util2.default.detectNode() || !_config2.default.use_native) {
       return;
     }
 
@@ -47283,7 +47498,7 @@ var util = {
   },
 
   isEmailAddress: function isEmailAddress(data) {
-    if (!util.isString(data)) {
+    if (!_util2.default.isString(data)) {
       return false;
     }
     var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
@@ -47291,17 +47506,38 @@ var util = {
   },
 
   isUserId: function isUserId(data) {
-    if (!util.isString(data)) {
+    if (!_util2.default.isString(data)) {
       return false;
     }
     return (/</.test(data) && />$/.test(data)
     );
   }
-};
+}; // re-import module to access util functions
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-exports.default = util;
+/**
+ * This object contains utility functions
+ * @requires config
+ * @requires encoding/base64
+ * @module util
+ */
 
-},{"./config":306,"./encoding/base64":336,"crypto":"crypto","zlib":"zlib"}],377:[function(_dereq_,module,exports){
+},{"./config":306,"./encoding/base64":336,"./util":376,"crypto":"crypto","zlib":"zlib"}],377:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -47366,11 +47602,11 @@ function handleMessage(workerId) {
 
 /**
  * Initializes a new proxy and loads the web worker
- * @constructor
  * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
  * @param {Number} n               number of workers to initialize if path given
  * @param {Object} config          config The worker configuration
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
+ * @constructor
  */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
@@ -47388,6 +47624,18 @@ function handleMessage(workerId) {
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview Provides functions for maintaining browser workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/worker
+ * @requires util
+ * @requires crypto
+ * @requires packet
+ * @module worker/async_proxy
+ */
 
 function AsyncProxy() {
   var _this = this;
@@ -47439,6 +47687,7 @@ AsyncProxy.prototype.getID = function () {
 /**
  * Send message to worker with random data
  * @param  {Integer} size Number of bytes to send
+ * @async
  */
 AsyncProxy.prototype.seedRandom = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(workerId, size) {
@@ -47482,6 +47731,7 @@ AsyncProxy.prototype.terminate = function () {
  * @param  {String} method    the public api function to be delegated to the worker thread
  * @param  {Object} options   the api function's options
  * @returns {Promise}          see the corresponding public api functions for their return types
+ * @async
  */
 AsyncProxy.prototype.delegate = function (method, options) {
   var _this2 = this;
