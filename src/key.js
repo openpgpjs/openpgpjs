@@ -1351,7 +1351,7 @@ function getExpirationTime(keyPacket, signature) {
   }
   // check V4 expiration time
   if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
-    expirationTime = signature.created.getTime() + signature.keyExpirationTime*1000;
+    expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
