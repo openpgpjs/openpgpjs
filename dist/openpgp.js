@@ -27747,7 +27747,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.1",
+  versionstring: "OpenPGP.js v3.0.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -37146,7 +37146,7 @@ Key.prototype.getPrimaryUser = function () {
             primaryUsers = primaryUsers.sort(function (a, b) {
               var A = a.selfCertification;
               var B = b.selfCertification;
-              return B.isPrimaryUserID - A.isPrimaryUserID || B.created - A.created;
+              return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
             });
             return _context10.abrupt('return', primaryUsers.pop());
 
@@ -44752,7 +44752,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 23:
       // Key Server Preferences
-      read_array.call(this, 'keyServerPreferencess', bytes.subarray(mypos, bytes.length));
+      read_array.call(this, 'keyServerPreferences', bytes.subarray(mypos, bytes.length));
       break;
     case 24:
       // Preferred Key Server
