@@ -494,7 +494,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
   primaryUsers = primaryUsers.sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
-    return (B.isPrimaryUserID - A.isPrimaryUserID) || (B.created - A.created);
+    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
   });
   return primaryUsers.pop();
 };
