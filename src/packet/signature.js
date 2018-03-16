@@ -484,7 +484,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 23:
       // Key Server Preferences
-      read_array.call(this, 'keyServerPreferencess', bytes.subarray(mypos, bytes.length));
+      read_array.call(this, 'keyServerPreferences', bytes.subarray(mypos, bytes.length));
       break;
     case 24:
       // Preferred Key Server
