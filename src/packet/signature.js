@@ -673,10 +673,18 @@ Signature.prototype.verify = async function (key, data) {
 Signature.prototype.isExpired = function (date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
-    const expirationTime = !this.signatureNeverExpires ? this.created.getTime() + this.signatureExpirationTime*1000 : Infinity;
+    const expirationTime = this.getExpirationTime();
     return !(this.created <= normDate && normDate < expirationTime);
   }
   return false;
+};
+
+/**
+ * Returns the expiration time of the signature or Infinity if signature does not expire
+ * @returns {Date} expiration time
+ */
+Signature.prototype.getExpirationTime = function () {
+  return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime*1000) : Infinity;
 };
 
 /**

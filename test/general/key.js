@@ -721,6 +721,21 @@ describe('Key', function() {
     '=6XMW',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
+    const expiredKey =
+    `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+    xcA4BAAAAAEBAgCgONc0J8rfO6cJw5YTP38x1ze2tAYIO7EcmRCNYwMkXngb
+    0Qdzg34Q5RW0rNiR56VB6KElPUhePRPVklLFiIvHABEBAAEAAf9qabYMzsz/
+    /LeRVZSsTgTljmJTdzd2ambUbpi+vt8MXJsbaWh71vjoLMWSXajaKSPDjVU5
+    waFNt9kLqwGGGLqpAQD5ZdMH2XzTq6GU9Ka69iZs6Pbnzwdz59Vc3i8hXlUj
+    zQEApHargCTsrtvSrm+hK/pN51/BHAy9lxCAw9f2etx+AeMA/RGrijkFZtYt
+    jeWdv/usXL3mgHvEcJv63N5zcEvDX5X4W1bND3Rlc3QxIDxhQGIuY29tPsJ7
+    BBABCAAvBQIAAAABBQMAAAU5BgsJBwgDAgkQzcF99nGrkAkEFQgKAgMWAgEC
+    GQECGwMCHgEAABAlAfwPehmLZs+gOhOTTaSslqQ50bl/REjmv42Nyr1ZBlQS
+    DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
+    =/7PI
+    -----END PGP PRIVATE KEY BLOCK-----`;
+
   it('Parsing armored text with two keys', function(done) {
     const pubKeys = openpgp.key.readArmored(twoKeys);
     expect(pubKeys).to.exist;
@@ -821,6 +836,14 @@ describe('Key', function() {
     expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
+  });
+
+  it('Method getExpirationTime expired V4 Key', async function() {
+    const pubKey = openpgp.key.readArmored(expiredKey).keys[0];
+    expect(pubKey).to.exist;
+    expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    const expirationTime = await pubKey.getExpirationTime();
+    expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
   });
 
   it('Method getExpirationTime V4 SubKey', async function() {

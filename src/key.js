@@ -437,18 +437,17 @@ Key.prototype.getExpirationTime = async function() {
     return getExpirationTime(this.primaryKey);
   }
   if (this.primaryKey.version === 4) {
-    let validUsers = await this.getValidUsers(new Date(), true);
-    if (!validUsers.length) {
-      return null;
+    const validUsers = await this.getValidUsers(null, true);
+    let highest = null;
+    for (let i = 0; i < validUsers.length; i++) {
+      const selfCert = validUsers[i].selfCertification;
+      const current = Math.min(+getExpirationTime(this.primaryKey, selfCert), +selfCert.getExpirationTime());
+      if (current === Infinity) {
+        return Infinity;
+      }
+      highest = current > highest ? current : highest;
     }
-    validUsers = validUsers.sort(function(a, b) {
-      const A = a.selfCertification;
-      const B = b.selfCertification;
-      const expTimeA = !A.signatureNeverExpires ? A.created.getTime() + A.signatureExpirationTime*1000 : Infinity;
-      const expTimeB = !B.signatureNeverExpires ? B.created.getTime() + B.signatureExpirationTime*1000 : Infinity;
-      return expTimeA - expTimeB;
-    });
-    return getExpirationTime(this.primaryKey, validUsers.pop().selfCertification);
+    return util.normalizeDate(highest);
   }
 };
 
@@ -478,7 +477,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
 /**
  * Returns an array containing all valid users for a key
  * @param  {Date} date use the given date for verification instead of the current time
- * @param  {bool} whether to allow expired self certifications
+ * @param  {bool} include users with expired certifications
  * @returns {Promise<Array<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>>} The valid user array
  * @async
@@ -983,17 +982,15 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
  * @returns {Date}
  */
 SubKey.prototype.getExpirationTime = function() {
-  let highest;
+  let highest = null;
   for (let i = 0; i < this.bindingSignatures.length; i++) {
-    const current = getExpirationTime(this.subKey, this.bindingSignatures[i]);
+    const current = Math.min(+getExpirationTime(this.subKey, this.bindingSignatures[i]), +this.bindingSignatures[i].getExpirationTime());
     if (current === Infinity) {
       return Infinity;
     }
-    if (!highest || current > highest) {
-      highest = current;
-    }
+    highest = current > highest ? current : highest;
   }
-  return highest;
+  return util.normalizeDate(highest);
 };
 
 /**
@@ -1359,13 +1356,14 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime);
+    return !(keyPacket.created <= normDate && normDate < expirationTime) ||
+      (signature && signature.isExpired(date));
   }
   return false;
 }
 
 function getExpirationTime(keyPacket, signature) {
-  let expirationTime = Infinity;
+  let expirationTime;
   // check V3 expiration time
   if (keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0) {
     expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
@@ -1374,10 +1372,7 @@ function getExpirationTime(keyPacket, signature) {
   if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
-  if (keyPacket.version === 4 && signature.signatureNeverExpires === false) {
-    expirationTime = Math.min(expirationTime, keyPacket.created.getTime() + signature.signatureExpirationTime*1000);
-  }
-  return expirationTime !== Infinity ? new Date(expirationTime) : Infinity;
+  return expirationTime ? new Date(expirationTime) : Infinity;
 }
 
 /**
