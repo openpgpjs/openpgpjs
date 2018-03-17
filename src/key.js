@@ -437,11 +437,18 @@ Key.prototype.getExpirationTime = async function() {
     return getExpirationTime(this.primaryKey);
   }
   if (this.primaryKey.version === 4) {
-    const primaryUser = await this.getPrimaryUser();
-    if (!primaryUser) {
+    let validUsers = await this.getValidUsers(new Date(), true);
+    if (!validUsers.length) {
       return null;
     }
-    return getExpirationTime(this.primaryKey, primaryUser.selfCertification);
+    validUsers = validUsers.sort(function(a, b) {
+      const A = a.selfCertification;
+      const B = b.selfCertification;
+      const expTimeA = !A.signatureNeverExpires ? A.created.getTime() + A.signatureExpirationTime*1000 : Infinity;
+      const expTimeB = !B.signatureNeverExpires ? B.created.getTime() + B.signatureExpirationTime*1000 : Infinity;
+      return expTimeA - expTimeB;
+    });
+    return getExpirationTime(this.primaryKey, validUsers.pop().selfCertification);
   }
 };
 
@@ -450,13 +457,35 @@ Key.prototype.getExpirationTime = async function() {
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<{user: Array<module:key.User>,
- *                    selfCertification: Array<module:packet.Signature>}>} The primary user and the self signature
+ * @returns {Promise<{user: module:key.User,
+ *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
+  let validUsers = await this.getValidUsers(date);
+  if (!validUsers.length) {
+    return null;
+  }
+  // sort by primary user flag and signature creation time
+  validUsers = validUsers.sort(function(a, b) {
+    const A = a.selfCertification;
+    const B = b.selfCertification;
+    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
+  });
+  return validUsers.pop();
+};
+
+/**
+ * Returns an array containing all valid users for a key
+ * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {bool} whether to allow expired self certifications
+ * @returns {Promise<Array<{user: module:key.User,
+ *                    selfCertification: module:packet.Signature}>>} The valid user array
+ * @async
+ */
+Key.prototype.getValidUsers = async function(date=new Date(), allowExpired=false) {
   const { primaryKey } = this;
-  let primaryUsers = [];
+  const validUsers = [];
   let lastCreated = null;
   let lastPrimaryUserID = null;
   // TODO replace when Promise.forEach is implemented
@@ -482,23 +511,16 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
       if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
         continue;
       }
-      if (cert.isExpired(date)) {
+      if (!allowExpired && cert.isExpired(date)) {
         continue;
       }
       lastPrimaryUserID = cert.isPrimaryUserID;
       lastCreated = cert.created;
-      primaryUsers.push({ index: i, user: user, selfCertification: cert });
+      validUsers.push({ index: i, user: user, selfCertification: cert });
     }
   }
-  // sort by primary user flag and signature creation time
-  primaryUsers = primaryUsers.sort(function(a, b) {
-    const A = a.selfCertification;
-    const B = b.selfCertification;
-    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
-  });
-  return primaryUsers.pop();
+  return validUsers;
 };
-
 /**
  * Update key with new components from specified key with same key ID:
  * users, subkeys, certificates are merged into the destination key,
@@ -964,8 +986,8 @@ SubKey.prototype.getExpirationTime = function() {
   let highest;
   for (let i = 0; i < this.bindingSignatures.length; i++) {
     const current = getExpirationTime(this.subKey, this.bindingSignatures[i]);
-    if (current === null) {
-      return null;
+    if (current === Infinity) {
+      return Infinity;
     }
     if (!highest || current > highest) {
       highest = current;
@@ -1337,14 +1359,13 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime) ||
-      (signature && signature.isExpired(date));
+    return !(keyPacket.created <= normDate && normDate < expirationTime);
   }
   return false;
 }
 
 function getExpirationTime(keyPacket, signature) {
-  let expirationTime;
+  let expirationTime = Infinity;
   // check V3 expiration time
   if (keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0) {
     expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
@@ -1353,7 +1374,10 @@ function getExpirationTime(keyPacket, signature) {
   if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
-  return expirationTime ? new Date(expirationTime) : Infinity;
+  if (keyPacket.version === 4 && signature.signatureNeverExpires === false) {
+    expirationTime = Math.min(expirationTime, keyPacket.created.getTime() + signature.signatureExpirationTime*1000);
+  }
+  return expirationTime !== Infinity ? new Date(expirationTime) : Infinity;
 }
 
 /**
