@@ -437,11 +437,17 @@ Key.prototype.getExpirationTime = async function() {
     return getExpirationTime(this.primaryKey);
   }
   if (this.primaryKey.version === 4) {
-    const primaryUser = await this.getPrimaryUser();
-    if (!primaryUser) {
-      return null;
+    const validUsers = await this.getValidUsers(null, true);
+    let highest = null;
+    for (let i = 0; i < validUsers.length; i++) {
+      const selfCert = validUsers[i].selfCertification;
+      const current = Math.min(+getExpirationTime(this.primaryKey, selfCert), +selfCert.getExpirationTime());
+      if (current === Infinity) {
+        return Infinity;
+      }
+      highest = current > highest ? current : highest;
     }
-    return getExpirationTime(this.primaryKey, primaryUser.selfCertification);
+    return util.normalizeDate(highest);
   }
 };
 
@@ -450,13 +456,35 @@ Key.prototype.getExpirationTime = async function() {
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
- * @returns {Promise<{user: Array<module:key.User>,
- *                    selfCertification: Array<module:packet.Signature>}>} The primary user and the self signature
+ * @returns {Promise<{user: module:key.User,
+ *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
+  let validUsers = await this.getValidUsers(date);
+  if (!validUsers.length) {
+    return null;
+  }
+  // sort by primary user flag and signature creation time
+  validUsers = validUsers.sort(function(a, b) {
+    const A = a.selfCertification;
+    const B = b.selfCertification;
+    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
+  });
+  return validUsers.pop();
+};
+
+/**
+ * Returns an array containing all valid users for a key
+ * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {bool} include users with expired certifications
+ * @returns {Promise<Array<{user: module:key.User,
+ *                    selfCertification: module:packet.Signature}>>} The valid user array
+ * @async
+ */
+Key.prototype.getValidUsers = async function(date=new Date(), allowExpired=false) {
   const { primaryKey } = this;
-  let primaryUsers = [];
+  const validUsers = [];
   let lastCreated = null;
   let lastPrimaryUserID = null;
   // TODO replace when Promise.forEach is implemented
@@ -482,23 +510,16 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
       if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
         continue;
       }
-      if (cert.isExpired(date)) {
+      if (!allowExpired && cert.isExpired(date)) {
         continue;
       }
       lastPrimaryUserID = cert.isPrimaryUserID;
       lastCreated = cert.created;
-      primaryUsers.push({ index: i, user: user, selfCertification: cert });
+      validUsers.push({ index: i, user: user, selfCertification: cert });
     }
   }
-  // sort by primary user flag and signature creation time
-  primaryUsers = primaryUsers.sort(function(a, b) {
-    const A = a.selfCertification;
-    const B = b.selfCertification;
-    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
-  });
-  return primaryUsers.pop();
+  return validUsers;
 };
-
 /**
  * Update key with new components from specified key with same key ID:
  * users, subkeys, certificates are merged into the destination key,
@@ -961,17 +982,15 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
  * @returns {Date}
  */
 SubKey.prototype.getExpirationTime = function() {
-  let highest;
+  let highest = null;
   for (let i = 0; i < this.bindingSignatures.length; i++) {
-    const current = getExpirationTime(this.subKey, this.bindingSignatures[i]);
-    if (current === null) {
-      return null;
+    const current = Math.min(+getExpirationTime(this.subKey, this.bindingSignatures[i]), +this.bindingSignatures[i].getExpirationTime());
+    if (current === Infinity) {
+      return Infinity;
     }
-    if (!highest || current > highest) {
-      highest = current;
-    }
+    highest = current > highest ? current : highest;
   }
-  return highest;
+  return util.normalizeDate(highest);
 };
 
 /**
