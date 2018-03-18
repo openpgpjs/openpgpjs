@@ -446,7 +446,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       // fingerprint)
       this.revocationKeyClass = bytes[mypos++];
       this.revocationKeyAlgorithm = bytes[mypos++];
-      this.revocationKeyFingerprint = bytes.subarray(mypos, 20);
+      this.revocationKeyFingerprint = bytes.subarray(mypos, mypos + 20);
       break;
 
     case 16:
