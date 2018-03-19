@@ -5,6 +5,7 @@
 export default {
 
   /** Maps curve names under various standards to one
+   * @see {@link https://wiki.gnupg.org/ECC|ECC - GnuPG wiki}
    * @enum {String}
    * @readonly
    */
@@ -34,13 +35,14 @@ export default {
     "2b81040023":   "p521",
     "2B81040023":   "p521",
 
-    /** SECP256k1 Curve */
+    /** SECG SECP256k1 Curve */
     "secp256k1":    "secp256k1",
     "1.3.132.0.10": "secp256k1",
     "2b8104000a":   "secp256k1",
     "2B8104000A":   "secp256k1",
 
-    /** Ed25519 Curve */
+    /** Ed25519 */
+    "ED25519":                "ed25519",
     "ed25519":                "ed25519",
     "Ed25519":                "ed25519",
     "1.3.6.1.4.1.11591.15.1": "ed25519",
@@ -48,12 +50,31 @@ export default {
     "2B06010401DA470F01":     "ed25519",
 
     /** Curve25519 */
+    "X25519":                 "curve25519",
     "cv25519":                "curve25519",
     "curve25519":             "curve25519",
     "Curve25519":             "curve25519",
     "1.3.6.1.4.1.3029.1.5.1": "curve25519",
     "2b060104019755010501":   "curve25519",
-    "2B060104019755010501":   "curve25519"
+    "2B060104019755010501":   "curve25519",
+
+    /** BrainpoolP256r1 Curve */
+    "brainpoolP256r1":       "brainpoolP256r1",
+    "1.3.36.3.3.2.8.1.1.7":  "brainpoolP256r1",
+    "2b2403030208010107":    "brainpoolP256r1",
+    "2B2403030208010107":    "brainpoolP256r1",
+
+    /** BrainpoolP384r1 Curve */
+    "brainpoolP384r1":       "brainpoolP384r1",
+    "1.3.36.3.3.2.8.1.1.11": "brainpoolP384r1",
+    "2b240303020801010b":    "brainpoolP384r1",
+    "2B240303020801010B":    "brainpoolP384r1",
+
+    /** BrainpoolP512r1 Curve */
+    "brainpoolP512r1":       "brainpoolP512r1",
+    "1.3.36.3.3.2.8.1.1.13": "brainpoolP512r1",
+    "2b240303020801010d":    "brainpoolP512r1",
+    "2B240303020801010D":    "brainpoolP512r1"
   },
 
   /** A string to key specifier type
