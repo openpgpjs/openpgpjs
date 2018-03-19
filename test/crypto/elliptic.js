@@ -139,22 +139,14 @@ describe('Elliptic Curve Cryptography', function () {
     }
   };
   describe('Basic Operations', function () {
-    it('Creating curve with name', function (done) {
-      const names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
-      names.forEach(function (name) {
-        expect(new elliptic_curves.Curve(name)).to.exist;
-      });
-      done();
-    });
-    it('Creating curve from oid', function (done) {
-      const oids = ['2A8648CE3D030107', '2B81040022', '2B81040023', '2B8104000A'];
-      oids.forEach(function (oid) {
-        expect(new elliptic_curves.Curve(oid)).to.exist;
-      });
+    it('Creating curve from name or oid', function (done) {
+      for (let name_or_oid in openpgp.enums.curves) {
+        expect(new elliptic_curves.Curve(name_or_oid)).to.exist;
+      }
       done();
     });
     it('Creating KeyPair', function () {
-      const names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519'];
+      const names = ['p256', 'p384', 'p521', 'secp256k1', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       return Promise.all(names.map(function (name) {
         const curve = new elliptic_curves.Curve(name);
         return curve.genKeyPair().then(keyPair => {

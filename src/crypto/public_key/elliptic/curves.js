@@ -38,20 +38,23 @@ import OID from '../../../type/oid';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
-const nodeCurves = {};
 const webCurves = {
   'p256': 'P-256',
   'p384': 'P-384',
   'p521': 'P-521'
 };
-if (nodeCrypto) {
-  const knownCurves = nodeCrypto.getCurves();
-  nodeCurves.secp256k1 = knownCurves.includes('secp256k1') ? 'secp256k1' : undefined;
-  nodeCurves.p256 = knownCurves.includes('prime256v1') ? 'prime256v1' : undefined;
-  nodeCurves.p384 = knownCurves.includes('secp384r1') ? 'secp384r1' : undefined;
-  nodeCurves.p521 = knownCurves.includes('secp521r1') ? 'secp521r1' : undefined;
-  // TODO add more here
-}
+const knownCurves = nodeCrypto ? nodeCrypto.getCurves() : [];
+const nodeCurves = nodeCrypto ? {
+  secp256k1: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
+  p256: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
+  p384: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
+  p521: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
+  ed25519: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
+  curve25519: knownCurves.includes('X25519') ? 'X25519' : undefined,
+  brainpoolP256r1: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
+  brainpoolP384r1: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
+  brainpoolP512r1: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
+} : {};
 
 const curves = {
   p256: {
@@ -92,22 +95,35 @@ const curves = {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsa,
     hash: enums.hash.sha512,
-    payloadSize: 32
+    node: false // nodeCurves.ed25519 TODO
   },
   curve25519: {
     oid: [0x06, 0x08, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
-    cipher: enums.symmetric.aes128
+    cipher: enums.symmetric.aes128,
+    node: false // nodeCurves.curve25519 TODO
   },
-  brainpoolP256r1: { // TODO 1.3.36.3.3.2.8.1.1.7
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07]
+  brainpoolP256r1: {
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
+    keyType: enums.publicKey.ecdsa,
+    hash: enums.hash.sha256,
+    cipher: enums.symmetric.aes128,
+    node: false // nodeCurves.brainpoolP256r1 TODO
   },
-  brainpoolP384r1: { // TODO 1.3.36.3.3.2.8.1.1.11
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B]
+  brainpoolP384r1: {
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
+    keyType: enums.publicKey.ecdsa,
+    hash: enums.hash.sha384,
+    cipher: enums.symmetric.aes192,
+    node: false // nodeCurves.brainpoolP384r1 TODO
   },
-  brainpoolP512r1: { // TODO 1.3.36.3.3.2.8.1.1.13
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D]
+  brainpoolP512r1: {
+    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
+    keyType: enums.publicKey.ecdsa,
+    hash: enums.hash.sha512,
+    cipher: enums.symmetric.aes256,
+    node: false // nodeCurves.brainpoolP512r1 TODO
   }
 };
 
