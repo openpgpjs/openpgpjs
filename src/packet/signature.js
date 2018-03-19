@@ -727,7 +727,7 @@ Signature.prototype.isExpired = function (date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate <= expirationTime);
+    return !(normDate <= expirationTime);
   }
   return false;
 };
