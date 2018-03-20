@@ -104,6 +104,7 @@ export function destroyWorker() {
  *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @param  {Date} date               (optional) override the creation date of the key and the key signatures
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @async
@@ -111,11 +112,11 @@ export function destroyWorker() {
  */
 
 export function generateKey({
-  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""
+  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="", date=new Date()
 } = {}) {
   userIds = formatUserIds(userIds);
   const options = {
-    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve
+    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve, date
   };
 
   if (util.getWebCryptoAll() && numBits < 2048) {

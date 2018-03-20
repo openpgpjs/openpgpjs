@@ -483,10 +483,12 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should have default params set', function() {
+      const now = new Date();
       const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
-        unlocked: true
+        unlocked: true,
+        date: now
       };
       return openpgp.generateKey(opt).then(function(newKey) {
         expect(keyGenStub.withArgs({
@@ -495,7 +497,8 @@ describe('OpenPGP.js public api tests', function() {
           numBits: 2048,
           unlocked: true,
           keyExpirationTime: 0,
-          curve: ""
+          curve: "",
+          date: now
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
@@ -504,14 +507,17 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work for no params', function() {
-      return openpgp.generateKey().then(function(newKey) {
+      const now = new Date();
+
+      return openpgp.generateKey({date: now}).then(function(newKey) {
         expect(keyGenStub.withArgs({
           userIds: [],
           passphrase: undefined,
           numBits: 2048,
           unlocked: false,
           keyExpirationTime: 0,
-          curve: ""
+          curve: "",
+          date: now
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
       });

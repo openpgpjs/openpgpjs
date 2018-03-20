@@ -39,8 +39,8 @@ import util from '../util';
  * @constructor
  * @extends module:packet.PublicKey
  */
-function SecretKey() {
-  publicKey.call(this);
+function SecretKey(date=new Date()) {
+  publicKey.call(this, date);
   /**
    * Packet type
    * @type {module:enums.packet}

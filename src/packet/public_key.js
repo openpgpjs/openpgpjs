@@ -42,7 +42,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function PublicKey() {
+function PublicKey(date=new Date()) {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -57,7 +57,7 @@ function PublicKey() {
    * Key creation date.
    * @type {Date}
    */
-  this.created = util.normalizeDate();
+  this.created = util.normalizeDate(date);
   /**
    * Algorithm specific params
    * @type {Array<Object>}
