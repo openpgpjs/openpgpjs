@@ -1103,6 +1103,7 @@ export function readArmored(armoredText) {
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
+ * @param  {Date} date         Override the creation date of the key and the key signatures
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
