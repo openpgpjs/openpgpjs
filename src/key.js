@@ -1154,7 +1154,7 @@ export function generate(options) {
   });
 
   function generateSecretKey() {
-    secretKeyPacket = new packet.SecretKey();
+    secretKeyPacket = new packet.SecretKey(options.date);
     secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
     options.curve = options.curve === enums.curve.curve25519 ? enums.curve.ed25519 : options.curve;
@@ -1162,7 +1162,7 @@ export function generate(options) {
   }
 
   function generateSecretSubkey() {
-    secretSubkeyPacket = new packet.SecretSubkey();
+    secretSubkeyPacket = new packet.SecretSubkey(options.date);
     secretKeyPacket.packets = null;
     secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
     options.curve = options.curve === enums.curve.ed25519 ? enums.curve.curve25519 : options.curve;
@@ -1245,7 +1245,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     const dataToSign = {};
     dataToSign.userid = userIdPacket;
     dataToSign.key = secretKeyPacket;
-    const signaturePacket = new packet.Signature();
+    const signaturePacket = new packet.Signature(options.date);
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = options.keyType;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretKeyPacket);
@@ -1290,7 +1290,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     const dataToSign = {};
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
-    const subkeySignaturePacket = new packet.Signature();
+    const subkeySignaturePacket = new packet.Signature(options.date);
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
     subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretSubkeyPacket);

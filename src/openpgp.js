@@ -111,11 +111,11 @@ export function destroyWorker() {
  */
 
 export function generateKey({
-  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve=""
+  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="", date=new Date()
 } = {}) {
   userIds = formatUserIds(userIds);
   const options = {
-    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve
+    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve, date
   };
 
   if (util.getWebCryptoAll() && numBits < 2048) {
