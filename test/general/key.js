@@ -1076,6 +1076,23 @@ describe('Key', function() {
     });
   });
 
+  it('Generate key - setting date to the past', function() {
+    const past = new Date(0);
+    const opt = {
+      userIds: { name: 'Test User', email: 'text@example.com' },
+      passphrase: 'secret',
+      unlocked: true,
+      date: past
+    };
+
+    return openpgp.generateKey(opt).then(function(newKey) {
+      expect(newKey.key).to.exist;
+      expect(+newKey.key.primaryKey.created).to.equal(+past);
+      expect(+newKey.key.subKeys[0].subKey.created).to.equal(+past);
+      expect(+newKey.key.subKeys[0].bindingSignatures[0].created).to.equal(+past);
+    });
+  })
+
   it('Generate key - multi userid', function() {
     const userId1 = 'test <a@b.com>';
     const userId2 = 'test <b@c.com>';
