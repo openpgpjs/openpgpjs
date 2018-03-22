@@ -564,9 +564,14 @@ export async function createVerificationObjects(signatureList, literalDataList, 
       }
     }));
 
+    const literalDataPacket = literalDataList[0];
+    if (signature.signatureType === enums.signature.text) {
+      literalDataPacket.setText(literalDataPacket.getText());
+    }
+
     const verifiedSig = {
       keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
     };
 
     const packetlist = new packet.List();

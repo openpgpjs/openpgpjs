@@ -49,8 +49,9 @@ function Literal(date=new Date()) {
 Literal.prototype.setText = function(text) {
   // normalize EOL to \r\n
   text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  this.format = 'utf8';
   // encode UTF8
-  this.data = this.format === 'utf8' ? util.str_to_Uint8Array(util.encode_utf8(text)) : util.str_to_Uint8Array(text);
+  this.data = util.str_to_Uint8Array(util.encode_utf8(text));
 };
 
 /**
