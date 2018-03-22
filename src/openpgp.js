@@ -335,9 +335,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({
-  data, privateKeys, armor=true, detached=false, date=new Date()
-}) {
+export function sign({ data, privateKeys, armor=true, detached=false, date=new Date() }) {
   checkData(data);
   privateKeys = toArray(privateKeys);
 
