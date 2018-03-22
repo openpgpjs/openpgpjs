@@ -564,6 +564,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
       }
     }));
 
+    // If this is a text signature, canonicalize line endings of the data
     const literalDataPacket = literalDataList[0];
     if (signature.signatureType === enums.signature.text) {
       literalDataPacket.setText(literalDataPacket.getText());
