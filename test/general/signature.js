@@ -640,6 +640,41 @@ describe("Signature", function() {
     });
   });
 
+  it('Should verify cleartext message correctly when using a detached cleartext signature and binary literal data', async function () {
+    const plaintext = 'short message\nnext line\n한국어/조선말';
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    await privKey.primaryKey.decrypt('hello world');
+    return openpgp.sign({ privateKeys:[privKey], data:plaintext, detached: true}).then(function(signed) {
+      const signature = openpgp.signature.readArmored(signed.signature);
+      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.str_to_Uint8Array(openpgp.util.encode_utf8(plaintext))), signature: signature });
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
+  it('Should verify encrypted cleartext message correctly when encrypting binary literal data with a canonical text signature', async function () {
+    const plaintext = 'short message\nnext line\n한국어/조선말';
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    await Promise.all([privKey.primaryKey.decrypt('hello world'), privKey.subKeys[0].subKey.decrypt('hello world')]);
+    return openpgp.sign({ privateKeys:[privKey], data: plaintext, detached: true}).then(function(signed) {
+      const signature = openpgp.signature.readArmored(signed.signature);
+      return openpgp.encrypt({ data: openpgp.util.str_to_Uint8Array(openpgp.util.encode_utf8(plaintext)), publicKeys: [pubKey], signature })
+    }).then(({ data }) => {
+      const csMsg = openpgp.message.readArmored(data);
+      return openpgp.decrypt({ message: csMsg, privateKeys: [ privKey ], publicKeys: [ pubKey ] });
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
   it('Verify test with expired verification public key', function() {
     const pubKey = openpgp.key.readArmored(pub_expired).keys[0];
     const message = openpgp.message.readArmored(msg_sig_expired);
