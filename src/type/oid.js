@@ -47,6 +47,9 @@ function OID(oid) {
              util.isUint8Array(oid)) {
     oid = new Uint8Array(oid);
     if (oid[0] === 0x06) { // DER encoded oid byte array
+      if (oid[1] !== oid.length - 2) {
+        throw new Error('Length mismatch in DER encoded oid');
+      }
       oid = oid.subarray(2);
     }
     this.oid = oid;
