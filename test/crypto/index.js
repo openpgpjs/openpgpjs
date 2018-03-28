@@ -6,4 +6,5 @@ describe('Crypto', function () {
   require('./elliptic.js');
   require('./pkcs5.js');
   require('./aes_kw.js');
+  require('./eax.js');
 });
