@@ -51,6 +51,14 @@ export default {
    * @property {Boolean} aead_protect
    */
   aead_protect:             false,
+  /**
+   * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
+   * Only has an effect when aead_protect is set to true.
+   * Must be an integer value from 0 to 56.
+   * @memberof module:config
+   * @property {Integer} aead_chunk_size_byte
+   */
+  aead_chunk_size_byte:     46,
   /** Use integrity protection for symmetric encryption
    * @memberof module:config
    * @property {Boolean} integrity_protect

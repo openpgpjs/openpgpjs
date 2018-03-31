@@ -667,6 +667,22 @@ describe('OpenPGP.js public api tests', function() {
       }
     });
 
+    tryTests('EAX mode (asm.js)', tests, {
+      if: true,
+      beforeEach: function() {
+        openpgp.config.use_native = false;
+        openpgp.config.aead_protect = 'draft04';
+      }
+    });
+
+    tryTests('EAX mode (native)', tests, {
+      if: openpgp.util.getWebCryptoAll() || openpgp.util.getNodeCrypto(),
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = 'draft04';
+      }
+    });
+
     function tests() {
       it('Configuration', function() {
         openpgp.config.show_version = false;

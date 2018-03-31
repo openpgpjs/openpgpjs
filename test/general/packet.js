@@ -1,5 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -138,6 +139,81 @@ describe("Packet", function() {
       return msg2[0].decrypt(algo, key);
     }).then(function() {
       expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    });
+  });
+
+  it('Sym. encrypted AEAD protected packet (draft04)', function() {
+    let aead_protectVal = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = 'draft04';
+
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setText('Hello world!');
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    return enc.encrypt(algo, key).then(function() {
+      msg2.read(msg.write());
+      return msg2[0].decrypt(algo, key);
+    }).then(function() {
+      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    }).finally(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+    });
+  });
+
+  it('Sym. encrypted AEAD protected packet test vector (draft04)', function() {
+    // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
+
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
+      ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
+      d9 00 16 38 4a 56 fc 82  1a e1 1a e8 db cb 49 86
+      26 55 de a8 8d 06 a8 14  86 80 1b 0f f3 87 bd 2e
+      ab 01 3d e1 25 95 86 90  6e ab 24 76
+    `.replace(/\s+/g, ''));
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = 'draft04';
+    openpgp.config.aead_chunk_size_byte = 14;
+
+    const iv = openpgp.util.hex_to_Uint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
+    const key = openpgp.util.hex_to_Uint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
+    const algo = 'aes128';
+
+    const literal = new openpgp.packet.Literal(0);
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setBytes(openpgp.util.str_to_Uint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+    literal.filename = '';
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
+    randomBytesStub.returns(resolves(iv));
+
+    return enc.encrypt(algo, key).then(function() {
+      const data = msg.write();
+      expect(data).to.deep.equal(packetBytes);
+      msg2.read(data);
+      return msg2[0].decrypt(algo, key);
+    }).then(function() {
+      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    }).finally(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      randomBytesStub.restore();
     });
   });
 

@@ -16,17 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires config
  * @requires crypto
  * @requires enums
  * @requires util
  */
 
+import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 
 const VERSION = 1; // A one-octet version number of the data packet.
-const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
 
 /**
  * Implementation of the Symmetrically Encrypted Authenticated Encryption with
@@ -40,6 +41,9 @@ const IV_LEN = crypto.gcm.ivLength; // currently only AES-GCM is supported
 function SymEncryptedAEADProtected() {
   this.tag = enums.packet.symEncryptedAEADProtected;
   this.version = VERSION;
+  this.cipherAlgo = null;
+  this.aeadAlgo = null;
+  this.chunkSizeByte = null;
   this.iv = null;
   this.encrypted = null;
   this.packets = null;
@@ -56,8 +60,16 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
     throw new Error('Invalid packet version.');
   }
   offset++;
-  this.iv = bytes.subarray(offset, IV_LEN + offset);
-  offset += IV_LEN;
+  if (config.aead_protect === 'draft04') {
+    this.cipherAlgo = bytes[offset++];
+    this.aeadAlgo = bytes[offset++];
+    this.chunkSizeByte = bytes[offset++];
+  } else {
+    this.aeadAlgo = enums.aead.gcm;
+  }
+  const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+  this.iv = bytes.subarray(offset, mode.ivLength + offset);
+  offset += mode.ivLength;
   this.encrypted = bytes.subarray(offset, bytes.length);
 };
 
@@ -66,6 +78,9 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
  * @returns {Uint8Array} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
+  if (config.aead_protect === 'draft04') {
+    return util.concatUint8Array([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
+  }
   return util.concatUint8Array([new Uint8Array([this.version]), this.iv, this.encrypted]);
 };
 
@@ -77,7 +92,34 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * @async
  */
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
-  this.packets.read(await crypto.gcm.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv));
+  const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+  if (config.aead_protect === 'draft04') {
+    const cipher = enums.read(enums.symmetric, this.cipherAlgo);
+    let data = this.encrypted.subarray(0, this.encrypted.length - mode.blockLength);
+    const authTag = this.encrypted.subarray(this.encrypted.length - mode.blockLength);
+    const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
+    const adataBuffer = new ArrayBuffer(21);
+    const adataArray = new Uint8Array(adataBuffer, 0, 13);
+    const adataTagArray = new Uint8Array(adataBuffer);
+    const adataView = new DataView(adataBuffer);
+    const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
+    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataView.setInt32(13 + 4, data.length - mode.blockLength); // Should be setInt64(13, ...)
+    const decryptedPromises = [];
+    for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
+      decryptedPromises.push(
+        mode.decrypt(cipher, data.subarray(0, chunkSize), key, mode.getNonce(this.iv, chunkIndexArray), adataArray)
+      );
+      data = data.subarray(chunkSize);
+      adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+    }
+    decryptedPromises.push(
+      mode.decrypt(cipher, authTag, key, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
+    );
+    this.packets.read(util.concatUint8Array(await Promise.all(decryptedPromises)));
+  } else {
+    this.packets.read(await mode.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv));
+  }
   return true;
 };
 
@@ -89,7 +131,38 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * @async
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
-  this.iv = await crypto.random.getRandomBytes(IV_LEN); // generate new random IV
-  this.encrypted = await crypto.gcm.encrypt(sessionKeyAlgorithm, this.packets.write(), key, this.iv);
+  this.aeadAlgo = config.aead_protect === 'draft04' ? enums.aead.eax : enums.aead.gcm;
+  const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+  this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
+  let data = this.packets.write();
+  if (config.aead_protect === 'draft04') {
+    this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
+    this.chunkSizeByte = config.aead_chunk_size_byte;
+    const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
+    const adataBuffer = new ArrayBuffer(21);
+    const adataArray = new Uint8Array(adataBuffer, 0, 13);
+    const adataTagArray = new Uint8Array(adataBuffer);
+    const adataView = new DataView(adataBuffer);
+    const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
+    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataView.setInt32(13 + 4, data.length); // Should be setInt64(13, ...)
+    const encryptedPromises = [];
+    for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
+      encryptedPromises.push(
+        mode.encrypt(sessionKeyAlgorithm, data.subarray(0, chunkSize), key, mode.getNonce(this.iv, chunkIndexArray), adataArray)
+      );
+      // We take a chunk of data, encrypt it, and shift `data` to the
+      // next chunk. After the final chunk, we encrypt a final, empty
+      // data chunk to get the final authentication tag.
+      data = data.subarray(chunkSize);
+      adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+    }
+    encryptedPromises.push(
+      mode.encrypt(sessionKeyAlgorithm, data, key, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
+    );
+    this.encrypted = util.concatUint8Array(await Promise.all(encryptedPromises));
+  } else {
+    this.encrypted = await mode.encrypt(sessionKeyAlgorithm, data, key, this.iv);
+  }
   return true;
 };

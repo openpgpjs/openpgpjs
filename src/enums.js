@@ -167,6 +167,16 @@ export default {
     'SHA-512': 10
   },
 
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.6|RFC4880bis-04, section 9.6}
+   * @enum {Integer}
+   * @readonly
+   */
+  aead: {
+    eax: 1,
+    ocb: 2,
+    gcm: 100 // Private algorithm
+  },
+
   /** A list of packet types and numeric tags associated with them.
    * @enum {Integer}
    * @readonly
