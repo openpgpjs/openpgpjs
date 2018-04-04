@@ -468,7 +468,7 @@ Key.prototype.getExpirationTime = async function() {
   if (this.primaryKey.version === 3) {
     return getExpirationTime(this.primaryKey);
   }
-  if (this.primaryKey.version === 4) {
+  if (this.primaryKey.version >= 4) {
     const primaryUser = await this.getPrimaryUser(null);
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = getExpirationTime(this.primaryKey, selfCert);
@@ -1383,7 +1383,7 @@ function getExpirationTime(keyPacket, signature) {
     expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
   }
   // check V4 expiration time
-  if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
+  if (keyPacket.version >= 4 && signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;

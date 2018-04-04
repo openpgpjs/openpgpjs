@@ -78,15 +78,17 @@ function get_hash_fn(hash) {
 // Helper function
 
 function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
-  const hashlen = get_hash_len(hash_algorithm);
-  const hashfn = get_hash_fn(hash_algorithm);
+  if (hash_algorithm) {
+    const hashlen = get_hash_len(hash_algorithm);
+    const hashfn = get_hash_fn(hash_algorithm);
 
-  const hashtext = util.Uint8Array_to_str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
-  cleartext = cleartext.subarray(0, cleartext.length - hashlen);
-  const hash = util.Uint8Array_to_str(hashfn(cleartext));
+    const hashtext = util.Uint8Array_to_str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
+    cleartext = cleartext.subarray(0, cleartext.length - hashlen);
+    const hash = util.Uint8Array_to_str(hashfn(cleartext));
 
-  if (hash !== hashtext) {
-    return new Error("Incorrect key passphrase");
+    if (hash !== hashtext) {
+      throw new Error("Incorrect key passphrase");
+    }
   }
 
   const algo = enums.write(enums.publicKey, algorithm);
@@ -115,9 +117,13 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
 
   const bytes = util.concatUint8Array(arr);
 
-  const hash = get_hash_fn(hash_algorithm)(bytes);
+  if (hash_algorithm) {
+    const hash = get_hash_fn(hash_algorithm)(bytes);
 
-  return util.concatUint8Array([bytes, hash]);
+    return util.concatUint8Array([bytes, hash]);
+  }
+
+  return bytes;
 }
 
 
@@ -125,7 +131,7 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
 
 /**
  * Internal parser for private keys as specified in
- * {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 section 5.5.3}
+ * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
 SecretKey.prototype.read = function (bytes) {
@@ -148,9 +154,6 @@ SecretKey.prototype.read = function (bytes) {
     //   key data.  These algorithm-specific fields are as described
     //   below.
     const privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
-    if (privParams instanceof Error) {
-      throw privParams;
-    }
     this.params = this.params.concat(privParams);
     this.isDecrypted = true;
   }
@@ -194,15 +197,29 @@ SecretKey.prototype.encrypt = async function (passphrase) {
   const s2k = new type_s2k();
   s2k.salt = await crypto.random.getRandomBytes(8);
   const symmetric = 'aes256';
-  const cleartext = write_cleartext_params('sha1', this.algorithm, this.params);
+  const hash = this.version === 5 ? null : 'sha1';
+  const cleartext = write_cleartext_params(hash, this.algorithm, this.params);
   const key = produceEncryptionKey(s2k, passphrase, symmetric);
   const blockLen = crypto.cipher[symmetric].blockSize;
   const iv = await crypto.random.getRandomBytes(blockLen);
 
-  const arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
-  arr.push(s2k.write());
-  arr.push(iv);
-  arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
+  let arr;
+
+  if (this.version === 5) {
+    const aead = 'eax';
+    const optionalFields = util.concatUint8Array([new Uint8Array([enums.write(enums.symmetric, symmetric), enums.write(enums.aead, aead)]), s2k.write(), iv]);
+    arr = [new Uint8Array([253, optionalFields.length])];
+    arr.push(optionalFields);
+    const mode = crypto[aead];
+    const encrypted = await mode.encrypt(symmetric, cleartext, key, iv.subarray(0, mode.ivLength), new Uint8Array());
+    arr.push(util.writeNumber(encrypted.length, 4));
+    arr.push(encrypted);
+  } else {
+    arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
+    arr.push(s2k.write());
+    arr.push(iv);
+    arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
+  }
 
   this.encrypted = util.concatUint8Array(arr);
   return true;
@@ -230,17 +247,31 @@ SecretKey.prototype.decrypt = async function (passphrase) {
 
   let i = 0;
   let symmetric;
+  let aead;
   let key;
 
   const s2k_usage = this.encrypted[i++];
 
-  // - [Optional] If string-to-key usage octet was 255 or 254, a one-
-  //   octet symmetric encryption algorithm.
-  if (s2k_usage === 255 || s2k_usage === 254) {
+  // - Only for a version 5 packet, a one-octet scalar octet count of
+  //   the next 4 optional fields.
+  if (this.version === 5) {
+    i++;
+  }
+
+  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+  //   one-octet symmetric encryption algorithm.
+  if (s2k_usage === 255 || s2k_usage === 254 || s2k_usage === 253) {
     symmetric = this.encrypted[i++];
     symmetric = enums.read(enums.symmetric, symmetric);
 
-    // - [Optional] If string-to-key usage octet was 255 or 254, a
+    // - [Optional] If string-to-key usage octet was 253, a one-octet
+    //   AEAD algorithm.
+    if (s2k_usage === 253) {
+      aead = this.encrypted[i++];
+      aead = enums.read(enums.aead, aead);
+    }
+
+    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
     //   string-to-key specifier.  The length of the string-to-key
     //   specifier is implied by its type, as described above.
     const s2k = new type_s2k();
@@ -263,16 +294,32 @@ SecretKey.prototype.decrypt = async function (passphrase) {
 
   i += iv.length;
 
+  // - Only for a version 5 packet, a four-octet scalar octet count for
+  //   the following key material.
+  if (this.version === 5) {
+    i += 4;
+  }
+
   const ciphertext = this.encrypted.subarray(i, this.encrypted.length);
-  const cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
-  const hash = s2k_usage === 254 ?
-    'sha1' :
+  let cleartext;
+  if (aead) {
+    const mode = crypto[aead];
+    try {
+      cleartext = await mode.decrypt(symmetric, ciphertext, key, iv.subarray(0, mode.ivLength), new Uint8Array());
+    } catch(err) {
+      if (err.message.startsWith('Authentication tag mismatch')) {
+        throw new Error('Incorrect key passphrase: ' + err.message);
+      }
+    }
+  } else {
+    cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
+  }
+  const hash =
+    s2k_usage === 253 ? null :
+    s2k_usage === 254 ? 'sha1' :
     'mod';
 
   const privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
-  if (privParams instanceof Error) {
-    throw privParams;
-  }
   this.params = this.params.concat(privParams);
   this.isDecrypted = true;
   this.encrypted = null;

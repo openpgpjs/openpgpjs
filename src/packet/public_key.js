@@ -18,6 +18,7 @@
 /**
  * @requires type/keyid
  * @requires type/mpi
+ * @requires config
  * @requires crypto
  * @requires enums
  * @requires util
@@ -25,6 +26,7 @@
 
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
+import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -52,7 +54,7 @@ function PublicKey(date=new Date()) {
    * Packet version
    * @type {Integer}
    */
-  this.version = 4;
+  this.version = config.aead_protect === 'draft04' ? 5 : 4;
   /**
    * Key creation date.
    * @type {Date}
@@ -88,10 +90,10 @@ function PublicKey(date=new Date()) {
  */
 PublicKey.prototype.read = function (bytes) {
   let pos = 0;
-  // A one-octet version number (3 or 4).
+  // A one-octet version number (3, 4 or 5).
   this.version = bytes[pos++];
 
-  if (this.version === 3 || this.version === 4) {
+  if (this.version === 3 || this.version === 4 || this.version === 5) {
     // - A four-octet number denoting the time that the key was created.
     this.created = util.readDate(bytes.subarray(pos, pos + 4));
     pos += 4;
@@ -106,20 +108,25 @@ PublicKey.prototype.read = function (bytes) {
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
     const algo = enums.write(enums.publicKey, this.algorithm);
+
+    if (this.version === 5) {
+      // - A four-octet scalar octet count for the following key material.
+      pos += 4;
+    }
+
+    // - A series of values comprising the key material.  This is
+    //   algorithm-specific and described in section XXXX.
     const types = crypto.getPubKeyParamTypes(algo);
     this.params = crypto.constructParams(types);
 
-    const b = bytes.subarray(pos, bytes.length);
-    let p = 0;
-
-    for (let i = 0; i < types.length && p < b.length; i++) {
-      p += this.params[i].read(b.subarray(p, b.length));
-      if (p > b.length) {
-        throw new Error('Error reading MPI @:' + p);
+    for (let i = 0; i < types.length && pos < bytes.length; i++) {
+      pos += this.params[i].read(bytes.subarray(pos, bytes.length));
+      if (pos > bytes.length) {
+        throw new Error('Error reading MPI @:' + pos);
       }
     }
 
-    return p + 6;
+    return pos;
   }
   throw new Error('Version ' + this.version + ' of the key packet is unsupported.');
 };
@@ -143,14 +150,18 @@ PublicKey.prototype.write = function () {
   if (this.version === 3) {
     arr.push(util.writeNumber(this.expirationTimeV3, 2));
   }
-  // Algorithm-specific params
+  // A one-octet number denoting the public-key algorithm of this key
   const algo = enums.write(enums.publicKey, this.algorithm);
-  const paramCount = crypto.getPubKeyParamTypes(algo).length;
   arr.push(new Uint8Array([algo]));
-  for (let i = 0; i < paramCount; i++) {
-    arr.push(this.params[i].write());
-  }
 
+  const paramCount = crypto.getPubKeyParamTypes(algo).length;
+  const params = util.concatUint8Array(this.params.slice(0, paramCount).map(param => param.write()));
+  if (this.version === 5) {
+    // A four-octet scalar octet count for the following key material
+    arr.push(util.writeNumber(params.length, 4));
+  }
+  // Algorithm-specific params
+  arr.push(params);
   return util.concatUint8Array(arr);
 };
 
@@ -178,7 +189,9 @@ PublicKey.prototype.getKeyId = function () {
     return this.keyid;
   }
   this.keyid = new type_keyid();
-  if (this.version === 4) {
+  if (this.version === 5) {
+    this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(0, 8));
+  } else if (this.version === 4) {
     this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(12, 20));
   } else if (this.version === 3) {
     const arr = this.params[0].write();
@@ -195,13 +208,18 @@ PublicKey.prototype.getFingerprint = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
-  let toHash = '';
-  if (this.version === 4) {
+  let toHash;
+  if (this.version === 5) {
+    const bytes = this.writePublicKey();
+    toHash = util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
+    this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha256(toHash));
+  } else if (this.version === 4) {
     toHash = this.writeOld();
     this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha1(toHash));
   } else if (this.version === 3) {
     const algo = enums.write(enums.publicKey, this.algorithm);
     const paramCount = crypto.getPubKeyParamTypes(algo).length;
+    toHash = '';
     for (let i = 0; i < paramCount; i++) {
       toHash += this.params[i].toString();
     }

@@ -637,6 +637,38 @@ describe("Packet", function() {
     });
   });
 
+  it('Writing and encryption of a secret key packet. (draft04)', function() {
+    let aead_protectVal = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = 'draft04';
+
+    const key = new openpgp.packet.List();
+    key.push(new openpgp.packet.SecretKey());
+
+    const rsa = openpgp.crypto.publicKey.rsa;
+    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+
+    return rsa.generate(keySize, "10001").then(async function(mpiGen) {
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      mpi = mpi.map(function(k) {
+        return new openpgp.MPI(k);
+      });
+
+      key[0].params = mpi;
+      key[0].algorithm = "rsa_sign";
+      await key[0].encrypt('hello');
+
+      const raw = key.write();
+
+      const key2 = new openpgp.packet.List();
+      key2.read(raw);
+      await key2[0].decrypt('hello');
+
+      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
+    }).finally(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+    });
+  });
+
   it('Writing and verification of a signature packet.', function() {
     const key = new openpgp.packet.SecretKey();
 

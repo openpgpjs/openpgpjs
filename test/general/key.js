@@ -6,6 +6,23 @@ chai.use(require('chai-as-promised'));
 const { expect } = chai;
 
 describe('Key', function() {
+  describe('V4', tests);
+
+  describe('V5', function() {
+    let aead_protectVal;
+    beforeEach(function() {
+      aead_protectVal = openpgp.config.aead_protect;
+      openpgp.config.aead_protect = 'draft04';
+    });
+    afterEach(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+    });
+
+    tests();
+  });
+});
+
+function tests() {
   const twoKeys =
        ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -893,6 +910,21 @@ p92yZgB3r2+f6/GIe2+7
     done();
   });
 
+  it('Parsing V5 public key packet', function() {
+    // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      98 37 05 53 f3 5f 0b 16  00 00 00 2d  09 2b 06 01 04 01 da 47
+      0f 01 01 07 40 3f 09 89  94 bd d9 16 ed 40 53 19
+      79 34 e4 a8 7c 80 73 3a  12 80 d6 2f 80 10 99 2e
+      43 ee 3b 24 06
+    `.replace(/\s+/g, ''));
+
+    let packetlist = new openpgp.packet.List();
+    packetlist.read(packetBytes);
+    let key = packetlist[0];
+    expect(key).to.exist;
+  });
+
   it('Testing key ID and fingerprint for V3 and V4 keys', function(done) {
     const pubKeysV4 = openpgp.key.readArmored(twoKeys);
     expect(pubKeysV4).to.exist;
@@ -1574,4 +1606,4 @@ p92yZgB3r2+f6/GIe2+7
       expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
     });
   });
-});
+}
