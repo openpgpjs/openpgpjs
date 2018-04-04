@@ -17,12 +17,14 @@
 
 /**
  * @requires type/s2k
+ * @requires config
  * @requires crypto
  * @requires enums
  * @requires util
  */
 
 import type_s2k from '../type/s2k';
+import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -47,12 +49,14 @@ import util from '../util';
  */
 function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
-  this.version = 4;
+  this.version = config.aead_protect === 'draft04' ? 5 : 4;
   this.sessionKey = null;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
+  this.aeadAlgorithm = 'eax';
   this.encrypted = null;
   this.s2k = null;
+  this.iv = null;
 }
 
 /**
@@ -66,22 +70,35 @@ function SymEncryptedSessionKey() {
  * @returns {module:packet.SymEncryptedSessionKey} Object representation
  */
 SymEncryptedSessionKey.prototype.read = function(bytes) {
+  let offset = 0;
+
   // A one-octet version number. The only currently defined version is 4.
-  [this.version] = bytes;
+  this.version = bytes[offset++];
 
   // A one-octet number describing the symmetric algorithm used.
-  const algo = enums.read(enums.symmetric, bytes[1]);
+  const algo = enums.read(enums.symmetric, bytes[offset++]);
+
+  if (this.version === 5) {
+    // A one-octet AEAD algorithm.
+    this.aeadAlgorithm = enums.read(enums.aead, bytes[offset++]);
+  }
 
   // A string-to-key (S2K) specifier, length as defined above.
   this.s2k = new type_s2k();
-  const s2klength = this.s2k.read(bytes.subarray(2, bytes.length));
+  offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
-  // Optionally, the encrypted session key itself, which is decrypted
-  // with the string-to-key object.
-  const done = s2klength + 2;
+  if (this.version === 5) {
+    const mode = crypto[this.aeadAlgorithm];
 
-  if (done < bytes.length) {
-    this.encrypted = bytes.subarray(done, bytes.length);
+    // A starting initialization vector of size specified by the AEAD
+    // algorithm.
+    this.iv = bytes.subarray(offset, offset += mode.ivLength);
+  }
+
+  // The encrypted session key itself, which is decrypted with the
+  // string-to-key object. This is optional in version 4.
+  if (this.version === 5 || offset < bytes.length) {
+    this.encrypted = bytes.subarray(offset, bytes.length);
     this.sessionKeyEncryptionAlgorithm = algo;
   } else {
     this.sessionKeyAlgorithm = algo;
@@ -93,11 +110,18 @@ SymEncryptedSessionKey.prototype.write = function() {
     this.sessionKeyAlgorithm :
     this.sessionKeyEncryptionAlgorithm;
 
-  let bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
+  let bytes;
 
-  if (this.encrypted !== null) {
-    bytes = util.concatUint8Array([bytes, this.encrypted]);
+  if (this.version === 5) {
+    bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo), enums.write(enums.aead, this.aeadAlgorithm)]), this.s2k.write(), this.iv, this.encrypted]);
+  } else {
+    bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
+
+    if (this.encrypted !== null) {
+      bytes = util.concatUint8Array([bytes, this.encrypted]);
+    }
   }
+
   return bytes;
 };
 
@@ -115,14 +139,19 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   const length = crypto.cipher[algo].keySize;
   const key = this.s2k.produce_key(passphrase, length);
 
-  if (this.encrypted === null) {
-    this.sessionKey = key;
-  } else {
+  if (this.version === 5) {
+    const mode = crypto[this.aeadAlgorithm];
+    const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
+    this.sessionKey = await mode.decrypt(algo, this.encrypted, key, this.iv, adata);
+  } else if (this.encrypted !== null) {
     const decrypted = crypto.cfb.normalDecrypt(algo, key, this.encrypted, null);
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
     this.sessionKey = decrypted.subarray(1, decrypted.length);
+  } else {
+    this.sessionKey = key;
   }
+
   return true;
 };
 
@@ -145,14 +174,21 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   const length = crypto.cipher[algo].keySize;
   const key = this.s2k.produce_key(passphrase, length);
 
-  const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
-
   if (this.sessionKey === null) {
     this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
   }
-  const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
 
-  this.encrypted = crypto.cfb.normalEncrypt(algo, key, private_key, null);
+  if (this.version === 5) {
+    const mode = crypto[this.aeadAlgorithm];
+    this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
+    const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
+    this.encrypted = await mode.encrypt(algo, this.sessionKey, key, this.iv, adata);
+  } else {
+    const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
+    const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
+    this.encrypted = crypto.cfb.normalEncrypt(algo, key, private_key, null);
+  }
+
   return true;
 };
 

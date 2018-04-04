@@ -24,15 +24,17 @@
  * places, currently: to encrypt the secret part of private keys in the
  * private keyring, and to convert passphrases to encryption keys for
  * symmetrically encrypted messages.
+ * @requires config
  * @requires crypto
  * @requires enums
  * @requires util
  * @module type/s2k
  */
 
+import config from '../config';
+import crypto from '../crypto';
 import enums from '../enums.js';
 import util from '../util.js';
-import crypto from '../crypto';
 
 /**
  * @constructor
@@ -42,7 +44,8 @@ function S2K() {
   this.algorithm = 'sha256';
   /** @type {module:enums.s2k} */
   this.type = 'iterated';
-  this.c = 96;
+  /** @type {Integer} */
+  this.c = config.s2k_iteration_count_byte;
   /** Eight bytes of salt in a binary string.
    * @type {String}
    */

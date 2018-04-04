@@ -59,6 +59,13 @@ export default {
    * @property {Integer} aead_chunk_size_byte
    */
   aead_chunk_size_byte:     46,
+  /**
+   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
+   * Iteration Count Byte for S2K (String to Key)
+   * @memberof module:config
+   * @property {Integer} s2k_iteration_count_byte
+   */
+  s2k_iteration_count_byte: 96,
   /** Use integrity protection for symmetric encryption
    * @memberof module:config
    * @property {Boolean} integrity_protect
