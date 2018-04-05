@@ -27747,7 +27747,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.3",
+  versionstring: "OpenPGP.js v3.0.4",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -31734,32 +31734,32 @@ var curves = {
     node: false // nodeCurves.ed25519 TODO
   },
   curve25519: {
-    oid: [0x06, 0x08, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
+    oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: _enums2.default.publicKey.ecdsa,
     hash: _enums2.default.hash.sha256,
     cipher: _enums2.default.symmetric.aes128,
     node: false // nodeCurves.curve25519 TODO
   },
   brainpoolP256r1: {
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
+    oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
     keyType: _enums2.default.publicKey.ecdsa,
     hash: _enums2.default.hash.sha256,
     cipher: _enums2.default.symmetric.aes128,
-    node: false // nodeCurves.brainpoolP256r1 TODO
+    node: nodeCurves.brainpoolP256r1
   },
   brainpoolP384r1: {
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
+    oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
     keyType: _enums2.default.publicKey.ecdsa,
     hash: _enums2.default.hash.sha384,
     cipher: _enums2.default.symmetric.aes192,
-    node: false // nodeCurves.brainpoolP384r1 TODO
+    node: nodeCurves.brainpoolP384r1
   },
   brainpoolP512r1: {
-    oid: [0x06, 0x07, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
+    oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
     keyType: _enums2.default.publicKey.ecdsa,
     hash: _enums2.default.hash.sha512,
     cipher: _enums2.default.symmetric.aes256,
-    node: false // nodeCurves.brainpoolP512r1 TODO
+    node: nodeCurves.brainpoolP512r1
   }
 };
 
@@ -35842,7 +35842,7 @@ var wrapKeyObject = function () {
 
                         dataToSign.userid = userIdPacket;
                         dataToSign.key = secretKeyPacket;
-                        signaturePacket = new _packet2.default.Signature();
+                        signaturePacket = new _packet2.default.Signature(options.date);
 
                         signaturePacket.signatureType = _enums2.default.signature.cert_generic;
                         signaturePacket.publicKeyAlgorithm = options.keyType;
@@ -35916,7 +35916,7 @@ var wrapKeyObject = function () {
 
             dataToSign.key = secretKeyPacket;
             dataToSign.bind = secretSubkeyPacket;
-            subkeySignaturePacket = new _packet2.default.Signature();
+            subkeySignaturePacket = new _packet2.default.Signature(options.date);
 
             subkeySignaturePacket.signatureType = _enums2.default.signature.subkey_binding;
             subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
@@ -38707,6 +38707,7 @@ function readArmored(armoredText) {
  * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
+ * @param  {Date} date         Override the creation date of the key and the key signatures
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -38758,7 +38759,7 @@ function generate(options) {
   });
 
   function generateSecretKey() {
-    secretKeyPacket = new _packet2.default.SecretKey();
+    secretKeyPacket = new _packet2.default.SecretKey(options.date);
     secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = _enums2.default.read(_enums2.default.publicKey, options.keyType);
     options.curve = options.curve === _enums2.default.curve.curve25519 ? _enums2.default.curve.ed25519 : options.curve;
@@ -38766,7 +38767,7 @@ function generate(options) {
   }
 
   function generateSecretSubkey() {
-    secretSubkeyPacket = new _packet2.default.SecretSubkey();
+    secretSubkeyPacket = new _packet2.default.SecretSubkey(options.date);
     secretKeyPacket.packets = null;
     secretSubkeyPacket.algorithm = _enums2.default.read(_enums2.default.publicKey, options.subkeyType);
     options.curve = options.curve === _enums2.default.curve.ed25519 ? _enums2.default.curve.curve25519 : options.curve;
@@ -39624,7 +39625,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
           case 0:
             return _context19.abrupt('return', _promise2.default.all(signatureList.map(function () {
               var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(signature) {
-                var keyPacket, verifiedSig, packetlist;
+                var keyPacket, literalDataPacket, verifiedSig, packetlist;
                 return _regenerator2.default.wrap(function _callee18$(_context18) {
                   while (1) {
                     switch (_context18.prev = _context18.next) {
@@ -39662,25 +39663,33 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
                         }()));
 
                       case 3:
+
+                        // If this is a text signature, canonicalize line endings of the data
+                        literalDataPacket = literalDataList[0];
+
+                        if (signature.signatureType === _enums2.default.signature.text) {
+                          literalDataPacket.setText(literalDataPacket.getText());
+                        }
+
                         _context18.t0 = signature.issuerKeyId;
 
                         if (!keyPacket) {
-                          _context18.next = 10;
+                          _context18.next = 12;
                           break;
                         }
 
-                        _context18.next = 7;
-                        return signature.verify(keyPacket, literalDataList[0]);
+                        _context18.next = 9;
+                        return signature.verify(keyPacket, literalDataPacket);
 
-                      case 7:
+                      case 9:
                         _context18.t1 = _context18.sent;
-                        _context18.next = 11;
+                        _context18.next = 13;
                         break;
 
-                      case 10:
+                      case 12:
                         _context18.t1 = null;
 
-                      case 11:
+                      case 13:
                         _context18.t2 = _context18.t1;
                         verifiedSig = {
                           keyid: _context18.t0,
@@ -39693,7 +39702,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
 
                         return _context18.abrupt('return', verifiedSig);
 
-                      case 17:
+                      case 19:
                       case 'end':
                         return _context18.stop();
                     }
@@ -40823,6 +40832,7 @@ function destroyWorker() {
  *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
  * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @param  {Date} date               (optional) override the creation date of the key and the key signatures
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @async
@@ -40841,11 +40851,13 @@ function generateKey() {
       _ref2$keyExpirationTi = _ref2.keyExpirationTime,
       keyExpirationTime = _ref2$keyExpirationTi === undefined ? 0 : _ref2$keyExpirationTi,
       _ref2$curve = _ref2.curve,
-      curve = _ref2$curve === undefined ? "" : _ref2$curve;
+      curve = _ref2$curve === undefined ? "" : _ref2$curve,
+      _ref2$date = _ref2.date,
+      date = _ref2$date === undefined ? new Date() : _ref2$date;
 
   userIds = formatUserIds(userIds);
   var options = {
-    userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked, keyExpirationTime: keyExpirationTime, curve: curve
+    userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked, keyExpirationTime: keyExpirationTime, curve: curve, date: date
   };
 
   if (_util2.default.getWebCryptoAll() && numBits < 2048) {
@@ -42304,8 +42316,9 @@ function Literal() {
 Literal.prototype.setText = function (text) {
   // normalize EOL to \r\n
   text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  this.format = 'utf8';
   // encode UTF8
-  this.data = this.format === 'utf8' ? _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(text)) : _util2.default.str_to_Uint8Array(text);
+  this.data = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(text));
 };
 
 /**
@@ -43283,6 +43296,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @constructor
  */
 function PublicKey() {
+  var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -43297,7 +43312,7 @@ function PublicKey() {
    * Key creation date.
    * @type {Date}
    */
-  this.created = _util2.default.normalizeDate();
+  this.created = _util2.default.normalizeDate(date);
   /**
    * Algorithm specific params
    * @type {Array<Object>}
@@ -43918,7 +43933,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 
 function SecretKey() {
-  _public_key2.default.call(this);
+  var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+
+  _public_key2.default.call(this, date);
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -44114,7 +44131,7 @@ SecretKey.prototype.encrypt = function () {
     }, _callee, this);
   }));
 
-  return function (_x) {
+  return function (_x2) {
     return _ref.apply(this, arguments);
   };
 }();
@@ -44207,7 +44224,7 @@ SecretKey.prototype.decrypt = function () {
     }, _callee2, this);
   }));
 
-  return function (_x2) {
+  return function (_x3) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -44297,7 +44314,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 
 function SecretSubkey() {
-  _secret_key2.default.call(this);
+  var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+
+  _secret_key2.default.call(this, date);
   this.tag = _enums2.default.packet.secretSubkey;
 }
 
@@ -46806,6 +46825,9 @@ function OID(oid) {
     oid = new Uint8Array(oid);
     if (oid[0] === 0x06) {
       // DER encoded oid byte array
+      if (oid[1] !== oid.length - 2) {
+        throw new Error('Length mismatch in DER encoded oid');
+      }
       oid = oid.subarray(2);
     }
     this.oid = oid;
