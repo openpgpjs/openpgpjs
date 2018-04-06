@@ -14,6 +14,7 @@ import hash from './hash';
 import cfb from './cfb';
 import gcm from './gcm';
 import eax from './eax';
+import ocb from './ocb';
 import publicKey from './public_key';
 import signature from './signature';
 import random from './random';
@@ -34,6 +35,8 @@ const mod = {
   gcm: gcm,
   /** @see module:crypto/eax */
   eax: eax,
+  /** @see module:crypto/ocb */
+  ocb: ocb,
   /** @see module:crypto/public_key */
   publicKey: publicKey,
   /** @see module:crypto/signature */

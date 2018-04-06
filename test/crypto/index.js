@@ -7,4 +7,5 @@ describe('Crypto', function () {
   require('./pkcs5.js');
   require('./aes_kw.js');
   require('./eax.js');
+  require('./ocb.js');
 });
