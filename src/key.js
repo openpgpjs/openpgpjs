@@ -1278,8 +1278,13 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.isPrimaryUserID = true;
     }
     if (config.integrity_protect) {
-      signaturePacket.features = [];
-      signaturePacket.features.push(1); // Modification Detection
+      signaturePacket.features = [0];
+      signaturePacket.features[0] |= enums.features.modification_detection;
+    }
+    if (config.aead_protect === 'draft04') {
+      signaturePacket.features || (signaturePacket.features = [0]);
+      signaturePacket.features[0] |= enums.features.aead;
+      signaturePacket.features[0] |= enums.features.v5_keys;
     }
     if (options.keyExpirationTime > 0) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;

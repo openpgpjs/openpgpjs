@@ -419,6 +419,21 @@ export default {
     signature: 6
   },
 
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.2.3.25|RFC4880bis-04, section 5.2.3.25}
+   * @enum {Integer}
+   * @readonly
+   */
+  features: {
+    /** 0x01 - Modification Detection (packets 18 and 19) */
+    modification_detection: 1,
+    /** 0x02 - AEAD Encrypted Data Packet (packet 20) and version 5
+     *         Symmetric-Key Encrypted Session Key Packets (packet 3) */
+    aead: 2,
+    /** 0x04 - Version 5 Public-Key Packet format and corresponding new
+      *        fingerprint format */
+    v5_keys: 4
+  },
+
   /** Asserts validity and converts from string/integer to integer. */
   write: function(type, e) {
     if (typeof e === 'number') {
