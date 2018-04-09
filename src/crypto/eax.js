@@ -19,12 +19,13 @@
  * @fileoverview This module implements AES-EAX en/decryption on top of
  * native AES-CTR using either the WebCrypto API or Node.js' crypto API.
  * @requires asmcrypto.js
+ * @requires crypto/cmac
  * @requires util
  * @module crypto/eax
  */
 
-import { AES_CMAC } from 'asmcrypto.js/src/aes/cmac/exports';
 import { AES_CTR } from 'asmcrypto.js/src/aes/ctr/exports';
+import CMAC from './cmac';
 import util from '../util';
 
 const webCrypto = util.getWebCryptoAll();
@@ -39,6 +40,12 @@ const tagLength = blockLength;
 const zero = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const one = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 const two = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+
+class OMAC extends CMAC {
+  mac(t, message) {
+    return super.mac(concat(t, message));
+  }
+}
 
 
 /**
@@ -55,11 +62,12 @@ async function encrypt(cipher, plaintext, key, nonce, adata) {
     throw new Error('EAX mode supports only AES cipher');
   }
 
-  const _nonce = OMAC(zero, nonce, key);
-  const _adata = OMAC(one, adata, key);
+  const omac = new OMAC(key);
+  const _nonce = omac.mac(zero, nonce);
+  const _adata = omac.mac(one, adata);
   const ciphered = await CTR(plaintext, key, _nonce);
-  const _ciphered = OMAC(two, ciphered, key);
-  const tag = xor3(_nonce, _ciphered, _adata); // Assumes that OMAC(*).length === tagLength.
+  const _ciphered = omac.mac(two, ciphered);
+  const tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac.mac(*).length === tagLength.
   return concat(ciphered, tag);
 }
 
@@ -80,10 +88,11 @@ async function decrypt(cipher, ciphertext, key, nonce, adata) {
   if (ciphertext.length < tagLength) throw new Error('Invalid EAX ciphertext');
   const ciphered = ciphertext.subarray(0, ciphertext.length - tagLength);
   const tag = ciphertext.subarray(ciphertext.length - tagLength);
-  const _nonce = OMAC(zero, nonce, key);
-  const _adata = OMAC(one, adata, key);
-  const _ciphered = OMAC(two, ciphered, key);
-  const _tag = xor3(_nonce, _ciphered, _adata); // Assumes that OMAC(*).length === tagLength.
+  const omac = new OMAC(key);
+  const _nonce = omac.mac(zero, nonce);
+  const _adata = omac.mac(one, adata);
+  const _ciphered = omac.mac(two, ciphered);
+  const _tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac.mac(*).length === tagLength.
   if (!util.equalsUint8Array(tag, _tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
   const plaintext = await CTR(ciphered, key, _nonce);
   return plaintext;
@@ -125,10 +134,6 @@ function xor3(a, b, c) {
 
 function concat(...arrays) {
   return util.concatUint8Array(arrays);
-}
-
-function OMAC(t, message, key) {
-  return AES_CMAC.bytes(concat(t, message), key);
 }
 
 function CTR(plaintext, key, iv) {
