@@ -366,6 +366,20 @@ export default {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
+   * Different than print_debug because will call Uint8Array_to_hex iff necessary.
+   * @param {String} str String of the debug message
+   */
+  print_debug_hexarray_dump: function (str, arrToHex) {
+    if (config.debug) {
+      str += ': ' + util.Uint8Array_to_hex(arrToHex);
+      console.log(str);
+    }
+  },
+
+  /**
+   * Helper function to print a debug message. Debug
+   * messages are only printed if
+   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call str_to_hex iff necessary.
    * @param {String} str String of the debug message
    */
