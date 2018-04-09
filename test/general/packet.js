@@ -89,7 +89,7 @@ describe("Packet", function() {
     message.push(enc);
     await enc.packets.push(literal);
 
-    const key = '12345678901234567890123456789012';
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
 
     await enc.encrypt(algo, key);
