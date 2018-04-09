@@ -177,15 +177,12 @@ export default {
       // 4.2.2.1. One-Octet Lengths
       if (input[mypos] < 192) {
         packet_length = input[mypos++];
-        util.print_debug("1 byte length:" + packet_length);
         // 4.2.2.2. Two-Octet Lengths
       } else if (input[mypos] >= 192 && input[mypos] < 224) {
         packet_length = ((input[mypos++] - 192) << 8) + (input[mypos++]) + 192;
-        util.print_debug("2 byte length:" + packet_length);
         // 4.2.2.4. Partial Body Lengths
       } else if (input[mypos] > 223 && input[mypos] < 255) {
         packet_length = 1 << (input[mypos++] & 0x1F);
-        util.print_debug("4 byte length:" + packet_length);
         // EEEK, we're reading the full data here...
         let mypos2 = mypos + packet_length;
         bodydata = [input.subarray(mypos, mypos + packet_length)];
