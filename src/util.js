@@ -388,14 +388,13 @@ export default {
     }
   },
 
-  // TODO rewrite getLeftNBits to work with Uint8Arrays
-  getLeftNBits: function (string, bitcount) {
+  getLeftNBits: function (array, bitcount) {
     const rest = bitcount % 8;
     if (rest === 0) {
-      return string.substring(0, bitcount / 8);
+      return array.subarray(0, bitcount / 8);
     }
     const bytes = (bitcount - rest) / 8 + 1;
-    const result = string.substring(0, bytes);
+    const result = array.subarray(0, bytes);
     return util.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
@@ -431,25 +430,41 @@ export default {
   },
 
   /**
-   * Shifting a string to n bits right
-   * @param {String} value The string to shift
-   * @param {Integer} bitcount Amount of bits to shift (MUST be smaller
-   * than 9)
-   * @returns {String} Resulting string.
+   * Shift a Uint8Array to the left by n bits
+   * @param {Uint8Array} array The array to shift
+   * @param {Integer} bits Amount of bits to shift (MUST be smaller
+   * than 8)
+   * @returns {String} Resulting array.
    */
-  shiftRight: function (value, bitcount) {
-    const temp = util.str_to_Uint8Array(value);
-    if (bitcount % 8 !== 0) {
-      for (let i = temp.length - 1; i >= 0; i--) {
-        temp[i] >>= bitcount % 8;
-        if (i > 0) {
-          temp[i] |= (temp[i - 1] << (8 - (bitcount % 8))) & 0xFF;
+  shiftLeft: function (array, bits) {
+    if (bits) {
+      for (let i = 0; i < array.length; i++) {
+        array[i] <<= bits;
+        if (i + 1 < array.length) {
+          array[i] |= array[i + 1] >> (8 - bits);
         }
       }
-    } else {
-      return value;
     }
-    return util.Uint8Array_to_str(temp);
+    return array;
+  },
+
+  /**
+   * Shift a Uint8Array to the right by n bits
+   * @param {Uint8Array} array The array to shift
+   * @param {Integer} bits Amount of bits to shift (MUST be smaller
+   * than 8)
+   * @returns {String} Resulting array.
+   */
+  shiftRight: function (array, bits) {
+    if (bits) {
+      for (let i = array.length - 1; i >= 0; i--) {
+        array[i] >>= bits;
+        if (i > 0) {
+          array[i] |= (array[i - 1] << (8 - bits));
+        }
+      }
+    }
+    return array;
   },
 
   /**
