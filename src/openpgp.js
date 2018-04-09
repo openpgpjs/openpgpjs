@@ -395,6 +395,7 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
  *   or passwords must be specified.
  * @param  {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
  * @param  {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
+ * @param  {String} aeadAlgorithm             (optional) aead algorithm, e.g. 'eax' or 'ocb'
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
@@ -402,16 +403,16 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, publicKeys, passwords, wildcard=false }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard=false }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords, wildcard });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard });
   }
 
   return Promise.resolve().then(async function() {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords, wildcard) };
+    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard) };
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }

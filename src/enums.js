@@ -366,7 +366,8 @@ export default {
     reason_for_revocation: 29,
     features: 30,
     signature_target: 31,
-    embedded_signature: 32
+    embedded_signature: 32,
+    preferred_aead_algorithms: 34
   },
 
   /** Key flags

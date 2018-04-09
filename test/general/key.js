@@ -1192,6 +1192,24 @@ p92yZgB3r2+f6/GIe2+7
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
+  it('getPreferredAeadAlgo() - one key - OCB', async function() {
+    const key1 = openpgp.key.readArmored(twoKeys).keys[0];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1]);
+    expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
+  });
+
+  it('getPreferredAeadAlgo() - two key - one without pref', async function() {
+    const keys = openpgp.key.readArmored(twoKeys).keys;
+    const key1 = keys[0];
+    const key2 = keys[1];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+  });
+
   it('Preferences of generated key', function() {
     const testPref = function(key) {
       // key flags
@@ -1202,6 +1220,10 @@ p92yZgB3r2+f6/GIe2+7
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
+      if (openpgp.config.aead_protect === 'draft04') {
+        const aead = openpgp.enums.aead;
+        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
+      }
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;

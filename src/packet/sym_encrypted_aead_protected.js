@@ -42,6 +42,7 @@ function SymEncryptedAEADProtected() {
   this.tag = enums.packet.symEncryptedAEADProtected;
   this.version = VERSION;
   this.cipherAlgo = null;
+  this.aeadAlgorithm = 'eax';
   this.aeadAlgo = null;
   this.chunkSizeByte = null;
   this.iv = null;
@@ -131,7 +132,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * @async
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
-  this.aeadAlgo = config.aead_protect === 'draft04' ? enums.aead.eax : enums.aead.gcm;
+  this.aeadAlgo = config.aead_protect === 'draft04' ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   let data = this.packets.write();

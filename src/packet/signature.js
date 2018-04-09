@@ -84,6 +84,7 @@ function Signature(date=new Date()) {
   this.signatureTargetHashAlgorithm = null;
   this.signatureTargetHash = null;
   this.embeddedSignature = null;
+  this.preferredAeadAlgorithms = null;
 
   this.verified = null;
   this.revoked = null;
@@ -355,6 +356,10 @@ Signature.prototype.write_all_sub_packets = function () {
   if (this.embeddedSignature !== null) {
     arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
   }
+  if (this.preferredAeadAlgorithms !== null) {
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
+    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
+  }
 
   const result = util.concatUint8Array(arr);
   const length = util.writeNumber(result.length, 2);
@@ -530,6 +535,10 @@ Signature.prototype.read_sub_packet = function (bytes) {
       // Embedded Signature
       this.embeddedSignature = new Signature();
       this.embeddedSignature.read(bytes.subarray(mypos, bytes.length));
+      break;
+    case 34:
+      // Preferred AEAD Algorithms
+      read_array.call(this, 'preferredAeadAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     default:
       util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);

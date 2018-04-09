@@ -53,7 +53,7 @@ function SymEncryptedSessionKey() {
   this.sessionKey = null;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
-  this.aeadAlgorithm = 'eax';
+  this.aeadAlgorithm = enums.read(enums.aead, config.aead_mode);
   this.encrypted = null;
   this.s2k = null;
   this.iv = null;

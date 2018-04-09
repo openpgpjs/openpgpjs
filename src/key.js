@@ -1261,6 +1261,11 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    if (config.aead_protect === 'draft04') {
+      signaturePacket.preferredAeadAlgorithms = [];
+      signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
+      signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
+    }
     signaturePacket.preferredHashAlgorithms = [];
     // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
     signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
@@ -1449,6 +1454,38 @@ export async function getPreferredSymAlgo(keys) {
       if (algo !== enums.symmetric.plaintext &&
           algo !== enums.symmetric.idea && // not implemented
           enums.read(enums.symmetric, algo) && // known algorithm
+          prioMap[algo].count === keys.length && // available for all keys
+          prioMap[algo].prio > prefAlgo.prio) {
+        prefAlgo = prioMap[algo];
+      }
+    } catch (e) {}
+  }
+  return prefAlgo.algo;
+}
+
+/**
+ * Returns the preferred aead algorithm for a set of keys
+ * @param  {Array<module:key.Key>} keys Set of keys
+ * @returns {Promise<module:enums.aead>}   Preferred aead algorithm
+ * @async
+ */
+export async function getPreferredAeadAlgo(keys) {
+  const prioMap = {};
+  await Promise.all(keys.map(async function(key) {
+    const primaryUser = await key.getPrimaryUser();
+    if (!primaryUser || !primaryUser.selfCertification.preferredAeadAlgorithms) {
+      return config.aead_mode;
+    }
+    primaryUser.selfCertification.preferredAeadAlgorithms.forEach(function(algo, index) {
+      const entry = prioMap[algo] || (prioMap[algo] = { prio: 0, count: 0, algo: algo });
+      entry.prio += 64 >> index;
+      entry.count++;
+    });
+  }));
+  let prefAlgo = { prio: 0, algo: config.aead_mode };
+  for (const algo in prioMap) {
+    try {
+      if (enums.read(enums.aead, algo) && // known algorithm
           prioMap[algo].count === keys.length && // available for all keys
           prioMap[algo].prio > prefAlgo.prio) {
         prefAlgo = prioMap[algo];
