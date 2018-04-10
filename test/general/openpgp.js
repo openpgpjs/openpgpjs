@@ -598,6 +598,7 @@ describe('OpenPGP.js public api tests', function() {
     let use_nativeVal;
     let aead_protectVal;
     let aead_protect_versionVal;
+    let aead_modeVal;
 
     beforeEach(function(done) {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -622,6 +623,7 @@ describe('OpenPGP.js public api tests', function() {
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
       aead_protect_versionVal = openpgp.config.aead_protect_version;
+      aead_modeVal = openpgp.config.aead_mode;
       done();
     });
 
@@ -630,6 +632,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
+      openpgp.config.aead_mode = aead_modeVal;
     });
 
     it('Decrypting key with wrong passphrase rejected', async function () {
@@ -685,6 +688,15 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 4;
+      }
+    });
+
+    tryTests('OCB mode', tests, {
+      if: true,
+      beforeEach: function() {
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
+        openpgp.config.aead_mode = openpgp.enums.aead.ocb;
       }
     });
 

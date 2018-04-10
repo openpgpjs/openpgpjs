@@ -149,4 +149,33 @@ describe('Symmetric AES-OCB', function() {
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
     }
   });
+
+  it('Different key size test vectors', async function() {
+    const TAGLEN = 128;
+    const outputs = {
+      128: '67E944D23256C5E0B6C61FA22FDF1EA2',
+      192: 'F673F2C3E7174AAE7BAE986CA9F29E17',
+      256: 'D90EB8E9C977C88B79DD793D7FFA161C'
+    };
+
+    for (const KEYLEN of [128, 192, 256]) {
+      const K = new Uint8Array(KEYLEN / 8);
+      K[K.length - 1] = TAGLEN;
+
+      const C = [];
+      let N;
+      for (let i = 0; i < 128; i++) {
+        const S = new Uint8Array(i);
+        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 1, 4)]);
+        C.push(await ocb.encrypt('aes' + KEYLEN, S, K, N, S));
+        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 2, 4)]);
+        C.push(await ocb.encrypt('aes' + KEYLEN, S, K, N, new Uint8Array()));
+        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 3, 4)]);
+        C.push(await ocb.encrypt('aes' + KEYLEN, new Uint8Array(), K, N, S));
+      }
+      N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(385, 4)]);
+      const output = await ocb.encrypt('aes' + KEYLEN, new Uint8Array(), K, N, openpgp.util.concatUint8Array(C));
+      expect(openpgp.util.Uint8Array_to_hex(output)).to.equal(outputs[KEYLEN].toLowerCase());
+    }
+  });
 });
