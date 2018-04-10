@@ -182,14 +182,14 @@ Curve.prototype.keyFromPublic = function (pub) {
 
 Curve.prototype.genKeyPair = async function () {
   let keyPair;
-  if (webCrypto && this.web) {
+  if (this.web && util.getWebCrypto()) {
     // If browser doesn't support a curve, we'll catch it
     try {
       keyPair = await webGenKeyPair(this.name);
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && this.node) {
+  } else if (this.node && util.getNodeCrypto()) {
     keyPair = await nodeGenKeyPair(this.name);
   }
 

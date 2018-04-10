@@ -49,9 +49,9 @@ function encrypt(cipher, plaintext, key, iv) {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  if (webCrypto && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
     return webEncrypt(plaintext, key, iv);
-  } else if (nodeCrypto) { // Node crypto library
+  } else if (util.getNodeCrypto()) { // Node crypto library
     return nodeEncrypt(plaintext, key, iv);
   } // asm.js fallback
   return Promise.resolve(AES_GCM.encrypt(plaintext, key, iv));
@@ -70,9 +70,9 @@ function decrypt(cipher, ciphertext, key, iv) {
     return Promise.reject(new Error('GCM mode supports only AES cipher'));
   }
 
-  if (webCrypto && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
     return webDecrypt(ciphertext, key, iv);
-  } else if (nodeCrypto) { // Node crypto library
+  } else if (util.getNodeCrypto()) { // Node crypto library
     return nodeDecrypt(ciphertext, key, iv);
   } // asm.js fallback
   return Promise.resolve(AES_GCM.decrypt(ciphertext, key, iv));

@@ -45,7 +45,7 @@ function KeyPair(curve, options) {
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo) {
-  if (webCrypto && this.curve.web) {
+  if (this.curve.web && util.getWebCrypto()) {
     // If browser doesn't support a curve, we'll catch it
     try {
       // need to await to make sure browser succeeds
@@ -54,7 +54,7 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && this.curve.node) {
+  } else if (this.curve.node && util.getNodeCrypto()) {
     return nodeSign(this.curve, hash_algo, message, this.keyPair);
   }
   const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
@@ -62,7 +62,7 @@ KeyPair.prototype.sign = async function (message, hash_algo) {
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo) {
-  if (webCrypto && this.curve.web) {
+  if (this.curve.web && util.getWebCrypto()) {
     // If browser doesn't support a curve, we'll catch it
     try {
       // need to await to make sure browser succeeds
@@ -71,7 +71,7 @@ KeyPair.prototype.verify = async function (message, signature, hash_algo) {
     } catch (err) {
       util.print_debug("Browser did not support signing: " + err.message);
     }
-  } else if (nodeCrypto && this.curve.node) {
+  } else if (this.curve.node && util.getNodeCrypto()) {
     return nodeVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
   }
   const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
