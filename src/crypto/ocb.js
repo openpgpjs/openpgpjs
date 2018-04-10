@@ -76,12 +76,15 @@ function double(S) {
 }
 
 
+const zeros_16 = zeros(16);
+const one = new Uint8Array([1]);
+
 function constructKeyVariables(cipher, key, text, adata) {
   const aes = new ciphers[cipher](key);
   const encipher = aes.encrypt.bind(aes);
   const decipher = aes.decrypt.bind(aes);
 
-  const L_x = encipher(zeros(16));
+  const L_x = encipher(zeros_16);
   const L_$ = double(L_x);
   const L = [];
   L[0] = double(L_$);
@@ -100,7 +103,7 @@ function constructKeyVariables(cipher, key, text, adata) {
 function hash(kv, key, adata) {
   if (!adata.length) {
     // Fast path
-    return zeros(16);
+    return zeros_16;
   }
 
   const { encipher, L } = kv;
@@ -161,7 +164,7 @@ async function encrypt(cipher, plaintext, key, nonce, adata) {
   // Nonce-dependent and per-encryption variables
   //
   // We assume here that TAGLEN mod 128 == 0 (tagLength === 16).
-  const Nonce = concat(zeros(15 - nonce.length), new Uint8Array([1]), nonce);
+  const Nonce = concat(zeros_16.subarray(0, 15 - nonce.length), one, nonce);
   const bottom = Nonce[15] & 0b111111;
   Nonce[15] &= 0b11000000;
   const Ktop = encipher(Nonce);
@@ -179,7 +182,7 @@ async function encrypt(cipher, plaintext, key, nonce, adata) {
   let pos = 0;
   for (i = 0; i < m; i++) {
     set_xor(offset, L[ntz(i + 1)]);
-    C.set(xor(offset, encipher(xor(offset, plaintext))), pos);
+    C.set(set_xor(encipher(xor(offset, plaintext)), offset), pos);
     set_xor(checksum, plaintext);
 
     plaintext = plaintext.subarray(16);
@@ -201,7 +204,7 @@ async function encrypt(cipher, plaintext, key, nonce, adata) {
     set_xor(checksum, xorInput);
     pos += plaintext.length;
   }
-  const Tag = xor(encipher(xor(xor(checksum, offset), L.$)), hash(kv, key, adata));
+  const Tag = set_xor(encipher(set_xor(set_xor(checksum, offset), L.$)), hash(kv, key, adata));
 
   //
   // Assemble ciphertext
@@ -238,7 +241,7 @@ async function decrypt(cipher, ciphertext, key, nonce, adata) {
   // Nonce-dependent and per-encryption variables
   //
   // We assume here that TAGLEN mod 128 == 0 (tagLength === 16).
-  const Nonce = concat(zeros(15 - nonce.length), new Uint8Array([1]), nonce);
+  const Nonce = concat(zeros_16.subarray(0, 15 - nonce.length), one, nonce);
   const bottom = Nonce[15] & 0b111111;
   Nonce[15] &= 0b11000000;
   const Ktop = encipher(Nonce);
@@ -256,7 +259,7 @@ async function decrypt(cipher, ciphertext, key, nonce, adata) {
   let pos = 0;
   for (i = 0; i < m; i++) {
     set_xor(offset, L[ntz(i + 1)]);
-    P.set(xor(offset, decipher(xor(offset, ciphertext))), pos);
+    P.set(set_xor(decipher(xor(offset, ciphertext)), offset), pos);
     set_xor(checksum, P.subarray(pos));
 
     ciphertext = ciphertext.subarray(16);
@@ -278,7 +281,7 @@ async function decrypt(cipher, ciphertext, key, nonce, adata) {
     set_xor(checksum, xorInput);
     pos += ciphertext.length;
   }
-  const Tag = xor(encipher(xor(xor(checksum, offset), L.$)), hash(kv, key, adata));
+  const Tag = set_xor(encipher(set_xor(set_xor(checksum, offset), L.$)), hash(kv, key, adata));
 
   //
   // Check for validity and assemble plaintext
