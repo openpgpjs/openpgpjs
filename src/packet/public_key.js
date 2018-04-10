@@ -54,7 +54,7 @@ function PublicKey(date=new Date()) {
    * Packet version
    * @type {Integer}
    */
-  this.version = config.aead_protect === 'draft04' ? 5 : 4;
+  this.version = config.aead_protect && config.aead_protect_version === 4 ? 5 : 4;
   /**
    * Key creation date.
    * @type {Date}

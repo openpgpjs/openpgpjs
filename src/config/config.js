@@ -52,6 +52,15 @@ export default {
    */
   aead_protect:             false,
   /**
+   * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
+   * 0 means we implement a variant of {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00|this IETF draft}.
+   * 4 means we implement {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04|RFC4880bis-04}.
+   * Only has an effect when aead_protect is set to true.
+   * @memberof module:config
+   * @property {Integer} aead_protect_version
+   */
+  aead_protect_version:     0,
+  /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aead_protect is set to true.
    * @memberof module:config

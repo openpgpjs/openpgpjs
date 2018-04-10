@@ -1261,7 +1261,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-    if (config.aead_protect === 'draft04') {
+    if (config.aead_protect && config.aead_protect_version === 4) {
       signaturePacket.preferredAeadAlgorithms = [];
       signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
       signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
@@ -1281,7 +1281,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.features = [0];
       signaturePacket.features[0] |= enums.features.modification_detection;
     }
-    if (config.aead_protect === 'draft04') {
+    if (config.aead_protect && config.aead_protect_version === 4) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
       signaturePacket.features[0] |= enums.features.v5_keys;

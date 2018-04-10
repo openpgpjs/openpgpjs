@@ -597,6 +597,7 @@ describe('OpenPGP.js public api tests', function() {
     let zero_copyVal;
     let use_nativeVal;
     let aead_protectVal;
+    let aead_protect_versionVal;
 
     beforeEach(function(done) {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -620,6 +621,7 @@ describe('OpenPGP.js public api tests', function() {
       zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
+      aead_protect_versionVal = openpgp.config.aead_protect_version;
       done();
     });
 
@@ -627,6 +629,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.zero_copy = zero_copyVal;
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_protect_version = aead_protect_versionVal;
     });
 
     it('Decrypting key with wrong passphrase rejected', async function () {
@@ -671,7 +674,8 @@ describe('OpenPGP.js public api tests', function() {
       if: true,
       beforeEach: function() {
         openpgp.config.use_native = false;
-        openpgp.config.aead_protect = 'draft04';
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
       }
     });
 
@@ -679,7 +683,8 @@ describe('OpenPGP.js public api tests', function() {
       if: openpgp.util.getWebCryptoAll() || openpgp.util.getNodeCrypto(),
       beforeEach: function() {
         openpgp.config.use_native = true;
-        openpgp.config.aead_protect = 'draft04';
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
       }
     });
 

@@ -49,7 +49,7 @@ import util from '../util';
  */
 function SymEncryptedSessionKey() {
   this.tag = enums.packet.symEncryptedSessionKey;
-  this.version = config.aead_protect === 'draft04' ? 5 : 4;
+  this.version = config.aead_protect && config.aead_protect_version === 4 ? 5 : 4;
   this.sessionKey = null;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';

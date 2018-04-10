@@ -10,12 +10,16 @@ describe('Key', function() {
 
   describe('V5', function() {
     let aead_protectVal;
+    let aead_protect_versionVal;
     beforeEach(function() {
       aead_protectVal = openpgp.config.aead_protect;
-      openpgp.config.aead_protect = 'draft04';
+      aead_protect_versionVal = openpgp.config.aead_protect_version;
+      openpgp.config.aead_protect = true;
+      openpgp.config.aead_protect_version = 4;
     });
     afterEach(function() {
       openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_protect_version = aead_protect_versionVal;
     });
 
     tests();
@@ -1220,7 +1224,7 @@ p92yZgB3r2+f6/GIe2+7
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
-      if (openpgp.config.aead_protect === 'draft04') {
+      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
@@ -1228,7 +1232,7 @@ p92yZgB3r2+f6/GIe2+7
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect === 'draft04' ? [7] : [1]);
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys

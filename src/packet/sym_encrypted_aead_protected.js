@@ -61,7 +61,7 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
     throw new Error('Invalid packet version.');
   }
   offset++;
-  if (config.aead_protect === 'draft04') {
+  if (config.aead_protect_version === 4) {
     this.cipherAlgo = bytes[offset++];
     this.aeadAlgo = bytes[offset++];
     this.chunkSizeByte = bytes[offset++];
@@ -79,7 +79,7 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
  * @returns {Uint8Array} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
-  if (config.aead_protect === 'draft04') {
+  if (config.aead_protect_version === 4) {
     return util.concatUint8Array([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
   }
   return util.concatUint8Array([new Uint8Array([this.version]), this.iv, this.encrypted]);
@@ -94,7 +94,7 @@ SymEncryptedAEADProtected.prototype.write = function () {
  */
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
-  if (config.aead_protect === 'draft04') {
+  if (config.aead_protect_version === 4) {
     const cipher = enums.read(enums.symmetric, this.cipherAlgo);
     let data = this.encrypted.subarray(0, this.encrypted.length - mode.blockLength);
     const authTag = this.encrypted.subarray(this.encrypted.length - mode.blockLength);
@@ -132,11 +132,11 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * @async
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
-  this.aeadAlgo = config.aead_protect === 'draft04' ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
+  this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   let data = this.packets.write();
-  if (config.aead_protect === 'draft04') {
+  if (config.aead_protect_version === 4) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
     this.chunkSizeByte = config.aead_chunk_size_byte;
     const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
