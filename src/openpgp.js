@@ -23,6 +23,7 @@
  * @requires cleartext
  * @requires key
  * @requires config
+ * @requires enums
  * @requires util
  * @requires polyfills
  * @requires worker/async_proxy
@@ -41,6 +42,7 @@ import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
+import enums from './enums';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
 
@@ -581,10 +583,15 @@ function onError(message, error) {
 }
 
 /**
- * Check for AES-GCM support and configuration by the user. Only browsers that
- * implement the current WebCrypto specification support native AES-GCM.
+ * Check for native AEAD support and configuration by the user. Only
+ * browsers that implement the current WebCrypto specification support
+ * native GCM. Native EAX is built on CTR and CBC, which all browsers
+ * support. OCB and CFB are not natively supported.
  * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
-  return util.getWebCrypto() && config.aead_protect;
+  return config.aead_protect && (
+    ((config.aead_protect_version !== 4 || config.aead_mode === enums.aead.gcm) && util.getWebCrypto()) ||
+    (config.aead_protect_version === 4 && config.aead_mode === enums.aead.eax && util.getWebCryptoAll())
+  );
 }
