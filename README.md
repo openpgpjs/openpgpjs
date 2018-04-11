@@ -54,11 +54,11 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
     | p384            | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
     | p521            | ECDH       | ECDSA     | Yes      | Yes*       | Yes*      |
     | secp256k1       | ECDH       | ECDSA     | Yes      | Yes*       | No        |
-    | curve25519      | ECDH       | N/A       | Yes      | No (TODO)  | No        |
-    | ed25519         | N/A        | EdDSA     | Yes      | No (TODO)  | No        |
-    | brainpoolP256r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
-    | brainpoolP384r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
-    | brainpoolP512r1 | ECDH       | ECDSA     | Yes      | No (TODO)  | No        |
+    | brainpoolP256r1 | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+    | brainpoolP384r1 | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+    | brainpoolP512r1 | ECDH       | ECDSA     | Yes      | Yes*       | No        |
+    | curve25519      | ECDH       | N/A       | Yes      | No         | No        |
+    | ed25519         | N/A        | EdDSA     | Yes      | No         | No        |
 
 * Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
 
