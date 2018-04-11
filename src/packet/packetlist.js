@@ -54,6 +54,7 @@ List.prototype.read = function (bytes) {
           parsed.tag === enums.packet.compressed) {
         throw e;
       }
+      util.print_debug_error(e);
       if (pushed) {
         this.pop(); // drop unsupported packet
       }

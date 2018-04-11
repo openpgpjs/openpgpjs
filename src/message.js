@@ -157,7 +157,9 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         try {
           await keyPacket.decrypt(password);
           keyPackets.push(keyPacket);
-        } catch (err) {}
+        } catch (err) {
+          util.print_debug_error(err);
+        }
       }));
     }));
   } else if (privateKeys) {
@@ -180,7 +182,9 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         try {
           await keyPacket.decrypt(privateKeyPacket);
           keyPackets.push(keyPacket);
-        } catch (err) {}
+        } catch (err) {
+          util.print_debug_error(err);
+        }
       }));
     }));
   } else {

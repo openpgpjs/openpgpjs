@@ -568,7 +568,7 @@ function parseMessage(message, format) {
  */
 function onError(message, error) {
   // log the stack trace
-  if (config.debug) { console.error(error.stack); }
+  util.print_debug_error(error);
 
   // update error message
   error.message = message + ': ' + error.message;

@@ -376,6 +376,18 @@ export default {
     }
   },
 
+  /**
+   * Helper function to print a debug error. Debug
+   * messages are only printed if
+   * @link module:config/config.debug is set to true.
+   * @param {String} str String of the debug message
+   */
+  print_debug_error: function (error) {
+    if (config.debug) {
+      console.error(error);
+    }
+  },
+
   // TODO rewrite getLeftNBits to work with Uint8Arrays
   getLeftNBits: function (string, bitcount) {
     const rest = bitcount % 8;
