@@ -1402,14 +1402,15 @@ function getExpirationTime(keyPacket, signature) {
 /**
  * Returns the preferred signature hash algorithm of a key
  * @param  {object} key
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key) {
+export async function getPreferredHashAlgo(key, date) {
   let hash_algo = config.prefer_hash_algorithm;
   let pref_algo = hash_algo;
   if (key instanceof Key) {
-    const primaryUser = await key.getPrimaryUser();
+    const primaryUser = await key.getPrimaryUser(date);
     if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
@@ -1437,13 +1438,14 @@ export async function getPreferredHashAlgo(key) {
 /**
  * Returns the preferred symmetric algorithm for a set of keys
  * @param  {Array<module:key.Key>} keys Set of keys
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredSymAlgo(keys) {
+export async function getPreferredSymAlgo(keys, date) {
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser();
+    const primaryUser = await key.getPrimaryUser(date);
     if (!primaryUser || !primaryUser.selfCertification.preferredSymmetricAlgorithms) {
       return config.encryption_cipher;
     }
@@ -1471,13 +1473,20 @@ export async function getPreferredSymAlgo(keys) {
 /**
  * Returns the preferred aead algorithm for a set of keys
  * @param  {Array<module:key.Key>} keys Set of keys
- * @returns {Promise<module:enums.aead>}   Preferred aead algorithm
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @returns {Promise<module:enums.aead>} Preferred aead algorithm, or null if the public keys do not support aead
  * @async
  */
-export async function getPreferredAeadAlgo(keys) {
+export async function getPreferredAeadAlgo(keys, date) {
+  let supports_aead = true;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser();
+    const primaryUser = await key.getPrimaryUser(date);
+    if (!primaryUser || !primaryUser.selfCertification.features ||
+        !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
+      supports_aead = false;
+      return;
+    }
     if (!primaryUser || !primaryUser.selfCertification.preferredAeadAlgorithms) {
       return config.aead_mode;
     }
@@ -1487,6 +1496,9 @@ export async function getPreferredAeadAlgo(keys) {
       entry.count++;
     });
   }));
+  if (!supports_aead) {
+    return null;
+  }
   let prefAlgo = { prio: 0, algo: config.aead_mode };
   for (const algo in prioMap) {
     try {

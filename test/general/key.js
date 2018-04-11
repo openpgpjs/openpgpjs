@@ -1199,6 +1199,7 @@ p92yZgB3r2+f6/GIe2+7
   it('getPreferredAeadAlgo() - one key - OCB', async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
     const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
     const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
@@ -1209,9 +1210,23 @@ p92yZgB3r2+f6/GIe2+7
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const primaryUser2 = await key2.getPrimaryUser();
+    primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1, key2]);
     expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+  });
+
+  it('getPreferredAeadAlgo() - two key - one with no support', async function() {
+    const keys = openpgp.key.readArmored(twoKeys).keys;
+    const key1 = keys[0];
+    const key2 = keys[1];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1, key2]);
+    expect(prefAlgo).to.be.null;
   });
 
   it('Preferences of generated key', function() {

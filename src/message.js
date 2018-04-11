@@ -93,7 +93,7 @@ Message.prototype.getSigningKeyIds = function() {
  * Decrypt the message. Either a private key, a session key, or a password must be specified.
  * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
- * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @returns {Promise<Message>}             new message with decrypted content
  * @async
  */
@@ -244,7 +244,7 @@ Message.prototype.getText = function() {
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
- * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @returns {Promise<Message>}                   new message with encrypted content
@@ -260,11 +260,14 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
       throw new Error('Invalid session key for encryption.');
     }
     symAlgo = sessionKey.algorithm;
-    aeadAlgo = sessionKey.aeadAlgorithm || config.aead_mode;
+    aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredSymAlgo(keys));
-    aeadAlgo = enums.read(enums.aead, await getPreferredAeadAlgo(keys));
+    symAlgo = enums.read(enums.symmetric, await getPreferredSymAlgo(keys, date));
+    aeadAlgo = await getPreferredAeadAlgo(keys, date);
+    if (aeadAlgo) {
+      aeadAlgo = enums.read(enums.aead, aeadAlgo);
+    }
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
     aeadAlgo = enums.read(enums.aead, config.aead_mode);
@@ -278,7 +281,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
 
   const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date);
 
-  if (config.aead_protect) {
+  if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
     symEncryptedPacket.aeadAlgorithm = aeadAlgo;
   } else if (config.integrity_protect) {
@@ -423,7 +426,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, date);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -507,7 +510,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     const signaturePacket = new packet.Signature(date);
     signaturePacket.signatureType = signatureType;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey);
+    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, date);
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     return signaturePacket;
   })).then(signatureList => {
