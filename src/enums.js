@@ -212,7 +212,9 @@ export default {
     /** Text data 't' */
     text: 't'.charCodeAt(),
     /** Utf8 data 'u' */
-    utf8: 'u'.charCodeAt()
+    utf8: 'u'.charCodeAt(),
+    /** MIME message body part 'm' */
+    mime: 'm'.charCodeAt()
   },
 
 

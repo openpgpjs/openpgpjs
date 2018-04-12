@@ -213,6 +213,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
  * @param  {String|Uint8Array} data               text/data to be encrypted as JavaScript binary string or Uint8Array
+ * @param  {utf8|binary|text|mime} dataType       (optional) data packet type
  * @param  {Key|Array<Key>} publicKeys            (optional) array of keys or single key, used to encrypt the message
  * @param  {Key|Array<Key>} privateKeys           (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords       (optional) array of passwords or a single password to encrypt the message
@@ -231,15 +232,15 @@ export function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date()}) {
+export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date()}) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, detached, signature, returnSessionKey, wildcard, date });
+    return asyncProxy.delegate('encrypt', { data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, detached, signature, returnSessionKey, wildcard, date });
   }
   const result = {};
   return Promise.resolve().then(async function() {
-    let message = createMessage(data, filename, date);
+    let message = createMessage(data, filename, date, dataType);
     if (!privateKeys) {
       privateKeys = [];
     }
@@ -314,6 +315,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 /**
  * Signs a cleartext message.
  * @param  {String | Uint8Array} data           cleartext input to be signed
+ * @param  {utf8|binary|text|mime} dataType     (optional) data packet type
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
@@ -324,19 +326,19 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ data, privateKeys, armor=true, detached=false, date=new Date() }) {
+export function sign({ data, dataType, privateKeys, armor=true, detached=false, date=new Date() }) {
   checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
-      data, privateKeys, armor, detached, date
+      data, dataType, privateKeys, armor, detached, date
     });
   }
 
   const result = {};
   return Promise.resolve().then(async function() {
-    let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data);
+    let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data, dataType);
 
     if (detached) {
       const signature = await message.signDetached(privateKeys, undefined, date);
@@ -527,14 +529,15 @@ function toArray(param) {
  * @param  {String|Uint8Array} data   the payload for the message
  * @param  {String} filename          the literal data packet's filename
  * @param  {Date} date      the creation date of the package
+ * @param  {utf8|binary|text|mime} type (optional) data packet type
  * @returns {Message}                  a message object
  */
-function createMessage(data, filename, date=new Date()) {
+function createMessage(data, filename, date=new Date(), type) {
   let msg;
   if (util.isUint8Array(data)) {
-    msg = messageLib.fromBinary(data, filename, date);
+    msg = messageLib.fromBinary(data, filename, date, type);
   } else if (util.isString(data)) {
-    msg = messageLib.fromText(data, filename, date);
+    msg = messageLib.fromText(data, filename, date, type);
   } else {
     throw new Error('Data must be of type String or Uint8Array');
   }

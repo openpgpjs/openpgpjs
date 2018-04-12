@@ -46,7 +46,7 @@ function Literal(date=new Date()) {
  * Set the packet data to a javascript native string, end of line
  * will be normalized to \r\n and by default text is converted to UTF8
  * @param {String} text Any native javascript string
- * @param {utf8|binary|text} format (optional) The format of the string of bytes
+ * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
 Literal.prototype.setText = function(text, format='utf8') {
   this.format = format;
@@ -73,7 +73,7 @@ Literal.prototype.getText = function() {
 /**
  * Set the packet data to value represented by the provided string of bytes.
  * @param {Uint8Array} bytes The string of bytes
- * @param {utf8|binary|text} format The format of the string of bytes
+ * @param {utf8|binary|text|mime} format The format of the string of bytes
  */
 Literal.prototype.setBytes = function(bytes, format) {
   this.format = format;

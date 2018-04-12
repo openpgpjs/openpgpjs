@@ -652,13 +652,14 @@ export function read(input) {
  * @param {String} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
+ * @param {utf8|binary|text|mime} type (optional) data packet type
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromText(text, filename, date=new Date()) {
+export function fromText(text, filename, date=new Date(), type='utf8') {
   const literalDataPacket = new packet.Literal(date);
   // text will be converted to UTF8
-  literalDataPacket.setText(text);
+  literalDataPacket.setText(text, type);
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }
@@ -672,19 +673,17 @@ export function fromText(text, filename, date=new Date()) {
  * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
+ * @param {utf8|binary|text|mime} type (optional) data packet type
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromBinary(bytes, filename, date=new Date()) {
+export function fromBinary(bytes, filename, date=new Date(), type='binary') {
   if (!util.isUint8Array(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
   const literalDataPacket = new packet.Literal(date);
-  if (filename) {
-    literalDataPacket.setFilename(filename);
-  }
-  literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
+  literalDataPacket.setBytes(bytes, type);
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }
