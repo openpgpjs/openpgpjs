@@ -9,8 +9,6 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-const eax = openpgp.crypto.eax;
-
 function testAESEAX() {
   it('Passes all test vectors', async function() {
     var vectors = [
@@ -96,28 +94,30 @@ function testAESEAX() {
         headerBytes = openpgp.util.hex_to_Uint8Array(vec.header),
         ctBytes = openpgp.util.hex_to_Uint8Array(vec.ct);
 
+      const eax = new openpgp.crypto.eax(cipher, keyBytes);
+
       // encryption test
-      let ct = await eax.encrypt(cipher, msgBytes, keyBytes, nonceBytes, headerBytes);
+      let ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
       expect(openpgp.util.Uint8Array_to_hex(ct)).to.equal(vec.ct.toLowerCase());
 
       // decryption test with verification
-      let pt = await eax.decrypt(cipher, ctBytes, keyBytes, nonceBytes, headerBytes);
+      let pt = await eax.decrypt(ctBytes, nonceBytes, headerBytes);
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.msg.toLowerCase());
 
       // tampering detection test
-      ct = await eax.encrypt(cipher, msgBytes, keyBytes, nonceBytes, headerBytes);
+      ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
-      pt = eax.decrypt(cipher, ct, keyBytes, nonceBytes, headerBytes);
+      pt = eax.decrypt(ct, nonceBytes, headerBytes);
       await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch in EAX ciphertext')
 
       // testing without additional data
-      ct = await eax.encrypt(cipher, msgBytes, keyBytes, nonceBytes, new Uint8Array());
-      pt = await eax.decrypt(cipher, ct, keyBytes, nonceBytes, new Uint8Array());
+      ct = await eax.encrypt(msgBytes, nonceBytes, new Uint8Array());
+      pt = await eax.decrypt(ct, nonceBytes, new Uint8Array());
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.msg.toLowerCase());
 
       // testing with multiple additional data
-      ct = await eax.encrypt(cipher, msgBytes, keyBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
-      pt = await eax.decrypt(cipher, ct, keyBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      ct = await eax.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      pt = await eax.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.msg.toLowerCase());
     }
   });

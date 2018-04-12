@@ -107,15 +107,16 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     adataView.setInt32(13 + 4, data.length - mode.blockLength); // Should be setInt64(13, ...)
     const decryptedPromises = [];
+    const modeInstance = new mode(cipher, key);
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       decryptedPromises.push(
-        mode.decrypt(cipher, data.subarray(0, chunkSize), key, mode.getNonce(this.iv, chunkIndexArray), adataArray)
+        modeInstance.decrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
       );
       data = data.subarray(chunkSize);
       adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
     }
     decryptedPromises.push(
-      mode.decrypt(cipher, authTag, key, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
+      modeInstance.decrypt(authTag, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
     );
     this.packets.read(util.concatUint8Array(await Promise.all(decryptedPromises)));
   } else {
@@ -148,9 +149,10 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     adataView.setInt32(13 + 4, data.length); // Should be setInt64(13, ...)
     const encryptedPromises = [];
+    const modeInstance = new mode(sessionKeyAlgorithm, key);
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       encryptedPromises.push(
-        mode.encrypt(sessionKeyAlgorithm, data.subarray(0, chunkSize), key, mode.getNonce(this.iv, chunkIndexArray), adataArray)
+        modeInstance.encrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
       );
       // We take a chunk of data, encrypt it, and shift `data` to the
       // next chunk. After the final chunk, we encrypt a final, empty
@@ -159,7 +161,7 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
       adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
     }
     encryptedPromises.push(
-      mode.encrypt(sessionKeyAlgorithm, data, key, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
+      modeInstance.encrypt(data, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
     );
     this.encrypted = util.concatUint8Array(await Promise.all(encryptedPromises));
   } else {

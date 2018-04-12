@@ -142,7 +142,7 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
   if (this.version === 5) {
     const mode = crypto[this.aeadAlgorithm];
     const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
-    this.sessionKey = await mode.decrypt(algo, this.encrypted, key, this.iv, adata);
+    this.sessionKey = await new mode(algo, key).decrypt(this.encrypted, this.iv, adata);
   } else if (this.encrypted !== null) {
     const decrypted = crypto.cfb.normalDecrypt(algo, key, this.encrypted, null);
 
@@ -182,7 +182,7 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
     const mode = crypto[this.aeadAlgorithm];
     this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
     const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
-    this.encrypted = await mode.encrypt(algo, this.sessionKey, key, this.iv, adata);
+    this.encrypted = await new mode(algo, key).encrypt(this.sessionKey, this.iv, adata);
   } else {
     const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
     const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);

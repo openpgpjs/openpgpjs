@@ -211,7 +211,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     arr = [new Uint8Array([253, optionalFields.length])];
     arr.push(optionalFields);
     const mode = crypto[aead];
-    const encrypted = await mode.encrypt(symmetric, cleartext, key, iv.subarray(0, mode.ivLength), new Uint8Array());
+    const encrypted = await new mode(symmetric, key).encrypt(cleartext, iv.subarray(0, mode.ivLength), new Uint8Array());
     arr.push(util.writeNumber(encrypted.length, 4));
     arr.push(encrypted);
   } else {
@@ -305,7 +305,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   if (aead) {
     const mode = crypto[aead];
     try {
-      cleartext = await mode.decrypt(symmetric, ciphertext, key, iv.subarray(0, mode.ivLength), new Uint8Array());
+      cleartext = await new mode(symmetric, key).decrypt(ciphertext, iv.subarray(0, mode.ivLength), new Uint8Array());
     } catch(err) {
       if (err.message.startsWith('Authentication tag mismatch')) {
         throw new Error('Incorrect key passphrase: ' + err.message);

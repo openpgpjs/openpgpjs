@@ -9,8 +9,6 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-const ocb = openpgp.crypto.ocb;
-
 describe('Symmetric AES-OCB', function() {
   it('Passes all test vectors', async function() {
     const K = '000102030405060708090A0B0C0D0E0F';
@@ -124,28 +122,30 @@ describe('Symmetric AES-OCB', function() {
         headerBytes = openpgp.util.hex_to_Uint8Array(vec.A),
         ctBytes = openpgp.util.hex_to_Uint8Array(vec.C);
 
+      const ocb = new openpgp.crypto.ocb(cipher, keyBytes);
+
       // encryption test
-      let ct = await ocb.encrypt(cipher, msgBytes, keyBytes, nonceBytes, headerBytes);
+      let ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
       expect(openpgp.util.Uint8Array_to_hex(ct)).to.equal(vec.C.toLowerCase());
 
       // decryption test with verification
-      let pt = await ocb.decrypt(cipher, ctBytes, keyBytes, nonceBytes, headerBytes);
+      let pt = await ocb.decrypt(ctBytes, nonceBytes, headerBytes);
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
 
       // tampering detection test
-      ct = await ocb.encrypt(cipher, msgBytes, keyBytes, nonceBytes, headerBytes);
+      ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
-      pt = ocb.decrypt(cipher, ct, keyBytes, nonceBytes, headerBytes);
+      pt = ocb.decrypt(ct, nonceBytes, headerBytes);
       await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch in OCB ciphertext')
 
       // testing without additional data
-      ct = await ocb.encrypt(cipher, msgBytes, keyBytes, nonceBytes, new Uint8Array());
-      pt = await ocb.decrypt(cipher, ct, keyBytes, nonceBytes, new Uint8Array());
+      ct = await ocb.encrypt(msgBytes, nonceBytes, new Uint8Array());
+      pt = await ocb.decrypt(ct, nonceBytes, new Uint8Array());
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
 
       // testing with multiple additional data
-      ct = await ocb.encrypt(cipher, msgBytes, keyBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
-      pt = await ocb.decrypt(cipher, ct, keyBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      ct = await ocb.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      pt = await ocb.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
     }
   });
@@ -162,19 +162,21 @@ describe('Symmetric AES-OCB', function() {
       const K = new Uint8Array(KEYLEN / 8);
       K[K.length - 1] = TAGLEN;
 
+      const ocb = new openpgp.crypto.ocb('aes' + KEYLEN, K);
+
       const C = [];
       let N;
       for (let i = 0; i < 128; i++) {
         const S = new Uint8Array(i);
         N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 1, 4)]);
-        C.push(await ocb.encrypt('aes' + KEYLEN, S, K, N, S));
+        C.push(await ocb.encrypt(S, N, S));
         N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 2, 4)]);
-        C.push(await ocb.encrypt('aes' + KEYLEN, S, K, N, new Uint8Array()));
+        C.push(await ocb.encrypt(S, N, new Uint8Array()));
         N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 3, 4)]);
-        C.push(await ocb.encrypt('aes' + KEYLEN, new Uint8Array(), K, N, S));
+        C.push(await ocb.encrypt(new Uint8Array(), N, S));
       }
       N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(385, 4)]);
-      const output = await ocb.encrypt('aes' + KEYLEN, new Uint8Array(), K, N, openpgp.util.concatUint8Array(C));
+      const output = await ocb.encrypt(new Uint8Array(), N, openpgp.util.concatUint8Array(C));
       expect(openpgp.util.Uint8Array_to_hex(output)).to.equal(outputs[KEYLEN].toLowerCase());
     }
   });
