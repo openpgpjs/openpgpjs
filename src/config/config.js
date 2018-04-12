@@ -63,6 +63,7 @@ export default {
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aead_protect is set to true.
+   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
    * @memberof module:config
    * @property {Integer} aead_mode Default AEAD mode {@link module:enums.aead}
    */

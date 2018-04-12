@@ -64,7 +64,22 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 * If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/API/crypto.html#crypto_crypto) is used. This can be deactivated by setting `openpgp.config.use_native = false`.
 
-* The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ford-openpgp-format-00) for authenticated encryption [using native AES-GCM](https://github.com/openpgpjs/openpgpjs/pull/430). This makes symmetric encryption about 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. You can activate it by setting `openpgp.config.aead_protect = true`. **Note: activating this setting can break compatibility with other OpenPGP implementations, so be careful if that's one of your requirements.**
+* The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04) for authenticated encryption using native AES-EAX, OCB, or GCM. This makes symmetric encryption up to 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations, and also with future versions of OpenPGP.js. Don't use it with messages you want to store on disk or in a database.** You can enable it by setting:
+
+  ```
+  openpgp.config.aead_protect = true
+  openpgp.config.aead_protect_version = 4
+  ```
+
+  You can change the AEAD mode by setting one of the following options:
+
+  ```
+  openpgp.config.aead_mode = openpgp.enums.aead.eax // Default, native
+  openpgp.config.aead_mode = openpgp.enums.aead.ocb // Non-native
+  openpgp.config.aead_mode = openpgp.enums.aead.gcm // **Non-standard**, fastest
+  ```
+
+  We previously also implemented an [earlier version](https://tools.ietf.org/html/draft-ford-openpgp-format-00) of the draft (using GCM), which you could enable by simply setting `openpgp.config.aead_protect = true`. If you need to stay compatible with that version, don't set `openpgp.config.aead_protect_version = 4`.
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://github.com/openpgpjs/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
 
@@ -92,8 +107,6 @@ Here are some examples of how to use the v2.x+ API. For more elaborate examples 
 var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
-
-openpgp.config.aead_protect = true // activate fast AES-GCM mode (not yet OpenPGP standard)
 ```
 
 #### Encrypt and decrypt *Uint8Array* data with a password
