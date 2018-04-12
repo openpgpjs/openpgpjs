@@ -551,9 +551,15 @@ Signature.prototype.toSign = function (type, data) {
 
   switch (type) {
     case t.binary:
-    case t.text:
       return data.getBytes();
 
+    case t.text: {
+      let text = data.getText();
+      // normalize EOL to \r\n
+      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+      // encode UTF8
+      return util.str_to_Uint8Array(util.encode_utf8(text));
+    }
     case t.standalone:
       return new Uint8Array(0);
 

@@ -216,7 +216,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
  */
 Message.prototype.getLiteralData = function() {
   const literal = this.packets.findPacket(enums.packet.literal);
-  return (literal && literal.data) || null;
+  return (literal && literal.getBytes()) || null;
 };
 
 /**
@@ -395,8 +395,8 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
 
   let i;
   let existingSigPacketlist;
-  const literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  const signatureType = literalFormat === enums.literal.binary ?
+  // If data packet was created from Uint8Array, use binary, otherwise use text
+  const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
   if (signature) {
@@ -491,8 +491,8 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
   const packetlist = new packet.List();
 
-  const literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  const signatureType = literalFormat === enums.literal.binary ?
+  // If data packet was created from Uint8Array, use binary, otherwise use text
+  const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
   await Promise.all(privateKeys.map(async function(privateKey) {
@@ -581,15 +581,9 @@ export async function createVerificationObjects(signatureList, literalDataList, 
       }
     }));
 
-    // If this is a text signature, canonicalize line endings of the data
-    const literalDataPacket = literalDataList[0];
-    if (signature.signatureType === enums.signature.text) {
-      literalDataPacket.setText(literalDataPacket.getText());
-    }
-
     const verifiedSig = {
       keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
     };
 
     const packetlist = new packet.List();
