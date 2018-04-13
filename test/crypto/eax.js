@@ -94,7 +94,7 @@ function testAESEAX() {
         headerBytes = openpgp.util.hex_to_Uint8Array(vec.header),
         ctBytes = openpgp.util.hex_to_Uint8Array(vec.ct);
 
-      const eax = new openpgp.crypto.eax(cipher, keyBytes);
+      const eax = await openpgp.crypto.eax(cipher, keyBytes);
 
       // encryption test
       let ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);

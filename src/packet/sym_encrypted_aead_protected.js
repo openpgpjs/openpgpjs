@@ -107,7 +107,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     adataView.setInt32(13 + 4, data.length - mode.blockLength); // Should be setInt64(13, ...)
     const decryptedPromises = [];
-    const modeInstance = new mode(cipher, key);
+    const modeInstance = await mode(cipher, key);
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       decryptedPromises.push(
         modeInstance.decrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
@@ -149,7 +149,7 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     adataView.setInt32(13 + 4, data.length); // Should be setInt64(13, ...)
     const encryptedPromises = [];
-    const modeInstance = new mode(sessionKeyAlgorithm, key);
+    const modeInstance = await mode(sessionKeyAlgorithm, key);
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       encryptedPromises.push(
         modeInstance.encrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)

@@ -41,98 +41,104 @@ const zero = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const one = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 const two = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
 
-class OMAC extends CMAC {
-  mac(t, message) {
-    return super.mac(concat(t, message));
-  }
+async function OMAC(key) {
+  const cmac = await CMAC(key);
+  return function(t, message) {
+    return cmac(concat(t, message));
+  };
 }
 
-class CTR {
-  constructor(key) {
-    if (util.getWebCryptoAll() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-      this.key = webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
-      this.ctr = this.webCtr;
-    } else if (util.getNodeCrypto()) { // Node crypto library
-      this.key = new Buffer(key);
-      this.ctr = this.nodeCtr;
-    } else {
-      // asm.js fallback
-      this.key = key;
-    }
+async function CTR(key) {
+  if (util.getWebCryptoAll() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    key = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
+    return async function(pt, iv) {
+      const ct = await webCrypto.encrypt({ name: 'AES-CTR', counter: iv, length: blockLength * 8 }, key, pt);
+      return new Uint8Array(ct);
+    };
   }
-
-  webCtr(pt, iv) {
-    return this.key
-      .then(keyObj => webCrypto.encrypt({ name: 'AES-CTR', counter: iv, length: blockLength * 8 }, keyObj, pt))
-      .then(ct => new Uint8Array(ct));
+  if (util.getNodeCrypto()) { // Node crypto library
+    key = new Buffer(key);
+    return async function(pt, iv) {
+      pt = new Buffer(pt);
+      iv = new Buffer(iv);
+      const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ctr', key, iv);
+      const ct = Buffer.concat([en.update(pt), en.final()]);
+      return new Uint8Array(ct);
+    };
   }
-
-  nodeCtr(pt, iv) {
-    pt = new Buffer(pt);
-    iv = new Buffer(iv);
-    const en = new nodeCrypto.createCipheriv('aes-' + (this.key.length * 8) + '-ctr', this.key, iv);
-    const ct = Buffer.concat([en.update(pt), en.final()]);
-    return Promise.resolve(new Uint8Array(ct));
-  }
-
-  ctr(pt, iv) {
-    return Promise.resolve(AES_CTR.encrypt(pt, this.key, iv));
-  }
+  // asm.js fallback
+  return async function(pt, iv) {
+    return AES_CTR.encrypt(pt, key, iv);
+  };
 }
 
 
-class EAX {
-  /**
-   * Class to en/decrypt using EAX mode.
-   * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
-   * @param  {Uint8Array} key         The encryption key
-   */
-  constructor(cipher, key) {
-    if (cipher.substr(0, 3) !== 'aes') {
-      throw new Error('EAX mode supports only AES cipher');
+/**
+ * Class to en/decrypt using EAX mode.
+ * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param  {Uint8Array} key         The encryption key
+ */
+async function EAX(cipher, key) {
+  if (cipher.substr(0, 3) !== 'aes') {
+    throw new Error('EAX mode supports only AES cipher');
+  }
+
+  const [
+    omac,
+    ctr
+  ] = await Promise.all([
+    OMAC(key),
+    CTR(key)
+  ]);
+
+  return {
+    /**
+     * Encrypt plaintext input.
+     * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
+     * @param  {Uint8Array} nonce       The nonce (16 bytes)
+     * @param  {Uint8Array} adata       Associated data to sign
+     * @returns {Promise<Uint8Array>}    The ciphertext output
+     */
+    encrypt: async function(plaintext, nonce, adata) {
+      const [
+        _nonce,
+        _adata
+      ] = await Promise.all([
+        omac(zero, nonce),
+        omac(one, adata)
+      ]);
+      const ciphered = await ctr(plaintext, _nonce);
+      const _ciphered = await omac(two, ciphered);
+      const tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
+      return concat(ciphered, tag);
+    },
+
+    /**
+     * Decrypt ciphertext input.
+     * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
+     * @param  {Uint8Array} nonce        The nonce (16 bytes)
+     * @param  {Uint8Array} adata        Associated data to verify
+     * @returns {Promise<Uint8Array>}     The plaintext output
+     */
+    decrypt: async function(ciphertext, nonce, adata) {
+      if (ciphertext.length < tagLength) throw new Error('Invalid EAX ciphertext');
+      const ciphered = ciphertext.subarray(0, ciphertext.length - tagLength);
+      const tag = ciphertext.subarray(ciphertext.length - tagLength);
+      const [
+        _nonce,
+        _adata,
+        _ciphered
+      ] = await Promise.all([
+        omac(zero, nonce),
+        omac(one, adata),
+        omac(two, ciphered)
+      ]);
+      const _tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
+      if (!util.equalsUint8Array(tag, _tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
+      const plaintext = await ctr(ciphered, _nonce);
+      return plaintext;
     }
-
-    const omac = new OMAC(key);
-    this.omac = omac.mac.bind(omac);
-    const ctr = new CTR(key);
-    this.ctr = ctr.ctr.bind(ctr);
-  }
-
-  /**
-   * Encrypt plaintext input.
-   * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
-   * @param  {Uint8Array} nonce       The nonce (16 bytes)
-   * @param  {Uint8Array} adata       Associated data to sign
-   * @returns {Promise<Uint8Array>}    The ciphertext output
-   */
-  async encrypt(plaintext, nonce, adata) {
-    const _nonce = this.omac(zero, nonce);
-    const _adata = this.omac(one, adata);
-    const ciphered = await this.ctr(plaintext, _nonce);
-    const _ciphered = this.omac(two, ciphered);
-    const tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
-    return concat(ciphered, tag);
-  }
-
-  /**
-   * Decrypt ciphertext input.
-   * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
-   * @param  {Uint8Array} nonce        The nonce (16 bytes)
-   * @param  {Uint8Array} adata        Associated data to verify
-   * @returns {Promise<Uint8Array>}     The plaintext output
-   */
-  async decrypt(ciphertext, nonce, adata) {
-    if (ciphertext.length < tagLength) throw new Error('Invalid EAX ciphertext');
-    const ciphered = ciphertext.subarray(0, ciphertext.length - tagLength);
-    const tag = ciphertext.subarray(ciphertext.length - tagLength);
-    const _nonce = this.omac(zero, nonce);
-    const _adata = this.omac(one, adata);
-    const _ciphered = this.omac(two, ciphered);
-    const _tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
-    if (!util.equalsUint8Array(tag, _tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
-    const plaintext = await this.ctr(ciphered, _nonce);
-    return plaintext;
-  }
+  };
 }
 
 

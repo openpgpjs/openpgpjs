@@ -122,7 +122,7 @@ describe('Symmetric AES-OCB', function() {
         headerBytes = openpgp.util.hex_to_Uint8Array(vec.A),
         ctBytes = openpgp.util.hex_to_Uint8Array(vec.C);
 
-      const ocb = new openpgp.crypto.ocb(cipher, keyBytes);
+      const ocb = await openpgp.crypto.ocb(cipher, keyBytes);
 
       // encryption test
       let ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
@@ -162,7 +162,7 @@ describe('Symmetric AES-OCB', function() {
       const K = new Uint8Array(KEYLEN / 8);
       K[K.length - 1] = TAGLEN;
 
-      const ocb = new openpgp.crypto.ocb('aes' + KEYLEN, K);
+      const ocb = await openpgp.crypto.ocb('aes' + KEYLEN, K);
 
       const C = [];
       let N;
