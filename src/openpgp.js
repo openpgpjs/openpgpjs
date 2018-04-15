@@ -99,26 +99,22 @@ export function destroyWorker() {
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @param  {String} curve            (optional) elliptic curve for ECC keys:
  *                                              curve25519, p256, p384, p521, secp256k1,
  *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
- * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
- * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @param  {Date} date               (optional) override the creation date of the key and the key signatures
+ * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @async
  * @static
  */
 
-export function generateKey({
-  userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0, curve="", date=new Date()
-} = {}) {
+export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
   userIds = formatUserIds(userIds);
-  const options = {
-    userIds, passphrase, numBits, unlocked, keyExpirationTime, curve, date
-  };
-
+  const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
   }
@@ -141,22 +137,15 @@ export function generateKey({
  * @param  {Key} privateKey          private key to reformat
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
  * @async
  * @static
  */
-export function reformatKey({
-  privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0
-} = {}) {
+export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date}) {
   userIds = formatUserIds(userIds);
-
-  const options = {
-    privateKey, userIds, passphrase, unlocked, keyExpirationTime
-  };
-
+  const options = { privateKey, userIds, passphrase, keyExpirationTime, date};
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }

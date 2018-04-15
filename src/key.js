@@ -291,7 +291,6 @@ Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date())
 };
 
 function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
-  const normDate = util.normalizeDate(date);
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
          keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
@@ -1100,18 +1099,34 @@ export function readArmored(armoredText) {
  *                             Assumes already in form of "User Name <username@email.com>"
  *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
- * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
+ * @param  {String} curve            (optional) elliptic curve for ECC keys:
  * @param  {Date} date         Override the creation date of the key and the key signatures
+ * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
-export function generate(options) {
-  let secretKeyPacket;
-  let secretSubkeyPacket;
-  return Promise.resolve().then(() => {
+export async function generate(options) {
+
+  options = sanitizeKeyOptions(options);
+  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
+
+  let promises = [generateSecretKey(options)];
+  promises = promises.concat(options.subkeys.map(generateSecretSubkey));
+  return Promise.all(promises).then(packets => wrapKeyObject(packets, options));
+
+  function sanitizeKeyOptions(options, subkeyDefaults={}) {
+    options.curve = options.curve || subkeyDefaults.curve;
+    options.numBits = options.numBits || subkeyDefaults.numBits;
+    options.keyExpirationTime = options.keyExpirationTime >= 0 ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
+    options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+    options.date = options.date || subkeyDefaults.date;
+
+    options.sign = options.sign || false;
+
     if (options.curve) {
       try {
         options.curve = enums.write(enums.curve, options.curve);
@@ -1119,81 +1134,63 @@ export function generate(options) {
         throw new Error('Not valid curve.');
       }
       if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        options.keyType = options.keyType || enums.publicKey.eddsa;
+        if (!subkeyDefaults.algorithm || options.sign) {
+          options.algorithm = options.algorithm || enums.publicKey.eddsa;
+          options.curve = enums.curve.ed25519;
+        } else {
+          options.algorithm = options.algorithm || enums.publicKey.ecdh;
+          options.curve = enums.curve.curve25519;
+        }
       } else {
-        options.keyType = options.keyType || enums.publicKey.ecdsa;
+        options.algorithm = options.algorithm || (!subkeyDefaults.algorithm ? enums.publicKey.ecdsa : enums.publicKey.ecdh);
+        if (options.algorithm !== enums.publicKey.ecdh && options.algorithm !== enums.publicKey.ecdsa) {
+          throw new Error('Invalid algorithm for curve');
+        }
       }
-      options.subkeyType = options.subkeyType || enums.publicKey.ecdh;
     } else if (options.numBits) {
-      options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-      options.subkeyType = options.subkeyType || enums.publicKey.rsa_encrypt_sign;
+      options.algorithm = enums.publicKey.rsa_encrypt_sign;
     } else {
-      throw new Error('Key type not specified.');
+      throw new Error('Unrecognized key type');
     }
-
-    if (options.keyType !== enums.publicKey.rsa_encrypt_sign &&
-        options.keyType !== enums.publicKey.ecdsa &&
-        options.keyType !== enums.publicKey.eddsa) {
-      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-      throw new Error('Unsupported key type');
-    }
-
-    if (options.subkeyType !== enums.publicKey.rsa_encrypt_sign &&
-        options.subkeyType !== enums.publicKey.ecdh) {
-      // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-      throw new Error('Unsupported subkey type');
-    }
-
-    if (!options.passphrase) { // Key without passphrase is unlocked by definition
-      options.unlocked = true;
-    }
-    if (util.isString(options.userIds)) {
-      options.userIds = [options.userIds];
-    }
-
-    return Promise.all([generateSecretKey(), generateSecretSubkey()]).then(() => wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options));
-  });
-
-  function generateSecretKey() {
-    secretKeyPacket = new packet.SecretKey(options.date);
-    secretKeyPacket.packets = null;
-    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.keyType);
-    options.curve = options.curve === enums.curve.curve25519 ? enums.curve.ed25519 : options.curve;
-    return secretKeyPacket.generate(options.numBits, options.curve);
+    return options;
   }
 
-  function generateSecretSubkey() {
-    secretSubkeyPacket = new packet.SecretSubkey(options.date);
+  async function generateSecretKey(options) {
+    const secretKeyPacket = new packet.SecretKey(options.date);
     secretKeyPacket.packets = null;
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.subkeyType);
-    options.curve = options.curve === enums.curve.ed25519 ? enums.curve.curve25519 : options.curve;
-    return secretSubkeyPacket.generate(options.numBits, options.curve);
+    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+    await secretKeyPacket.generate(options.numBits, options.curve);
+    return secretKeyPacket;
+  }
+
+  async function generateSecretSubkey(options) {
+    const secretSubkeyPacket = new packet.SecretSubkey(options.date);
+    secretSubkeyPacket.packets = null;
+    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+    await secretSubkeyPacket.generate(options.numBits, options.curve);
+    return secretSubkeyPacket;
   }
 }
 
 /**
- * Reformats and signs an OpenPGP with a given User ID. Currently only supports RSA keys.
+ * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
  * @param {module:key.Key} options.privateKey   The private key to reformat
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
  * @param {String|Array<String>}  options.userIds
  *                             Assumes already in form of "User Name <username@email.com>"
  *                             If array is used, the first userId is set as primary user Id
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
- * @param {Boolean} [options.unlocked=false]    The secret part of the generated key is unlocked
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
+ * @param  {Date} date         Override the creation date of the key and the key signatures
+ * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
  */
 export async function reformat(options) {
-  let secretKeyPacket;
-  let secretSubkeyPacket;
-  options.keyType = options.keyType || enums.publicKey.rsa_encrypt_sign;
-  // RSA Encrypt-Only and RSA Sign-Only are deprecated and SHOULD NOT be generated
-  if (options.keyType !== enums.publicKey.rsa_encrypt_sign) {
-    throw new Error('Only RSA Encrypt or Sign supported');
-  }
+  options = sanitizeKeyOptions(options);
 
   try {
     const isDecrypted = options.privateKey.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
@@ -1204,36 +1201,55 @@ export async function reformat(options) {
     throw new Error('Key not decrypted');
   }
 
-  if (!options.passphrase) { // Key without passphrase is unlocked by definition
-    options.unlocked = true;
-  }
-  if (util.isString(options.userIds)) {
-    options.userIds = [options.userIds];
-  }
   const packetlist = options.privateKey.toPacketlist();
+  let secretKeyPacket;
+  const secretSubkeyPackets = [];
   for (let i = 0; i < packetlist.length; i++) {
     if (packetlist[i].tag === enums.packet.secretKey) {
       secretKeyPacket = packetlist[i];
-      options.keyType = secretKeyPacket.algorithm;
     } else if (packetlist[i].tag === enums.packet.secretSubkey) {
-      secretSubkeyPacket = packetlist[i];
-      options.subkeyType = secretSubkeyPacket.algorithm;
+      secretSubkeyPackets.push(packetlist[i]);
     }
   }
   if (!secretKeyPacket) {
     throw new Error('Key does not contain a secret key packet');
   }
-  return wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options);
+
+  if (!options.subkeys) {
+    options.subkeys = secretSubkeyPackets.map(() => ({}));
+  }
+
+  if (options.subkeys.length !== secretSubkeyPackets.length) {
+    throw new Error('Number of subkey options does not match number of subkeys');
+  }
+
+  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
+
+  return wrapKeyObject([secretKeyPacket].concat(secretSubkeyPackets), options);
+
+    function sanitizeKeyOptions(options, subkeyDefaults={}) {
+    options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
+    options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+    options.date = options.date || subkeyDefaults.date;
+
+    return options;
+  }
 }
 
-async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
+async function wrapKeyObject(packets, options) {
+  const secretKeyPacket = packets[0];
+  const secretSubkeyPackets = packets.slice(1);
   // set passphrase protection
   if (options.passphrase) {
     await secretKeyPacket.encrypt(options.passphrase);
-    if (secretSubkeyPacket) {
-      await secretSubkeyPacket.encrypt(options.passphrase);
-    }
   }
+
+  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+    const subkeyPassphrase = options.subkeys[index].passphrase;
+    if (subkeyPassphrase) {
+      await secretSubkeyPacket.encrypt(subkeyPassphrase);
+    }
+  }));
 
   const packetlist = new packet.List();
 
@@ -1248,7 +1264,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     dataToSign.key = secretKeyPacket;
     const signaturePacket = new packet.Signature(options.date);
     signaturePacket.signatureType = enums.signature.cert_generic;
-    signaturePacket.publicKeyAlgorithm = options.keyType;
+    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
@@ -1277,6 +1293,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
+
     await signaturePacket.sign(secretKeyPacket, dataToSign);
 
     return { userIdPacket, signaturePacket };
@@ -1287,31 +1304,41 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPacket, options) {
     });
   });
 
-  if (secretSubkeyPacket) {
+  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+    const subkeyOptions = options.subkeys[index];
     const dataToSign = {};
     dataToSign.key = secretKeyPacket;
     dataToSign.bind = secretSubkeyPacket;
-    const subkeySignaturePacket = new packet.Signature(options.date);
+    const subkeySignaturePacket = new packet.Signature(subkeyOptions.date);
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-    subkeySignaturePacket.publicKeyAlgorithm = options.keyType;
+    subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretSubkeyPacket);
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-    if (options.keyExpirationTime > 0) {
-      subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyFlags = subkeyOptions.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    if (subkeyOptions.keyExpirationTime > 0) {
+      subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
       subkeySignaturePacket.keyNeverExpires = false;
     }
     await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-    packetlist.push(secretSubkeyPacket);
-    packetlist.push(subkeySignaturePacket);
+    return { secretSubkeyPacket, subkeySignaturePacket};
+  })).then(packets => {
+    packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
+      packetlist.push(secretSubkeyPacket);
+      packetlist.push(subkeySignaturePacket);
+    });
+  });
+
+  // set passphrase protection
+  if (options.passphrase) {
+    secretKeyPacket.clearPrivateParams();
   }
 
-  if (!options.unlocked) {
-    secretKeyPacket.clearPrivateParams();
-    if (secretSubkeyPacket) {
+  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+    const subkeyPassphrase = options.subkeys[index].passphrase;
+    if (subkeyPassphrase) {
       secretSubkeyPacket.clearPrivateParams();
     }
-  }
+  }));
 
   return new Key(packetlist);
 }
