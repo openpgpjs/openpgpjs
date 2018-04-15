@@ -483,43 +483,26 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should have default params set', function() {
-      const now = new Date();
+      const now = openpgp.util.normalizeDate(new Date());
       const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
-        unlocked: true,
-        date: now
+        date: now,
+        subkeys: []
       };
       return openpgp.generateKey(opt).then(function(newKey) {
         expect(keyGenStub.withArgs({
           userIds: ['Test User <text@example.com>'],
           passphrase: 'secret',
           numBits: 2048,
-          unlocked: true,
           keyExpirationTime: 0,
           curve: "",
-          date: now
+          date: now,
+          subkeys: [],
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
         expect(newKey.publicKeyArmored).to.exist;
-      });
-    });
-
-    it('should work for no params', function() {
-      const now = new Date();
-
-      return openpgp.generateKey({date: now}).then(function(newKey) {
-        expect(keyGenStub.withArgs({
-          userIds: [],
-          passphrase: undefined,
-          numBits: 2048,
-          unlocked: false,
-          keyExpirationTime: 0,
-          curve: "",
-          date: now
-        }).calledOnce).to.be.true;
-        expect(newKey.key).to.exist;
       });
     });
 
@@ -533,7 +516,12 @@ describe('OpenPGP.js public api tests', function() {
       const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
 
-      openpgp.generateKey();
+      const opt = {
+        userIds: { name: 'Test User', email: 'text@example.com' },
+        passphrase: 'secret',
+        subkeys: []
+      };
+      openpgp.generateKey(opt);
       expect(proxyGenStub.calledOnce).to.be.true;
       expect(keyGenStub.calledOnce).to.be.false;
     });

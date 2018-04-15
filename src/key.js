@@ -1101,7 +1101,7 @@ export function readArmored(armoredText) {
  * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
- * @param  {String} curve            (optional) elliptic curve for ECC keys:
+ * @param  {String} curve            (optional) elliptic curve for ECC keys
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
@@ -1110,13 +1110,13 @@ export function readArmored(armoredText) {
  * @static
  */
 export async function generate(options) {
-
+  options.sign = true; // primary key is always a signing key
   options = sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
 
   let promises = [generateSecretKey(options)];
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
-  return Promise.all(promises).then(packets => wrapKeyObject(packets, options));
+  return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
 
   function sanitizeKeyOptions(options, subkeyDefaults={}) {
     options.curve = options.curve || subkeyDefaults.curve;
@@ -1134,17 +1134,18 @@ export async function generate(options) {
         throw new Error('Not valid curve.');
       }
       if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        if (!subkeyDefaults.algorithm || options.sign) {
-          options.algorithm = options.algorithm || enums.publicKey.eddsa;
+        if (options.sign) {
+          options.algorithm = enums.publicKey.eddsa;
           options.curve = enums.curve.ed25519;
         } else {
-          options.algorithm = options.algorithm || enums.publicKey.ecdh;
+          options.algorithm = enums.publicKey.ecdh;
           options.curve = enums.curve.curve25519;
         }
       } else {
-        options.algorithm = options.algorithm || (!subkeyDefaults.algorithm ? enums.publicKey.ecdsa : enums.publicKey.ecdh);
-        if (options.algorithm !== enums.publicKey.ecdh && options.algorithm !== enums.publicKey.ecdsa) {
-          throw new Error('Invalid algorithm for curve');
+        if (options.sign) {
+          options.algorithm = enums.publicKey.ecdsa;
+        } else {
+          options.algorithm = enums.publicKey.ecdh;
         }
       }
     } else if (options.numBits) {
@@ -1225,9 +1226,9 @@ export async function reformat(options) {
 
   options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
 
-  return wrapKeyObject([secretKeyPacket].concat(secretSubkeyPackets), options);
+  return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options);
 
-    function sanitizeKeyOptions(options, subkeyDefaults={}) {
+  function sanitizeKeyOptions(options, subkeyDefaults={}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
     options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
     options.date = options.date || subkeyDefaults.date;
@@ -1236,9 +1237,7 @@ export async function reformat(options) {
   }
 }
 
-async function wrapKeyObject(packets, options) {
-  const secretKeyPacket = packets[0];
-  const secretSubkeyPackets = packets.slice(1);
+async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   // set passphrase protection
   if (options.passphrase) {
     await secretKeyPacket.encrypt(options.passphrase);
@@ -1293,7 +1292,6 @@ async function wrapKeyObject(packets, options) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-
     await signaturePacket.sign(secretKeyPacket, dataToSign);
 
     return { userIdPacket, signaturePacket };
