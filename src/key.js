@@ -341,18 +341,24 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
 
 /**
  * Encrypts all secret key and subkey packets matching keyId
+ * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
  * @param  {module:type/keyid} keyId
- * @param  {String} passphrase
  * @returns {Promise<Array<module:packet.SecretKey|module:packet.SecretSubkey>>}
  * @async
  */
-Key.prototype.encrypt = async function(passphrase, keyId=null) {
+Key.prototype.encrypt = async function(passphrases, keyId=null) {
   if (!this.isPrivate()) {
     throw new Error("Nothing to encrypt in a public key");
   }
 
-  return Promise.all(this.getKeyPackets(keyId).map(async function(keyPacket) {
-    await keyPacket.encrypt(passphrase);
+  const keyPackets = this.getKeyPackets(keyId);
+  passphrases = util.isArray(passphrases) ? passphrases : new Array(keyPackets.length).fill(passphrases);
+  if (passphrases.length !== keyPackets.length) {
+    throw new Error("Invalid number of passphrases for key");
+  }
+
+  return Promise.all(keyPackets.map(async function(keyPacket, i) {
+    await keyPacket.encrypt(passphrases[i]);
     await keyPacket.clearPrivateParams();
     return keyPacket;
   }));
@@ -360,18 +366,32 @@ Key.prototype.encrypt = async function(passphrase, keyId=null) {
 
 /**
  * Decrypts all secret key and subkey packets matching keyId
- * @param  {String} passphrase
+ * @param  {String|Array<String>} passphrases
  * @param  {module:type/keyid} keyId
  * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
  * @async
  */
-Key.prototype.decrypt = async function(passphrase, keyId=null) {
+Key.prototype.decrypt = async function(passphrases, keyId=null) {
   if (!this.isPrivate()) {
     throw new Error("Nothing to decrypt in a public key");
   }
+  passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
 
   const results = await Promise.all(this.getKeyPackets(keyId).map(async function(keyPacket) {
-    return keyPacket.decrypt(passphrase);
+    let decrypted = false;
+    let error = null;
+    await Promise.all(passphrases.map(async function(passphrase) {
+      try {
+        await keyPacket.decrypt(passphrase);
+        decrypted = true;
+      } catch (e) {
+        error = e;
+      }
+    }));
+    if (!decrypted) {
+      throw error;
+    }
+    return decrypted;
   }));
   return results.every(result => result === true);
 };
@@ -1121,7 +1141,7 @@ export async function generate(options) {
   function sanitizeKeyOptions(options, subkeyDefaults={}) {
     options.curve = options.curve || subkeyDefaults.curve;
     options.numBits = options.numBits || subkeyDefaults.numBits;
-    options.keyExpirationTime = options.keyExpirationTime >= 0 ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
+    options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
     options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
     options.date = options.date || subkeyDefaults.date;
 

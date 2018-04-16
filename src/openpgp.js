@@ -161,9 +161,9 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
 
 /**
  * Unlock a private key with your passphrase.
- * @param  {Key} privateKey      the private key that is to be decrypted
- * @param  {String} passphrase   the user's passphrase chosen during key generation
- * @returns {Promise<Object>}     the unlocked key object in the form: { key:Key }
+ * @param  {Key} privateKey                    the private key that is to be decrypted
+ * @param  {String|Array<String>} passphrase   the user's passphrase(s) chosen during key generation
+ * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
  * @async
  */
 export function decryptKey({ privateKey, passphrase }) {
@@ -182,9 +182,9 @@ export function decryptKey({ privateKey, passphrase }) {
 
 /**
  * Lock a private key with your passphrase.
- * @param  {Key} privateKey      the private key that is to be decrypted
- * @param  {String} passphrase   the user's passphrase chosen during key generation
- * @returns {Promise<Object>}     the locked key object in the form: { key:Key }
+ * @param  {Key} privateKey                      the private key that is to be decrypted
+ * @param  {String|Array<String>} passphrase     the user's passphrase(s) chosen during key generation
+ * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
  * @async
  */
 export function encryptKey({ privateKey, passphrase }) {
