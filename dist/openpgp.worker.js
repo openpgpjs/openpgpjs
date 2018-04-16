@@ -35,7 +35,6 @@ importScripts('openpgp.js');
 var openpgp = window.openpgp;
 
 var randomQueue = [];
-var randomRequested = false;
 var MIN_SIZE_RANDOM_BUFFER = 40000;
 var MAX_SIZE_RANDOM_BUFFER = 60000;
 var MIN_SIZE_RANDOM_REQUEST = 20000;
@@ -46,10 +45,9 @@ var MIN_SIZE_RANDOM_REQUEST = 20000;
  */
 function randomCallback() {
 
-  if (!randomRequested) {
+  if (!randomQueue.length) {
     self.postMessage({ event: 'request-seed', amount: MAX_SIZE_RANDOM_BUFFER });
   }
-  randomRequested = true;
 
   return new Promise(function(resolve, reject) {
     randomQueue.push(resolve);
@@ -135,7 +133,7 @@ function delegate(id, method, options) {
  * @param  {Object} event  Contains event type and data
  */
 function response(event) {
-  if (!randomRequested && openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
+  if (!randomQueue.length && openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
     self.postMessage({ event: 'request-seed', amount: MIN_SIZE_RANDOM_REQUEST });
   }
   self.postMessage(event, openpgp.util.getTransferables(event.data));
