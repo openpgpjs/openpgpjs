@@ -1081,7 +1081,6 @@ describe('Key', function() {
     const opt = {
       userIds: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
-      unlocked: true,
       date: past
     };
 
@@ -1105,6 +1104,47 @@ describe('Key', function() {
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.users[1].userId.userid).to.equal(userId2);
       expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
+    });
+  });
+
+  it('Generate key - two subkeys with default values', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{},{}]};
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.subKeys).to.have.lengthOf(2);
+      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
+      expect(key.subKeys[1].subKey.algorithm).to.equal('ecdh');
+    });
+  });
+
+  it('Generate key - one signing subkey', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{}, {sign: true}]};
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.subKeys).to.have.lengthOf(2);
+      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
+      expect(key.subKeys[1].subKey.algorithm).to.equal('eddsa');
+    });
+  });
+
+  it('Generate key - override main key options for subkey', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {numBits: 2048, userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}]};
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.primaryKey.algorithm).to.equal('rsa_encrypt_sign');
+      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
     });
   });
 
@@ -1258,6 +1298,28 @@ describe('Key', function() {
       expect(newKey.users.length).to.equal(1);
       expect(newKey.users[0].userId.userid).to.equal(userId);
       expect(newKey.primaryKey.isDecrypted).to.be.false;
+    });
+  });
+
+  it('Reformat key with two subkeys with passphrase', function() {
+    const userId1 = 'test <a@b.com>';
+    const userId2 = 'test <b@c.com>';
+    const now = openpgp.util.normalizeDate(new Date());
+    const before = openpgp.util.normalizeDate(new Date(0));
+    const opt1 = {curve: 'curve25519', userIds: [userId1], date: now};
+    return openpgp.generateKey(opt1).then(function(newKey) {
+      newKey = newKey.key;
+      expect(newKey.users[0].userId.userid).to.equal(userId1);
+      expect(+newKey.primaryKey.created).to.equal(+now);
+      expect(+newKey.subKeys[0].subKey.created).to.equal(+now);
+      expect(+newKey.subKeys[0].bindingSignatures[0].created).to.equal(+now);
+      const opt2 = {privateKey: newKey, userIds: [userId2], date: before};
+      return openpgp.reformatKey(opt2).then(function(refKey) {
+        refKey = refKey.key;
+        expect(refKey.users.length).to.equal(1);
+        expect(refKey.users[0].userId.userid).to.equal(userId2);
+        expect(+refKey.subKeys[0].bindingSignatures[0].created).to.equal(+before);
+      });
     });
   });
 
