@@ -26738,7 +26738,7 @@ function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g, "\r\n");
+  this.text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n/g, "\r\n");
   if (signature && !(signature instanceof _signature.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -27747,7 +27747,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.6",
+  versionstring: "OpenPGP.js v3.0.7",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -42524,7 +42524,7 @@ function Literal() {
  */
 Literal.prototype.setText = function (text) {
   // normalize EOL to \r\n
-  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n/g, "\r\n");
   this.format = 'utf8';
   // encode UTF8
   this.data = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(text));
