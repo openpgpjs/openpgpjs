@@ -36,13 +36,6 @@ const ivLength = 15;
 const tagLength = 16;
 
 
-const { shiftLeft, shiftRight } = util;
-
-
-function zeros(bytes) {
-  return new Uint8Array(bytes);
-}
-
 function ntz(n) {
   let ntz = 0;
   for(let i = 1; (n & i) === 0; i <<= 1) {
@@ -51,7 +44,7 @@ function ntz(n) {
   return ntz;
 }
 
-function set_xor(S, T) {
+function xorMut(S, T) {
   for (let i = 0; i < S.length; i++) {
     S[i] ^= T[i];
   }
@@ -59,16 +52,12 @@ function set_xor(S, T) {
 }
 
 function xor(S, T) {
-  return set_xor(S.slice(), T);
-}
-
-function concat(...arrays) {
-  return util.concatUint8Array(arrays);
+  return xorMut(S.slice(), T);
 }
 
 function double(S) {
   const double = S.slice();
-  shiftLeft(double, 1);
+  util.shiftLeft(double, 1);
   if (S[0] & 0b10000000) {
     double[15] ^= 0b10000111;
   }
@@ -76,7 +65,7 @@ function double(S) {
 }
 
 
-const zeros_16 = zeros(16);
+const zeroBlock = new Uint8Array(blockLength);
 const one = new Uint8Array([1]);
 
 /**
@@ -86,7 +75,7 @@ const one = new Uint8Array([1]);
  */
 async function OCB(cipher, key) {
 
-  let max_ntz = 0;
+  let maxNtz = 0;
   let kv;
 
   constructKeyVariables(cipher, key);
@@ -96,45 +85,45 @@ async function OCB(cipher, key) {
     const encipher = aes.encrypt.bind(aes);
     const decipher = aes.decrypt.bind(aes);
 
-    const L_x = encipher(zeros_16);
-    const L_$ = double(L_x);
-    const L = [];
-    L[0] = double(L_$);
+    const mask_x = encipher(zeroBlock);
+    const mask_$ = double(mask_x);
+    const mask = [];
+    mask[0] = double(mask_$);
 
 
-    L.x = L_x;
-    L.$ = L_$;
+    mask.x = mask_x;
+    mask.$ = mask_$;
 
-    kv = { encipher, decipher, L };
+    kv = { encipher, decipher, mask };
   }
 
   function extendKeyVariables(text, adata) {
-    const { L } = kv;
-    const new_max_ntz = util.nbits(Math.max(text.length, adata.length) >> 4) - 1;
-    for (let i = max_ntz + 1; i <= new_max_ntz; i++) {
-      L[i] = double(L[i - 1]);
+    const { mask } = kv;
+    const newMaxNtz = util.nbits(Math.max(text.length, adata.length) >> 4) - 1;
+    for (let i = maxNtz + 1; i <= newMaxNtz; i++) {
+      mask[i] = double(mask[i - 1]);
     }
-    max_ntz = new_max_ntz;
+    maxNtz = newMaxNtz;
   }
 
   function hash(adata) {
     if (!adata.length) {
       // Fast path
-      return zeros_16;
+      return zeroBlock;
     }
 
-    const { encipher, L } = kv;
+    const { encipher, mask } = kv;
 
     //
     // Consider A as a sequence of 128-bit blocks
     //
     const m = adata.length >> 4;
 
-    const offset = zeros(16);
-    const sum = zeros(16);
+    const offset = new Uint8Array(16);
+    const sum = new Uint8Array(16);
     for (let i = 0; i < m; i++) {
-      set_xor(offset, L[ntz(i + 1)]);
-      set_xor(sum, encipher(xor(offset, adata)));
+      xorMut(offset, mask[ntz(i + 1)]);
+      xorMut(sum, encipher(xor(offset, adata)));
       adata = adata.subarray(16);
     }
 
@@ -142,14 +131,14 @@ async function OCB(cipher, key) {
     // Process any final partial block; compute final hash value
     //
     if (adata.length) {
-      set_xor(offset, L.x);
+      xorMut(offset, mask.x);
 
-      const cipherInput = zeros(16);
+      const cipherInput = new Uint8Array(16);
       cipherInput.set(adata, 0);
       cipherInput[adata.length] = 0b10000000;
-      set_xor(cipherInput, offset);
+      xorMut(cipherInput, offset);
 
-      set_xor(sum, encipher(cipherInput));
+      xorMut(sum, encipher(cipherInput));
     }
 
     return sum;
@@ -174,22 +163,22 @@ async function OCB(cipher, key) {
       // Key-dependent variables
       //
       extendKeyVariables(plaintext, adata);
-      const { encipher, L } = kv;
+      const { encipher, mask } = kv;
 
       //
       // Nonce-dependent and per-encryption variables
       //
-      // We assume here that TAGLEN mod 128 == 0 (tagLength === 16).
-      const Nonce = concat(zeros_16.subarray(0, 15 - nonce.length), one, nonce);
-      const bottom = Nonce[15] & 0b111111;
-      Nonce[15] &= 0b11000000;
-      const Ktop = encipher(Nonce);
-      const Stretch = concat(Ktop, xor(Ktop.subarray(0, 8), Ktop.subarray(1, 9)));
+      // We assume here that tagLength mod 16 == 0.
+      const paddedNonce = util.concatUint8Array([zeroBlock.subarray(0, 15 - nonce.length), one, nonce]);
+      const bottom = paddedNonce[15] & 0b111111;
+      paddedNonce[15] &= 0b11000000;
+      const kTop = encipher(paddedNonce);
+      const stretched = util.concatUint8Array([kTop, xor(kTop.subarray(0, 8), kTop.subarray(1, 9))]);
       //    Offset_0 = Stretch[1+bottom..128+bottom]
-      const offset = shiftRight(Stretch.subarray(0 + (bottom >> 3), 17 + (bottom >> 3)), 8 - (bottom & 7)).subarray(1);
-      const checksum = zeros(16);
+      const offset = util.shiftRight(stretched.subarray(0 + (bottom >> 3), 17 + (bottom >> 3)), 8 - (bottom & 7)).subarray(1);
+      const checksum = new Uint8Array(16);
 
-      const C = new Uint8Array(plaintext.length + tagLength);
+      const ct = new Uint8Array(plaintext.length + tagLength);
 
       //
       // Process any whole blocks
@@ -197,9 +186,9 @@ async function OCB(cipher, key) {
       let i;
       let pos = 0;
       for (i = 0; i < m; i++) {
-        set_xor(offset, L[ntz(i + 1)]);
-        C.set(set_xor(encipher(xor(offset, plaintext)), offset), pos);
-        set_xor(checksum, plaintext);
+        xorMut(offset, mask[ntz(i + 1)]);
+        ct.set(xorMut(encipher(xor(offset, plaintext)), offset), pos);
+        xorMut(checksum, plaintext);
 
         plaintext = plaintext.subarray(16);
         pos += 16;
@@ -209,24 +198,24 @@ async function OCB(cipher, key) {
       // Process any final partial block and compute raw tag
       //
       if (plaintext.length) {
-        set_xor(offset, L.x);
-        const Pad = encipher(offset);
-        C.set(xor(plaintext, Pad), pos);
+        xorMut(offset, mask.x);
+        const padding = encipher(offset);
+        ct.set(xor(plaintext, padding), pos);
 
-        // Checksum_* = Checksum_m xor (P_* || 1 || zeros(127-bitlen(P_*)))
-        const xorInput = zeros(16);
+        // Checksum_* = Checksum_m xor (P_* || 1 || new Uint8Array(127-bitlen(P_*)))
+        const xorInput = new Uint8Array(16);
         xorInput.set(plaintext, 0);
         xorInput[plaintext.length] = 0b10000000;
-        set_xor(checksum, xorInput);
+        xorMut(checksum, xorInput);
         pos += plaintext.length;
       }
-      const Tag = set_xor(encipher(set_xor(set_xor(checksum, offset), L.$)), hash(adata));
+      const tag = xorMut(encipher(xorMut(xorMut(checksum, offset), mask.$)), hash(adata));
 
       //
       // Assemble ciphertext
       //
-      C.set(Tag, pos);
-      return C;
+      ct.set(tag, pos);
+      return ct;
     },
 
 
@@ -241,7 +230,7 @@ async function OCB(cipher, key) {
       //
       // Consider C as a sequence of 128-bit blocks
       //
-      const T = ciphertext.subarray(ciphertext.length - tagLength);
+      const ctTag = ciphertext.subarray(ciphertext.length - tagLength);
       ciphertext = ciphertext.subarray(0, ciphertext.length - tagLength);
       const m = ciphertext.length >> 4;
 
@@ -249,22 +238,22 @@ async function OCB(cipher, key) {
       // Key-dependent variables
       //
       extendKeyVariables(ciphertext, adata);
-      const { encipher, decipher, L } = kv;
+      const { encipher, decipher, mask } = kv;
 
       //
       // Nonce-dependent and per-encryption variables
       //
-      // We assume here that TAGLEN mod 128 == 0 (tagLength === 16).
-      const Nonce = concat(zeros_16.subarray(0, 15 - nonce.length), one, nonce);
-      const bottom = Nonce[15] & 0b111111;
-      Nonce[15] &= 0b11000000;
-      const Ktop = encipher(Nonce);
-      const Stretch = concat(Ktop, xor(Ktop.subarray(0, 8), Ktop.subarray(1, 9)));
+      // We assume here that tagLength mod 16 == 0.
+      const paddedNonce = util.concatUint8Array([zeroBlock.subarray(0, 15 - nonce.length), one, nonce]);
+      const bottom = paddedNonce[15] & 0b111111;
+      paddedNonce[15] &= 0b11000000;
+      const kTop = encipher(paddedNonce);
+      const stretched = util.concatUint8Array([kTop, xor(kTop.subarray(0, 8), kTop.subarray(1, 9))]);
       //    Offset_0 = Stretch[1+bottom..128+bottom]
-      const offset = shiftRight(Stretch.subarray(0 + (bottom >> 3), 17 + (bottom >> 3)), 8 - (bottom & 7)).subarray(1);
-      const checksum = zeros(16);
+      const offset = util.shiftRight(stretched.subarray(0 + (bottom >> 3), 17 + (bottom >> 3)), 8 - (bottom & 7)).subarray(1);
+      const checksum = new Uint8Array(16);
 
-      const P = new Uint8Array(ciphertext.length);
+      const pt = new Uint8Array(ciphertext.length);
 
       //
       // Process any whole blocks
@@ -272,9 +261,9 @@ async function OCB(cipher, key) {
       let i;
       let pos = 0;
       for (i = 0; i < m; i++) {
-        set_xor(offset, L[ntz(i + 1)]);
-        P.set(set_xor(decipher(xor(offset, ciphertext)), offset), pos);
-        set_xor(checksum, P.subarray(pos));
+        xorMut(offset, mask[ntz(i + 1)]);
+        pt.set(xorMut(decipher(xor(offset, ciphertext)), offset), pos);
+        xorMut(checksum, pt.subarray(pos));
 
         ciphertext = ciphertext.subarray(16);
         pos += 16;
@@ -284,26 +273,26 @@ async function OCB(cipher, key) {
       // Process any final partial block and compute raw tag
       //
       if (ciphertext.length) {
-        set_xor(offset, L.x);
-        const Pad = encipher(offset);
-        P.set(xor(ciphertext, Pad), pos);
+        xorMut(offset, mask.x);
+        const padding = encipher(offset);
+        pt.set(xor(ciphertext, padding), pos);
 
-        // Checksum_* = Checksum_m xor (P_* || 1 || zeros(127-bitlen(P_*)))
-        const xorInput = zeros(16);
-        xorInput.set(P.subarray(pos), 0);
+        // Checksum_* = Checksum_m xor (P_* || 1 || new Uint8Array(127-bitlen(P_*)))
+        const xorInput = new Uint8Array(16);
+        xorInput.set(pt.subarray(pos), 0);
         xorInput[ciphertext.length] = 0b10000000;
-        set_xor(checksum, xorInput);
+        xorMut(checksum, xorInput);
         pos += ciphertext.length;
       }
-      const Tag = set_xor(encipher(set_xor(set_xor(checksum, offset), L.$)), hash(adata));
+      const tag = xorMut(encipher(xorMut(xorMut(checksum, offset), mask.$)), hash(adata));
 
       //
       // Check for validity and assemble plaintext
       //
-      if (!util.equalsUint8Array(Tag, T)) {
+      if (!util.equalsUint8Array(ctTag, tag)) {
         throw new Error('Authentication tag mismatch in OCB ciphertext');
       }
-      return P;
+      return pt;
     }
   };
 }

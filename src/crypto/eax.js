@@ -37,14 +37,14 @@ const blockLength = 16;
 const ivLength = blockLength;
 const tagLength = blockLength;
 
-const zero = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-const one = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-const two = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+const zero = new Uint8Array(blockLength);
+const one = new Uint8Array(blockLength); one[blockLength - 1] = 1;
+const two = new Uint8Array(blockLength); two[blockLength - 1] = 2;
 
 async function OMAC(key) {
   const cmac = await CMAC(key);
   return function(t, message) {
-    return cmac(concat(t, message));
+    return cmac(util.concatUint8Array([t, message]));
   };
 }
 
@@ -101,16 +101,19 @@ async function EAX(cipher, key) {
      */
     encrypt: async function(plaintext, nonce, adata) {
       const [
-        _nonce,
-        _adata
+        omacNonce,
+        omacAdata
       ] = await Promise.all([
         omac(zero, nonce),
         omac(one, adata)
       ]);
-      const ciphered = await ctr(plaintext, _nonce);
-      const _ciphered = await omac(two, ciphered);
-      const tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
-      return concat(ciphered, tag);
+      const ciphered = await ctr(plaintext, omacNonce);
+      const omacCiphered = await omac(two, ciphered);
+      const tag = omacCiphered; // Assumes that omac(*).length === tagLength.
+      for (let i = 0; i < tagLength; i++) {
+        tag[i] ^= omacAdata[i] ^ omacNonce[i];
+      }
+      return util.concatUint8Array([ciphered, tag]);
     },
 
     /**
@@ -122,20 +125,23 @@ async function EAX(cipher, key) {
      */
     decrypt: async function(ciphertext, nonce, adata) {
       if (ciphertext.length < tagLength) throw new Error('Invalid EAX ciphertext');
-      const ciphered = ciphertext.subarray(0, ciphertext.length - tagLength);
-      const tag = ciphertext.subarray(ciphertext.length - tagLength);
+      const ciphered = ciphertext.subarray(0, -tagLength);
+      const ctTag = ciphertext.subarray(-tagLength);
       const [
-        _nonce,
-        _adata,
-        _ciphered
+        omacNonce,
+        omacAdata,
+        omacCiphered
       ] = await Promise.all([
         omac(zero, nonce),
         omac(one, adata),
         omac(two, ciphered)
       ]);
-      const _tag = xor3(_nonce, _ciphered, _adata); // Assumes that omac(*).length === tagLength.
-      if (!util.equalsUint8Array(tag, _tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
-      const plaintext = await ctr(ciphered, _nonce);
+      const tag = omacCiphered; // Assumes that omac(*).length === tagLength.
+      for (let i = 0; i < tagLength; i++) {
+        tag[i] ^= omacAdata[i] ^ omacNonce[i];
+      }
+      if (!util.equalsUint8Array(ctTag, tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
+      const plaintext = await ctr(ciphered, omacNonce);
       return plaintext;
     }
   };
@@ -159,19 +165,3 @@ EAX.blockLength = blockLength;
 EAX.ivLength = ivLength;
 
 export default EAX;
-
-
-//////////////////////////
-//                      //
-//   Helper functions   //
-//                      //
-//////////////////////////
-
-
-function xor3(a, b, c) {
-  return a.map((n, i) => n ^ b[i] ^ c[i]);
-}
-
-function concat(...arrays) {
-  return util.concatUint8Array(arrays);
-}
