@@ -43,7 +43,7 @@ export function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = text.replace(/\r/g, '').replace(/[\t ]+\n/g, "\n").replace(/\n/g, "\r\n");
+  this.text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n/g, "\r\n");
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
