@@ -34,9 +34,7 @@ importScripts('openpgp.js');
 var openpgp = window.openpgp;
 
 var randomQueue = [];
-var MIN_SIZE_RANDOM_BUFFER = 40000;
 var MAX_SIZE_RANDOM_BUFFER = 60000;
-var MIN_SIZE_RANDOM_REQUEST = 20000;
 
 /**
  * Handle random buffer exhaustion by requesting more random bytes from the main window
@@ -132,8 +130,5 @@ function delegate(id, method, options) {
  * @param  {Object} event  Contains event type and data
  */
 function response(event) {
-  if (!randomQueue.length && openpgp.crypto.random.randomBuffer.size < MIN_SIZE_RANDOM_BUFFER) {
-    self.postMessage({ event: 'request-seed', amount: MIN_SIZE_RANDOM_REQUEST });
-  }
   self.postMessage(event, openpgp.util.getTransferables(event.data));
 }
