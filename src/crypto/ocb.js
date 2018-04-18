@@ -55,16 +55,6 @@ function xor(S, T) {
   return xorMut(S.slice(), T);
 }
 
-function double(S) {
-  const double = S.slice();
-  util.shiftLeft(double, 1);
-  if (S[0] & 0b10000000) {
-    double[15] ^= 0b10000111;
-  }
-  return double;
-}
-
-
 const zeroBlock = new Uint8Array(blockLength);
 const one = new Uint8Array([1]);
 
@@ -86,9 +76,9 @@ async function OCB(cipher, key) {
     const decipher = aes.decrypt.bind(aes);
 
     const mask_x = encipher(zeroBlock);
-    const mask_$ = double(mask_x);
+    const mask_$ = util.double(mask_x);
     const mask = [];
-    mask[0] = double(mask_$);
+    mask[0] = util.double(mask_$);
 
 
     mask.x = mask_x;
@@ -101,7 +91,7 @@ async function OCB(cipher, key) {
     const { mask } = kv;
     const newMaxNtz = util.nbits(Math.max(text.length, adata.length) >> 4) - 1;
     for (let i = maxNtz + 1; i <= newMaxNtz; i++) {
-      mask[i] = double(mask[i - 1]);
+      mask[i] = util.double(mask[i - 1]);
     }
     maxNtz = newMaxNtz;
   }

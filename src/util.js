@@ -444,22 +444,22 @@ export default {
   },
 
   /**
-   * Shift a Uint8Array to the left by n bits
-   * @param {Uint8Array} array The array to shift
-   * @param {Integer} bits Amount of bits to shift (MUST be smaller
-   * than 8)
-   * @returns {String} Resulting array.
+   * If S[1] == 0, then double(S) == (S[2..128] || 0);
+   * otherwise, double(S) == (S[2..128] || 0) xor
+   * (zeros(120) || 10000111).
+   *
+   * Both OCB and EAX (through CMAC) require this function to be constant-time.
+   *
+   * @param {Uint8Array} data
    */
-  shiftLeft: function (array, bits) {
-    if (bits) {
-      for (let i = 0; i < array.length; i++) {
-        array[i] <<= bits;
-        if (i + 1 < array.length) {
-          array[i] |= array[i + 1] >> (8 - bits);
-        }
-      }
+  double: function(data) {
+    const double = new Uint8Array(data.length);
+    const last = data.length - 1;
+    for (let i = 0; i < last; i++) {
+      double[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
     }
-    return array;
+    double[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
+    return double;
   },
 
   /**

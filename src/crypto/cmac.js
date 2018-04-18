@@ -46,24 +46,6 @@ function rightXorMut(data, padding) {
   return data;
 }
 
-/**
- * 2L = L<<1 if the first bit of L is 0 and 2L = (L<<1) xor (0^120 ||
- * 10000111) otherwise, where L<<1 means the left shift of L by one
- * position (the first bit vanishing and a zero entering into the last
- * bit). The value of 4L is simply 2(2L). We warn that to avoid side-
- * channel attacks one must implement the doubling operation in a
- * constant-time manner.
- * @param {Uint8Array} data
- */
-function mul2(data) {
-  const t = data[0] & 0x80;
-  for (let i = 0; i < 15; i++) {
-    data[i] = (data[i] << 1) ^ ((data[i + 1] & 0x80) ? 1 : 0);
-  }
-  data[15] = (data[15] << 1) ^ (t ? 0x87 : 0);
-  return data;
-}
-
 function pad(data, padding, padding2) {
   // if |M| in {n, 2n, 3n, ...}
   if (data.length % blockLength === 0) {
@@ -83,8 +65,8 @@ export default async function CMAC(key) {
   const cbc = await CBC(key);
 
   // L ← E_K(0^n); B ← 2L; P ← 4L
-  const padding = mul2(await cbc(zeroBlock));
-  const padding2 = mul2(padding.slice());
+  const padding = util.double(await cbc(zeroBlock));
+  const padding2 = util.double(padding);
 
   return async function(data) {
     // return CBC_K(pad(M; B, P))
