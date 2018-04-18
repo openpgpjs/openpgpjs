@@ -528,29 +528,27 @@ Key.prototype.getValidUsers = async function(date=new Date(), allowExpired=false
       return;
     }
     const dataToVerify = { userid: user.userId , key: primaryKey };
-    for (let j = 0; j < user.selfCertifications.length; j++) {
-      const cert = user.selfCertifications[j];
-      // skip if certificate is not the most recent
-      if ((cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID) ||
-          (!lastPrimaryUserID && cert.created < lastCreated)) {
-        continue;
-      }
-      // skip if certificates is invalid, revoked, or expired
-      // eslint-disable-next-line no-await-in-loop
-      if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
-        continue;
-      }
-      // eslint-disable-next-line no-await-in-loop
-      if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
-        continue;
-      }
-      if (!allowExpired && cert.isExpired(date)) {
-        continue;
-      }
-      lastPrimaryUserID = cert.isPrimaryUserID;
-      lastCreated = cert.created;
-      validUsers.push({ index: i, user: user, selfCertification: cert });
+    const cert = getLatestSignature(user.selfCertifications);
+    // skip if certificate is not the most recent
+    if ((cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID) ||
+        (!lastPrimaryUserID && cert.created < lastCreated)) {
+      continue;
     }
+    // skip if certificates is invalid, revoked, or expired
+    // eslint-disable-next-line no-await-in-loop
+    if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
+      continue;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
+      continue;
+    }
+    if (!allowExpired && cert.isExpired(date)) {
+      continue;
+    }
+    lastPrimaryUserID = cert.isPrimaryUserID;
+    lastCreated = cert.created;
+    validUsers.push({ index: i, user: user, selfCertification: cert });
   }
   return validUsers;
 };
