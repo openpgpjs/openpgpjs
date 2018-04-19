@@ -556,7 +556,7 @@ Signature.prototype.toSign = function (type, data) {
     case t.text: {
       let text = data.getText();
       // normalize EOL to \r\n
-      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+      text = util.canonicalizeEOL(text);
       // encode UTF8
       return util.str_to_Uint8Array(util.encode_utf8(text));
     }

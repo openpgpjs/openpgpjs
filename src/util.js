@@ -574,5 +574,26 @@ export default {
       return false;
     }
     return /</.test(data) && />$/.test(data);
+  },
+
+  /**
+   * Normalize line endings to \r\n
+   */
+  canonicalizeEOL: function(text) {
+    return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+  },
+
+  /**
+   * Convert line endings from canonicalized \r\n to native \n
+   */
+  nativeEOL: function(text) {
+    return text.replace(/\r\n/g, "\n");
+  },
+
+  /**
+   * Remove trailing spaces and tabs from each line
+   */
+  removeTrailingSpaces: function(text) {
+    return text.replace(/[ \t]+$/mg, "");
   }
 };

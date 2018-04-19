@@ -66,7 +66,7 @@ Literal.prototype.getText = function() {
   // decode UTF8
   const text = util.decode_utf8(util.Uint8Array_to_str(this.data));
   // normalize EOL to \n
-  this.text = text.replace(/\r\n/g, '\n');
+  this.text = util.nativeEOL(text);
   return this.text;
 };
 
@@ -92,7 +92,7 @@ Literal.prototype.getBytes = function() {
   }
 
   // normalize EOL to \r\n
-  const text = this.text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  const text = util.canonicalizeEOL(this.text);
   // encode UTF8
   this.data = util.str_to_Uint8Array(util.encode_utf8(text));
   return this.data;
