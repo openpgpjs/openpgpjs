@@ -120,7 +120,8 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
     );
     this.packets.read(util.concatUint8Array(await Promise.all(decryptedPromises)));
   } else {
-    this.packets.read(await mode.decrypt(sessionKeyAlgorithm, this.encrypted, key, this.iv));
+    const modeInstance = await mode(sessionKeyAlgorithm, key);
+    this.packets.read(await modeInstance.decrypt(this.encrypted, this.iv));
   }
   return true;
 };
@@ -135,6 +136,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
   this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+  const modeInstance = await mode(sessionKeyAlgorithm, key);
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   let data = this.packets.write();
   if (config.aead_protect_version === 4) {
@@ -149,7 +151,6 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     adataView.setInt32(13 + 4, data.length); // Should be setInt64(13, ...)
     const encryptedPromises = [];
-    const modeInstance = await mode(sessionKeyAlgorithm, key);
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       encryptedPromises.push(
         modeInstance.encrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
@@ -165,7 +166,7 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
     );
     this.encrypted = util.concatUint8Array(await Promise.all(encryptedPromises));
   } else {
-    this.encrypted = await mode.encrypt(sessionKeyAlgorithm, data, key, this.iv);
+    this.encrypted = await modeInstance.encrypt(data, this.iv);
   }
   return true;
 };

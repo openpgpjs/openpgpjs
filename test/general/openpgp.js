@@ -674,6 +674,36 @@ describe('OpenPGP.js public api tests', function() {
       }
     });
 
+    tryTests('GCM mode (draft04, asm.js)', tests, {
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
+      beforeEach: function() {
+        openpgp.config.use_native = false;
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
+        openpgp.config.aead_mode = openpgp.enums.aead.gcm;
+
+        // Monkey-patch AEAD feature flag
+        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
+      }
+    });
+
+    tryTests('GCM mode (draft04, native)', tests, {
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
+        openpgp.config.aead_mode = openpgp.enums.aead.gcm;
+
+        // Monkey-patch AEAD feature flag
+        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
+      }
+    });
+
     tryTests('EAX mode (asm.js)', tests, {
       if: true,
       beforeEach: function() {
