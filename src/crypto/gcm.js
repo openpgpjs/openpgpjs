@@ -120,5 +120,6 @@ GCM.getNonce = function(iv, chunkIndex) {
 
 GCM.blockLength = blockLength;
 GCM.ivLength = ivLength;
+GCM.tagLength = tagLength;
 
 export default GCM;

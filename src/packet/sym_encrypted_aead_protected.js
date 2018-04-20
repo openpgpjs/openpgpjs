@@ -95,33 +95,12 @@ SymEncryptedAEADProtected.prototype.write = function () {
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   if (config.aead_protect_version === 4) {
-    const cipher = enums.read(enums.symmetric, this.cipherAlgo);
-    let data = this.encrypted.subarray(0, this.encrypted.length - mode.blockLength);
-    const authTag = this.encrypted.subarray(this.encrypted.length - mode.blockLength);
-    const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
-    const adataBuffer = new ArrayBuffer(21);
-    const adataArray = new Uint8Array(adataBuffer, 0, 13);
-    const adataTagArray = new Uint8Array(adataBuffer);
-    const adataView = new DataView(adataBuffer);
-    const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    adataView.setInt32(13 + 4, data.length - mode.blockLength); // Should be setInt64(13, ...)
-    const decryptedPromises = [];
-    const modeInstance = await mode(cipher, key);
-    for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
-      decryptedPromises.push(
-        modeInstance.decrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
-      );
-      data = data.subarray(chunkSize);
-      adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-    }
-    decryptedPromises.push(
-      modeInstance.decrypt(authTag, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
-    );
-    this.packets.read(util.concatUint8Array(await Promise.all(decryptedPromises)));
+    const data = this.encrypted.subarray(0, -mode.tagLength);
+    const authTag = this.encrypted.subarray(-mode.tagLength);
+    this.packets.read(await this.crypt('decrypt', key, data, authTag));
   } else {
-    const modeInstance = await mode(sessionKeyAlgorithm, key);
-    this.packets.read(await modeInstance.decrypt(this.encrypted, this.iv));
+    this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
+    this.packets.read(await this.crypt('decrypt', key, this.encrypted));
   }
   return true;
 };
@@ -134,14 +113,30 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * @async
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
+  this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
   this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
-  const modeInstance = await mode(sessionKeyAlgorithm, key);
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
-  let data = this.packets.write();
+  this.chunkSizeByte = config.aead_chunk_size_byte;
+  const data = this.packets.write();
+  this.encrypted = await this.crypt('encrypt', key, data, data.subarray(0, 0));
+};
+
+/**
+ * En/decrypt the payload.
+ * @param  {encrypt|decrypt} fn      Whether to encrypt or decrypt
+ * @param  {Uint8Array} key          The session key used to en/decrypt the payload
+ * @param  {Uint8Array} data         The data to en/decrypt
+ * @param  {Uint8Array} finalChunk   For encryption: empty final chunk; for decryption: final authentication tag
+ * @returns {Promise<Uint8Array>}
+ * @async
+ */
+SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, finalChunk) {
+  const cipher = enums.read(enums.symmetric, this.cipherAlgo);
+  const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+  const modeInstance = await mode(cipher, key);
   if (config.aead_protect_version === 4) {
-    this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-    this.chunkSizeByte = config.aead_chunk_size_byte;
+    const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
     const adataBuffer = new ArrayBuffer(21);
     const adataArray = new Uint8Array(adataBuffer, 0, 13);
@@ -149,24 +144,25 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    adataView.setInt32(13 + 4, data.length); // Should be setInt64(13, ...)
-    const encryptedPromises = [];
+    adataView.setInt32(13 + 4, data.length - tagLengthIfDecrypting); // Should be setInt64(13, ...)
+    const cryptedPromises = [];
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
-      encryptedPromises.push(
-        modeInstance.encrypt(data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
+      cryptedPromises.push(
+        modeInstance[fn](data.subarray(0, chunkSize), mode.getNonce(this.iv, chunkIndexArray), adataArray)
       );
-      // We take a chunk of data, encrypt it, and shift `data` to the
-      // next chunk. After the final chunk, we encrypt a final, empty
-      // data chunk to get the final authentication tag.
+      // We take a chunk of data, en/decrypt it, and shift `data` to the
+      // next chunk.
       data = data.subarray(chunkSize);
       adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
     }
-    encryptedPromises.push(
-      modeInstance.encrypt(data, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
+    // After the final chunk, we either encrypt a final, empty data
+    // chunk to get the final authentication tag or validate that final
+    // authentication tag.
+    cryptedPromises.push(
+      modeInstance[fn](finalChunk, mode.getNonce(this.iv, chunkIndexArray), adataTagArray)
     );
-    this.encrypted = util.concatUint8Array(await Promise.all(encryptedPromises));
+    return util.concatUint8Array(await Promise.all(cryptedPromises));
   } else {
-    this.encrypted = await modeInstance.encrypt(data, this.iv);
+    return modeInstance[fn](data, this.iv);
   }
-  return true;
-};
+}

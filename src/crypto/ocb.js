@@ -303,5 +303,6 @@ OCB.getNonce = function(iv, chunkIndex) {
 
 OCB.blockLength = blockLength;
 OCB.ivLength = ivLength;
+OCB.tagLength = tagLength;
 
 export default OCB;

@@ -163,5 +163,6 @@ EAX.getNonce = function(iv, chunkIndex) {
 
 EAX.blockLength = blockLength;
 EAX.ivLength = ivLength;
+EAX.tagLength = tagLength;
 
 export default EAX;
