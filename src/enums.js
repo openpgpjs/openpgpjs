@@ -88,7 +88,7 @@ export default {
     gnu: 101
   },
 
-  /** {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.1|RFC4880bis-04, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -109,7 +109,11 @@ export default {
     ecdsa: 19,
     /** EdDSA (Sign only)
      * [{@link https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04|Draft RFC}] */
-    eddsa: 22
+    eddsa: 22,
+    /** Reserved for AEDH */
+    aedh: 23,
+    /** Reserved for AEDSA */
+    aedsa: 24
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
