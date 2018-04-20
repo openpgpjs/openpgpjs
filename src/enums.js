@@ -373,6 +373,7 @@ export default {
     features: 30,
     signature_target: 31,
     embedded_signature: 32,
+    issuer_fingerprint: 33,
     preferred_aead_algorithms: 34
   },
 
