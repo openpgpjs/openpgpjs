@@ -858,6 +858,30 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with pgp key pair -- trailing spaces', function () {
+          const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+          let msgAsciiArmored;
+          return openpgp.encrypt({
+            data: plaintext,
+            publicKeys: publicKey.keys
+          }).then(function (encrypted) {
+            msgAsciiArmored = encrypted.data;
+            return openpgp.decryptSessionKeys({
+              message: openpgp.message.readArmored(msgAsciiArmored),
+              privateKeys: privateKey.keys[0]
+            });
+
+          }).then(function (decryptedSessionKeys) {
+            const message = openpgp.message.readArmored(msgAsciiArmored);
+            return openpgp.decrypt({
+              sessionKeys: decryptedSessionKeys[0],
+              message
+            });
+          }).then(function (decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+          });
+        });
+
         it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with password', function () {
           let msgAsciiArmored;
           return openpgp.encrypt({
