@@ -36,7 +36,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredSymAlgo, getPreferredAeadAlgo } from './key';
+import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported } from './key';
 
 
 /**
@@ -263,10 +263,9 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredSymAlgo(keys, date));
-    aeadAlgo = await getPreferredAeadAlgo(keys, date);
-    if (aeadAlgo) {
-      aeadAlgo = enums.read(enums.aead, aeadAlgo);
+    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date));
+    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date)) {
+      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date));
     }
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);

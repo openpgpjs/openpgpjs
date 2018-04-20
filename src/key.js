@@ -1436,31 +1436,34 @@ export async function getPreferredHashAlgo(key, date) {
 }
 
 /**
- * Returns the preferred symmetric algorithm for a set of keys
+ * Returns the preferred symmetric/aead algorithm for a set of keys
+ * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredSymAlgo(keys, date) {
+export async function getPreferredAlgo(type, keys, date) {
+  const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
+  const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date);
-    if (!primaryUser || !primaryUser.selfCertification.preferredSymmetricAlgorithms) {
-      return config.encryption_cipher;
+    if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
+      return defaultAlgo;
     }
-    primaryUser.selfCertification.preferredSymmetricAlgorithms.forEach(function(algo, index) {
+    primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
       const entry = prioMap[algo] || (prioMap[algo] = { prio: 0, count: 0, algo: algo });
       entry.prio += 64 >> index;
       entry.count++;
     });
   }));
-  let prefAlgo = { prio: 0, algo: config.encryption_cipher };
+  let prefAlgo = { prio: 0, algo: defaultAlgo };
   for (const algo in prioMap) {
     try {
-      if (algo !== enums.symmetric.plaintext &&
-          algo !== enums.symmetric.idea && // not implemented
-          enums.read(enums.symmetric, algo) && // known algorithm
+      if (algo !== enums[type].plaintext &&
+          algo !== enums[type].idea && // not implemented
+          enums.read(enums[type], algo) && // known algorithm
           prioMap[algo].count === keys.length && // available for all keys
           prioMap[algo].prio > prefAlgo.prio) {
         prefAlgo = prioMap[algo];
@@ -1471,43 +1474,21 @@ export async function getPreferredSymAlgo(keys, date) {
 }
 
 /**
- * Returns the preferred aead algorithm for a set of keys
+ * Returns whether aead is supported by all keys in the set
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @returns {Promise<module:enums.aead>} Preferred aead algorithm, or null if the public keys do not support aead
+ * @returns {Promise<Boolean>}
  * @async
  */
-export async function getPreferredAeadAlgo(keys, date) {
-  let supports_aead = true;
-  const prioMap = {};
+export async function isAeadSupported(keys, date) {
+  let supported = true;
+  // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date);
     if (!primaryUser || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
-      supports_aead = false;
-      return;
+      supported = false;
     }
-    if (!primaryUser || !primaryUser.selfCertification.preferredAeadAlgorithms) {
-      return config.aead_mode;
-    }
-    primaryUser.selfCertification.preferredAeadAlgorithms.forEach(function(algo, index) {
-      const entry = prioMap[algo] || (prioMap[algo] = { prio: 0, count: 0, algo: algo });
-      entry.prio += 64 >> index;
-      entry.count++;
-    });
   }));
-  if (!supports_aead) {
-    return null;
-  }
-  let prefAlgo = { prio: 0, algo: config.aead_mode };
-  for (const algo in prioMap) {
-    try {
-      if (enums.read(enums.aead, algo) && // known algorithm
-          prioMap[algo].count === keys.length && // available for all keys
-          prioMap[algo].prio > prefAlgo.prio) {
-        prefAlgo = prioMap[algo];
-      }
-    } catch (e) {}
-  }
-  return prefAlgo.algo;
+  return supported;
 }

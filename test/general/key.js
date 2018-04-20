@@ -1170,42 +1170,44 @@ p92yZgB3r2+f6/GIe2+7
     });
   });
 
-  it('getPreferredSymAlgo() - one key - AES256', async function() {
+  it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
-  it('getPreferredSymAlgo() - two key - AES128', async function() {
+  it("getPreferredAlgo('symmetric') - two key - AES128", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = [6,7,3];
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1, key2]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
-  it('getPreferredSymAlgo() - two key - one without pref', async function() {
+  it("getPreferredAlgo('symmetric') - two key - one without pref", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1, key2]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
   });
 
-  it('getPreferredAeadAlgo() - one key - OCB', async function() {
+  it("getPreferredAlgo('aead') - one key - OCB", async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
-    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
+    const supported = await openpgp.key.isAeadSupported([key1]);
+    expect(supported).to.be.true;
   });
 
-  it('getPreferredAeadAlgo() - two key - one without pref', async function() {
+  it("getPreferredAlgo('aead') - two key - one without pref", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
@@ -1214,19 +1216,23 @@ p92yZgB3r2+f6/GIe2+7
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
     const primaryUser2 = await key2.getPrimaryUser();
     primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1, key2]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+    const supported = await openpgp.key.isAeadSupported([key1, key2]);
+    expect(supported).to.be.true;
   });
 
-  it('getPreferredAeadAlgo() - two key - one with no support', async function() {
+  it("getPreferredAlgo('aead') - two key - one with no support", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
-    const prefAlgo = await openpgp.key.getPreferredAeadAlgo([key1, key2]);
-    expect(prefAlgo).to.be.null;
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+    const supported = await openpgp.key.isAeadSupported([key1, key2]);
+    expect(supported).to.be.false;
   });
 
   it('Preferences of generated key', function() {
