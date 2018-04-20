@@ -202,9 +202,9 @@ PublicKey.prototype.getKeyId = function () {
 
 /**
  * Calculates the fingerprint of the key
- * @returns {String} A string containing the fingerprint in lowercase hex
+ * @returns {Uint8Array} A Uint8Array containing the fingerprint
  */
-PublicKey.prototype.getFingerprint = function () {
+PublicKey.prototype.getFingerprintBytes = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
@@ -212,10 +212,10 @@ PublicKey.prototype.getFingerprint = function () {
   if (this.version === 5) {
     const bytes = this.writePublicKey();
     toHash = util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
-    this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha256(toHash));
+    this.fingerprint = crypto.hash.sha256(toHash);
   } else if (this.version === 4) {
     toHash = this.writeOld();
-    this.fingerprint = util.Uint8Array_to_str(crypto.hash.sha1(toHash));
+    this.fingerprint = crypto.hash.sha1(toHash);
   } else if (this.version === 3) {
     const algo = enums.write(enums.publicKey, this.algorithm);
     const paramCount = crypto.getPubKeyParamTypes(algo).length;
@@ -223,10 +223,17 @@ PublicKey.prototype.getFingerprint = function () {
     for (let i = 0; i < paramCount; i++) {
       toHash += this.params[i].toString();
     }
-    this.fingerprint = util.Uint8Array_to_str(crypto.hash.md5(util.str_to_Uint8Array(toHash)));
+    this.fingerprint = crypto.hash.md5(util.str_to_Uint8Array(toHash));
   }
-  this.fingerprint = util.str_to_hex(this.fingerprint);
   return this.fingerprint;
+};
+
+/**
+ * Calculates the fingerprint of the key
+ * @returns {String} A string containing the fingerprint in lowercase hex
+ */
+PublicKey.prototype.getFingerprint = function () {
+  return util.Uint8Array_to_hex(this.getFingerprintBytes());
 };
 
 /**

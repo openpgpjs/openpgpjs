@@ -269,13 +269,13 @@ describe("Packet", function() {
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      return enc.encrypt({ params: mpi }).then(() => {
+      return enc.encrypt({ params: mpi, getFingerprintBytes() {} }).then(() => {
 
         msg.push(enc);
 
         msg2.read(msg.write());
 
-        return msg2[0].decrypt({ params: mpi }).then(() => {
+        return msg2[0].decrypt({ params: mpi, getFingerprintBytes() {} }).then(() => {
 
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
