@@ -137,14 +137,14 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, final
   const modeInstance = await mode(cipher, key);
   if (config.aead_protect_version === 4) {
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
-    const chunkSize = 2 ** (this.chunkSizeByte + 6); // ((uint64_t)1 << (c + 6))
+    const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
     const adataBuffer = new ArrayBuffer(21);
     const adataArray = new Uint8Array(adataBuffer, 0, 13);
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    adataView.setInt32(13 + 4, data.length - tagLengthIfDecrypting); // Should be setInt64(13, ...)
+    adataView.setInt32(13 + 4, data.length - tagLengthIfDecrypting * Math.ceil(data.length / chunkSize)); // Should be setInt64(13, ...)
     const cryptedPromises = [];
     for (let chunkIndex = 0; chunkIndex === 0 || data.length;) {
       cryptedPromises.push(

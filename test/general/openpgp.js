@@ -599,6 +599,7 @@ describe('OpenPGP.js public api tests', function() {
     let aead_protectVal;
     let aead_protect_versionVal;
     let aead_modeVal;
+    let aead_chunk_size_byteVal;
 
     beforeEach(function(done) {
       publicKey = openpgp.key.readArmored(pub_key);
@@ -625,6 +626,7 @@ describe('OpenPGP.js public api tests', function() {
       aead_protectVal = openpgp.config.aead_protect;
       aead_protect_versionVal = openpgp.config.aead_protect_version;
       aead_modeVal = openpgp.config.aead_mode;
+      aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
       done();
     });
 
@@ -634,6 +636,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
       openpgp.config.aead_mode = aead_modeVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
     });
 
     it('Decrypting key with wrong passphrase rejected', async function () {
@@ -724,6 +727,21 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 4;
+
+        // Monkey-patch AEAD feature flag
+        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
+        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
+      }
+    });
+
+    tryTests('EAX mode (small chunk size)', tests, {
+      if: openpgp.util.getWebCryptoAll() || openpgp.util.getNodeCrypto(),
+      beforeEach: function() {
+        openpgp.config.use_native = true;
+        openpgp.config.aead_protect = true;
+        openpgp.config.aead_protect_version = 4;
+        openpgp.config.aead_chunk_size_byte = 0;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];
