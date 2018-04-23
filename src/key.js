@@ -258,7 +258,7 @@ function getLatestSignature(signatures, date=new Date()) {
   let signature = signatures[0];
   for (let i = 1; i < signatures.length; i++) {
     if (signatures[i].created >= signature.created &&
-        signatures[i].created <= date) {
+       (signatures[i].created <= date || date === null)) {
       signature = signatures[i];
     }
   }
@@ -453,9 +453,7 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
     return enums.keyStatus.invalid;
   }
   // check for expiration time
-  const currentTime = util.normalizeDate(date);
-  if ((primaryKey.version === 3 && isDataExpired(primaryKey, null, date)) ||
-      (primaryKey.version === 4 && isDataExpired(primaryKey, selfCertification, date))) {
+  if (isDataExpired(primaryKey, selfCertification, date)) {
     return enums.keyStatus.expired;
   }
   return enums.keyStatus.valid;
@@ -471,17 +469,11 @@ Key.prototype.getExpirationTime = async function() {
     return getExpirationTime(this.primaryKey);
   }
   if (this.primaryKey.version === 4) {
-    const validUsers = await this.getValidUsers(null, true);
-    let highest = null;
-    for (let i = 0; i < validUsers.length; i++) {
-      const selfCert = validUsers[i].selfCertification;
-      const current = Math.min(+getExpirationTime(this.primaryKey, selfCert), +selfCert.getExpirationTime());
-      if (current === Infinity) {
-        return Infinity;
-      }
-      highest = current > highest ? current : highest;
-    }
-    return util.normalizeDate(highest);
+    const primaryUser = await this.getPrimaryUser(null);
+    const selfCert = primaryUser.selfCertification;
+    const keyExpiry = getExpirationTime(this.primaryKey, selfCert);
+    const sigExpiry = selfCert.getExpirationTime();
+    return keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   }
 };
 
@@ -495,62 +487,34 @@ Key.prototype.getExpirationTime = async function() {
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date()) {
-  let validUsers = await this.getValidUsers(date);
-  if (!validUsers.length) {
-    return null;
-  }
   // sort by primary user flag and signature creation time
-  validUsers = validUsers.sort(function(a, b) {
+  const primaryUser = this.users.map(function(user, index) {
+    const selfCertification = getLatestSignature(user.selfCertifications, date);
+    return { index, user, selfCertification };
+  }).sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
     return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
-  });
-  return validUsers.pop();
-};
-
-/**
- * Returns an array containing all valid users for a key
- * @param  {Date} date use the given date for verification instead of the current time
- * @param  {bool} include users with expired certifications
- * @returns {Promise<Array<{user: module:key.User,
- *                    selfCertification: module:packet.Signature}>>} The valid user array
- * @async
- */
-Key.prototype.getValidUsers = async function(date=new Date(), allowExpired=false) {
-  const { primaryKey } = this;
-  const validUsers = [];
-  let lastCreated = null;
-  let lastPrimaryUserID = null;
-  // TODO replace when Promise.forEach is implemented
-  for (let i = 0; i < this.users.length; i++) {
-    const user = this.users[i];
-    if (!user.userId) {
-      return;
-    }
-    const dataToVerify = { userid: user.userId , key: primaryKey };
-    const cert = getLatestSignature(user.selfCertifications);
-    // skip if certificate is not the most recent
-    if ((cert.isPrimaryUserID && cert.isPrimaryUserID < lastPrimaryUserID) ||
-        (!lastPrimaryUserID && cert.created < lastCreated)) {
-      continue;
-    }
-    // skip if certificates is invalid, revoked, or expired
-    // eslint-disable-next-line no-await-in-loop
-    if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
-      continue;
-    }
-    // eslint-disable-next-line no-await-in-loop
-    if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
-      continue;
-    }
-    if (!allowExpired && cert.isExpired(date)) {
-      continue;
-    }
-    lastPrimaryUserID = cert.isPrimaryUserID;
-    lastCreated = cert.created;
-    validUsers.push({ index: i, user: user, selfCertification: cert });
+  }).pop();
+  const { user, selfCertification: cert } = primaryUser;
+  if (!user.userId) {
+    return null;
   }
-  return validUsers;
+  const { primaryKey } = this;
+  const dataToVerify = { userid: user.userId , key: primaryKey };
+  // skip if certificates is invalid, revoked, or expired
+  // eslint-disable-next-line no-await-in-loop
+  if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
+    return null;
+  }
+  // eslint-disable-next-line no-await-in-loop
+  if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
+    return null;
+  }
+  if (cert.isExpired(date)) {
+    return null;
+  }
+  return primaryUser;
 };
 
 /**
