@@ -165,4 +165,4 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, final
   } else {
     return modeInstance[fn](data, this.iv);
   }
-}
+};
