@@ -347,7 +347,7 @@ function armor(messagetype, body, partindex, parttotal) {
     case enums.armor.signed:
       result.push("\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n");
       result.push("Hash: " + body.hash + "\r\n\r\n");
-      result.push(body.text.replace(/\n-/g, "\n- -"));
+      result.push(body.text.replace(/^-/mg, "- -"));
       result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader());
       result.push(base64.encode(body.data));
