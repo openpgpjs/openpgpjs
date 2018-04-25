@@ -600,6 +600,26 @@ describe("Signature", function() {
     });
   });
 
+  it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures -- escape armored message', async function() {
+    const plaintext = pub_key_arm2;
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    await privKey.primaryKey.decrypt('hello world');
+
+    return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
+
+      const csMsg = openpgp.cleartext.readArmored(signed.data);
+      return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
+
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.data).to.equal(plaintext);
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', async function() {
     const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
