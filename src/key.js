@@ -279,14 +279,15 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Object} userId, optional user ID
  * @returns {Promise<module:packet.SecretSubkey|
  *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date()) {
+Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
-  if (await this.verifyPrimaryKey(date) === enums.keyStatus.valid) {
-    const primaryUser = await this.getPrimaryUser(date);
+  if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
+    const primaryUser = await this.getPrimaryUser(date, userId);
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
         isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
       return primaryKey;
@@ -322,15 +323,16 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
+ * @param  {String}            userId, optional
  * @returns {Promise<module:packet.PublicSubkey|
  *                   module:packet.SecretSubkey|
  *                   module:packet.SecretKey|
  *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
  * @async
  */
-Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
+Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
-  if (await this.verifyPrimaryKey(date) === enums.keyStatus.valid) {
+  if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
     // V3: keys MUST NOT have subkeys
     for (let i = 0; i < this.subKeys.length; i++) {
@@ -345,7 +347,7 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date()) {
       }
     }
     // if no valid subkey for encryption, evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date);
+    const primaryUser = await this.getPrimaryUser(date, userId);
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
         isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
       return primaryKey;
@@ -433,10 +435,11 @@ Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
  * Verify primary key. Checks for revocation signatures, expiration time
  * and valid self signature
  * @param {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<module:enums.keyStatus>} The status of the primary key
  * @async
  */
-Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
+Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
   // check for key revocation signatures
   if (await this.isRevoked(null, null, date)) {
@@ -448,7 +451,7 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date()) {
     return enums.keyStatus.no_self_cert;
   }
   // check for valid, unrevoked, unexpired self signature
-  const { user, selfCertification } = await this.getPrimaryUser(date) || {};
+  const { user, selfCertification } = await this.getPrimaryUser(date, userId) || {};
   if (!user) {
     return enums.keyStatus.invalid;
   }
@@ -482,19 +485,29 @@ Key.prototype.getExpirationTime = async function() {
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
  * @async
  */
-Key.prototype.getPrimaryUser = async function(date=new Date()) {
-  // sort by primary user flag and signature creation time
+Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
+  if (!this.users.length) {
+    return null;
+  }
+  // sort by userId, primary user flag and signature creation time
   const primaryUser = this.users.map(function(user, index) {
     const selfCertification = getLatestSignature(user.selfCertifications, date);
     return { index, user, selfCertification };
   }).sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
-    return (A.isPrimaryUserID - B.isPrimaryUserID) || (A.created - B.created);
+    return (
+      (a.user.userId.email === userId.email) - (b.user.userId.email === userId.email) ||
+      (a.user.userId.name === userId.name) - (b.user.userId.name === userId.name) ||
+      (a.user.userId.comment === userId.comment) - (b.user.userId.comment === userId.comment) ||
+      A.isPrimaryUserID - B.isPrimaryUserID ||
+      A.created - B.created
+    );
   }).pop();
   const { user, selfCertification: cert } = primaryUser;
   if (!user.userId) {
@@ -1403,21 +1416,22 @@ function getExpirationTime(keyPacket, signature) {
  * Returns the preferred signature hash algorithm of a key
  * @param  {object} key
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key, date) {
+export async function getPreferredHashAlgo(key, date=new Date(), userId={}) {
   let hash_algo = config.prefer_hash_algorithm;
   let pref_algo = hash_algo;
   if (key instanceof Key) {
-    const primaryUser = await key.getPrimaryUser(date);
+    const primaryUser = await key.getPrimaryUser(date, userId);
     if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
         pref_algo : hash_algo;
     }
     // disable expiration checks
-    key = key.getSigningKeyPacket(undefined, null);
+    key = key.getSigningKeyPacket(undefined, null, userId);
   }
   switch (Object.getPrototypeOf(key)) {
     case packet.SecretKey.prototype:
@@ -1440,15 +1454,16 @@ export async function getPreferredHashAlgo(key, date) {
  * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date) {
+export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
   const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date);
+    const primaryUser = await key.getPrimaryUser(date, userId);
     if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
@@ -1480,11 +1495,11 @@ export async function getPreferredAlgo(type, keys, date) {
  * @returns {Promise<Boolean>}
  * @async
  */
-export async function isAeadSupported(keys, date) {
+export async function isAeadSupported(keys, date=new Date(), userId={}) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date);
+    const primaryUser = await key.getPrimaryUser(date, userId);
     if (!primaryUser || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;

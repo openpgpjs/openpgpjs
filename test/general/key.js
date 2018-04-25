@@ -1523,6 +1523,59 @@ p92yZgB3r2+f6/GIe2+7
     expect(signatures[3].valid).to.be.null;
   });
 
+  it('Encrypt - latest created user', async function() {
+    let publicKey = openpgp.key.readArmored(multi_uid_key).keys[0];
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    await privateKey.decrypt('hello world');
+    // Set second user to prefer aes128. We should select this user by default, since it was created later.
+    publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
+    const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, armor: false});
+    expect(encrypted.message.packets[0].sessionKeyAlgorithm).to.equal('aes128');
+  });
+
+  it('Encrypt - primary user', async function() {
+    let publicKey = openpgp.key.readArmored(multi_uid_key).keys[0];
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    await privateKey.decrypt('hello world');
+    // Set first user to primary. We should select this user by default.
+    publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
+    // Set first user to prefer aes128.
+    publicKey.users[0].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
+    const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, armor: false});
+    expect(encrypted.message.packets[0].sessionKeyAlgorithm).to.equal('aes128');
+  });
+
+  it('Encrypt - specific user', async function() {
+    let publicKey = openpgp.key.readArmored(multi_uid_key).keys[0];
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    await privateKey.decrypt('hello world');
+    // Set first user to primary. We won't select this user, this is to test that.
+    publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
+    // Set second user to prefer aes128. We will select this user.
+    publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
+    const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, toUserId: {name: 'Test User', email: 'b@c.com'}, armor: false});
+    expect(encrypted.message.packets[0].sessionKeyAlgorithm).to.equal('aes128');
+  });
+
+  it('Sign - specific user', async function() {
+    let publicKey = openpgp.key.readArmored(multi_uid_key).keys[0];
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    await privateKey.decrypt('hello world');
+    const privateKeyClone = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    // Duplicate user
+    privateKey.users.push(privateKeyClone.users[0]);
+    // Set first user to primary. We won't select this user, this is to test that.
+    privateKey.users[0].selfCertifications[0].isPrimaryUserID = true;
+    // Change userid of the first user so that we don't select it. This also makes this user invalid.
+    privateKey.users[0].userId.parse('Test User <b@c.com>');
+    // Set second user to prefer aes128. We will select this user.
+    privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
+    const signed = await openpgp.sign({data: 'hello', privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
+    expect(signed.message.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
+    const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
+    expect(encrypted.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
+  });
+
   it('Reformat key without passphrase', function() {
     const userId1 = 'test1 <a@b.com>';
     const userId2 = 'test2 <b@a.com>';
