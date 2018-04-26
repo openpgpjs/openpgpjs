@@ -257,12 +257,12 @@ function splitChecksum(text) {
 function dearmor(text) {
   const reSplit = /^-----[^-]+-----$\n/m;
 
-  // remove trailing whitespace at end of line
-  text = text.replace(/[\t\r ]+\n/g, '\n');
+  // trim string and remove trailing whitespace at end of lines
+  text = text.trim().replace(/[\t\r ]+\n/g, '\n');
 
   const type = getType(text);
 
-  text = text.trim() + "\n";
+  text = text + "\n";
   const splittext = text.split(reSplit);
 
   // IE has a bug in split with a re. If the pattern matches the beginning of the
