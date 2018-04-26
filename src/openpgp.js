@@ -591,7 +591,7 @@ function onError(message, error) {
  */
 function nativeAEAD() {
   return config.aead_protect && (
-    ((config.aead_protect_version !== 4 || config.aead_mode === enums.aead.gcm) && util.getWebCrypto()) ||
+    ((config.aead_protect_version !== 4 || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto()) ||
     (config.aead_protect_version === 4 && config.aead_mode === enums.aead.eax && util.getWebCryptoAll())
   );
 }

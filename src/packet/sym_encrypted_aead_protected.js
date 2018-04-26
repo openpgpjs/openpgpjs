@@ -66,7 +66,7 @@ SymEncryptedAEADProtected.prototype.read = function (bytes) {
     this.aeadAlgo = bytes[offset++];
     this.chunkSizeByte = bytes[offset++];
   } else {
-    this.aeadAlgo = enums.aead.gcm;
+    this.aeadAlgo = enums.aead.experimental_gcm;
   }
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = bytes.subarray(offset, mode.ivLength + offset);
@@ -114,7 +114,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
   this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-  this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.gcm;
+  this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.experimental_gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   this.chunkSizeByte = config.aead_chunk_size_byte;

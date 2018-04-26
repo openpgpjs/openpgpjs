@@ -76,7 +76,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
   ```
   openpgp.config.aead_mode = openpgp.enums.aead.eax // Default, native
   openpgp.config.aead_mode = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.aead_mode = openpgp.enums.aead.gcm // **Non-standard**, fastest
+  openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm // **Non-standard**, fastest
   ```
 
   We previously also implemented an [earlier version](https://tools.ietf.org/html/draft-ford-openpgp-format-00) of the draft (using GCM), which you could enable by simply setting `openpgp.config.aead_protect = true`. If you need to stay compatible with that version, don't set `openpgp.config.aead_protect_version = 4`.

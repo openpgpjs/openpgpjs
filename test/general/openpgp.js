@@ -683,7 +683,7 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.config.use_native = false;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 4;
-        openpgp.config.aead_mode = openpgp.enums.aead.gcm;
+        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];
@@ -698,7 +698,7 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 4;
-        openpgp.config.aead_mode = openpgp.enums.aead.gcm;
+        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];

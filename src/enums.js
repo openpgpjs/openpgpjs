@@ -178,7 +178,7 @@ export default {
   aead: {
     eax: 1,
     ocb: 2,
-    gcm: 100 // Private algorithm
+    experimental_gcm: 100 // Private algorithm
   },
 
   /** A list of packet types and numeric tags associated with them.
