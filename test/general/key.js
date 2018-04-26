@@ -1297,6 +1297,9 @@ p92yZgB3r2+f6/GIe2+7
     const primUser = await key.getPrimaryUser();
     expect(primUser).to.exist;
     expect(primUser.user.userId.userid).to.equal('Signature Test <signature@test.com>');
+    expect(primUser.user.userId.name).to.equal('Signature Test');
+    expect(primUser.user.userId.email).to.equal('signature@test.com');
+    expect(primUser.user.userId.comment).to.equal('');
     expect(primUser.selfCertification).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
@@ -1315,13 +1318,16 @@ p92yZgB3r2+f6/GIe2+7
   });
 
   it('Generate key - single userid', function() {
-    const userId = 'test <a@b.com>';
+    const userId = { name: 'test', email: 'a@b.com', comment: 'test comment' };
     const opt = {numBits: 512, userIds: userId, passphrase: '123'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].userId.userid).to.equal('test <a@b.com> (test comment)');
+      expect(key.users[0].userId.name).to.equal(userId.name);
+      expect(key.users[0].userId.email).to.equal(userId.email);
+      expect(key.users[0].userId.comment).to.equal(userId.comment);
     });
   });
 

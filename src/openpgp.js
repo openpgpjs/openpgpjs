@@ -115,7 +115,7 @@ export function destroyWorker() {
  */
 
 export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
@@ -146,7 +146,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  * @static
  */
 export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date}) {
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   const options = { privateKey, userIds, passphrase, keyExpirationTime, date};
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -482,36 +482,6 @@ function checkCleartextOrMessage(message) {
   if (!(message instanceof CleartextMessage) && !(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
-}
-
-/**
- * Format user ids for internal use.
- */
-function formatUserIds(userIds) {
-  if (!userIds) {
-    return userIds;
-  }
-  userIds = toArray(userIds); // normalize to array
-  userIds = userIds.map(id => {
-    if (util.isString(id) && !util.isUserId(id)) {
-      throw new Error('Invalid user id format');
-    }
-    if (util.isUserId(id)) {
-      return id; // user id is already in correct format... no conversion necessary
-    }
-    // name and email address can be empty but must be of the correct type
-    id.name = id.name || '';
-    id.email = id.email || '';
-    if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
-      throw new Error('Invalid user id format');
-    }
-    id.name = id.name.trim();
-    if (id.name.length > 0) {
-      id.name += ' ';
-    }
-    return id.name + '<' + id.email + '>';
-  });
-  return userIds;
 }
 
 /**

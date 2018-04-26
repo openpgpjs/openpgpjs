@@ -41,6 +41,10 @@ function Userid() {
    * @type {String}
    */
   this.userid = '';
+
+  this.name = '';
+  this.email = '';
+  this.comment = '';
 }
 
 /**
@@ -48,7 +52,17 @@ function Userid() {
  * @param {Uint8Array} input payload of a tag 13 packet
  */
 Userid.prototype.read = function (bytes) {
-  this.userid = util.decode_utf8(util.Uint8Array_to_str(bytes));
+  this.parse(util.decode_utf8(util.Uint8Array_to_str(bytes)));
+};
+
+/**
+ * Parse userid string, e.g. 'John Doe <john@example.com>'
+ */
+Userid.prototype.parse = function (userid) {
+  try {
+    Object.assign(this, util.parseUserId(userid));
+  } catch(e) {}
+  this.userid = userid;
 };
 
 /**
@@ -57,6 +71,17 @@ Userid.prototype.read = function (bytes) {
  */
 Userid.prototype.write = function () {
   return util.str_to_Uint8Array(util.encode_utf8(this.userid));
+};
+
+/**
+ * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
+ */
+Userid.prototype.format = function (userid) {
+  if (util.isString(userid)) {
+    userid = util.parseUserId(userid);
+  }
+  Object.assign(this, userid);
+  this.userid = util.formatUserId(userid);
 };
 
 export default Userid;

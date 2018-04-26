@@ -1244,7 +1244,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   await Promise.all(options.userIds.map(async function(userId, index) {
     const userIdPacket = new packet.Userid();
-    userIdPacket.read(util.str_to_Uint8Array(userId));
+    userIdPacket.format(userId);
 
     const dataToSign = {};
     dataToSign.userid = userIdPacket;
