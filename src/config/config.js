@@ -59,7 +59,7 @@ export default {
    * @memberof module:config
    * @property {Integer} aead_protect_version
    */
-  aead_protect_version:     0,
+  aead_protect_version:     4,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aead_protect is set to true.
