@@ -594,13 +594,6 @@ export default {
     }
   },
 
-  isUserId: function(data) {
-    if (!util.isString(data)) {
-      return false;
-    }
-    return /</.test(data) && />$/.test(data);
-  },
-
   /**
    * Normalize line endings to \r\n
    */

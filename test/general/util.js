@@ -116,37 +116,6 @@ describe('Util unit tests', function() {
     });
   });
 
-  describe('isUserId', function() {
-    it('should return true for valid user id', function() {
-      const data = 'Test User <test@example.com>';
-      expect(openpgp.util.isUserId(data)).to.be.true;
-    });
-    it('should return false for invalid user id', function() {
-      const data = 'Test User test@example.com>';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for invalid user id', function() {
-      const data = 'Test User <test@example.com';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for invalid user id', function() {
-      const data = 'Test User test@example.com';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for empty string', function() {
-      const data = '';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for undefined', function() {
-      let data;
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for Object', function() {
-      const data = {};
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-  });
-
   describe('getTransferables', function() {
     let zero_copyVal;
     const buf1 = new Uint8Array(1);
