@@ -2,6 +2,8 @@
  * @module enums
  */
 
+const byValue = Symbol('byValue');
+
 export default {
 
   /** Maps curve names under various standards to one
@@ -456,10 +458,15 @@ export default {
 
   /** Converts from an integer to string. */
   read: function(type, e) {
-    for (const i in type) {
-      if (type[i] === parseInt(e, 10)) {
-        return i;
-      }
+    if (!type[byValue]) {
+      type[byValue] = [];
+      Object.entries(type).forEach(([key, value]) => {
+        type[byValue][value] = key;
+      });
+    }
+
+    if (type[byValue][e] !== undefined) {
+      return type[byValue][e];
     }
 
     throw new Error('Invalid enum value.');
