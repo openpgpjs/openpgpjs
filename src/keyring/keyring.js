@@ -179,17 +179,16 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  */
 KeyArray.prototype.importKey = async function (armored) {
   const imported = readArmored(armored);
-  const that = this;
   for (let i = 0; i < imported.keys.length; i++) {
     const key = imported.keys[i];
     // check if key already in key array
     const keyidHex = key.primaryKey.getKeyId().toHex();
-    const keyFound = that.getForId(keyidHex);
+    const keyFound = this.getForId(keyidHex);
     if (keyFound) {
       // eslint-disable-next-line no-await-in-loop
       await keyFound.update(key);
     } else {
-      that.push(key);
+      this.push(key);
     }
   }
   return imported.err ? imported.err : null;

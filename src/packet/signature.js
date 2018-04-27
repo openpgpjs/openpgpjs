@@ -103,7 +103,7 @@ Signature.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
 
-  function subpackets(bytes) {
+  const subpackets = bytes => {
     // Two-octet scalar octet count for following subpacket data.
     const subpacket_length = util.readNumber(bytes.subarray(0, 2));
 
@@ -120,7 +120,7 @@ Signature.prototype.read = function (bytes) {
     }
 
     return i;
-  }
+  };
 
   // switch on version (3 and 4)
   switch (this.version) {
@@ -160,7 +160,7 @@ Signature.prototype.read = function (bytes) {
       this.hashAlgorithm = bytes[i++];
 
       // hashed subpackets
-      i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
+      i += subpackets(bytes.subarray(i, bytes.length), true);
 
       // A V4 signature hashes the packet body
       // starting from its first field, the version number, through the end
@@ -172,7 +172,7 @@ Signature.prototype.read = function (bytes) {
       const sigDataLength = i;
 
       // unhashed subpackets
-      i += subpackets.call(this, bytes.subarray(i, bytes.length), false);
+      i += subpackets(bytes.subarray(i, bytes.length), false);
       this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
       break;
@@ -308,19 +308,16 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
-    for (const name in this.notation) {
-      if (this.notation.hasOwnProperty(name)) {
-        const value = this.notation[name];
-        bytes = [new Uint8Array([0x80, 0, 0, 0])];
-        // 2 octets of name length
-        bytes.push(util.writeNumber(name.length, 2));
-        // 2 octets of value length
-        bytes.push(util.writeNumber(value.length, 2));
-        bytes.push(util.str_to_Uint8Array(name + value));
-        bytes = util.concatUint8Array(bytes);
-        arr.push(write_sub_packet(sub.notation_data, bytes));
-      }
-    }
+    Object.entries(this.notation).forEach(([name, value]) => {
+      bytes = [new Uint8Array([0x80, 0, 0, 0])];
+      // 2 octets of name length
+      bytes.push(util.writeNumber(name.length, 2));
+      // 2 octets of value length
+      bytes.push(util.writeNumber(value.length, 2));
+      bytes.push(util.str_to_Uint8Array(name + value));
+      bytes = util.concatUint8Array(bytes);
+      arr.push(write_sub_packet(sub.notation_data, bytes));
+    });
   }
   if (this.preferredHashAlgorithms !== null) {
     bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredHashAlgorithms));
@@ -405,13 +402,13 @@ function write_sub_packet(type, data) {
 Signature.prototype.read_sub_packet = function (bytes) {
   let mypos = 0;
 
-  function read_array(prop, bytes) {
+  const read_array = (prop, bytes) => {
     this[prop] = [];
 
     for (let i = 0; i < bytes.length; i++) {
       this[prop].push(bytes[i]);
     }
-  }
+  };
 
   // The leftwost bit denotes a "critical" packet, but we ignore it.
   const type = bytes[mypos++] & 0x7F;
@@ -458,7 +455,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 11:
       // Preferred Symmetric Algorithms
-      read_array.call(this, 'preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 12:
       // Revocation Key
@@ -497,15 +494,15 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 21:
       // Preferred Hash Algorithms
-      read_array.call(this, 'preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 22:
       // Preferred Compression Algorithms
-      read_array.call(this, 'preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 23:
       // Key Server Preferences
-      read_array.call(this, 'keyServerPreferences', bytes.subarray(mypos, bytes.length));
+      read_array('keyServerPreferences', bytes.subarray(mypos, bytes.length));
       break;
     case 24:
       // Preferred Key Server
@@ -521,7 +518,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 27:
       // Key Flags
-      read_array.call(this, 'keyFlags', bytes.subarray(mypos, bytes.length));
+      read_array('keyFlags', bytes.subarray(mypos, bytes.length));
       break;
     case 28:
       // Signer's User ID
@@ -534,7 +531,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 30:
       // Features
-      read_array.call(this, 'features', bytes.subarray(mypos, bytes.length));
+      read_array('features', bytes.subarray(mypos, bytes.length));
       break;
     case 31: {
       // Signature Target

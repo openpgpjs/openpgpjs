@@ -15,8 +15,6 @@ const mod = {
   clone
 };
 
-for (const i in packets) {
-  mod[i] = packets[i];
-}
+Object.assign(mod, packets);
 
 export default mod;

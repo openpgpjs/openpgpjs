@@ -31,11 +31,20 @@ import util from '../util.js';
 import crypto from '../crypto';
 import packet from '../packet';
 
+
 /**
- * Message handling
+ * Initializes a new proxy and loads the web worker
+ * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
+ * @param {Number} n               number of workers to initialize if path given
+ * @param {Object} config          config The worker configuration
+ * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
+ * @constructor
  */
-function handleMessage(workerId) {
-  return function(event) {
+function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
+  /**
+   * Message handling
+   */
+  const handleMessage = workerId => event => {
     const msg = event.data;
     switch (msg.event) {
       case 'method-return':
@@ -59,17 +68,6 @@ function handleMessage(workerId) {
         throw new Error('Unknown Worker Event.');
     }
   };
-}
-
-/**
- * Initializes a new proxy and loads the web worker
- * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
- * @param {Number} n               number of workers to initialize if path given
- * @param {Object} config          config The worker configuration
- * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
- * @constructor
- */
-function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
 
   if (workers.length) {
     this.workers = workers;
@@ -84,7 +82,7 @@ function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = 
   let workerId = 0;
   this.workers.forEach(worker => {
     worker.requests = 0;
-    worker.onmessage = handleMessage(workerId++).bind(this);
+    worker.onmessage = handleMessage(workerId++);
     worker.onerror = e => {
       throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
     };

@@ -63,9 +63,9 @@ export default {
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      for (const key in obj) { // recursively search all children
-        util.collectBuffers(obj[key], collection);
-      }
+      Object.values(obj).forEach(value => { // recursively search all children
+        util.collectBuffers(value, collection);
+      });
     }
   },
 
@@ -160,8 +160,8 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
-//    atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
-    return b64.decode(base64.replace(/\-/g, '+').replace(/_/g, '/'));
+//    atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+    return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
   /**
@@ -565,7 +565,7 @@ export default {
     if (!util.isString(data)) {
       return false;
     }
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
     return re.test(data);
   },
 

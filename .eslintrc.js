@@ -317,12 +317,9 @@ module.exports = {
 
     // Custom silencers:
     "camelcase": 0,
-    "no-debugger": 0,
     "require-await": 0,
     "no-multi-assign": 0,
     "no-underscore-dangle": 0,
-    "no-restricted-syntax": 0,
-    "one-var-declaration-per-line": 0,
 
     // Custom errors:
     "no-undef": 2,
@@ -330,6 +327,7 @@ module.exports = {
     "no-mixed-operators": [ 2, {"groups": [["&", "|", "^", "~", "<<", ">>", ">>>"], ["&&", "||"]]}],
     "no-use-before-define": [ 2, { "functions": false, "classes": true, "variables": false }],
     "no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
+    "no-constant-condition": [ 2, { "checkLoops": false } ],
 
     // Custom warnings:
     "no-console": 0,
@@ -340,12 +338,7 @@ module.exports = {
     "valid-jsdoc": 0,
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
     "no-lonely-if": 0,
-    "no-fallthrough": 0,
-    "no-invalid-this": 0,
     "import/extensions": 0,
-    "no-useless-escape": 0,
-    "no-array-constructor": 0,
-    "no-constant-condition": 0,
     "no-buffer-constructor": 0, // deprecated
   }
 };

@@ -98,11 +98,7 @@ export function newPacketFromTag(tag) {
 export function fromStructuredClone(packetClone) {
   const tagName = enums.read(enums.packet, packetClone.tag);
   const packet = newPacketFromTag(tagName);
-  for (const attr in packetClone) {
-    if (packetClone.hasOwnProperty(attr)) {
-      packet[attr] = packetClone[attr];
-    }
-  }
+  Object.assign(packet, packetClone);
   if (packet.postCloneTypeFix) {
     packet.postCloneTypeFix();
   }

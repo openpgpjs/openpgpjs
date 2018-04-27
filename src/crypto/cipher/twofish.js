@@ -1,4 +1,5 @@
-/* eslint-disable no-mixed-operators */
+/* eslint-disable no-mixed-operators, no-fallthrough */
+
 
 /* Modified by Recurity Labs GmbH
  *

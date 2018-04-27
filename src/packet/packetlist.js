@@ -131,12 +131,11 @@ List.prototype.filter = function (callback) {
  */
 List.prototype.filterByTag = function (...args) {
   const filtered = new List();
-  const that = this;
 
   const handle = tag => packetType => tag === packetType;
 
   for (let i = 0; i < this.length; i++) {
-    if (args.some(handle(that[i].tag))) {
+    if (args.some(handle(this[i].tag))) {
       filtered.push(this[i]);
     }
   }

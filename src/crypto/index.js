@@ -52,8 +52,6 @@ const mod = {
   aes_kw: aes_kw
 };
 
-for (const i in crypto) {
-  mod[i] = crypto[i];
-}
+Object.assign(mod, crypto);
 
 export default mod;

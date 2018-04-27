@@ -229,6 +229,8 @@ async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
 // Originally written by Owen Smith https://github.com/omsmith
 // Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
 
+/* eslint-disable no-invalid-this */
+
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
 const ECDSASignature = nodeCrypto ?

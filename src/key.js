@@ -527,7 +527,6 @@ Key.prototype.getPrimaryUser = async function(date=new Date()) {
  * @param  {module:key.Key} key Source key to merge
  */
 Key.prototype.update = async function(key) {
-  const that = this;
   if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
     return;
   }
@@ -537,8 +536,8 @@ Key.prototype.update = async function(key) {
   if (this.isPublic() && key.isPrivate()) {
     // check for equal subkey packets
     const equal = (this.subKeys.length === key.subKeys.length) &&
-          (this.subKeys.every(function(destSubKey) {
-            return key.subKeys.some(function(srcSubKey) {
+          (this.subKeys.every(destSubKey => {
+            return key.subKeys.some(srcSubKey => {
               return destSubKey.subKey.getFingerprint() === srcSubKey.subKey.getFingerprint();
             });
           }));
@@ -548,38 +547,38 @@ Key.prototype.update = async function(key) {
     this.primaryKey = key.primaryKey;
   }
   // revocation signatures
-  await mergeSignatures(key, this, 'revocationSignatures', function(srcRevSig) {
-    return isDataRevoked(that.primaryKey, that, [srcRevSig], null, key.primaryKey);
+  await mergeSignatures(key, this, 'revocationSignatures', srcRevSig => {
+    return isDataRevoked(this.primaryKey, this, [srcRevSig], null, key.primaryKey);
   });
   // direct signatures
   await mergeSignatures(key, this, 'directSignatures');
   // TODO replace when Promise.some or Promise.any are implemented
   // users
-  await Promise.all(key.users.map(async function(srcUser) {
+  await Promise.all(key.users.map(async srcUser => {
     let found = false;
-    await Promise.all(that.users.map(async function(dstUser) {
+    await Promise.all(this.users.map(async dstUser => {
       if ((srcUser.userId && (srcUser.userId.userid === dstUser.userId.userid)) ||
           (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
-        await dstUser.update(srcUser, that.primaryKey);
+        await dstUser.update(srcUser, this.primaryKey);
         found = true;
       }
     }));
     if (!found) {
-      that.users.push(srcUser);
+      this.users.push(srcUser);
     }
   }));
   // TODO replace when Promise.some or Promise.any are implemented
   // subkeys
-  await Promise.all(key.subKeys.map(async function(srcSubKey) {
+  await Promise.all(key.subKeys.map(async srcSubKey => {
     let found = false;
-    await Promise.all(that.subKeys.map(async function(dstSubKey) {
+    await Promise.all(this.subKeys.map(async dstSubKey => {
       if (srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint()) {
-        await dstSubKey.update(srcSubKey, that.primaryKey);
+        await dstSubKey.update(srcSubKey, this.primaryKey);
         found = true;
       }
     }));
     if (!found) {
-      that.subKeys.push(srcSubKey);
+      this.subKeys.push(srcSubKey);
     }
   }));
 };
@@ -1459,17 +1458,17 @@ export async function getPreferredAlgo(type, keys, date) {
     });
   }));
   let prefAlgo = { prio: 0, algo: defaultAlgo };
-  for (const algo in prioMap) {
+  Object.values(prioMap).forEach(({ prio, count, algo }) => {
     try {
       if (algo !== enums[type].plaintext &&
           algo !== enums[type].idea && // not implemented
           enums.read(enums[type], algo) && // known algorithm
-          prioMap[algo].count === keys.length && // available for all keys
-          prioMap[algo].prio > prefAlgo.prio) {
+          count === keys.length && // available for all keys
+          prio > prefAlgo.prio) {
         prefAlgo = prioMap[algo];
       }
     } catch (e) {}
-  }
+  });
   return prefAlgo.algo;
 }
 

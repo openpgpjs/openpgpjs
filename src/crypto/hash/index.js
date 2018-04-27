@@ -122,25 +122,18 @@ export default {
    */
   getHashByteLength: function(algo) {
     switch (algo) {
-      case 1:
-        // - MD5 [HAC]
+      case 1: // - MD5 [HAC]
         return 16;
-      case 2:
-        // - SHA-1 [FIPS180]
-      case 3:
-        // - RIPE-MD/160 [HAC]
+      case 2: // - SHA-1 [FIPS180]
+      case 3: // - RIPE-MD/160 [HAC]
         return 20;
-      case 8:
-        // - SHA256 [FIPS180]
+      case 8: // - SHA256 [FIPS180]
         return 32;
-      case 9:
-        // - SHA384 [FIPS180]
+      case 9: // - SHA384 [FIPS180]
         return 48;
-      case 10:
-        // - SHA512 [FIPS180]
+      case 10: // - SHA512 [FIPS180]
         return 64;
-      case 11:
-        // - SHA224 [FIPS180]
+      case 11: // - SHA224 [FIPS180]
         return 28;
       default:
         throw new Error('Invalid hash algorithm.');

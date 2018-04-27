@@ -329,13 +329,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   return true;
 };
 
-SecretKey.prototype.generate = function (bits, curve) {
-  const that = this;
-  const algo = enums.write(enums.publicKey, that.algorithm);
-  return crypto.generateParams(algo, bits, curve).then(function(params) {
-    that.params = params;
-    that.isDecrypted = true;
-  });
+SecretKey.prototype.generate = async function (bits, curve) {
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  this.params = await crypto.generateParams(algo, bits, curve);
+  this.isDecrypted = true;
 };
 
 /**
