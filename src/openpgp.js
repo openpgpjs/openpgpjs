@@ -585,13 +585,13 @@ function onError(message, error) {
 /**
  * Check for native AEAD support and configuration by the user. Only
  * browsers that implement the current WebCrypto specification support
- * native GCM. Native EAX is built on CTR and CBC, which all browsers
- * support. OCB and CFB are not natively supported.
+ * native GCM. Native EAX is built on CTR and CBC, which current
+ * browsers support. OCB and CFB are not natively supported.
  * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
   return config.aead_protect && (
     ((config.aead_protect_version !== 4 || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto()) ||
-    (config.aead_protect_version === 4 && config.aead_mode === enums.aead.eax && util.getWebCryptoAll())
+    (config.aead_protect_version === 4 && config.aead_mode === enums.aead.eax && util.getWebCrypto())
   );
 }

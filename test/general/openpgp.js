@@ -720,7 +720,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('EAX mode (native)', tests, {
-      if: openpgp.util.getWebCryptoAll() || openpgp.util.getNodeCrypto(),
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
       beforeEach: function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
@@ -733,7 +733,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('EAX mode (small chunk size)', tests, {
-      if: openpgp.util.getWebCryptoAll() || openpgp.util.getNodeCrypto(),
+      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
       beforeEach: function() {
         openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
