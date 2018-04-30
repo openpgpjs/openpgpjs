@@ -248,7 +248,7 @@ async function OCB(cipher, key) {
       if (util.equalsUint8Array(tag, crypted.subarray(-tagLength))) {
         return crypted.subarray(0, -tagLength);
       }
-      throw new Error('Authentication tag mismatch in OCB ciphertext');
+      throw new Error('Authentication tag mismatch');
     }
   };
 }

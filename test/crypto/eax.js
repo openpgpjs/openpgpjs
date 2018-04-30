@@ -108,7 +108,7 @@ function testAESEAX() {
       ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
       pt = eax.decrypt(ct, nonceBytes, headerBytes);
-      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch in EAX ciphertext')
+      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch')
 
       // testing without additional data
       ct = await eax.encrypt(msgBytes, nonceBytes, new Uint8Array());

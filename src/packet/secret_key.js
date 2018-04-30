@@ -309,7 +309,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
       const modeInstance = await mode(symmetric, key);
       cleartext = await modeInstance.decrypt(ciphertext, iv.subarray(0, mode.ivLength), new Uint8Array());
     } catch(err) {
-      if (err.message.startsWith('Authentication tag mismatch')) {
+      if (err.message === 'Authentication tag mismatch') {
         throw new Error('Incorrect key passphrase: ' + err.message);
       }
     }

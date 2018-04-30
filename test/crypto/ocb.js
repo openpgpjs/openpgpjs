@@ -136,7 +136,7 @@ describe('Symmetric AES-OCB', function() {
       ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
       pt = ocb.decrypt(ct, nonceBytes, headerBytes);
-      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch in OCB ciphertext')
+      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch')
 
       // testing without additional data
       ct = await ocb.encrypt(msgBytes, nonceBytes, new Uint8Array());

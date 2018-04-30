@@ -140,7 +140,7 @@ async function EAX(cipher, key) {
       for (let i = 0; i < tagLength; i++) {
         tag[i] ^= omacAdata[i] ^ omacNonce[i];
       }
-      if (!util.equalsUint8Array(ctTag, tag)) throw new Error('Authentication tag mismatch in EAX ciphertext');
+      if (!util.equalsUint8Array(ctTag, tag)) throw new Error('Authentication tag mismatch');
       const plaintext = await ctr(ciphered, omacNonce);
       return plaintext;
     }
