@@ -48,16 +48,26 @@ async function GCM(cipher, key) {
   }
 
   if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
+    const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
 
     return {
       encrypt: async function(pt, iv, adata=new Uint8Array()) {
-        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata }, key, pt);
+        if (!pt.length) {
+          // iOS does not support GCM-en/decrypting empty messages
+          // Also, synchronous en/decryption might be faster in this case.
+          return AES_GCM.encrypt(pt, key, iv, adata);
+        }
+        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata }, _key, pt);
         return new Uint8Array(ct);
       },
 
       decrypt: async function(ct, iv, adata=new Uint8Array()) {
-        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata }, key, ct);
+        if (ct.length === tagLength) {
+          // iOS does not support GCM-en/decrypting empty messages
+          // Also, synchronous en/decryption might be faster in this case.
+         return AES_GCM.decrypt(ct, key, iv, adata);
+        }
+        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata }, _key, ct);
         return new Uint8Array(pt);
       }
     };
