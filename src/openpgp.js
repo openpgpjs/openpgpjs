@@ -577,7 +577,9 @@ function onError(message, error) {
   util.print_debug_error(error);
 
   // update error message
-  error.message = message + ': ' + error.message;
+  try {
+    error.message = message + ': ' + error.message;
+  } catch(e) {}
 
   throw error;
 }
