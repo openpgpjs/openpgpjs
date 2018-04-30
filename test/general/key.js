@@ -1,11 +1,34 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 
 describe('Key', function() {
+  let webCrypto = openpgp.util.getWebCryptoAll();
+
+  if (webCrypto) {
+    let generateKey = webCrypto.generateKey;
+    let keyGenStub;
+    let keyGenValue;
+
+    beforeEach(function() {
+      keyGenStub = stub(webCrypto, 'generateKey');
+      keyGenStub.callsFake(function() {
+        if (!keyGenValue) {
+          keyGenValue = generateKey.apply(webCrypto, arguments);
+        }
+        return keyGenValue;
+      });
+    });
+
+    afterEach(function() {
+      keyGenStub.restore();
+    });
+  }
+
   describe('V4', tests);
 
   describe('V5', function() {
