@@ -36,7 +36,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredSymAlgo } from './key';
+import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported } from './key';
 
 
 /**
@@ -93,7 +93,7 @@ Message.prototype.getSigningKeyIds = function() {
  * Decrypt the message. Either a private key, a session key, or a password must be specified.
  * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
- * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @returns {Promise<Message>}             new message with decrypted content
  * @async
  */
@@ -157,7 +157,9 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         try {
           await keyPacket.decrypt(password);
           keyPackets.push(keyPacket);
-        } catch (err) {}
+        } catch (err) {
+          util.print_debug_error(err);
+        }
       }));
     }));
   } else if (privateKeys) {
@@ -180,7 +182,9 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         try {
           await keyPacket.decrypt(privateKeyPacket);
           keyPackets.push(keyPacket);
-        } catch (err) {}
+        } catch (err) {
+          util.print_debug_error(err);
+        }
       }));
     }));
   } else {
@@ -212,7 +216,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
  */
 Message.prototype.getLiteralData = function() {
   const literal = this.packets.findPacket(enums.packet.literal);
-  return (literal && literal.data) || null;
+  return (literal && literal.getBytes()) || null;
 };
 
 /**
@@ -240,7 +244,7 @@ Message.prototype.getText = function() {
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
- * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @returns {Promise<Message>}                   new message with encrypted content
@@ -248,6 +252,7 @@ Message.prototype.getText = function() {
  */
 Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date()) {
   let symAlgo;
+  let aeadAlgo;
   let symEncryptedPacket;
 
   if (sessionKey) {
@@ -255,11 +260,16 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
       throw new Error('Invalid session key for encryption.');
     }
     symAlgo = sessionKey.algorithm;
+    aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredSymAlgo(keys));
+    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date));
+    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date)) {
+      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date));
+    }
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
+    aeadAlgo = enums.read(enums.aead, config.aead_mode);
   } else {
     throw new Error('No keys, passwords, or session key provided.');
   }
@@ -268,10 +278,11 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     sessionKey = await crypto.generateSessionKey(symAlgo);
   }
 
-  const msg = await encryptSessionKey(sessionKey, symAlgo, keys, passwords, wildcard, date);
+  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date);
 
-  if (config.aead_protect) {
+  if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
+    symEncryptedPacket.aeadAlgorithm = aeadAlgo;
   } else if (config.integrity_protect) {
     symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
@@ -287,7 +298,8 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     message: msg,
     sessionKey: {
       data: sessionKey,
-      algorithm: symAlgo
+      algorithm: symAlgo,
+      aeadAlgorithm: aeadAlgo
     }
   };
 };
@@ -296,6 +308,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * Encrypt a session key either with public keys, passwords, or both at once.
  * @param  {Uint8Array} sessionKey     session key for encryption
  * @param  {String} symAlgo            session key algorithm
+ * @param  {String} aeadAlgo           (optional) aead algorithm, e.g. 'eax' or 'ocb'
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
@@ -303,7 +316,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
+export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date()) {
   const packetlist = new packet.List();
 
   if (publicKeys) {
@@ -336,10 +349,13 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
 
     const sum = (accumulator, currentValue) => accumulator + currentValue;
 
-    const encryptPassword = async function(sessionKey, symAlgo, password) {
+    const encryptPassword = async function(sessionKey, symAlgo, aeadAlgo, password) {
       const symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
       symEncryptedSessionKeyPacket.sessionKey = sessionKey;
       symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
+      if (aeadAlgo) {
+        symEncryptedSessionKeyPacket.aeadAlgorithm = aeadAlgo;
+      }
       await symEncryptedSessionKeyPacket.encrypt(password);
 
       if (config.password_collision_check) {
@@ -353,7 +369,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwor
       return symEncryptedSessionKeyPacket;
     };
 
-    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, pwd)));
+    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, aeadAlgo, pwd)));
     packetlist.concat(results);
   }
 
@@ -378,8 +394,8 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
 
   let i;
   let existingSigPacketlist;
-  const literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  const signatureType = literalFormat === enums.literal.binary ?
+  // If data packet was created from Uint8Array, use binary, otherwise use text
+  const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
   if (signature) {
@@ -409,7 +425,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, date);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -474,8 +490,8 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date()) {
   const packetlist = new packet.List();
 
-  const literalFormat = enums.write(enums.literal, literalDataPacket.format);
-  const signatureType = literalFormat === enums.literal.binary ?
+  // If data packet was created from Uint8Array, use binary, otherwise use text
+  const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
   await Promise.all(privateKeys.map(async function(privateKey) {
@@ -493,7 +509,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     const signaturePacket = new packet.Signature(date);
     signaturePacket.signatureType = signatureType;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey);
+    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, date);
     await signaturePacket.sign(signingKeyPacket, literalDataPacket);
     return signaturePacket;
   })).then(signatureList => {
@@ -564,15 +580,9 @@ export async function createVerificationObjects(signatureList, literalDataList, 
       }
     }));
 
-    // If this is a text signature, canonicalize line endings of the data
-    const literalDataPacket = literalDataList[0];
-    if (signature.signatureType === enums.signature.text) {
-      literalDataPacket.setText(literalDataPacket.getText());
-    }
-
     const verifiedSig = {
       keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataPacket) : null
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
     };
 
     const packetlist = new packet.List();
@@ -641,13 +651,14 @@ export function read(input) {
  * @param {String} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
+ * @param {utf8|binary|text|mime} type (optional) data packet type
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromText(text, filename, date=new Date()) {
+export function fromText(text, filename, date=new Date(), type='utf8') {
   const literalDataPacket = new packet.Literal(date);
   // text will be converted to UTF8
-  literalDataPacket.setText(text);
+  literalDataPacket.setText(text, type);
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }
@@ -661,19 +672,17 @@ export function fromText(text, filename, date=new Date()) {
  * @param {Uint8Array} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
+ * @param {utf8|binary|text|mime} type (optional) data packet type
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromBinary(bytes, filename, date=new Date()) {
+export function fromBinary(bytes, filename, date=new Date(), type='binary') {
   if (!util.isUint8Array(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
   const literalDataPacket = new packet.Literal(date);
-  if (filename) {
-    literalDataPacket.setFilename(filename);
-  }
-  literalDataPacket.setBytes(bytes, enums.read(enums.literal, enums.literal.binary));
+  literalDataPacket.setBytes(bytes, type);
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
   }

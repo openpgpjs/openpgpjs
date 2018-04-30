@@ -32,93 +32,104 @@ const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
+const blockLength = 16;
 const ivLength = 12; // size of the IV in bytes
-const TAG_LEN = 16; // size of the tag in bytes
+const tagLength = 16; // size of the tag in bytes
 const ALGO = 'AES-GCM';
 
 /**
- * Encrypt plaintext input.
+ * Class to en/decrypt using GCM mode.
  * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
- * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
  * @param  {Uint8Array} key         The encryption key
- * @param  {Uint8Array} iv          The initialization vector (12 bytes)
- * @returns {Promise<Uint8Array>}    The ciphertext output
  */
-function encrypt(cipher, plaintext, key, iv) {
+async function GCM(cipher, key) {
   if (cipher.substr(0, 3) !== 'aes') {
-    return Promise.reject(new Error('GCM mode supports only AES cipher'));
+    throw new Error('GCM mode supports only AES cipher');
   }
 
-  if (webCrypto && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    return webEncrypt(plaintext, key, iv);
-  } else if (nodeCrypto) { // Node crypto library
-    return nodeEncrypt(plaintext, key, iv);
-  } // asm.js fallback
-  return Promise.resolve(AES_GCM.encrypt(plaintext, key, iv));
+  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
+
+    return {
+      encrypt: async function(pt, iv, adata=new Uint8Array()) {
+        if (!pt.length) {
+          // iOS does not support GCM-en/decrypting empty messages
+          // Also, synchronous en/decryption might be faster in this case.
+          return AES_GCM.encrypt(pt, key, iv, adata);
+        }
+        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata }, _key, pt);
+        return new Uint8Array(ct);
+      },
+
+      decrypt: async function(ct, iv, adata=new Uint8Array()) {
+        if (ct.length === tagLength) {
+          // iOS does not support GCM-en/decrypting empty messages
+          // Also, synchronous en/decryption might be faster in this case.
+         return AES_GCM.decrypt(ct, key, iv, adata);
+        }
+        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata }, _key, ct);
+        return new Uint8Array(pt);
+      }
+    };
+  }
+
+  if (util.getNodeCrypto()) { // Node crypto library
+    key = new Buffer(key);
+
+    return {
+      encrypt: async function(pt, iv, adata=new Uint8Array()) {
+        pt = new Buffer(pt);
+        iv = new Buffer(iv);
+        adata = new Buffer(adata);
+        const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
+        en.setAAD(adata);
+        const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
+        return new Uint8Array(ct);
+      },
+
+      decrypt: async function(ct, iv, adata=new Uint8Array()) {
+        ct = new Buffer(ct);
+        iv = new Buffer(iv);
+        adata = new Buffer(adata);
+        const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
+        de.setAAD(adata);
+        de.setAuthTag(ct.slice(ct.length - tagLength, ct.length)); // read auth tag at end of ciphertext
+        const pt = Buffer.concat([de.update(ct.slice(0, ct.length - tagLength)), de.final()]);
+        return new Uint8Array(pt);
+      }
+    };
+  }
+
+  return {
+    encrypt: async function(pt, iv, adata) {
+      return AES_GCM.encrypt(pt, key, iv, adata);
+    },
+
+    decrypt: async function(ct, iv, adata) {
+      return AES_GCM.decrypt(ct, key, iv, adata);
+    }
+  };
 }
+
 
 /**
- * Decrypt ciphertext input.
- * @param  {String}     cipher       The symmetric cipher algorithm to use e.g. 'aes128'
- * @param  {Uint8Array} ciphertext   The ciphertext input to be decrypted
- * @param  {Uint8Array} key          The encryption key
+ * Get GCM nonce. Note: this operation is not defined by the standard.
+ * A future version of the standard may define GCM mode differently,
+ * hopefully under a different ID (we use Private/Experimental algorithm
+ * ID 100) so that we can maintain backwards compatibility.
  * @param  {Uint8Array} iv           The initialization vector (12 bytes)
- * @returns {Promise<Uint8Array>}     The plaintext output
+ * @param  {Uint8Array} chunkIndex   The chunk index (8 bytes)
  */
-function decrypt(cipher, ciphertext, key, iv) {
-  if (cipher.substr(0, 3) !== 'aes') {
-    return Promise.reject(new Error('GCM mode supports only AES cipher'));
+GCM.getNonce = function(iv, chunkIndex) {
+  const nonce = iv.slice();
+  for (let i = 0; i < chunkIndex.length; i++) {
+    nonce[4 + i] ^= chunkIndex[i];
   }
-
-  if (webCrypto && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    return webDecrypt(ciphertext, key, iv);
-  } else if (nodeCrypto) { // Node crypto library
-    return nodeDecrypt(ciphertext, key, iv);
-  } // asm.js fallback
-  return Promise.resolve(AES_GCM.decrypt(ciphertext, key, iv));
-}
-
-export default {
-  ivLength,
-  encrypt,
-  decrypt
+  return nonce;
 };
 
+GCM.blockLength = blockLength;
+GCM.ivLength = ivLength;
+GCM.tagLength = tagLength;
 
-//////////////////////////
-//                      //
-//   Helper functions   //
-//                      //
-//////////////////////////
-
-
-function webEncrypt(pt, key, iv) {
-  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt'])
-    .then(keyObj => webCrypto.encrypt({ name: ALGO, iv }, keyObj, pt))
-    .then(ct => new Uint8Array(ct));
-}
-
-function webDecrypt(ct, key, iv) {
-  return webCrypto.importKey('raw', key, { name: ALGO }, false, ['decrypt'])
-    .then(keyObj => webCrypto.decrypt({ name: ALGO, iv }, keyObj, ct))
-    .then(pt => new Uint8Array(pt));
-}
-
-function nodeEncrypt(pt, key, iv) {
-  pt = new Buffer(pt);
-  key = new Buffer(key);
-  iv = new Buffer(iv);
-  const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
-  const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
-  return Promise.resolve(new Uint8Array(ct));
-}
-
-function nodeDecrypt(ct, key, iv) {
-  ct = new Buffer(ct);
-  key = new Buffer(key);
-  iv = new Buffer(iv);
-  const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
-  de.setAuthTag(ct.slice(ct.length - TAG_LEN, ct.length)); // read auth tag at end of ciphertext
-  const pt = Buffer.concat([de.update(ct.slice(0, ct.length - TAG_LEN)), de.final()]);
-  return Promise.resolve(new Uint8Array(pt));
-}
+export default GCM;

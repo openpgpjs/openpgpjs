@@ -1,11 +1,55 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 
 describe('Key', function() {
+  let webCrypto = openpgp.util.getWebCryptoAll();
+
+  if (webCrypto) {
+    let generateKey = webCrypto.generateKey;
+    let keyGenStub;
+    let keyGenValue;
+
+    beforeEach(function() {
+      keyGenStub = stub(webCrypto, 'generateKey');
+      keyGenStub.callsFake(function() {
+        if (!keyGenValue) {
+          keyGenValue = generateKey.apply(webCrypto, arguments);
+        }
+        return keyGenValue;
+      });
+    });
+
+    afterEach(function() {
+      keyGenStub.restore();
+    });
+  }
+
+  describe('V4', tests);
+
+  describe('V5', function() {
+    let aead_protectVal;
+    let aead_protect_versionVal;
+    beforeEach(function() {
+      aead_protectVal = openpgp.config.aead_protect;
+      aead_protect_versionVal = openpgp.config.aead_protect_version;
+      openpgp.config.aead_protect = true;
+      openpgp.config.aead_protect_version = 4;
+    });
+    afterEach(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_protect_version = aead_protect_versionVal;
+    });
+
+    tests();
+  });
+});
+
+function tests() {
   const twoKeys =
        ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -893,6 +937,21 @@ p92yZgB3r2+f6/GIe2+7
     done();
   });
 
+  it('Parsing V5 public key packet', function() {
+    // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      98 37 05 53 f3 5f 0b 16  00 00 00 2d  09 2b 06 01 04 01 da 47
+      0f 01 01 07 40 3f 09 89  94 bd d9 16 ed 40 53 19
+      79 34 e4 a8 7c 80 73 3a  12 80 d6 2f 80 10 99 2e
+      43 ee 3b 24 06
+    `.replace(/\s+/g, ''));
+
+    let packetlist = new openpgp.packet.List();
+    packetlist.read(packetBytes);
+    let key = packetlist[0];
+    expect(key).to.exist;
+  });
+
   it('Testing key ID and fingerprint for V3 and V4 keys', function(done) {
     const pubKeysV4 = openpgp.key.readArmored(twoKeys);
     expect(pubKeysV4).to.exist;
@@ -1134,30 +1193,69 @@ p92yZgB3r2+f6/GIe2+7
     });
   });
 
-  it('getPreferredSymAlgo() - one key - AES256', async function() {
+  it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
     const key1 = openpgp.key.readArmored(twoKeys).keys[0];
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
-  it('getPreferredSymAlgo() - two key - AES128', async function() {
+  it("getPreferredAlgo('symmetric') - two key - AES128", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = [6,7,3];
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1, key2]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
-  it('getPreferredSymAlgo() - two key - one without pref', async function() {
+  it("getPreferredAlgo('symmetric') - two key - one without pref", async function() {
     const keys = openpgp.key.readArmored(twoKeys).keys;
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
-    const prefAlgo = await openpgp.key.getPreferredSymAlgo([key1, key2]);
+    const prefAlgo = await openpgp.key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.config.encryption_cipher);
+  });
+
+  it("getPreferredAlgo('aead') - one key - OCB", async function() {
+    const key1 = openpgp.key.readArmored(twoKeys).keys[0];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1]);
+    expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
+    const supported = await openpgp.key.isAeadSupported([key1]);
+    expect(supported).to.be.true;
+  });
+
+  it("getPreferredAlgo('aead') - two key - one without pref", async function() {
+    const keys = openpgp.key.readArmored(twoKeys).keys;
+    const key1 = keys[0];
+    const key2 = keys[1];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const primaryUser2 = await key2.getPrimaryUser();
+    primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+    const supported = await openpgp.key.isAeadSupported([key1, key2]);
+    expect(supported).to.be.true;
+  });
+
+  it("getPreferredAlgo('aead') - two key - one with no support", async function() {
+    const keys = openpgp.key.readArmored(twoKeys).keys;
+    const key1 = keys[0];
+    const key2 = keys[1];
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
+    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    const prefAlgo = await openpgp.key.getPreferredAlgo('aead', [key1, key2]);
+    expect(prefAlgo).to.equal(openpgp.config.aead_mode);
+    const supported = await openpgp.key.isAeadSupported([key1, key2]);
+    expect(supported).to.be.false;
   });
 
   it('Preferences of generated key', function() {
@@ -1170,11 +1268,15 @@ p92yZgB3r2+f6/GIe2+7
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
+      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
+        const aead = openpgp.enums.aead;
+        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
+      }
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.integrity_protect ? [1] : null); // modification detection
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -1574,4 +1676,4 @@ p92yZgB3r2+f6/GIe2+7
       expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
     });
   });
-});
+}

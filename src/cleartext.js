@@ -19,6 +19,7 @@
  * @requires config
  * @requires encoding/armor
  * @requires enums
+ * @requires util
  * @requires packet
  * @requires signature
  * @module cleartext
@@ -27,6 +28,7 @@
 import config from './config';
 import armor from './encoding/armor';
 import enums from './enums';
+import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
@@ -43,7 +45,7 @@ export function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n/g, "\r\n");
+  this.text = util.canonicalizeEOL(util.removeTrailingSpaces(text));
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -122,7 +124,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new D
  */
 CleartextMessage.prototype.getText = function() {
   // normalize end of line to \n
-  return this.text.replace(/\r\n/g, "\n");
+  return util.nativeEOL(this.text);
 };
 
 /**

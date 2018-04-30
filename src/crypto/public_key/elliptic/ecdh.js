@@ -46,7 +46,7 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
     new Uint8Array([public_algo]),
     kdf_params.write(),
     util.str_to_Uint8Array("Anonymous Sender    "),
-    fingerprint
+    fingerprint.subarray(0, 20)
   ]);
 }
 
@@ -73,7 +73,6 @@ function kdf(hash_algo, X, length, param) {
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-  fingerprint = util.hex_to_Uint8Array(fingerprint);
   const curve = new Curve(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
@@ -102,7 +101,6 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-  fingerprint = util.hex_to_Uint8Array(fingerprint);
   const curve = new Curve(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);

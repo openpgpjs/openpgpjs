@@ -88,7 +88,7 @@ export default {
     gnu: 101
   },
 
-  /** {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880, section 9.1}
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.1|RFC4880bis-04, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -109,7 +109,11 @@ export default {
     ecdsa: 19,
     /** EdDSA (Sign only)
      * [{@link https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04|Draft RFC}] */
-    eddsa: 22
+    eddsa: 22,
+    /** Reserved for AEDH */
+    aedh: 23,
+    /** Reserved for AEDSA */
+    aedsa: 24
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
@@ -167,6 +171,16 @@ export default {
     'SHA-512': 10
   },
 
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.6|RFC4880bis-04, section 9.6}
+   * @enum {Integer}
+   * @readonly
+   */
+  aead: {
+    eax: 1,
+    ocb: 2,
+    experimental_gcm: 100 // Private algorithm
+  },
+
   /** A list of packet types and numeric tags associated with them.
    * @enum {Integer}
    * @readonly
@@ -202,7 +216,9 @@ export default {
     /** Text data 't' */
     text: 't'.charCodeAt(),
     /** Utf8 data 'u' */
-    utf8: 'u'.charCodeAt()
+    utf8: 'u'.charCodeAt(),
+    /** MIME message body part 'm' */
+    mime: 'm'.charCodeAt()
   },
 
 
@@ -356,7 +372,9 @@ export default {
     reason_for_revocation: 29,
     features: 30,
     signature_target: 31,
-    embedded_signature: 32
+    embedded_signature: 32,
+    issuer_fingerprint: 33,
+    preferred_aead_algorithms: 34
   },
 
   /** Key flags
@@ -406,6 +424,21 @@ export default {
     public_key: 4,
     private_key: 5,
     signature: 6
+  },
+
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.2.3.25|RFC4880bis-04, section 5.2.3.25}
+   * @enum {Integer}
+   * @readonly
+   */
+  features: {
+    /** 0x01 - Modification Detection (packets 18 and 19) */
+    modification_detection: 1,
+    /** 0x02 - AEAD Encrypted Data Packet (packet 20) and version 5
+     *         Symmetric-Key Encrypted Session Key Packets (packet 3) */
+    aead: 2,
+    /** 0x04 - Version 5 Public-Key Packet format and corresponding new
+      *        fingerprint format */
+    v5_keys: 4
   },
 
   /** Asserts validity and converts from string/integer to integer. */

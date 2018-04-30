@@ -122,7 +122,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   }
 
   this.encrypted = await crypto.publicKeyEncrypt(
-    algo, key.params, toEncrypt, key.fingerprint);
+    algo, key.params, toEncrypt, key.getFingerprintBytes());
   return true;
 };
 
@@ -138,7 +138,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const result = await crypto.publicKeyDecrypt(
-    algo, key.params, this.encrypted, key.fingerprint);
+    algo, key.params, this.encrypted, key.getFingerprintBytes());
 
   let checksum;
   let decoded;

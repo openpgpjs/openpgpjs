@@ -366,6 +366,20 @@ export default {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
+   * Different than print_debug because will call Uint8Array_to_hex iff necessary.
+   * @param {String} str String of the debug message
+   */
+  print_debug_hexarray_dump: function (str, arrToHex) {
+    if (config.debug) {
+      str += ': ' + util.Uint8Array_to_hex(arrToHex);
+      console.log(str);
+    }
+  },
+
+  /**
+   * Helper function to print a debug message. Debug
+   * messages are only printed if
+   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call str_to_hex iff necessary.
    * @param {String} str String of the debug message
    */
@@ -376,14 +390,25 @@ export default {
     }
   },
 
-  // TODO rewrite getLeftNBits to work with Uint8Arrays
-  getLeftNBits: function (string, bitcount) {
+  /**
+   * Helper function to print a debug error. Debug
+   * messages are only printed if
+   * @link module:config/config.debug is set to true.
+   * @param {String} str String of the debug message
+   */
+  print_debug_error: function (error) {
+    if (config.debug) {
+      console.error(error);
+    }
+  },
+
+  getLeftNBits: function (array, bitcount) {
     const rest = bitcount % 8;
     if (rest === 0) {
-      return string.substring(0, bitcount / 8);
+      return array.subarray(0, bitcount / 8);
     }
     const bytes = (bitcount - rest) / 8 + 1;
-    const result = string.substring(0, bytes);
+    const result = array.subarray(0, bytes);
     return util.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
   },
 
@@ -419,25 +444,41 @@ export default {
   },
 
   /**
-   * Shifting a string to n bits right
-   * @param {String} value The string to shift
-   * @param {Integer} bitcount Amount of bits to shift (MUST be smaller
-   * than 9)
-   * @returns {String} Resulting string.
+   * If S[1] == 0, then double(S) == (S[2..128] || 0);
+   * otherwise, double(S) == (S[2..128] || 0) xor
+   * (zeros(120) || 10000111).
+   *
+   * Both OCB and EAX (through CMAC) require this function to be constant-time.
+   *
+   * @param {Uint8Array} data
    */
-  shiftRight: function (value, bitcount) {
-    const temp = util.str_to_Uint8Array(value);
-    if (bitcount % 8 !== 0) {
-      for (let i = temp.length - 1; i >= 0; i--) {
-        temp[i] >>= bitcount % 8;
+  double: function(data) {
+    const double = new Uint8Array(data.length);
+    const last = data.length - 1;
+    for (let i = 0; i < last; i++) {
+      double[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
+    }
+    double[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
+    return double;
+  },
+
+  /**
+   * Shift a Uint8Array to the right by n bits
+   * @param {Uint8Array} array The array to shift
+   * @param {Integer} bits Amount of bits to shift (MUST be smaller
+   * than 8)
+   * @returns {String} Resulting array.
+   */
+  shiftRight: function (array, bits) {
+    if (bits) {
+      for (let i = array.length - 1; i >= 0; i--) {
+        array[i] >>= bits;
         if (i > 0) {
-          temp[i] |= (temp[i - 1] << (8 - (bitcount % 8))) & 0xFF;
+          array[i] |= (array[i - 1] << (8 - bits));
         }
       }
-    } else {
-      return value;
     }
-    return util.Uint8Array_to_str(temp);
+    return array;
   },
 
   /**
@@ -533,5 +574,26 @@ export default {
       return false;
     }
     return /</.test(data) && />$/.test(data);
+  },
+
+  /**
+   * Normalize line endings to \r\n
+   */
+  canonicalizeEOL: function(text) {
+    return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+  },
+
+  /**
+   * Convert line endings from canonicalized \r\n to native \n
+   */
+  nativeEOL: function(text) {
+    return text.replace(/\r\n/g, "\n");
+  },
+
+  /**
+   * Remove trailing spaces and tabs from each line
+   */
+  removeTrailingSpaces: function(text) {
+    return text.replace(/[ \t]+$/mg, "");
   }
 };

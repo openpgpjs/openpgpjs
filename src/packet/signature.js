@@ -84,6 +84,9 @@ function Signature(date=new Date()) {
   this.signatureTargetHashAlgorithm = null;
   this.signatureTargetHash = null;
   this.embeddedSignature = null;
+  this.issuerKeyVersion = null;
+  this.issuerFingerprint = null;
+  this.preferredAeadAlgorithms = null;
 
   this.verified = null;
   this.revoked = null;
@@ -222,6 +225,13 @@ Signature.prototype.sign = async function (key, data) {
 
   const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
+  if (key.version === 5) {
+    // We could also generate this subpacket for version 4 keys, but for
+    // now we don't.
+    this.issuerKeyVersion = key.version;
+    this.issuerFingerprint = key.getFingerprintBytes();
+  }
+
   this.issuerKeyId = key.getKeyId();
 
   // Add hashed subpackets
@@ -292,7 +302,9 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = util.concatUint8Array([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
-  if (!this.issuerKeyId.isNull()) {
+  if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
+    // If the version of [the] key is greater than 4, this subpacket
+    // MUST NOT be included in the signature.
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
@@ -354,6 +366,15 @@ Signature.prototype.write_all_sub_packets = function () {
   }
   if (this.embeddedSignature !== null) {
     arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
+  }
+  if (this.issuerFingerprint !== null) {
+    bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
+    bytes = util.concatUint8Array(bytes);
+    arr.push(write_sub_packet(sub.issuer_fingerprint, bytes));
+  }
+  if (this.preferredAeadAlgorithms !== null) {
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
+    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
   }
 
   const result = util.concatUint8Array(arr);
@@ -531,6 +552,20 @@ Signature.prototype.read_sub_packet = function (bytes) {
       this.embeddedSignature = new Signature();
       this.embeddedSignature.read(bytes.subarray(mypos, bytes.length));
       break;
+    case 33:
+      // Issuer Fingerprint
+      this.issuerKeyVersion = bytes[mypos++];
+      this.issuerFingerprint = bytes.subarray(mypos, bytes.length);
+      if (this.issuerKeyVersion === 5) {
+        this.issuerKeyId.read(this.issuerFingerprint);
+      } else {
+        this.issuerKeyId.read(this.issuerFingerprint.subarray(-8));
+      }
+      break;
+    case 34:
+      // Preferred AEAD Algorithms
+      read_array.call(this, 'preferredAeadAlgorithms', bytes.subarray(mypos, bytes.length));
+      break;
     default:
       util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
   }
@@ -542,9 +577,15 @@ Signature.prototype.toSign = function (type, data) {
 
   switch (type) {
     case t.binary:
-    case t.text:
       return data.getBytes();
 
+    case t.text: {
+      let text = data.getText();
+      // normalize EOL to \r\n
+      text = util.canonicalizeEOL(text);
+      // encode UTF8
+      return util.str_to_Uint8Array(util.encode_utf8(text));
+    }
     case t.standalone:
       return new Uint8Array(0);
 

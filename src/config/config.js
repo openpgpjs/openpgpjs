@@ -51,6 +51,38 @@ export default {
    * @property {Boolean} aead_protect
    */
   aead_protect:             false,
+  /**
+   * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
+   * 0 means we implement a variant of {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00|this IETF draft}.
+   * 4 means we implement {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04|RFC4880bis-04}.
+   * Only has an effect when aead_protect is set to true.
+   * @memberof module:config
+   * @property {Integer} aead_protect_version
+   */
+  aead_protect_version:     4,
+  /**
+   * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
+   * Only has an effect when aead_protect is set to true.
+   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
+   * @memberof module:config
+   * @property {Integer} aead_mode Default AEAD mode {@link module:enums.aead}
+   */
+  aead_mode: enums.aead.eax,
+  /**
+   * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
+   * Only has an effect when aead_protect is set to true.
+   * Must be an integer value from 0 to 56.
+   * @memberof module:config
+   * @property {Integer} aead_chunk_size_byte
+   */
+  aead_chunk_size_byte:     12,
+  /**
+   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
+   * Iteration Count Byte for S2K (String to Key)
+   * @memberof module:config
+   * @property {Integer} s2k_iteration_count_byte
+   */
+  s2k_iteration_count_byte: 96,
   /** Use integrity protection for symmetric encryption
    * @memberof module:config
    * @property {Boolean} integrity_protect

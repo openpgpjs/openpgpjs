@@ -468,7 +468,7 @@ Key.prototype.getExpirationTime = async function() {
   if (this.primaryKey.version === 3) {
     return getExpirationTime(this.primaryKey);
   }
-  if (this.primaryKey.version === 4) {
+  if (this.primaryKey.version >= 4) {
     const primaryUser = await this.getPrimaryUser(null);
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = getExpirationTime(this.primaryKey, selfCert);
@@ -1261,6 +1261,11 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
     signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    if (config.aead_protect && config.aead_protect_version === 4) {
+      signaturePacket.preferredAeadAlgorithms = [];
+      signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
+      signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
+    }
     signaturePacket.preferredHashAlgorithms = [];
     // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
     signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
@@ -1273,8 +1278,13 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.isPrimaryUserID = true;
     }
     if (config.integrity_protect) {
-      signaturePacket.features = [];
-      signaturePacket.features.push(1); // Modification Detection
+      signaturePacket.features = [0];
+      signaturePacket.features[0] |= enums.features.modification_detection;
+    }
+    if (config.aead_protect && config.aead_protect_version === 4) {
+      signaturePacket.features || (signaturePacket.features = [0]);
+      signaturePacket.features[0] |= enums.features.aead;
+      signaturePacket.features[0] |= enums.features.v5_keys;
     }
     if (options.keyExpirationTime > 0) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
@@ -1383,7 +1393,7 @@ function getExpirationTime(keyPacket, signature) {
     expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
   }
   // check V4 expiration time
-  if (keyPacket.version === 4 && signature.keyNeverExpires === false) {
+  if (keyPacket.version >= 4 && signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
@@ -1392,14 +1402,15 @@ function getExpirationTime(keyPacket, signature) {
 /**
  * Returns the preferred signature hash algorithm of a key
  * @param  {object} key
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key) {
+export async function getPreferredHashAlgo(key, date) {
   let hash_algo = config.prefer_hash_algorithm;
   let pref_algo = hash_algo;
   if (key instanceof Key) {
-    const primaryUser = await key.getPrimaryUser();
+    const primaryUser = await key.getPrimaryUser(date);
     if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
@@ -1425,30 +1436,34 @@ export async function getPreferredHashAlgo(key) {
 }
 
 /**
- * Returns the preferred symmetric algorithm for a set of keys
+ * Returns the preferred symmetric/aead algorithm for a set of keys
+ * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredSymAlgo(keys) {
+export async function getPreferredAlgo(type, keys, date) {
+  const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
+  const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser();
-    if (!primaryUser || !primaryUser.selfCertification.preferredSymmetricAlgorithms) {
-      return config.encryption_cipher;
+    const primaryUser = await key.getPrimaryUser(date);
+    if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
+      return defaultAlgo;
     }
-    primaryUser.selfCertification.preferredSymmetricAlgorithms.forEach(function(algo, index) {
+    primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
       const entry = prioMap[algo] || (prioMap[algo] = { prio: 0, count: 0, algo: algo });
       entry.prio += 64 >> index;
       entry.count++;
     });
   }));
-  let prefAlgo = { prio: 0, algo: config.encryption_cipher };
+  let prefAlgo = { prio: 0, algo: defaultAlgo };
   for (const algo in prioMap) {
     try {
-      if (algo !== enums.symmetric.plaintext &&
-          algo !== enums.symmetric.idea && // not implemented
-          enums.read(enums.symmetric, algo) && // known algorithm
+      if (algo !== enums[type].plaintext &&
+          algo !== enums[type].idea && // not implemented
+          enums.read(enums[type], algo) && // known algorithm
           prioMap[algo].count === keys.length && // available for all keys
           prioMap[algo].prio > prefAlgo.prio) {
         prefAlgo = prioMap[algo];
@@ -1456,4 +1471,24 @@ export async function getPreferredSymAlgo(keys) {
     } catch (e) {}
   }
   return prefAlgo.algo;
+}
+
+/**
+ * Returns whether aead is supported by all keys in the set
+ * @param  {Array<module:key.Key>} keys Set of keys
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @returns {Promise<Boolean>}
+ * @async
+ */
+export async function isAeadSupported(keys, date) {
+  let supported = true;
+  // TODO replace when Promise.some or Promise.any are implemented
+  await Promise.all(keys.map(async function(key) {
+    const primaryUser = await key.getPrimaryUser(date);
+    if (!primaryUser || !primaryUser.selfCertification.features ||
+        !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
+      supported = false;
+    }
+  }));
+  return supported;
 }

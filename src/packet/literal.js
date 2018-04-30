@@ -37,7 +37,8 @@ function Literal(date=new Date()) {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
   this.date = util.normalizeDate(date);
-  this.data = new Uint8Array(0); // literal data representation
+  this.text = null; // textual data representation
+  this.data = null; // literal data representation
   this.filename = 'msg.txt';
 }
 
@@ -45,13 +46,12 @@ function Literal(date=new Date()) {
  * Set the packet data to a javascript native string, end of line
  * will be normalized to \r\n and by default text is converted to UTF8
  * @param {String} text Any native javascript string
+ * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
-Literal.prototype.setText = function(text) {
-  // normalize EOL to \r\n
-  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n/g, "\r\n");
-  this.format = 'utf8';
-  // encode UTF8
-  this.data = util.str_to_Uint8Array(util.encode_utf8(text));
+Literal.prototype.setText = function(text, format='utf8') {
+  this.format = format;
+  this.text = text;
+  this.data = null;
 };
 
 /**
@@ -60,20 +60,25 @@ Literal.prototype.setText = function(text) {
  * @returns {String} literal data as text
  */
 Literal.prototype.getText = function() {
+  if (this.text !== null) {
+    return this.text;
+  }
   // decode UTF8
   const text = util.decode_utf8(util.Uint8Array_to_str(this.data));
   // normalize EOL to \n
-  return text.replace(/\r\n/g, '\n');
+  this.text = util.nativeEOL(text);
+  return this.text;
 };
 
 /**
  * Set the packet data to value represented by the provided string of bytes.
  * @param {Uint8Array} bytes The string of bytes
- * @param {utf8|binary|text} format The format of the string of bytes
+ * @param {utf8|binary|text|mime} format The format of the string of bytes
  */
 Literal.prototype.setBytes = function(bytes, format) {
   this.format = format;
   this.data = bytes;
+  this.text = null;
 };
 
 
@@ -82,6 +87,14 @@ Literal.prototype.setBytes = function(bytes, format) {
  * @returns {Uint8Array} A sequence of bytes
  */
 Literal.prototype.getBytes = function() {
+  if (this.data !== null) {
+    return this.data;
+  }
+
+  // normalize EOL to \r\n
+  const text = util.canonicalizeEOL(this.text);
+  // encode UTF8
+  this.data = util.str_to_Uint8Array(util.encode_utf8(text));
   return this.data;
 };
 

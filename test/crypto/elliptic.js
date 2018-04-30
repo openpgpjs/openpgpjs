@@ -317,7 +317,7 @@ describe('Elliptic Curve Cryptography', function () {
           new Uint8Array(ephemeral),
           data,
           new Uint8Array(priv),
-          fingerprint
+          new Uint8Array(fingerprint)
         );
       });
     };
@@ -344,17 +344,17 @@ describe('Elliptic Curve Cryptography', function () {
 
     it('Invalid curve oid', function (done) {
       expect(decrypt_message(
-        '', 2, 7, [], [], [], ''
+        '', 2, 7, [], [], [], []
       )).to.be.rejectedWith(Error, /Not valid curve/).notify(done);
     });
     it('Invalid ephemeral key', function (done) {
       expect(decrypt_message(
-        'secp256k1', 2, 7, [], [], [], ''
+        'secp256k1', 2, 7, [], [], [], []
       )).to.be.rejectedWith(Error, /Unknown point format/).notify(done);
     });
     it('Invalid key data integrity', function (done) {
       expect(decrypt_message(
-        'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_data, ''
+        'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_data, []
       )).to.be.rejectedWith(Error, /Key Data Integrity failed/).notify(done);
     });
   });

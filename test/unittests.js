@@ -32,7 +32,20 @@ if (typeof Promise === 'undefined') {
 
 describe('Unit Tests', function () {
 
-  if (typeof window !== 'undefined') { afterEach(function () { window.scrollTo(0, document.body.scrollHeight); }); }
+  if (typeof window !== 'undefined') {
+    afterEach(function () {
+      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100) {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    });
+
+    window.location.search.substr(1).split('&').forEach(param => {
+      const [key, value] = param.split('=');
+      if (key && key !== 'grep') {
+        openpgp.config[key] = JSON.parse(value);
+      }
+    });
+  }
 
   require('./crypto');
   require('./general');
