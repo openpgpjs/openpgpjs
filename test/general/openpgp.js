@@ -648,9 +648,8 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('CFB mode (asm.js)', tests, {
-      if: true,
+      if: !(typeof window !== 'undefined' && window.Worker),
       beforeEach: function() {
-        openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
       }
     });
@@ -661,7 +660,6 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       },
       beforeEach: function() {
-        openpgp.config.use_native = true;
         openpgp.config.aead_protect = false;
       },
       after: function() {
@@ -669,61 +667,19 @@ describe('OpenPGP.js public api tests', function() {
       }
     });
 
-    tryTests('GCM mode (native)', tests, {
-      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
+    tryTests('GCM mode', tests, {
+      if: true,
       beforeEach: function() {
-        openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 0;
       }
     });
 
-    tryTests('GCM mode (draft04, asm.js)', tests, {
-      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
-      beforeEach: function() {
-        openpgp.config.use_native = false;
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
-
-        // Monkey-patch AEAD feature flag
-        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
-      }
-    });
-
-    tryTests('GCM mode (draft04, native)', tests, {
-      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
-      beforeEach: function() {
-        openpgp.config.use_native = true;
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
-
-        // Monkey-patch AEAD feature flag
-        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
-      }
-    });
-
-    tryTests('EAX mode (asm.js)', tests, {
+    tryTests('GCM mode (draft04)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.use_native = false;
         openpgp.config.aead_protect = true;
-
-        // Monkey-patch AEAD feature flag
-        publicKey.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.keys[0].users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.keys[0].users[0].selfCertifications[0].features = [7];
-      }
-    });
-
-    tryTests('EAX mode (native)', tests, {
-      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
-      beforeEach: function() {
-        openpgp.config.use_native = true;
-        openpgp.config.aead_protect = true;
+        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];
@@ -733,9 +689,8 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('EAX mode (small chunk size)', tests, {
-      if: openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto(),
+      if: true,
       beforeEach: function() {
-        openpgp.config.use_native = true;
         openpgp.config.aead_protect = true;
         openpgp.config.aead_chunk_size_byte = 0;
 
