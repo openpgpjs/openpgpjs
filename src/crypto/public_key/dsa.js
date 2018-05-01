@@ -68,7 +68,8 @@ export default {
     // directly in the DSA signature algorithm.
     const h = new BN(
       util.getLeftNBits(
-        hash.digest(hash_algo, m), q.bitLength()));
+        hash.digest(hash_algo, m), q.bitLength()))
+      .toRed(redq);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -82,7 +83,7 @@ export default {
       if (zero.cmp(r) === 0) {
         continue;
       }
-      t = h.add(x.mul(r)).toRed(redq); // H(m) + x*r mod q
+      t = h.redAdd(xred.redMul(r)); // H(m) + x*r mod q
       s = k.toRed(redq).redInvm().redMul(t); // k**-1 * (H(m) + x*r) mod q
       if (zero.cmp(s) === 0) {
         continue;
