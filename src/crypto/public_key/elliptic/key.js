@@ -18,7 +18,7 @@
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
- * @requires crypto/public_key/elliptic/curve
+ * @requires crypto/public_key/elliptic/curves
  * @requires crypto/hash
  * @requires util
  * @requires enums
@@ -27,7 +27,7 @@
  */
 
 import BN from 'bn.js';
-import { webCurves, nodeCurves } from './curves';
+import { webCurves } from './curves';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';

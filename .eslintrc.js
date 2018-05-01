@@ -331,7 +331,7 @@ module.exports = {
 
     // Custom warnings:
     "no-console": 0,
-    "no-unused-vars": 0,
+    "no-unused-vars": 1,
     "indent": [ 0, 2, { "SwitchCase": 1 } ],
 
     // TODO Consider fixing these:

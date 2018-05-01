@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires type/ecdh_symkey
  * @requires type/keyid
  * @requires type/mpi
  * @requires crypto
@@ -24,7 +23,6 @@
  * @requires util
  */
 
-import type_ecdh_symkey from '../type/ecdh_symkey';
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
 import crypto from '../crypto';

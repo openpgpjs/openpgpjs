@@ -126,7 +126,6 @@ export default Compressed;
 
 
 const nodeZlib = util.getNodeZlib();
-const Buffer = util.getNodeBuffer();
 
 function node_zlib(func, options = {}) {
   return function (data) {

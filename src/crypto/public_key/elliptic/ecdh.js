@@ -21,7 +21,6 @@
  * @requires crypto/aes_kw
  * @requires crypto/cipher
  * @requires crypto/hash
- * @requires type/oid
  * @requires type/kdf_params
  * @requires enums
  * @requires util
@@ -34,7 +33,6 @@ import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
 import hash from '../../hash';
 import type_kdf_params from '../../../type/kdf_params';
-import type_oid from '../../../type/oid';
 import enums from '../../../enums';
 import util from '../../../util';
 

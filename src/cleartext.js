@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires config
  * @requires encoding/armor
  * @requires enums
  * @requires util
@@ -25,7 +24,6 @@
  * @module cleartext
  */
 
-import config from './config';
 import armor from './encoding/armor';
 import enums from './enums';
 import util from './util';

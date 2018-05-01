@@ -20,7 +20,6 @@
  * @requires bn.js
  * @requires crypto/hash
  * @requires crypto/random
- * @requires config
  * @requires util
  * @module crypto/public_key/dsa
  */
@@ -28,7 +27,6 @@
 import BN from 'bn.js';
 import hash from '../hash';
 import random from '../random';
-import config from '../../config';
 import util from '../../util';
 
 const one = new BN(1);

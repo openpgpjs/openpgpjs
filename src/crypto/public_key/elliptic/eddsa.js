@@ -17,14 +17,10 @@
 
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
- * @requires bn.js
- * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import BN from 'bn.js';
-import hash from '../../hash';
 import Curve from './curves';
 
 /**
