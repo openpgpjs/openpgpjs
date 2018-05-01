@@ -330,11 +330,11 @@ module.exports = {
     "no-constant-condition": [ 2, { "checkLoops": false } ],
 
     // Custom warnings:
-    "no-console": 0,
+    "no-console": 1,
     "no-unused-vars": 1,
-    "indent": [ 0, 2, { "SwitchCase": 1 } ],
 
     // TODO Consider fixing these:
+    "indent": [ 0, 2, { "SwitchCase": 1 } ],
     "valid-jsdoc": 0,
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
     "no-lonely-if": 0,
