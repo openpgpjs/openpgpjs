@@ -86,7 +86,9 @@ self.onmessage = function(event) {
  * @param  {Object} config   The openpgp configuration
  */
 function configure(config) {
-  Object.assign(openpgp.config, config);
+  Object.keys(config).forEach(function(key) {
+    openpgp.config[key] = config[key];
+  });
 }
 
 /**

@@ -27,3 +27,6 @@ if (typeof String.prototype.repeat === 'undefined') {
 if (typeof Symbol === 'undefined') {
   require('core-js/fn/symbol');
 }
+if (typeof Object.assign === 'undefined') {
+  require('core-js/fn/object/assign');
+}
