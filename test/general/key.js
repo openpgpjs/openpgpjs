@@ -1555,6 +1555,7 @@ p92yZgB3r2+f6/GIe2+7
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
     const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, toUserId: {name: 'Test User', email: 'b@c.com'}, armor: false});
     expect(encrypted.message.packets[0].sessionKeyAlgorithm).to.equal('aes128');
+    await expect(openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, toUserId: {name: 'Test User', email: 'c@c.com'}, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Sign - specific user', async function() {
@@ -1574,6 +1575,7 @@ p92yZgB3r2+f6/GIe2+7
     expect(signed.message.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     const encrypted = await openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
     expect(encrypted.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
+    await expect(openpgp.encrypt({data: 'hello', publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Not Test McTestington', email: 'test@example.com'}, detached: true, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Reformat key without passphrase', function() {

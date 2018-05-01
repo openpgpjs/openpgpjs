@@ -491,28 +491,29 @@ Key.prototype.getExpirationTime = async function() {
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
-  if (!this.users.length) {
-    return null;
-  }
-  // sort by userId, primary user flag and signature creation time
-  const primaryUser = this.users.map(function(user, index) {
+  const users = this.users.map(function(user, index) {
     const selfCertification = getLatestSignature(user.selfCertifications, date);
     return { index, user, selfCertification };
-  }).sort(function(a, b) {
-    const A = a.selfCertification;
-    const B = b.selfCertification;
-    return (
-      (a.user.userId.email === userId.email) - (b.user.userId.email === userId.email) ||
-      (a.user.userId.name === userId.name) - (b.user.userId.name === userId.name) ||
-      (a.user.userId.comment === userId.comment) - (b.user.userId.comment === userId.comment) ||
-      A.isPrimaryUserID - B.isPrimaryUserID ||
-      A.created - B.created
+  }).filter(({ user }) => {
+    return user.userId && (
+      (userId.name === undefined || user.userId.name === userId.name) &&
+      (userId.email === undefined || user.userId.email === userId.email) &&
+      (userId.comment === undefined || user.userId.comment === userId.comment)
     );
-  }).pop();
-  const { user, selfCertification: cert } = primaryUser;
-  if (!user.userId) {
+  });
+  if (!users.length) {
+    if (userId) {
+      throw new Error('Could not find user that matches that user ID');
+    }
     return null;
   }
+  // sort by primary user flag and signature creation time
+  const primaryUser = users.sort(function(a, b) {
+    const A = a.selfCertification;
+    const B = b.selfCertification;
+    return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
+  }).pop();
+  const { user, selfCertification: cert } = primaryUser;
   const { primaryKey } = this;
   const dataToVerify = { userid: user.userId , key: primaryKey };
   // skip if certificates is invalid, revoked, or expired
