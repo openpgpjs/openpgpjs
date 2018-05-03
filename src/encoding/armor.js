@@ -19,12 +19,14 @@
  * @requires encoding/base64
  * @requires enums
  * @requires config
+ * @requires util
  * @module encoding/armor
  */
 
 import base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';
+import util from '../util';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
@@ -219,8 +221,8 @@ function verifyHeaders(headers) {
     if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
-    if (config.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
-      console.log('Unknown header: ' + headers[i]);
+    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+      util.print_debug_error(new Error('Unknown header: ' + headers[i]));
     }
   }
 }

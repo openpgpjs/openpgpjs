@@ -46,7 +46,7 @@ function randomCallback() {
     self.postMessage({ event: 'request-seed', amount: MAX_SIZE_RANDOM_BUFFER });
   }
 
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve) {
     randomQueue.push(resolve);
   });
 }
@@ -86,9 +86,9 @@ self.onmessage = function(event) {
  * @param  {Object} config   The openpgp configuration
  */
 function configure(config) {
-  for (var i in config) {
-    openpgp.config[i] = config[i];
-  }
+  Object.keys(config).forEach(function(key) {
+    openpgp.config[key] = config[key];
+  });
 }
 
 /**

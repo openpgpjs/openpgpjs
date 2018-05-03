@@ -20,13 +20,11 @@
 /**
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @requires bn.js
- * @requires type/mpi
  * @requires util
  * @module crypto/random
  */
 
 import BN from 'bn.js';
-import type_mpi from '../type/mpi';
 import util from '../util';
 
 // Do not use util.getNodeCrypto because we need this regardless of use_native setting

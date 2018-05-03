@@ -18,7 +18,7 @@
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
- * @requires crypto/public_key/elliptic/curve
+ * @requires crypto/public_key/elliptic/curves
  * @requires crypto/hash
  * @requires util
  * @requires enums
@@ -27,7 +27,7 @@
  */
 
 import BN from 'bn.js';
-import { webCurves, nodeCurves } from './curves';
+import { webCurves } from './curves';
 import hash from '../../hash';
 import util from '../../../util';
 import enums from '../../../enums';
@@ -228,6 +228,8 @@ async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
 
 // Originally written by Owen Smith https://github.com/omsmith
 // Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
+
+/* eslint-disable no-invalid-this */
 
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 

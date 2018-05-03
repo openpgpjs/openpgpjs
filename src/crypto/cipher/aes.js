@@ -7,7 +7,7 @@ import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/ecb';
 
 // TODO use webCrypto or nodeCrypto when possible.
 function aes(length) {
-  const c = function(key) {
+  const C = function(key) {
     const aes_ecb = new AES_ECB(key, _AES_heap_instance, _AES_asm_instance);
 
     this.encrypt = function(block) {
@@ -19,10 +19,10 @@ function aes(length) {
     };
   };
 
-  c.blockSize = c.prototype.blockSize = 16;
-  c.keySize = c.prototype.keySize = length / 8;
+  C.blockSize = C.prototype.blockSize = 16;
+  C.keySize = C.prototype.keySize = length / 8;
 
-  return c;
+  return C;
 }
 
 export default aes;

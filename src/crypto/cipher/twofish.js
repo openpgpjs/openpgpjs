@@ -1,4 +1,5 @@
-/* eslint-disable no-mixed-operators */
+/* eslint-disable no-mixed-operators, no-fallthrough */
+
 
 /* Modified by Recurity Labs GmbH
  *
@@ -52,11 +53,8 @@ function createTwofish() {
   let dataBytes = null;
   let dataOffset = -1;
   // var dataLength = -1;
-  let algorithmName = null;
   // var idx2 = -1;
   //
-
-  algorithmName = "twofish";
 
   let tfsKey = [];
   let tfsM = [

@@ -17,12 +17,10 @@
 
 /**
  * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
- * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/ecdsa
  */
 
-import hash from '../../hash';
 import Curve from './curves';
 
 /**

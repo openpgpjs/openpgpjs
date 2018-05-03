@@ -28,7 +28,6 @@
  * @requires type/mpi
  * @requires type/oid
  * @requires enums
- * @requires util
  * @module crypto/crypto
  */
 
@@ -40,7 +39,6 @@ import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import enums from '../enums';
-import util from '../util';
 
 function constructParams(types, data) {
   return types.map(function(type, i) {
