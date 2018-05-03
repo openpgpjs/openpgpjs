@@ -17,11 +17,13 @@
 
 /**
  * This object contains utility functions
+ * @requires address-rfc2822
  * @requires config
  * @requires encoding/base64
  * @module util
  */
 
+import rfc2822 from 'address-rfc2822';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
@@ -569,11 +571,27 @@ export default {
     return re.test(data);
   },
 
-  isUserId: function(data) {
-    if (!util.isString(data)) {
-      return false;
+  /**
+   * Format user id for internal use.
+   */
+  formatUserId: function(id) {
+    // name and email address can be empty but must be of the correct type
+    if ((id.name && !util.isString(id.name)) || (id.email && !util.isEmailAddress(id.email))) {
+      throw new Error('Invalid user id format');
     }
-    return /</.test(data) && />$/.test(data);
+    return new rfc2822.Address(id.name, id.email, id.comment).format();
+  },
+
+  /**
+   * Parse user id.
+   */
+  parseUserId: function(userid) {
+    try {
+      const [{ phrase: name, address: email, comment }] = rfc2822.parse(userid);
+      return { name, email, comment: comment.replace(/^\(|\)$/g, '') };
+    } catch(e) {
+      throw new Error('Invalid user id format');
+    }
   },
 
   /**

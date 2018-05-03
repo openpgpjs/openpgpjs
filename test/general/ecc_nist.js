@@ -156,8 +156,14 @@ describe('Elliptic Curve Cryptography', function () {
     return data[name].priv_key;
   }
   it('Load public key', function (done) {
-    load_pub_key('romeo');
-    load_pub_key('juliet');
+    const romeoPublic = load_pub_key('romeo');
+    expect(romeoPublic.users[0].userId.name).to.equal('Romeo Montague');
+    expect(romeoPublic.users[0].userId.email).to.equal('romeo@example.net');
+    expect(romeoPublic.users[0].userId.comment).to.equal('secp256k1');
+    const julietPublic = load_pub_key('juliet');
+    expect(julietPublic.users[0].userId.name).to.equal('Juliet Capulet');
+    expect(julietPublic.users[0].userId.email).to.equal('juliet@example.net');
+    expect(julietPublic.users[0].userId.comment).to.equal('secp256k1');
     done();
   });
   it('Load private key', async function () {

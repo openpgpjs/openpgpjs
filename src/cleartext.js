@@ -70,11 +70,12 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
-CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date()) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date));
+CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date(), userId={}) {
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userId));
 };
 
 /**
@@ -82,14 +83,15 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature=null, da
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
-CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date()) {
+CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date(), userId={}) {
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId));
 };
 
 /**

@@ -29,8 +29,8 @@ module.exports = function(grunt) {
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify asmcrypto and address-rfc2822 in node_modules
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",

@@ -115,7 +115,7 @@ export function destroyWorker() {
  */
 
 export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
@@ -146,7 +146,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  * @static
  */
 export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date}) {
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   const options = { privateKey, userIds, passphrase, keyExpirationTime, date};
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -228,17 +228,19 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                            (optional) override the creation date of the message and the message signature
+ * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @async
  * @static
  */
-export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date()}) {
+export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={} }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, detached, signature, returnSessionKey, wildcard, date });
+    return asyncProxy.delegate('encrypt', { data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, detached, signature, returnSessionKey, wildcard, date, fromUserId, toUserId });
   }
   const result = {};
   return Promise.resolve().then(async function() {
@@ -248,14 +250,14 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        const detachedSignature = await message.signDetached(privateKeys, signature, date);
+        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserId);
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = await message.sign(privateKeys, signature, date);
+        message = await message.sign(privateKeys, signature, date, fromUserId);
       }
     }
     message = message.compress(compression);
-    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId);
 
   }).then(encrypted => {
     if (armor) {
@@ -322,19 +324,20 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
  * @param  {Date} date                          (optional) override the creation date signature
+ * @param  {Object} fromUserId                  (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @async
  * @static
  */
-export function sign({ data, dataType, privateKeys, armor=true, detached=false, date=new Date() }) {
+export function sign({ data, dataType, privateKeys, armor=true, detached=false, date=new Date(), fromUserId={} }) {
   checkData(data);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
-      data, dataType, privateKeys, armor, detached, date
+      data, dataType, privateKeys, armor, detached, date, fromUserId
     });
   }
 
@@ -343,10 +346,10 @@ export function sign({ data, dataType, privateKeys, armor=true, detached=false, 
     let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data, dataType);
 
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, date);
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserId);
       result.signature = armor ? signature.armor() : signature;
     } else {
-      message = await message.sign(privateKeys, undefined, date);
+      message = await message.sign(privateKeys, undefined, date, fromUserId);
       if (armor) {
         result.data = message.armor();
       } else {
@@ -403,20 +406,22 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Date} date                        (optional) override the date
+ * @param  {Object} toUserId                  (optional) user ID to encrypt for, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
  * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard=false }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard=false, date=new Date(), toUserId={} }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserId });
   }
 
   return Promise.resolve().then(async function() {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard) };
+    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserId) };
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }
@@ -482,36 +487,6 @@ function checkCleartextOrMessage(message) {
   if (!(message instanceof CleartextMessage) && !(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
-}
-
-/**
- * Format user ids for internal use.
- */
-function formatUserIds(userIds) {
-  if (!userIds) {
-    return userIds;
-  }
-  userIds = toArray(userIds); // normalize to array
-  userIds = userIds.map(id => {
-    if (util.isString(id) && !util.isUserId(id)) {
-      throw new Error('Invalid user id format');
-    }
-    if (util.isUserId(id)) {
-      return id; // user id is already in correct format... no conversion necessary
-    }
-    // name and email address can be empty but must be of the correct type
-    id.name = id.name || '';
-    id.email = id.email || '';
-    if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
-      throw new Error('Invalid user id format');
-    }
-    id.name = id.name.trim();
-    if (id.name.length > 0) {
-      id.name += ' ';
-    }
-    return id.name + '<' + id.email + '>';
-  });
-  return userIds;
 }
 
 /**
