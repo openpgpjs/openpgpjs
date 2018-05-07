@@ -13,6 +13,7 @@
 
 import Rusha from 'rusha';
 import { SHA256 } from 'asmcrypto.js/src/hash/sha256/exports';
+import sha1 from 'hash.js/lib/hash/sha/1';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
@@ -34,7 +35,14 @@ function node_hash(type) {
 
 function hashjs_hash(hash) {
   return function(data) {
-    return util.hex_to_Uint8Array(hash().update(data).digest('hex'));
+    const hashInstance = hash();
+    return data.transform((done, value) => {
+      if (!done) {
+        hashInstance.update(value);
+      } else {
+        return util.hex_to_Uint8Array(hashInstance.digest('hex'));
+      }
+    });
   };
 }
 
@@ -52,9 +60,10 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
 } else { // Use JS fallbacks
   hash_fns = {
     md5: md5,
-    sha1: function(data) {
+    sha1: hashjs_hash(sha1),
+    /*sha1: function(data) {
       return util.hex_to_Uint8Array(rusha.digest(data));
-    },
+    },*/
     sha224: hashjs_hash(sha224),
     sha256: SHA256.bytes,
     sha384: hashjs_hash(sha384),

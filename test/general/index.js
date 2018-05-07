@@ -13,5 +13,6 @@ describe('General', function () {
   require('./x25519.js');
   require('./brainpool.js');
   require('./decompression.js');
+  require('./streaming.js');
 });
 

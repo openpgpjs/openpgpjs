@@ -12,8 +12,11 @@
  */
 
 /**
+ * @requires util
  * @module encoding/base64
  */
+
+import util from '../util';
 
 const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
 const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
@@ -30,56 +33,62 @@ function s2r(t, u = false) {
   const b64 = u ? b64u : b64s;
   let a;
   let c;
-  let n;
-  const r = [];
+
   let l = 0;
   let s = 0;
-  const tl = t.length;
 
-  for (n = 0; n < tl; n++) {
-    c = t[n];
-    if (s === 0) {
-      r.push(b64.charAt((c >> 2) & 63));
-      a = (c & 3) << 4;
-    } else if (s === 1) {
-      r.push(b64.charAt(a | ((c >> 4) & 15)));
-      a = (c & 15) << 2;
-    } else if (s === 2) {
-      r.push(b64.charAt(a | ((c >> 6) & 3)));
-      l += 1;
-      if ((l % 60) === 0 && !u) {
-        r.push("\n");
+  return t.transform((done, value) => {
+    const r = [];
+
+    if (!done) {
+      const tl = value.length;
+      for (let n = 0; n < tl; n++) {
+        c = value[n];
+        if (s === 0) {
+          r.push(b64.charAt((c >> 2) & 63));
+          a = (c & 3) << 4;
+        } else if (s === 1) {
+          r.push(b64.charAt(a | ((c >> 4) & 15)));
+          a = (c & 15) << 2;
+        } else if (s === 2) {
+          r.push(b64.charAt(a | ((c >> 6) & 3)));
+          l += 1;
+          if ((l % 60) === 0 && !u) {
+            r.push("\n");
+          }
+          r.push(b64.charAt(c & 63));
+        }
+        l += 1;
+        if ((l % 60) === 0 && !u) {
+          r.push("\n");
+        }
+
+        s += 1;
+        if (s === 3) {
+          s = 0;
+        }
       }
-      r.push(b64.charAt(c & 63));
+    } else {
+      if (s > 0) {
+        r.push(b64.charAt(a));
+        l += 1;
+        if ((l % 60) === 0 && !u) {
+          r.push("\n");
+        }
+        if (!u) {
+          r.push('=');
+          l += 1;
+        }
+      }
+      if (s === 1 && !u) {
+        if ((l % 60) === 0 && !u) {
+          r.push("\n");
+        }
+        r.push('=');
+      }
     }
-    l += 1;
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
-    }
-
-    s += 1;
-    if (s === 3) {
-      s = 0;
-    }
-  }
-  if (s > 0) {
-    r.push(b64.charAt(a));
-    l += 1;
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
-    }
-    if (!u) {
-      r.push('=');
-      l += 1;
-    }
-  }
-  if (s === 1 && !u) {
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
-    }
-    r.push('=');
-  }
-  return r.join('');
+    return util.str_to_Uint8Array(r.join(''));
+  });
 }
 
 /**

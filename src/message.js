@@ -674,7 +674,7 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date(), type='binary') {
-  if (!util.isUint8Array(bytes)) {
+  if (!util.isUint8Array(bytes) && !util.isStream(bytes)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 

@@ -101,6 +101,12 @@ export { default as KDFParams } from './type/kdf_params';
 export { default as OID } from './type/oid';
 
 /**
+ * @see module:type/oid
+ * @name module:openpgp.OID
+ */
+export { default as Stream } from './type/stream';
+
+/**
  * @see module:encoding/armor
  * @name module:openpgp.armor
  */

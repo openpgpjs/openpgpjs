@@ -117,12 +117,15 @@ function addheader(customComment) {
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
  * @param {String} data Data to create a CRC-24 checksum for
- * @returns {String} Base64 encoded checksum
+ * @returns {Uint8Array} Base64 encoded checksum
  */
 function getCheckSum(data) {
-  const c = createcrc24(data);
-  const bytes = new Uint8Array([c >> 16, (c >> 8) & 0xFF, c & 0xFF]);
-  return base64.encode(bytes);
+  const crc = createcrc24(data);
+  return base64.encode(crc);
+}
+
+function getCheckSumString(data) {
+  return util.Uint8Array_to_str(getCheckSum(data));
 }
 
 /**
@@ -133,10 +136,11 @@ function getCheckSum(data) {
  * @returns {Boolean} True if the given checksum is correct; otherwise false
  */
 function verifyCheckSum(data, checksum) {
-  const c = getCheckSum(data);
+  const c = getCheckSumString(data);
   const d = checksum;
   return c[0] === d[0] && c[1] === d[1] && c[2] === d[2] && c[3] === d[3];
 }
+
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
  * @param {String} data Data to create a CRC-24 checksum for
@@ -179,11 +183,16 @@ const crc_table = [
 
 function createcrc24(input) {
   let crc = 0xB704CE;
-
-  for (let index = 0; index < input.length; index++) {
-    crc = (crc << 8) ^ crc_table[((crc >> 16) ^ input[index]) & 0xff];
-  }
-  return crc & 0xffffff;
+  return input.transform((done, value) => {
+    if (!done) {
+      for (let index = 0; index < value.length; index++) {
+        crc = (crc << 8) ^ crc_table[((crc >> 16) ^ value[index]) & 0xff];
+      }
+    } else {
+      crc &= 0xffffff;
+      return new Uint8Array([crc >> 16, (crc >> 8) & 0xFF, crc & 0xFF]);
+    }
+  });
 }
 
 /**
@@ -315,7 +324,7 @@ function dearmor(text) {
   if (!verifyCheckSum(result.data, checksum) && (checksum || config.checksum_required)) {
     // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
     throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-      getCheckSum(result.data) + "'");
+      getCheckSumString(result.data) + "'");
   }
 
   verifyHeaders(result.headers);
@@ -335,63 +344,70 @@ function dearmor(text) {
  * @static
  */
 function armor(messagetype, body, partindex, parttotal, customComment) {
+  let text;
+  if (messagetype === enums.armor.signed) {
+    text = body.text;
+    body = body.data;
+  }
+  let bodyClone;
+  [body, bodyClone] = body.tee();
   const result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       break;
     case enums.armor.multipart_last:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP MESSAGE, PART " + partindex + "-----\r\n");
       break;
     case enums.armor.signed:
       result.push("\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n");
       result.push("Hash: " + body.hash + "\r\n\r\n");
-      result.push(body.text.replace(/^-/mg, "- -"));
+      result.push(text.replace(/^-/mg, "- -"));
       result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader(customComment));
-      result.push(base64.encode(body.data));
-      result.push("\r\n=" + getCheckSum(body.data) + "\r\n");
+      result.push(base64.encode(body));
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP SIGNATURE-----\r\n");
       break;
     case enums.armor.message:
       result.push("-----BEGIN PGP MESSAGE-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP MESSAGE-----\r\n");
       break;
     case enums.armor.public_key:
       result.push("-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n");
       break;
     case enums.armor.private_key:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP PRIVATE KEY BLOCK-----\r\n");
       break;
     case enums.armor.signature:
       result.push("-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=" + getCheckSum(body) + "\r\n");
+      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
       result.push("-----END PGP SIGNATURE-----\r\n");
       break;
   }
 
-  return result.join('');
+  return util.concatUint8Array(result.map(part => (util.isString(part) ? util.str_to_Uint8Array(part) : part)));
 }
 
 export default {

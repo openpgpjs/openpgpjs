@@ -29,6 +29,7 @@ import rfc2822 from 'address-rfc2822';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
+import Stream from './type/stream';
 
 const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
@@ -43,6 +44,10 @@ export default {
 
   isUint8Array: function(data) {
     return Uint8Array.prototype.isPrototypeOf(data);
+  },
+
+  isStream: function(data) {
+    return ReadableStream.prototype.isPrototypeOf(data);
   },
 
   /**
@@ -282,6 +287,9 @@ export default {
   concatUint8Array: function (arrays) {
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
+      if (util.isStream(arrays[i])) {
+        return Stream.concat(arrays);
+      }
       if (!util.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }
@@ -407,6 +415,14 @@ export default {
     if (config.debug) {
       console.error(error);
     }
+  },
+
+  print_entire_stream: function (str, stream) {
+    const teed = stream.tee();
+    teed[1].readToEnd().then(result => {
+      console.log(str + ': ' + util.Uint8Array_to_str(result));
+    });
+    return teed[0];
   },
 
   getLeftNBits: function (array, bitcount) {

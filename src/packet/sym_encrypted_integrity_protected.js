@@ -22,7 +22,9 @@
  * @requires util
  */
 
-import { AES_CFB } from 'asmcrypto.js/src/aes/cfb/exports';
+import { _AES_asm_instance, _AES_heap_instance } from 'asmcrypto.js/src/aes/exports';
+import { AES_CFB, AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/exports';
+
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -89,12 +91,12 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const prefix = util.concatUint8Array([prefixrandom, repeat]);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let tohash = util.concatUint8Array([bytes, mdc]);
-  const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohash]));
+  let [tohash, tohashClone] = util.concatUint8Array([bytes, mdc]).tee();
+  const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohashClone]));
   tohash = util.concatUint8Array([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = aesEncrypt(sessionKeyAlgorithm, prefix, tohash, key);
+    this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concatUint8Array([prefix, tohash]), key);
   } else {
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
     this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
@@ -144,11 +146,17 @@ export default SymEncryptedIntegrityProtected;
 //////////////////////////
 
 
-function aesEncrypt(algo, prefix, pt, key) {
+function aesEncrypt(algo, pt, key) {
   if (nodeCrypto) { // Node crypto library.
-    return nodeEncrypt(algo, prefix, pt, key);
+    return nodeEncrypt(algo, pt, key);
   } // asm.js fallback
-  return AES_CFB.encrypt(util.concatUint8Array([prefix, pt]), key);
+  const cfb = new AES_CFB_Encrypt(key, undefined, _AES_heap_instance, _AES_asm_instance);
+  return pt.transform((done, value) => {
+    if (!done) {
+      return cfb.process(value).result;
+    }
+    return cfb.finish().result;
+  });
 }
 
 function aesDecrypt(algo, ct, key) {

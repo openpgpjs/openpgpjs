@@ -536,8 +536,8 @@ function checkBinary(data, name) {
   }
 }
 function checkData(data, name) {
-  if (!util.isUint8Array(data) && !util.isString(data)) {
-    throw new Error('Parameter [' + (name || 'data') + '] must be of type String or Uint8Array');
+  if (!util.isUint8Array(data) && !util.isString(data) && !util.isStream(data)) {
+    throw new Error('Parameter [' + (name || 'data') + '] must be of type String, Uint8Array or ReadableStream');
   }
 }
 function checkMessage(message) {
@@ -573,7 +573,7 @@ function toArray(param) {
  */
 function createMessage(data, filename, date=new Date(), type) {
   let msg;
-  if (util.isUint8Array(data)) {
+  if (util.isUint8Array(data) || util.isStream(data)) {
     msg = messageLib.fromBinary(data, filename, date, type);
   } else if (util.isString(data)) {
     msg = messageLib.fromText(data, filename, date, type);
