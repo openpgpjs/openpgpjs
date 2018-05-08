@@ -72,8 +72,31 @@ List.prototype.write = function () {
 
   for (let i = 0; i < this.length; i++) {
     const packetbytes = this[i].write();
-    arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
-    arr.push(packetbytes);
+    if (util.isStream(packetbytes)) {
+      let buffer = [];
+      let bufferLength = 0;
+      const minLength = 512;
+      arr.push(packetParser.writeTag(this[i].tag));
+      arr.push(packetbytes.transform((done, value) => {
+        if (!done) {
+          buffer.push(value);
+          bufferLength += value.length;
+          if (bufferLength >= minLength) {
+            const powerOf2 = Math.min(Math.log(bufferLength) / Math.LN2 | 0, 30);
+            const chunkSize = 2 ** powerOf2;
+            const bufferConcat = util.concatUint8Array([packetParser.writePartialLength(powerOf2)].concat(buffer));
+            buffer = [bufferConcat.subarray(1 + chunkSize)];
+            bufferLength = buffer[0].length;
+            return bufferConcat.subarray(0, 1 + chunkSize);
+          }
+        } else {
+          return util.concatUint8Array([packetParser.writeSimpleLength(bufferLength)].concat(buffer));
+        }
+      }));
+    } else {
+      arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+      arr.push(packetbytes);
+    }
   }
 
   return util.concatUint8Array(arr);
