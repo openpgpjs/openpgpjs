@@ -653,7 +653,7 @@ yYDnCgA=
     const plaintext = 'short message\nnext line\n한국어/조선말';
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -673,7 +673,7 @@ yYDnCgA=
     const plaintext = pub_key_arm2;
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -693,7 +693,7 @@ yYDnCgA=
     const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -713,7 +713,7 @@ yYDnCgA=
     const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext }).then(function(signed) {
 
@@ -733,7 +733,7 @@ yYDnCgA=
     const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line\n한국어/조선말');
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, armor:false }).then(function(signed) {
 
@@ -753,7 +753,7 @@ yYDnCgA=
     const plaintext = 'short message\nnext line\n한국어/조선말';
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    await privKey.primaryKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
     return openpgp.sign({ privateKeys:[privKey], data:plaintext, detached: true}).then(function(signed) {
       const signature = openpgp.signature.readArmored(signed.signature);
       return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.str_to_Uint8Array(openpgp.util.encode_utf8(plaintext))), signature: signature });

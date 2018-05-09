@@ -287,11 +287,6 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
 Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    const primaryUser = await this.getPrimaryUser(date, userId);
-    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
-      return primaryKey;
-    }
     for (let i = 0; i < this.subKeys.length; i++) {
       if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
@@ -302,6 +297,11 @@ Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(),
           }
         }
       }
+    }
+    const primaryUser = await this.getPrimaryUser(date, userId);
+    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
+      return primaryKey;
     }
   }
   return null;
