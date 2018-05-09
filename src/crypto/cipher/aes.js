@@ -2,13 +2,12 @@
  * @requires asmcrypto.js
  */
 
-import { _AES_asm_instance, _AES_heap_instance } from 'asmcrypto.js/src/aes/exports';
 import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/ecb';
 
 // TODO use webCrypto or nodeCrypto when possible.
 function aes(length) {
   const C = function(key) {
-    const aes_ecb = new AES_ECB(key, _AES_heap_instance, _AES_asm_instance);
+    const aes_ecb = new AES_ECB(key);
 
     this.encrypt = function(block) {
       return aes_ecb.encrypt(block).result;

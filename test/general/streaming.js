@@ -57,4 +57,34 @@ describe('Streaming', function() {
     });
     expect(decrypted.data).to.deep.equal(util.concatUint8Array(plaintext));
   });
+
+  it('Encrypt and decrypt larger message roundtrip', async function() {
+    let plaintext = [];
+    let i = 0;
+    const data = new ReadableStream({
+      async pull(controller) {
+        if (i++ < 10) {
+          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          controller.enqueue(randomBytes);
+          plaintext.push(randomBytes);
+        } else {
+          controller.close();
+        }
+      }
+    });
+    const encrypted = await openpgp.encrypt({
+      data,
+      passwords: ['test'],
+    });
+
+    const msgAsciiArmored = encrypted.data;
+    const message = await openpgp.message.readArmored(msgAsciiArmored);
+    const decrypted = await openpgp.decrypt({
+      passwords: ['test'],
+      message,
+      format: 'binary'
+    });
+    expect(util.isStream(decrypted.data)).to.be.true;
+    expect(await decrypted.data.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
+  });
 });

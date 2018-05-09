@@ -174,7 +174,7 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
-    return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
+    return b64.decode(util.str_to_Uint8Array(base64.replace(/-/g, '+').replace(/_/g, '/')));
   },
 
   /**
@@ -417,12 +417,16 @@ export default {
     }
   },
 
-  print_entire_stream: function (str, stream) {
+  print_entire_stream: function (str, stream, fn = result => result) {
     const teed = stream.tee();
     teed[1].readToEnd().then(result => {
-      console.log(str + ': ' + util.Uint8Array_to_str(result));
+      console.log(str + ': ', fn(result));
     });
     return teed[0];
+  },
+
+  print_entire_stream_str: function (str, stream, fn = result => result) {
+    return util.print_entire_stream(str, stream, result => fn(util.Uint8Array_to_str(result)));
   },
 
   getLeftNBits: function (array, bitcount) {

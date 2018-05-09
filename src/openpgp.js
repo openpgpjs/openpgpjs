@@ -357,9 +357,10 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, signature, date });
   }
 
+  const asStream = message.fromStream;
   return message.decrypt(privateKeys, passwords, sessionKeys).then(async function(message) {
 
-    const result = parseMessage(message, format);
+    const result = await parseMessage(message, format, asStream);
 
     if (!publicKeys) {
       publicKeys = [];
@@ -587,21 +588,26 @@ function createMessage(data, filename, date=new Date(), type) {
  * Parse the message given a certain format.
  * @param  {Message} message   the message object to be parse
  * @param  {String} format     the output format e.g. 'utf8' or 'binary'
+ * @param  {Boolean} asStream  whether to return a ReadableStream, if available
  * @returns {Object}            the parse data in the respective format
  */
-function parseMessage(message, format) {
+async function parseMessage(message, format, asStream) {
+  let data;
   if (format === 'binary') {
-    return {
-      data: message.getLiteralData(),
-      filename: message.getFilename()
-    };
+    data = message.getLiteralData();
+    if (!asStream && util.isStream(data)) {
+      data = await data.readToEnd();
+    }
   } else if (format === 'utf8') {
-    return {
-      data: message.getText(),
-      filename: message.getFilename()
-    };
+    data = message.getText();
+    if (!asStream && util.isStream(data)) {
+      data = await data.readToEnd(chunks => chunks.join(''));
+    }
+  } else {
+    throw new Error('Invalid format');
   }
-  throw new Error('Invalid format');
+  const filename = message.getFilename();
+  return { data, filename };
 }
 
 /**

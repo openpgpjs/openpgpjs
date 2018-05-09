@@ -54,6 +54,10 @@ Literal.prototype.setText = function(text, format='utf8') {
   this.data = null;
 };
 
+function normalize(text) {
+  return util.nativeEOL(util.decode_utf8(text));
+}
+
 /**
  * Returns literal data packets as native JavaScript string
  * with normalized end of line to \n
@@ -63,10 +67,24 @@ Literal.prototype.getText = function() {
   if (this.text !== null) {
     return this.text;
   }
-  // decode UTF8
-  const text = util.decode_utf8(util.Uint8Array_to_str(this.data));
-  // normalize EOL to \n
-  this.text = util.nativeEOL(text);
+  let lastChar = '';
+  this.text = this.data.transform((done, value) => {
+    if (!done) {
+      const text = lastChar + util.Uint8Array_to_str(value);
+      // decode UTF8 and normalize EOL to \n
+      const normalized = normalize(text);
+      // if last two bytes are \r\n or an UTF8 sequence, return them immediately
+      if (text.length >= 2 && normalize(text.slice(-2)).length === 1) {
+        lastChar = '';
+        return normalized;
+      }
+      // else, store the last character for the next chunk in case it's \r or half an UTF8 sequence
+      lastChar = text[text.length - 1];
+      return normalized.slice(0, -1);
+    } else {
+      return lastChar;
+    }
+  });
   return this.text;
 };
 
@@ -123,16 +141,17 @@ Literal.prototype.getFilename = function() {
  * @param {Uint8Array} input Payload of a tag 11 packet
  * @returns {module:packet.Literal} object representation
  */
-Literal.prototype.read = function(bytes) {
+Literal.prototype.read = async function(bytes) {
+  const reader = bytes.getReader();
   // - A one-octet field that describes how the data is formatted.
-  const format = enums.read(enums.literal, bytes[0]);
+  const format = enums.read(enums.literal, await reader.readByte());
 
-  const filename_len = bytes[1];
-  this.filename = util.decode_utf8(util.Uint8Array_to_str(bytes.subarray(2, 2 + filename_len)));
+  const filename_len = await reader.readByte();
+  this.filename = util.decode_utf8(util.Uint8Array_to_str(await reader.readBytes(filename_len)));
 
-  this.date = util.readDate(bytes.subarray(2 + filename_len, 2 + filename_len + 4));
+  this.date = util.readDate(await reader.readBytes(4));
 
-  const data = bytes.subarray(6 + filename_len, bytes.length);
+  const data = reader.substream();
 
   this.setBytes(data, format);
 };

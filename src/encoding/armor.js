@@ -41,7 +41,7 @@ import util from '../util';
  *         6 = SIGNATURE
  */
 function getType(text) {
-  const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$\n/m;
+  const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$/m;
 
   const header = text.match(reHeader);
 
@@ -269,6 +269,85 @@ function splitChecksum(text) {
  * an attribute "data" containing the bytes and "type" for the ASCII armor type
  * @static
  */
+function dearmorStream(text) {
+  return new Promise(async (resolve, reject) => {
+    const reSplit = /^-----[^-]+-----$/;
+    const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
+
+    const reader = text.getReader();
+    let lineIndex = 0;
+    let type;
+    const headers = {};
+    let headersDone;
+    let controller;
+    let [data, dataClone] = base64.decode(new ReadableStream({
+      async start(_controller) {
+        controller = _controller;
+      }
+    })).tee();
+    let checksum;
+    const checksumVerified = getCheckSum(dataClone);
+    data = data.transform(async (done, value) => {
+      if (!done) {
+        return value;
+      }
+      const checksumVerifiedString = util.Uint8Array_to_str(await checksumVerified.readToEnd());
+      if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
+        throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
+                checksumVerifiedString + "'");
+      }
+    });
+    while (true) {
+      const value = await reader.readLine();
+      if (!value) break;
+      let text = util.Uint8Array_to_str(value);
+      if (lineIndex++ === 0) {
+        // trim string
+        text = text.trim();
+      }
+      // remove trailing whitespace at end of lines
+      text = text.replace(/[\t\r\n ]+$/g, '');
+      if (!type) {
+        if (reSplit.test(text)) {
+          type = getType(text);
+        }
+      } else if(!headersDone) {
+        if (reSplit.test(text)) {
+          reject(new Error('Mandatory blank line missing between armor headers and armor data'));
+        }
+        if (!reEmptyLine.test(text)) {
+          // Parse header
+        } else {
+          headersDone = true;
+          resolve({
+            type,
+            data
+          });
+        }
+      } else {
+        if (!reSplit.test(text)) {
+          if (text[0] !== '=') {
+            controller.enqueue(util.str_to_Uint8Array(text));
+          } else {
+            checksum = text.substr(1);
+          }
+        } else {
+          controller.close();
+          break;
+        }
+      }
+    }
+  });
+}
+
+/**
+ * DeArmor an OpenPGP armored message; verify the checksum and return
+ * the encoded bytes
+ * @param {String} text OpenPGP armored message
+ * @returns {Object} An object with attribute "text" containing the message text,
+ * an attribute "data" containing the bytes and "type" for the ASCII armor type
+ * @static
+ */
 function dearmor(text) {
   const reSplit = /^-----[^-]+-----$\n/m;
 
@@ -298,7 +377,7 @@ function dearmor(text) {
     const msg_sum = splitChecksum(msg.body);
 
     result = {
-      data: base64.decode(msg_sum.body),
+      data: base64.decode(util.str_to_Uint8Array(msg_sum.body)),
       headers: msg.headers,
       type: type
     };
@@ -313,7 +392,7 @@ function dearmor(text) {
 
     result = {
       text: msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
-      data: base64.decode(sig_sum.body),
+      data: base64.decode(util.str_to_Uint8Array(sig_sum.body)),
       headers: msg.headers,
       type: type
     };
@@ -412,5 +491,6 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
 
 export default {
   encode: armor,
-  decode: dearmor
+  decode: dearmor,
+  decodeStream: dearmorStream
 };

@@ -122,6 +122,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
       await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data);
       break;
     } catch (e) {
+      util.print_debug_error(e);
       exception = e;
     }
   }
@@ -624,11 +625,39 @@ Message.prototype.armor = function() {
  * @returns {module:message.Message} new message object
  * @static
  */
+async function readArmoredStream(armoredText) {
+  const input = await armor.decodeStream(armoredText);
+  return readStream(input.data);
+}
+
+/**
+ * reads an OpenPGP armored message and returns a message object
+ * @param {String} armoredText text to be parsed
+ * @returns {module:message.Message} new message object
+ * @static
+ */
 export function readArmored(armoredText) {
+  if (util.isStream(armoredText)) {
+    return readArmoredStream(armoredText);
+  }
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   const input = armor.decode(armoredText).data;
   return read(input);
+}
+
+/**
+ * reads an OpenPGP message as byte array and returns a message object
+ * @param {Uint8Array} input   binary message
+ * @returns {Message}           new message object
+ * @static
+ */
+async function readStream(input) {
+  const packetlist = new packet.List();
+  await packetlist.readStream(input);
+  const message = new Message(packetlist);
+  message.fromStream = true;
+  return message;
 }
 
 /**
