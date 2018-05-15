@@ -21,14 +21,14 @@ function getReader(input) {
   return new Reader(input);
 }
 
-function transform(input, fn) {
+function transform(input, process = () => undefined, finish = () => undefined) {
   if (util.isStream(input)) {
     const reader = getReader(input);
     return new ReadableStream({
       async pull(controller) {
         try {
           const { done, value } = await reader.read();
-          const result = await fn(done, value);
+          const result = await (!done ? process : finish)(value);
           if (result) controller.enqueue(result);
           else if (!done) await this.pull(controller); // ??? Chrome bug?
           if (done) controller.close();
@@ -38,8 +38,8 @@ function transform(input, fn) {
       }
     });
   }
-  const result1 = fn(false, input);
-  const result2 = fn(true, undefined);
+  const result1 = process(input);
+  const result2 = finish(undefined);
   if (result1 && result2) return util.concatUint8Array([result1, result2]);
   return result1 || result2;
 }

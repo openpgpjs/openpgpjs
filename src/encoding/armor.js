@@ -168,16 +168,11 @@ const crc_table = [
 
 function createcrc24(input) {
   let crc = 0xB704CE;
-  return stream.transform(input, (done, value) => {
-    if (!done) {
-      for (let index = 0; index < value.length; index++) {
-        crc = (crc << 8) ^ crc_table[((crc >> 16) ^ value[index]) & 0xff];
-      }
-    } else {
-      crc &= 0xffffff;
-      return new Uint8Array([crc >> 16, (crc >> 8) & 0xFF, crc & 0xFF]);
+  return stream.transform(input, value => {
+    for (let index = 0; index < value.length; index++) {
+      crc = (crc << 8) ^ crc_table[((crc >> 16) ^ value[index]) & 0xff];
     }
-  });
+  }, () => new Uint8Array([crc >> 16, crc >> 8, crc]));
 }
 
 /**

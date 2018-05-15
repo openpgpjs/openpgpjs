@@ -39,55 +39,54 @@ function s2r(t, u = false) {
   let l = 0;
   let s = 0;
 
-  return stream.transform(t, (done, value) => {
+  return stream.transform(t, value => {
     const r = [];
-
-    if (!done) {
-      const tl = value.length;
-      for (let n = 0; n < tl; n++) {
-        c = value[n];
-        if (s === 0) {
-          r.push(b64[(c >> 2) & 63]);
-          a = (c & 3) << 4;
-        } else if (s === 1) {
-          r.push(b64[a | ((c >> 4) & 15)]);
-          a = (c & 15) << 2;
-        } else if (s === 2) {
-          r.push(b64[a | ((c >> 6) & 3)]);
-          l += 1;
-          if ((l % 60) === 0 && !u) {
-            r.push(10); // "\n"
-          }
-          r.push(b64[c & 63]);
-        }
+    const tl = value.length;
+    for (let n = 0; n < tl; n++) {
+      c = value[n];
+      if (s === 0) {
+        r.push(b64[(c >> 2) & 63]);
+        a = (c & 3) << 4;
+      } else if (s === 1) {
+        r.push(b64[a | ((c >> 4) & 15)]);
+        a = (c & 15) << 2;
+      } else if (s === 2) {
+        r.push(b64[a | ((c >> 6) & 3)]);
         l += 1;
         if ((l % 60) === 0 && !u) {
           r.push(10); // "\n"
         }
+        r.push(b64[c & 63]);
+      }
+      l += 1;
+      if ((l % 60) === 0 && !u) {
+        r.push(10); // "\n"
+      }
 
-        s += 1;
-        if (s === 3) {
-          s = 0;
-        }
+      s += 1;
+      if (s === 3) {
+        s = 0;
       }
-    } else {
-      if (s > 0) {
-        r.push(b64[a]);
-        l += 1;
-        if ((l % 60) === 0 && !u) {
-          r.push(10); // "\n"
-        }
-        if (!u) {
-          r.push(61); // "="
-          l += 1;
-        }
+    }
+    return new Uint8Array(r);
+  }, () => {
+    const r = [];
+    if (s > 0) {
+      r.push(b64[a]);
+      l += 1;
+      if ((l % 60) === 0 && !u) {
+        r.push(10); // "\n"
       }
-      if (s === 1 && !u) {
-        if ((l % 60) === 0 && !u) {
-          r.push(10); // "\n"
-        }
+      if (!u) {
         r.push(61); // "="
+        l += 1;
       }
+    }
+    if (s === 1 && !u) {
+      if ((l % 60) === 0 && !u) {
+        r.push(10); // "\n"
+      }
+      r.push(61); // "="
     }
     return new Uint8Array(r);
   });
@@ -108,22 +107,20 @@ function r2s(t, u) {
   let s = 0;
   let a = 0;
 
-  return stream.transform(t, (done, value) => {
-    if (!done) {
-      const r = [];
-      const tl = value.length;
-      for (let n = 0; n < tl; n++) {
-        c = b64.indexOf(value[n]);
-        if (c >= 0) {
-          if (s) {
-            r.push(a | ((c >> (6 - s)) & 255));
-          }
-          s = (s + 2) & 7;
-          a = (c << s) & 255;
+  return stream.transform(t, value => {
+    const r = [];
+    const tl = value.length;
+    for (let n = 0; n < tl; n++) {
+      c = b64.indexOf(value[n]);
+      if (c >= 0) {
+        if (s) {
+          r.push(a | ((c >> (6 - s)) & 255));
         }
+        s = (s + 2) & 7;
+        a = (c << s) & 255;
       }
-      return new Uint8Array(r);
     }
+    return new Uint8Array(r);
   });
 }
 

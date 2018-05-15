@@ -38,13 +38,9 @@ function node_hash(type) {
 function hashjs_hash(hash) {
   return function(data) {
     const hashInstance = hash();
-    return stream.transform(data, (done, value) => {
-      if (!done) {
-        hashInstance.update(value);
-      } else {
-        return util.hex_to_Uint8Array(hashInstance.digest('hex'));
-      }
-    });
+    return stream.transform(data, value => {
+      hashInstance.update(value);
+    }, () => util.hex_to_Uint8Array(hashInstance.digest('hex')));
   };
 }
 

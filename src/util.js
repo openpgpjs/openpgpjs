@@ -29,7 +29,7 @@ import rfc2822 from 'address-rfc2822';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
-import Stream from './stream';
+import stream from './stream';
 
 const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
@@ -290,7 +290,7 @@ export default {
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
       if (util.isStream(arrays[i])) {
-        return Stream.concat(arrays);
+        return stream.concat(arrays);
       }
       if (!util.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
@@ -628,11 +628,7 @@ export default {
    * Normalize line endings to \r\n
    */
   canonicalizeEOL: function(text) {
-    return stream.transform(text, (done, value) => {
-      if (!done) {
-        return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
-      }
-    });
+    return stream.transform(text, value => value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
   },
 
   /**

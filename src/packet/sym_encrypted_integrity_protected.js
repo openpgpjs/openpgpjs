@@ -158,12 +158,7 @@ function aesEncrypt(algo, pt, key) {
     return nodeEncrypt(algo, pt, key);
   } // asm.js fallback
   const cfb = new AES_CFB_Encrypt(key);
-  return stream.transform(pt, (done, value) => {
-    if (!done) {
-      return cfb.process(value).result;
-    }
-    return cfb.finish().result;
-  });
+  return stream.transform(pt, value => cfb.process(value).result, () => cfb.finish().result);
 }
 
 function aesDecrypt(algo, ct, key) {
@@ -172,12 +167,7 @@ function aesDecrypt(algo, ct, key) {
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
     const cfb = new AES_CFB_Decrypt(key);
-    pt = stream.transform(ct, (done, value) => {
-      if (!done) {
-        return cfb.process(value).result;
-      }
-      return cfb.finish().result;
-    });
+    pt = stream.transform(ct, value => cfb.process(value).result, () => cfb.finish().result);
   }
   return stream.subarray(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
 }
