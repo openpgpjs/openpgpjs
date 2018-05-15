@@ -226,15 +226,17 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   str_to_Uint8Array: function (str) {
-    if (!util.isString(str)) {
-      throw new Error('str_to_Uint8Array: Data must be in the form of a string');
-    }
+    return stream.transform(str, str => {
+      if (!util.isString(str)) {
+        throw new Error('str_to_Uint8Array: Data must be in the form of a string');
+      }
 
-    const result = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-    return result;
+      const result = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        result[i] = str.charCodeAt(i);
+      }
+      return result;
+    });
   },
 
   /**
@@ -260,7 +262,7 @@ export default {
    * @returns {String} A valid squence of utf8 bytes
    */
   encode_utf8: function (str) {
-    return unescape(encodeURIComponent(str));
+    return stream.transform(str, value => unescape(encodeURIComponent(value)));
   },
 
   /**
@@ -626,7 +628,11 @@ export default {
    * Normalize line endings to \r\n
    */
   canonicalizeEOL: function(text) {
-    return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+    return stream.transform(text, (done, value) => {
+      if (!done) {
+        return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+      }
+    });
   },
 
   /**

@@ -64,12 +64,11 @@ function normalize(text) {
  * @returns {String} literal data as text
  */
 Literal.prototype.getText = function() {
-  if (this.text !== null) {
-    return this.text;
-  }
-  let lastChar = '';
-  this.text = this.data.transform((done, value) => {
-    if (!done) {
+  let text;
+  if (this.text === null) {
+    let lastChar = '';
+    [this.data, this.text] = this.data.tee();
+    this.text = stream.transform(this.text, value => {
       const text = lastChar + util.Uint8Array_to_str(value);
       // decode UTF8 and normalize EOL to \n
       const normalized = normalize(text);
@@ -81,11 +80,10 @@ Literal.prototype.getText = function() {
       // else, store the last character for the next chunk in case it's \r or half an UTF8 sequence
       lastChar = text[text.length - 1];
       return normalized.slice(0, -1);
-    } else {
-      return lastChar;
-    }
-  });
-  return this.text;
+    }, () => lastChar);
+  }
+  [text, this.text] = this.text.tee();
+  return text;
 };
 
 /**
