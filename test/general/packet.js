@@ -96,7 +96,7 @@ describe("Packet", function() {
 
     const msg2 = new openpgp.packet.List();
     msg2.read(message.write());
-    await expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC in combination with modern cipher.');
+    await expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC.');
   });
 
   it('Sym. encrypted integrity protected packet', async function() {
