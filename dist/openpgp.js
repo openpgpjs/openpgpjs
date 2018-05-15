@@ -1,4 +1,266 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+'use strict';
+
+var _classCallCheck2 = _dereq_('babel-runtime/helpers/classCallCheck');
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _createClass2 = _dereq_('babel-runtime/helpers/createClass');
+
+var _createClass3 = _interopRequireDefault(_createClass2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var ea_lib = _dereq_('email-addresses');
+
+exports.parse = function parse(line, startAt) {
+    if (!line) throw 'Nothing to parse';
+
+    line = line.trim();
+
+    var addr = ea_lib({
+        input: line,
+        rfc6532: true, // unicode
+        partial: false, // return failed parses
+        simple: false, // simple AST
+        strict: false, // turn off obs- features in the rfc
+        rejectTLD: false, // domains require a "."
+        startAt: startAt || null
+    });
+
+    if (!addr) throw 'No results';
+
+    // console.log("Parsed to: ", require('util').inspect(addr, {depth: 10, colors: true}));
+
+    return addr.addresses.map(map_addresses);
+};
+
+function map_addresses(adr) {
+    if (adr.type === 'group') {
+        return new Group(adr.name, adr.addresses.map(map_addresses));
+    }
+    var comments = void 0;
+    if (adr.parts.comments) {
+        comments = adr.parts.comments.map(function (c) {
+            return c.tokens.trim();
+        }).join(' ').trim();
+        // if (comments.length) {
+        //     comments = '(' + comments + ')';
+        // }
+    }
+    var l = adr.local;
+    if (!adr.name && /:/.test(l)) l = '"' + l + '"';
+    return new Address(adr.name, l + '@' + adr.domain, comments);
+}
+
+exports.parseFrom = function (line) {
+    return exports.parse(line, 'from');
+};
+
+exports.parseSender = function (line) {
+    return exports.parse(line, 'sender');
+};
+
+exports.parseReplyTo = function (line) {
+    return exports.parse(line, 'reply-to');
+};
+
+var Group = function () {
+    function Group(display_name, addresses) {
+        (0, _classCallCheck3.default)(this, Group);
+
+        this.phrase = display_name;
+        this.addresses = addresses;
+    }
+
+    (0, _createClass3.default)(Group, [{
+        key: 'format',
+        value: function format() {
+            return this.phrase + ":" + this.addresses.map(function (a) {
+                return a.format();
+            }).join(',');
+        }
+    }, {
+        key: 'name',
+        value: function name() {
+            var phrase = this.phrase;
+
+            if (!(phrase && phrase.length)) {
+                phrase = this.comment;
+            }
+
+            var name = _extract_name(phrase);
+            return name;
+        }
+    }]);
+    return Group;
+}();
+
+var Address = function () {
+    function Address(phrase, address, comment) {
+        (0, _classCallCheck3.default)(this, Address);
+
+        this.phrase = phrase || '';
+        this.address = address || '';
+        this.comment = comment || '';
+    }
+
+    (0, _createClass3.default)(Address, [{
+        key: 'host',
+        value: function host() {
+            var match = /.*@(.*)$/.exec(this.address);
+            if (!match) return null;
+            return match[1];
+        }
+    }, {
+        key: 'user',
+        value: function user() {
+            var match = /^(.*)@/.exec(this.address);
+            if (!match) return null;
+            return match[1];
+        }
+    }, {
+        key: 'format',
+        value: function format() {
+            var phrase = this.phrase;
+            var email = this.address;
+            var comment = this.comment;
+
+            var addr = [];
+            var atext = new RegExp('^[\\-\\w !#$%&\'*+/=?^`{|}~]+$');
+
+            if (phrase && phrase.length) {
+                addr.push(atext.test(phrase.trim()) ? phrase : _quote_no_esc(phrase) ? phrase : '"' + phrase + '"');
+
+                if (email && email.length) {
+                    addr.push("<" + email + ">");
+                }
+            } else if (email && email.length) {
+                addr.push(email);
+            }
+
+            if (comment && /\S/.test(comment)) {
+                comment = comment.replace(/^\s*\(?/, '(').replace(/\)?\s*$/, ')');
+            }
+
+            if (comment && comment.length) {
+                addr.push(comment);
+            }
+
+            return addr.join(' ');
+        }
+    }, {
+        key: 'name',
+        value: function name() {
+            var phrase = this.phrase;
+            var addr = this.address;
+
+            if (!(phrase && phrase.length)) {
+                phrase = this.comment;
+            }
+
+            var name = _extract_name(phrase);
+
+            // first.last@domain address
+            if (name === '') {
+                var match = /([^%.@_]+([._][^%.@_]+)+)[@%]/.exec(addr);
+                if (match) {
+                    name = match[1].replace(/[._]+/g, ' ');
+                    name = _extract_name(name);
+                }
+            }
+
+            if (name === '' && /\/g=/i.test(addr)) {
+                // X400 style address
+                var _match = /\/g=([^/]*)/i.exec(addr);
+                var f = _match[1];
+                _match = /\/s=([^/]*)/i.exec(addr);
+                var l = _match[1];
+                name = _extract_name(f + " " + l);
+            }
+
+            return name;
+        }
+    }]);
+    return Address;
+}();
+
+exports.Address = Address;
+
+// This is because JS regexps have no equivalent of
+// zero-width negative look-behind assertion for: /(?<!\\)"/
+function _quote_no_esc(str) {
+    if (/^"/.test(str)) return true;
+    var match = void 0;
+    while (match = /^[\s\S]*?([\s\S])"/.exec(str)) {
+        if (match[1] !== '\\') {
+            return true;
+        }
+        str = str.substr(match[0].length);
+    }
+    return false;
+}
+
+exports.isAllLower = function (string) {
+    return string === string.toLowerCase();
+};
+
+exports.isAllUpper = function (string) {
+    return string === string.toUpperCase();
+};
+
+exports.nameCase = function (string) {
+
+    return string.toLowerCase().replace(/\b(\w+)/g, function (_, d1) {
+        // Set the case of the name to first char upper rest lower
+        return d1.charAt(0).toUpperCase() + d1.slice(1);
+    }).replace(/\bMc(\w)/gi, function (_, d1) {
+        // Scottish names such as 'McLeod'
+        return 'Mc' + d1.toUpperCase();
+    }).replace(/\bo'(\w)/gi, function (_, d1) {
+        // Irish names such as 'O'Malley, O'Reilly'
+        return 'O\'' + d1.toUpperCase();
+    }).replace(/\b(x*(ix)?v*(iv)?i*)\b/ig, function (_, d1) {
+        // Roman numerals, eg 'Level III Support'
+        return d1.toUpperCase();
+    });
+};
+
+// given a comment, attempt to extract a person's name
+function _extract_name(name) {
+    // Using encodings, too hard. See Mail::Message::Field::Full.
+    if (/=?.*?\?=/.test(name)) return '';
+
+    // trim whitespace
+    name = name.trim();
+    name = name.replace(/\s+/, ' ');
+
+    // Disregard numeric names (e.g. 123456.1234@compuserve.com)
+    if (/^[\d ]+$/.test(name)) return '';
+
+    name = name.replace(/^\((.*)\)$/, '$1') // remove outermost parenthesis
+    .replace(/^"(.*)"$/, '$1') // remove outer quotation marks
+    .replace(/\(.*?\)/g, '') // remove minimal embedded comments
+    .replace(/\\/g, '') // remove all escapes
+    .replace(/^"(.*)"$/, '$1') // remove internal quotation marks
+    .replace(/^([^\s]+) ?, ?(.*)$/, '$2 $1') // reverse "Last, First M." if applicable
+    .replace(/,.*/, '');
+
+    // Change casing only when the name contains only upper or only
+    // lower cased characters.
+    if (exports.isAllUpper(name) || exports.isAllLower(name)) {
+        // console.log("Changing case of: " + name);
+        name = exports.nameCase(name);
+        // console.log("Now: " + name);
+    }
+
+    // some cleanup
+    name = name.replace(/\[[^\]]*\]/g, '').replace(/(^[\s'"]+|[\s'"]+$)/g, '').replace(/\s{2,}/g, ' ');
+
+    return name;
+}
+
+},{"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"email-addresses":283}],2:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -785,7 +1047,7 @@ var AES_asm = exports.AES_asm = function () {
   return wrapper;
 }();
 
-},{}],2:[function(_dereq_,module,exports){
+},{}],3:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1187,7 +1449,7 @@ var AES = exports.AES = function () {
   return AES;
 }();
 
-},{"../errors":13,"../utils":18,"./aes.asm":1,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33}],3:[function(_dereq_,module,exports){
+},{"../errors":14,"../utils":19,"./aes.asm":2,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37}],4:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1364,7 +1626,7 @@ var AES_CBC_Decrypt = exports.AES_CBC_Decrypt = function (_AES_CBC2) {
   return AES_CBC_Decrypt;
 }(AES_CBC);
 
-},{"../aes":2,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33,"babel-runtime/helpers/inherits":34,"babel-runtime/helpers/possibleConstructorReturn":35}],4:[function(_dereq_,module,exports){
+},{"../aes":3,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39}],5:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1409,7 +1671,7 @@ exports.AES_CBC = _cbc.AES_CBC;
 exports.AES_CBC_Encrypt = _cbc.AES_CBC_Encrypt;
 exports.AES_CBC_Decrypt = _cbc.AES_CBC_Decrypt;
 
-},{"../exports":10,"./cbc":3}],5:[function(_dereq_,module,exports){
+},{"../exports":11,"./cbc":4}],6:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1584,7 +1846,7 @@ var AES_CFB_Decrypt = exports.AES_CFB_Decrypt = function (_AES_CFB2) {
   return AES_CFB_Decrypt;
 }(AES_CFB);
 
-},{"../aes":2,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33,"babel-runtime/helpers/inherits":34,"babel-runtime/helpers/possibleConstructorReturn":35}],6:[function(_dereq_,module,exports){
+},{"../aes":3,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39}],7:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1631,7 +1893,7 @@ exports.AES_CFB = _cfb.AES_CFB;
 exports.AES_CFB_Encrypt = _cfb.AES_CFB_Encrypt;
 exports.AES_CFB_Decrypt = _cfb.AES_CFB_Decrypt;
 
-},{"../exports":10,"./cfb":5}],7:[function(_dereq_,module,exports){
+},{"../exports":11,"./cfb":6}],8:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1795,7 +2057,7 @@ var AES_CTR_Crypt = exports.AES_CTR_Crypt = function (_AES_CTR) {
   return AES_CTR_Crypt;
 }(AES_CTR);
 
-},{"../aes":2,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33,"babel-runtime/helpers/inherits":34,"babel-runtime/helpers/possibleConstructorReturn":35}],8:[function(_dereq_,module,exports){
+},{"../aes":3,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39}],9:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1829,7 +2091,7 @@ _ctr.AES_CTR.decrypt = AES_CTR_crypt_bytes;
 
 exports.AES_CTR = _ctr.AES_CTR;
 
-},{"../exports":10,"./ctr":7}],9:[function(_dereq_,module,exports){
+},{"../exports":11,"./ctr":8}],10:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1996,7 +2258,7 @@ var AES_ECB_Decrypt = exports.AES_ECB_Decrypt = function (_AES_ECB2) {
   return AES_ECB_Decrypt;
 }(AES_ECB);
 
-},{"../aes":2,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33,"babel-runtime/helpers/inherits":34,"babel-runtime/helpers/possibleConstructorReturn":35}],10:[function(_dereq_,module,exports){
+},{"../aes":3,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39}],11:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2010,7 +2272,7 @@ var _AES_heap_instance = exports._AES_heap_instance = new Uint8Array(0x100000); 
 // shared asm.js module and heap
 var _AES_asm_instance = exports._AES_asm_instance = (0, _aes.AES_asm)(null, _AES_heap_instance.buffer);
 
-},{"./aes.asm":1}],11:[function(_dereq_,module,exports){
+},{"./aes.asm":2}],12:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2063,7 +2325,7 @@ exports.AES_GCM = _gcm.AES_GCM;
 exports.AES_GCM_Encrypt = _gcm.AES_GCM_Encrypt;
 exports.AES_GCM_Decrypt = _gcm.AES_GCM_Decrypt;
 
-},{"../exports":10,"./gcm":12}],12:[function(_dereq_,module,exports){
+},{"../exports":11,"./gcm":13}],13:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2509,7 +2771,7 @@ var AES_GCM_Decrypt = exports.AES_GCM_Decrypt = function (_AES_GCM2) {
   return AES_GCM_Decrypt;
 }(AES_GCM);
 
-},{"../../errors":13,"../../utils":18,"../aes":2,"../aes.asm":1,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/helpers/classCallCheck":32,"babel-runtime/helpers/createClass":33,"babel-runtime/helpers/inherits":34,"babel-runtime/helpers/possibleConstructorReturn":35}],13:[function(_dereq_,module,exports){
+},{"../../errors":14,"../../utils":19,"../aes":3,"../aes.asm":2,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/helpers/classCallCheck":36,"babel-runtime/helpers/createClass":37,"babel-runtime/helpers/inherits":38,"babel-runtime/helpers/possibleConstructorReturn":39}],14:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2544,7 +2806,7 @@ function SecurityError() {
 }
 SecurityError.prototype = (0, _create2.default)(Error.prototype, { name: { value: 'SecurityError' } });
 
-},{"babel-runtime/core-js/object/create":23}],14:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/object/create":25}],15:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2619,7 +2881,7 @@ function hash_finish() {
   return this;
 }
 
-},{"../errors":13,"../utils":18}],15:[function(_dereq_,module,exports){
+},{"../errors":14,"../utils":19}],16:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2655,7 +2917,7 @@ SHA256.bytes = sha256_bytes;
 SHA256.hex = sha256_hex;
 SHA256.base64 = sha256_base64;
 
-},{"../../utils":18,"./sha256":17}],16:[function(_dereq_,module,exports){
+},{"../../utils":19,"./sha256":18}],17:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3472,7 +3734,7 @@ function sha256_asm(stdlib, foreign, buffer) {
     };
 }
 
-},{}],17:[function(_dereq_,module,exports){
+},{}],18:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3519,7 +3781,7 @@ function get_sha256_instance() {
   return sha256_instance;
 }
 
-},{"../../utils":18,"../hash":14,"./sha256.asm":16}],18:[function(_dereq_,module,exports){
+},{"../../utils":19,"../hash":15,"./sha256.asm":17}],19:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3700,31 +3962,37 @@ function _heap_write(heap, hpos, data, dpos, dlen) {
   return wlen;
 }
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/array/from"), __esModule: true };
-},{"core-js/library/fn/array/from":51}],20:[function(_dereq_,module,exports){
+},{"core-js/library/fn/array/from":56}],21:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/get-iterator"), __esModule: true };
-},{"core-js/library/fn/get-iterator":52}],21:[function(_dereq_,module,exports){
+},{"core-js/library/fn/get-iterator":57}],22:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/is-iterable"), __esModule: true };
-},{"core-js/library/fn/is-iterable":53}],22:[function(_dereq_,module,exports){
+},{"core-js/library/fn/is-iterable":58}],23:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/json/stringify"), __esModule: true };
-},{"core-js/library/fn/json/stringify":54}],23:[function(_dereq_,module,exports){
+},{"core-js/library/fn/json/stringify":59}],24:[function(_dereq_,module,exports){
+module.exports = { "default": _dereq_("core-js/library/fn/object/assign"), __esModule: true };
+},{"core-js/library/fn/object/assign":60}],25:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/object/create"), __esModule: true };
-},{"core-js/library/fn/object/create":55}],24:[function(_dereq_,module,exports){
+},{"core-js/library/fn/object/create":61}],26:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/object/define-property"), __esModule: true };
-},{"core-js/library/fn/object/define-property":56}],25:[function(_dereq_,module,exports){
+},{"core-js/library/fn/object/define-property":62}],27:[function(_dereq_,module,exports){
+module.exports = { "default": _dereq_("core-js/library/fn/object/entries"), __esModule: true };
+},{"core-js/library/fn/object/entries":63}],28:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/object/freeze"), __esModule: true };
-},{"core-js/library/fn/object/freeze":57}],26:[function(_dereq_,module,exports){
+},{"core-js/library/fn/object/freeze":64}],29:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/object/get-prototype-of"), __esModule: true };
-},{"core-js/library/fn/object/get-prototype-of":58}],27:[function(_dereq_,module,exports){
+},{"core-js/library/fn/object/get-prototype-of":65}],30:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/object/set-prototype-of"), __esModule: true };
-},{"core-js/library/fn/object/set-prototype-of":59}],28:[function(_dereq_,module,exports){
+},{"core-js/library/fn/object/set-prototype-of":66}],31:[function(_dereq_,module,exports){
+module.exports = { "default": _dereq_("core-js/library/fn/object/values"), __esModule: true };
+},{"core-js/library/fn/object/values":67}],32:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/promise"), __esModule: true };
-},{"core-js/library/fn/promise":60}],29:[function(_dereq_,module,exports){
+},{"core-js/library/fn/promise":68}],33:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/symbol"), __esModule: true };
-},{"core-js/library/fn/symbol":61}],30:[function(_dereq_,module,exports){
+},{"core-js/library/fn/symbol":69}],34:[function(_dereq_,module,exports){
 module.exports = { "default": _dereq_("core-js/library/fn/symbol/iterator"), __esModule: true };
-},{"core-js/library/fn/symbol/iterator":62}],31:[function(_dereq_,module,exports){
+},{"core-js/library/fn/symbol/iterator":70}],35:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3763,7 +4031,7 @@ exports.default = function (fn) {
     });
   };
 };
-},{"../core-js/promise":28}],32:[function(_dereq_,module,exports){
+},{"../core-js/promise":32}],36:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3773,7 +4041,7 @@ exports.default = function (instance, Constructor) {
     throw new TypeError("Cannot call a class as a function");
   }
 };
-},{}],33:[function(_dereq_,module,exports){
+},{}],37:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3801,7 +4069,7 @@ exports.default = function () {
     return Constructor;
   };
 }();
-},{"../core-js/object/define-property":24}],34:[function(_dereq_,module,exports){
+},{"../core-js/object/define-property":26}],38:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3835,7 +4103,7 @@ exports.default = function (subClass, superClass) {
   });
   if (superClass) _setPrototypeOf2.default ? (0, _setPrototypeOf2.default)(subClass, superClass) : subClass.__proto__ = superClass;
 };
-},{"../core-js/object/create":23,"../core-js/object/set-prototype-of":27,"../helpers/typeof":37}],35:[function(_dereq_,module,exports){
+},{"../core-js/object/create":25,"../core-js/object/set-prototype-of":30,"../helpers/typeof":41}],39:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3853,7 +4121,7 @@ exports.default = function (self, call) {
 
   return call && ((typeof call === "undefined" ? "undefined" : (0, _typeof3.default)(call)) === "object" || typeof call === "function") ? call : self;
 };
-},{"../helpers/typeof":37}],36:[function(_dereq_,module,exports){
+},{"../helpers/typeof":41}],40:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3905,7 +4173,7 @@ exports.default = function () {
     }
   };
 }();
-},{"../core-js/get-iterator":20,"../core-js/is-iterable":21}],37:[function(_dereq_,module,exports){
+},{"../core-js/get-iterator":21,"../core-js/is-iterable":22}],41:[function(_dereq_,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -3927,10 +4195,10 @@ exports.default = typeof _symbol2.default === "function" && _typeof(_iterator2.d
 } : function (obj) {
   return obj && typeof _symbol2.default === "function" && obj.constructor === _symbol2.default && obj !== _symbol2.default.prototype ? "symbol" : typeof obj === "undefined" ? "undefined" : _typeof(obj);
 };
-},{"../core-js/symbol":29,"../core-js/symbol/iterator":30}],38:[function(_dereq_,module,exports){
+},{"../core-js/symbol":33,"../core-js/symbol/iterator":34}],42:[function(_dereq_,module,exports){
 module.exports = _dereq_("regenerator-runtime");
 
-},{"regenerator-runtime":302}],39:[function(_dereq_,module,exports){
+},{"regenerator-runtime":318}],43:[function(_dereq_,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -4046,7 +4314,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],40:[function(_dereq_,module,exports){
+},{}],44:[function(_dereq_,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -7475,7 +7743,7 @@ function fromByteArray (uint8) {
   };
 })(typeof module === 'undefined' || module, this);
 
-},{"buffer":42}],41:[function(_dereq_,module,exports){
+},{"buffer":46}],45:[function(_dereq_,module,exports){
 var r;
 
 module.exports = function rand(len) {
@@ -7542,9 +7810,9 @@ if (typeof self === 'object') {
   }
 }
 
-},{"crypto":"crypto"}],42:[function(_dereq_,module,exports){
+},{"crypto":"crypto"}],46:[function(_dereq_,module,exports){
 
-},{}],43:[function(_dereq_,module,exports){
+},{}],47:[function(_dereq_,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -9260,20 +9528,24 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":39,"ieee754":281}],44:[function(_dereq_,module,exports){
+},{"base64-js":43,"ieee754":297}],48:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.array.fill');
 module.exports = _dereq_('../../modules/_core').Array.fill;
 
-},{"../../modules/_core":167,"../../modules/es6.array.fill":237}],45:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.array.fill":251}],49:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.array.find');
 module.exports = _dereq_('../../modules/_core').Array.find;
 
-},{"../../modules/_core":167,"../../modules/es6.array.find":238}],46:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.array.find":252}],50:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.string.iterator');
 _dereq_('../../modules/es6.array.from');
 module.exports = _dereq_('../../modules/_core').Array.from;
 
-},{"../../modules/_core":167,"../../modules/es6.array.from":239,"../../modules/es6.string.iterator":243}],47:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.array.from":253,"../../modules/es6.string.iterator":258}],51:[function(_dereq_,module,exports){
+_dereq_('../../modules/es6.object.assign');
+module.exports = _dereq_('../../modules/_core').Object.assign;
+
+},{"../../modules/_core":180,"../../modules/es6.object.assign":255}],52:[function(_dereq_,module,exports){
 _dereq_('../modules/es6.object.to-string');
 _dereq_('../modules/es6.string.iterator');
 _dereq_('../modules/web.dom.iterable');
@@ -9282,99 +9554,109 @@ _dereq_('../modules/es7.promise.finally');
 _dereq_('../modules/es7.promise.try');
 module.exports = _dereq_('../modules/_core').Promise;
 
-},{"../modules/_core":167,"../modules/es6.object.to-string":241,"../modules/es6.promise":242,"../modules/es6.string.iterator":243,"../modules/es7.promise.finally":247,"../modules/es7.promise.try":248,"../modules/web.dom.iterable":251}],48:[function(_dereq_,module,exports){
+},{"../modules/_core":180,"../modules/es6.object.to-string":256,"../modules/es6.promise":257,"../modules/es6.string.iterator":258,"../modules/es7.promise.finally":262,"../modules/es7.promise.try":263,"../modules/web.dom.iterable":266}],53:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.string.repeat');
 module.exports = _dereq_('../../modules/_core').String.repeat;
 
-},{"../../modules/_core":167,"../../modules/es6.string.repeat":244}],49:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.string.repeat":259}],54:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.symbol');
 _dereq_('../../modules/es6.object.to-string');
 _dereq_('../../modules/es7.symbol.async-iterator');
 _dereq_('../../modules/es7.symbol.observable');
 module.exports = _dereq_('../../modules/_core').Symbol;
 
-},{"../../modules/_core":167,"../../modules/es6.object.to-string":241,"../../modules/es6.symbol":245,"../../modules/es7.symbol.async-iterator":249,"../../modules/es7.symbol.observable":250}],50:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.object.to-string":256,"../../modules/es6.symbol":260,"../../modules/es7.symbol.async-iterator":264,"../../modules/es7.symbol.observable":265}],55:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.typed.uint8-array');
 module.exports = _dereq_('../../modules/_core').Uint8Array;
 
-},{"../../modules/_core":167,"../../modules/es6.typed.uint8-array":246}],51:[function(_dereq_,module,exports){
-arguments[4][46][0].apply(exports,arguments)
-},{"../../modules/_core":70,"../../modules/es6.array.from":139,"../../modules/es6.string.iterator":148,"dup":46}],52:[function(_dereq_,module,exports){
+},{"../../modules/_core":180,"../../modules/es6.typed.uint8-array":261}],56:[function(_dereq_,module,exports){
+arguments[4][50][0].apply(exports,arguments)
+},{"../../modules/_core":78,"../../modules/es6.array.from":149,"../../modules/es6.string.iterator":159,"dup":50}],57:[function(_dereq_,module,exports){
 _dereq_('../modules/web.dom.iterable');
 _dereq_('../modules/es6.string.iterator');
 module.exports = _dereq_('../modules/core.get-iterator');
 
-},{"../modules/core.get-iterator":137,"../modules/es6.string.iterator":148,"../modules/web.dom.iterable":154}],53:[function(_dereq_,module,exports){
+},{"../modules/core.get-iterator":147,"../modules/es6.string.iterator":159,"../modules/web.dom.iterable":167}],58:[function(_dereq_,module,exports){
 _dereq_('../modules/web.dom.iterable');
 _dereq_('../modules/es6.string.iterator');
 module.exports = _dereq_('../modules/core.is-iterable');
 
-},{"../modules/core.is-iterable":138,"../modules/es6.string.iterator":148,"../modules/web.dom.iterable":154}],54:[function(_dereq_,module,exports){
+},{"../modules/core.is-iterable":148,"../modules/es6.string.iterator":159,"../modules/web.dom.iterable":167}],59:[function(_dereq_,module,exports){
 var core = _dereq_('../../modules/_core');
 var $JSON = core.JSON || (core.JSON = { stringify: JSON.stringify });
 module.exports = function stringify(it) { // eslint-disable-line no-unused-vars
   return $JSON.stringify.apply($JSON, arguments);
 };
 
-},{"../../modules/_core":70}],55:[function(_dereq_,module,exports){
+},{"../../modules/_core":78}],60:[function(_dereq_,module,exports){
+arguments[4][51][0].apply(exports,arguments)
+},{"../../modules/_core":78,"../../modules/es6.object.assign":151,"dup":51}],61:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.object.create');
 var $Object = _dereq_('../../modules/_core').Object;
 module.exports = function create(P, D) {
   return $Object.create(P, D);
 };
 
-},{"../../modules/_core":70,"../../modules/es6.object.create":141}],56:[function(_dereq_,module,exports){
+},{"../../modules/_core":78,"../../modules/es6.object.create":152}],62:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.object.define-property');
 var $Object = _dereq_('../../modules/_core').Object;
 module.exports = function defineProperty(it, key, desc) {
   return $Object.defineProperty(it, key, desc);
 };
 
-},{"../../modules/_core":70,"../../modules/es6.object.define-property":142}],57:[function(_dereq_,module,exports){
+},{"../../modules/_core":78,"../../modules/es6.object.define-property":153}],63:[function(_dereq_,module,exports){
+_dereq_('../../modules/es7.object.entries');
+module.exports = _dereq_('../../modules/_core').Object.entries;
+
+},{"../../modules/_core":78,"../../modules/es7.object.entries":161}],64:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.object.freeze');
 module.exports = _dereq_('../../modules/_core').Object.freeze;
 
-},{"../../modules/_core":70,"../../modules/es6.object.freeze":143}],58:[function(_dereq_,module,exports){
+},{"../../modules/_core":78,"../../modules/es6.object.freeze":154}],65:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.object.get-prototype-of');
 module.exports = _dereq_('../../modules/_core').Object.getPrototypeOf;
 
-},{"../../modules/_core":70,"../../modules/es6.object.get-prototype-of":144}],59:[function(_dereq_,module,exports){
+},{"../../modules/_core":78,"../../modules/es6.object.get-prototype-of":155}],66:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.object.set-prototype-of');
 module.exports = _dereq_('../../modules/_core').Object.setPrototypeOf;
 
-},{"../../modules/_core":70,"../../modules/es6.object.set-prototype-of":145}],60:[function(_dereq_,module,exports){
-arguments[4][47][0].apply(exports,arguments)
-},{"../modules/_core":70,"../modules/es6.object.to-string":146,"../modules/es6.promise":147,"../modules/es6.string.iterator":148,"../modules/es7.promise.finally":150,"../modules/es7.promise.try":151,"../modules/web.dom.iterable":154,"dup":47}],61:[function(_dereq_,module,exports){
-arguments[4][49][0].apply(exports,arguments)
-},{"../../modules/_core":70,"../../modules/es6.object.to-string":146,"../../modules/es6.symbol":149,"../../modules/es7.symbol.async-iterator":152,"../../modules/es7.symbol.observable":153,"dup":49}],62:[function(_dereq_,module,exports){
+},{"../../modules/_core":78,"../../modules/es6.object.set-prototype-of":156}],67:[function(_dereq_,module,exports){
+_dereq_('../../modules/es7.object.values');
+module.exports = _dereq_('../../modules/_core').Object.values;
+
+},{"../../modules/_core":78,"../../modules/es7.object.values":162}],68:[function(_dereq_,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"../modules/_core":78,"../modules/es6.object.to-string":157,"../modules/es6.promise":158,"../modules/es6.string.iterator":159,"../modules/es7.promise.finally":163,"../modules/es7.promise.try":164,"../modules/web.dom.iterable":167,"dup":52}],69:[function(_dereq_,module,exports){
+arguments[4][54][0].apply(exports,arguments)
+},{"../../modules/_core":78,"../../modules/es6.object.to-string":157,"../../modules/es6.symbol":160,"../../modules/es7.symbol.async-iterator":165,"../../modules/es7.symbol.observable":166,"dup":54}],70:[function(_dereq_,module,exports){
 _dereq_('../../modules/es6.string.iterator');
 _dereq_('../../modules/web.dom.iterable');
 module.exports = _dereq_('../../modules/_wks-ext').f('iterator');
 
-},{"../../modules/_wks-ext":134,"../../modules/es6.string.iterator":148,"../../modules/web.dom.iterable":154}],63:[function(_dereq_,module,exports){
+},{"../../modules/_wks-ext":144,"../../modules/es6.string.iterator":159,"../../modules/web.dom.iterable":167}],71:[function(_dereq_,module,exports){
 module.exports = function (it) {
   if (typeof it != 'function') throw TypeError(it + ' is not a function!');
   return it;
 };
 
-},{}],64:[function(_dereq_,module,exports){
+},{}],72:[function(_dereq_,module,exports){
 module.exports = function () { /* empty */ };
 
-},{}],65:[function(_dereq_,module,exports){
+},{}],73:[function(_dereq_,module,exports){
 module.exports = function (it, Constructor, name, forbiddenField) {
   if (!(it instanceof Constructor) || (forbiddenField !== undefined && forbiddenField in it)) {
     throw TypeError(name + ': incorrect invocation!');
   } return it;
 };
 
-},{}],66:[function(_dereq_,module,exports){
+},{}],74:[function(_dereq_,module,exports){
 var isObject = _dereq_('./_is-object');
 module.exports = function (it) {
   if (!isObject(it)) throw TypeError(it + ' is not an object!');
   return it;
 };
 
-},{"./_is-object":90}],67:[function(_dereq_,module,exports){
+},{"./_is-object":98}],75:[function(_dereq_,module,exports){
 // false -> Array#indexOf
 // true  -> Array#includes
 var toIObject = _dereq_('./_to-iobject');
@@ -9399,7 +9681,7 @@ module.exports = function (IS_INCLUDES) {
   };
 };
 
-},{"./_to-absolute-index":126,"./_to-iobject":128,"./_to-length":129}],68:[function(_dereq_,module,exports){
+},{"./_to-absolute-index":136,"./_to-iobject":138,"./_to-length":139}],76:[function(_dereq_,module,exports){
 // getting tag from 19.1.3.6 Object.prototype.toString()
 var cof = _dereq_('./_cof');
 var TAG = _dereq_('./_wks')('toStringTag');
@@ -9424,18 +9706,18 @@ module.exports = function (it) {
     : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
 };
 
-},{"./_cof":69,"./_wks":135}],69:[function(_dereq_,module,exports){
+},{"./_cof":77,"./_wks":145}],77:[function(_dereq_,module,exports){
 var toString = {}.toString;
 
 module.exports = function (it) {
   return toString.call(it).slice(8, -1);
 };
 
-},{}],70:[function(_dereq_,module,exports){
+},{}],78:[function(_dereq_,module,exports){
 var core = module.exports = { version: '2.5.3' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
-},{}],71:[function(_dereq_,module,exports){
+},{}],79:[function(_dereq_,module,exports){
 'use strict';
 var $defineProperty = _dereq_('./_object-dp');
 var createDesc = _dereq_('./_property-desc');
@@ -9445,7 +9727,7 @@ module.exports = function (object, index, value) {
   else object[index] = value;
 };
 
-},{"./_object-dp":102,"./_property-desc":115}],72:[function(_dereq_,module,exports){
+},{"./_object-dp":111,"./_property-desc":125}],80:[function(_dereq_,module,exports){
 // optional / simple context binding
 var aFunction = _dereq_('./_a-function');
 module.exports = function (fn, that, length) {
@@ -9467,20 +9749,20 @@ module.exports = function (fn, that, length) {
   };
 };
 
-},{"./_a-function":63}],73:[function(_dereq_,module,exports){
+},{"./_a-function":71}],81:[function(_dereq_,module,exports){
 // 7.2.1 RequireObjectCoercible(argument)
 module.exports = function (it) {
   if (it == undefined) throw TypeError("Can't call method on  " + it);
   return it;
 };
 
-},{}],74:[function(_dereq_,module,exports){
+},{}],82:[function(_dereq_,module,exports){
 // Thank's IE8 for his funny defineProperty
 module.exports = !_dereq_('./_fails')(function () {
   return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
 });
 
-},{"./_fails":79}],75:[function(_dereq_,module,exports){
+},{"./_fails":87}],83:[function(_dereq_,module,exports){
 var isObject = _dereq_('./_is-object');
 var document = _dereq_('./_global').document;
 // typeof document.createElement is 'object' in old IE
@@ -9489,13 +9771,13 @@ module.exports = function (it) {
   return is ? document.createElement(it) : {};
 };
 
-},{"./_global":81,"./_is-object":90}],76:[function(_dereq_,module,exports){
+},{"./_global":89,"./_is-object":98}],84:[function(_dereq_,module,exports){
 // IE 8- don't enum bug keys
 module.exports = (
   'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
 ).split(',');
 
-},{}],77:[function(_dereq_,module,exports){
+},{}],85:[function(_dereq_,module,exports){
 // all enumerable object keys, includes symbols
 var getKeys = _dereq_('./_object-keys');
 var gOPS = _dereq_('./_object-gops');
@@ -9512,7 +9794,7 @@ module.exports = function (it) {
   } return result;
 };
 
-},{"./_object-gops":107,"./_object-keys":110,"./_object-pie":111}],78:[function(_dereq_,module,exports){
+},{"./_object-gops":116,"./_object-keys":119,"./_object-pie":120}],86:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var core = _dereq_('./_core');
 var ctx = _dereq_('./_ctx');
@@ -9575,7 +9857,7 @@ $export.U = 64;  // safe
 $export.R = 128; // real proto method for `library`
 module.exports = $export;
 
-},{"./_core":70,"./_ctx":72,"./_global":81,"./_hide":83}],79:[function(_dereq_,module,exports){
+},{"./_core":78,"./_ctx":80,"./_global":89,"./_hide":91}],87:[function(_dereq_,module,exports){
 module.exports = function (exec) {
   try {
     return !!exec();
@@ -9584,7 +9866,7 @@ module.exports = function (exec) {
   }
 };
 
-},{}],80:[function(_dereq_,module,exports){
+},{}],88:[function(_dereq_,module,exports){
 var ctx = _dereq_('./_ctx');
 var call = _dereq_('./_iter-call');
 var isArrayIter = _dereq_('./_is-array-iter');
@@ -9611,7 +9893,7 @@ var exports = module.exports = function (iterable, entries, fn, that, ITERATOR) 
 exports.BREAK = BREAK;
 exports.RETURN = RETURN;
 
-},{"./_an-object":66,"./_ctx":72,"./_is-array-iter":88,"./_iter-call":91,"./_to-length":129,"./core.get-iterator-method":136}],81:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_ctx":80,"./_is-array-iter":96,"./_iter-call":99,"./_to-length":139,"./core.get-iterator-method":146}],89:[function(_dereq_,module,exports){
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 var global = module.exports = typeof window != 'undefined' && window.Math == Math
   ? window : typeof self != 'undefined' && self.Math == Math ? self
@@ -9619,13 +9901,13 @@ var global = module.exports = typeof window != 'undefined' && window.Math == Mat
   : Function('return this')();
 if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 
-},{}],82:[function(_dereq_,module,exports){
+},{}],90:[function(_dereq_,module,exports){
 var hasOwnProperty = {}.hasOwnProperty;
 module.exports = function (it, key) {
   return hasOwnProperty.call(it, key);
 };
 
-},{}],83:[function(_dereq_,module,exports){
+},{}],91:[function(_dereq_,module,exports){
 var dP = _dereq_('./_object-dp');
 var createDesc = _dereq_('./_property-desc');
 module.exports = _dereq_('./_descriptors') ? function (object, key, value) {
@@ -9635,16 +9917,16 @@ module.exports = _dereq_('./_descriptors') ? function (object, key, value) {
   return object;
 };
 
-},{"./_descriptors":74,"./_object-dp":102,"./_property-desc":115}],84:[function(_dereq_,module,exports){
+},{"./_descriptors":82,"./_object-dp":111,"./_property-desc":125}],92:[function(_dereq_,module,exports){
 var document = _dereq_('./_global').document;
 module.exports = document && document.documentElement;
 
-},{"./_global":81}],85:[function(_dereq_,module,exports){
+},{"./_global":89}],93:[function(_dereq_,module,exports){
 module.exports = !_dereq_('./_descriptors') && !_dereq_('./_fails')(function () {
   return Object.defineProperty(_dereq_('./_dom-create')('div'), 'a', { get: function () { return 7; } }).a != 7;
 });
 
-},{"./_descriptors":74,"./_dom-create":75,"./_fails":79}],86:[function(_dereq_,module,exports){
+},{"./_descriptors":82,"./_dom-create":83,"./_fails":87}],94:[function(_dereq_,module,exports){
 // fast apply, http://jsperf.lnkit.com/fast-apply/5
 module.exports = function (fn, args, that) {
   var un = that === undefined;
@@ -9662,7 +9944,7 @@ module.exports = function (fn, args, that) {
   } return fn.apply(that, args);
 };
 
-},{}],87:[function(_dereq_,module,exports){
+},{}],95:[function(_dereq_,module,exports){
 // fallback for non-array-like ES3 and non-enumerable old V8 strings
 var cof = _dereq_('./_cof');
 // eslint-disable-next-line no-prototype-builtins
@@ -9670,7 +9952,7 @@ module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
   return cof(it) == 'String' ? it.split('') : Object(it);
 };
 
-},{"./_cof":69}],88:[function(_dereq_,module,exports){
+},{"./_cof":77}],96:[function(_dereq_,module,exports){
 // check on default Array iterator
 var Iterators = _dereq_('./_iterators');
 var ITERATOR = _dereq_('./_wks')('iterator');
@@ -9680,19 +9962,19 @@ module.exports = function (it) {
   return it !== undefined && (Iterators.Array === it || ArrayProto[ITERATOR] === it);
 };
 
-},{"./_iterators":96,"./_wks":135}],89:[function(_dereq_,module,exports){
+},{"./_iterators":104,"./_wks":145}],97:[function(_dereq_,module,exports){
 // 7.2.2 IsArray(argument)
 var cof = _dereq_('./_cof');
 module.exports = Array.isArray || function isArray(arg) {
   return cof(arg) == 'Array';
 };
 
-},{"./_cof":69}],90:[function(_dereq_,module,exports){
+},{"./_cof":77}],98:[function(_dereq_,module,exports){
 module.exports = function (it) {
   return typeof it === 'object' ? it !== null : typeof it === 'function';
 };
 
-},{}],91:[function(_dereq_,module,exports){
+},{}],99:[function(_dereq_,module,exports){
 // call something on iterator step with safe closing on error
 var anObject = _dereq_('./_an-object');
 module.exports = function (iterator, fn, value, entries) {
@@ -9706,7 +9988,7 @@ module.exports = function (iterator, fn, value, entries) {
   }
 };
 
-},{"./_an-object":66}],92:[function(_dereq_,module,exports){
+},{"./_an-object":74}],100:[function(_dereq_,module,exports){
 'use strict';
 var create = _dereq_('./_object-create');
 var descriptor = _dereq_('./_property-desc');
@@ -9721,7 +10003,7 @@ module.exports = function (Constructor, NAME, next) {
   setToStringTag(Constructor, NAME + ' Iterator');
 };
 
-},{"./_hide":83,"./_object-create":101,"./_property-desc":115,"./_set-to-string-tag":120,"./_wks":135}],93:[function(_dereq_,module,exports){
+},{"./_hide":91,"./_object-create":110,"./_property-desc":125,"./_set-to-string-tag":130,"./_wks":145}],101:[function(_dereq_,module,exports){
 'use strict';
 var LIBRARY = _dereq_('./_library');
 var $export = _dereq_('./_export');
@@ -9793,7 +10075,7 @@ module.exports = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCE
   return methods;
 };
 
-},{"./_export":78,"./_has":82,"./_hide":83,"./_iter-create":92,"./_iterators":96,"./_library":97,"./_object-gpo":108,"./_redefine":117,"./_set-to-string-tag":120,"./_wks":135}],94:[function(_dereq_,module,exports){
+},{"./_export":86,"./_has":90,"./_hide":91,"./_iter-create":100,"./_iterators":104,"./_library":105,"./_object-gpo":117,"./_redefine":127,"./_set-to-string-tag":130,"./_wks":145}],102:[function(_dereq_,module,exports){
 var ITERATOR = _dereq_('./_wks')('iterator');
 var SAFE_CLOSING = false;
 
@@ -9817,18 +10099,18 @@ module.exports = function (exec, skipClosing) {
   return safe;
 };
 
-},{"./_wks":135}],95:[function(_dereq_,module,exports){
+},{"./_wks":145}],103:[function(_dereq_,module,exports){
 module.exports = function (done, value) {
   return { value: value, done: !!done };
 };
 
-},{}],96:[function(_dereq_,module,exports){
+},{}],104:[function(_dereq_,module,exports){
 module.exports = {};
 
-},{}],97:[function(_dereq_,module,exports){
+},{}],105:[function(_dereq_,module,exports){
 module.exports = true;
 
-},{}],98:[function(_dereq_,module,exports){
+},{}],106:[function(_dereq_,module,exports){
 var META = _dereq_('./_uid')('meta');
 var isObject = _dereq_('./_is-object');
 var has = _dereq_('./_has');
@@ -9883,7 +10165,7 @@ var meta = module.exports = {
   onFreeze: onFreeze
 };
 
-},{"./_fails":79,"./_has":82,"./_is-object":90,"./_object-dp":102,"./_uid":132}],99:[function(_dereq_,module,exports){
+},{"./_fails":87,"./_has":90,"./_is-object":98,"./_object-dp":111,"./_uid":142}],107:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var macrotask = _dereq_('./_task').set;
 var Observer = global.MutationObserver || global.WebKitMutationObserver;
@@ -9953,7 +10235,7 @@ module.exports = function () {
   };
 };
 
-},{"./_cof":69,"./_global":81,"./_task":125}],100:[function(_dereq_,module,exports){
+},{"./_cof":77,"./_global":89,"./_task":135}],108:[function(_dereq_,module,exports){
 'use strict';
 // 25.4.1.5 NewPromiseCapability(C)
 var aFunction = _dereq_('./_a-function');
@@ -9973,7 +10255,43 @@ module.exports.f = function (C) {
   return new PromiseCapability(C);
 };
 
-},{"./_a-function":63}],101:[function(_dereq_,module,exports){
+},{"./_a-function":71}],109:[function(_dereq_,module,exports){
+'use strict';
+// 19.1.2.1 Object.assign(target, source, ...)
+var getKeys = _dereq_('./_object-keys');
+var gOPS = _dereq_('./_object-gops');
+var pIE = _dereq_('./_object-pie');
+var toObject = _dereq_('./_to-object');
+var IObject = _dereq_('./_iobject');
+var $assign = Object.assign;
+
+// should work with symbols and should have deterministic property order (V8 bug)
+module.exports = !$assign || _dereq_('./_fails')(function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var S = Symbol();
+  var K = 'abcdefghijklmnopqrst';
+  A[S] = 7;
+  K.split('').forEach(function (k) { B[k] = k; });
+  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = toObject(target);
+  var aLen = arguments.length;
+  var index = 1;
+  var getSymbols = gOPS.f;
+  var isEnum = pIE.f;
+  while (aLen > index) {
+    var S = IObject(arguments[index++]);
+    var keys = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+  } return T;
+} : $assign;
+
+},{"./_fails":87,"./_iobject":95,"./_object-gops":116,"./_object-keys":119,"./_object-pie":120,"./_to-object":140}],110:[function(_dereq_,module,exports){
 // 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
 var anObject = _dereq_('./_an-object');
 var dPs = _dereq_('./_object-dps');
@@ -10016,7 +10334,7 @@ module.exports = Object.create || function create(O, Properties) {
   return Properties === undefined ? result : dPs(result, Properties);
 };
 
-},{"./_an-object":66,"./_dom-create":75,"./_enum-bug-keys":76,"./_html":84,"./_object-dps":103,"./_shared-key":121}],102:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_dom-create":83,"./_enum-bug-keys":84,"./_html":92,"./_object-dps":112,"./_shared-key":131}],111:[function(_dereq_,module,exports){
 var anObject = _dereq_('./_an-object');
 var IE8_DOM_DEFINE = _dereq_('./_ie8-dom-define');
 var toPrimitive = _dereq_('./_to-primitive');
@@ -10034,7 +10352,7 @@ exports.f = _dereq_('./_descriptors') ? Object.defineProperty : function defineP
   return O;
 };
 
-},{"./_an-object":66,"./_descriptors":74,"./_ie8-dom-define":85,"./_to-primitive":131}],103:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_descriptors":82,"./_ie8-dom-define":93,"./_to-primitive":141}],112:[function(_dereq_,module,exports){
 var dP = _dereq_('./_object-dp');
 var anObject = _dereq_('./_an-object');
 var getKeys = _dereq_('./_object-keys');
@@ -10049,7 +10367,7 @@ module.exports = _dereq_('./_descriptors') ? Object.defineProperties : function 
   return O;
 };
 
-},{"./_an-object":66,"./_descriptors":74,"./_object-dp":102,"./_object-keys":110}],104:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_descriptors":82,"./_object-dp":111,"./_object-keys":119}],113:[function(_dereq_,module,exports){
 var pIE = _dereq_('./_object-pie');
 var createDesc = _dereq_('./_property-desc');
 var toIObject = _dereq_('./_to-iobject');
@@ -10067,7 +10385,7 @@ exports.f = _dereq_('./_descriptors') ? gOPD : function getOwnPropertyDescriptor
   if (has(O, P)) return createDesc(!pIE.f.call(O, P), O[P]);
 };
 
-},{"./_descriptors":74,"./_has":82,"./_ie8-dom-define":85,"./_object-pie":111,"./_property-desc":115,"./_to-iobject":128,"./_to-primitive":131}],105:[function(_dereq_,module,exports){
+},{"./_descriptors":82,"./_has":90,"./_ie8-dom-define":93,"./_object-pie":120,"./_property-desc":125,"./_to-iobject":138,"./_to-primitive":141}],114:[function(_dereq_,module,exports){
 // fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
 var toIObject = _dereq_('./_to-iobject');
 var gOPN = _dereq_('./_object-gopn').f;
@@ -10088,7 +10406,7 @@ module.exports.f = function getOwnPropertyNames(it) {
   return windowNames && toString.call(it) == '[object Window]' ? getWindowNames(it) : gOPN(toIObject(it));
 };
 
-},{"./_object-gopn":106,"./_to-iobject":128}],106:[function(_dereq_,module,exports){
+},{"./_object-gopn":115,"./_to-iobject":138}],115:[function(_dereq_,module,exports){
 // 19.1.2.7 / 15.2.3.4 Object.getOwnPropertyNames(O)
 var $keys = _dereq_('./_object-keys-internal');
 var hiddenKeys = _dereq_('./_enum-bug-keys').concat('length', 'prototype');
@@ -10097,10 +10415,10 @@ exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
   return $keys(O, hiddenKeys);
 };
 
-},{"./_enum-bug-keys":76,"./_object-keys-internal":109}],107:[function(_dereq_,module,exports){
+},{"./_enum-bug-keys":84,"./_object-keys-internal":118}],116:[function(_dereq_,module,exports){
 exports.f = Object.getOwnPropertySymbols;
 
-},{}],108:[function(_dereq_,module,exports){
+},{}],117:[function(_dereq_,module,exports){
 // 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
 var has = _dereq_('./_has');
 var toObject = _dereq_('./_to-object');
@@ -10115,7 +10433,7 @@ module.exports = Object.getPrototypeOf || function (O) {
   } return O instanceof Object ? ObjectProto : null;
 };
 
-},{"./_has":82,"./_shared-key":121,"./_to-object":130}],109:[function(_dereq_,module,exports){
+},{"./_has":90,"./_shared-key":131,"./_to-object":140}],118:[function(_dereq_,module,exports){
 var has = _dereq_('./_has');
 var toIObject = _dereq_('./_to-iobject');
 var arrayIndexOf = _dereq_('./_array-includes')(false);
@@ -10134,7 +10452,7 @@ module.exports = function (object, names) {
   return result;
 };
 
-},{"./_array-includes":67,"./_has":82,"./_shared-key":121,"./_to-iobject":128}],110:[function(_dereq_,module,exports){
+},{"./_array-includes":75,"./_has":90,"./_shared-key":131,"./_to-iobject":138}],119:[function(_dereq_,module,exports){
 // 19.1.2.14 / 15.2.3.14 Object.keys(O)
 var $keys = _dereq_('./_object-keys-internal');
 var enumBugKeys = _dereq_('./_enum-bug-keys');
@@ -10143,10 +10461,10 @@ module.exports = Object.keys || function keys(O) {
   return $keys(O, enumBugKeys);
 };
 
-},{"./_enum-bug-keys":76,"./_object-keys-internal":109}],111:[function(_dereq_,module,exports){
+},{"./_enum-bug-keys":84,"./_object-keys-internal":118}],120:[function(_dereq_,module,exports){
 exports.f = {}.propertyIsEnumerable;
 
-},{}],112:[function(_dereq_,module,exports){
+},{}],121:[function(_dereq_,module,exports){
 // most Object methods by ES6 should accept primitives
 var $export = _dereq_('./_export');
 var core = _dereq_('./_core');
@@ -10158,7 +10476,25 @@ module.exports = function (KEY, exec) {
   $export($export.S + $export.F * fails(function () { fn(1); }), 'Object', exp);
 };
 
-},{"./_core":70,"./_export":78,"./_fails":79}],113:[function(_dereq_,module,exports){
+},{"./_core":78,"./_export":86,"./_fails":87}],122:[function(_dereq_,module,exports){
+var getKeys = _dereq_('./_object-keys');
+var toIObject = _dereq_('./_to-iobject');
+var isEnum = _dereq_('./_object-pie').f;
+module.exports = function (isEntries) {
+  return function (it) {
+    var O = toIObject(it);
+    var keys = getKeys(O);
+    var length = keys.length;
+    var i = 0;
+    var result = [];
+    var key;
+    while (length > i) if (isEnum.call(O, key = keys[i++])) {
+      result.push(isEntries ? [key, O[key]] : O[key]);
+    } return result;
+  };
+};
+
+},{"./_object-keys":119,"./_object-pie":120,"./_to-iobject":138}],123:[function(_dereq_,module,exports){
 module.exports = function (exec) {
   try {
     return { e: false, v: exec() };
@@ -10167,7 +10503,7 @@ module.exports = function (exec) {
   }
 };
 
-},{}],114:[function(_dereq_,module,exports){
+},{}],124:[function(_dereq_,module,exports){
 var anObject = _dereq_('./_an-object');
 var isObject = _dereq_('./_is-object');
 var newPromiseCapability = _dereq_('./_new-promise-capability');
@@ -10181,7 +10517,7 @@ module.exports = function (C, x) {
   return promiseCapability.promise;
 };
 
-},{"./_an-object":66,"./_is-object":90,"./_new-promise-capability":100}],115:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_is-object":98,"./_new-promise-capability":108}],125:[function(_dereq_,module,exports){
 module.exports = function (bitmap, value) {
   return {
     enumerable: !(bitmap & 1),
@@ -10191,7 +10527,7 @@ module.exports = function (bitmap, value) {
   };
 };
 
-},{}],116:[function(_dereq_,module,exports){
+},{}],126:[function(_dereq_,module,exports){
 var hide = _dereq_('./_hide');
 module.exports = function (target, src, safe) {
   for (var key in src) {
@@ -10200,10 +10536,10 @@ module.exports = function (target, src, safe) {
   } return target;
 };
 
-},{"./_hide":83}],117:[function(_dereq_,module,exports){
+},{"./_hide":91}],127:[function(_dereq_,module,exports){
 module.exports = _dereq_('./_hide');
 
-},{"./_hide":83}],118:[function(_dereq_,module,exports){
+},{"./_hide":91}],128:[function(_dereq_,module,exports){
 // Works with __proto__ only. Old v8 can't work with null proto objects.
 /* eslint-disable no-proto */
 var isObject = _dereq_('./_is-object');
@@ -10230,7 +10566,7 @@ module.exports = {
   check: check
 };
 
-},{"./_an-object":66,"./_ctx":72,"./_is-object":90,"./_object-gopd":104}],119:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_ctx":80,"./_is-object":98,"./_object-gopd":113}],129:[function(_dereq_,module,exports){
 'use strict';
 var global = _dereq_('./_global');
 var core = _dereq_('./_core');
@@ -10246,7 +10582,7 @@ module.exports = function (KEY) {
   });
 };
 
-},{"./_core":70,"./_descriptors":74,"./_global":81,"./_object-dp":102,"./_wks":135}],120:[function(_dereq_,module,exports){
+},{"./_core":78,"./_descriptors":82,"./_global":89,"./_object-dp":111,"./_wks":145}],130:[function(_dereq_,module,exports){
 var def = _dereq_('./_object-dp').f;
 var has = _dereq_('./_has');
 var TAG = _dereq_('./_wks')('toStringTag');
@@ -10255,14 +10591,14 @@ module.exports = function (it, tag, stat) {
   if (it && !has(it = stat ? it : it.prototype, TAG)) def(it, TAG, { configurable: true, value: tag });
 };
 
-},{"./_has":82,"./_object-dp":102,"./_wks":135}],121:[function(_dereq_,module,exports){
+},{"./_has":90,"./_object-dp":111,"./_wks":145}],131:[function(_dereq_,module,exports){
 var shared = _dereq_('./_shared')('keys');
 var uid = _dereq_('./_uid');
 module.exports = function (key) {
   return shared[key] || (shared[key] = uid(key));
 };
 
-},{"./_shared":122,"./_uid":132}],122:[function(_dereq_,module,exports){
+},{"./_shared":132,"./_uid":142}],132:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var SHARED = '__core-js_shared__';
 var store = global[SHARED] || (global[SHARED] = {});
@@ -10270,7 +10606,7 @@ module.exports = function (key) {
   return store[key] || (store[key] = {});
 };
 
-},{"./_global":81}],123:[function(_dereq_,module,exports){
+},{"./_global":89}],133:[function(_dereq_,module,exports){
 // 7.3.20 SpeciesConstructor(O, defaultConstructor)
 var anObject = _dereq_('./_an-object');
 var aFunction = _dereq_('./_a-function');
@@ -10281,7 +10617,7 @@ module.exports = function (O, D) {
   return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? D : aFunction(S);
 };
 
-},{"./_a-function":63,"./_an-object":66,"./_wks":135}],124:[function(_dereq_,module,exports){
+},{"./_a-function":71,"./_an-object":74,"./_wks":145}],134:[function(_dereq_,module,exports){
 var toInteger = _dereq_('./_to-integer');
 var defined = _dereq_('./_defined');
 // true  -> String#at
@@ -10300,7 +10636,7 @@ module.exports = function (TO_STRING) {
   };
 };
 
-},{"./_defined":73,"./_to-integer":127}],125:[function(_dereq_,module,exports){
+},{"./_defined":81,"./_to-integer":137}],135:[function(_dereq_,module,exports){
 var ctx = _dereq_('./_ctx');
 var invoke = _dereq_('./_invoke');
 var html = _dereq_('./_html');
@@ -10386,7 +10722,7 @@ module.exports = {
   clear: clearTask
 };
 
-},{"./_cof":69,"./_ctx":72,"./_dom-create":75,"./_global":81,"./_html":84,"./_invoke":86}],126:[function(_dereq_,module,exports){
+},{"./_cof":77,"./_ctx":80,"./_dom-create":83,"./_global":89,"./_html":92,"./_invoke":94}],136:[function(_dereq_,module,exports){
 var toInteger = _dereq_('./_to-integer');
 var max = Math.max;
 var min = Math.min;
@@ -10395,7 +10731,7 @@ module.exports = function (index, length) {
   return index < 0 ? max(index + length, 0) : min(index, length);
 };
 
-},{"./_to-integer":127}],127:[function(_dereq_,module,exports){
+},{"./_to-integer":137}],137:[function(_dereq_,module,exports){
 // 7.1.4 ToInteger
 var ceil = Math.ceil;
 var floor = Math.floor;
@@ -10403,7 +10739,7 @@ module.exports = function (it) {
   return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
 };
 
-},{}],128:[function(_dereq_,module,exports){
+},{}],138:[function(_dereq_,module,exports){
 // to indexed object, toObject with fallback for non-array-like ES3 strings
 var IObject = _dereq_('./_iobject');
 var defined = _dereq_('./_defined');
@@ -10411,7 +10747,7 @@ module.exports = function (it) {
   return IObject(defined(it));
 };
 
-},{"./_defined":73,"./_iobject":87}],129:[function(_dereq_,module,exports){
+},{"./_defined":81,"./_iobject":95}],139:[function(_dereq_,module,exports){
 // 7.1.15 ToLength
 var toInteger = _dereq_('./_to-integer');
 var min = Math.min;
@@ -10419,14 +10755,14 @@ module.exports = function (it) {
   return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 };
 
-},{"./_to-integer":127}],130:[function(_dereq_,module,exports){
+},{"./_to-integer":137}],140:[function(_dereq_,module,exports){
 // 7.1.13 ToObject(argument)
 var defined = _dereq_('./_defined');
 module.exports = function (it) {
   return Object(defined(it));
 };
 
-},{"./_defined":73}],131:[function(_dereq_,module,exports){
+},{"./_defined":81}],141:[function(_dereq_,module,exports){
 // 7.1.1 ToPrimitive(input [, PreferredType])
 var isObject = _dereq_('./_is-object');
 // instead of the ES6 spec version, we didn't implement @@toPrimitive case
@@ -10440,14 +10776,14 @@ module.exports = function (it, S) {
   throw TypeError("Can't convert object to primitive value");
 };
 
-},{"./_is-object":90}],132:[function(_dereq_,module,exports){
+},{"./_is-object":98}],142:[function(_dereq_,module,exports){
 var id = 0;
 var px = Math.random();
 module.exports = function (key) {
   return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
 };
 
-},{}],133:[function(_dereq_,module,exports){
+},{}],143:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var core = _dereq_('./_core');
 var LIBRARY = _dereq_('./_library');
@@ -10458,10 +10794,10 @@ module.exports = function (name) {
   if (name.charAt(0) != '_' && !(name in $Symbol)) defineProperty($Symbol, name, { value: wksExt.f(name) });
 };
 
-},{"./_core":70,"./_global":81,"./_library":97,"./_object-dp":102,"./_wks-ext":134}],134:[function(_dereq_,module,exports){
+},{"./_core":78,"./_global":89,"./_library":105,"./_object-dp":111,"./_wks-ext":144}],144:[function(_dereq_,module,exports){
 exports.f = _dereq_('./_wks');
 
-},{"./_wks":135}],135:[function(_dereq_,module,exports){
+},{"./_wks":145}],145:[function(_dereq_,module,exports){
 var store = _dereq_('./_shared')('wks');
 var uid = _dereq_('./_uid');
 var Symbol = _dereq_('./_global').Symbol;
@@ -10474,7 +10810,7 @@ var $exports = module.exports = function (name) {
 
 $exports.store = store;
 
-},{"./_global":81,"./_shared":122,"./_uid":132}],136:[function(_dereq_,module,exports){
+},{"./_global":89,"./_shared":132,"./_uid":142}],146:[function(_dereq_,module,exports){
 var classof = _dereq_('./_classof');
 var ITERATOR = _dereq_('./_wks')('iterator');
 var Iterators = _dereq_('./_iterators');
@@ -10484,7 +10820,7 @@ module.exports = _dereq_('./_core').getIteratorMethod = function (it) {
     || Iterators[classof(it)];
 };
 
-},{"./_classof":68,"./_core":70,"./_iterators":96,"./_wks":135}],137:[function(_dereq_,module,exports){
+},{"./_classof":76,"./_core":78,"./_iterators":104,"./_wks":145}],147:[function(_dereq_,module,exports){
 var anObject = _dereq_('./_an-object');
 var get = _dereq_('./core.get-iterator-method');
 module.exports = _dereq_('./_core').getIterator = function (it) {
@@ -10493,7 +10829,7 @@ module.exports = _dereq_('./_core').getIterator = function (it) {
   return anObject(iterFn.call(it));
 };
 
-},{"./_an-object":66,"./_core":70,"./core.get-iterator-method":136}],138:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_core":78,"./core.get-iterator-method":146}],148:[function(_dereq_,module,exports){
 var classof = _dereq_('./_classof');
 var ITERATOR = _dereq_('./_wks')('iterator');
 var Iterators = _dereq_('./_iterators');
@@ -10505,7 +10841,7 @@ module.exports = _dereq_('./_core').isIterable = function (it) {
     || Iterators.hasOwnProperty(classof(O));
 };
 
-},{"./_classof":68,"./_core":70,"./_iterators":96,"./_wks":135}],139:[function(_dereq_,module,exports){
+},{"./_classof":76,"./_core":78,"./_iterators":104,"./_wks":145}],149:[function(_dereq_,module,exports){
 'use strict';
 var ctx = _dereq_('./_ctx');
 var $export = _dereq_('./_export');
@@ -10544,7 +10880,7 @@ $export($export.S + $export.F * !_dereq_('./_iter-detect')(function (iter) { Arr
   }
 });
 
-},{"./_create-property":71,"./_ctx":72,"./_export":78,"./_is-array-iter":88,"./_iter-call":91,"./_iter-detect":94,"./_to-length":129,"./_to-object":130,"./core.get-iterator-method":136}],140:[function(_dereq_,module,exports){
+},{"./_create-property":79,"./_ctx":80,"./_export":86,"./_is-array-iter":96,"./_iter-call":99,"./_iter-detect":102,"./_to-length":139,"./_to-object":140,"./core.get-iterator-method":146}],150:[function(_dereq_,module,exports){
 'use strict';
 var addToUnscopables = _dereq_('./_add-to-unscopables');
 var step = _dereq_('./_iter-step');
@@ -10580,17 +10916,23 @@ addToUnscopables('keys');
 addToUnscopables('values');
 addToUnscopables('entries');
 
-},{"./_add-to-unscopables":64,"./_iter-define":93,"./_iter-step":95,"./_iterators":96,"./_to-iobject":128}],141:[function(_dereq_,module,exports){
+},{"./_add-to-unscopables":72,"./_iter-define":101,"./_iter-step":103,"./_iterators":104,"./_to-iobject":138}],151:[function(_dereq_,module,exports){
+// 19.1.3.1 Object.assign(target, source)
+var $export = _dereq_('./_export');
+
+$export($export.S + $export.F, 'Object', { assign: _dereq_('./_object-assign') });
+
+},{"./_export":86,"./_object-assign":109}],152:[function(_dereq_,module,exports){
 var $export = _dereq_('./_export');
 // 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
 $export($export.S, 'Object', { create: _dereq_('./_object-create') });
 
-},{"./_export":78,"./_object-create":101}],142:[function(_dereq_,module,exports){
+},{"./_export":86,"./_object-create":110}],153:[function(_dereq_,module,exports){
 var $export = _dereq_('./_export');
 // 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
 $export($export.S + $export.F * !_dereq_('./_descriptors'), 'Object', { defineProperty: _dereq_('./_object-dp').f });
 
-},{"./_descriptors":74,"./_export":78,"./_object-dp":102}],143:[function(_dereq_,module,exports){
+},{"./_descriptors":82,"./_export":86,"./_object-dp":111}],154:[function(_dereq_,module,exports){
 // 19.1.2.5 Object.freeze(O)
 var isObject = _dereq_('./_is-object');
 var meta = _dereq_('./_meta').onFreeze;
@@ -10601,7 +10943,7 @@ _dereq_('./_object-sap')('freeze', function ($freeze) {
   };
 });
 
-},{"./_is-object":90,"./_meta":98,"./_object-sap":112}],144:[function(_dereq_,module,exports){
+},{"./_is-object":98,"./_meta":106,"./_object-sap":121}],155:[function(_dereq_,module,exports){
 // 19.1.2.9 Object.getPrototypeOf(O)
 var toObject = _dereq_('./_to-object');
 var $getPrototypeOf = _dereq_('./_object-gpo');
@@ -10612,14 +10954,14 @@ _dereq_('./_object-sap')('getPrototypeOf', function () {
   };
 });
 
-},{"./_object-gpo":108,"./_object-sap":112,"./_to-object":130}],145:[function(_dereq_,module,exports){
+},{"./_object-gpo":117,"./_object-sap":121,"./_to-object":140}],156:[function(_dereq_,module,exports){
 // 19.1.3.19 Object.setPrototypeOf(O, proto)
 var $export = _dereq_('./_export');
 $export($export.S, 'Object', { setPrototypeOf: _dereq_('./_set-proto').set });
 
-},{"./_export":78,"./_set-proto":118}],146:[function(_dereq_,module,exports){
-arguments[4][42][0].apply(exports,arguments)
-},{"dup":42}],147:[function(_dereq_,module,exports){
+},{"./_export":86,"./_set-proto":128}],157:[function(_dereq_,module,exports){
+arguments[4][46][0].apply(exports,arguments)
+},{"dup":46}],158:[function(_dereq_,module,exports){
 'use strict';
 var LIBRARY = _dereq_('./_library');
 var global = _dereq_('./_global');
@@ -10894,7 +11236,7 @@ $export($export.S + $export.F * !(USE_NATIVE && _dereq_('./_iter-detect')(functi
   }
 });
 
-},{"./_a-function":63,"./_an-instance":65,"./_classof":68,"./_core":70,"./_ctx":72,"./_export":78,"./_for-of":80,"./_global":81,"./_is-object":90,"./_iter-detect":94,"./_library":97,"./_microtask":99,"./_new-promise-capability":100,"./_perform":113,"./_promise-resolve":114,"./_redefine-all":116,"./_set-species":119,"./_set-to-string-tag":120,"./_species-constructor":123,"./_task":125,"./_wks":135}],148:[function(_dereq_,module,exports){
+},{"./_a-function":71,"./_an-instance":73,"./_classof":76,"./_core":78,"./_ctx":80,"./_export":86,"./_for-of":88,"./_global":89,"./_is-object":98,"./_iter-detect":102,"./_library":105,"./_microtask":107,"./_new-promise-capability":108,"./_perform":123,"./_promise-resolve":124,"./_redefine-all":126,"./_set-species":129,"./_set-to-string-tag":130,"./_species-constructor":133,"./_task":135,"./_wks":145}],159:[function(_dereq_,module,exports){
 'use strict';
 var $at = _dereq_('./_string-at')(true);
 
@@ -10913,7 +11255,7 @@ _dereq_('./_iter-define')(String, 'String', function (iterated) {
   return { value: point, done: false };
 });
 
-},{"./_iter-define":93,"./_string-at":124}],149:[function(_dereq_,module,exports){
+},{"./_iter-define":101,"./_string-at":134}],160:[function(_dereq_,module,exports){
 'use strict';
 // ECMAScript 6 symbols shim
 var global = _dereq_('./_global');
@@ -11149,7 +11491,29 @@ setToStringTag(Math, 'Math', true);
 // 24.3.3 JSON[@@toStringTag]
 setToStringTag(global.JSON, 'JSON', true);
 
-},{"./_an-object":66,"./_descriptors":74,"./_enum-keys":77,"./_export":78,"./_fails":79,"./_global":81,"./_has":82,"./_hide":83,"./_is-array":89,"./_is-object":90,"./_library":97,"./_meta":98,"./_object-create":101,"./_object-dp":102,"./_object-gopd":104,"./_object-gopn":106,"./_object-gopn-ext":105,"./_object-gops":107,"./_object-keys":110,"./_object-pie":111,"./_property-desc":115,"./_redefine":117,"./_set-to-string-tag":120,"./_shared":122,"./_to-iobject":128,"./_to-primitive":131,"./_uid":132,"./_wks":135,"./_wks-define":133,"./_wks-ext":134}],150:[function(_dereq_,module,exports){
+},{"./_an-object":74,"./_descriptors":82,"./_enum-keys":85,"./_export":86,"./_fails":87,"./_global":89,"./_has":90,"./_hide":91,"./_is-array":97,"./_is-object":98,"./_library":105,"./_meta":106,"./_object-create":110,"./_object-dp":111,"./_object-gopd":113,"./_object-gopn":115,"./_object-gopn-ext":114,"./_object-gops":116,"./_object-keys":119,"./_object-pie":120,"./_property-desc":125,"./_redefine":127,"./_set-to-string-tag":130,"./_shared":132,"./_to-iobject":138,"./_to-primitive":141,"./_uid":142,"./_wks":145,"./_wks-define":143,"./_wks-ext":144}],161:[function(_dereq_,module,exports){
+// https://github.com/tc39/proposal-object-values-entries
+var $export = _dereq_('./_export');
+var $entries = _dereq_('./_object-to-array')(true);
+
+$export($export.S, 'Object', {
+  entries: function entries(it) {
+    return $entries(it);
+  }
+});
+
+},{"./_export":86,"./_object-to-array":122}],162:[function(_dereq_,module,exports){
+// https://github.com/tc39/proposal-object-values-entries
+var $export = _dereq_('./_export');
+var $values = _dereq_('./_object-to-array')(false);
+
+$export($export.S, 'Object', {
+  values: function values(it) {
+    return $values(it);
+  }
+});
+
+},{"./_export":86,"./_object-to-array":122}],163:[function(_dereq_,module,exports){
 // https://github.com/tc39/proposal-promise-finally
 'use strict';
 var $export = _dereq_('./_export');
@@ -11171,7 +11535,7 @@ $export($export.P + $export.R, 'Promise', { 'finally': function (onFinally) {
   );
 } });
 
-},{"./_core":70,"./_export":78,"./_global":81,"./_promise-resolve":114,"./_species-constructor":123}],151:[function(_dereq_,module,exports){
+},{"./_core":78,"./_export":86,"./_global":89,"./_promise-resolve":124,"./_species-constructor":133}],164:[function(_dereq_,module,exports){
 'use strict';
 // https://github.com/tc39/proposal-promise-try
 var $export = _dereq_('./_export');
@@ -11185,13 +11549,13 @@ $export($export.S, 'Promise', { 'try': function (callbackfn) {
   return promiseCapability.promise;
 } });
 
-},{"./_export":78,"./_new-promise-capability":100,"./_perform":113}],152:[function(_dereq_,module,exports){
+},{"./_export":86,"./_new-promise-capability":108,"./_perform":123}],165:[function(_dereq_,module,exports){
 _dereq_('./_wks-define')('asyncIterator');
 
-},{"./_wks-define":133}],153:[function(_dereq_,module,exports){
+},{"./_wks-define":143}],166:[function(_dereq_,module,exports){
 _dereq_('./_wks-define')('observable');
 
-},{"./_wks-define":133}],154:[function(_dereq_,module,exports){
+},{"./_wks-define":143}],167:[function(_dereq_,module,exports){
 _dereq_('./es6.array.iterator');
 var global = _dereq_('./_global');
 var hide = _dereq_('./_hide');
@@ -11212,9 +11576,9 @@ for (var i = 0; i < DOMIterables.length; i++) {
   Iterators[NAME] = Iterators.Array;
 }
 
-},{"./_global":81,"./_hide":83,"./_iterators":96,"./_wks":135,"./es6.array.iterator":140}],155:[function(_dereq_,module,exports){
-arguments[4][63][0].apply(exports,arguments)
-},{"dup":63}],156:[function(_dereq_,module,exports){
+},{"./_global":89,"./_hide":91,"./_iterators":104,"./_wks":145,"./es6.array.iterator":150}],168:[function(_dereq_,module,exports){
+arguments[4][71][0].apply(exports,arguments)
+},{"dup":71}],169:[function(_dereq_,module,exports){
 // 22.1.3.31 Array.prototype[@@unscopables]
 var UNSCOPABLES = _dereq_('./_wks')('unscopables');
 var ArrayProto = Array.prototype;
@@ -11223,11 +11587,11 @@ module.exports = function (key) {
   ArrayProto[UNSCOPABLES][key] = true;
 };
 
-},{"./_hide":180,"./_wks":235}],157:[function(_dereq_,module,exports){
-arguments[4][65][0].apply(exports,arguments)
-},{"dup":65}],158:[function(_dereq_,module,exports){
-arguments[4][66][0].apply(exports,arguments)
-},{"./_is-object":187,"dup":66}],159:[function(_dereq_,module,exports){
+},{"./_hide":193,"./_wks":249}],170:[function(_dereq_,module,exports){
+arguments[4][73][0].apply(exports,arguments)
+},{"dup":73}],171:[function(_dereq_,module,exports){
+arguments[4][74][0].apply(exports,arguments)
+},{"./_is-object":200,"dup":74}],172:[function(_dereq_,module,exports){
 // 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)
 'use strict';
 var toObject = _dereq_('./_to-object');
@@ -11255,7 +11619,7 @@ module.exports = [].copyWithin || function copyWithin(target /* = 0 */, start /*
   } return O;
 };
 
-},{"./_to-absolute-index":222,"./_to-length":226,"./_to-object":227}],160:[function(_dereq_,module,exports){
+},{"./_to-absolute-index":236,"./_to-length":240,"./_to-object":241}],173:[function(_dereq_,module,exports){
 // 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
 'use strict';
 var toObject = _dereq_('./_to-object');
@@ -11272,9 +11636,9 @@ module.exports = function fill(value /* , start = 0, end = @length */) {
   return O;
 };
 
-},{"./_to-absolute-index":222,"./_to-length":226,"./_to-object":227}],161:[function(_dereq_,module,exports){
-arguments[4][67][0].apply(exports,arguments)
-},{"./_to-absolute-index":222,"./_to-iobject":225,"./_to-length":226,"dup":67}],162:[function(_dereq_,module,exports){
+},{"./_to-absolute-index":236,"./_to-length":240,"./_to-object":241}],174:[function(_dereq_,module,exports){
+arguments[4][75][0].apply(exports,arguments)
+},{"./_to-absolute-index":236,"./_to-iobject":239,"./_to-length":240,"dup":75}],175:[function(_dereq_,module,exports){
 // 0 -> Array#forEach
 // 1 -> Array#map
 // 2 -> Array#filter
@@ -11320,7 +11684,7 @@ module.exports = function (TYPE, $create) {
   };
 };
 
-},{"./_array-species-create":164,"./_ctx":169,"./_iobject":184,"./_to-length":226,"./_to-object":227}],163:[function(_dereq_,module,exports){
+},{"./_array-species-create":177,"./_ctx":182,"./_iobject":197,"./_to-length":240,"./_to-object":241}],176:[function(_dereq_,module,exports){
 var isObject = _dereq_('./_is-object');
 var isArray = _dereq_('./_is-array');
 var SPECIES = _dereq_('./_wks')('species');
@@ -11338,7 +11702,7 @@ module.exports = function (original) {
   } return C === undefined ? Array : C;
 };
 
-},{"./_is-array":186,"./_is-object":187,"./_wks":235}],164:[function(_dereq_,module,exports){
+},{"./_is-array":199,"./_is-object":200,"./_wks":249}],177:[function(_dereq_,module,exports){
 // 9.4.2.3 ArraySpeciesCreate(originalArray, length)
 var speciesConstructor = _dereq_('./_array-species-constructor');
 
@@ -11346,27 +11710,27 @@ module.exports = function (original, length) {
   return new (speciesConstructor(original))(length);
 };
 
-},{"./_array-species-constructor":163}],165:[function(_dereq_,module,exports){
-arguments[4][68][0].apply(exports,arguments)
-},{"./_cof":166,"./_wks":235,"dup":68}],166:[function(_dereq_,module,exports){
-arguments[4][69][0].apply(exports,arguments)
-},{"dup":69}],167:[function(_dereq_,module,exports){
-arguments[4][70][0].apply(exports,arguments)
-},{"dup":70}],168:[function(_dereq_,module,exports){
-arguments[4][71][0].apply(exports,arguments)
-},{"./_object-dp":199,"./_property-desc":211,"dup":71}],169:[function(_dereq_,module,exports){
-arguments[4][72][0].apply(exports,arguments)
-},{"./_a-function":155,"dup":72}],170:[function(_dereq_,module,exports){
-arguments[4][73][0].apply(exports,arguments)
-},{"dup":73}],171:[function(_dereq_,module,exports){
-arguments[4][74][0].apply(exports,arguments)
-},{"./_fails":176,"dup":74}],172:[function(_dereq_,module,exports){
-arguments[4][75][0].apply(exports,arguments)
-},{"./_global":178,"./_is-object":187,"dup":75}],173:[function(_dereq_,module,exports){
+},{"./_array-species-constructor":176}],178:[function(_dereq_,module,exports){
 arguments[4][76][0].apply(exports,arguments)
-},{"dup":76}],174:[function(_dereq_,module,exports){
+},{"./_cof":179,"./_wks":249,"dup":76}],179:[function(_dereq_,module,exports){
 arguments[4][77][0].apply(exports,arguments)
-},{"./_object-gops":204,"./_object-keys":207,"./_object-pie":208,"dup":77}],175:[function(_dereq_,module,exports){
+},{"dup":77}],180:[function(_dereq_,module,exports){
+arguments[4][78][0].apply(exports,arguments)
+},{"dup":78}],181:[function(_dereq_,module,exports){
+arguments[4][79][0].apply(exports,arguments)
+},{"./_object-dp":213,"./_property-desc":225,"dup":79}],182:[function(_dereq_,module,exports){
+arguments[4][80][0].apply(exports,arguments)
+},{"./_a-function":168,"dup":80}],183:[function(_dereq_,module,exports){
+arguments[4][81][0].apply(exports,arguments)
+},{"dup":81}],184:[function(_dereq_,module,exports){
+arguments[4][82][0].apply(exports,arguments)
+},{"./_fails":189,"dup":82}],185:[function(_dereq_,module,exports){
+arguments[4][83][0].apply(exports,arguments)
+},{"./_global":191,"./_is-object":200,"dup":83}],186:[function(_dereq_,module,exports){
+arguments[4][84][0].apply(exports,arguments)
+},{"dup":84}],187:[function(_dereq_,module,exports){
+arguments[4][85][0].apply(exports,arguments)
+},{"./_object-gops":218,"./_object-keys":221,"./_object-pie":222,"dup":85}],188:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var core = _dereq_('./_core');
 var hide = _dereq_('./_hide');
@@ -11411,87 +11775,89 @@ $export.U = 64;  // safe
 $export.R = 128; // real proto method for `library`
 module.exports = $export;
 
-},{"./_core":167,"./_ctx":169,"./_global":178,"./_hide":180,"./_redefine":213}],176:[function(_dereq_,module,exports){
-arguments[4][79][0].apply(exports,arguments)
-},{"dup":79}],177:[function(_dereq_,module,exports){
-arguments[4][80][0].apply(exports,arguments)
-},{"./_an-object":158,"./_ctx":169,"./_is-array-iter":185,"./_iter-call":188,"./_to-length":226,"./core.get-iterator-method":236,"dup":80}],178:[function(_dereq_,module,exports){
-arguments[4][81][0].apply(exports,arguments)
-},{"dup":81}],179:[function(_dereq_,module,exports){
-arguments[4][82][0].apply(exports,arguments)
-},{"dup":82}],180:[function(_dereq_,module,exports){
-arguments[4][83][0].apply(exports,arguments)
-},{"./_descriptors":171,"./_object-dp":199,"./_property-desc":211,"dup":83}],181:[function(_dereq_,module,exports){
-arguments[4][84][0].apply(exports,arguments)
-},{"./_global":178,"dup":84}],182:[function(_dereq_,module,exports){
-arguments[4][85][0].apply(exports,arguments)
-},{"./_descriptors":171,"./_dom-create":172,"./_fails":176,"dup":85}],183:[function(_dereq_,module,exports){
-arguments[4][86][0].apply(exports,arguments)
-},{"dup":86}],184:[function(_dereq_,module,exports){
+},{"./_core":180,"./_ctx":182,"./_global":191,"./_hide":193,"./_redefine":227}],189:[function(_dereq_,module,exports){
 arguments[4][87][0].apply(exports,arguments)
-},{"./_cof":166,"dup":87}],185:[function(_dereq_,module,exports){
+},{"dup":87}],190:[function(_dereq_,module,exports){
 arguments[4][88][0].apply(exports,arguments)
-},{"./_iterators":193,"./_wks":235,"dup":88}],186:[function(_dereq_,module,exports){
+},{"./_an-object":171,"./_ctx":182,"./_is-array-iter":198,"./_iter-call":201,"./_to-length":240,"./core.get-iterator-method":250,"dup":88}],191:[function(_dereq_,module,exports){
 arguments[4][89][0].apply(exports,arguments)
-},{"./_cof":166,"dup":89}],187:[function(_dereq_,module,exports){
+},{"dup":89}],192:[function(_dereq_,module,exports){
 arguments[4][90][0].apply(exports,arguments)
-},{"dup":90}],188:[function(_dereq_,module,exports){
+},{"dup":90}],193:[function(_dereq_,module,exports){
 arguments[4][91][0].apply(exports,arguments)
-},{"./_an-object":158,"dup":91}],189:[function(_dereq_,module,exports){
+},{"./_descriptors":184,"./_object-dp":213,"./_property-desc":225,"dup":91}],194:[function(_dereq_,module,exports){
 arguments[4][92][0].apply(exports,arguments)
-},{"./_hide":180,"./_object-create":198,"./_property-desc":211,"./_set-to-string-tag":215,"./_wks":235,"dup":92}],190:[function(_dereq_,module,exports){
+},{"./_global":191,"dup":92}],195:[function(_dereq_,module,exports){
 arguments[4][93][0].apply(exports,arguments)
-},{"./_export":175,"./_has":179,"./_hide":180,"./_iter-create":189,"./_iterators":193,"./_library":194,"./_object-gpo":205,"./_redefine":213,"./_set-to-string-tag":215,"./_wks":235,"dup":93}],191:[function(_dereq_,module,exports){
+},{"./_descriptors":184,"./_dom-create":185,"./_fails":189,"dup":93}],196:[function(_dereq_,module,exports){
 arguments[4][94][0].apply(exports,arguments)
-},{"./_wks":235,"dup":94}],192:[function(_dereq_,module,exports){
+},{"dup":94}],197:[function(_dereq_,module,exports){
 arguments[4][95][0].apply(exports,arguments)
-},{"dup":95}],193:[function(_dereq_,module,exports){
+},{"./_cof":179,"dup":95}],198:[function(_dereq_,module,exports){
 arguments[4][96][0].apply(exports,arguments)
-},{"dup":96}],194:[function(_dereq_,module,exports){
+},{"./_iterators":206,"./_wks":249,"dup":96}],199:[function(_dereq_,module,exports){
+arguments[4][97][0].apply(exports,arguments)
+},{"./_cof":179,"dup":97}],200:[function(_dereq_,module,exports){
+arguments[4][98][0].apply(exports,arguments)
+},{"dup":98}],201:[function(_dereq_,module,exports){
+arguments[4][99][0].apply(exports,arguments)
+},{"./_an-object":171,"dup":99}],202:[function(_dereq_,module,exports){
+arguments[4][100][0].apply(exports,arguments)
+},{"./_hide":193,"./_object-create":212,"./_property-desc":225,"./_set-to-string-tag":229,"./_wks":249,"dup":100}],203:[function(_dereq_,module,exports){
+arguments[4][101][0].apply(exports,arguments)
+},{"./_export":188,"./_has":192,"./_hide":193,"./_iter-create":202,"./_iterators":206,"./_library":207,"./_object-gpo":219,"./_redefine":227,"./_set-to-string-tag":229,"./_wks":249,"dup":101}],204:[function(_dereq_,module,exports){
+arguments[4][102][0].apply(exports,arguments)
+},{"./_wks":249,"dup":102}],205:[function(_dereq_,module,exports){
+arguments[4][103][0].apply(exports,arguments)
+},{"dup":103}],206:[function(_dereq_,module,exports){
+arguments[4][104][0].apply(exports,arguments)
+},{"dup":104}],207:[function(_dereq_,module,exports){
 module.exports = false;
 
-},{}],195:[function(_dereq_,module,exports){
-arguments[4][98][0].apply(exports,arguments)
-},{"./_fails":176,"./_has":179,"./_is-object":187,"./_object-dp":199,"./_uid":232,"dup":98}],196:[function(_dereq_,module,exports){
-arguments[4][99][0].apply(exports,arguments)
-},{"./_cof":166,"./_global":178,"./_task":221,"dup":99}],197:[function(_dereq_,module,exports){
-arguments[4][100][0].apply(exports,arguments)
-},{"./_a-function":155,"dup":100}],198:[function(_dereq_,module,exports){
-arguments[4][101][0].apply(exports,arguments)
-},{"./_an-object":158,"./_dom-create":172,"./_enum-bug-keys":173,"./_html":181,"./_object-dps":200,"./_shared-key":216,"dup":101}],199:[function(_dereq_,module,exports){
-arguments[4][102][0].apply(exports,arguments)
-},{"./_an-object":158,"./_descriptors":171,"./_ie8-dom-define":182,"./_to-primitive":228,"dup":102}],200:[function(_dereq_,module,exports){
-arguments[4][103][0].apply(exports,arguments)
-},{"./_an-object":158,"./_descriptors":171,"./_object-dp":199,"./_object-keys":207,"dup":103}],201:[function(_dereq_,module,exports){
-arguments[4][104][0].apply(exports,arguments)
-},{"./_descriptors":171,"./_has":179,"./_ie8-dom-define":182,"./_object-pie":208,"./_property-desc":211,"./_to-iobject":225,"./_to-primitive":228,"dup":104}],202:[function(_dereq_,module,exports){
-arguments[4][105][0].apply(exports,arguments)
-},{"./_object-gopn":203,"./_to-iobject":225,"dup":105}],203:[function(_dereq_,module,exports){
+},{}],208:[function(_dereq_,module,exports){
 arguments[4][106][0].apply(exports,arguments)
-},{"./_enum-bug-keys":173,"./_object-keys-internal":206,"dup":106}],204:[function(_dereq_,module,exports){
+},{"./_fails":189,"./_has":192,"./_is-object":200,"./_object-dp":213,"./_uid":246,"dup":106}],209:[function(_dereq_,module,exports){
 arguments[4][107][0].apply(exports,arguments)
-},{"dup":107}],205:[function(_dereq_,module,exports){
+},{"./_cof":179,"./_global":191,"./_task":235,"dup":107}],210:[function(_dereq_,module,exports){
 arguments[4][108][0].apply(exports,arguments)
-},{"./_has":179,"./_shared-key":216,"./_to-object":227,"dup":108}],206:[function(_dereq_,module,exports){
+},{"./_a-function":168,"dup":108}],211:[function(_dereq_,module,exports){
 arguments[4][109][0].apply(exports,arguments)
-},{"./_array-includes":161,"./_has":179,"./_shared-key":216,"./_to-iobject":225,"dup":109}],207:[function(_dereq_,module,exports){
+},{"./_fails":189,"./_iobject":197,"./_object-gops":218,"./_object-keys":221,"./_object-pie":222,"./_to-object":241,"dup":109}],212:[function(_dereq_,module,exports){
 arguments[4][110][0].apply(exports,arguments)
-},{"./_enum-bug-keys":173,"./_object-keys-internal":206,"dup":110}],208:[function(_dereq_,module,exports){
+},{"./_an-object":171,"./_dom-create":185,"./_enum-bug-keys":186,"./_html":194,"./_object-dps":214,"./_shared-key":230,"dup":110}],213:[function(_dereq_,module,exports){
 arguments[4][111][0].apply(exports,arguments)
-},{"dup":111}],209:[function(_dereq_,module,exports){
+},{"./_an-object":171,"./_descriptors":184,"./_ie8-dom-define":195,"./_to-primitive":242,"dup":111}],214:[function(_dereq_,module,exports){
+arguments[4][112][0].apply(exports,arguments)
+},{"./_an-object":171,"./_descriptors":184,"./_object-dp":213,"./_object-keys":221,"dup":112}],215:[function(_dereq_,module,exports){
 arguments[4][113][0].apply(exports,arguments)
-},{"dup":113}],210:[function(_dereq_,module,exports){
+},{"./_descriptors":184,"./_has":192,"./_ie8-dom-define":195,"./_object-pie":222,"./_property-desc":225,"./_to-iobject":239,"./_to-primitive":242,"dup":113}],216:[function(_dereq_,module,exports){
 arguments[4][114][0].apply(exports,arguments)
-},{"./_an-object":158,"./_is-object":187,"./_new-promise-capability":197,"dup":114}],211:[function(_dereq_,module,exports){
+},{"./_object-gopn":217,"./_to-iobject":239,"dup":114}],217:[function(_dereq_,module,exports){
 arguments[4][115][0].apply(exports,arguments)
-},{"dup":115}],212:[function(_dereq_,module,exports){
+},{"./_enum-bug-keys":186,"./_object-keys-internal":220,"dup":115}],218:[function(_dereq_,module,exports){
+arguments[4][116][0].apply(exports,arguments)
+},{"dup":116}],219:[function(_dereq_,module,exports){
+arguments[4][117][0].apply(exports,arguments)
+},{"./_has":192,"./_shared-key":230,"./_to-object":241,"dup":117}],220:[function(_dereq_,module,exports){
+arguments[4][118][0].apply(exports,arguments)
+},{"./_array-includes":174,"./_has":192,"./_shared-key":230,"./_to-iobject":239,"dup":118}],221:[function(_dereq_,module,exports){
+arguments[4][119][0].apply(exports,arguments)
+},{"./_enum-bug-keys":186,"./_object-keys-internal":220,"dup":119}],222:[function(_dereq_,module,exports){
+arguments[4][120][0].apply(exports,arguments)
+},{"dup":120}],223:[function(_dereq_,module,exports){
+arguments[4][123][0].apply(exports,arguments)
+},{"dup":123}],224:[function(_dereq_,module,exports){
+arguments[4][124][0].apply(exports,arguments)
+},{"./_an-object":171,"./_is-object":200,"./_new-promise-capability":210,"dup":124}],225:[function(_dereq_,module,exports){
+arguments[4][125][0].apply(exports,arguments)
+},{"dup":125}],226:[function(_dereq_,module,exports){
 var redefine = _dereq_('./_redefine');
 module.exports = function (target, src, safe) {
   for (var key in src) redefine(target, key, src[key], safe);
   return target;
 };
 
-},{"./_redefine":213}],213:[function(_dereq_,module,exports){
+},{"./_redefine":227}],227:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var hide = _dereq_('./_hide');
 var has = _dereq_('./_has');
@@ -11524,7 +11890,7 @@ _dereq_('./_core').inspectSource = function (it) {
   return typeof this == 'function' && this[SRC] || $toString.call(this);
 });
 
-},{"./_core":167,"./_global":178,"./_has":179,"./_hide":180,"./_uid":232}],214:[function(_dereq_,module,exports){
+},{"./_core":180,"./_global":191,"./_has":192,"./_hide":193,"./_uid":246}],228:[function(_dereq_,module,exports){
 'use strict';
 var global = _dereq_('./_global');
 var dP = _dereq_('./_object-dp');
@@ -11539,17 +11905,17 @@ module.exports = function (KEY) {
   });
 };
 
-},{"./_descriptors":171,"./_global":178,"./_object-dp":199,"./_wks":235}],215:[function(_dereq_,module,exports){
-arguments[4][120][0].apply(exports,arguments)
-},{"./_has":179,"./_object-dp":199,"./_wks":235,"dup":120}],216:[function(_dereq_,module,exports){
-arguments[4][121][0].apply(exports,arguments)
-},{"./_shared":217,"./_uid":232,"dup":121}],217:[function(_dereq_,module,exports){
-arguments[4][122][0].apply(exports,arguments)
-},{"./_global":178,"dup":122}],218:[function(_dereq_,module,exports){
-arguments[4][123][0].apply(exports,arguments)
-},{"./_a-function":155,"./_an-object":158,"./_wks":235,"dup":123}],219:[function(_dereq_,module,exports){
-arguments[4][124][0].apply(exports,arguments)
-},{"./_defined":170,"./_to-integer":224,"dup":124}],220:[function(_dereq_,module,exports){
+},{"./_descriptors":184,"./_global":191,"./_object-dp":213,"./_wks":249}],229:[function(_dereq_,module,exports){
+arguments[4][130][0].apply(exports,arguments)
+},{"./_has":192,"./_object-dp":213,"./_wks":249,"dup":130}],230:[function(_dereq_,module,exports){
+arguments[4][131][0].apply(exports,arguments)
+},{"./_shared":231,"./_uid":246,"dup":131}],231:[function(_dereq_,module,exports){
+arguments[4][132][0].apply(exports,arguments)
+},{"./_global":191,"dup":132}],232:[function(_dereq_,module,exports){
+arguments[4][133][0].apply(exports,arguments)
+},{"./_a-function":168,"./_an-object":171,"./_wks":249,"dup":133}],233:[function(_dereq_,module,exports){
+arguments[4][134][0].apply(exports,arguments)
+},{"./_defined":183,"./_to-integer":238,"dup":134}],234:[function(_dereq_,module,exports){
 'use strict';
 var toInteger = _dereq_('./_to-integer');
 var defined = _dereq_('./_defined');
@@ -11563,11 +11929,11 @@ module.exports = function repeat(count) {
   return res;
 };
 
-},{"./_defined":170,"./_to-integer":224}],221:[function(_dereq_,module,exports){
-arguments[4][125][0].apply(exports,arguments)
-},{"./_cof":166,"./_ctx":169,"./_dom-create":172,"./_global":178,"./_html":181,"./_invoke":183,"dup":125}],222:[function(_dereq_,module,exports){
-arguments[4][126][0].apply(exports,arguments)
-},{"./_to-integer":224,"dup":126}],223:[function(_dereq_,module,exports){
+},{"./_defined":183,"./_to-integer":238}],235:[function(_dereq_,module,exports){
+arguments[4][135][0].apply(exports,arguments)
+},{"./_cof":179,"./_ctx":182,"./_dom-create":185,"./_global":191,"./_html":194,"./_invoke":196,"dup":135}],236:[function(_dereq_,module,exports){
+arguments[4][136][0].apply(exports,arguments)
+},{"./_to-integer":238,"dup":136}],237:[function(_dereq_,module,exports){
 // https://tc39.github.io/ecma262/#sec-toindex
 var toInteger = _dereq_('./_to-integer');
 var toLength = _dereq_('./_to-length');
@@ -11579,17 +11945,17 @@ module.exports = function (it) {
   return length;
 };
 
-},{"./_to-integer":224,"./_to-length":226}],224:[function(_dereq_,module,exports){
-arguments[4][127][0].apply(exports,arguments)
-},{"dup":127}],225:[function(_dereq_,module,exports){
-arguments[4][128][0].apply(exports,arguments)
-},{"./_defined":170,"./_iobject":184,"dup":128}],226:[function(_dereq_,module,exports){
-arguments[4][129][0].apply(exports,arguments)
-},{"./_to-integer":224,"dup":129}],227:[function(_dereq_,module,exports){
-arguments[4][130][0].apply(exports,arguments)
-},{"./_defined":170,"dup":130}],228:[function(_dereq_,module,exports){
-arguments[4][131][0].apply(exports,arguments)
-},{"./_is-object":187,"dup":131}],229:[function(_dereq_,module,exports){
+},{"./_to-integer":238,"./_to-length":240}],238:[function(_dereq_,module,exports){
+arguments[4][137][0].apply(exports,arguments)
+},{"dup":137}],239:[function(_dereq_,module,exports){
+arguments[4][138][0].apply(exports,arguments)
+},{"./_defined":183,"./_iobject":197,"dup":138}],240:[function(_dereq_,module,exports){
+arguments[4][139][0].apply(exports,arguments)
+},{"./_to-integer":238,"dup":139}],241:[function(_dereq_,module,exports){
+arguments[4][140][0].apply(exports,arguments)
+},{"./_defined":183,"dup":140}],242:[function(_dereq_,module,exports){
+arguments[4][141][0].apply(exports,arguments)
+},{"./_is-object":200,"dup":141}],243:[function(_dereq_,module,exports){
 'use strict';
 if (_dereq_('./_descriptors')) {
   var LIBRARY = _dereq_('./_library');
@@ -12071,7 +12437,7 @@ if (_dereq_('./_descriptors')) {
   };
 } else module.exports = function () { /* empty */ };
 
-},{"./_an-instance":157,"./_array-copy-within":159,"./_array-fill":160,"./_array-includes":161,"./_array-methods":162,"./_classof":165,"./_ctx":169,"./_descriptors":171,"./_export":175,"./_fails":176,"./_global":178,"./_has":179,"./_hide":180,"./_is-array-iter":185,"./_is-object":187,"./_iter-detect":191,"./_iterators":193,"./_library":194,"./_object-create":198,"./_object-dp":199,"./_object-gopd":201,"./_object-gopn":203,"./_object-gpo":205,"./_property-desc":211,"./_redefine-all":212,"./_set-species":214,"./_species-constructor":218,"./_to-absolute-index":222,"./_to-index":223,"./_to-integer":224,"./_to-length":226,"./_to-object":227,"./_to-primitive":228,"./_typed":231,"./_typed-buffer":230,"./_uid":232,"./_wks":235,"./core.get-iterator-method":236,"./es6.array.iterator":240}],230:[function(_dereq_,module,exports){
+},{"./_an-instance":170,"./_array-copy-within":172,"./_array-fill":173,"./_array-includes":174,"./_array-methods":175,"./_classof":178,"./_ctx":182,"./_descriptors":184,"./_export":188,"./_fails":189,"./_global":191,"./_has":192,"./_hide":193,"./_is-array-iter":198,"./_is-object":200,"./_iter-detect":204,"./_iterators":206,"./_library":207,"./_object-create":212,"./_object-dp":213,"./_object-gopd":215,"./_object-gopn":217,"./_object-gpo":219,"./_property-desc":225,"./_redefine-all":226,"./_set-species":228,"./_species-constructor":232,"./_to-absolute-index":236,"./_to-index":237,"./_to-integer":238,"./_to-length":240,"./_to-object":241,"./_to-primitive":242,"./_typed":245,"./_typed-buffer":244,"./_uid":246,"./_wks":249,"./core.get-iterator-method":250,"./es6.array.iterator":254}],244:[function(_dereq_,module,exports){
 'use strict';
 var global = _dereq_('./_global');
 var DESCRIPTORS = _dereq_('./_descriptors');
@@ -12349,7 +12715,7 @@ hide($DataView[PROTOTYPE], $typed.VIEW, true);
 exports[ARRAY_BUFFER] = $ArrayBuffer;
 exports[DATA_VIEW] = $DataView;
 
-},{"./_an-instance":157,"./_array-fill":160,"./_descriptors":171,"./_fails":176,"./_global":178,"./_hide":180,"./_library":194,"./_object-dp":199,"./_object-gopn":203,"./_redefine-all":212,"./_set-to-string-tag":215,"./_to-index":223,"./_to-integer":224,"./_to-length":226,"./_typed":231}],231:[function(_dereq_,module,exports){
+},{"./_an-instance":170,"./_array-fill":173,"./_descriptors":184,"./_fails":189,"./_global":191,"./_hide":193,"./_library":207,"./_object-dp":213,"./_object-gopn":217,"./_redefine-all":226,"./_set-to-string-tag":229,"./_to-index":237,"./_to-integer":238,"./_to-length":240,"./_typed":245}],245:[function(_dereq_,module,exports){
 var global = _dereq_('./_global');
 var hide = _dereq_('./_hide');
 var uid = _dereq_('./_uid');
@@ -12379,17 +12745,17 @@ module.exports = {
   VIEW: VIEW
 };
 
-},{"./_global":178,"./_hide":180,"./_uid":232}],232:[function(_dereq_,module,exports){
-arguments[4][132][0].apply(exports,arguments)
-},{"dup":132}],233:[function(_dereq_,module,exports){
-arguments[4][133][0].apply(exports,arguments)
-},{"./_core":167,"./_global":178,"./_library":194,"./_object-dp":199,"./_wks-ext":234,"dup":133}],234:[function(_dereq_,module,exports){
-arguments[4][134][0].apply(exports,arguments)
-},{"./_wks":235,"dup":134}],235:[function(_dereq_,module,exports){
-arguments[4][135][0].apply(exports,arguments)
-},{"./_global":178,"./_shared":217,"./_uid":232,"dup":135}],236:[function(_dereq_,module,exports){
-arguments[4][136][0].apply(exports,arguments)
-},{"./_classof":165,"./_core":167,"./_iterators":193,"./_wks":235,"dup":136}],237:[function(_dereq_,module,exports){
+},{"./_global":191,"./_hide":193,"./_uid":246}],246:[function(_dereq_,module,exports){
+arguments[4][142][0].apply(exports,arguments)
+},{"dup":142}],247:[function(_dereq_,module,exports){
+arguments[4][143][0].apply(exports,arguments)
+},{"./_core":180,"./_global":191,"./_library":207,"./_object-dp":213,"./_wks-ext":248,"dup":143}],248:[function(_dereq_,module,exports){
+arguments[4][144][0].apply(exports,arguments)
+},{"./_wks":249,"dup":144}],249:[function(_dereq_,module,exports){
+arguments[4][145][0].apply(exports,arguments)
+},{"./_global":191,"./_shared":231,"./_uid":246,"dup":145}],250:[function(_dereq_,module,exports){
+arguments[4][146][0].apply(exports,arguments)
+},{"./_classof":178,"./_core":180,"./_iterators":206,"./_wks":249,"dup":146}],251:[function(_dereq_,module,exports){
 // 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
 var $export = _dereq_('./_export');
 
@@ -12397,7 +12763,7 @@ $export($export.P, 'Array', { fill: _dereq_('./_array-fill') });
 
 _dereq_('./_add-to-unscopables')('fill');
 
-},{"./_add-to-unscopables":156,"./_array-fill":160,"./_export":175}],238:[function(_dereq_,module,exports){
+},{"./_add-to-unscopables":169,"./_array-fill":173,"./_export":188}],252:[function(_dereq_,module,exports){
 'use strict';
 // 22.1.3.8 Array.prototype.find(predicate, thisArg = undefined)
 var $export = _dereq_('./_export');
@@ -12413,11 +12779,13 @@ $export($export.P + $export.F * forced, 'Array', {
 });
 _dereq_('./_add-to-unscopables')(KEY);
 
-},{"./_add-to-unscopables":156,"./_array-methods":162,"./_export":175}],239:[function(_dereq_,module,exports){
-arguments[4][139][0].apply(exports,arguments)
-},{"./_create-property":168,"./_ctx":169,"./_export":175,"./_is-array-iter":185,"./_iter-call":188,"./_iter-detect":191,"./_to-length":226,"./_to-object":227,"./core.get-iterator-method":236,"dup":139}],240:[function(_dereq_,module,exports){
-arguments[4][140][0].apply(exports,arguments)
-},{"./_add-to-unscopables":156,"./_iter-define":190,"./_iter-step":192,"./_iterators":193,"./_to-iobject":225,"dup":140}],241:[function(_dereq_,module,exports){
+},{"./_add-to-unscopables":169,"./_array-methods":175,"./_export":188}],253:[function(_dereq_,module,exports){
+arguments[4][149][0].apply(exports,arguments)
+},{"./_create-property":181,"./_ctx":182,"./_export":188,"./_is-array-iter":198,"./_iter-call":201,"./_iter-detect":204,"./_to-length":240,"./_to-object":241,"./core.get-iterator-method":250,"dup":149}],254:[function(_dereq_,module,exports){
+arguments[4][150][0].apply(exports,arguments)
+},{"./_add-to-unscopables":169,"./_iter-define":203,"./_iter-step":205,"./_iterators":206,"./_to-iobject":239,"dup":150}],255:[function(_dereq_,module,exports){
+arguments[4][151][0].apply(exports,arguments)
+},{"./_export":188,"./_object-assign":211,"dup":151}],256:[function(_dereq_,module,exports){
 'use strict';
 // 19.1.3.6 Object.prototype.toString()
 var classof = _dereq_('./_classof');
@@ -12429,11 +12797,11 @@ if (test + '' != '[object z]') {
   }, true);
 }
 
-},{"./_classof":165,"./_redefine":213,"./_wks":235}],242:[function(_dereq_,module,exports){
-arguments[4][147][0].apply(exports,arguments)
-},{"./_a-function":155,"./_an-instance":157,"./_classof":165,"./_core":167,"./_ctx":169,"./_export":175,"./_for-of":177,"./_global":178,"./_is-object":187,"./_iter-detect":191,"./_library":194,"./_microtask":196,"./_new-promise-capability":197,"./_perform":209,"./_promise-resolve":210,"./_redefine-all":212,"./_set-species":214,"./_set-to-string-tag":215,"./_species-constructor":218,"./_task":221,"./_wks":235,"dup":147}],243:[function(_dereq_,module,exports){
-arguments[4][148][0].apply(exports,arguments)
-},{"./_iter-define":190,"./_string-at":219,"dup":148}],244:[function(_dereq_,module,exports){
+},{"./_classof":178,"./_redefine":227,"./_wks":249}],257:[function(_dereq_,module,exports){
+arguments[4][158][0].apply(exports,arguments)
+},{"./_a-function":168,"./_an-instance":170,"./_classof":178,"./_core":180,"./_ctx":182,"./_export":188,"./_for-of":190,"./_global":191,"./_is-object":200,"./_iter-detect":204,"./_library":207,"./_microtask":209,"./_new-promise-capability":210,"./_perform":223,"./_promise-resolve":224,"./_redefine-all":226,"./_set-species":228,"./_set-to-string-tag":229,"./_species-constructor":232,"./_task":235,"./_wks":249,"dup":158}],258:[function(_dereq_,module,exports){
+arguments[4][159][0].apply(exports,arguments)
+},{"./_iter-define":203,"./_string-at":233,"dup":159}],259:[function(_dereq_,module,exports){
 var $export = _dereq_('./_export');
 
 $export($export.P, 'String', {
@@ -12441,24 +12809,24 @@ $export($export.P, 'String', {
   repeat: _dereq_('./_string-repeat')
 });
 
-},{"./_export":175,"./_string-repeat":220}],245:[function(_dereq_,module,exports){
-arguments[4][149][0].apply(exports,arguments)
-},{"./_an-object":158,"./_descriptors":171,"./_enum-keys":174,"./_export":175,"./_fails":176,"./_global":178,"./_has":179,"./_hide":180,"./_is-array":186,"./_is-object":187,"./_library":194,"./_meta":195,"./_object-create":198,"./_object-dp":199,"./_object-gopd":201,"./_object-gopn":203,"./_object-gopn-ext":202,"./_object-gops":204,"./_object-keys":207,"./_object-pie":208,"./_property-desc":211,"./_redefine":213,"./_set-to-string-tag":215,"./_shared":217,"./_to-iobject":225,"./_to-primitive":228,"./_uid":232,"./_wks":235,"./_wks-define":233,"./_wks-ext":234,"dup":149}],246:[function(_dereq_,module,exports){
+},{"./_export":188,"./_string-repeat":234}],260:[function(_dereq_,module,exports){
+arguments[4][160][0].apply(exports,arguments)
+},{"./_an-object":171,"./_descriptors":184,"./_enum-keys":187,"./_export":188,"./_fails":189,"./_global":191,"./_has":192,"./_hide":193,"./_is-array":199,"./_is-object":200,"./_library":207,"./_meta":208,"./_object-create":212,"./_object-dp":213,"./_object-gopd":215,"./_object-gopn":217,"./_object-gopn-ext":216,"./_object-gops":218,"./_object-keys":221,"./_object-pie":222,"./_property-desc":225,"./_redefine":227,"./_set-to-string-tag":229,"./_shared":231,"./_to-iobject":239,"./_to-primitive":242,"./_uid":246,"./_wks":249,"./_wks-define":247,"./_wks-ext":248,"dup":160}],261:[function(_dereq_,module,exports){
 _dereq_('./_typed-array')('Uint8', 1, function (init) {
   return function Uint8Array(data, byteOffset, length) {
     return init(this, data, byteOffset, length);
   };
 });
 
-},{"./_typed-array":229}],247:[function(_dereq_,module,exports){
-arguments[4][150][0].apply(exports,arguments)
-},{"./_core":167,"./_export":175,"./_global":178,"./_promise-resolve":210,"./_species-constructor":218,"dup":150}],248:[function(_dereq_,module,exports){
-arguments[4][151][0].apply(exports,arguments)
-},{"./_export":175,"./_new-promise-capability":197,"./_perform":209,"dup":151}],249:[function(_dereq_,module,exports){
-arguments[4][152][0].apply(exports,arguments)
-},{"./_wks-define":233,"dup":152}],250:[function(_dereq_,module,exports){
-arguments[4][153][0].apply(exports,arguments)
-},{"./_wks-define":233,"dup":153}],251:[function(_dereq_,module,exports){
+},{"./_typed-array":243}],262:[function(_dereq_,module,exports){
+arguments[4][163][0].apply(exports,arguments)
+},{"./_core":180,"./_export":188,"./_global":191,"./_promise-resolve":224,"./_species-constructor":232,"dup":163}],263:[function(_dereq_,module,exports){
+arguments[4][164][0].apply(exports,arguments)
+},{"./_export":188,"./_new-promise-capability":210,"./_perform":223,"dup":164}],264:[function(_dereq_,module,exports){
+arguments[4][165][0].apply(exports,arguments)
+},{"./_wks-define":247,"dup":165}],265:[function(_dereq_,module,exports){
+arguments[4][166][0].apply(exports,arguments)
+},{"./_wks-define":247,"dup":166}],266:[function(_dereq_,module,exports){
 var $iterators = _dereq_('./es6.array.iterator');
 var getKeys = _dereq_('./_object-keys');
 var redefine = _dereq_('./_redefine');
@@ -12518,7 +12886,7 @@ for (var collections = getKeys(DOMIterables), i = 0; i < collections.length; i++
   }
 }
 
-},{"./_global":178,"./_hide":180,"./_iterators":193,"./_object-keys":207,"./_redefine":213,"./_wks":235,"./es6.array.iterator":240}],252:[function(_dereq_,module,exports){
+},{"./_global":191,"./_hide":193,"./_iterators":206,"./_object-keys":221,"./_redefine":227,"./_wks":249,"./es6.array.iterator":254}],267:[function(_dereq_,module,exports){
 'use strict';
 
 var elliptic = exports;
@@ -12533,7 +12901,7 @@ elliptic.curves = _dereq_('./elliptic/curves');
 elliptic.ec = _dereq_('./elliptic/ec');
 elliptic.eddsa = _dereq_('./elliptic/eddsa');
 
-},{"../package.json":267,"./elliptic/curve":255,"./elliptic/curves":258,"./elliptic/ec":259,"./elliptic/eddsa":262,"./elliptic/utils":266,"brorand":41}],253:[function(_dereq_,module,exports){
+},{"../package.json":282,"./elliptic/curve":270,"./elliptic/curves":273,"./elliptic/ec":274,"./elliptic/eddsa":277,"./elliptic/utils":281,"brorand":45}],268:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -12910,7 +13278,7 @@ BasePoint.prototype.dblp = function dblp(k) {
   return r;
 };
 
-},{"../../elliptic":252,"bn.js":40}],254:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"bn.js":44}],269:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = _dereq_('../curve');
@@ -13345,7 +13713,7 @@ Point.prototype.eqXToP = function eqXToP(x) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":252,"../curve":255,"bn.js":40,"inherits":282}],255:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"../curve":270,"bn.js":44,"inherits":298}],270:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = exports;
@@ -13355,7 +13723,7 @@ curve.short = _dereq_('./short');
 curve.mont = _dereq_('./mont');
 curve.edwards = _dereq_('./edwards');
 
-},{"./base":253,"./edwards":254,"./mont":256,"./short":257}],256:[function(_dereq_,module,exports){
+},{"./base":268,"./edwards":269,"./mont":271,"./short":272}],271:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = _dereq_('../curve');
@@ -13558,7 +13926,7 @@ Point.prototype.getX = function getX() {
   return this.x.fromRed();
 };
 
-},{"../../elliptic":252,"../curve":255,"bn.js":40,"inherits":282}],257:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"../curve":270,"bn.js":44,"inherits":298}],272:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = _dereq_('../curve');
@@ -14497,7 +14865,7 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":252,"../curve":255,"bn.js":40,"inherits":282}],258:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"../curve":270,"bn.js":44,"inherits":298}],273:[function(_dereq_,module,exports){
 'use strict';
 
 var curves = exports;
@@ -14768,7 +15136,7 @@ defineCurve('secp256k1', {
   ]
 });
 
-},{"../elliptic":252,"./precomputed/secp256k1":265,"hash.js":268}],259:[function(_dereq_,module,exports){
+},{"../elliptic":267,"./precomputed/secp256k1":280,"hash.js":284}],274:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15016,7 +15384,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
   throw new Error('Unable to find valid recovery factor');
 };
 
-},{"../../elliptic":252,"./key":260,"./signature":261,"bn.js":40,"hmac-drbg":280}],260:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"./key":275,"./signature":276,"bn.js":44,"hmac-drbg":296}],275:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15149,7 +15517,7 @@ KeyPair.prototype.inspect = function inspect() {
          ' pub: ' + (this.pub && this.pub.inspect()) + ' >';
 };
 
-},{"../../elliptic":252,"bn.js":40}],261:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"bn.js":44}],276:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15286,7 +15654,7 @@ Signature.prototype.toDER = function toDER(enc) {
   return utils.encode(res, enc);
 };
 
-},{"../../elliptic":252,"bn.js":40}],262:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"bn.js":44}],277:[function(_dereq_,module,exports){
 'use strict';
 
 var hash = _dereq_('hash.js');
@@ -15428,7 +15796,7 @@ EDDSA.prototype.isPoint = function isPoint(val) {
   return val instanceof this.pointClass;
 };
 
-},{"../../elliptic":252,"./key":263,"./signature":264,"hash.js":268,"hmac-drbg":280}],263:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"./key":278,"./signature":279,"hash.js":284,"hmac-drbg":296}],278:[function(_dereq_,module,exports){
 'use strict';
 
 var elliptic = _dereq_('../../elliptic');
@@ -15534,7 +15902,7 @@ KeyPair.prototype.getPublic = function getPublic(enc, compact) {
 
 module.exports = KeyPair;
 
-},{"../../elliptic":252}],264:[function(_dereq_,module,exports){
+},{"../../elliptic":267}],279:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15602,7 +15970,7 @@ Signature.prototype.toHex = function toHex() {
 
 module.exports = Signature;
 
-},{"../../elliptic":252,"bn.js":40}],265:[function(_dereq_,module,exports){
+},{"../../elliptic":267,"bn.js":44}],280:[function(_dereq_,module,exports){
 module.exports = {
   doubles: {
     step: 4,
@@ -16384,7 +16752,7 @@ module.exports = {
   }
 };
 
-},{}],266:[function(_dereq_,module,exports){
+},{}],281:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = exports;
@@ -16506,7 +16874,7 @@ function intFromLE(bytes) {
 utils.intFromLE = intFromLE;
 
 
-},{"bn.js":40,"minimalistic-assert":283,"minimalistic-crypto-utils":284}],267:[function(_dereq_,module,exports){
+},{"bn.js":44,"minimalistic-assert":299,"minimalistic-crypto-utils":300}],282:[function(_dereq_,module,exports){
 module.exports={
   "_from": "github:openpgpjs/elliptic",
   "_id": "elliptic@6.4.0",
@@ -16592,7 +16960,1080 @@ module.exports={
   "version": "6.4.0"
 }
 
-},{}],268:[function(_dereq_,module,exports){
+},{}],283:[function(_dereq_,module,exports){
+
+// email-addresses.js - RFC 5322 email address parser
+// v 3.0.1
+//
+// http://tools.ietf.org/html/rfc5322
+//
+// This library does not validate email addresses.
+// emailAddresses attempts to parse addresses using the (fairly liberal)
+// grammar specified in RFC 5322.
+//
+// email-addresses returns {
+//     ast: <an abstract syntax tree based on rfc5322>,
+//     addresses: [{
+//            node: <node in ast for this address>,
+//            name: <display-name>,
+//            address: <addr-spec>,
+//            local: <local-part>,
+//            domain: <domain>
+//         }, ...]
+// }
+//
+// emailAddresses.parseOneAddress and emailAddresses.parseAddressList
+// work as you might expect. Try it out.
+//
+// Many thanks to Dominic Sayers and his documentation on the is_email function,
+// http://code.google.com/p/isemail/ , which helped greatly in writing this parser.
+
+(function (global) {
+"use strict";
+
+function parse5322(opts) {
+
+    // tokenizing functions
+
+    function inStr() { return pos < len; }
+    function curTok() { return parseString[pos]; }
+    function getPos() { return pos; }
+    function setPos(i) { pos = i; }
+    function nextTok() { pos += 1; }
+    function initialize() {
+        pos = 0;
+        len = parseString.length;
+    }
+
+    // parser helper functions
+
+    function o(name, value) {
+        return {
+            name: name,
+            tokens: value || "",
+            semantic: value || "",
+            children: []
+        };
+    }
+
+    function wrap(name, ast) {
+        var n;
+        if (ast === null) { return null; }
+        n = o(name);
+        n.tokens = ast.tokens;
+        n.semantic = ast.semantic;
+        n.children.push(ast);
+        return n;
+    }
+
+    function add(parent, child) {
+        if (child !== null) {
+            parent.tokens += child.tokens;
+            parent.semantic += child.semantic;
+        }
+        parent.children.push(child);
+        return parent;
+    }
+
+    function compareToken(fxnCompare) {
+        var tok;
+        if (!inStr()) { return null; }
+        tok = curTok();
+        if (fxnCompare(tok)) {
+            nextTok();
+            return o('token', tok);
+        }
+        return null;
+    }
+
+    function literal(lit) {
+        return function literalFunc() {
+            return wrap('literal', compareToken(function (tok) {
+                return tok === lit;
+            }));
+        };
+    }
+
+    function and() {
+        var args = arguments;
+        return function andFunc() {
+            var i, s, result, start;
+            start = getPos();
+            s = o('and');
+            for (i = 0; i < args.length; i += 1) {
+                result = args[i]();
+                if (result === null) {
+                    setPos(start);
+                    return null;
+                }
+                add(s, result);
+            }
+            return s;
+        };
+    }
+
+    function or() {
+        var args = arguments;
+        return function orFunc() {
+            var i, result, start;
+            start = getPos();
+            for (i = 0; i < args.length; i += 1) {
+                result = args[i]();
+                if (result !== null) {
+                    return result;
+                }
+                setPos(start);
+            }
+            return null;
+        };
+    }
+
+    function opt(prod) {
+        return function optFunc() {
+            var result, start;
+            start = getPos();
+            result = prod();
+            if (result !== null) {
+                return result;
+            }
+            else {
+                setPos(start);
+                return o('opt');
+            }
+        };
+    }
+
+    function invis(prod) {
+        return function invisFunc() {
+            var result = prod();
+            if (result !== null) {
+                result.semantic = "";
+            }
+            return result;
+        };
+    }
+
+    function colwsp(prod) {
+        return function collapseSemanticWhitespace() {
+            var result = prod();
+            if (result !== null && result.semantic.length > 0) {
+                result.semantic = " ";
+            }
+            return result;
+        };
+    }
+
+    function star(prod, minimum) {
+        return function starFunc() {
+            var s, result, count, start, min;
+            start = getPos();
+            s = o('star');
+            count = 0;
+            min = minimum === undefined ? 0 : minimum;
+            while ((result = prod()) !== null) {
+                count = count + 1;
+                add(s, result);
+            }
+            if (count >= min) {
+                return s;
+            }
+            else {
+                setPos(start);
+                return null;
+            }
+        };
+    }
+
+    // One expects names to get normalized like this:
+    // "  First  Last " -> "First Last"
+    // "First Last" -> "First Last"
+    // "First   Last" -> "First Last"
+    function collapseWhitespace(s) {
+        return s.replace(/([ \t]|\r\n)+/g, ' ').replace(/^\s*/, '').replace(/\s*$/, '');
+    }
+
+    // UTF-8 pseudo-production (RFC 6532)
+    // RFC 6532 extends RFC 5322 productions to include UTF-8
+    // using the following productions:
+    // UTF8-non-ascii  =   UTF8-2 / UTF8-3 / UTF8-4
+    // UTF8-2          =   <Defined in Section 4 of RFC3629>
+    // UTF8-3          =   <Defined in Section 4 of RFC3629>
+    // UTF8-4          =   <Defined in Section 4 of RFC3629>
+    //
+    // For reference, the extended RFC 5322 productions are:
+    // VCHAR   =/  UTF8-non-ascii
+    // ctext   =/  UTF8-non-ascii
+    // atext   =/  UTF8-non-ascii
+    // qtext   =/  UTF8-non-ascii
+    // dtext   =/  UTF8-non-ascii
+    function isUTF8NonAscii(tok) {
+        // In JavaScript, we just deal directly with Unicode code points,
+        // so we aren't checking individual bytes for UTF-8 encoding.
+        // Just check that the character is non-ascii.
+        return tok.charCodeAt(0) >= 128;
+    }
+
+
+    // common productions (RFC 5234)
+    // http://tools.ietf.org/html/rfc5234
+    // B.1. Core Rules
+
+    // CR             =  %x0D
+    //                         ; carriage return
+    function cr() { return wrap('cr', literal('\r')()); }
+
+    // CRLF           =  CR LF
+    //                         ; Internet standard newline
+    function crlf() { return wrap('crlf', and(cr, lf)()); }
+
+    // DQUOTE         =  %x22
+    //                         ; " (Double Quote)
+    function dquote() { return wrap('dquote', literal('"')()); }
+
+    // HTAB           =  %x09
+    //                         ; horizontal tab
+    function htab() { return wrap('htab', literal('\t')()); }
+
+    // LF             =  %x0A
+    //                         ; linefeed
+    function lf() { return wrap('lf', literal('\n')()); }
+
+    // SP             =  %x20
+    function sp() { return wrap('sp', literal(' ')()); }
+
+    // VCHAR          =  %x21-7E
+    //                         ; visible (printing) characters
+    function vchar() {
+        return wrap('vchar', compareToken(function vcharFunc(tok) {
+            var code = tok.charCodeAt(0);
+            var accept = (0x21 <= code && code <= 0x7E);
+            if (opts.rfc6532) {
+                accept = accept || isUTF8NonAscii(tok);
+            }
+            return accept;
+        }));
+    }
+
+    // WSP            =  SP / HTAB
+    //                         ; white space
+    function wsp() { return wrap('wsp', or(sp, htab)()); }
+
+
+    // email productions (RFC 5322)
+    // http://tools.ietf.org/html/rfc5322
+    // 3.2.1. Quoted characters
+
+    // quoted-pair     =   ("\" (VCHAR / WSP)) / obs-qp
+    function quotedPair() {
+        var qp = wrap('quoted-pair',
+        or(
+            and(literal('\\'), or(vchar, wsp)),
+            obsQP
+        )());
+        if (qp === null) { return null; }
+        // a quoted pair will be two characters, and the "\" character
+        // should be semantically "invisible" (RFC 5322 3.2.1)
+        qp.semantic = qp.semantic[1];
+        return qp;
+    }
+
+    // 3.2.2. Folding White Space and Comments
+
+    // FWS             =   ([*WSP CRLF] 1*WSP) /  obs-FWS
+    function fws() {
+        return wrap('fws', or(
+            obsFws,
+            and(
+                opt(and(
+                    star(wsp),
+                    invis(crlf)
+                   )),
+                star(wsp, 1)
+            )
+        )());
+    }
+
+    // ctext           =   %d33-39 /          ; Printable US-ASCII
+    //                     %d42-91 /          ;  characters not including
+    //                     %d93-126 /         ;  "(", ")", or "\"
+    //                     obs-ctext
+    function ctext() {
+        return wrap('ctext', or(
+            function ctextFunc1() {
+                return compareToken(function ctextFunc2(tok) {
+                    var code = tok.charCodeAt(0);
+                    var accept =
+                        (33 <= code && code <= 39) ||
+                        (42 <= code && code <= 91) ||
+                        (93 <= code && code <= 126);
+                    if (opts.rfc6532) {
+                        accept = accept || isUTF8NonAscii(tok);
+                    }
+                    return accept;
+                });
+            },
+            obsCtext
+        )());
+    }
+
+    // ccontent        =   ctext / quoted-pair / comment
+    function ccontent() {
+        return wrap('ccontent', or(ctext, quotedPair, comment)());
+    }
+
+    // comment         =   "(" *([FWS] ccontent) [FWS] ")"
+    function comment() {
+        return wrap('comment', and(
+            literal('('),
+            star(and(opt(fws), ccontent)),
+            opt(fws),
+            literal(')')
+        )());
+    }
+
+    // CFWS            =   (1*([FWS] comment) [FWS]) / FWS
+    function cfws() {
+        return wrap('cfws', or(
+            and(
+                star(
+                    and(opt(fws), comment),
+                    1
+                ),
+                opt(fws)
+            ),
+            fws
+        )());
+    }
+
+    // 3.2.3. Atom
+
+    //atext           =   ALPHA / DIGIT /    ; Printable US-ASCII
+    //                       "!" / "#" /        ;  characters not including
+    //                       "$" / "%" /        ;  specials.  Used for atoms.
+    //                       "&" / "'" /
+    //                       "*" / "+" /
+    //                       "-" / "/" /
+    //                       "=" / "?" /
+    //                       "^" / "_" /
+    //                       "`" / "{" /
+    //                       "|" / "}" /
+    //                       "~"
+    function atext() {
+        return wrap('atext', compareToken(function atextFunc(tok) {
+            var accept =
+                ('a' <= tok && tok <= 'z') ||
+                ('A' <= tok && tok <= 'Z') ||
+                ('0' <= tok && tok <= '9') ||
+                (['!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
+                  '=', '?', '^', '_', '`', '{', '|', '}', '~'].indexOf(tok) >= 0);
+            if (opts.rfc6532) {
+                accept = accept || isUTF8NonAscii(tok);
+            }
+            return accept;
+        }));
+    }
+
+    // atom            =   [CFWS] 1*atext [CFWS]
+    function atom() {
+        return wrap('atom', and(colwsp(opt(cfws)), star(atext, 1), colwsp(opt(cfws)))());
+    }
+
+    // dot-atom-text   =   1*atext *("." 1*atext)
+    function dotAtomText() {
+        var s, maybeText;
+        s = wrap('dot-atom-text', star(atext, 1)());
+        if (s === null) { return s; }
+        maybeText = star(and(literal('.'), star(atext, 1)))();
+        if (maybeText !== null) {
+            add(s, maybeText);
+        }
+        return s;
+    }
+
+    // dot-atom        =   [CFWS] dot-atom-text [CFWS]
+    function dotAtom() {
+        return wrap('dot-atom', and(invis(opt(cfws)), dotAtomText, invis(opt(cfws)))());
+    }
+
+    // 3.2.4. Quoted Strings
+
+    //  qtext           =   %d33 /             ; Printable US-ASCII
+    //                      %d35-91 /          ;  characters not including
+    //                      %d93-126 /         ;  "\" or the quote character
+    //                      obs-qtext
+    function qtext() {
+        return wrap('qtext', or(
+            function qtextFunc1() {
+                return compareToken(function qtextFunc2(tok) {
+                    var code = tok.charCodeAt(0);
+                    var accept =
+                        (33 === code) ||
+                        (35 <= code && code <= 91) ||
+                        (93 <= code && code <= 126);
+                    if (opts.rfc6532) {
+                        accept = accept || isUTF8NonAscii(tok);
+                    }
+                    return accept;
+                });
+            },
+            obsQtext
+        )());
+    }
+
+    // qcontent        =   qtext / quoted-pair
+    function qcontent() {
+        return wrap('qcontent', or(qtext, quotedPair)());
+    }
+
+    //  quoted-string   =   [CFWS]
+    //                      DQUOTE *([FWS] qcontent) [FWS] DQUOTE
+    //                      [CFWS]
+    function quotedString() {
+        return wrap('quoted-string', and(
+            invis(opt(cfws)),
+            invis(dquote), star(and(opt(colwsp(fws)), qcontent)), opt(invis(fws)), invis(dquote),
+            invis(opt(cfws))
+        )());
+    }
+
+    // 3.2.5 Miscellaneous Tokens
+
+    // word            =   atom / quoted-string
+    function word() {
+        return wrap('word', or(atom, quotedString)());
+    }
+
+    // phrase          =   1*word / obs-phrase
+    function phrase() {
+        return wrap('phrase', or(obsPhrase, star(word, 1))());
+    }
+
+    // 3.4. Address Specification
+    //   address         =   mailbox / group
+    function address() {
+        return wrap('address', or(mailbox, group)());
+    }
+
+    //   mailbox         =   name-addr / addr-spec
+    function mailbox() {
+        return wrap('mailbox', or(nameAddr, addrSpec)());
+    }
+
+    //   name-addr       =   [display-name] angle-addr
+    function nameAddr() {
+        return wrap('name-addr', and(opt(displayName), angleAddr)());
+    }
+
+    //   angle-addr      =   [CFWS] "<" addr-spec ">" [CFWS] /
+    //                       obs-angle-addr
+    function angleAddr() {
+        return wrap('angle-addr', or(
+            and(
+                invis(opt(cfws)),
+                literal('<'),
+                addrSpec,
+                literal('>'),
+                invis(opt(cfws))
+            ),
+            obsAngleAddr
+        )());
+    }
+
+    //   group           =   display-name ":" [group-list] ";" [CFWS]
+    function group() {
+        return wrap('group', and(
+            displayName,
+            literal(':'),
+            opt(groupList),
+            literal(';'),
+            invis(opt(cfws))
+        )());
+    }
+
+    //   display-name    =   phrase
+    function displayName() {
+        return wrap('display-name', function phraseFixedSemantic() {
+            var result = phrase();
+            if (result !== null) {
+                result.semantic = collapseWhitespace(result.semantic);
+            }
+            return result;
+        }());
+    }
+
+    //   mailbox-list    =   (mailbox *("," mailbox)) / obs-mbox-list
+    function mailboxList() {
+        return wrap('mailbox-list', or(
+            and(
+                mailbox,
+                star(and(literal(','), mailbox))
+            ),
+            obsMboxList
+        )());
+    }
+
+    //   address-list    =   (address *("," address)) / obs-addr-list
+    function addressList() {
+        return wrap('address-list', or(
+            and(
+                address,
+                star(and(literal(','), address))
+            ),
+            obsAddrList
+        )());
+    }
+
+    //   group-list      =   mailbox-list / CFWS / obs-group-list
+    function groupList() {
+        return wrap('group-list', or(
+            mailboxList,
+            invis(cfws),
+            obsGroupList
+        )());
+    }
+
+    // 3.4.1 Addr-Spec Specification
+
+    // local-part      =   dot-atom / quoted-string / obs-local-part
+    function localPart() {
+        // note: quoted-string, dotAtom are proper subsets of obs-local-part
+        // so we really just have to look for obsLocalPart, if we don't care about the exact parse tree
+        return wrap('local-part', or(obsLocalPart, dotAtom, quotedString)());
+    }
+
+    //  dtext           =   %d33-90 /          ; Printable US-ASCII
+    //                      %d94-126 /         ;  characters not including
+    //                      obs-dtext          ;  "[", "]", or "\"
+    function dtext() {
+        return wrap('dtext', or(
+            function dtextFunc1() {
+                return compareToken(function dtextFunc2(tok) {
+                    var code = tok.charCodeAt(0);
+                    var accept =
+                        (33 <= code && code <= 90) ||
+                        (94 <= code && code <= 126);
+                    if (opts.rfc6532) {
+                        accept = accept || isUTF8NonAscii(tok);
+                    }
+                    return accept;
+                });
+            },
+            obsDtext
+            )()
+        );
+    }
+
+    // domain-literal  =   [CFWS] "[" *([FWS] dtext) [FWS] "]" [CFWS]
+    function domainLiteral() {
+        return wrap('domain-literal', and(
+            invis(opt(cfws)),
+            literal('['),
+            star(and(opt(fws), dtext)),
+            opt(fws),
+            literal(']'),
+            invis(opt(cfws))
+        )());
+    }
+
+    // domain          =   dot-atom / domain-literal / obs-domain
+    function domain() {
+        return wrap('domain', function domainCheckTLD() {
+            var result = or(obsDomain, dotAtom, domainLiteral)();
+            if (opts.rejectTLD) {
+                if (result.semantic.indexOf('.') < 0) {
+                    return null;
+                }
+            }
+            // strip all whitespace from domains
+            if (result) {
+                result.semantic = result.semantic.replace(/\s+/g, '');
+            }
+            return result;
+        }());
+    }
+
+    // addr-spec       =   local-part "@" domain
+    function addrSpec() {
+        return wrap('addr-spec', and(
+            localPart, literal('@'), domain
+        )());
+    }
+
+    // 3.6.2 Originator Fields
+    // Below we only parse the field body, not the name of the field
+    // like "From:", "Sender:", or "Reply-To:". Other libraries that
+    // parse email headers can parse those and defer to these productions
+    // for the "RFC 5322" part.
+
+    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+    // from = "From:" (mailbox-list / address-list) CRLF
+    function fromSpec() {
+        return wrap('from', or(
+            mailboxList,
+            addressList
+        )());
+    }
+
+    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+    // sender = "Sender:" (mailbox / address) CRLF
+    function senderSpec() {
+        return wrap('sender', or(
+            mailbox,
+            address
+        )());
+    }
+
+    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+    // reply-to = "Reply-To:" address-list CRLF
+    function replyToSpec() {
+        return wrap('reply-to', addressList());
+    }
+
+    // 4.1. Miscellaneous Obsolete Tokens
+
+    //  obs-NO-WS-CTL   =   %d1-8 /            ; US-ASCII control
+    //                      %d11 /             ;  characters that do not
+    //                      %d12 /             ;  include the carriage
+    //                      %d14-31 /          ;  return, line feed, and
+    //                      %d127              ;  white space characters
+    function obsNoWsCtl() {
+        return opts.strict ? null : wrap('obs-NO-WS-CTL', compareToken(function (tok) {
+            var code = tok.charCodeAt(0);
+            return ((1 <= code && code <= 8) ||
+                    (11 === code || 12 === code) ||
+                    (14 <= code && code <= 31) ||
+                    (127 === code));
+        }));
+    }
+
+    // obs-ctext       =   obs-NO-WS-CTL
+    function obsCtext() { return opts.strict ? null : wrap('obs-ctext', obsNoWsCtl()); }
+
+    // obs-qtext       =   obs-NO-WS-CTL
+    function obsQtext() { return opts.strict ? null : wrap('obs-qtext', obsNoWsCtl()); }
+
+    // obs-qp          =   "\" (%d0 / obs-NO-WS-CTL / LF / CR)
+    function obsQP() {
+        return opts.strict ? null : wrap('obs-qp', and(
+            literal('\\'),
+            or(literal('\0'), obsNoWsCtl, lf, cr)
+        )());
+    }
+
+    // obs-phrase      =   word *(word / "." / CFWS)
+    function obsPhrase() {
+        return opts.strict ? null : wrap('obs-phrase', and(
+            word,
+            star(or(word, literal('.'), colwsp(cfws)))
+        )());
+    }
+
+    // 4.2. Obsolete Folding White Space
+
+    // NOTE: read the errata http://www.rfc-editor.org/errata_search.php?rfc=5322&eid=1908
+    // obs-FWS         =   1*([CRLF] WSP)
+    function obsFws() {
+        return opts.strict ? null : wrap('obs-FWS', star(
+            and(invis(opt(crlf)), wsp),
+            1
+        )());
+    }
+
+    // 4.4. Obsolete Addressing
+
+    // obs-angle-addr  =   [CFWS] "<" obs-route addr-spec ">" [CFWS]
+    function obsAngleAddr() {
+        return opts.strict ? null : wrap('obs-angle-addr', and(
+            invis(opt(cfws)),
+            literal('<'),
+            obsRoute,
+            addrSpec,
+            literal('>'),
+            invis(opt(cfws))
+        )());
+    }
+
+    // obs-route       =   obs-domain-list ":"
+    function obsRoute() {
+        return opts.strict ? null : wrap('obs-route', and(
+            obsDomainList,
+            literal(':')
+        )());
+    }
+
+    //   obs-domain-list =   *(CFWS / ",") "@" domain
+    //                       *("," [CFWS] ["@" domain])
+    function obsDomainList() {
+        return opts.strict ? null : wrap('obs-domain-list', and(
+            star(or(invis(cfws), literal(','))),
+            literal('@'),
+            domain,
+            star(and(
+                literal(','),
+                invis(opt(cfws)),
+                opt(and(literal('@'), domain))
+            ))
+        )());
+    }
+
+    // obs-mbox-list   =   *([CFWS] ",") mailbox *("," [mailbox / CFWS])
+    function obsMboxList() {
+        return opts.strict ? null : wrap('obs-mbox-list', and(
+            star(and(
+                invis(opt(cfws)),
+                literal(',')
+            )),
+            mailbox,
+            star(and(
+                literal(','),
+                opt(and(
+                    mailbox,
+                    invis(cfws)
+                ))
+            ))
+        )());
+    }
+
+    // obs-addr-list   =   *([CFWS] ",") address *("," [address / CFWS])
+    function obsAddrList() {
+        return opts.strict ? null : wrap('obs-addr-list', and(
+            star(and(
+                invis(opt(cfws)),
+                literal(',')
+            )),
+            address,
+            star(and(
+                literal(','),
+                opt(and(
+                    address,
+                    invis(cfws)
+                ))
+            ))
+        )());
+    }
+
+    // obs-group-list  =   1*([CFWS] ",") [CFWS]
+    function obsGroupList() {
+        return opts.strict ? null : wrap('obs-group-list', and(
+            star(and(
+                invis(opt(cfws)),
+                literal(',')
+            ), 1),
+            invis(opt(cfws))
+        )());
+    }
+
+    // obs-local-part = word *("." word)
+    function obsLocalPart() {
+        return opts.strict ? null : wrap('obs-local-part', and(word, star(and(literal('.'), word)))());
+    }
+
+    // obs-domain       = atom *("." atom)
+    function obsDomain() {
+        return opts.strict ? null : wrap('obs-domain', and(atom, star(and(literal('.'), atom)))());
+    }
+
+    // obs-dtext       =   obs-NO-WS-CTL / quoted-pair
+    function obsDtext() {
+        return opts.strict ? null : wrap('obs-dtext', or(obsNoWsCtl, quotedPair)());
+    }
+
+    /////////////////////////////////////////////////////
+
+    // ast analysis
+
+    function findNode(name, root) {
+        var i, stack, node;
+        if (root === null || root === undefined) { return null; }
+        stack = [root];
+        while (stack.length > 0) {
+            node = stack.pop();
+            if (node.name === name) {
+                return node;
+            }
+            for (i = node.children.length - 1; i >= 0; i -= 1) {
+                stack.push(node.children[i]);
+            }
+        }
+        return null;
+    }
+
+    function findAllNodes(name, root) {
+        var i, stack, node, result;
+        if (root === null || root === undefined) { return null; }
+        stack = [root];
+        result = [];
+        while (stack.length > 0) {
+            node = stack.pop();
+            if (node.name === name) {
+                result.push(node);
+            }
+            for (i = node.children.length - 1; i >= 0; i -= 1) {
+                stack.push(node.children[i]);
+            }
+        }
+        return result;
+    }
+
+    function findAllNodesNoChildren(names, root) {
+        var i, stack, node, result, namesLookup;
+        if (root === null || root === undefined) { return null; }
+        stack = [root];
+        result = [];
+        namesLookup = {};
+        for (i = 0; i < names.length; i += 1) {
+            namesLookup[names[i]] = true;
+        }
+
+        while (stack.length > 0) {
+            node = stack.pop();
+            if (node.name in namesLookup) {
+                result.push(node);
+                // don't look at children (hence findAllNodesNoChildren)
+            } else {
+                for (i = node.children.length - 1; i >= 0; i -= 1) {
+                    stack.push(node.children[i]);
+                }
+            }
+        }
+        return result;
+    }
+
+    function giveResult(ast) {
+        var addresses, groupsAndMailboxes, i, groupOrMailbox, result;
+        if (ast === null) {
+            return null;
+        }
+        addresses = [];
+
+        // An address is a 'group' (i.e. a list of mailboxes) or a 'mailbox'.
+        groupsAndMailboxes = findAllNodesNoChildren(['group', 'mailbox'], ast);
+        for (i = 0; i <  groupsAndMailboxes.length; i += 1) {
+            groupOrMailbox = groupsAndMailboxes[i];
+            if (groupOrMailbox.name === 'group') {
+                addresses.push(giveResultGroup(groupOrMailbox));
+            } else if (groupOrMailbox.name === 'mailbox') {
+                addresses.push(giveResultMailbox(groupOrMailbox));
+            }
+        }
+
+        result = {
+            ast: ast,
+            addresses: addresses,
+        };
+        if (opts.simple) {
+            result = simplifyResult(result);
+        }
+        if (opts.oneResult) {
+            return oneResult(result);
+        }
+        if (opts.simple) {
+            return result && result.addresses;
+        } else {
+            return result;
+        }
+    }
+
+    function giveResultGroup(group) {
+        var i;
+        var groupName = findNode('display-name', group);
+        var groupResultMailboxes = [];
+        var mailboxes = findAllNodesNoChildren(['mailbox'], group);
+        for (i = 0; i < mailboxes.length; i += 1) {
+            groupResultMailboxes.push(giveResultMailbox(mailboxes[i]));
+        }
+        return {
+            node: group,
+            parts: {
+                name: groupName,
+            },
+            type: group.name, // 'group'
+            name: grabSemantic(groupName),
+            addresses: groupResultMailboxes,
+        };
+    }
+
+    function giveResultMailbox(mailbox) {
+        var name = findNode('display-name', mailbox);
+        var aspec = findNode('addr-spec', mailbox);
+        var comments = findAllNodes('cfws', mailbox);
+
+        var local = findNode('local-part', aspec);
+        var domain = findNode('domain', aspec);
+        return {
+            node: mailbox,
+            parts: {
+                name: name,
+                address: aspec,
+                local: local,
+                domain: domain,
+                comments: comments
+            },
+            type: mailbox.name, // 'mailbox'
+            name: grabSemantic(name),
+            address: grabSemantic(aspec),
+            local: grabSemantic(local),
+            domain: grabSemantic(domain),
+            groupName: grabSemantic(mailbox.groupName),
+        };
+    }
+
+    function grabSemantic(n) {
+        return n !== null && n !== undefined ? n.semantic : null;
+    }
+
+    function simplifyResult(result) {
+        var i;
+        if (result && result.addresses) {
+            for (i = 0; i < result.addresses.length; i += 1) {
+                delete result.addresses[i].node;
+            }
+        }
+        return result;
+    }
+
+    function oneResult(result) {
+        if (!result) { return null; }
+        if (!opts.partial && result.addresses.length > 1) { return null; }
+        return result.addresses && result.addresses[0];
+    }
+
+    /////////////////////////////////////////////////////
+
+    var parseString, pos, len, parsed, startProduction;
+
+    opts = handleOpts(opts, {});
+    if (opts === null) { return null; }
+
+    parseString = opts.input;
+
+    startProduction = {
+        'address': address,
+        'address-list': addressList,
+        'angle-addr': angleAddr,
+        'from': fromSpec,
+        'group': group,
+        'mailbox': mailbox,
+        'mailbox-list': mailboxList,
+        'reply-to': replyToSpec,
+        'sender': senderSpec,
+    }[opts.startAt] || addressList;
+
+    if (!opts.strict) {
+        initialize();
+        opts.strict = true;
+        parsed = startProduction(parseString);
+        if (opts.partial || !inStr()) {
+            return giveResult(parsed);
+        }
+        opts.strict = false;
+    }
+
+    initialize();
+    parsed = startProduction(parseString);
+    if (!opts.partial && inStr()) { return null; }
+    return giveResult(parsed);
+}
+
+function parseOneAddressSimple(opts) {
+    return parse5322(handleOpts(opts, {
+        oneResult: true,
+        rfc6532: true,
+        simple: true,
+        startAt: 'address-list',
+    }));
+}
+
+function parseAddressListSimple(opts) {
+    return parse5322(handleOpts(opts, {
+        rfc6532: true,
+        simple: true,
+        startAt: 'address-list',
+    }));
+}
+
+function parseFromSimple(opts) {
+    return parse5322(handleOpts(opts, {
+        rfc6532: true,
+        simple: true,
+        startAt: 'from',
+    }));
+}
+
+function parseSenderSimple(opts) {
+    return parse5322(handleOpts(opts, {
+        oneResult: true,
+        rfc6532: true,
+        simple: true,
+        startAt: 'sender',
+    }));
+}
+
+function parseReplyToSimple(opts) {
+    return parse5322(handleOpts(opts, {
+        rfc6532: true,
+        simple: true,
+        startAt: 'reply-to',
+    }));
+}
+
+function handleOpts(opts, defs) {
+    function isString(str) {
+        return Object.prototype.toString.call(str) === '[object String]';
+    }
+
+    function isObject(o) {
+        return o === Object(o);
+    }
+
+    function isNullUndef(o) {
+        return o === null || o === undefined;
+    }
+
+    var defaults, o;
+
+    if (isString(opts)) {
+        opts = { input: opts };
+    } else if (!isObject(opts)) {
+        return null;
+    }
+
+    if (!isString(opts.input)) { return null; }
+    if (!defs) { return null; }
+
+    defaults = {
+        oneResult: false,
+        partial: false,
+        rejectTLD: false,
+        rfc6532: false,
+        simple: false,
+        startAt: 'address-list',
+        strict: false,
+    };
+
+    for (o in defaults) {
+        if (isNullUndef(opts[o])) {
+            opts[o] = !isNullUndef(defs[o]) ? defs[o] : defaults[o];
+        }
+    }
+    return opts;
+}
+
+parse5322.parseOneAddress = parseOneAddressSimple;
+parse5322.parseAddressList = parseAddressListSimple;
+parse5322.parseFrom = parseFromSimple;
+parse5322.parseSender = parseSenderSimple;
+parse5322.parseReplyTo = parseReplyToSimple;
+
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    module.exports = parse5322;
+} else {
+    global.emailAddresses = parse5322;
+}
+
+}(this));
+
+},{}],284:[function(_dereq_,module,exports){
 var hash = exports;
 
 hash.utils = _dereq_('./hash/utils');
@@ -16609,7 +18050,7 @@ hash.sha384 = hash.sha.sha384;
 hash.sha512 = hash.sha.sha512;
 hash.ripemd160 = hash.ripemd.ripemd160;
 
-},{"./hash/common":269,"./hash/hmac":270,"./hash/ripemd":271,"./hash/sha":272,"./hash/utils":279}],269:[function(_dereq_,module,exports){
+},{"./hash/common":285,"./hash/hmac":286,"./hash/ripemd":287,"./hash/sha":288,"./hash/utils":295}],285:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -16703,7 +18144,7 @@ BlockHash.prototype._pad = function pad() {
   return res;
 };
 
-},{"./utils":279,"minimalistic-assert":283}],270:[function(_dereq_,module,exports){
+},{"./utils":295,"minimalistic-assert":299}],286:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -16752,7 +18193,7 @@ Hmac.prototype.digest = function digest(enc) {
   return this.outer.digest(enc);
 };
 
-},{"./utils":279,"minimalistic-assert":283}],271:[function(_dereq_,module,exports){
+},{"./utils":295,"minimalistic-assert":299}],287:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -16900,7 +18341,7 @@ var sh = [
   8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
 ];
 
-},{"./common":269,"./utils":279}],272:[function(_dereq_,module,exports){
+},{"./common":285,"./utils":295}],288:[function(_dereq_,module,exports){
 'use strict';
 
 exports.sha1 = _dereq_('./sha/1');
@@ -16909,7 +18350,7 @@ exports.sha256 = _dereq_('./sha/256');
 exports.sha384 = _dereq_('./sha/384');
 exports.sha512 = _dereq_('./sha/512');
 
-},{"./sha/1":273,"./sha/224":274,"./sha/256":275,"./sha/384":276,"./sha/512":277}],273:[function(_dereq_,module,exports){
+},{"./sha/1":289,"./sha/224":290,"./sha/256":291,"./sha/384":292,"./sha/512":293}],289:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -16985,7 +18426,7 @@ SHA1.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":269,"../utils":279,"./common":278}],274:[function(_dereq_,module,exports){
+},{"../common":285,"../utils":295,"./common":294}],290:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -17017,7 +18458,7 @@ SHA224.prototype._digest = function digest(enc) {
 };
 
 
-},{"../utils":279,"./256":275}],275:[function(_dereq_,module,exports){
+},{"../utils":295,"./256":291}],291:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -17124,7 +18565,7 @@ SHA256.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":269,"../utils":279,"./common":278,"minimalistic-assert":283}],276:[function(_dereq_,module,exports){
+},{"../common":285,"../utils":295,"./common":294,"minimalistic-assert":299}],292:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -17161,7 +18602,7 @@ SHA384.prototype._digest = function digest(enc) {
     return utils.split32(this.h.slice(0, 12), 'big');
 };
 
-},{"../utils":279,"./512":277}],277:[function(_dereq_,module,exports){
+},{"../utils":295,"./512":293}],293:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -17493,7 +18934,7 @@ function g1_512_lo(xh, xl) {
   return r;
 }
 
-},{"../common":269,"../utils":279,"minimalistic-assert":283}],278:[function(_dereq_,module,exports){
+},{"../common":285,"../utils":295,"minimalistic-assert":299}],294:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -17544,7 +18985,7 @@ function g1_256(x) {
 }
 exports.g1_256 = g1_256;
 
-},{"../utils":279}],279:[function(_dereq_,module,exports){
+},{"../utils":295}],295:[function(_dereq_,module,exports){
 'use strict';
 
 var assert = _dereq_('minimalistic-assert');
@@ -17799,7 +19240,7 @@ function shr64_lo(ah, al, num) {
 }
 exports.shr64_lo = shr64_lo;
 
-},{"inherits":282,"minimalistic-assert":283}],280:[function(_dereq_,module,exports){
+},{"inherits":298,"minimalistic-assert":299}],296:[function(_dereq_,module,exports){
 'use strict';
 
 var hash = _dereq_('hash.js');
@@ -17914,7 +19355,7 @@ HmacDRBG.prototype.generate = function generate(len, enc, add, addEnc) {
   return utils.encode(res, enc);
 };
 
-},{"hash.js":268,"minimalistic-assert":283,"minimalistic-crypto-utils":284}],281:[function(_dereq_,module,exports){
+},{"hash.js":284,"minimalistic-assert":299,"minimalistic-crypto-utils":300}],297:[function(_dereq_,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -18000,7 +19441,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],282:[function(_dereq_,module,exports){
+},{}],298:[function(_dereq_,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -18025,7 +19466,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],283:[function(_dereq_,module,exports){
+},{}],299:[function(_dereq_,module,exports){
 module.exports = assert;
 
 function assert(val, msg) {
@@ -18038,7 +19479,7 @@ assert.equal = function assertEqual(l, r, msg) {
     throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
 };
 
-},{}],284:[function(_dereq_,module,exports){
+},{}],300:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = exports;
@@ -18098,7 +19539,7 @@ utils.encode = function encode(arr, enc) {
     return arr;
 };
 
-},{}],285:[function(_dereq_,module,exports){
+},{}],301:[function(_dereq_,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -18114,7 +19555,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":286,"./lib/inflate":287,"./lib/utils/common":288,"./lib/zlib/constants":291}],286:[function(_dereq_,module,exports){
+},{"./lib/deflate":302,"./lib/inflate":303,"./lib/utils/common":304,"./lib/zlib/constants":307}],302:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -18516,7 +19957,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":288,"./utils/strings":289,"./zlib/deflate":293,"./zlib/messages":298,"./zlib/zstream":300}],287:[function(_dereq_,module,exports){
+},{"./utils/common":304,"./utils/strings":305,"./zlib/deflate":309,"./zlib/messages":314,"./zlib/zstream":316}],303:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -18936,7 +20377,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":288,"./utils/strings":289,"./zlib/constants":291,"./zlib/gzheader":294,"./zlib/inflate":296,"./zlib/messages":298,"./zlib/zstream":300}],288:[function(_dereq_,module,exports){
+},{"./utils/common":304,"./utils/strings":305,"./zlib/constants":307,"./zlib/gzheader":310,"./zlib/inflate":312,"./zlib/messages":314,"./zlib/zstream":316}],304:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -19043,7 +20484,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],289:[function(_dereq_,module,exports){
+},{}],305:[function(_dereq_,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -19230,7 +20671,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":288}],290:[function(_dereq_,module,exports){
+},{"./common":304}],306:[function(_dereq_,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -19283,7 +20724,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],291:[function(_dereq_,module,exports){
+},{}],307:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -19353,7 +20794,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],292:[function(_dereq_,module,exports){
+},{}],308:[function(_dereq_,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -19414,7 +20855,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],293:[function(_dereq_,module,exports){
+},{}],309:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -21290,7 +22731,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":288,"./adler32":290,"./crc32":292,"./messages":298,"./trees":299}],294:[function(_dereq_,module,exports){
+},{"../utils/common":304,"./adler32":306,"./crc32":308,"./messages":314,"./trees":315}],310:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -21350,7 +22791,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],295:[function(_dereq_,module,exports){
+},{}],311:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -21697,7 +23138,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],296:[function(_dereq_,module,exports){
+},{}],312:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -23255,7 +24696,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":288,"./adler32":290,"./crc32":292,"./inffast":295,"./inftrees":297}],297:[function(_dereq_,module,exports){
+},{"../utils/common":304,"./adler32":306,"./crc32":308,"./inffast":311,"./inftrees":313}],313:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -23600,7 +25041,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":288}],298:[function(_dereq_,module,exports){
+},{"../utils/common":304}],314:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -23634,7 +25075,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],299:[function(_dereq_,module,exports){
+},{}],315:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -24856,7 +26297,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":288}],300:[function(_dereq_,module,exports){
+},{"../utils/common":304}],316:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -24905,7 +26346,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],301:[function(_dereq_,module,exports){
+},{}],317:[function(_dereq_,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -25091,7 +26532,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],302:[function(_dereq_,module,exports){
+},{}],318:[function(_dereq_,module,exports){
 // This method of obtaining a reference to the global object needs to be
 // kept identical to the way it is obtained in runtime.js
 var g = (function() { return this })() || Function("return this")();
@@ -25121,7 +26562,7 @@ if (hadRuntime) {
   }
 }
 
-},{"./runtime":303}],303:[function(_dereq_,module,exports){
+},{"./runtime":319}],319:[function(_dereq_,module,exports){
 /**
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -25853,7 +27294,7 @@ if (hadRuntime) {
   (function() { return this })() || Function("return this")()
 );
 
-},{}],304:[function(_dereq_,module,exports){
+},{}],320:[function(_dereq_,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Rusha = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 var bundleFn = arguments[3];
@@ -26582,7 +28023,7 @@ module.exports = function () {
 },{"./rusha":6}]},{},[5])(5)
 });
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],305:[function(_dereq_,module,exports){
+},{}],321:[function(_dereq_,module,exports){
 (function(self) {
   'use strict';
 
@@ -27045,7 +28486,7 @@ module.exports = function () {
   self.fetch.polyfill = true
 })(typeof self !== 'undefined' ? self : this);
 
-},{}],306:[function(_dereq_,module,exports){
+},{}],322:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27062,10 +28503,6 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 exports.CleartextMessage = CleartextMessage;
 exports.readArmored = readArmored;
-
-var _config = _dereq_('./config');
-
-var _config2 = _interopRequireDefault(_config);
 
 var _armor = _dereq_('./encoding/armor');
 
@@ -27096,22 +28533,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param  {String}           text       The cleartext of the signed message
  * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
  */
-function CleartextMessage(text, signature) {
-  if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(text, signature);
-  }
-  // normalize EOL to canonical form <CR><LF>
-  this.text = _util2.default.canonicalizeEOL(_util2.default.removeTrailingSpaces(text));
-  if (signature && !(signature instanceof _signature.Signature)) {
-    throw new Error('Invalid signature input');
-  }
-  this.signature = signature || new _signature.Signature(new _packet2.default.List());
-}
-
-/**
- * Returns the key IDs of the keys that signed the cleartext message
- * @returns {Array<module:type/keyid>} array of keyid objects
- */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -27130,7 +28551,6 @@ function CleartextMessage(text, signature) {
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires config
  * @requires encoding/armor
  * @requires enums
  * @requires util
@@ -27139,6 +28559,22 @@ function CleartextMessage(text, signature) {
  * @module cleartext
  */
 
+function CleartextMessage(text, signature) {
+  if (!(this instanceof CleartextMessage)) {
+    return new CleartextMessage(text, signature);
+  }
+  // normalize EOL to canonical form <CR><LF>
+  this.text = _util2.default.canonicalizeEOL(_util2.default.removeTrailingSpaces(text));
+  if (signature && !(signature instanceof _signature.Signature)) {
+    throw new Error('Invalid signature input');
+  }
+  this.signature = signature || new _signature.Signature(new _packet2.default.List());
+}
+
+/**
+ * Returns the key IDs of the keys that signed the cleartext message
+ * @returns {Array<module:type/keyid>} array of keyid objects
+ */
 CleartextMessage.prototype.getSigningKeyIds = function () {
   var keyIds = [];
   var signatureList = this.signature.packets;
@@ -27153,6 +28589,7 @@ CleartextMessage.prototype.getSigningKeyIds = function () {
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
@@ -27160,6 +28597,7 @@ CleartextMessage.prototype.sign = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(privateKeys) {
     var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
+    var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -27167,7 +28605,7 @@ CleartextMessage.prototype.sign = function () {
             _context.t0 = CleartextMessage;
             _context.t1 = this.text;
             _context.next = 4;
-            return this.signDetached(privateKeys, signature, date);
+            return this.signDetached(privateKeys, signature, date, userId);
 
           case 4:
             _context.t2 = _context.sent;
@@ -27191,6 +28629,7 @@ CleartextMessage.prototype.sign = function () {
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
@@ -27198,6 +28637,7 @@ CleartextMessage.prototype.signDetached = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(privateKeys) {
     var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
+    var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     var literalDataPacket;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -27209,7 +28649,7 @@ CleartextMessage.prototype.signDetached = function () {
 
             _context2.t0 = _signature.Signature;
             _context2.next = 5;
-            return (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date);
+            return (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date, userId);
 
           case 5:
             _context2.t1 = _context2.sent;
@@ -27223,7 +28663,7 @@ CleartextMessage.prototype.signDetached = function () {
     }, _callee2, this);
   }));
 
-  return function (_x4) {
+  return function (_x5) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -27354,7 +28794,7 @@ function verifyHeaders(headers, packetlist) {
   }
 }
 
-},{"./config":309,"./encoding/armor":341,"./enums":343,"./message":350,"./packet":355,"./signature":375,"./util":382,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],307:[function(_dereq_,module,exports){
+},{"./encoding/armor":357,"./enums":359,"./message":366,"./packet":371,"./signature":391,"./util":398,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],323:[function(_dereq_,module,exports){
 (function (process,Buffer){
 "use strict";
 
@@ -28027,7 +29467,7 @@ var freeze, Stream, BitStream, Util, BWT, CRC32, HuffmanAllocator, Bzip2;freeze 
 }(0, BitStream, BWT, CRC32, HuffmanAllocator, Stream, Util), module.exports = Bzip2;
 
 }).call(this,_dereq_('_process'),_dereq_("buffer").Buffer)
-},{"_process":301,"babel-runtime/core-js/object/create":23,"babel-runtime/core-js/object/freeze":25,"babel-runtime/helpers/typeof":37,"buffer":43}],308:[function(_dereq_,module,exports){
+},{"_process":317,"babel-runtime/core-js/object/create":25,"babel-runtime/core-js/object/freeze":28,"babel-runtime/helpers/typeof":41,"buffer":47}],324:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28169,7 +29609,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.9",
+  versionstring: "OpenPGP.js v3.0.10",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -28208,7 +29648,7 @@ exports.default = {
  * @requires enums
  */
 
-},{"../enums":343}],309:[function(_dereq_,module,exports){
+},{"../enums":359}],325:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28226,7 +29666,7 @@ Object.defineProperty(exports, 'default', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./config.js":308}],310:[function(_dereq_,module,exports){
+},{"./config.js":324}],326:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28396,7 +29836,7 @@ exports.default = {
   unwrap: unwrap
 };
 
-},{"../util":382,"./cipher":316}],311:[function(_dereq_,module,exports){
+},{"../util":398,"./cipher":332}],327:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28722,7 +30162,7 @@ exports.default = {
  * @module crypto/cfb
  */
 
-},{"./cipher":316}],312:[function(_dereq_,module,exports){
+},{"./cipher":332}],328:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28739,7 +30179,7 @@ var _ecb = _dereq_('asmcrypto.js/src/aes/ecb/ecb');
  */
 
 function aes(length) {
-  var c = function c(key) {
+  var C = function C(key) {
     var aes_ecb = new _ecb.AES_ECB(key, _exports._AES_heap_instance, _exports._AES_asm_instance);
 
     this.encrypt = function (block) {
@@ -28751,15 +30191,15 @@ function aes(length) {
     };
   };
 
-  c.blockSize = c.prototype.blockSize = 16;
-  c.keySize = c.prototype.keySize = length / 8;
+  C.blockSize = C.prototype.blockSize = 16;
+  C.keySize = C.prototype.keySize = length / 8;
 
-  return c;
+  return C;
 }
 
 exports.default = aes;
 
-},{"asmcrypto.js/src/aes/ecb/ecb":9,"asmcrypto.js/src/aes/exports":10}],313:[function(_dereq_,module,exports){
+},{"asmcrypto.js/src/aes/ecb/ecb":10,"asmcrypto.js/src/aes/exports":11}],329:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28979,7 +30419,7 @@ BF.blockSize = BF.prototype.blockSize = 16;
 
 exports.default = BF;
 
-},{}],314:[function(_dereq_,module,exports){
+},{}],330:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29178,54 +30618,54 @@ function OpenpgpSymencCast5() {
   var scheduleA = new Array(4);
 
   scheduleA[0] = new Array(4);
-  scheduleA[0][0] = new Array(4, 0, 0xd, 0xf, 0xc, 0xe, 0x8);
-  scheduleA[0][1] = new Array(5, 2, 16 + 0, 16 + 2, 16 + 1, 16 + 3, 0xa);
-  scheduleA[0][2] = new Array(6, 3, 16 + 7, 16 + 6, 16 + 5, 16 + 4, 9);
-  scheduleA[0][3] = new Array(7, 1, 16 + 0xa, 16 + 9, 16 + 0xb, 16 + 8, 0xb);
+  scheduleA[0][0] = [4, 0, 0xd, 0xf, 0xc, 0xe, 0x8];
+  scheduleA[0][1] = [5, 2, 16 + 0, 16 + 2, 16 + 1, 16 + 3, 0xa];
+  scheduleA[0][2] = [6, 3, 16 + 7, 16 + 6, 16 + 5, 16 + 4, 9];
+  scheduleA[0][3] = [7, 1, 16 + 0xa, 16 + 9, 16 + 0xb, 16 + 8, 0xb];
 
   scheduleA[1] = new Array(4);
-  scheduleA[1][0] = new Array(0, 6, 16 + 5, 16 + 7, 16 + 4, 16 + 6, 16 + 0);
-  scheduleA[1][1] = new Array(1, 4, 0, 2, 1, 3, 16 + 2);
-  scheduleA[1][2] = new Array(2, 5, 7, 6, 5, 4, 16 + 1);
-  scheduleA[1][3] = new Array(3, 7, 0xa, 9, 0xb, 8, 16 + 3);
+  scheduleA[1][0] = [0, 6, 16 + 5, 16 + 7, 16 + 4, 16 + 6, 16 + 0];
+  scheduleA[1][1] = [1, 4, 0, 2, 1, 3, 16 + 2];
+  scheduleA[1][2] = [2, 5, 7, 6, 5, 4, 16 + 1];
+  scheduleA[1][3] = [3, 7, 0xa, 9, 0xb, 8, 16 + 3];
 
   scheduleA[2] = new Array(4);
-  scheduleA[2][0] = new Array(4, 0, 0xd, 0xf, 0xc, 0xe, 8);
-  scheduleA[2][1] = new Array(5, 2, 16 + 0, 16 + 2, 16 + 1, 16 + 3, 0xa);
-  scheduleA[2][2] = new Array(6, 3, 16 + 7, 16 + 6, 16 + 5, 16 + 4, 9);
-  scheduleA[2][3] = new Array(7, 1, 16 + 0xa, 16 + 9, 16 + 0xb, 16 + 8, 0xb);
+  scheduleA[2][0] = [4, 0, 0xd, 0xf, 0xc, 0xe, 8];
+  scheduleA[2][1] = [5, 2, 16 + 0, 16 + 2, 16 + 1, 16 + 3, 0xa];
+  scheduleA[2][2] = [6, 3, 16 + 7, 16 + 6, 16 + 5, 16 + 4, 9];
+  scheduleA[2][3] = [7, 1, 16 + 0xa, 16 + 9, 16 + 0xb, 16 + 8, 0xb];
 
   scheduleA[3] = new Array(4);
-  scheduleA[3][0] = new Array(0, 6, 16 + 5, 16 + 7, 16 + 4, 16 + 6, 16 + 0);
-  scheduleA[3][1] = new Array(1, 4, 0, 2, 1, 3, 16 + 2);
-  scheduleA[3][2] = new Array(2, 5, 7, 6, 5, 4, 16 + 1);
-  scheduleA[3][3] = new Array(3, 7, 0xa, 9, 0xb, 8, 16 + 3);
+  scheduleA[3][0] = [0, 6, 16 + 5, 16 + 7, 16 + 4, 16 + 6, 16 + 0];
+  scheduleA[3][1] = [1, 4, 0, 2, 1, 3, 16 + 2];
+  scheduleA[3][2] = [2, 5, 7, 6, 5, 4, 16 + 1];
+  scheduleA[3][3] = [3, 7, 0xa, 9, 0xb, 8, 16 + 3];
 
   var scheduleB = new Array(4);
 
   scheduleB[0] = new Array(4);
-  scheduleB[0][0] = new Array(16 + 8, 16 + 9, 16 + 7, 16 + 6, 16 + 2);
-  scheduleB[0][1] = new Array(16 + 0xa, 16 + 0xb, 16 + 5, 16 + 4, 16 + 6);
-  scheduleB[0][2] = new Array(16 + 0xc, 16 + 0xd, 16 + 3, 16 + 2, 16 + 9);
-  scheduleB[0][3] = new Array(16 + 0xe, 16 + 0xf, 16 + 1, 16 + 0, 16 + 0xc);
+  scheduleB[0][0] = [16 + 8, 16 + 9, 16 + 7, 16 + 6, 16 + 2];
+  scheduleB[0][1] = [16 + 0xa, 16 + 0xb, 16 + 5, 16 + 4, 16 + 6];
+  scheduleB[0][2] = [16 + 0xc, 16 + 0xd, 16 + 3, 16 + 2, 16 + 9];
+  scheduleB[0][3] = [16 + 0xe, 16 + 0xf, 16 + 1, 16 + 0, 16 + 0xc];
 
   scheduleB[1] = new Array(4);
-  scheduleB[1][0] = new Array(3, 2, 0xc, 0xd, 8);
-  scheduleB[1][1] = new Array(1, 0, 0xe, 0xf, 0xd);
-  scheduleB[1][2] = new Array(7, 6, 8, 9, 3);
-  scheduleB[1][3] = new Array(5, 4, 0xa, 0xb, 7);
+  scheduleB[1][0] = [3, 2, 0xc, 0xd, 8];
+  scheduleB[1][1] = [1, 0, 0xe, 0xf, 0xd];
+  scheduleB[1][2] = [7, 6, 8, 9, 3];
+  scheduleB[1][3] = [5, 4, 0xa, 0xb, 7];
 
   scheduleB[2] = new Array(4);
-  scheduleB[2][0] = new Array(16 + 3, 16 + 2, 16 + 0xc, 16 + 0xd, 16 + 9);
-  scheduleB[2][1] = new Array(16 + 1, 16 + 0, 16 + 0xe, 16 + 0xf, 16 + 0xc);
-  scheduleB[2][2] = new Array(16 + 7, 16 + 6, 16 + 8, 16 + 9, 16 + 2);
-  scheduleB[2][3] = new Array(16 + 5, 16 + 4, 16 + 0xa, 16 + 0xb, 16 + 6);
+  scheduleB[2][0] = [16 + 3, 16 + 2, 16 + 0xc, 16 + 0xd, 16 + 9];
+  scheduleB[2][1] = [16 + 1, 16 + 0, 16 + 0xe, 16 + 0xf, 16 + 0xc];
+  scheduleB[2][2] = [16 + 7, 16 + 6, 16 + 8, 16 + 9, 16 + 2];
+  scheduleB[2][3] = [16 + 5, 16 + 4, 16 + 0xa, 16 + 0xb, 16 + 6];
 
   scheduleB[3] = new Array(4);
-  scheduleB[3][0] = new Array(8, 9, 7, 6, 3);
-  scheduleB[3][1] = new Array(0xa, 0xb, 5, 4, 7);
-  scheduleB[3][2] = new Array(0xc, 0xd, 3, 2, 8);
-  scheduleB[3][3] = new Array(0xe, 0xf, 1, 0, 0xd);
+  scheduleB[3][0] = [8, 9, 7, 6, 3];
+  scheduleB[3][1] = [0xa, 0xb, 5, 4, 7];
+  scheduleB[3][2] = [0xc, 0xd, 3, 2, 8];
+  scheduleB[3][3] = [0xe, 0xf, 1, 0, 0xd];
 
   // changed 'in' to 'inn' (in javascript 'in' is a reserved word)
   this.keySchedule = function (inn) {
@@ -29298,21 +30738,21 @@ function OpenpgpSymencCast5() {
   }
 
   var sBox = new Array(8);
-  sBox[0] = new Array(0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949, 0xbfd4af27, 0x88bbbdb5, 0xe2034090, 0x98d09675, 0x6e63a0e0, 0x15c361d2, 0xc2e7661d, 0x22d4ff8e, 0x28683b6f, 0xc07fd059, 0xff2379c8, 0x775f50e2, 0x43c340d3, 0xdf2f8656, 0x887ca41a, 0xa2d2bd2d, 0xa1c9e0d6, 0x346c4819, 0x61b76d87, 0x22540f2f, 0x2abe32e1, 0xaa54166b, 0x22568e3a, 0xa2d341d0, 0x66db40c8, 0xa784392f, 0x004dff2f, 0x2db9d2de, 0x97943fac, 0x4a97c1d8, 0x527644b7, 0xb5f437a7, 0xb82cbaef, 0xd751d159, 0x6ff7f0ed, 0x5a097a1f, 0x827b68d0, 0x90ecf52e, 0x22b0c054, 0xbc8e5935, 0x4b6d2f7f, 0x50bb64a2, 0xd2664910, 0xbee5812d, 0xb7332290, 0xe93b159f, 0xb48ee411, 0x4bff345d, 0xfd45c240, 0xad31973f, 0xc4f6d02e, 0x55fc8165, 0xd5b1caad, 0xa1ac2dae, 0xa2d4b76d, 0xc19b0c50, 0x882240f2, 0x0c6e4f38, 0xa4e4bfd7, 0x4f5ba272, 0x564c1d2f, 0xc59c5319, 0xb949e354, 0xb04669fe, 0xb1b6ab8a, 0xc71358dd, 0x6385c545, 0x110f935d, 0x57538ad5, 0x6a390493, 0xe63d37e0, 0x2a54f6b3, 0x3a787d5f, 0x6276a0b5, 0x19a6fcdf, 0x7a42206a, 0x29f9d4d5, 0xf61b1891, 0xbb72275e, 0xaa508167, 0x38901091, 0xc6b505eb, 0x84c7cb8c, 0x2ad75a0f, 0x874a1427, 0xa2d1936b, 0x2ad286af, 0xaa56d291, 0xd7894360, 0x425c750d, 0x93b39e26, 0x187184c9, 0x6c00b32d, 0x73e2bb14, 0xa0bebc3c, 0x54623779, 0x64459eab, 0x3f328b82, 0x7718cf82, 0x59a2cea6, 0x04ee002e, 0x89fe78e6, 0x3fab0950, 0x325ff6c2, 0x81383f05, 0x6963c5c8, 0x76cb5ad6, 0xd49974c9, 0xca180dcf, 0x380782d5, 0xc7fa5cf6, 0x8ac31511, 0x35e79e13, 0x47da91d0, 0xf40f9086, 0xa7e2419e, 0x31366241, 0x051ef495, 0xaa573b04, 0x4a805d8d, 0x548300d0, 0x00322a3c, 0xbf64cddf, 0xba57a68e, 0x75c6372b, 0x50afd341, 0xa7c13275, 0x915a0bf5, 0x6b54bfab, 0x2b0b1426, 0xab4cc9d7, 0x449ccd82, 0xf7fbf265, 0xab85c5f3, 0x1b55db94, 0xaad4e324, 0xcfa4bd3f, 0x2deaa3e2, 0x9e204d02, 0xc8bd25ac, 0xeadf55b3, 0xd5bd9e98, 0xe31231b2, 0x2ad5ad6c, 0x954329de, 0xadbe4528, 0xd8710f69, 0xaa51c90f, 0xaa786bf6, 0x22513f1e, 0xaa51a79b, 0x2ad344cc, 0x7b5a41f0, 0xd37cfbad, 0x1b069505, 0x41ece491, 0xb4c332e6, 0x032268d4, 0xc9600acc, 0xce387e6d, 0xbf6bb16c, 0x6a70fb78, 0x0d03d9c9, 0xd4df39de, 0xe01063da, 0x4736f464, 0x5ad328d8, 0xb347cc96, 0x75bb0fc3, 0x98511bfb, 0x4ffbcc35, 0xb58bcf6a, 0xe11f0abc, 0xbfc5fe4a, 0xa70aec10, 0xac39570a, 0x3f04442f, 0x6188b153, 0xe0397a2e, 0x5727cb79, 0x9ceb418f, 0x1cacd68d, 0x2ad37c96, 0x0175cb9d, 0xc69dff09, 0xc75b65f0, 0xd9db40d8, 0xec0e7779, 0x4744ead4, 0xb11c3274, 0xdd24cb9e, 0x7e1c54bd, 0xf01144f9, 0xd2240eb1, 0x9675b3fd, 0xa3ac3755, 0xd47c27af, 0x51c85f4d, 0x56907596, 0xa5bb15e6, 0x580304f0, 0xca042cf1, 0x011a37ea, 0x8dbfaadb, 0x35ba3e4a, 0x3526ffa0, 0xc37b4d09, 0xbc306ed9, 0x98a52666, 0x5648f725, 0xff5e569d, 0x0ced63d0, 0x7c63b2cf, 0x700b45e1, 0xd5ea50f1, 0x85a92872, 0xaf1fbda7, 0xd4234870, 0xa7870bf3, 0x2d3b4d79, 0x42e04198, 0x0cd0ede7, 0x26470db8, 0xf881814c, 0x474d6ad7, 0x7c0c5e5c, 0xd1231959, 0x381b7298, 0xf5d2f4db, 0xab838653, 0x6e2f1e23, 0x83719c9e, 0xbd91e046, 0x9a56456e, 0xdc39200c, 0x20c8c571, 0x962bda1c, 0xe1e696ff, 0xb141ab08, 0x7cca89b9, 0x1a69e783, 0x02cc4843, 0xa2f7c579, 0x429ef47d, 0x427b169c, 0x5ac9f049, 0xdd8f0f00, 0x5c8165bf);
+  sBox[0] = [0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949, 0xbfd4af27, 0x88bbbdb5, 0xe2034090, 0x98d09675, 0x6e63a0e0, 0x15c361d2, 0xc2e7661d, 0x22d4ff8e, 0x28683b6f, 0xc07fd059, 0xff2379c8, 0x775f50e2, 0x43c340d3, 0xdf2f8656, 0x887ca41a, 0xa2d2bd2d, 0xa1c9e0d6, 0x346c4819, 0x61b76d87, 0x22540f2f, 0x2abe32e1, 0xaa54166b, 0x22568e3a, 0xa2d341d0, 0x66db40c8, 0xa784392f, 0x004dff2f, 0x2db9d2de, 0x97943fac, 0x4a97c1d8, 0x527644b7, 0xb5f437a7, 0xb82cbaef, 0xd751d159, 0x6ff7f0ed, 0x5a097a1f, 0x827b68d0, 0x90ecf52e, 0x22b0c054, 0xbc8e5935, 0x4b6d2f7f, 0x50bb64a2, 0xd2664910, 0xbee5812d, 0xb7332290, 0xe93b159f, 0xb48ee411, 0x4bff345d, 0xfd45c240, 0xad31973f, 0xc4f6d02e, 0x55fc8165, 0xd5b1caad, 0xa1ac2dae, 0xa2d4b76d, 0xc19b0c50, 0x882240f2, 0x0c6e4f38, 0xa4e4bfd7, 0x4f5ba272, 0x564c1d2f, 0xc59c5319, 0xb949e354, 0xb04669fe, 0xb1b6ab8a, 0xc71358dd, 0x6385c545, 0x110f935d, 0x57538ad5, 0x6a390493, 0xe63d37e0, 0x2a54f6b3, 0x3a787d5f, 0x6276a0b5, 0x19a6fcdf, 0x7a42206a, 0x29f9d4d5, 0xf61b1891, 0xbb72275e, 0xaa508167, 0x38901091, 0xc6b505eb, 0x84c7cb8c, 0x2ad75a0f, 0x874a1427, 0xa2d1936b, 0x2ad286af, 0xaa56d291, 0xd7894360, 0x425c750d, 0x93b39e26, 0x187184c9, 0x6c00b32d, 0x73e2bb14, 0xa0bebc3c, 0x54623779, 0x64459eab, 0x3f328b82, 0x7718cf82, 0x59a2cea6, 0x04ee002e, 0x89fe78e6, 0x3fab0950, 0x325ff6c2, 0x81383f05, 0x6963c5c8, 0x76cb5ad6, 0xd49974c9, 0xca180dcf, 0x380782d5, 0xc7fa5cf6, 0x8ac31511, 0x35e79e13, 0x47da91d0, 0xf40f9086, 0xa7e2419e, 0x31366241, 0x051ef495, 0xaa573b04, 0x4a805d8d, 0x548300d0, 0x00322a3c, 0xbf64cddf, 0xba57a68e, 0x75c6372b, 0x50afd341, 0xa7c13275, 0x915a0bf5, 0x6b54bfab, 0x2b0b1426, 0xab4cc9d7, 0x449ccd82, 0xf7fbf265, 0xab85c5f3, 0x1b55db94, 0xaad4e324, 0xcfa4bd3f, 0x2deaa3e2, 0x9e204d02, 0xc8bd25ac, 0xeadf55b3, 0xd5bd9e98, 0xe31231b2, 0x2ad5ad6c, 0x954329de, 0xadbe4528, 0xd8710f69, 0xaa51c90f, 0xaa786bf6, 0x22513f1e, 0xaa51a79b, 0x2ad344cc, 0x7b5a41f0, 0xd37cfbad, 0x1b069505, 0x41ece491, 0xb4c332e6, 0x032268d4, 0xc9600acc, 0xce387e6d, 0xbf6bb16c, 0x6a70fb78, 0x0d03d9c9, 0xd4df39de, 0xe01063da, 0x4736f464, 0x5ad328d8, 0xb347cc96, 0x75bb0fc3, 0x98511bfb, 0x4ffbcc35, 0xb58bcf6a, 0xe11f0abc, 0xbfc5fe4a, 0xa70aec10, 0xac39570a, 0x3f04442f, 0x6188b153, 0xe0397a2e, 0x5727cb79, 0x9ceb418f, 0x1cacd68d, 0x2ad37c96, 0x0175cb9d, 0xc69dff09, 0xc75b65f0, 0xd9db40d8, 0xec0e7779, 0x4744ead4, 0xb11c3274, 0xdd24cb9e, 0x7e1c54bd, 0xf01144f9, 0xd2240eb1, 0x9675b3fd, 0xa3ac3755, 0xd47c27af, 0x51c85f4d, 0x56907596, 0xa5bb15e6, 0x580304f0, 0xca042cf1, 0x011a37ea, 0x8dbfaadb, 0x35ba3e4a, 0x3526ffa0, 0xc37b4d09, 0xbc306ed9, 0x98a52666, 0x5648f725, 0xff5e569d, 0x0ced63d0, 0x7c63b2cf, 0x700b45e1, 0xd5ea50f1, 0x85a92872, 0xaf1fbda7, 0xd4234870, 0xa7870bf3, 0x2d3b4d79, 0x42e04198, 0x0cd0ede7, 0x26470db8, 0xf881814c, 0x474d6ad7, 0x7c0c5e5c, 0xd1231959, 0x381b7298, 0xf5d2f4db, 0xab838653, 0x6e2f1e23, 0x83719c9e, 0xbd91e046, 0x9a56456e, 0xdc39200c, 0x20c8c571, 0x962bda1c, 0xe1e696ff, 0xb141ab08, 0x7cca89b9, 0x1a69e783, 0x02cc4843, 0xa2f7c579, 0x429ef47d, 0x427b169c, 0x5ac9f049, 0xdd8f0f00, 0x5c8165bf];
 
-  sBox[1] = new Array(0x1f201094, 0xef0ba75b, 0x69e3cf7e, 0x393f4380, 0xfe61cf7a, 0xeec5207a, 0x55889c94, 0x72fc0651, 0xada7ef79, 0x4e1d7235, 0xd55a63ce, 0xde0436ba, 0x99c430ef, 0x5f0c0794, 0x18dcdb7d, 0xa1d6eff3, 0xa0b52f7b, 0x59e83605, 0xee15b094, 0xe9ffd909, 0xdc440086, 0xef944459, 0xba83ccb3, 0xe0c3cdfb, 0xd1da4181, 0x3b092ab1, 0xf997f1c1, 0xa5e6cf7b, 0x01420ddb, 0xe4e7ef5b, 0x25a1ff41, 0xe180f806, 0x1fc41080, 0x179bee7a, 0xd37ac6a9, 0xfe5830a4, 0x98de8b7f, 0x77e83f4e, 0x79929269, 0x24fa9f7b, 0xe113c85b, 0xacc40083, 0xd7503525, 0xf7ea615f, 0x62143154, 0x0d554b63, 0x5d681121, 0xc866c359, 0x3d63cf73, 0xcee234c0, 0xd4d87e87, 0x5c672b21, 0x071f6181, 0x39f7627f, 0x361e3084, 0xe4eb573b, 0x602f64a4, 0xd63acd9c, 0x1bbc4635, 0x9e81032d, 0x2701f50c, 0x99847ab4, 0xa0e3df79, 0xba6cf38c, 0x10843094, 0x2537a95e, 0xf46f6ffe, 0xa1ff3b1f, 0x208cfb6a, 0x8f458c74, 0xd9e0a227, 0x4ec73a34, 0xfc884f69, 0x3e4de8df, 0xef0e0088, 0x3559648d, 0x8a45388c, 0x1d804366, 0x721d9bfd, 0xa58684bb, 0xe8256333, 0x844e8212, 0x128d8098, 0xfed33fb4, 0xce280ae1, 0x27e19ba5, 0xd5a6c252, 0xe49754bd, 0xc5d655dd, 0xeb667064, 0x77840b4d, 0xa1b6a801, 0x84db26a9, 0xe0b56714, 0x21f043b7, 0xe5d05860, 0x54f03084, 0x066ff472, 0xa31aa153, 0xdadc4755, 0xb5625dbf, 0x68561be6, 0x83ca6b94, 0x2d6ed23b, 0xeccf01db, 0xa6d3d0ba, 0xb6803d5c, 0xaf77a709, 0x33b4a34c, 0x397bc8d6, 0x5ee22b95, 0x5f0e5304, 0x81ed6f61, 0x20e74364, 0xb45e1378, 0xde18639b, 0x881ca122, 0xb96726d1, 0x8049a7e8, 0x22b7da7b, 0x5e552d25, 0x5272d237, 0x79d2951c, 0xc60d894c, 0x488cb402, 0x1ba4fe5b, 0xa4b09f6b, 0x1ca815cf, 0xa20c3005, 0x8871df63, 0xb9de2fcb, 0x0cc6c9e9, 0x0beeff53, 0xe3214517, 0xb4542835, 0x9f63293c, 0xee41e729, 0x6e1d2d7c, 0x50045286, 0x1e6685f3, 0xf33401c6, 0x30a22c95, 0x31a70850, 0x60930f13, 0x73f98417, 0xa1269859, 0xec645c44, 0x52c877a9, 0xcdff33a6, 0xa02b1741, 0x7cbad9a2, 0x2180036f, 0x50d99c08, 0xcb3f4861, 0xc26bd765, 0x64a3f6ab, 0x80342676, 0x25a75e7b, 0xe4e6d1fc, 0x20c710e6, 0xcdf0b680, 0x17844d3b, 0x31eef84d, 0x7e0824e4, 0x2ccb49eb, 0x846a3bae, 0x8ff77888, 0xee5d60f6, 0x7af75673, 0x2fdd5cdb, 0xa11631c1, 0x30f66f43, 0xb3faec54, 0x157fd7fa, 0xef8579cc, 0xd152de58, 0xdb2ffd5e, 0x8f32ce19, 0x306af97a, 0x02f03ef8, 0x99319ad5, 0xc242fa0f, 0xa7e3ebb0, 0xc68e4906, 0xb8da230c, 0x80823028, 0xdcdef3c8, 0xd35fb171, 0x088a1bc8, 0xbec0c560, 0x61a3c9e8, 0xbca8f54d, 0xc72feffa, 0x22822e99, 0x82c570b4, 0xd8d94e89, 0x8b1c34bc, 0x301e16e6, 0x273be979, 0xb0ffeaa6, 0x61d9b8c6, 0x00b24869, 0xb7ffce3f, 0x08dc283b, 0x43daf65a, 0xf7e19798, 0x7619b72f, 0x8f1c9ba4, 0xdc8637a0, 0x16a7d3b1, 0x9fc393b7, 0xa7136eeb, 0xc6bcc63e, 0x1a513742, 0xef6828bc, 0x520365d6, 0x2d6a77ab, 0x3527ed4b, 0x821fd216, 0x095c6e2e, 0xdb92f2fb, 0x5eea29cb, 0x145892f5, 0x91584f7f, 0x5483697b, 0x2667a8cc, 0x85196048, 0x8c4bacea, 0x833860d4, 0x0d23e0f9, 0x6c387e8a, 0x0ae6d249, 0xb284600c, 0xd835731d, 0xdcb1c647, 0xac4c56ea, 0x3ebd81b3, 0x230eabb0, 0x6438bc87, 0xf0b5b1fa, 0x8f5ea2b3, 0xfc184642, 0x0a036b7a, 0x4fb089bd, 0x649da589, 0xa345415e, 0x5c038323, 0x3e5d3bb9, 0x43d79572, 0x7e6dd07c, 0x06dfdf1e, 0x6c6cc4ef, 0x7160a539, 0x73bfbe70, 0x83877605, 0x4523ecf1);
+  sBox[1] = [0x1f201094, 0xef0ba75b, 0x69e3cf7e, 0x393f4380, 0xfe61cf7a, 0xeec5207a, 0x55889c94, 0x72fc0651, 0xada7ef79, 0x4e1d7235, 0xd55a63ce, 0xde0436ba, 0x99c430ef, 0x5f0c0794, 0x18dcdb7d, 0xa1d6eff3, 0xa0b52f7b, 0x59e83605, 0xee15b094, 0xe9ffd909, 0xdc440086, 0xef944459, 0xba83ccb3, 0xe0c3cdfb, 0xd1da4181, 0x3b092ab1, 0xf997f1c1, 0xa5e6cf7b, 0x01420ddb, 0xe4e7ef5b, 0x25a1ff41, 0xe180f806, 0x1fc41080, 0x179bee7a, 0xd37ac6a9, 0xfe5830a4, 0x98de8b7f, 0x77e83f4e, 0x79929269, 0x24fa9f7b, 0xe113c85b, 0xacc40083, 0xd7503525, 0xf7ea615f, 0x62143154, 0x0d554b63, 0x5d681121, 0xc866c359, 0x3d63cf73, 0xcee234c0, 0xd4d87e87, 0x5c672b21, 0x071f6181, 0x39f7627f, 0x361e3084, 0xe4eb573b, 0x602f64a4, 0xd63acd9c, 0x1bbc4635, 0x9e81032d, 0x2701f50c, 0x99847ab4, 0xa0e3df79, 0xba6cf38c, 0x10843094, 0x2537a95e, 0xf46f6ffe, 0xa1ff3b1f, 0x208cfb6a, 0x8f458c74, 0xd9e0a227, 0x4ec73a34, 0xfc884f69, 0x3e4de8df, 0xef0e0088, 0x3559648d, 0x8a45388c, 0x1d804366, 0x721d9bfd, 0xa58684bb, 0xe8256333, 0x844e8212, 0x128d8098, 0xfed33fb4, 0xce280ae1, 0x27e19ba5, 0xd5a6c252, 0xe49754bd, 0xc5d655dd, 0xeb667064, 0x77840b4d, 0xa1b6a801, 0x84db26a9, 0xe0b56714, 0x21f043b7, 0xe5d05860, 0x54f03084, 0x066ff472, 0xa31aa153, 0xdadc4755, 0xb5625dbf, 0x68561be6, 0x83ca6b94, 0x2d6ed23b, 0xeccf01db, 0xa6d3d0ba, 0xb6803d5c, 0xaf77a709, 0x33b4a34c, 0x397bc8d6, 0x5ee22b95, 0x5f0e5304, 0x81ed6f61, 0x20e74364, 0xb45e1378, 0xde18639b, 0x881ca122, 0xb96726d1, 0x8049a7e8, 0x22b7da7b, 0x5e552d25, 0x5272d237, 0x79d2951c, 0xc60d894c, 0x488cb402, 0x1ba4fe5b, 0xa4b09f6b, 0x1ca815cf, 0xa20c3005, 0x8871df63, 0xb9de2fcb, 0x0cc6c9e9, 0x0beeff53, 0xe3214517, 0xb4542835, 0x9f63293c, 0xee41e729, 0x6e1d2d7c, 0x50045286, 0x1e6685f3, 0xf33401c6, 0x30a22c95, 0x31a70850, 0x60930f13, 0x73f98417, 0xa1269859, 0xec645c44, 0x52c877a9, 0xcdff33a6, 0xa02b1741, 0x7cbad9a2, 0x2180036f, 0x50d99c08, 0xcb3f4861, 0xc26bd765, 0x64a3f6ab, 0x80342676, 0x25a75e7b, 0xe4e6d1fc, 0x20c710e6, 0xcdf0b680, 0x17844d3b, 0x31eef84d, 0x7e0824e4, 0x2ccb49eb, 0x846a3bae, 0x8ff77888, 0xee5d60f6, 0x7af75673, 0x2fdd5cdb, 0xa11631c1, 0x30f66f43, 0xb3faec54, 0x157fd7fa, 0xef8579cc, 0xd152de58, 0xdb2ffd5e, 0x8f32ce19, 0x306af97a, 0x02f03ef8, 0x99319ad5, 0xc242fa0f, 0xa7e3ebb0, 0xc68e4906, 0xb8da230c, 0x80823028, 0xdcdef3c8, 0xd35fb171, 0x088a1bc8, 0xbec0c560, 0x61a3c9e8, 0xbca8f54d, 0xc72feffa, 0x22822e99, 0x82c570b4, 0xd8d94e89, 0x8b1c34bc, 0x301e16e6, 0x273be979, 0xb0ffeaa6, 0x61d9b8c6, 0x00b24869, 0xb7ffce3f, 0x08dc283b, 0x43daf65a, 0xf7e19798, 0x7619b72f, 0x8f1c9ba4, 0xdc8637a0, 0x16a7d3b1, 0x9fc393b7, 0xa7136eeb, 0xc6bcc63e, 0x1a513742, 0xef6828bc, 0x520365d6, 0x2d6a77ab, 0x3527ed4b, 0x821fd216, 0x095c6e2e, 0xdb92f2fb, 0x5eea29cb, 0x145892f5, 0x91584f7f, 0x5483697b, 0x2667a8cc, 0x85196048, 0x8c4bacea, 0x833860d4, 0x0d23e0f9, 0x6c387e8a, 0x0ae6d249, 0xb284600c, 0xd835731d, 0xdcb1c647, 0xac4c56ea, 0x3ebd81b3, 0x230eabb0, 0x6438bc87, 0xf0b5b1fa, 0x8f5ea2b3, 0xfc184642, 0x0a036b7a, 0x4fb089bd, 0x649da589, 0xa345415e, 0x5c038323, 0x3e5d3bb9, 0x43d79572, 0x7e6dd07c, 0x06dfdf1e, 0x6c6cc4ef, 0x7160a539, 0x73bfbe70, 0x83877605, 0x4523ecf1];
 
-  sBox[2] = new Array(0x8defc240, 0x25fa5d9f, 0xeb903dbf, 0xe810c907, 0x47607fff, 0x369fe44b, 0x8c1fc644, 0xaececa90, 0xbeb1f9bf, 0xeefbcaea, 0xe8cf1950, 0x51df07ae, 0x920e8806, 0xf0ad0548, 0xe13c8d83, 0x927010d5, 0x11107d9f, 0x07647db9, 0xb2e3e4d4, 0x3d4f285e, 0xb9afa820, 0xfade82e0, 0xa067268b, 0x8272792e, 0x553fb2c0, 0x489ae22b, 0xd4ef9794, 0x125e3fbc, 0x21fffcee, 0x825b1bfd, 0x9255c5ed, 0x1257a240, 0x4e1a8302, 0xbae07fff, 0x528246e7, 0x8e57140e, 0x3373f7bf, 0x8c9f8188, 0xa6fc4ee8, 0xc982b5a5, 0xa8c01db7, 0x579fc264, 0x67094f31, 0xf2bd3f5f, 0x40fff7c1, 0x1fb78dfc, 0x8e6bd2c1, 0x437be59b, 0x99b03dbf, 0xb5dbc64b, 0x638dc0e6, 0x55819d99, 0xa197c81c, 0x4a012d6e, 0xc5884a28, 0xccc36f71, 0xb843c213, 0x6c0743f1, 0x8309893c, 0x0feddd5f, 0x2f7fe850, 0xd7c07f7e, 0x02507fbf, 0x5afb9a04, 0xa747d2d0, 0x1651192e, 0xaf70bf3e, 0x58c31380, 0x5f98302e, 0x727cc3c4, 0x0a0fb402, 0x0f7fef82, 0x8c96fdad, 0x5d2c2aae, 0x8ee99a49, 0x50da88b8, 0x8427f4a0, 0x1eac5790, 0x796fb449, 0x8252dc15, 0xefbd7d9b, 0xa672597d, 0xada840d8, 0x45f54504, 0xfa5d7403, 0xe83ec305, 0x4f91751a, 0x925669c2, 0x23efe941, 0xa903f12e, 0x60270df2, 0x0276e4b6, 0x94fd6574, 0x927985b2, 0x8276dbcb, 0x02778176, 0xf8af918d, 0x4e48f79e, 0x8f616ddf, 0xe29d840e, 0x842f7d83, 0x340ce5c8, 0x96bbb682, 0x93b4b148, 0xef303cab, 0x984faf28, 0x779faf9b, 0x92dc560d, 0x224d1e20, 0x8437aa88, 0x7d29dc96, 0x2756d3dc, 0x8b907cee, 0xb51fd240, 0xe7c07ce3, 0xe566b4a1, 0xc3e9615e, 0x3cf8209d, 0x6094d1e3, 0xcd9ca341, 0x5c76460e, 0x00ea983b, 0xd4d67881, 0xfd47572c, 0xf76cedd9, 0xbda8229c, 0x127dadaa, 0x438a074e, 0x1f97c090, 0x081bdb8a, 0x93a07ebe, 0xb938ca15, 0x97b03cff, 0x3dc2c0f8, 0x8d1ab2ec, 0x64380e51, 0x68cc7bfb, 0xd90f2788, 0x12490181, 0x5de5ffd4, 0xdd7ef86a, 0x76a2e214, 0xb9a40368, 0x925d958f, 0x4b39fffa, 0xba39aee9, 0xa4ffd30b, 0xfaf7933b, 0x6d498623, 0x193cbcfa, 0x27627545, 0x825cf47a, 0x61bd8ba0, 0xd11e42d1, 0xcead04f4, 0x127ea392, 0x10428db7, 0x8272a972, 0x9270c4a8, 0x127de50b, 0x285ba1c8, 0x3c62f44f, 0x35c0eaa5, 0xe805d231, 0x428929fb, 0xb4fcdf82, 0x4fb66a53, 0x0e7dc15b, 0x1f081fab, 0x108618ae, 0xfcfd086d, 0xf9ff2889, 0x694bcc11, 0x236a5cae, 0x12deca4d, 0x2c3f8cc5, 0xd2d02dfe, 0xf8ef5896, 0xe4cf52da, 0x95155b67, 0x494a488c, 0xb9b6a80c, 0x5c8f82bc, 0x89d36b45, 0x3a609437, 0xec00c9a9, 0x44715253, 0x0a874b49, 0xd773bc40, 0x7c34671c, 0x02717ef6, 0x4feb5536, 0xa2d02fff, 0xd2bf60c4, 0xd43f03c0, 0x50b4ef6d, 0x07478cd1, 0x006e1888, 0xa2e53f55, 0xb9e6d4bc, 0xa2048016, 0x97573833, 0xd7207d67, 0xde0f8f3d, 0x72f87b33, 0xabcc4f33, 0x7688c55d, 0x7b00a6b0, 0x947b0001, 0x570075d2, 0xf9bb88f8, 0x8942019e, 0x4264a5ff, 0x856302e0, 0x72dbd92b, 0xee971b69, 0x6ea22fde, 0x5f08ae2b, 0xaf7a616d, 0xe5c98767, 0xcf1febd2, 0x61efc8c2, 0xf1ac2571, 0xcc8239c2, 0x67214cb8, 0xb1e583d1, 0xb7dc3e62, 0x7f10bdce, 0xf90a5c38, 0x0ff0443d, 0x606e6dc6, 0x60543a49, 0x5727c148, 0x2be98a1d, 0x8ab41738, 0x20e1be24, 0xaf96da0f, 0x68458425, 0x99833be5, 0x600d457d, 0x282f9350, 0x8334b362, 0xd91d1120, 0x2b6d8da0, 0x642b1e31, 0x9c305a00, 0x52bce688, 0x1b03588a, 0xf7baefd5, 0x4142ed9c, 0xa4315c11, 0x83323ec5, 0xdfef4636, 0xa133c501, 0xe9d3531c, 0xee353783);
+  sBox[2] = [0x8defc240, 0x25fa5d9f, 0xeb903dbf, 0xe810c907, 0x47607fff, 0x369fe44b, 0x8c1fc644, 0xaececa90, 0xbeb1f9bf, 0xeefbcaea, 0xe8cf1950, 0x51df07ae, 0x920e8806, 0xf0ad0548, 0xe13c8d83, 0x927010d5, 0x11107d9f, 0x07647db9, 0xb2e3e4d4, 0x3d4f285e, 0xb9afa820, 0xfade82e0, 0xa067268b, 0x8272792e, 0x553fb2c0, 0x489ae22b, 0xd4ef9794, 0x125e3fbc, 0x21fffcee, 0x825b1bfd, 0x9255c5ed, 0x1257a240, 0x4e1a8302, 0xbae07fff, 0x528246e7, 0x8e57140e, 0x3373f7bf, 0x8c9f8188, 0xa6fc4ee8, 0xc982b5a5, 0xa8c01db7, 0x579fc264, 0x67094f31, 0xf2bd3f5f, 0x40fff7c1, 0x1fb78dfc, 0x8e6bd2c1, 0x437be59b, 0x99b03dbf, 0xb5dbc64b, 0x638dc0e6, 0x55819d99, 0xa197c81c, 0x4a012d6e, 0xc5884a28, 0xccc36f71, 0xb843c213, 0x6c0743f1, 0x8309893c, 0x0feddd5f, 0x2f7fe850, 0xd7c07f7e, 0x02507fbf, 0x5afb9a04, 0xa747d2d0, 0x1651192e, 0xaf70bf3e, 0x58c31380, 0x5f98302e, 0x727cc3c4, 0x0a0fb402, 0x0f7fef82, 0x8c96fdad, 0x5d2c2aae, 0x8ee99a49, 0x50da88b8, 0x8427f4a0, 0x1eac5790, 0x796fb449, 0x8252dc15, 0xefbd7d9b, 0xa672597d, 0xada840d8, 0x45f54504, 0xfa5d7403, 0xe83ec305, 0x4f91751a, 0x925669c2, 0x23efe941, 0xa903f12e, 0x60270df2, 0x0276e4b6, 0x94fd6574, 0x927985b2, 0x8276dbcb, 0x02778176, 0xf8af918d, 0x4e48f79e, 0x8f616ddf, 0xe29d840e, 0x842f7d83, 0x340ce5c8, 0x96bbb682, 0x93b4b148, 0xef303cab, 0x984faf28, 0x779faf9b, 0x92dc560d, 0x224d1e20, 0x8437aa88, 0x7d29dc96, 0x2756d3dc, 0x8b907cee, 0xb51fd240, 0xe7c07ce3, 0xe566b4a1, 0xc3e9615e, 0x3cf8209d, 0x6094d1e3, 0xcd9ca341, 0x5c76460e, 0x00ea983b, 0xd4d67881, 0xfd47572c, 0xf76cedd9, 0xbda8229c, 0x127dadaa, 0x438a074e, 0x1f97c090, 0x081bdb8a, 0x93a07ebe, 0xb938ca15, 0x97b03cff, 0x3dc2c0f8, 0x8d1ab2ec, 0x64380e51, 0x68cc7bfb, 0xd90f2788, 0x12490181, 0x5de5ffd4, 0xdd7ef86a, 0x76a2e214, 0xb9a40368, 0x925d958f, 0x4b39fffa, 0xba39aee9, 0xa4ffd30b, 0xfaf7933b, 0x6d498623, 0x193cbcfa, 0x27627545, 0x825cf47a, 0x61bd8ba0, 0xd11e42d1, 0xcead04f4, 0x127ea392, 0x10428db7, 0x8272a972, 0x9270c4a8, 0x127de50b, 0x285ba1c8, 0x3c62f44f, 0x35c0eaa5, 0xe805d231, 0x428929fb, 0xb4fcdf82, 0x4fb66a53, 0x0e7dc15b, 0x1f081fab, 0x108618ae, 0xfcfd086d, 0xf9ff2889, 0x694bcc11, 0x236a5cae, 0x12deca4d, 0x2c3f8cc5, 0xd2d02dfe, 0xf8ef5896, 0xe4cf52da, 0x95155b67, 0x494a488c, 0xb9b6a80c, 0x5c8f82bc, 0x89d36b45, 0x3a609437, 0xec00c9a9, 0x44715253, 0x0a874b49, 0xd773bc40, 0x7c34671c, 0x02717ef6, 0x4feb5536, 0xa2d02fff, 0xd2bf60c4, 0xd43f03c0, 0x50b4ef6d, 0x07478cd1, 0x006e1888, 0xa2e53f55, 0xb9e6d4bc, 0xa2048016, 0x97573833, 0xd7207d67, 0xde0f8f3d, 0x72f87b33, 0xabcc4f33, 0x7688c55d, 0x7b00a6b0, 0x947b0001, 0x570075d2, 0xf9bb88f8, 0x8942019e, 0x4264a5ff, 0x856302e0, 0x72dbd92b, 0xee971b69, 0x6ea22fde, 0x5f08ae2b, 0xaf7a616d, 0xe5c98767, 0xcf1febd2, 0x61efc8c2, 0xf1ac2571, 0xcc8239c2, 0x67214cb8, 0xb1e583d1, 0xb7dc3e62, 0x7f10bdce, 0xf90a5c38, 0x0ff0443d, 0x606e6dc6, 0x60543a49, 0x5727c148, 0x2be98a1d, 0x8ab41738, 0x20e1be24, 0xaf96da0f, 0x68458425, 0x99833be5, 0x600d457d, 0x282f9350, 0x8334b362, 0xd91d1120, 0x2b6d8da0, 0x642b1e31, 0x9c305a00, 0x52bce688, 0x1b03588a, 0xf7baefd5, 0x4142ed9c, 0xa4315c11, 0x83323ec5, 0xdfef4636, 0xa133c501, 0xe9d3531c, 0xee353783];
 
-  sBox[3] = new Array(0x9db30420, 0x1fb6e9de, 0xa7be7bef, 0xd273a298, 0x4a4f7bdb, 0x64ad8c57, 0x85510443, 0xfa020ed1, 0x7e287aff, 0xe60fb663, 0x095f35a1, 0x79ebf120, 0xfd059d43, 0x6497b7b1, 0xf3641f63, 0x241e4adf, 0x28147f5f, 0x4fa2b8cd, 0xc9430040, 0x0cc32220, 0xfdd30b30, 0xc0a5374f, 0x1d2d00d9, 0x24147b15, 0xee4d111a, 0x0fca5167, 0x71ff904c, 0x2d195ffe, 0x1a05645f, 0x0c13fefe, 0x081b08ca, 0x05170121, 0x80530100, 0xe83e5efe, 0xac9af4f8, 0x7fe72701, 0xd2b8ee5f, 0x06df4261, 0xbb9e9b8a, 0x7293ea25, 0xce84ffdf, 0xf5718801, 0x3dd64b04, 0xa26f263b, 0x7ed48400, 0x547eebe6, 0x446d4ca0, 0x6cf3d6f5, 0x2649abdf, 0xaea0c7f5, 0x36338cc1, 0x503f7e93, 0xd3772061, 0x11b638e1, 0x72500e03, 0xf80eb2bb, 0xabe0502e, 0xec8d77de, 0x57971e81, 0xe14f6746, 0xc9335400, 0x6920318f, 0x081dbb99, 0xffc304a5, 0x4d351805, 0x7f3d5ce3, 0xa6c866c6, 0x5d5bcca9, 0xdaec6fea, 0x9f926f91, 0x9f46222f, 0x3991467d, 0xa5bf6d8e, 0x1143c44f, 0x43958302, 0xd0214eeb, 0x022083b8, 0x3fb6180c, 0x18f8931e, 0x281658e6, 0x26486e3e, 0x8bd78a70, 0x7477e4c1, 0xb506e07c, 0xf32d0a25, 0x79098b02, 0xe4eabb81, 0x28123b23, 0x69dead38, 0x1574ca16, 0xdf871b62, 0x211c40b7, 0xa51a9ef9, 0x0014377b, 0x041e8ac8, 0x09114003, 0xbd59e4d2, 0xe3d156d5, 0x4fe876d5, 0x2f91a340, 0x557be8de, 0x00eae4a7, 0x0ce5c2ec, 0x4db4bba6, 0xe756bdff, 0xdd3369ac, 0xec17b035, 0x06572327, 0x99afc8b0, 0x56c8c391, 0x6b65811c, 0x5e146119, 0x6e85cb75, 0xbe07c002, 0xc2325577, 0x893ff4ec, 0x5bbfc92d, 0xd0ec3b25, 0xb7801ab7, 0x8d6d3b24, 0x20c763ef, 0xc366a5fc, 0x9c382880, 0x0ace3205, 0xaac9548a, 0xeca1d7c7, 0x041afa32, 0x1d16625a, 0x6701902c, 0x9b757a54, 0x31d477f7, 0x9126b031, 0x36cc6fdb, 0xc70b8b46, 0xd9e66a48, 0x56e55a79, 0x026a4ceb, 0x52437eff, 0x2f8f76b4, 0x0df980a5, 0x8674cde3, 0xedda04eb, 0x17a9be04, 0x2c18f4df, 0xb7747f9d, 0xab2af7b4, 0xefc34d20, 0x2e096b7c, 0x1741a254, 0xe5b6a035, 0x213d42f6, 0x2c1c7c26, 0x61c2f50f, 0x6552daf9, 0xd2c231f8, 0x25130f69, 0xd8167fa2, 0x0418f2c8, 0x001a96a6, 0x0d1526ab, 0x63315c21, 0x5e0a72ec, 0x49bafefd, 0x187908d9, 0x8d0dbd86, 0x311170a7, 0x3e9b640c, 0xcc3e10d7, 0xd5cad3b6, 0x0caec388, 0xf73001e1, 0x6c728aff, 0x71eae2a1, 0x1f9af36e, 0xcfcbd12f, 0xc1de8417, 0xac07be6b, 0xcb44a1d8, 0x8b9b0f56, 0x013988c3, 0xb1c52fca, 0xb4be31cd, 0xd8782806, 0x12a3a4e2, 0x6f7de532, 0x58fd7eb6, 0xd01ee900, 0x24adffc2, 0xf4990fc5, 0x9711aac5, 0x001d7b95, 0x82e5e7d2, 0x109873f6, 0x00613096, 0xc32d9521, 0xada121ff, 0x29908415, 0x7fbb977f, 0xaf9eb3db, 0x29c9ed2a, 0x5ce2a465, 0xa730f32c, 0xd0aa3fe8, 0x8a5cc091, 0xd49e2ce7, 0x0ce454a9, 0xd60acd86, 0x015f1919, 0x77079103, 0xdea03af6, 0x78a8565e, 0xdee356df, 0x21f05cbe, 0x8b75e387, 0xb3c50651, 0xb8a5c3ef, 0xd8eeb6d2, 0xe523be77, 0xc2154529, 0x2f69efdf, 0xafe67afb, 0xf470c4b2, 0xf3e0eb5b, 0xd6cc9876, 0x39e4460c, 0x1fda8538, 0x1987832f, 0xca007367, 0xa99144f8, 0x296b299e, 0x492fc295, 0x9266beab, 0xb5676e69, 0x9bd3ddda, 0xdf7e052f, 0xdb25701c, 0x1b5e51ee, 0xf65324e6, 0x6afce36c, 0x0316cc04, 0x8644213e, 0xb7dc59d0, 0x7965291f, 0xccd6fd43, 0x41823979, 0x932bcdf6, 0xb657c34d, 0x4edfd282, 0x7ae5290c, 0x3cb9536b, 0x851e20fe, 0x9833557e, 0x13ecf0b0, 0xd3ffb372, 0x3f85c5c1, 0x0aef7ed2);
+  sBox[3] = [0x9db30420, 0x1fb6e9de, 0xa7be7bef, 0xd273a298, 0x4a4f7bdb, 0x64ad8c57, 0x85510443, 0xfa020ed1, 0x7e287aff, 0xe60fb663, 0x095f35a1, 0x79ebf120, 0xfd059d43, 0x6497b7b1, 0xf3641f63, 0x241e4adf, 0x28147f5f, 0x4fa2b8cd, 0xc9430040, 0x0cc32220, 0xfdd30b30, 0xc0a5374f, 0x1d2d00d9, 0x24147b15, 0xee4d111a, 0x0fca5167, 0x71ff904c, 0x2d195ffe, 0x1a05645f, 0x0c13fefe, 0x081b08ca, 0x05170121, 0x80530100, 0xe83e5efe, 0xac9af4f8, 0x7fe72701, 0xd2b8ee5f, 0x06df4261, 0xbb9e9b8a, 0x7293ea25, 0xce84ffdf, 0xf5718801, 0x3dd64b04, 0xa26f263b, 0x7ed48400, 0x547eebe6, 0x446d4ca0, 0x6cf3d6f5, 0x2649abdf, 0xaea0c7f5, 0x36338cc1, 0x503f7e93, 0xd3772061, 0x11b638e1, 0x72500e03, 0xf80eb2bb, 0xabe0502e, 0xec8d77de, 0x57971e81, 0xe14f6746, 0xc9335400, 0x6920318f, 0x081dbb99, 0xffc304a5, 0x4d351805, 0x7f3d5ce3, 0xa6c866c6, 0x5d5bcca9, 0xdaec6fea, 0x9f926f91, 0x9f46222f, 0x3991467d, 0xa5bf6d8e, 0x1143c44f, 0x43958302, 0xd0214eeb, 0x022083b8, 0x3fb6180c, 0x18f8931e, 0x281658e6, 0x26486e3e, 0x8bd78a70, 0x7477e4c1, 0xb506e07c, 0xf32d0a25, 0x79098b02, 0xe4eabb81, 0x28123b23, 0x69dead38, 0x1574ca16, 0xdf871b62, 0x211c40b7, 0xa51a9ef9, 0x0014377b, 0x041e8ac8, 0x09114003, 0xbd59e4d2, 0xe3d156d5, 0x4fe876d5, 0x2f91a340, 0x557be8de, 0x00eae4a7, 0x0ce5c2ec, 0x4db4bba6, 0xe756bdff, 0xdd3369ac, 0xec17b035, 0x06572327, 0x99afc8b0, 0x56c8c391, 0x6b65811c, 0x5e146119, 0x6e85cb75, 0xbe07c002, 0xc2325577, 0x893ff4ec, 0x5bbfc92d, 0xd0ec3b25, 0xb7801ab7, 0x8d6d3b24, 0x20c763ef, 0xc366a5fc, 0x9c382880, 0x0ace3205, 0xaac9548a, 0xeca1d7c7, 0x041afa32, 0x1d16625a, 0x6701902c, 0x9b757a54, 0x31d477f7, 0x9126b031, 0x36cc6fdb, 0xc70b8b46, 0xd9e66a48, 0x56e55a79, 0x026a4ceb, 0x52437eff, 0x2f8f76b4, 0x0df980a5, 0x8674cde3, 0xedda04eb, 0x17a9be04, 0x2c18f4df, 0xb7747f9d, 0xab2af7b4, 0xefc34d20, 0x2e096b7c, 0x1741a254, 0xe5b6a035, 0x213d42f6, 0x2c1c7c26, 0x61c2f50f, 0x6552daf9, 0xd2c231f8, 0x25130f69, 0xd8167fa2, 0x0418f2c8, 0x001a96a6, 0x0d1526ab, 0x63315c21, 0x5e0a72ec, 0x49bafefd, 0x187908d9, 0x8d0dbd86, 0x311170a7, 0x3e9b640c, 0xcc3e10d7, 0xd5cad3b6, 0x0caec388, 0xf73001e1, 0x6c728aff, 0x71eae2a1, 0x1f9af36e, 0xcfcbd12f, 0xc1de8417, 0xac07be6b, 0xcb44a1d8, 0x8b9b0f56, 0x013988c3, 0xb1c52fca, 0xb4be31cd, 0xd8782806, 0x12a3a4e2, 0x6f7de532, 0x58fd7eb6, 0xd01ee900, 0x24adffc2, 0xf4990fc5, 0x9711aac5, 0x001d7b95, 0x82e5e7d2, 0x109873f6, 0x00613096, 0xc32d9521, 0xada121ff, 0x29908415, 0x7fbb977f, 0xaf9eb3db, 0x29c9ed2a, 0x5ce2a465, 0xa730f32c, 0xd0aa3fe8, 0x8a5cc091, 0xd49e2ce7, 0x0ce454a9, 0xd60acd86, 0x015f1919, 0x77079103, 0xdea03af6, 0x78a8565e, 0xdee356df, 0x21f05cbe, 0x8b75e387, 0xb3c50651, 0xb8a5c3ef, 0xd8eeb6d2, 0xe523be77, 0xc2154529, 0x2f69efdf, 0xafe67afb, 0xf470c4b2, 0xf3e0eb5b, 0xd6cc9876, 0x39e4460c, 0x1fda8538, 0x1987832f, 0xca007367, 0xa99144f8, 0x296b299e, 0x492fc295, 0x9266beab, 0xb5676e69, 0x9bd3ddda, 0xdf7e052f, 0xdb25701c, 0x1b5e51ee, 0xf65324e6, 0x6afce36c, 0x0316cc04, 0x8644213e, 0xb7dc59d0, 0x7965291f, 0xccd6fd43, 0x41823979, 0x932bcdf6, 0xb657c34d, 0x4edfd282, 0x7ae5290c, 0x3cb9536b, 0x851e20fe, 0x9833557e, 0x13ecf0b0, 0xd3ffb372, 0x3f85c5c1, 0x0aef7ed2];
 
-  sBox[4] = new Array(0x7ec90c04, 0x2c6e74b9, 0x9b0e66df, 0xa6337911, 0xb86a7fff, 0x1dd358f5, 0x44dd9d44, 0x1731167f, 0x08fbf1fa, 0xe7f511cc, 0xd2051b00, 0x735aba00, 0x2ab722d8, 0x386381cb, 0xacf6243a, 0x69befd7a, 0xe6a2e77f, 0xf0c720cd, 0xc4494816, 0xccf5c180, 0x38851640, 0x15b0a848, 0xe68b18cb, 0x4caadeff, 0x5f480a01, 0x0412b2aa, 0x259814fc, 0x41d0efe2, 0x4e40b48d, 0x248eb6fb, 0x8dba1cfe, 0x41a99b02, 0x1a550a04, 0xba8f65cb, 0x7251f4e7, 0x95a51725, 0xc106ecd7, 0x97a5980a, 0xc539b9aa, 0x4d79fe6a, 0xf2f3f763, 0x68af8040, 0xed0c9e56, 0x11b4958b, 0xe1eb5a88, 0x8709e6b0, 0xd7e07156, 0x4e29fea7, 0x6366e52d, 0x02d1c000, 0xc4ac8e05, 0x9377f571, 0x0c05372a, 0x578535f2, 0x2261be02, 0xd642a0c9, 0xdf13a280, 0x74b55bd2, 0x682199c0, 0xd421e5ec, 0x53fb3ce8, 0xc8adedb3, 0x28a87fc9, 0x3d959981, 0x5c1ff900, 0xfe38d399, 0x0c4eff0b, 0x062407ea, 0xaa2f4fb1, 0x4fb96976, 0x90c79505, 0xb0a8a774, 0xef55a1ff, 0xe59ca2c2, 0xa6b62d27, 0xe66a4263, 0xdf65001f, 0x0ec50966, 0xdfdd55bc, 0x29de0655, 0x911e739a, 0x17af8975, 0x32c7911c, 0x89f89468, 0x0d01e980, 0x524755f4, 0x03b63cc9, 0x0cc844b2, 0xbcf3f0aa, 0x87ac36e9, 0xe53a7426, 0x01b3d82b, 0x1a9e7449, 0x64ee2d7e, 0xcddbb1da, 0x01c94910, 0xb868bf80, 0x0d26f3fd, 0x9342ede7, 0x04a5c284, 0x636737b6, 0x50f5b616, 0xf24766e3, 0x8eca36c1, 0x136e05db, 0xfef18391, 0xfb887a37, 0xd6e7f7d4, 0xc7fb7dc9, 0x3063fcdf, 0xb6f589de, 0xec2941da, 0x26e46695, 0xb7566419, 0xf654efc5, 0xd08d58b7, 0x48925401, 0xc1bacb7f, 0xe5ff550f, 0xb6083049, 0x5bb5d0e8, 0x87d72e5a, 0xab6a6ee1, 0x223a66ce, 0xc62bf3cd, 0x9e0885f9, 0x68cb3e47, 0x086c010f, 0xa21de820, 0xd18b69de, 0xf3f65777, 0xfa02c3f6, 0x407edac3, 0xcbb3d550, 0x1793084d, 0xb0d70eba, 0x0ab378d5, 0xd951fb0c, 0xded7da56, 0x4124bbe4, 0x94ca0b56, 0x0f5755d1, 0xe0e1e56e, 0x6184b5be, 0x580a249f, 0x94f74bc0, 0xe327888e, 0x9f7b5561, 0xc3dc0280, 0x05687715, 0x646c6bd7, 0x44904db3, 0x66b4f0a3, 0xc0f1648a, 0x697ed5af, 0x49e92ff6, 0x309e374f, 0x2cb6356a, 0x85808573, 0x4991f840, 0x76f0ae02, 0x083be84d, 0x28421c9a, 0x44489406, 0x736e4cb8, 0xc1092910, 0x8bc95fc6, 0x7d869cf4, 0x134f616f, 0x2e77118d, 0xb31b2be1, 0xaa90b472, 0x3ca5d717, 0x7d161bba, 0x9cad9010, 0xaf462ba2, 0x9fe459d2, 0x45d34559, 0xd9f2da13, 0xdbc65487, 0xf3e4f94e, 0x176d486f, 0x097c13ea, 0x631da5c7, 0x445f7382, 0x175683f4, 0xcdc66a97, 0x70be0288, 0xb3cdcf72, 0x6e5dd2f3, 0x20936079, 0x459b80a5, 0xbe60e2db, 0xa9c23101, 0xeba5315c, 0x224e42f2, 0x1c5c1572, 0xf6721b2c, 0x1ad2fff3, 0x8c25404e, 0x324ed72f, 0x4067b7fd, 0x0523138e, 0x5ca3bc78, 0xdc0fd66e, 0x75922283, 0x784d6b17, 0x58ebb16e, 0x44094f85, 0x3f481d87, 0xfcfeae7b, 0x77b5ff76, 0x8c2302bf, 0xaaf47556, 0x5f46b02a, 0x2b092801, 0x3d38f5f7, 0x0ca81f36, 0x52af4a8a, 0x66d5e7c0, 0xdf3b0874, 0x95055110, 0x1b5ad7a8, 0xf61ed5ad, 0x6cf6e479, 0x20758184, 0xd0cefa65, 0x88f7be58, 0x4a046826, 0x0ff6f8f3, 0xa09c7f70, 0x5346aba0, 0x5ce96c28, 0xe176eda3, 0x6bac307f, 0x376829d2, 0x85360fa9, 0x17e3fe2a, 0x24b79767, 0xf5a96b20, 0xd6cd2595, 0x68ff1ebf, 0x7555442c, 0xf19f06be, 0xf9e0659a, 0xeeb9491d, 0x34010718, 0xbb30cab8, 0xe822fe15, 0x88570983, 0x750e6249, 0xda627e55, 0x5e76ffa8, 0xb1534546, 0x6d47de08, 0xefe9e7d4);
+  sBox[4] = [0x7ec90c04, 0x2c6e74b9, 0x9b0e66df, 0xa6337911, 0xb86a7fff, 0x1dd358f5, 0x44dd9d44, 0x1731167f, 0x08fbf1fa, 0xe7f511cc, 0xd2051b00, 0x735aba00, 0x2ab722d8, 0x386381cb, 0xacf6243a, 0x69befd7a, 0xe6a2e77f, 0xf0c720cd, 0xc4494816, 0xccf5c180, 0x38851640, 0x15b0a848, 0xe68b18cb, 0x4caadeff, 0x5f480a01, 0x0412b2aa, 0x259814fc, 0x41d0efe2, 0x4e40b48d, 0x248eb6fb, 0x8dba1cfe, 0x41a99b02, 0x1a550a04, 0xba8f65cb, 0x7251f4e7, 0x95a51725, 0xc106ecd7, 0x97a5980a, 0xc539b9aa, 0x4d79fe6a, 0xf2f3f763, 0x68af8040, 0xed0c9e56, 0x11b4958b, 0xe1eb5a88, 0x8709e6b0, 0xd7e07156, 0x4e29fea7, 0x6366e52d, 0x02d1c000, 0xc4ac8e05, 0x9377f571, 0x0c05372a, 0x578535f2, 0x2261be02, 0xd642a0c9, 0xdf13a280, 0x74b55bd2, 0x682199c0, 0xd421e5ec, 0x53fb3ce8, 0xc8adedb3, 0x28a87fc9, 0x3d959981, 0x5c1ff900, 0xfe38d399, 0x0c4eff0b, 0x062407ea, 0xaa2f4fb1, 0x4fb96976, 0x90c79505, 0xb0a8a774, 0xef55a1ff, 0xe59ca2c2, 0xa6b62d27, 0xe66a4263, 0xdf65001f, 0x0ec50966, 0xdfdd55bc, 0x29de0655, 0x911e739a, 0x17af8975, 0x32c7911c, 0x89f89468, 0x0d01e980, 0x524755f4, 0x03b63cc9, 0x0cc844b2, 0xbcf3f0aa, 0x87ac36e9, 0xe53a7426, 0x01b3d82b, 0x1a9e7449, 0x64ee2d7e, 0xcddbb1da, 0x01c94910, 0xb868bf80, 0x0d26f3fd, 0x9342ede7, 0x04a5c284, 0x636737b6, 0x50f5b616, 0xf24766e3, 0x8eca36c1, 0x136e05db, 0xfef18391, 0xfb887a37, 0xd6e7f7d4, 0xc7fb7dc9, 0x3063fcdf, 0xb6f589de, 0xec2941da, 0x26e46695, 0xb7566419, 0xf654efc5, 0xd08d58b7, 0x48925401, 0xc1bacb7f, 0xe5ff550f, 0xb6083049, 0x5bb5d0e8, 0x87d72e5a, 0xab6a6ee1, 0x223a66ce, 0xc62bf3cd, 0x9e0885f9, 0x68cb3e47, 0x086c010f, 0xa21de820, 0xd18b69de, 0xf3f65777, 0xfa02c3f6, 0x407edac3, 0xcbb3d550, 0x1793084d, 0xb0d70eba, 0x0ab378d5, 0xd951fb0c, 0xded7da56, 0x4124bbe4, 0x94ca0b56, 0x0f5755d1, 0xe0e1e56e, 0x6184b5be, 0x580a249f, 0x94f74bc0, 0xe327888e, 0x9f7b5561, 0xc3dc0280, 0x05687715, 0x646c6bd7, 0x44904db3, 0x66b4f0a3, 0xc0f1648a, 0x697ed5af, 0x49e92ff6, 0x309e374f, 0x2cb6356a, 0x85808573, 0x4991f840, 0x76f0ae02, 0x083be84d, 0x28421c9a, 0x44489406, 0x736e4cb8, 0xc1092910, 0x8bc95fc6, 0x7d869cf4, 0x134f616f, 0x2e77118d, 0xb31b2be1, 0xaa90b472, 0x3ca5d717, 0x7d161bba, 0x9cad9010, 0xaf462ba2, 0x9fe459d2, 0x45d34559, 0xd9f2da13, 0xdbc65487, 0xf3e4f94e, 0x176d486f, 0x097c13ea, 0x631da5c7, 0x445f7382, 0x175683f4, 0xcdc66a97, 0x70be0288, 0xb3cdcf72, 0x6e5dd2f3, 0x20936079, 0x459b80a5, 0xbe60e2db, 0xa9c23101, 0xeba5315c, 0x224e42f2, 0x1c5c1572, 0xf6721b2c, 0x1ad2fff3, 0x8c25404e, 0x324ed72f, 0x4067b7fd, 0x0523138e, 0x5ca3bc78, 0xdc0fd66e, 0x75922283, 0x784d6b17, 0x58ebb16e, 0x44094f85, 0x3f481d87, 0xfcfeae7b, 0x77b5ff76, 0x8c2302bf, 0xaaf47556, 0x5f46b02a, 0x2b092801, 0x3d38f5f7, 0x0ca81f36, 0x52af4a8a, 0x66d5e7c0, 0xdf3b0874, 0x95055110, 0x1b5ad7a8, 0xf61ed5ad, 0x6cf6e479, 0x20758184, 0xd0cefa65, 0x88f7be58, 0x4a046826, 0x0ff6f8f3, 0xa09c7f70, 0x5346aba0, 0x5ce96c28, 0xe176eda3, 0x6bac307f, 0x376829d2, 0x85360fa9, 0x17e3fe2a, 0x24b79767, 0xf5a96b20, 0xd6cd2595, 0x68ff1ebf, 0x7555442c, 0xf19f06be, 0xf9e0659a, 0xeeb9491d, 0x34010718, 0xbb30cab8, 0xe822fe15, 0x88570983, 0x750e6249, 0xda627e55, 0x5e76ffa8, 0xb1534546, 0x6d47de08, 0xefe9e7d4];
 
-  sBox[5] = new Array(0xf6fa8f9d, 0x2cac6ce1, 0x4ca34867, 0xe2337f7c, 0x95db08e7, 0x016843b4, 0xeced5cbc, 0x325553ac, 0xbf9f0960, 0xdfa1e2ed, 0x83f0579d, 0x63ed86b9, 0x1ab6a6b8, 0xde5ebe39, 0xf38ff732, 0x8989b138, 0x33f14961, 0xc01937bd, 0xf506c6da, 0xe4625e7e, 0xa308ea99, 0x4e23e33c, 0x79cbd7cc, 0x48a14367, 0xa3149619, 0xfec94bd5, 0xa114174a, 0xeaa01866, 0xa084db2d, 0x09a8486f, 0xa888614a, 0x2900af98, 0x01665991, 0xe1992863, 0xc8f30c60, 0x2e78ef3c, 0xd0d51932, 0xcf0fec14, 0xf7ca07d2, 0xd0a82072, 0xfd41197e, 0x9305a6b0, 0xe86be3da, 0x74bed3cd, 0x372da53c, 0x4c7f4448, 0xdab5d440, 0x6dba0ec3, 0x083919a7, 0x9fbaeed9, 0x49dbcfb0, 0x4e670c53, 0x5c3d9c01, 0x64bdb941, 0x2c0e636a, 0xba7dd9cd, 0xea6f7388, 0xe70bc762, 0x35f29adb, 0x5c4cdd8d, 0xf0d48d8c, 0xb88153e2, 0x08a19866, 0x1ae2eac8, 0x284caf89, 0xaa928223, 0x9334be53, 0x3b3a21bf, 0x16434be3, 0x9aea3906, 0xefe8c36e, 0xf890cdd9, 0x80226dae, 0xc340a4a3, 0xdf7e9c09, 0xa694a807, 0x5b7c5ecc, 0x221db3a6, 0x9a69a02f, 0x68818a54, 0xceb2296f, 0x53c0843a, 0xfe893655, 0x25bfe68a, 0xb4628abc, 0xcf222ebf, 0x25ac6f48, 0xa9a99387, 0x53bddb65, 0xe76ffbe7, 0xe967fd78, 0x0ba93563, 0x8e342bc1, 0xe8a11be9, 0x4980740d, 0xc8087dfc, 0x8de4bf99, 0xa11101a0, 0x7fd37975, 0xda5a26c0, 0xe81f994f, 0x9528cd89, 0xfd339fed, 0xb87834bf, 0x5f04456d, 0x22258698, 0xc9c4c83b, 0x2dc156be, 0x4f628daa, 0x57f55ec5, 0xe2220abe, 0xd2916ebf, 0x4ec75b95, 0x24f2c3c0, 0x42d15d99, 0xcd0d7fa0, 0x7b6e27ff, 0xa8dc8af0, 0x7345c106, 0xf41e232f, 0x35162386, 0xe6ea8926, 0x3333b094, 0x157ec6f2, 0x372b74af, 0x692573e4, 0xe9a9d848, 0xf3160289, 0x3a62ef1d, 0xa787e238, 0xf3a5f676, 0x74364853, 0x20951063, 0x4576698d, 0xb6fad407, 0x592af950, 0x36f73523, 0x4cfb6e87, 0x7da4cec0, 0x6c152daa, 0xcb0396a8, 0xc50dfe5d, 0xfcd707ab, 0x0921c42f, 0x89dff0bb, 0x5fe2be78, 0x448f4f33, 0x754613c9, 0x2b05d08d, 0x48b9d585, 0xdc049441, 0xc8098f9b, 0x7dede786, 0xc39a3373, 0x42410005, 0x6a091751, 0x0ef3c8a6, 0x890072d6, 0x28207682, 0xa9a9f7be, 0xbf32679d, 0xd45b5b75, 0xb353fd00, 0xcbb0e358, 0x830f220a, 0x1f8fb214, 0xd372cf08, 0xcc3c4a13, 0x8cf63166, 0x061c87be, 0x88c98f88, 0x6062e397, 0x47cf8e7a, 0xb6c85283, 0x3cc2acfb, 0x3fc06976, 0x4e8f0252, 0x64d8314d, 0xda3870e3, 0x1e665459, 0xc10908f0, 0x513021a5, 0x6c5b68b7, 0x822f8aa0, 0x3007cd3e, 0x74719eef, 0xdc872681, 0x073340d4, 0x7e432fd9, 0x0c5ec241, 0x8809286c, 0xf592d891, 0x08a930f6, 0x957ef305, 0xb7fbffbd, 0xc266e96f, 0x6fe4ac98, 0xb173ecc0, 0xbc60b42a, 0x953498da, 0xfba1ae12, 0x2d4bd736, 0x0f25faab, 0xa4f3fceb, 0xe2969123, 0x257f0c3d, 0x9348af49, 0x361400bc, 0xe8816f4a, 0x3814f200, 0xa3f94043, 0x9c7a54c2, 0xbc704f57, 0xda41e7f9, 0xc25ad33a, 0x54f4a084, 0xb17f5505, 0x59357cbe, 0xedbd15c8, 0x7f97c5ab, 0xba5ac7b5, 0xb6f6deaf, 0x3a479c3a, 0x5302da25, 0x653d7e6a, 0x54268d49, 0x51a477ea, 0x5017d55b, 0xd7d25d88, 0x44136c76, 0x0404a8c8, 0xb8e5a121, 0xb81a928a, 0x60ed5869, 0x97c55b96, 0xeaec991b, 0x29935913, 0x01fdb7f1, 0x088e8dfa, 0x9ab6f6f5, 0x3b4cbf9f, 0x4a5de3ab, 0xe6051d35, 0xa0e1d855, 0xd36b4cf1, 0xf544edeb, 0xb0e93524, 0xbebb8fbd, 0xa2d762cf, 0x49c92f54, 0x38b5f331, 0x7128a454, 0x48392905, 0xa65b1db8, 0x851c97bd, 0xd675cf2f);
+  sBox[5] = [0xf6fa8f9d, 0x2cac6ce1, 0x4ca34867, 0xe2337f7c, 0x95db08e7, 0x016843b4, 0xeced5cbc, 0x325553ac, 0xbf9f0960, 0xdfa1e2ed, 0x83f0579d, 0x63ed86b9, 0x1ab6a6b8, 0xde5ebe39, 0xf38ff732, 0x8989b138, 0x33f14961, 0xc01937bd, 0xf506c6da, 0xe4625e7e, 0xa308ea99, 0x4e23e33c, 0x79cbd7cc, 0x48a14367, 0xa3149619, 0xfec94bd5, 0xa114174a, 0xeaa01866, 0xa084db2d, 0x09a8486f, 0xa888614a, 0x2900af98, 0x01665991, 0xe1992863, 0xc8f30c60, 0x2e78ef3c, 0xd0d51932, 0xcf0fec14, 0xf7ca07d2, 0xd0a82072, 0xfd41197e, 0x9305a6b0, 0xe86be3da, 0x74bed3cd, 0x372da53c, 0x4c7f4448, 0xdab5d440, 0x6dba0ec3, 0x083919a7, 0x9fbaeed9, 0x49dbcfb0, 0x4e670c53, 0x5c3d9c01, 0x64bdb941, 0x2c0e636a, 0xba7dd9cd, 0xea6f7388, 0xe70bc762, 0x35f29adb, 0x5c4cdd8d, 0xf0d48d8c, 0xb88153e2, 0x08a19866, 0x1ae2eac8, 0x284caf89, 0xaa928223, 0x9334be53, 0x3b3a21bf, 0x16434be3, 0x9aea3906, 0xefe8c36e, 0xf890cdd9, 0x80226dae, 0xc340a4a3, 0xdf7e9c09, 0xa694a807, 0x5b7c5ecc, 0x221db3a6, 0x9a69a02f, 0x68818a54, 0xceb2296f, 0x53c0843a, 0xfe893655, 0x25bfe68a, 0xb4628abc, 0xcf222ebf, 0x25ac6f48, 0xa9a99387, 0x53bddb65, 0xe76ffbe7, 0xe967fd78, 0x0ba93563, 0x8e342bc1, 0xe8a11be9, 0x4980740d, 0xc8087dfc, 0x8de4bf99, 0xa11101a0, 0x7fd37975, 0xda5a26c0, 0xe81f994f, 0x9528cd89, 0xfd339fed, 0xb87834bf, 0x5f04456d, 0x22258698, 0xc9c4c83b, 0x2dc156be, 0x4f628daa, 0x57f55ec5, 0xe2220abe, 0xd2916ebf, 0x4ec75b95, 0x24f2c3c0, 0x42d15d99, 0xcd0d7fa0, 0x7b6e27ff, 0xa8dc8af0, 0x7345c106, 0xf41e232f, 0x35162386, 0xe6ea8926, 0x3333b094, 0x157ec6f2, 0x372b74af, 0x692573e4, 0xe9a9d848, 0xf3160289, 0x3a62ef1d, 0xa787e238, 0xf3a5f676, 0x74364853, 0x20951063, 0x4576698d, 0xb6fad407, 0x592af950, 0x36f73523, 0x4cfb6e87, 0x7da4cec0, 0x6c152daa, 0xcb0396a8, 0xc50dfe5d, 0xfcd707ab, 0x0921c42f, 0x89dff0bb, 0x5fe2be78, 0x448f4f33, 0x754613c9, 0x2b05d08d, 0x48b9d585, 0xdc049441, 0xc8098f9b, 0x7dede786, 0xc39a3373, 0x42410005, 0x6a091751, 0x0ef3c8a6, 0x890072d6, 0x28207682, 0xa9a9f7be, 0xbf32679d, 0xd45b5b75, 0xb353fd00, 0xcbb0e358, 0x830f220a, 0x1f8fb214, 0xd372cf08, 0xcc3c4a13, 0x8cf63166, 0x061c87be, 0x88c98f88, 0x6062e397, 0x47cf8e7a, 0xb6c85283, 0x3cc2acfb, 0x3fc06976, 0x4e8f0252, 0x64d8314d, 0xda3870e3, 0x1e665459, 0xc10908f0, 0x513021a5, 0x6c5b68b7, 0x822f8aa0, 0x3007cd3e, 0x74719eef, 0xdc872681, 0x073340d4, 0x7e432fd9, 0x0c5ec241, 0x8809286c, 0xf592d891, 0x08a930f6, 0x957ef305, 0xb7fbffbd, 0xc266e96f, 0x6fe4ac98, 0xb173ecc0, 0xbc60b42a, 0x953498da, 0xfba1ae12, 0x2d4bd736, 0x0f25faab, 0xa4f3fceb, 0xe2969123, 0x257f0c3d, 0x9348af49, 0x361400bc, 0xe8816f4a, 0x3814f200, 0xa3f94043, 0x9c7a54c2, 0xbc704f57, 0xda41e7f9, 0xc25ad33a, 0x54f4a084, 0xb17f5505, 0x59357cbe, 0xedbd15c8, 0x7f97c5ab, 0xba5ac7b5, 0xb6f6deaf, 0x3a479c3a, 0x5302da25, 0x653d7e6a, 0x54268d49, 0x51a477ea, 0x5017d55b, 0xd7d25d88, 0x44136c76, 0x0404a8c8, 0xb8e5a121, 0xb81a928a, 0x60ed5869, 0x97c55b96, 0xeaec991b, 0x29935913, 0x01fdb7f1, 0x088e8dfa, 0x9ab6f6f5, 0x3b4cbf9f, 0x4a5de3ab, 0xe6051d35, 0xa0e1d855, 0xd36b4cf1, 0xf544edeb, 0xb0e93524, 0xbebb8fbd, 0xa2d762cf, 0x49c92f54, 0x38b5f331, 0x7128a454, 0x48392905, 0xa65b1db8, 0x851c97bd, 0xd675cf2f];
 
-  sBox[6] = new Array(0x85e04019, 0x332bf567, 0x662dbfff, 0xcfc65693, 0x2a8d7f6f, 0xab9bc912, 0xde6008a1, 0x2028da1f, 0x0227bce7, 0x4d642916, 0x18fac300, 0x50f18b82, 0x2cb2cb11, 0xb232e75c, 0x4b3695f2, 0xb28707de, 0xa05fbcf6, 0xcd4181e9, 0xe150210c, 0xe24ef1bd, 0xb168c381, 0xfde4e789, 0x5c79b0d8, 0x1e8bfd43, 0x4d495001, 0x38be4341, 0x913cee1d, 0x92a79c3f, 0x089766be, 0xbaeeadf4, 0x1286becf, 0xb6eacb19, 0x2660c200, 0x7565bde4, 0x64241f7a, 0x8248dca9, 0xc3b3ad66, 0x28136086, 0x0bd8dfa8, 0x356d1cf2, 0x107789be, 0xb3b2e9ce, 0x0502aa8f, 0x0bc0351e, 0x166bf52a, 0xeb12ff82, 0xe3486911, 0xd34d7516, 0x4e7b3aff, 0x5f43671b, 0x9cf6e037, 0x4981ac83, 0x334266ce, 0x8c9341b7, 0xd0d854c0, 0xcb3a6c88, 0x47bc2829, 0x4725ba37, 0xa66ad22b, 0x7ad61f1e, 0x0c5cbafa, 0x4437f107, 0xb6e79962, 0x42d2d816, 0x0a961288, 0xe1a5c06e, 0x13749e67, 0x72fc081a, 0xb1d139f7, 0xf9583745, 0xcf19df58, 0xbec3f756, 0xc06eba30, 0x07211b24, 0x45c28829, 0xc95e317f, 0xbc8ec511, 0x38bc46e9, 0xc6e6fa14, 0xbae8584a, 0xad4ebc46, 0x468f508b, 0x7829435f, 0xf124183b, 0x821dba9f, 0xaff60ff4, 0xea2c4e6d, 0x16e39264, 0x92544a8b, 0x009b4fc3, 0xaba68ced, 0x9ac96f78, 0x06a5b79a, 0xb2856e6e, 0x1aec3ca9, 0xbe838688, 0x0e0804e9, 0x55f1be56, 0xe7e5363b, 0xb3a1f25d, 0xf7debb85, 0x61fe033c, 0x16746233, 0x3c034c28, 0xda6d0c74, 0x79aac56c, 0x3ce4e1ad, 0x51f0c802, 0x98f8f35a, 0x1626a49f, 0xeed82b29, 0x1d382fe3, 0x0c4fb99a, 0xbb325778, 0x3ec6d97b, 0x6e77a6a9, 0xcb658b5c, 0xd45230c7, 0x2bd1408b, 0x60c03eb7, 0xb9068d78, 0xa33754f4, 0xf430c87d, 0xc8a71302, 0xb96d8c32, 0xebd4e7be, 0xbe8b9d2d, 0x7979fb06, 0xe7225308, 0x8b75cf77, 0x11ef8da4, 0xe083c858, 0x8d6b786f, 0x5a6317a6, 0xfa5cf7a0, 0x5dda0033, 0xf28ebfb0, 0xf5b9c310, 0xa0eac280, 0x08b9767a, 0xa3d9d2b0, 0x79d34217, 0x021a718d, 0x9ac6336a, 0x2711fd60, 0x438050e3, 0x069908a8, 0x3d7fedc4, 0x826d2bef, 0x4eeb8476, 0x488dcf25, 0x36c9d566, 0x28e74e41, 0xc2610aca, 0x3d49a9cf, 0xbae3b9df, 0xb65f8de6, 0x92aeaf64, 0x3ac7d5e6, 0x9ea80509, 0xf22b017d, 0xa4173f70, 0xdd1e16c3, 0x15e0d7f9, 0x50b1b887, 0x2b9f4fd5, 0x625aba82, 0x6a017962, 0x2ec01b9c, 0x15488aa9, 0xd716e740, 0x40055a2c, 0x93d29a22, 0xe32dbf9a, 0x058745b9, 0x3453dc1e, 0xd699296e, 0x496cff6f, 0x1c9f4986, 0xdfe2ed07, 0xb87242d1, 0x19de7eae, 0x053e561a, 0x15ad6f8c, 0x66626c1c, 0x7154c24c, 0xea082b2a, 0x93eb2939, 0x17dcb0f0, 0x58d4f2ae, 0x9ea294fb, 0x52cf564c, 0x9883fe66, 0x2ec40581, 0x763953c3, 0x01d6692e, 0xd3a0c108, 0xa1e7160e, 0xe4f2dfa6, 0x693ed285, 0x74904698, 0x4c2b0edd, 0x4f757656, 0x5d393378, 0xa132234f, 0x3d321c5d, 0xc3f5e194, 0x4b269301, 0xc79f022f, 0x3c997e7e, 0x5e4f9504, 0x3ffafbbd, 0x76f7ad0e, 0x296693f4, 0x3d1fce6f, 0xc61e45be, 0xd3b5ab34, 0xf72bf9b7, 0x1b0434c0, 0x4e72b567, 0x5592a33d, 0xb5229301, 0xcfd2a87f, 0x60aeb767, 0x1814386b, 0x30bcc33d, 0x38a0c07d, 0xfd1606f2, 0xc363519b, 0x589dd390, 0x5479f8e6, 0x1cb8d647, 0x97fd61a9, 0xea7759f4, 0x2d57539d, 0x569a58cf, 0xe84e63ad, 0x462e1b78, 0x6580f87e, 0xf3817914, 0x91da55f4, 0x40a230f3, 0xd1988f35, 0xb6e318d2, 0x3ffa50bc, 0x3d40f021, 0xc3c0bdae, 0x4958c24c, 0x518f36b2, 0x84b1d370, 0x0fedce83, 0x878ddada, 0xf2a279c7, 0x94e01be8, 0x90716f4b, 0x954b8aa3);
+  sBox[6] = [0x85e04019, 0x332bf567, 0x662dbfff, 0xcfc65693, 0x2a8d7f6f, 0xab9bc912, 0xde6008a1, 0x2028da1f, 0x0227bce7, 0x4d642916, 0x18fac300, 0x50f18b82, 0x2cb2cb11, 0xb232e75c, 0x4b3695f2, 0xb28707de, 0xa05fbcf6, 0xcd4181e9, 0xe150210c, 0xe24ef1bd, 0xb168c381, 0xfde4e789, 0x5c79b0d8, 0x1e8bfd43, 0x4d495001, 0x38be4341, 0x913cee1d, 0x92a79c3f, 0x089766be, 0xbaeeadf4, 0x1286becf, 0xb6eacb19, 0x2660c200, 0x7565bde4, 0x64241f7a, 0x8248dca9, 0xc3b3ad66, 0x28136086, 0x0bd8dfa8, 0x356d1cf2, 0x107789be, 0xb3b2e9ce, 0x0502aa8f, 0x0bc0351e, 0x166bf52a, 0xeb12ff82, 0xe3486911, 0xd34d7516, 0x4e7b3aff, 0x5f43671b, 0x9cf6e037, 0x4981ac83, 0x334266ce, 0x8c9341b7, 0xd0d854c0, 0xcb3a6c88, 0x47bc2829, 0x4725ba37, 0xa66ad22b, 0x7ad61f1e, 0x0c5cbafa, 0x4437f107, 0xb6e79962, 0x42d2d816, 0x0a961288, 0xe1a5c06e, 0x13749e67, 0x72fc081a, 0xb1d139f7, 0xf9583745, 0xcf19df58, 0xbec3f756, 0xc06eba30, 0x07211b24, 0x45c28829, 0xc95e317f, 0xbc8ec511, 0x38bc46e9, 0xc6e6fa14, 0xbae8584a, 0xad4ebc46, 0x468f508b, 0x7829435f, 0xf124183b, 0x821dba9f, 0xaff60ff4, 0xea2c4e6d, 0x16e39264, 0x92544a8b, 0x009b4fc3, 0xaba68ced, 0x9ac96f78, 0x06a5b79a, 0xb2856e6e, 0x1aec3ca9, 0xbe838688, 0x0e0804e9, 0x55f1be56, 0xe7e5363b, 0xb3a1f25d, 0xf7debb85, 0x61fe033c, 0x16746233, 0x3c034c28, 0xda6d0c74, 0x79aac56c, 0x3ce4e1ad, 0x51f0c802, 0x98f8f35a, 0x1626a49f, 0xeed82b29, 0x1d382fe3, 0x0c4fb99a, 0xbb325778, 0x3ec6d97b, 0x6e77a6a9, 0xcb658b5c, 0xd45230c7, 0x2bd1408b, 0x60c03eb7, 0xb9068d78, 0xa33754f4, 0xf430c87d, 0xc8a71302, 0xb96d8c32, 0xebd4e7be, 0xbe8b9d2d, 0x7979fb06, 0xe7225308, 0x8b75cf77, 0x11ef8da4, 0xe083c858, 0x8d6b786f, 0x5a6317a6, 0xfa5cf7a0, 0x5dda0033, 0xf28ebfb0, 0xf5b9c310, 0xa0eac280, 0x08b9767a, 0xa3d9d2b0, 0x79d34217, 0x021a718d, 0x9ac6336a, 0x2711fd60, 0x438050e3, 0x069908a8, 0x3d7fedc4, 0x826d2bef, 0x4eeb8476, 0x488dcf25, 0x36c9d566, 0x28e74e41, 0xc2610aca, 0x3d49a9cf, 0xbae3b9df, 0xb65f8de6, 0x92aeaf64, 0x3ac7d5e6, 0x9ea80509, 0xf22b017d, 0xa4173f70, 0xdd1e16c3, 0x15e0d7f9, 0x50b1b887, 0x2b9f4fd5, 0x625aba82, 0x6a017962, 0x2ec01b9c, 0x15488aa9, 0xd716e740, 0x40055a2c, 0x93d29a22, 0xe32dbf9a, 0x058745b9, 0x3453dc1e, 0xd699296e, 0x496cff6f, 0x1c9f4986, 0xdfe2ed07, 0xb87242d1, 0x19de7eae, 0x053e561a, 0x15ad6f8c, 0x66626c1c, 0x7154c24c, 0xea082b2a, 0x93eb2939, 0x17dcb0f0, 0x58d4f2ae, 0x9ea294fb, 0x52cf564c, 0x9883fe66, 0x2ec40581, 0x763953c3, 0x01d6692e, 0xd3a0c108, 0xa1e7160e, 0xe4f2dfa6, 0x693ed285, 0x74904698, 0x4c2b0edd, 0x4f757656, 0x5d393378, 0xa132234f, 0x3d321c5d, 0xc3f5e194, 0x4b269301, 0xc79f022f, 0x3c997e7e, 0x5e4f9504, 0x3ffafbbd, 0x76f7ad0e, 0x296693f4, 0x3d1fce6f, 0xc61e45be, 0xd3b5ab34, 0xf72bf9b7, 0x1b0434c0, 0x4e72b567, 0x5592a33d, 0xb5229301, 0xcfd2a87f, 0x60aeb767, 0x1814386b, 0x30bcc33d, 0x38a0c07d, 0xfd1606f2, 0xc363519b, 0x589dd390, 0x5479f8e6, 0x1cb8d647, 0x97fd61a9, 0xea7759f4, 0x2d57539d, 0x569a58cf, 0xe84e63ad, 0x462e1b78, 0x6580f87e, 0xf3817914, 0x91da55f4, 0x40a230f3, 0xd1988f35, 0xb6e318d2, 0x3ffa50bc, 0x3d40f021, 0xc3c0bdae, 0x4958c24c, 0x518f36b2, 0x84b1d370, 0x0fedce83, 0x878ddada, 0xf2a279c7, 0x94e01be8, 0x90716f4b, 0x954b8aa3];
 
-  sBox[7] = new Array(0xe216300d, 0xbbddfffc, 0xa7ebdabd, 0x35648095, 0x7789f8b7, 0xe6c1121b, 0x0e241600, 0x052ce8b5, 0x11a9cfb0, 0xe5952f11, 0xece7990a, 0x9386d174, 0x2a42931c, 0x76e38111, 0xb12def3a, 0x37ddddfc, 0xde9adeb1, 0x0a0cc32c, 0xbe197029, 0x84a00940, 0xbb243a0f, 0xb4d137cf, 0xb44e79f0, 0x049eedfd, 0x0b15a15d, 0x480d3168, 0x8bbbde5a, 0x669ded42, 0xc7ece831, 0x3f8f95e7, 0x72df191b, 0x7580330d, 0x94074251, 0x5c7dcdfa, 0xabbe6d63, 0xaa402164, 0xb301d40a, 0x02e7d1ca, 0x53571dae, 0x7a3182a2, 0x12a8ddec, 0xfdaa335d, 0x176f43e8, 0x71fb46d4, 0x38129022, 0xce949ad4, 0xb84769ad, 0x965bd862, 0x82f3d055, 0x66fb9767, 0x15b80b4e, 0x1d5b47a0, 0x4cfde06f, 0xc28ec4b8, 0x57e8726e, 0x647a78fc, 0x99865d44, 0x608bd593, 0x6c200e03, 0x39dc5ff6, 0x5d0b00a3, 0xae63aff2, 0x7e8bd632, 0x70108c0c, 0xbbd35049, 0x2998df04, 0x980cf42a, 0x9b6df491, 0x9e7edd53, 0x06918548, 0x58cb7e07, 0x3b74ef2e, 0x522fffb1, 0xd24708cc, 0x1c7e27cd, 0xa4eb215b, 0x3cf1d2e2, 0x19b47a38, 0x424f7618, 0x35856039, 0x9d17dee7, 0x27eb35e6, 0xc9aff67b, 0x36baf5b8, 0x09c467cd, 0xc18910b1, 0xe11dbf7b, 0x06cd1af8, 0x7170c608, 0x2d5e3354, 0xd4de495a, 0x64c6d006, 0xbcc0c62c, 0x3dd00db3, 0x708f8f34, 0x77d51b42, 0x264f620f, 0x24b8d2bf, 0x15c1b79e, 0x46a52564, 0xf8d7e54e, 0x3e378160, 0x7895cda5, 0x859c15a5, 0xe6459788, 0xc37bc75f, 0xdb07ba0c, 0x0676a3ab, 0x7f229b1e, 0x31842e7b, 0x24259fd7, 0xf8bef472, 0x835ffcb8, 0x6df4c1f2, 0x96f5b195, 0xfd0af0fc, 0xb0fe134c, 0xe2506d3d, 0x4f9b12ea, 0xf215f225, 0xa223736f, 0x9fb4c428, 0x25d04979, 0x34c713f8, 0xc4618187, 0xea7a6e98, 0x7cd16efc, 0x1436876c, 0xf1544107, 0xbedeee14, 0x56e9af27, 0xa04aa441, 0x3cf7c899, 0x92ecbae6, 0xdd67016d, 0x151682eb, 0xa842eedf, 0xfdba60b4, 0xf1907b75, 0x20e3030f, 0x24d8c29e, 0xe139673b, 0xefa63fb8, 0x71873054, 0xb6f2cf3b, 0x9f326442, 0xcb15a4cc, 0xb01a4504, 0xf1e47d8d, 0x844a1be5, 0xbae7dfdc, 0x42cbda70, 0xcd7dae0a, 0x57e85b7a, 0xd53f5af6, 0x20cf4d8c, 0xcea4d428, 0x79d130a4, 0x3486ebfb, 0x33d3cddc, 0x77853b53, 0x37effcb5, 0xc5068778, 0xe580b3e6, 0x4e68b8f4, 0xc5c8b37e, 0x0d809ea2, 0x398feb7c, 0x132a4f94, 0x43b7950e, 0x2fee7d1c, 0x223613bd, 0xdd06caa2, 0x37df932b, 0xc4248289, 0xacf3ebc3, 0x5715f6b7, 0xef3478dd, 0xf267616f, 0xc148cbe4, 0x9052815e, 0x5e410fab, 0xb48a2465, 0x2eda7fa4, 0xe87b40e4, 0xe98ea084, 0x5889e9e1, 0xefd390fc, 0xdd07d35b, 0xdb485694, 0x38d7e5b2, 0x57720101, 0x730edebc, 0x5b643113, 0x94917e4f, 0x503c2fba, 0x646f1282, 0x7523d24a, 0xe0779695, 0xf9c17a8f, 0x7a5b2121, 0xd187b896, 0x29263a4d, 0xba510cdf, 0x81f47c9f, 0xad1163ed, 0xea7b5965, 0x1a00726e, 0x11403092, 0x00da6d77, 0x4a0cdd61, 0xad1f4603, 0x605bdfb0, 0x9eedc364, 0x22ebe6a8, 0xcee7d28a, 0xa0e736a0, 0x5564a6b9, 0x10853209, 0xc7eb8f37, 0x2de705ca, 0x8951570f, 0xdf09822b, 0xbd691a6c, 0xaa12e4f2, 0x87451c0f, 0xe0f6a27a, 0x3ada4819, 0x4cf1764f, 0x0d771c2b, 0x67cdb156, 0x350d8384, 0x5938fa0f, 0x42399ef3, 0x36997b07, 0x0e84093d, 0x4aa93e61, 0x8360d87b, 0x1fa98b0c, 0x1149382c, 0xe97625a5, 0x0614d1b7, 0x0e25244b, 0x0c768347, 0x589e8d82, 0x0d2059d1, 0xa466bb1e, 0xf8da0a82, 0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e);
+  sBox[7] = [0xe216300d, 0xbbddfffc, 0xa7ebdabd, 0x35648095, 0x7789f8b7, 0xe6c1121b, 0x0e241600, 0x052ce8b5, 0x11a9cfb0, 0xe5952f11, 0xece7990a, 0x9386d174, 0x2a42931c, 0x76e38111, 0xb12def3a, 0x37ddddfc, 0xde9adeb1, 0x0a0cc32c, 0xbe197029, 0x84a00940, 0xbb243a0f, 0xb4d137cf, 0xb44e79f0, 0x049eedfd, 0x0b15a15d, 0x480d3168, 0x8bbbde5a, 0x669ded42, 0xc7ece831, 0x3f8f95e7, 0x72df191b, 0x7580330d, 0x94074251, 0x5c7dcdfa, 0xabbe6d63, 0xaa402164, 0xb301d40a, 0x02e7d1ca, 0x53571dae, 0x7a3182a2, 0x12a8ddec, 0xfdaa335d, 0x176f43e8, 0x71fb46d4, 0x38129022, 0xce949ad4, 0xb84769ad, 0x965bd862, 0x82f3d055, 0x66fb9767, 0x15b80b4e, 0x1d5b47a0, 0x4cfde06f, 0xc28ec4b8, 0x57e8726e, 0x647a78fc, 0x99865d44, 0x608bd593, 0x6c200e03, 0x39dc5ff6, 0x5d0b00a3, 0xae63aff2, 0x7e8bd632, 0x70108c0c, 0xbbd35049, 0x2998df04, 0x980cf42a, 0x9b6df491, 0x9e7edd53, 0x06918548, 0x58cb7e07, 0x3b74ef2e, 0x522fffb1, 0xd24708cc, 0x1c7e27cd, 0xa4eb215b, 0x3cf1d2e2, 0x19b47a38, 0x424f7618, 0x35856039, 0x9d17dee7, 0x27eb35e6, 0xc9aff67b, 0x36baf5b8, 0x09c467cd, 0xc18910b1, 0xe11dbf7b, 0x06cd1af8, 0x7170c608, 0x2d5e3354, 0xd4de495a, 0x64c6d006, 0xbcc0c62c, 0x3dd00db3, 0x708f8f34, 0x77d51b42, 0x264f620f, 0x24b8d2bf, 0x15c1b79e, 0x46a52564, 0xf8d7e54e, 0x3e378160, 0x7895cda5, 0x859c15a5, 0xe6459788, 0xc37bc75f, 0xdb07ba0c, 0x0676a3ab, 0x7f229b1e, 0x31842e7b, 0x24259fd7, 0xf8bef472, 0x835ffcb8, 0x6df4c1f2, 0x96f5b195, 0xfd0af0fc, 0xb0fe134c, 0xe2506d3d, 0x4f9b12ea, 0xf215f225, 0xa223736f, 0x9fb4c428, 0x25d04979, 0x34c713f8, 0xc4618187, 0xea7a6e98, 0x7cd16efc, 0x1436876c, 0xf1544107, 0xbedeee14, 0x56e9af27, 0xa04aa441, 0x3cf7c899, 0x92ecbae6, 0xdd67016d, 0x151682eb, 0xa842eedf, 0xfdba60b4, 0xf1907b75, 0x20e3030f, 0x24d8c29e, 0xe139673b, 0xefa63fb8, 0x71873054, 0xb6f2cf3b, 0x9f326442, 0xcb15a4cc, 0xb01a4504, 0xf1e47d8d, 0x844a1be5, 0xbae7dfdc, 0x42cbda70, 0xcd7dae0a, 0x57e85b7a, 0xd53f5af6, 0x20cf4d8c, 0xcea4d428, 0x79d130a4, 0x3486ebfb, 0x33d3cddc, 0x77853b53, 0x37effcb5, 0xc5068778, 0xe580b3e6, 0x4e68b8f4, 0xc5c8b37e, 0x0d809ea2, 0x398feb7c, 0x132a4f94, 0x43b7950e, 0x2fee7d1c, 0x223613bd, 0xdd06caa2, 0x37df932b, 0xc4248289, 0xacf3ebc3, 0x5715f6b7, 0xef3478dd, 0xf267616f, 0xc148cbe4, 0x9052815e, 0x5e410fab, 0xb48a2465, 0x2eda7fa4, 0xe87b40e4, 0xe98ea084, 0x5889e9e1, 0xefd390fc, 0xdd07d35b, 0xdb485694, 0x38d7e5b2, 0x57720101, 0x730edebc, 0x5b643113, 0x94917e4f, 0x503c2fba, 0x646f1282, 0x7523d24a, 0xe0779695, 0xf9c17a8f, 0x7a5b2121, 0xd187b896, 0x29263a4d, 0xba510cdf, 0x81f47c9f, 0xad1163ed, 0xea7b5965, 0x1a00726e, 0x11403092, 0x00da6d77, 0x4a0cdd61, 0xad1f4603, 0x605bdfb0, 0x9eedc364, 0x22ebe6a8, 0xcee7d28a, 0xa0e736a0, 0x5564a6b9, 0x10853209, 0xc7eb8f37, 0x2de705ca, 0x8951570f, 0xdf09822b, 0xbd691a6c, 0xaa12e4f2, 0x87451c0f, 0xe0f6a27a, 0x3ada4819, 0x4cf1764f, 0x0d771c2b, 0x67cdb156, 0x350d8384, 0x5938fa0f, 0x42399ef3, 0x36997b07, 0x0e84093d, 0x4aa93e61, 0x8360d87b, 0x1fa98b0c, 0x1149382c, 0xe97625a5, 0x0614d1b7, 0x0e25244b, 0x0c768347, 0x589e8d82, 0x0d2059d1, 0xa466bb1e, 0xf8da0a82, 0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e];
 }
 
 function Cast5(key) {
@@ -29329,7 +30769,7 @@ Cast5.keySize = Cast5.prototype.keySize = 16;
 
 exports.default = Cast5;
 
-},{}],315:[function(_dereq_,module,exports){
+},{}],331:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29360,14 +30800,14 @@ Object.defineProperty(exports, "__esModule", {
 
 function des(keys, message, encrypt, mode, iv, padding) {
   //declaring this locally speeds things up a bit
-  var spfunction1 = new Array(0x1010400, 0, 0x10000, 0x1010404, 0x1010004, 0x10404, 0x4, 0x10000, 0x400, 0x1010400, 0x1010404, 0x400, 0x1000404, 0x1010004, 0x1000000, 0x4, 0x404, 0x1000400, 0x1000400, 0x10400, 0x10400, 0x1010000, 0x1010000, 0x1000404, 0x10004, 0x1000004, 0x1000004, 0x10004, 0, 0x404, 0x10404, 0x1000000, 0x10000, 0x1010404, 0x4, 0x1010000, 0x1010400, 0x1000000, 0x1000000, 0x400, 0x1010004, 0x10000, 0x10400, 0x1000004, 0x400, 0x4, 0x1000404, 0x10404, 0x1010404, 0x10004, 0x1010000, 0x1000404, 0x1000004, 0x404, 0x10404, 0x1010400, 0x404, 0x1000400, 0x1000400, 0, 0x10004, 0x10400, 0, 0x1010004);
-  var spfunction2 = new Array(-0x7fef7fe0, -0x7fff8000, 0x8000, 0x108020, 0x100000, 0x20, -0x7fefffe0, -0x7fff7fe0, -0x7fffffe0, -0x7fef7fe0, -0x7fef8000, -0x80000000, -0x7fff8000, 0x100000, 0x20, -0x7fefffe0, 0x108000, 0x100020, -0x7fff7fe0, 0, -0x80000000, 0x8000, 0x108020, -0x7ff00000, 0x100020, -0x7fffffe0, 0, 0x108000, 0x8020, -0x7fef8000, -0x7ff00000, 0x8020, 0, 0x108020, -0x7fefffe0, 0x100000, -0x7fff7fe0, -0x7ff00000, -0x7fef8000, 0x8000, -0x7ff00000, -0x7fff8000, 0x20, -0x7fef7fe0, 0x108020, 0x20, 0x8000, -0x80000000, 0x8020, -0x7fef8000, 0x100000, -0x7fffffe0, 0x100020, -0x7fff7fe0, -0x7fffffe0, 0x100020, 0x108000, 0, -0x7fff8000, 0x8020, -0x80000000, -0x7fefffe0, -0x7fef7fe0, 0x108000);
-  var spfunction3 = new Array(0x208, 0x8020200, 0, 0x8020008, 0x8000200, 0, 0x20208, 0x8000200, 0x20008, 0x8000008, 0x8000008, 0x20000, 0x8020208, 0x20008, 0x8020000, 0x208, 0x8000000, 0x8, 0x8020200, 0x200, 0x20200, 0x8020000, 0x8020008, 0x20208, 0x8000208, 0x20200, 0x20000, 0x8000208, 0x8, 0x8020208, 0x200, 0x8000000, 0x8020200, 0x8000000, 0x20008, 0x208, 0x20000, 0x8020200, 0x8000200, 0, 0x200, 0x20008, 0x8020208, 0x8000200, 0x8000008, 0x200, 0, 0x8020008, 0x8000208, 0x20000, 0x8000000, 0x8020208, 0x8, 0x20208, 0x20200, 0x8000008, 0x8020000, 0x8000208, 0x208, 0x8020000, 0x20208, 0x8, 0x8020008, 0x20200);
-  var spfunction4 = new Array(0x802001, 0x2081, 0x2081, 0x80, 0x802080, 0x800081, 0x800001, 0x2001, 0, 0x802000, 0x802000, 0x802081, 0x81, 0, 0x800080, 0x800001, 0x1, 0x2000, 0x800000, 0x802001, 0x80, 0x800000, 0x2001, 0x2080, 0x800081, 0x1, 0x2080, 0x800080, 0x2000, 0x802080, 0x802081, 0x81, 0x800080, 0x800001, 0x802000, 0x802081, 0x81, 0, 0, 0x802000, 0x2080, 0x800080, 0x800081, 0x1, 0x802001, 0x2081, 0x2081, 0x80, 0x802081, 0x81, 0x1, 0x2000, 0x800001, 0x2001, 0x802080, 0x800081, 0x2001, 0x2080, 0x800000, 0x802001, 0x80, 0x800000, 0x2000, 0x802080);
-  var spfunction5 = new Array(0x100, 0x2080100, 0x2080000, 0x42000100, 0x80000, 0x100, 0x40000000, 0x2080000, 0x40080100, 0x80000, 0x2000100, 0x40080100, 0x42000100, 0x42080000, 0x80100, 0x40000000, 0x2000000, 0x40080000, 0x40080000, 0, 0x40000100, 0x42080100, 0x42080100, 0x2000100, 0x42080000, 0x40000100, 0, 0x42000000, 0x2080100, 0x2000000, 0x42000000, 0x80100, 0x80000, 0x42000100, 0x100, 0x2000000, 0x40000000, 0x2080000, 0x42000100, 0x40080100, 0x2000100, 0x40000000, 0x42080000, 0x2080100, 0x40080100, 0x100, 0x2000000, 0x42080000, 0x42080100, 0x80100, 0x42000000, 0x42080100, 0x2080000, 0, 0x40080000, 0x42000000, 0x80100, 0x2000100, 0x40000100, 0x80000, 0, 0x40080000, 0x2080100, 0x40000100);
-  var spfunction6 = new Array(0x20000010, 0x20400000, 0x4000, 0x20404010, 0x20400000, 0x10, 0x20404010, 0x400000, 0x20004000, 0x404010, 0x400000, 0x20000010, 0x400010, 0x20004000, 0x20000000, 0x4010, 0, 0x400010, 0x20004010, 0x4000, 0x404000, 0x20004010, 0x10, 0x20400010, 0x20400010, 0, 0x404010, 0x20404000, 0x4010, 0x404000, 0x20404000, 0x20000000, 0x20004000, 0x10, 0x20400010, 0x404000, 0x20404010, 0x400000, 0x4010, 0x20000010, 0x400000, 0x20004000, 0x20000000, 0x4010, 0x20000010, 0x20404010, 0x404000, 0x20400000, 0x404010, 0x20404000, 0, 0x20400010, 0x10, 0x4000, 0x20400000, 0x404010, 0x4000, 0x400010, 0x20004010, 0, 0x20404000, 0x20000000, 0x400010, 0x20004010);
-  var spfunction7 = new Array(0x200000, 0x4200002, 0x4000802, 0, 0x800, 0x4000802, 0x200802, 0x4200800, 0x4200802, 0x200000, 0, 0x4000002, 0x2, 0x4000000, 0x4200002, 0x802, 0x4000800, 0x200802, 0x200002, 0x4000800, 0x4000002, 0x4200000, 0x4200800, 0x200002, 0x4200000, 0x800, 0x802, 0x4200802, 0x200800, 0x2, 0x4000000, 0x200800, 0x4000000, 0x200800, 0x200000, 0x4000802, 0x4000802, 0x4200002, 0x4200002, 0x2, 0x200002, 0x4000000, 0x4000800, 0x200000, 0x4200800, 0x802, 0x200802, 0x4200800, 0x802, 0x4000002, 0x4200802, 0x4200000, 0x200800, 0, 0x2, 0x4200802, 0, 0x200802, 0x4200000, 0x800, 0x4000002, 0x4000800, 0x800, 0x200002);
-  var spfunction8 = new Array(0x10001040, 0x1000, 0x40000, 0x10041040, 0x10000000, 0x10001040, 0x40, 0x10000000, 0x40040, 0x10040000, 0x10041040, 0x41000, 0x10041000, 0x41040, 0x1000, 0x40, 0x10040000, 0x10000040, 0x10001000, 0x1040, 0x41000, 0x40040, 0x10040040, 0x10041000, 0x1040, 0, 0, 0x10040040, 0x10000040, 0x10001000, 0x41040, 0x40000, 0x41040, 0x40000, 0x10041000, 0x1000, 0x40, 0x10040040, 0x1000, 0x41040, 0x10001000, 0x40, 0x10000040, 0x10040000, 0x10040040, 0x10000000, 0x40000, 0x10001040, 0, 0x10041040, 0x40040, 0x10000040, 0x10040000, 0x10001000, 0x10001040, 0, 0x10041040, 0x41000, 0x41000, 0x1040, 0x1040, 0x40040, 0x10000000, 0x10041000);
+  var spfunction1 = [0x1010400, 0, 0x10000, 0x1010404, 0x1010004, 0x10404, 0x4, 0x10000, 0x400, 0x1010400, 0x1010404, 0x400, 0x1000404, 0x1010004, 0x1000000, 0x4, 0x404, 0x1000400, 0x1000400, 0x10400, 0x10400, 0x1010000, 0x1010000, 0x1000404, 0x10004, 0x1000004, 0x1000004, 0x10004, 0, 0x404, 0x10404, 0x1000000, 0x10000, 0x1010404, 0x4, 0x1010000, 0x1010400, 0x1000000, 0x1000000, 0x400, 0x1010004, 0x10000, 0x10400, 0x1000004, 0x400, 0x4, 0x1000404, 0x10404, 0x1010404, 0x10004, 0x1010000, 0x1000404, 0x1000004, 0x404, 0x10404, 0x1010400, 0x404, 0x1000400, 0x1000400, 0, 0x10004, 0x10400, 0, 0x1010004];
+  var spfunction2 = [-0x7fef7fe0, -0x7fff8000, 0x8000, 0x108020, 0x100000, 0x20, -0x7fefffe0, -0x7fff7fe0, -0x7fffffe0, -0x7fef7fe0, -0x7fef8000, -0x80000000, -0x7fff8000, 0x100000, 0x20, -0x7fefffe0, 0x108000, 0x100020, -0x7fff7fe0, 0, -0x80000000, 0x8000, 0x108020, -0x7ff00000, 0x100020, -0x7fffffe0, 0, 0x108000, 0x8020, -0x7fef8000, -0x7ff00000, 0x8020, 0, 0x108020, -0x7fefffe0, 0x100000, -0x7fff7fe0, -0x7ff00000, -0x7fef8000, 0x8000, -0x7ff00000, -0x7fff8000, 0x20, -0x7fef7fe0, 0x108020, 0x20, 0x8000, -0x80000000, 0x8020, -0x7fef8000, 0x100000, -0x7fffffe0, 0x100020, -0x7fff7fe0, -0x7fffffe0, 0x100020, 0x108000, 0, -0x7fff8000, 0x8020, -0x80000000, -0x7fefffe0, -0x7fef7fe0, 0x108000];
+  var spfunction3 = [0x208, 0x8020200, 0, 0x8020008, 0x8000200, 0, 0x20208, 0x8000200, 0x20008, 0x8000008, 0x8000008, 0x20000, 0x8020208, 0x20008, 0x8020000, 0x208, 0x8000000, 0x8, 0x8020200, 0x200, 0x20200, 0x8020000, 0x8020008, 0x20208, 0x8000208, 0x20200, 0x20000, 0x8000208, 0x8, 0x8020208, 0x200, 0x8000000, 0x8020200, 0x8000000, 0x20008, 0x208, 0x20000, 0x8020200, 0x8000200, 0, 0x200, 0x20008, 0x8020208, 0x8000200, 0x8000008, 0x200, 0, 0x8020008, 0x8000208, 0x20000, 0x8000000, 0x8020208, 0x8, 0x20208, 0x20200, 0x8000008, 0x8020000, 0x8000208, 0x208, 0x8020000, 0x20208, 0x8, 0x8020008, 0x20200];
+  var spfunction4 = [0x802001, 0x2081, 0x2081, 0x80, 0x802080, 0x800081, 0x800001, 0x2001, 0, 0x802000, 0x802000, 0x802081, 0x81, 0, 0x800080, 0x800001, 0x1, 0x2000, 0x800000, 0x802001, 0x80, 0x800000, 0x2001, 0x2080, 0x800081, 0x1, 0x2080, 0x800080, 0x2000, 0x802080, 0x802081, 0x81, 0x800080, 0x800001, 0x802000, 0x802081, 0x81, 0, 0, 0x802000, 0x2080, 0x800080, 0x800081, 0x1, 0x802001, 0x2081, 0x2081, 0x80, 0x802081, 0x81, 0x1, 0x2000, 0x800001, 0x2001, 0x802080, 0x800081, 0x2001, 0x2080, 0x800000, 0x802001, 0x80, 0x800000, 0x2000, 0x802080];
+  var spfunction5 = [0x100, 0x2080100, 0x2080000, 0x42000100, 0x80000, 0x100, 0x40000000, 0x2080000, 0x40080100, 0x80000, 0x2000100, 0x40080100, 0x42000100, 0x42080000, 0x80100, 0x40000000, 0x2000000, 0x40080000, 0x40080000, 0, 0x40000100, 0x42080100, 0x42080100, 0x2000100, 0x42080000, 0x40000100, 0, 0x42000000, 0x2080100, 0x2000000, 0x42000000, 0x80100, 0x80000, 0x42000100, 0x100, 0x2000000, 0x40000000, 0x2080000, 0x42000100, 0x40080100, 0x2000100, 0x40000000, 0x42080000, 0x2080100, 0x40080100, 0x100, 0x2000000, 0x42080000, 0x42080100, 0x80100, 0x42000000, 0x42080100, 0x2080000, 0, 0x40080000, 0x42000000, 0x80100, 0x2000100, 0x40000100, 0x80000, 0, 0x40080000, 0x2080100, 0x40000100];
+  var spfunction6 = [0x20000010, 0x20400000, 0x4000, 0x20404010, 0x20400000, 0x10, 0x20404010, 0x400000, 0x20004000, 0x404010, 0x400000, 0x20000010, 0x400010, 0x20004000, 0x20000000, 0x4010, 0, 0x400010, 0x20004010, 0x4000, 0x404000, 0x20004010, 0x10, 0x20400010, 0x20400010, 0, 0x404010, 0x20404000, 0x4010, 0x404000, 0x20404000, 0x20000000, 0x20004000, 0x10, 0x20400010, 0x404000, 0x20404010, 0x400000, 0x4010, 0x20000010, 0x400000, 0x20004000, 0x20000000, 0x4010, 0x20000010, 0x20404010, 0x404000, 0x20400000, 0x404010, 0x20404000, 0, 0x20400010, 0x10, 0x4000, 0x20400000, 0x404010, 0x4000, 0x400010, 0x20004010, 0, 0x20404000, 0x20000000, 0x400010, 0x20004010];
+  var spfunction7 = [0x200000, 0x4200002, 0x4000802, 0, 0x800, 0x4000802, 0x200802, 0x4200800, 0x4200802, 0x200000, 0, 0x4000002, 0x2, 0x4000000, 0x4200002, 0x802, 0x4000800, 0x200802, 0x200002, 0x4000800, 0x4000002, 0x4200000, 0x4200800, 0x200002, 0x4200000, 0x800, 0x802, 0x4200802, 0x200800, 0x2, 0x4000000, 0x200800, 0x4000000, 0x200800, 0x200000, 0x4000802, 0x4000802, 0x4200002, 0x4200002, 0x2, 0x200002, 0x4000000, 0x4000800, 0x200000, 0x4200800, 0x802, 0x200802, 0x4200800, 0x802, 0x4000002, 0x4200802, 0x4200000, 0x200800, 0, 0x2, 0x4200802, 0, 0x200802, 0x4200000, 0x800, 0x4000002, 0x4000800, 0x800, 0x200002];
+  var spfunction8 = [0x10001040, 0x1000, 0x40000, 0x10041040, 0x10000000, 0x10001040, 0x40, 0x10000000, 0x40040, 0x10040000, 0x10041040, 0x41000, 0x10041000, 0x41040, 0x1000, 0x40, 0x10040000, 0x10000040, 0x10001000, 0x1040, 0x41000, 0x40040, 0x10040040, 0x10041000, 0x1040, 0, 0, 0x10040040, 0x10000040, 0x10001000, 0x41040, 0x40000, 0x41040, 0x40000, 0x10041000, 0x1000, 0x40, 0x10040040, 0x1000, 0x41040, 0x10001000, 0x40, 0x10000040, 0x10040000, 0x10040040, 0x10000000, 0x40000, 0x10001040, 0, 0x10041040, 0x40040, 0x10000040, 0x10040000, 0x10001000, 0x10001040, 0, 0x10041040, 0x41000, 0x41000, 0x1040, 0x1040, 0x40040, 0x10000000, 0x10041000];
 
   //create the 16 or 48 subkeys we will need
   var m = 0;
@@ -29390,9 +30830,9 @@ function des(keys, message, encrypt, mode, iv, padding) {
   //set up the loops for single and triple des
   var iterations = keys.length === 32 ? 3 : 9; //single or triple des
   if (iterations === 3) {
-    looping = encrypt ? new Array(0, 32, 2) : new Array(30, -2, -2);
+    looping = encrypt ? [0, 32, 2] : [30, -2, -2];
   } else {
-    looping = encrypt ? new Array(0, 32, 2, 62, 30, -2, 64, 96, 2) : new Array(94, 62, -2, 32, 64, 2, 30, -2, -2);
+    looping = encrypt ? [0, 32, 2, 62, 30, -2, 64, 96, 2] : [94, 62, -2, 32, 64, 2, 30, -2, -2];
   }
 
   //pad the message depending on the padding parameter
@@ -29527,27 +30967,27 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
 function des_createKeys(key) {
   //declaring this locally speeds things up a bit
-  var pc2bytes0 = new Array(0, 0x4, 0x20000000, 0x20000004, 0x10000, 0x10004, 0x20010000, 0x20010004, 0x200, 0x204, 0x20000200, 0x20000204, 0x10200, 0x10204, 0x20010200, 0x20010204);
-  var pc2bytes1 = new Array(0, 0x1, 0x100000, 0x100001, 0x4000000, 0x4000001, 0x4100000, 0x4100001, 0x100, 0x101, 0x100100, 0x100101, 0x4000100, 0x4000101, 0x4100100, 0x4100101);
-  var pc2bytes2 = new Array(0, 0x8, 0x800, 0x808, 0x1000000, 0x1000008, 0x1000800, 0x1000808, 0, 0x8, 0x800, 0x808, 0x1000000, 0x1000008, 0x1000800, 0x1000808);
-  var pc2bytes3 = new Array(0, 0x200000, 0x8000000, 0x8200000, 0x2000, 0x202000, 0x8002000, 0x8202000, 0x20000, 0x220000, 0x8020000, 0x8220000, 0x22000, 0x222000, 0x8022000, 0x8222000);
-  var pc2bytes4 = new Array(0, 0x40000, 0x10, 0x40010, 0, 0x40000, 0x10, 0x40010, 0x1000, 0x41000, 0x1010, 0x41010, 0x1000, 0x41000, 0x1010, 0x41010);
-  var pc2bytes5 = new Array(0, 0x400, 0x20, 0x420, 0, 0x400, 0x20, 0x420, 0x2000000, 0x2000400, 0x2000020, 0x2000420, 0x2000000, 0x2000400, 0x2000020, 0x2000420);
-  var pc2bytes6 = new Array(0, 0x10000000, 0x80000, 0x10080000, 0x2, 0x10000002, 0x80002, 0x10080002, 0, 0x10000000, 0x80000, 0x10080000, 0x2, 0x10000002, 0x80002, 0x10080002);
-  var pc2bytes7 = new Array(0, 0x10000, 0x800, 0x10800, 0x20000000, 0x20010000, 0x20000800, 0x20010800, 0x20000, 0x30000, 0x20800, 0x30800, 0x20020000, 0x20030000, 0x20020800, 0x20030800);
-  var pc2bytes8 = new Array(0, 0x40000, 0, 0x40000, 0x2, 0x40002, 0x2, 0x40002, 0x2000000, 0x2040000, 0x2000000, 0x2040000, 0x2000002, 0x2040002, 0x2000002, 0x2040002);
-  var pc2bytes9 = new Array(0, 0x10000000, 0x8, 0x10000008, 0, 0x10000000, 0x8, 0x10000008, 0x400, 0x10000400, 0x408, 0x10000408, 0x400, 0x10000400, 0x408, 0x10000408);
-  var pc2bytes10 = new Array(0, 0x20, 0, 0x20, 0x100000, 0x100020, 0x100000, 0x100020, 0x2000, 0x2020, 0x2000, 0x2020, 0x102000, 0x102020, 0x102000, 0x102020);
-  var pc2bytes11 = new Array(0, 0x1000000, 0x200, 0x1000200, 0x200000, 0x1200000, 0x200200, 0x1200200, 0x4000000, 0x5000000, 0x4000200, 0x5000200, 0x4200000, 0x5200000, 0x4200200, 0x5200200);
-  var pc2bytes12 = new Array(0, 0x1000, 0x8000000, 0x8001000, 0x80000, 0x81000, 0x8080000, 0x8081000, 0x10, 0x1010, 0x8000010, 0x8001010, 0x80010, 0x81010, 0x8080010, 0x8081010);
-  var pc2bytes13 = new Array(0, 0x4, 0x100, 0x104, 0, 0x4, 0x100, 0x104, 0x1, 0x5, 0x101, 0x105, 0x1, 0x5, 0x101, 0x105);
+  var pc2bytes0 = [0, 0x4, 0x20000000, 0x20000004, 0x10000, 0x10004, 0x20010000, 0x20010004, 0x200, 0x204, 0x20000200, 0x20000204, 0x10200, 0x10204, 0x20010200, 0x20010204];
+  var pc2bytes1 = [0, 0x1, 0x100000, 0x100001, 0x4000000, 0x4000001, 0x4100000, 0x4100001, 0x100, 0x101, 0x100100, 0x100101, 0x4000100, 0x4000101, 0x4100100, 0x4100101];
+  var pc2bytes2 = [0, 0x8, 0x800, 0x808, 0x1000000, 0x1000008, 0x1000800, 0x1000808, 0, 0x8, 0x800, 0x808, 0x1000000, 0x1000008, 0x1000800, 0x1000808];
+  var pc2bytes3 = [0, 0x200000, 0x8000000, 0x8200000, 0x2000, 0x202000, 0x8002000, 0x8202000, 0x20000, 0x220000, 0x8020000, 0x8220000, 0x22000, 0x222000, 0x8022000, 0x8222000];
+  var pc2bytes4 = [0, 0x40000, 0x10, 0x40010, 0, 0x40000, 0x10, 0x40010, 0x1000, 0x41000, 0x1010, 0x41010, 0x1000, 0x41000, 0x1010, 0x41010];
+  var pc2bytes5 = [0, 0x400, 0x20, 0x420, 0, 0x400, 0x20, 0x420, 0x2000000, 0x2000400, 0x2000020, 0x2000420, 0x2000000, 0x2000400, 0x2000020, 0x2000420];
+  var pc2bytes6 = [0, 0x10000000, 0x80000, 0x10080000, 0x2, 0x10000002, 0x80002, 0x10080002, 0, 0x10000000, 0x80000, 0x10080000, 0x2, 0x10000002, 0x80002, 0x10080002];
+  var pc2bytes7 = [0, 0x10000, 0x800, 0x10800, 0x20000000, 0x20010000, 0x20000800, 0x20010800, 0x20000, 0x30000, 0x20800, 0x30800, 0x20020000, 0x20030000, 0x20020800, 0x20030800];
+  var pc2bytes8 = [0, 0x40000, 0, 0x40000, 0x2, 0x40002, 0x2, 0x40002, 0x2000000, 0x2040000, 0x2000000, 0x2040000, 0x2000002, 0x2040002, 0x2000002, 0x2040002];
+  var pc2bytes9 = [0, 0x10000000, 0x8, 0x10000008, 0, 0x10000000, 0x8, 0x10000008, 0x400, 0x10000400, 0x408, 0x10000408, 0x400, 0x10000400, 0x408, 0x10000408];
+  var pc2bytes10 = [0, 0x20, 0, 0x20, 0x100000, 0x100020, 0x100000, 0x100020, 0x2000, 0x2020, 0x2000, 0x2020, 0x102000, 0x102020, 0x102000, 0x102020];
+  var pc2bytes11 = [0, 0x1000000, 0x200, 0x1000200, 0x200000, 0x1200000, 0x200200, 0x1200200, 0x4000000, 0x5000000, 0x4000200, 0x5000200, 0x4200000, 0x5200000, 0x4200200, 0x5200200];
+  var pc2bytes12 = [0, 0x1000, 0x8000000, 0x8001000, 0x80000, 0x81000, 0x8080000, 0x8081000, 0x10, 0x1010, 0x8000010, 0x8001010, 0x80010, 0x81010, 0x8080010, 0x8081010];
+  var pc2bytes13 = [0, 0x4, 0x100, 0x104, 0, 0x4, 0x100, 0x104, 0x1, 0x5, 0x101, 0x105, 0x1, 0x5, 0x101, 0x105];
 
   //how many iterations (1 for des, 3 for triple des)
   var iterations = key.length > 8 ? 3 : 1; //changed by Paul 16/6/2007 to use Triple DES for 9+ byte keys
   //stores the return keys
   var keys = new Array(32 * iterations);
   //now define the left shifts which need to be done
-  var shifts = new Array(0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0);
+  var shifts = [0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0];
   //other variables
   var lefttemp = void 0;
   var righttemp = void 0;
@@ -29709,7 +31149,7 @@ function DES(key) {
 
 exports.default = { DES: DES, TripleDES: TripleDES };
 
-},{}],316:[function(_dereq_,module,exports){
+},{}],332:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29821,7 +31261,7 @@ exports.default = {
     * @module crypto/cipher
     */
 
-},{"./aes":312,"./blowfish":313,"./cast5":314,"./des.js":315,"./twofish":317}],317:[function(_dereq_,module,exports){
+},{"./aes":328,"./blowfish":329,"./cast5":330,"./des.js":331,"./twofish":333}],333:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29834,7 +31274,7 @@ var _from2 = _interopRequireDefault(_from);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/* eslint-disable no-mixed-operators */
+/* eslint-disable no-mixed-operators, no-fallthrough */
 
 /* Modified by Recurity Labs GmbH
  *
@@ -29888,11 +31328,8 @@ function createTwofish() {
   var dataBytes = null;
   var dataOffset = -1;
   // var dataLength = -1;
-  var algorithmName = null;
   // var idx2 = -1;
   //
-
-  algorithmName = "twofish";
 
   var tfsKey = [];
   var tfsM = [[], [], [], []];
@@ -30147,7 +31584,7 @@ TF.blockSize = TF.prototype.blockSize = 16;
 
 exports.default = TF;
 
-},{"babel-runtime/core-js/array/from":19}],318:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":20}],334:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30400,7 +31837,7 @@ exports.default = function () {
   return CMAC;
 }();
 
-},{"../util":382,"asmcrypto.js/src/aes/cbc/exports":4,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],319:[function(_dereq_,module,exports){
+},{"../util":398,"asmcrypto.js/src/aes/cbc/exports":5,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],335:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30447,20 +31884,9 @@ var _enums = _dereq_('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
-var _util = _dereq_('../util');
-
-var _util2 = _interopRequireDefault(_util);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function constructParams(types, data) {
-  return types.map(function (type, i) {
-    if (data && data[i]) {
-      return new type(data[i]);
-    }
-    return new type();
-  });
-} // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -30490,9 +31916,17 @@ function constructParams(types, data) {
  * @requires type/mpi
  * @requires type/oid
  * @requires enums
- * @requires util
  * @module crypto/crypto
  */
+
+function constructParams(types, data) {
+  return types.map(function (type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    }
+    return new type();
+  });
+}
 
 exports.default = {
   /**
@@ -30842,7 +32276,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":343,"../type/ecdh_symkey":376,"../type/kdf_params":377,"../type/mpi":379,"../type/oid":380,"../util":382,"./cipher":316,"./public_key":336,"./random":339,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],320:[function(_dereq_,module,exports){
+},{"../enums":359,"../type/ecdh_symkey":392,"../type/kdf_params":393,"../type/mpi":395,"../type/oid":396,"./cipher":332,"./public_key":352,"./random":355,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],336:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31247,7 +32681,7 @@ EAX.tagLength = tagLength;
 
 exports.default = EAX;
 
-},{"../util":382,"./cmac":318,"asmcrypto.js/src/aes/ctr/exports":8,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/helpers/slicedToArray":36,"babel-runtime/regenerator":38}],321:[function(_dereq_,module,exports){
+},{"../util":398,"./cmac":334,"asmcrypto.js/src/aes/ctr/exports":9,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/slicedToArray":40,"babel-runtime/regenerator":42}],337:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31522,17 +32956,12 @@ var GCM = function () {
 
 var _exports = _dereq_('asmcrypto.js/src/aes/gcm/exports');
 
-var _config = _dereq_('../config');
-
-var _config2 = _interopRequireDefault(_config);
-
 var _util = _dereq_('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var webCrypto = _util2.default.getWebCrypto(); // no GCM support in IE11, Safari 9
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2016 Tankred Hase
 //
@@ -31554,11 +32983,11 @@ var webCrypto = _util2.default.getWebCrypto(); // no GCM support in IE11, Safari
  * @fileoverview This module wraps native AES-GCM en/decryption for both
  * the WebCrypto api as well as node.js' crypto api.
  * @requires asmcrypto.js
- * @requires config
  * @requires util
  * @module crypto/gcm
  */
 
+var webCrypto = _util2.default.getWebCrypto(); // no GCM support in IE11, Safari 9
 var nodeCrypto = _util2.default.getNodeCrypto();
 var Buffer = _util2.default.getNodeBuffer();
 
@@ -31579,7 +33008,7 @@ GCM.tagLength = tagLength;
 
 exports.default = GCM;
 
-},{"../config":309,"../util":382,"asmcrypto.js/src/aes/gcm/exports":11,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],322:[function(_dereq_,module,exports){
+},{"../util":398,"asmcrypto.js/src/aes/gcm/exports":12,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],338:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31736,8 +33165,7 @@ exports.default = {
       case 1:
         // - MD5 [HAC]
         return 16;
-      case 2:
-      // - SHA-1 [FIPS180]
+      case 2: // - SHA-1 [FIPS180]
       case 3:
         // - RIPE-MD/160 [HAC]
         return 20;
@@ -31759,7 +33187,7 @@ exports.default = {
   }
 };
 
-},{"../../util":382,"./md5":323,"asmcrypto.js/src/hash/sha256/exports":15,"hash.js/lib/hash/ripemd":271,"hash.js/lib/hash/sha/224":274,"hash.js/lib/hash/sha/384":276,"hash.js/lib/hash/sha/512":277,"rusha":304}],323:[function(_dereq_,module,exports){
+},{"../../util":398,"./md5":339,"asmcrypto.js/src/hash/sha256/exports":16,"hash.js/lib/hash/ripemd":287,"hash.js/lib/hash/sha/224":290,"hash.js/lib/hash/sha/384":292,"hash.js/lib/hash/sha/512":293,"rusha":320}],339:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31974,12 +33402,16 @@ function add32(a, b) {
 
 exports.default = md5;
 
-},{"../../util":382}],324:[function(_dereq_,module,exports){
+},{"../../util":398}],340:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _assign = _dereq_('babel-runtime/core-js/object/assign');
+
+var _assign2 = _interopRequireDefault(_assign);
 
 var _cipher = _dereq_('./cipher');
 
@@ -32073,13 +33505,11 @@ var mod = {
     * @module crypto
     */
 
-for (var i in _crypto2.default) {
-  mod[i] = _crypto2.default[i];
-}
+(0, _assign2.default)(mod, _crypto2.default);
 
 exports.default = mod;
 
-},{"./aes_kw":310,"./cfb":311,"./cipher":316,"./crypto":319,"./eax":320,"./gcm":321,"./hash":322,"./ocb":325,"./pkcs1":326,"./pkcs5":327,"./public_key":336,"./random":339,"./signature":340}],325:[function(_dereq_,module,exports){
+},{"./aes_kw":326,"./cfb":327,"./cipher":332,"./crypto":335,"./eax":336,"./gcm":337,"./hash":338,"./ocb":341,"./pkcs1":342,"./pkcs5":343,"./public_key":352,"./random":355,"./signature":356,"babel-runtime/core-js/object/assign":24}],341:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32441,7 +33871,7 @@ OCB.tagLength = tagLength;
 
 exports.default = OCB;
 
-},{"../util":382,"./cipher":316,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],326:[function(_dereq_,module,exports){
+},{"../util":398,"./cipher":332,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],342:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32681,7 +34111,7 @@ emsa.encode = function (algo, M, emLen) {
 
 exports.default = { eme: eme, emsa: emsa };
 
-},{"../util":382,"./hash":322,"./random":339,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],327:[function(_dereq_,module,exports){
+},{"../util":398,"./hash":338,"./random":355,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],343:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32743,7 +34173,7 @@ function decode(msg) {
 
 exports.default = { encode: encode, decode: decode };
 
-},{}],328:[function(_dereq_,module,exports){
+},{}],344:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32770,17 +34200,13 @@ var _random = _dereq_('../random');
 
 var _random2 = _interopRequireDefault(_random);
 
-var _config = _dereq_('../../config');
-
-var _config2 = _interopRequireDefault(_config);
-
 var _util = _dereq_('../../util');
 
 var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var one = new _bn2.default(1); // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -32802,11 +34228,11 @@ var one = new _bn2.default(1); // GPG4Browsers - An OpenPGP implementation in ja
  * @requires bn.js
  * @requires crypto/hash
  * @requires crypto/random
- * @requires config
  * @requires util
  * @module crypto/public_key/dsa
  */
 
+var one = new _bn2.default(1);
 var zero = new _bn2.default(0);
 
 /*
@@ -32848,7 +34274,7 @@ exports.default = {
               // truncated) hash function result is treated as a number and used
               // directly in the DSA signature algorithm.
 
-              h = new _bn2.default(_util2.default.getLeftNBits(_hash2.default.digest(hash_algo, m), q.bitLength()));
+              h = new _bn2.default(_util2.default.getLeftNBits(_hash2.default.digest(hash_algo, m), q.bitLength())).toRed(redq);
               // FIPS-186-4, section 4.6:
               // The values of r and s shall be checked to determine if r = 0 or s = 0.
               // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -32877,7 +34303,7 @@ exports.default = {
               return _context.abrupt('continue', 9);
 
             case 16:
-              t = h.add(x.mul(r)).toRed(redq); // H(m) + x*r mod q
+              t = h.redAdd(xred.redMul(r)); // H(m) + x*r mod q
               s = k.toRed(redq).redInvm().redMul(t); // k**-1 * (H(m) + x*r) mod q
 
               if (!(zero.cmp(s) === 0)) {
@@ -32980,7 +34406,7 @@ exports.default = {
   }()
 };
 
-},{"../../config":309,"../../util":382,"../hash":322,"../random":339,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],329:[function(_dereq_,module,exports){
+},{"../../util":398,"../hash":338,"../random":355,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],345:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33116,7 +34542,7 @@ exports.default = {
   }()
 };
 
-},{"../random":339,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],330:[function(_dereq_,module,exports){
+},{"../random":355,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],346:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33545,7 +34971,7 @@ exports.nodeCurves = nodeCurves;
 exports.generate = generate;
 exports.getPreferredHashAlgo = getPreferredHashAlgo;
 
-},{"../../../enums":343,"../../../type/oid":380,"../../../util":382,"../../random":339,"./key":335,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40,"elliptic":252}],331:[function(_dereq_,module,exports){
+},{"../../../enums":359,"../../../type/oid":396,"../../../util":398,"../../random":355,"./key":351,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44,"elliptic":267}],347:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33680,10 +35106,6 @@ var _kdf_params = _dereq_('../../../type/kdf_params');
 
 var _kdf_params2 = _interopRequireDefault(_kdf_params);
 
-var _oid = _dereq_('../../../type/oid');
-
-var _oid2 = _interopRequireDefault(_oid);
-
 var _enums = _dereq_('../../../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
@@ -33695,12 +35117,6 @@ var _util2 = _interopRequireDefault(_util);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Build Param for ECDH algorithm (RFC 6637)
-function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
-  var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
-  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
-}
-
-// Key Derivation Function (RFC 6637)
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //
@@ -33724,18 +35140,23 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
  * @requires crypto/aes_kw
  * @requires crypto/cipher
  * @requires crypto/hash
- * @requires type/oid
  * @requires type/kdf_params
  * @requires enums
  * @requires util
  * @module crypto/public_key/elliptic/ecdh
  */
 
+function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
+  var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
+  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
+}
+
+// Key Derivation Function (RFC 6637)
 function kdf(hash_algo, X, length, param) {
   return _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), new Uint8Array(X), param])).subarray(0, length);
 }exports.default = { encrypt: encrypt, decrypt: decrypt };
 
-},{"../../../enums":343,"../../../type/kdf_params":377,"../../../type/oid":380,"../../../util":382,"../../aes_kw":310,"../../cipher":316,"../../hash":322,"./curves":330,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],332:[function(_dereq_,module,exports){
+},{"../../../enums":359,"../../../type/kdf_params":393,"../../../util":398,"../../aes_kw":326,"../../cipher":332,"../../hash":338,"./curves":346,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],348:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33760,30 +35181,6 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  *            s: Uint8Array}}            Signature of the message
  * @async
  */
-// OpenPGP.js - An OpenPGP implementation in javascript
-// Copyright (C) 2015-2016 Decentral
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
- * @requires crypto/hash
- * @requires crypto/public_key/elliptic/curve
- * @module crypto/public_key/elliptic/ecdsa
- */
-
 var sign = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(oid, hash_algo, m, d) {
     var curve, key, signature;
@@ -33825,7 +35222,28 @@ var sign = function () {
  * @returns {Boolean}
  * @async
  */
+// OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2015-2016 Decentral
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
+ * @requires crypto/public_key/elliptic/curve
+ * @module crypto/public_key/elliptic/ecdsa
+ */
 
 var verify = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, hash_algo, signature, m, Q) {
@@ -33851,10 +35269,6 @@ var verify = function () {
   };
 }();
 
-var _hash = _dereq_('../../hash');
-
-var _hash2 = _interopRequireDefault(_hash);
-
 var _curves = _dereq_('./curves');
 
 var _curves2 = _interopRequireDefault(_curves);
@@ -33863,7 +35277,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = { sign: sign, verify: verify };
 
-},{"../../hash":322,"./curves":330,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],333:[function(_dereq_,module,exports){
+},{"./curves":346,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],349:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33948,8 +35362,6 @@ var sign = function () {
 
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
- * @requires bn.js
- * @requires crypto/hash
  * @requires crypto/public_key/elliptic/curve
  * @module crypto/public_key/elliptic/eddsa
  */
@@ -33978,14 +35390,6 @@ var verify = function () {
   };
 }();
 
-var _bn = _dereq_('bn.js');
-
-var _bn2 = _interopRequireDefault(_bn);
-
-var _hash = _dereq_('../../hash');
-
-var _hash2 = _interopRequireDefault(_hash);
-
 var _curves = _dereq_('./curves');
 
 var _curves2 = _interopRequireDefault(_curves);
@@ -33994,7 +35398,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = { sign: sign, verify: verify };
 
-},{"../../hash":322,"./curves":330,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],334:[function(_dereq_,module,exports){
+},{"./curves":346,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],350:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34049,7 +35453,7 @@ exports.default = {
   Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
 };
 
-},{"./curves":330,"./ecdh":331,"./ecdsa":332,"./eddsa":333}],335:[function(_dereq_,module,exports){
+},{"./curves":346,"./ecdh":347,"./ecdsa":348,"./eddsa":349}],351:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34256,6 +35660,8 @@ var nodeVerify = function () {
 // Originally written by Owen Smith https://github.com/omsmith
 // Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
 
+/* eslint-disable no-invalid-this */
+
 var _bn = _dereq_('bn.js');
 
 var _bn2 = _interopRequireDefault(_bn);
@@ -34296,7 +35702,7 @@ var webCrypto = _util2.default.getWebCrypto(); // OpenPGP.js - An OpenPGP implem
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
- * @requires crypto/public_key/elliptic/curve
+ * @requires crypto/public_key/elliptic/curves
  * @requires crypto/hash
  * @requires util
  * @requires enums
@@ -34463,7 +35869,7 @@ var SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', func
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":343,"../../../util":382,"../../hash":322,"./curves":330,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],336:[function(_dereq_,module,exports){
+},{"../../../enums":359,"../../../util":398,"../../hash":338,"./curves":346,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],352:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34508,7 +35914,7 @@ exports.default = {
   dsa: _dsa2.default
 };
 
-},{"./dsa":328,"./elgamal":329,"./elliptic":334,"./rsa":338}],337:[function(_dereq_,module,exports){
+},{"./dsa":344,"./elgamal":345,"./elliptic":350,"./rsa":354}],353:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34878,7 +36284,7 @@ function divisionTest(n) {
 // https://github.com/gpg/libgcrypt/blob/master/cipher/primegen.c
 var small_primes = [7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063, 1069, 1087, 1091, 1093, 1097, 1103, 1109, 1117, 1123, 1129, 1151, 1153, 1163, 1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229, 1231, 1237, 1249, 1259, 1277, 1279, 1283, 1289, 1291, 1297, 1301, 1303, 1307, 1319, 1321, 1327, 1361, 1367, 1373, 1381, 1399, 1409, 1423, 1427, 1429, 1433, 1439, 1447, 1451, 1453, 1459, 1471, 1481, 1483, 1487, 1489, 1493, 1499, 1511, 1523, 1531, 1543, 1549, 1553, 1559, 1567, 1571, 1579, 1583, 1597, 1601, 1607, 1609, 1613, 1619, 1621, 1627, 1637, 1657, 1663, 1667, 1669, 1693, 1697, 1699, 1709, 1721, 1723, 1733, 1741, 1747, 1753, 1759, 1777, 1783, 1787, 1789, 1801, 1811, 1823, 1831, 1847, 1861, 1867, 1871, 1873, 1877, 1879, 1889, 1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987, 1993, 1997, 1999, 2003, 2011, 2017, 2027, 2029, 2039, 2053, 2063, 2069, 2081, 2083, 2087, 2089, 2099, 2111, 2113, 2129, 2131, 2137, 2141, 2143, 2153, 2161, 2179, 2203, 2207, 2213, 2221, 2237, 2239, 2243, 2251, 2267, 2269, 2273, 2281, 2287, 2293, 2297, 2309, 2311, 2333, 2339, 2341, 2347, 2351, 2357, 2371, 2377, 2381, 2383, 2389, 2393, 2399, 2411, 2417, 2423, 2437, 2441, 2447, 2459, 2467, 2473, 2477, 2503, 2521, 2531, 2539, 2543, 2549, 2551, 2557, 2579, 2591, 2593, 2609, 2617, 2621, 2633, 2647, 2657, 2659, 2663, 2671, 2677, 2683, 2687, 2689, 2693, 2699, 2707, 2711, 2713, 2719, 2729, 2731, 2741, 2749, 2753, 2767, 2777, 2789, 2791, 2797, 2801, 2803, 2819, 2833, 2837, 2843, 2851, 2857, 2861, 2879, 2887, 2897, 2903, 2909, 2917, 2927, 2939, 2953, 2957, 2963, 2969, 2971, 2999, 3001, 3011, 3019, 3023, 3037, 3041, 3049, 3061, 3067, 3079, 3083, 3089, 3109, 3119, 3121, 3137, 3163, 3167, 3169, 3181, 3187, 3191, 3203, 3209, 3217, 3221, 3229, 3251, 3253, 3257, 3259, 3271, 3299, 3301, 3307, 3313, 3319, 3323, 3329, 3331, 3343, 3347, 3359, 3361, 3371, 3373, 3389, 3391, 3407, 3413, 3433, 3449, 3457, 3461, 3463, 3467, 3469, 3491, 3499, 3511, 3517, 3527, 3529, 3533, 3539, 3541, 3547, 3557, 3559, 3571, 3581, 3583, 3593, 3607, 3613, 3617, 3623, 3631, 3637, 3643, 3659, 3671, 3673, 3677, 3691, 3697, 3701, 3709, 3719, 3727, 3733, 3739, 3761, 3767, 3769, 3779, 3793, 3797, 3803, 3821, 3823, 3833, 3847, 3851, 3853, 3863, 3877, 3881, 3889, 3907, 3911, 3917, 3919, 3923, 3929, 3931, 3943, 3947, 3967, 3989, 4001, 4003, 4007, 4013, 4019, 4021, 4027, 4049, 4051, 4057, 4073, 4079, 4091, 4093, 4099, 4111, 4127, 4129, 4133, 4139, 4153, 4157, 4159, 4177, 4201, 4211, 4217, 4219, 4229, 4231, 4241, 4243, 4253, 4259, 4261, 4271, 4273, 4283, 4289, 4297, 4327, 4337, 4339, 4349, 4357, 4363, 4373, 4391, 4397, 4409, 4421, 4423, 4441, 4447, 4451, 4457, 4463, 4481, 4483, 4493, 4507, 4513, 4517, 4519, 4523, 4547, 4549, 4561, 4567, 4583, 4591, 4597, 4603, 4621, 4637, 4639, 4643, 4649, 4651, 4657, 4663, 4673, 4679, 4691, 4703, 4721, 4723, 4729, 4733, 4751, 4759, 4783, 4787, 4789, 4793, 4799, 4801, 4813, 4817, 4831, 4861, 4871, 4877, 4889, 4903, 4909, 4919, 4931, 4933, 4937, 4943, 4951, 4957, 4967, 4969, 4973, 4987, 4993, 4999];
 
-},{"../random":339,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],338:[function(_dereq_,module,exports){
+},{"../random":355,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],354:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35326,7 +36732,7 @@ exports.default = {
   prime: _prime2.default
 };
 
-},{"../../config":309,"../../util":382,"../random":339,"./prime":337,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],339:[function(_dereq_,module,exports){
+},{"../../config":325,"../../util":398,"../random":355,"./prime":353,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],355:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35349,10 +36755,6 @@ var _bn = _dereq_('bn.js');
 
 var _bn2 = _interopRequireDefault(_bn);
 
-var _mpi = _dereq_('../type/mpi');
-
-var _mpi2 = _interopRequireDefault(_mpi);
-
 var _util = _dereq_('../util');
 
 var _util2 = _interopRequireDefault(_util);
@@ -35360,7 +36762,7 @@ var _util2 = _interopRequireDefault(_util);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Do not use util.getNodeCrypto because we need this regardless of use_native setting
-var nodeCrypto = _util2.default.detectNode() && _dereq_('crypto'); // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -35382,10 +36784,11 @@ var nodeCrypto = _util2.default.detectNode() && _dereq_('crypto'); // GPG4Browse
 /**
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @requires bn.js
- * @requires type/mpi
  * @requires util
  * @module crypto/random
  */
+
+var nodeCrypto = _util2.default.detectNode() && _dereq_('crypto');
 
 exports.default = {
   /**
@@ -35630,7 +37033,7 @@ RandomBuffer.prototype.get = function () {
   };
 }();
 
-},{"../type/mpi":379,"../util":382,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/helpers/typeof":37,"babel-runtime/regenerator":38,"bn.js":40,"crypto":"crypto"}],340:[function(_dereq_,module,exports){
+},{"../util":398,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/typeof":41,"babel-runtime/regenerator":42,"bn.js":44,"crypto":"crypto"}],356:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35852,7 +37255,7 @@ exports.default = {
     * @module crypto/signature
    */
 
-},{"../enums":343,"../util":382,"./pkcs1":326,"./public_key":336,"babel-runtime/core-js/array/from":19,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38,"bn.js":40}],341:[function(_dereq_,module,exports){
+},{"../enums":359,"../util":398,"./pkcs1":342,"./public_key":352,"babel-runtime/core-js/array/from":20,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42,"bn.js":44}],357:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35871,6 +37274,10 @@ var _config = _dereq_('../config');
 
 var _config2 = _interopRequireDefault(_config);
 
+var _util = _dereq_('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -35885,6 +37292,31 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  *         5 = PRIVATE KEY BLOCK
  *         6 = SIGNATURE
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @requires encoding/base64
+ * @requires enums
+ * @requires config
+ * @requires util
+ * @module encoding/armor
+ */
+
 function getType(text) {
   var reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$\n/m;
 
@@ -35942,30 +37374,6 @@ function getType(text) {
  * @version 2011-12-16
  * @returns {String} The header information
  */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @requires encoding/base64
- * @requires enums
- * @requires config
- * @module encoding/armor
- */
-
 function addheader() {
   var result = "";
   if (_config2.default.show_version) {
@@ -36056,8 +37464,8 @@ function verifyHeaders(headers) {
     if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
       throw new Error('Improperly formatted armor header: ' + headers[i]);
     }
-    if (_config2.default.debug && !/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
-      console.log('Unknown header: ' + headers[i]);
+    if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
+      _util2.default.print_debug_error(new Error('Unknown header: ' + headers[i]));
     }
   }
 }
@@ -36228,7 +37636,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":309,"../enums.js":343,"./base64.js":342}],342:[function(_dereq_,module,exports){
+},{"../config":325,"../enums.js":359,"../util":398,"./base64.js":358}],358:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36355,15 +37763,32 @@ exports.default = {
   decode: r2s
 };
 
-},{}],343:[function(_dereq_,module,exports){
+},{}],359:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _slicedToArray2 = _dereq_("babel-runtime/helpers/slicedToArray");
+
+var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+
+var _entries = _dereq_("babel-runtime/core-js/object/entries");
+
+var _entries2 = _interopRequireDefault(_entries);
+
+var _symbol = _dereq_("babel-runtime/core-js/symbol");
+
+var _symbol2 = _interopRequireDefault(_symbol);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 /**
  * @module enums
  */
+
+var byValue = (0, _symbol2.default)('byValue');
 
 exports.default = {
 
@@ -36818,10 +38243,19 @@ exports.default = {
 
   /** Converts from an integer to string. */
   read: function read(type, e) {
-    for (var i in type) {
-      if (type[i] === parseInt(e, 10)) {
-        return i;
-      }
+    if (!type[byValue]) {
+      type[byValue] = [];
+      (0, _entries2.default)(type).forEach(function (_ref) {
+        var _ref2 = (0, _slicedToArray3.default)(_ref, 2),
+            key = _ref2[0],
+            value = _ref2[1];
+
+        type[byValue][value] = key;
+      });
+    }
+
+    if (type[byValue][e] !== undefined) {
+      return type[byValue][e];
     }
 
     throw new Error('Invalid enum value.');
@@ -36829,7 +38263,7 @@ exports.default = {
 
 };
 
-},{}],344:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/object/entries":27,"babel-runtime/core-js/symbol":33,"babel-runtime/helpers/slicedToArray":40}],360:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36929,7 +38363,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
-},{"./config":309,"node-fetch":"node-fetch"}],345:[function(_dereq_,module,exports){
+},{"./config":325,"node-fetch":"node-fetch"}],361:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37219,13 +38653,17 @@ var cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":306,"./config/config":308,"./crypto":324,"./encoding/armor":341,"./enums":343,"./hkp":344,"./key":346,"./keyring":347,"./message":350,"./openpgp":351,"./packet":355,"./signature":375,"./type/ecdh_symkey":376,"./type/kdf_params":377,"./type/keyid":378,"./type/mpi":379,"./type/oid":380,"./type/s2k":381,"./util":382,"./worker/async_proxy":383}],346:[function(_dereq_,module,exports){
+},{"./cleartext":322,"./config/config":324,"./crypto":340,"./encoding/armor":357,"./enums":359,"./hkp":360,"./key":362,"./keyring":363,"./message":366,"./openpgp":367,"./packet":371,"./signature":391,"./type/ecdh_symkey":392,"./type/kdf_params":393,"./type/keyid":394,"./type/mpi":395,"./type/oid":396,"./type/s2k":397,"./util":398,"./worker/async_proxy":399}],362:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.isAeadSupported = exports.getPreferredAlgo = exports.getPreferredHashAlgo = exports.reformat = exports.generate = undefined;
+
+var _values = _dereq_('babel-runtime/core-js/object/values');
+
+var _values2 = _interopRequireDefault(_values);
 
 var _getPrototypeOf = _dereq_('babel-runtime/core-js/object/get-prototype-of');
 
@@ -37256,7 +38694,7 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  * @param  {Function} checkFn optional, signature only merged if true
  */
 var mergeSignatures = function () {
-  var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(source, dest, attr, checkFn) {
+  var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(source, dest, attr, checkFn) {
     return _regenerator2.default.wrap(function _callee18$(_context18) {
       while (1) {
         switch (_context18.prev = _context18.next) {
@@ -37280,7 +38718,7 @@ var mergeSignatures = function () {
           case 6:
             _context18.next = 8;
             return _promise2.default.all(source.map(function () {
-              var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(sourceSig) {
+              var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(sourceSig) {
                 return _regenerator2.default.wrap(function _callee17$(_context17) {
                   while (1) {
                     switch (_context17.prev = _context17.next) {
@@ -37336,8 +38774,8 @@ var mergeSignatures = function () {
                 }, _callee17, this);
               }));
 
-              return function (_x32) {
-                return _ref19.apply(this, arguments);
+              return function (_x36) {
+                return _ref20.apply(this, arguments);
               };
             }()));
 
@@ -37349,8 +38787,8 @@ var mergeSignatures = function () {
     }, _callee18, this);
   }));
 
-  return function mergeSignatures(_x28, _x29, _x30, _x31) {
-    return _ref18.apply(this, arguments);
+  return function mergeSignatures(_x32, _x33, _x34, _x35) {
+    return _ref19.apply(this, arguments);
   };
 }();
 
@@ -37379,9 +38817,9 @@ var mergeSignatures = function () {
  * @static
  */
 var generate = exports.generate = function () {
-  var _ref42 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee41(options) {
+  var _ref43 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee41(options) {
     var generateSecretKey = function () {
-      var _ref43 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(options) {
+      var _ref44 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee39(options) {
         var secretKeyPacket;
         return _regenerator2.default.wrap(function _callee39$(_context39) {
           while (1) {
@@ -37405,13 +38843,13 @@ var generate = exports.generate = function () {
         }, _callee39, this);
       }));
 
-      return function generateSecretKey(_x70) {
-        return _ref43.apply(this, arguments);
+      return function generateSecretKey(_x74) {
+        return _ref44.apply(this, arguments);
       };
     }();
 
     var generateSecretSubkey = function () {
-      var _ref44 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(options) {
+      var _ref45 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(options) {
         var secretSubkeyPacket;
         return _regenerator2.default.wrap(function _callee40$(_context40) {
           while (1) {
@@ -37435,8 +38873,8 @@ var generate = exports.generate = function () {
         }, _callee40, this);
       }));
 
-      return function generateSecretSubkey(_x71) {
-        return _ref44.apply(this, arguments);
+      return function generateSecretSubkey(_x75) {
+        return _ref45.apply(this, arguments);
       };
     }();
 
@@ -37506,8 +38944,8 @@ var generate = exports.generate = function () {
     }, _callee41, this);
   }));
 
-  return function generate(_x68) {
-    return _ref42.apply(this, arguments);
+  return function generate(_x72) {
+    return _ref43.apply(this, arguments);
   };
 }();
 
@@ -37531,7 +38969,7 @@ var generate = exports.generate = function () {
 
 
 var reformat = exports.reformat = function () {
-  var _ref45 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee42(options) {
+  var _ref46 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee42(options) {
     var isDecrypted, packetlist, secretKeyPacket, secretSubkeyPackets, i, sanitizeKeyOptions;
     return _regenerator2.default.wrap(function _callee42$(_context42) {
       while (1) {
@@ -37622,13 +39060,13 @@ var reformat = exports.reformat = function () {
     }, _callee42, this, [[2, 9]]);
   }));
 
-  return function reformat(_x72) {
-    return _ref45.apply(this, arguments);
+  return function reformat(_x76) {
+    return _ref46.apply(this, arguments);
   };
 }();
 
 var wrapKeyObject = function () {
-  var _ref46 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee47(secretKeyPacket, secretSubkeyPackets, options) {
+  var _ref47 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee47(secretKeyPacket, secretSubkeyPackets, options) {
     var packetlist;
     return _regenerator2.default.wrap(function _callee47$(_context47) {
       while (1) {
@@ -37645,7 +39083,7 @@ var wrapKeyObject = function () {
           case 3:
             _context47.next = 5;
             return _promise2.default.all(secretSubkeyPackets.map(function () {
-              var _ref47 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee43(secretSubkeyPacket, index) {
+              var _ref48 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee43(secretSubkeyPacket, index) {
                 var subkeyPassphrase;
                 return _regenerator2.default.wrap(function _callee43$(_context43) {
                   while (1) {
@@ -37669,8 +39107,8 @@ var wrapKeyObject = function () {
                 }, _callee43, this);
               }));
 
-              return function (_x77, _x78) {
-                return _ref47.apply(this, arguments);
+              return function (_x81, _x82) {
+                return _ref48.apply(this, arguments);
               };
             }()));
 
@@ -37682,7 +39120,7 @@ var wrapKeyObject = function () {
 
             _context47.next = 9;
             return _promise2.default.all(options.userIds.map(function () {
-              var _ref48 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee44(userId, index) {
+              var _ref49 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee44(userId, index) {
                 var userIdPacket, dataToSign, signaturePacket;
                 return _regenerator2.default.wrap(function _callee44$(_context44) {
                   while (1) {
@@ -37690,7 +39128,7 @@ var wrapKeyObject = function () {
                       case 0:
                         userIdPacket = new _packet2.default.Userid();
 
-                        userIdPacket.read(_util2.default.str_to_Uint8Array(userId));
+                        userIdPacket.format(userId);
 
                         dataToSign = {};
 
@@ -37757,13 +39195,13 @@ var wrapKeyObject = function () {
                 }, _callee44, this);
               }));
 
-              return function (_x79, _x80) {
-                return _ref48.apply(this, arguments);
+              return function (_x83, _x84) {
+                return _ref49.apply(this, arguments);
               };
             }())).then(function (list) {
-              list.forEach(function (_ref49) {
-                var userIdPacket = _ref49.userIdPacket,
-                    signaturePacket = _ref49.signaturePacket;
+              list.forEach(function (_ref50) {
+                var userIdPacket = _ref50.userIdPacket,
+                    signaturePacket = _ref50.signaturePacket;
 
                 packetlist.push(userIdPacket);
                 packetlist.push(signaturePacket);
@@ -37773,7 +39211,7 @@ var wrapKeyObject = function () {
           case 9:
             _context47.next = 11;
             return _promise2.default.all(secretSubkeyPackets.map(function () {
-              var _ref50 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee45(secretSubkeyPacket, index) {
+              var _ref51 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee45(secretSubkeyPacket, index) {
                 var subkeyOptions, dataToSign, subkeySignaturePacket;
                 return _regenerator2.default.wrap(function _callee45$(_context45) {
                   while (1) {
@@ -37813,13 +39251,13 @@ var wrapKeyObject = function () {
                 }, _callee45, this);
               }));
 
-              return function (_x81, _x82) {
-                return _ref50.apply(this, arguments);
+              return function (_x85, _x86) {
+                return _ref51.apply(this, arguments);
               };
             }())).then(function (packets) {
-              packets.forEach(function (_ref51) {
-                var secretSubkeyPacket = _ref51.secretSubkeyPacket,
-                    subkeySignaturePacket = _ref51.subkeySignaturePacket;
+              packets.forEach(function (_ref52) {
+                var secretSubkeyPacket = _ref52.secretSubkeyPacket,
+                    subkeySignaturePacket = _ref52.subkeySignaturePacket;
 
                 packetlist.push(secretSubkeyPacket);
                 packetlist.push(subkeySignaturePacket);
@@ -37835,7 +39273,7 @@ var wrapKeyObject = function () {
 
             _context47.next = 14;
             return _promise2.default.all(secretSubkeyPackets.map(function () {
-              var _ref52 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee46(secretSubkeyPacket, index) {
+              var _ref53 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee46(secretSubkeyPacket, index) {
                 var subkeyPassphrase;
                 return _regenerator2.default.wrap(function _callee46$(_context46) {
                   while (1) {
@@ -37855,8 +39293,8 @@ var wrapKeyObject = function () {
                 }, _callee46, this);
               }));
 
-              return function (_x83, _x84) {
-                return _ref52.apply(this, arguments);
+              return function (_x87, _x88) {
+                return _ref53.apply(this, arguments);
               };
             }()));
 
@@ -37871,8 +39309,8 @@ var wrapKeyObject = function () {
     }, _callee47, this);
   }));
 
-  return function wrapKeyObject(_x74, _x75, _x76) {
-    return _ref46.apply(this, arguments);
+  return function wrapKeyObject(_x78, _x79, _x80) {
+    return _ref47.apply(this, arguments);
   };
 }();
 
@@ -37894,7 +39332,7 @@ var wrapKeyObject = function () {
 
 
 var isDataRevoked = function () {
-  var _ref53 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee49(primaryKey, dataToVerify, revocations, signature, key) {
+  var _ref54 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee49(primaryKey, dataToVerify, revocations, signature, key) {
     var date = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : new Date();
     var normDate, revocationKeyIds;
     return _regenerator2.default.wrap(function _callee49$(_context49) {
@@ -37906,7 +39344,7 @@ var isDataRevoked = function () {
             revocationKeyIds = [];
             _context49.next = 5;
             return _promise2.default.all(revocations.map(function () {
-              var _ref54 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee48(revocationSignature) {
+              var _ref55 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee48(revocationSignature) {
                 return _regenerator2.default.wrap(function _callee48$(_context48) {
                   while (1) {
                     switch (_context48.prev = _context48.next) {
@@ -37955,8 +39393,8 @@ var isDataRevoked = function () {
                 }, _callee48, this);
               }));
 
-              return function (_x91) {
-                return _ref54.apply(this, arguments);
+              return function (_x95) {
+                return _ref55.apply(this, arguments);
               };
             }()));
 
@@ -37982,8 +39420,8 @@ var isDataRevoked = function () {
     }, _callee49, this);
   }));
 
-  return function isDataRevoked(_x85, _x86, _x87, _x88, _x89) {
-    return _ref53.apply(this, arguments);
+  return function isDataRevoked(_x89, _x90, _x91, _x92, _x93) {
+    return _ref54.apply(this, arguments);
   };
 }();
 
@@ -37991,11 +39429,15 @@ var isDataRevoked = function () {
  * Returns the preferred signature hash algorithm of a key
  * @param  {object} key
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<String>}
  * @async
  */
 var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
-  var _ref55 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee50(key, date) {
+  var _ref56 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee50(key) {
+    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
+    var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
     var hash_algo, pref_algo, primaryUser, _primaryUser$selfCert;
 
     return _regenerator2.default.wrap(function _callee50$(_context50) {
@@ -38011,7 +39453,7 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
             }
 
             _context50.next = 5;
-            return key.getPrimaryUser(date);
+            return key.getPrimaryUser(date, userId);
 
           case 5:
             primaryUser = _context50.sent;
@@ -38023,7 +39465,7 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
               hash_algo = _crypto2.default.hash.getHashByteLength(hash_algo) <= _crypto2.default.hash.getHashByteLength(pref_algo) ? pref_algo : hash_algo;
             }
             // disable expiration checks
-            key = key.getSigningKeyPacket(undefined, null);
+            key = key.getSigningKeyPacket(undefined, null, userId);
 
           case 8:
             switch ((0, _getPrototypeOf2.default)(key)) {
@@ -38048,8 +39490,8 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
     }, _callee50, this);
   }));
 
-  return function getPreferredHashAlgo(_x93, _x94) {
-    return _ref55.apply(this, arguments);
+  return function getPreferredHashAlgo(_x97) {
+    return _ref56.apply(this, arguments);
   };
 }();
 
@@ -38058,14 +39500,17 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
  * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
 
 
 var getPreferredAlgo = exports.getPreferredAlgo = function () {
-  var _ref56 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee52(type, keys, date) {
-    var prefProperty, defaultAlgo, prioMap, prefAlgo, algo;
+  var _ref57 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee52(type, keys) {
+    var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
+    var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    var prefProperty, defaultAlgo, prioMap, prefAlgo;
     return _regenerator2.default.wrap(function _callee52$(_context52) {
       while (1) {
         switch (_context52.prev = _context52.next) {
@@ -38075,14 +39520,14 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
             prioMap = {};
             _context52.next = 5;
             return _promise2.default.all(keys.map(function () {
-              var _ref57 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee51(key) {
+              var _ref58 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee51(key) {
                 var primaryUser;
                 return _regenerator2.default.wrap(function _callee51$(_context51) {
                   while (1) {
                     switch (_context51.prev = _context51.next) {
                       case 0:
                         _context51.next = 2;
-                        return key.getPrimaryUser(date);
+                        return key.getPrimaryUser(date, userId);
 
                       case 2:
                         primaryUser = _context51.sent;
@@ -38109,24 +39554,28 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
                 }, _callee51, this);
               }));
 
-              return function (_x98) {
-                return _ref57.apply(this, arguments);
+              return function (_x104) {
+                return _ref58.apply(this, arguments);
               };
             }()));
 
           case 5:
             prefAlgo = { prio: 0, algo: defaultAlgo };
 
-            for (algo in prioMap) {
+            (0, _values2.default)(prioMap).forEach(function (_ref59) {
+              var prio = _ref59.prio,
+                  count = _ref59.count,
+                  algo = _ref59.algo;
+
               try {
                 if (algo !== _enums2.default[type].plaintext && algo !== _enums2.default[type].idea && // not implemented
                 _enums2.default.read(_enums2.default[type], algo) && // known algorithm
-                prioMap[algo].count === keys.length && // available for all keys
-                prioMap[algo].prio > prefAlgo.prio) {
+                count === keys.length && // available for all keys
+                prio > prefAlgo.prio) {
                   prefAlgo = prioMap[algo];
                 }
               } catch (e) {}
-            }
+            });
             return _context52.abrupt('return', prefAlgo.algo);
 
           case 8:
@@ -38137,8 +39586,8 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
     }, _callee52, this);
   }));
 
-  return function getPreferredAlgo(_x95, _x96, _x97) {
-    return _ref56.apply(this, arguments);
+  return function getPreferredAlgo(_x100, _x101) {
+    return _ref57.apply(this, arguments);
   };
 }();
 
@@ -38152,7 +39601,9 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
 
 
 var isAeadSupported = exports.isAeadSupported = function () {
-  var _ref58 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee54(keys, date) {
+  var _ref60 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee54(keys) {
+    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
+    var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var supported;
     return _regenerator2.default.wrap(function _callee54$(_context54) {
       while (1) {
@@ -38163,14 +39614,14 @@ var isAeadSupported = exports.isAeadSupported = function () {
 
             _context54.next = 3;
             return _promise2.default.all(keys.map(function () {
-              var _ref59 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee53(key) {
+              var _ref61 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee53(key) {
                 var primaryUser;
                 return _regenerator2.default.wrap(function _callee53$(_context53) {
                   while (1) {
                     switch (_context53.prev = _context53.next) {
                       case 0:
                         _context53.next = 2;
-                        return key.getPrimaryUser(date);
+                        return key.getPrimaryUser(date, userId);
 
                       case 2:
                         primaryUser = _context53.sent;
@@ -38187,8 +39638,8 @@ var isAeadSupported = exports.isAeadSupported = function () {
                 }, _callee53, this);
               }));
 
-              return function (_x101) {
-                return _ref59.apply(this, arguments);
+              return function (_x108) {
+                return _ref61.apply(this, arguments);
               };
             }()));
 
@@ -38203,8 +39654,8 @@ var isAeadSupported = exports.isAeadSupported = function () {
     }, _callee54, this);
   }));
 
-  return function isAeadSupported(_x99, _x100) {
-    return _ref58.apply(this, arguments);
+  return function isAeadSupported(_x105) {
+    return _ref60.apply(this, arguments);
   };
 }();
 
@@ -38521,6 +39972,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
  * Returns first key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Object} userId, optional user ID
  * @returns {Promise<module:packet.SecretSubkey|
  *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
  * @async
@@ -38529,14 +39981,15 @@ Key.prototype.getSigningKeyPacket = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
     var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
-    var primaryKey, primaryUser, i, bindingSignature;
+    var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var primaryKey, i, bindingSignature, primaryUser;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             primaryKey = this.primaryKey;
             _context.next = 3;
-            return this.verifyPrimaryKey(date);
+            return this.verifyPrimaryKey(date, userId);
 
           case 3:
             _context.t0 = _context.sent;
@@ -38547,58 +40000,58 @@ Key.prototype.getSigningKeyPacket = function () {
               break;
             }
 
-            _context.next = 8;
-            return this.getPrimaryUser(date);
-
-          case 8:
-            primaryUser = _context.sent;
-
-            if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
-              _context.next = 11;
-              break;
-            }
-
-            return _context.abrupt('return', primaryKey);
-
-          case 11:
             i = 0;
 
-          case 12:
+          case 7:
             if (!(i < this.subKeys.length)) {
-              _context.next = 25;
+              _context.next = 20;
               break;
             }
 
             if (!(!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
-              _context.next = 22;
+              _context.next = 17;
               break;
             }
 
-            _context.next = 16;
+            _context.next = 11;
             return this.subKeys[i].verify(primaryKey, date);
 
-          case 16:
+          case 11:
             _context.t2 = _context.sent;
             _context.t3 = _enums2.default.keyStatus.valid;
 
             if (!(_context.t2 === _context.t3)) {
-              _context.next = 22;
+              _context.next = 17;
               break;
             }
 
             bindingSignature = getLatestSignature(this.subKeys[i].bindingSignatures, date);
 
             if (!isValidSigningKeyPacket(this.subKeys[i].subKey, bindingSignature, date)) {
-              _context.next = 22;
+              _context.next = 17;
               break;
             }
 
             return _context.abrupt('return', this.subKeys[i].subKey);
 
-          case 22:
+          case 17:
             i++;
-            _context.next = 12;
+            _context.next = 7;
             break;
+
+          case 20:
+            _context.next = 22;
+            return this.getPrimaryUser(date, userId);
+
+          case 22:
+            primaryUser = _context.sent;
+
+            if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
+              _context.next = 25;
+              break;
+            }
+
+            return _context.abrupt('return', primaryKey);
 
           case 25:
             return _context.abrupt('return', null);
@@ -38626,6 +40079,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
  * Returns first key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
+ * @param  {String}            userId, optional
  * @returns {Promise<module:packet.PublicSubkey|
  *                   module:packet.SecretSubkey|
  *                   module:packet.SecretKey|
@@ -38635,6 +40089,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
 Key.prototype.getEncryptionKeyPacket = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(keyId) {
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
+    var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var primaryKey, i, bindingSignature, primaryUser;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -38642,7 +40097,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
           case 0:
             primaryKey = this.primaryKey;
             _context2.next = 3;
-            return this.verifyPrimaryKey(date);
+            return this.verifyPrimaryKey(date, userId);
 
           case 3:
             _context2.t0 = _context2.sent;
@@ -38694,7 +40149,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
 
           case 20:
             _context2.next = 22;
-            return this.getPrimaryUser(date);
+            return this.getPrimaryUser(date, userId);
 
           case 22:
             primaryUser = _context2.sent;
@@ -38717,7 +40172,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
     }, _callee2, this);
   }));
 
-  return function (_x8) {
+  return function (_x9) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -38781,7 +40236,7 @@ Key.prototype.encrypt = function () {
                 }, _callee3, this);
               }));
 
-              return function (_x12, _x13) {
+              return function (_x14, _x15) {
                 return _ref4.apply(this, arguments);
               };
             }())));
@@ -38794,7 +40249,7 @@ Key.prototype.encrypt = function () {
     }, _callee4, this);
   }));
 
-  return function (_x10) {
+  return function (_x12) {
     return _ref3.apply(this, arguments);
   };
 }();
@@ -38864,7 +40319,7 @@ Key.prototype.decrypt = function () {
                             }, _callee5, this, [[0, 6]]);
                           }));
 
-                          return function (_x17) {
+                          return function (_x19) {
                             return _ref7.apply(this, arguments);
                           };
                         }()));
@@ -38888,7 +40343,7 @@ Key.prototype.decrypt = function () {
                 }, _callee6, this);
               }));
 
-              return function (_x16) {
+              return function (_x18) {
                 return _ref6.apply(this, arguments);
               };
             }()));
@@ -38907,7 +40362,7 @@ Key.prototype.decrypt = function () {
     }, _callee7, this);
   }));
 
-  return function (_x14) {
+  return function (_x16) {
     return _ref5.apply(this, arguments);
   };
 }();
@@ -38941,7 +40396,7 @@ Key.prototype.isRevoked = function () {
     }, _callee8, this);
   }));
 
-  return function (_x18, _x19) {
+  return function (_x20, _x21) {
     return _ref8.apply(this, arguments);
   };
 }();
@@ -38950,12 +40405,14 @@ Key.prototype.isRevoked = function () {
  * Verify primary key. Checks for revocation signatures, expiration time
  * and valid self signature
  * @param {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID
  * @returns {Promise<module:enums.keyStatus>} The status of the primary key
  * @async
  */
 Key.prototype.verifyPrimaryKey = function () {
   var _ref9 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9() {
     var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+    var userId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     var primaryKey, _ref10, user, selfCertification;
 
@@ -38989,7 +40446,7 @@ Key.prototype.verifyPrimaryKey = function () {
 
           case 7:
             _context9.next = 9;
-            return this.getPrimaryUser(date);
+            return this.getPrimaryUser(date, userId);
 
           case 9:
             _context9.t0 = _context9.sent;
@@ -39084,6 +40541,7 @@ Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
  * @async
@@ -39091,30 +40549,44 @@ Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/
 Key.prototype.getPrimaryUser = function () {
   var _ref12 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11() {
     var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
-    var primaryUser, user, cert, primaryKey, dataToVerify;
+    var userId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var users, primaryUser, user, cert, primaryKey, dataToVerify;
     return _regenerator2.default.wrap(function _callee11$(_context11) {
       while (1) {
         switch (_context11.prev = _context11.next) {
           case 0:
-            // sort by primary user flag and signature creation time
-            primaryUser = this.users.map(function (user, index) {
+            users = this.users.map(function (user, index) {
               var selfCertification = getLatestSignature(user.selfCertifications, date);
               return { index: index, user: user, selfCertification: selfCertification };
-            }).sort(function (a, b) {
+            }).filter(function (_ref13) {
+              var user = _ref13.user;
+
+              return user.userId && (userId.name === undefined || user.userId.name === userId.name) && (userId.email === undefined || user.userId.email === userId.email) && (userId.comment === undefined || user.userId.comment === userId.comment);
+            });
+
+            if (users.length) {
+              _context11.next = 5;
+              break;
+            }
+
+            if (!userId) {
+              _context11.next = 4;
+              break;
+            }
+
+            throw new Error('Could not find user that matches that user ID');
+
+          case 4:
+            return _context11.abrupt('return', null);
+
+          case 5:
+            // sort by primary user flag and signature creation time
+            primaryUser = users.sort(function (a, b) {
               var A = a.selfCertification;
               var B = b.selfCertification;
               return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
             }).pop();
             user = primaryUser.user, cert = primaryUser.selfCertification;
-
-            if (user.userId) {
-              _context11.next = 4;
-              break;
-            }
-
-            return _context11.abrupt('return', null);
-
-          case 4:
             primaryKey = this.primaryKey;
             dataToVerify = { userid: user.userId, key: primaryKey };
             // skip if certificates is invalid, revoked, or expired
@@ -39123,58 +40595,58 @@ Key.prototype.getPrimaryUser = function () {
             _context11.t0 = cert.verified;
 
             if (_context11.t0) {
-              _context11.next = 11;
+              _context11.next = 14;
               break;
             }
 
-            _context11.next = 10;
+            _context11.next = 13;
             return cert.verify(primaryKey, dataToVerify);
 
-          case 10:
+          case 13:
             _context11.t0 = _context11.sent;
 
-          case 11:
+          case 14:
             if (_context11.t0) {
-              _context11.next = 13;
+              _context11.next = 16;
               break;
             }
 
             return _context11.abrupt('return', null);
 
-          case 13:
+          case 16:
             _context11.t1 = cert.revoked;
 
             if (_context11.t1) {
-              _context11.next = 18;
+              _context11.next = 21;
               break;
             }
 
-            _context11.next = 17;
+            _context11.next = 20;
             return user.isRevoked(primaryKey, cert, null, date);
 
-          case 17:
+          case 20:
             _context11.t1 = _context11.sent;
 
-          case 18:
+          case 21:
             if (!_context11.t1) {
-              _context11.next = 20;
+              _context11.next = 23;
               break;
             }
 
             return _context11.abrupt('return', null);
-
-          case 20:
-            if (!cert.isExpired(date)) {
-              _context11.next = 22;
-              break;
-            }
-
-            return _context11.abrupt('return', null);
-
-          case 22:
-            return _context11.abrupt('return', primaryUser);
 
           case 23:
+            if (!cert.isExpired(date)) {
+              _context11.next = 25;
+              break;
+            }
+
+            return _context11.abrupt('return', null);
+
+          case 25:
+            return _context11.abrupt('return', primaryUser);
+
+          case 26:
           case 'end':
             return _context11.stop();
         }
@@ -39197,38 +40669,39 @@ Key.prototype.getPrimaryUser = function () {
  * @param  {module:key.Key} key Source key to merge
  */
 Key.prototype.update = function () {
-  var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(key) {
-    var that, equal;
+  var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(key) {
+    var _this = this;
+
+    var equal;
     return _regenerator2.default.wrap(function _callee16$(_context16) {
       while (1) {
         switch (_context16.prev = _context16.next) {
           case 0:
-            that = this;
-            _context16.next = 3;
+            _context16.next = 2;
             return key.verifyPrimaryKey();
 
-          case 3:
+          case 2:
             _context16.t0 = _context16.sent;
             _context16.t1 = _enums2.default.keyStatus.invalid;
 
             if (!(_context16.t0 === _context16.t1)) {
-              _context16.next = 7;
+              _context16.next = 6;
               break;
             }
 
             return _context16.abrupt('return');
 
-          case 7:
+          case 6:
             if (!(this.primaryKey.getFingerprint() !== key.primaryKey.getFingerprint())) {
-              _context16.next = 9;
+              _context16.next = 8;
               break;
             }
 
             throw new Error('Key update method: fingerprints of keys not equal');
 
-          case 9:
+          case 8:
             if (!(this.isPublic() && key.isPrivate())) {
-              _context16.next = 14;
+              _context16.next = 13;
               break;
             }
 
@@ -39240,29 +40713,29 @@ Key.prototype.update = function () {
             });
 
             if (equal) {
-              _context16.next = 13;
+              _context16.next = 12;
               break;
             }
 
             throw new Error('Cannot update public key with private key if subkey mismatch');
 
-          case 13:
+          case 12:
             this.primaryKey = key.primaryKey;
 
-          case 14:
-            _context16.next = 16;
+          case 13:
+            _context16.next = 15;
             return mergeSignatures(key, this, 'revocationSignatures', function (srcRevSig) {
-              return isDataRevoked(that.primaryKey, that, [srcRevSig], null, key.primaryKey);
+              return isDataRevoked(_this.primaryKey, _this, [srcRevSig], null, key.primaryKey);
             });
 
-          case 16:
-            _context16.next = 18;
+          case 15:
+            _context16.next = 17;
             return mergeSignatures(key, this, 'directSignatures');
 
-          case 18:
-            _context16.next = 20;
+          case 17:
+            _context16.next = 19;
             return _promise2.default.all(key.users.map(function () {
-              var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(srcUser) {
+              var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(srcUser) {
                 var found;
                 return _regenerator2.default.wrap(function _callee13$(_context13) {
                   while (1) {
@@ -39270,8 +40743,8 @@ Key.prototype.update = function () {
                       case 0:
                         found = false;
                         _context13.next = 3;
-                        return _promise2.default.all(that.users.map(function () {
-                          var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(dstUser) {
+                        return _promise2.default.all(_this.users.map(function () {
+                          var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(dstUser) {
                             return _regenerator2.default.wrap(function _callee12$(_context12) {
                               while (1) {
                                 switch (_context12.prev = _context12.next) {
@@ -39282,7 +40755,7 @@ Key.prototype.update = function () {
                                     }
 
                                     _context12.next = 3;
-                                    return dstUser.update(srcUser, that.primaryKey);
+                                    return dstUser.update(srcUser, _this.primaryKey);
 
                                   case 3:
                                     found = true;
@@ -39292,17 +40765,17 @@ Key.prototype.update = function () {
                                     return _context12.stop();
                                 }
                               }
-                            }, _callee12, this);
+                            }, _callee12, _this);
                           }));
 
-                          return function (_x25) {
-                            return _ref15.apply(this, arguments);
+                          return function (_x29) {
+                            return _ref16.apply(this, arguments);
                           };
                         }()));
 
                       case 3:
                         if (!found) {
-                          that.users.push(srcUser);
+                          _this.users.push(srcUser);
                         }
 
                       case 4:
@@ -39310,18 +40783,18 @@ Key.prototype.update = function () {
                         return _context13.stop();
                     }
                   }
-                }, _callee13, this);
+                }, _callee13, _this);
               }));
 
-              return function (_x24) {
-                return _ref14.apply(this, arguments);
+              return function (_x28) {
+                return _ref15.apply(this, arguments);
               };
             }()));
 
-          case 20:
-            _context16.next = 22;
+          case 19:
+            _context16.next = 21;
             return _promise2.default.all(key.subKeys.map(function () {
-              var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(srcSubKey) {
+              var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(srcSubKey) {
                 var found;
                 return _regenerator2.default.wrap(function _callee15$(_context15) {
                   while (1) {
@@ -39329,8 +40802,8 @@ Key.prototype.update = function () {
                       case 0:
                         found = false;
                         _context15.next = 3;
-                        return _promise2.default.all(that.subKeys.map(function () {
-                          var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(dstSubKey) {
+                        return _promise2.default.all(_this.subKeys.map(function () {
+                          var _ref18 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(dstSubKey) {
                             return _regenerator2.default.wrap(function _callee14$(_context14) {
                               while (1) {
                                 switch (_context14.prev = _context14.next) {
@@ -39341,7 +40814,7 @@ Key.prototype.update = function () {
                                     }
 
                                     _context14.next = 3;
-                                    return dstSubKey.update(srcSubKey, that.primaryKey);
+                                    return dstSubKey.update(srcSubKey, _this.primaryKey);
 
                                   case 3:
                                     found = true;
@@ -39351,17 +40824,17 @@ Key.prototype.update = function () {
                                     return _context14.stop();
                                 }
                               }
-                            }, _callee14, this);
+                            }, _callee14, _this);
                           }));
 
-                          return function (_x27) {
-                            return _ref17.apply(this, arguments);
+                          return function (_x31) {
+                            return _ref18.apply(this, arguments);
                           };
                         }()));
 
                       case 3:
                         if (!found) {
-                          that.subKeys.push(srcSubKey);
+                          _this.subKeys.push(srcSubKey);
                         }
 
                       case 4:
@@ -39369,15 +40842,15 @@ Key.prototype.update = function () {
                         return _context15.stop();
                     }
                   }
-                }, _callee15, this);
+                }, _callee15, _this);
               }));
 
-              return function (_x26) {
-                return _ref16.apply(this, arguments);
+              return function (_x30) {
+                return _ref17.apply(this, arguments);
               };
             }()));
 
-          case 22:
+          case 21:
           case 'end':
             return _context16.stop();
         }
@@ -39385,8 +40858,8 @@ Key.prototype.update = function () {
     }, _callee16, this);
   }));
 
-  return function (_x23) {
-    return _ref13.apply(this, arguments);
+  return function (_x27) {
+    return _ref14.apply(this, arguments);
   };
 }();Key.prototype.revoke = function () {};
 
@@ -39397,8 +40870,8 @@ Key.prototype.update = function () {
  * @async
  */
 Key.prototype.signPrimaryUser = function () {
-  var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(privateKeys) {
-    var _ref21, index, user, userSign, key;
+  var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(privateKeys) {
+    var _ref22, index, user, userSign, key;
 
     return _regenerator2.default.wrap(function _callee19$(_context19) {
       while (1) {
@@ -39418,9 +40891,9 @@ Key.prototype.signPrimaryUser = function () {
             _context19.t0 = {};
 
           case 5:
-            _ref21 = _context19.t0;
-            index = _ref21.index;
-            user = _ref21.user;
+            _ref22 = _context19.t0;
+            index = _ref22.index;
+            user = _ref22.user;
 
             if (user) {
               _context19.next = 10;
@@ -39448,8 +40921,8 @@ Key.prototype.signPrimaryUser = function () {
     }, _callee19, this);
   }));
 
-  return function (_x33) {
-    return _ref20.apply(this, arguments);
+  return function (_x37) {
+    return _ref21.apply(this, arguments);
   };
 }();
 
@@ -39460,7 +40933,7 @@ Key.prototype.signPrimaryUser = function () {
  * @async
  */
 Key.prototype.signAllUsers = function () {
-  var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(privateKeys) {
+  var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(privateKeys) {
     var that, key;
     return _regenerator2.default.wrap(function _callee20$(_context20) {
       while (1) {
@@ -39485,8 +40958,8 @@ Key.prototype.signAllUsers = function () {
     }, _callee20, this);
   }));
 
-  return function (_x34) {
-    return _ref22.apply(this, arguments);
+  return function (_x38) {
+    return _ref23.apply(this, arguments);
   };
 }();
 
@@ -39500,8 +40973,8 @@ Key.prototype.signAllUsers = function () {
  * @async
  */
 Key.prototype.verifyPrimaryUser = function () {
-  var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(keys) {
-    var primaryKey, _ref24, user, results;
+  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(keys) {
+    var primaryKey, _ref25, user, results;
 
     return _regenerator2.default.wrap(function _callee21$(_context21) {
       while (1) {
@@ -39522,8 +40995,8 @@ Key.prototype.verifyPrimaryUser = function () {
             _context21.t0 = {};
 
           case 6:
-            _ref24 = _context21.t0;
-            user = _ref24.user;
+            _ref25 = _context21.t0;
+            user = _ref25.user;
 
             if (user) {
               _context21.next = 10;
@@ -39573,8 +41046,8 @@ Key.prototype.verifyPrimaryUser = function () {
     }, _callee21, this);
   }));
 
-  return function (_x35) {
-    return _ref23.apply(this, arguments);
+  return function (_x39) {
+    return _ref24.apply(this, arguments);
   };
 }();
 
@@ -39589,7 +41062,7 @@ Key.prototype.verifyPrimaryUser = function () {
  * @async
  */
 Key.prototype.verifyAllUsers = function () {
-  var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(keys) {
+  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(keys) {
     var results, primaryKey;
     return _regenerator2.default.wrap(function _callee23$(_context23) {
       while (1) {
@@ -39599,7 +41072,7 @@ Key.prototype.verifyAllUsers = function () {
             primaryKey = this.primaryKey;
             _context23.next = 4;
             return _promise2.default.all(this.users.map(function () {
-              var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(user) {
+              var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(user) {
                 var signatures;
                 return _regenerator2.default.wrap(function _callee22$(_context22) {
                   while (1) {
@@ -39652,8 +41125,8 @@ Key.prototype.verifyAllUsers = function () {
                 }, _callee22, this);
               }));
 
-              return function (_x37) {
-                return _ref26.apply(this, arguments);
+              return function (_x41) {
+                return _ref27.apply(this, arguments);
               };
             }()));
 
@@ -39668,8 +41141,8 @@ Key.prototype.verifyAllUsers = function () {
     }, _callee23, this);
   }));
 
-  return function (_x36) {
-    return _ref25.apply(this, arguments);
+  return function (_x40) {
+    return _ref26.apply(this, arguments);
   };
 }();
 
@@ -39710,7 +41183,7 @@ User.prototype.toPacketlist = function () {
  * @async
  */
 User.prototype.sign = function () {
-  var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(primaryKey, privateKeys) {
+  var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(primaryKey, privateKeys) {
     var dataToSign, user;
     return _regenerator2.default.wrap(function _callee25$(_context25) {
       while (1) {
@@ -39720,7 +41193,7 @@ User.prototype.sign = function () {
             user = new User(dataToSign.userid);
             _context25.next = 4;
             return _promise2.default.all(privateKeys.map(function () {
-              var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(privateKey) {
+              var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(privateKey) {
                 var signingKeyPacket, signaturePacket;
                 return _regenerator2.default.wrap(function _callee24$(_context24) {
                   while (1) {
@@ -39788,8 +41261,8 @@ User.prototype.sign = function () {
                 }, _callee24, this);
               }));
 
-              return function (_x40) {
-                return _ref28.apply(this, arguments);
+              return function (_x44) {
+                return _ref29.apply(this, arguments);
               };
             }()));
 
@@ -39809,8 +41282,8 @@ User.prototype.sign = function () {
     }, _callee25, this);
   }));
 
-  return function (_x38, _x39) {
-    return _ref27.apply(this, arguments);
+  return function (_x42, _x43) {
+    return _ref28.apply(this, arguments);
   };
 }();
 
@@ -39828,7 +41301,7 @@ User.prototype.sign = function () {
  * @async
  */
 User.prototype.isRevoked = function () {
-  var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(primaryKey, certificate, key) {
+  var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(primaryKey, certificate, key) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     return _regenerator2.default.wrap(function _callee26$(_context26) {
       while (1) {
@@ -39847,8 +41320,8 @@ User.prototype.isRevoked = function () {
     }, _callee26, this);
   }));
 
-  return function (_x41, _x42, _x43) {
-    return _ref29.apply(this, arguments);
+  return function (_x45, _x46, _x47) {
+    return _ref30.apply(this, arguments);
   };
 }();
 
@@ -39863,7 +41336,7 @@ User.prototype.isRevoked = function () {
  * @async
  */
 User.prototype.verifyCertificate = function () {
-  var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(primaryKey, certificate, keys) {
+  var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(primaryKey, certificate, keys) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     var that, keyid, dataToVerify, results;
     return _regenerator2.default.wrap(function _callee28$(_context28) {
@@ -39875,7 +41348,7 @@ User.prototype.verifyCertificate = function () {
             dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
             _context28.next = 5;
             return _promise2.default.all(keys.map(function () {
-              var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27(key) {
+              var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee27(key) {
                 var keyPacket;
                 return _regenerator2.default.wrap(function _callee27$(_context27) {
                   while (1) {
@@ -39958,8 +41431,8 @@ User.prototype.verifyCertificate = function () {
                 }, _callee27, this);
               }));
 
-              return function (_x49) {
-                return _ref31.apply(this, arguments);
+              return function (_x53) {
+                return _ref32.apply(this, arguments);
               };
             }()));
 
@@ -39977,8 +41450,8 @@ User.prototype.verifyCertificate = function () {
     }, _callee28, this);
   }));
 
-  return function (_x45, _x46, _x47) {
-    return _ref30.apply(this, arguments);
+  return function (_x49, _x50, _x51) {
+    return _ref31.apply(this, arguments);
   };
 }();
 
@@ -39992,7 +41465,7 @@ User.prototype.verifyCertificate = function () {
  * @async
  */
 User.prototype.verifyAllCertifications = function () {
-  var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(primaryKey, keys) {
+  var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(primaryKey, keys) {
     var that, certifications;
     return _regenerator2.default.wrap(function _callee30$(_context30) {
       while (1) {
@@ -40001,7 +41474,7 @@ User.prototype.verifyAllCertifications = function () {
             that = this;
             certifications = this.selfCertifications.concat(this.otherCertifications);
             return _context30.abrupt('return', _promise2.default.all(certifications.map(function () {
-              var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(certification) {
+              var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(certification) {
                 var status;
                 return _regenerator2.default.wrap(function _callee29$(_context29) {
                   while (1) {
@@ -40025,8 +41498,8 @@ User.prototype.verifyAllCertifications = function () {
                 }, _callee29, this);
               }));
 
-              return function (_x52) {
-                return _ref33.apply(this, arguments);
+              return function (_x56) {
+                return _ref34.apply(this, arguments);
               };
             }())));
 
@@ -40038,8 +41511,8 @@ User.prototype.verifyAllCertifications = function () {
     }, _callee30, this);
   }));
 
-  return function (_x50, _x51) {
-    return _ref32.apply(this, arguments);
+  return function (_x54, _x55) {
+    return _ref33.apply(this, arguments);
   };
 }();
 
@@ -40052,7 +41525,7 @@ User.prototype.verifyAllCertifications = function () {
  * @async
  */
 User.prototype.verify = function () {
-  var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32(primaryKey) {
+  var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee32(primaryKey) {
     var that, dataToVerify, results;
     return _regenerator2.default.wrap(function _callee32$(_context32) {
       while (1) {
@@ -40073,7 +41546,7 @@ User.prototype.verify = function () {
             _context32.t0 = [_enums2.default.keyStatus.invalid];
             _context32.next = 7;
             return _promise2.default.all(this.selfCertifications.map(function () {
-              var _ref35 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31(selfCertification) {
+              var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee31(selfCertification) {
                 return _regenerator2.default.wrap(function _callee31$(_context31) {
                   while (1) {
                     switch (_context31.prev = _context31.next) {
@@ -40140,8 +41613,8 @@ User.prototype.verify = function () {
                 }, _callee31, this);
               }));
 
-              return function (_x54) {
-                return _ref35.apply(this, arguments);
+              return function (_x58) {
+                return _ref36.apply(this, arguments);
               };
             }()));
 
@@ -40160,8 +41633,8 @@ User.prototype.verify = function () {
     }, _callee32, this);
   }));
 
-  return function (_x53) {
-    return _ref34.apply(this, arguments);
+  return function (_x57) {
+    return _ref35.apply(this, arguments);
   };
 }();
 
@@ -40172,7 +41645,7 @@ User.prototype.verify = function () {
  *          module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 User.prototype.update = function () {
-  var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(user, primaryKey) {
+  var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee34(user, primaryKey) {
     var dataToVerify;
     return _regenerator2.default.wrap(function _callee34$(_context34) {
       while (1) {
@@ -40183,7 +41656,7 @@ User.prototype.update = function () {
 
             _context34.next = 3;
             return mergeSignatures(user, this, 'selfCertifications', function () {
-              var _ref37 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33(srcSelfSig) {
+              var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee33(srcSelfSig) {
                 return _regenerator2.default.wrap(function _callee33$(_context33) {
                   while (1) {
                     switch (_context33.prev = _context33.next) {
@@ -40198,8 +41671,8 @@ User.prototype.update = function () {
                 }, _callee33, this);
               }));
 
-              return function (_x57) {
-                return _ref37.apply(this, arguments);
+              return function (_x61) {
+                return _ref38.apply(this, arguments);
               };
             }());
 
@@ -40221,8 +41694,8 @@ User.prototype.update = function () {
     }, _callee34, this);
   }));
 
-  return function (_x55, _x56) {
-    return _ref36.apply(this, arguments);
+  return function (_x59, _x60) {
+    return _ref37.apply(this, arguments);
   };
 }();
 
@@ -40265,7 +41738,7 @@ SubKey.prototype.toPacketlist = function () {
  * @async
  */
 SubKey.prototype.isRevoked = function () {
-  var _ref38 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(primaryKey, signature, key) {
+  var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee35(primaryKey, signature, key) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     return _regenerator2.default.wrap(function _callee35$(_context35) {
       while (1) {
@@ -40284,8 +41757,8 @@ SubKey.prototype.isRevoked = function () {
     }, _callee35, this);
   }));
 
-  return function (_x58, _x59, _x60) {
-    return _ref38.apply(this, arguments);
+  return function (_x62, _x63, _x64) {
+    return _ref39.apply(this, arguments);
   };
 }();
 
@@ -40299,7 +41772,7 @@ SubKey.prototype.isRevoked = function () {
  * @async
  */
 SubKey.prototype.verify = function () {
-  var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(primaryKey) {
+  var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(primaryKey) {
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var that, dataToVerify, bindingSignature;
     return _regenerator2.default.wrap(function _callee36$(_context36) {
@@ -40384,8 +41857,8 @@ SubKey.prototype.verify = function () {
     }, _callee36, this);
   }));
 
-  return function (_x62) {
-    return _ref39.apply(this, arguments);
+  return function (_x66) {
+    return _ref40.apply(this, arguments);
   };
 }();
 
@@ -40410,7 +41883,7 @@ SubKey.prototype.getExpirationTime = function () {
             module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 SubKey.prototype.update = function () {
-  var _ref40 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(subKey, primaryKey) {
+  var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(subKey, primaryKey) {
     var that, dataToVerify;
     return _regenerator2.default.wrap(function _callee38$(_context38) {
       while (1) {
@@ -40448,7 +41921,7 @@ SubKey.prototype.update = function () {
             dataToVerify = { key: primaryKey, bind: that.subKey };
             _context38.next = 13;
             return mergeSignatures(subKey, this, 'bindingSignatures', function () {
-              var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(srcBindSig) {
+              var _ref42 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(srcBindSig) {
                 var i;
                 return _regenerator2.default.wrap(function _callee37$(_context37) {
                   while (1) {
@@ -40513,8 +41986,8 @@ SubKey.prototype.update = function () {
                 }, _callee37, this);
               }));
 
-              return function (_x67) {
-                return _ref41.apply(this, arguments);
+              return function (_x71) {
+                return _ref42.apply(this, arguments);
               };
             }());
 
@@ -40532,8 +42005,8 @@ SubKey.prototype.update = function () {
     }, _callee38, this);
   }));
 
-  return function (_x65, _x66) {
-    return _ref40.apply(this, arguments);
+  return function (_x69, _x70) {
+    return _ref41.apply(this, arguments);
   };
 }();
 
@@ -40616,7 +42089,7 @@ function getExpirationTime(keyPacket, signature) {
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
 
-},{"./config":309,"./crypto":324,"./encoding/armor":341,"./enums":343,"./packet":355,"./util":382,"babel-runtime/core-js/object/get-prototype-of":26,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/helpers/slicedToArray":36,"babel-runtime/regenerator":38}],347:[function(_dereq_,module,exports){
+},{"./config":325,"./crypto":340,"./encoding/armor":357,"./enums":359,"./packet":371,"./util":398,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/object/values":31,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/slicedToArray":40,"babel-runtime/regenerator":42}],363:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40643,7 +42116,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":348,"./localstore.js":349}],348:[function(_dereq_,module,exports){
+},{"./keyring.js":364,"./localstore.js":365}],364:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40844,18 +42317,17 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  */
 KeyArray.prototype.importKey = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(armored) {
-    var imported, that, i, key, keyidHex, keyFound;
+    var imported, i, key, keyidHex, keyFound;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             imported = (0, _key.readArmored)(armored);
-            that = this;
             i = 0;
 
-          case 3:
+          case 2:
             if (!(i < imported.keys.length)) {
-              _context.next = 16;
+              _context.next = 15;
               break;
             }
 
@@ -40863,32 +42335,32 @@ KeyArray.prototype.importKey = function () {
             // check if key already in key array
 
             keyidHex = key.primaryKey.getKeyId().toHex();
-            keyFound = that.getForId(keyidHex);
+            keyFound = this.getForId(keyidHex);
 
             if (!keyFound) {
-              _context.next = 12;
+              _context.next = 11;
               break;
             }
 
-            _context.next = 10;
+            _context.next = 9;
             return keyFound.update(key);
 
-          case 10:
-            _context.next = 13;
+          case 9:
+            _context.next = 12;
             break;
+
+          case 11:
+            this.push(key);
 
           case 12:
-            that.push(key);
-
-          case 13:
             i++;
-            _context.next = 3;
+            _context.next = 2;
             break;
 
-          case 16:
+          case 15:
             return _context.abrupt('return', imported.err ? imported.err : null);
 
-          case 17:
+          case 16:
           case 'end':
             return _context.stop();
         }
@@ -40927,7 +42399,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 
 exports.default = Keyring;
 
-},{"../key":346,"./localstore":349,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],349:[function(_dereq_,module,exports){
+},{"../key":362,"./localstore":365,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],365:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41063,7 +42535,7 @@ function storeKeys(storage, itemname, keys) {
 
 exports.default = LocalStore;
 
-},{"../config":309,"../key":346,"../util":382,"babel-runtime/core-js/json/stringify":22,"node-localstorage":"node-localstorage"}],350:[function(_dereq_,module,exports){
+},{"../config":325,"../key":362,"../util":398,"babel-runtime/core-js/json/stringify":23,"node-localstorage":"node-localstorage"}],366:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41095,7 +42567,8 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                 (optional) override the creation date signature
+ * @param  {Date} date                 (optional) override the date
+ * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
@@ -41103,6 +42576,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
   var _ref8 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords) {
     var wildcard = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
     var date = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : new Date();
+    var userId = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : {};
 
     var packetlist, results, testDecrypt, sum, encryptPassword, _results;
 
@@ -41126,7 +42600,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
                     switch (_context8.prev = _context8.next) {
                       case 0:
                         _context8.next = 2;
-                        return publicKey.getEncryptionKeyPacket(undefined, date);
+                        return publicKey.getEncryptionKeyPacket(undefined, date, userId);
 
                       case 2:
                         encryptionKeyPacket = _context8.sent;
@@ -41160,7 +42634,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
                 }, _callee8, this);
               }));
 
-              return function (_x22) {
+              return function (_x24) {
                 return _ref9.apply(this, arguments);
               };
             }()));
@@ -41202,7 +42676,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
                 }, _callee9, this, [[0, 6]]);
               }));
 
-              return function testDecrypt(_x23, _x24) {
+              return function testDecrypt(_x25, _x26) {
                 return _ref10.apply(this, arguments);
               };
             }();
@@ -41263,7 +42737,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
                 }, _callee10, this);
               }));
 
-              return function encryptPassword(_x25, _x26, _x27, _x28) {
+              return function encryptPassword(_x27, _x28, _x29, _x30) {
                 return _ref11.apply(this, arguments);
               };
             }();
@@ -41289,7 +42763,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
     }, _callee11, this);
   }));
 
-  return function encryptSessionKey(_x15, _x16, _x17, _x18, _x19) {
+  return function encryptSessionKey(_x16, _x17, _x18, _x19, _x20) {
     return _ref8.apply(this, arguments);
   };
 }();
@@ -41298,7 +42772,8 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
  * Sign the message (the literal data packet of the message)
  * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
- * @param  {Date} date}                   (optional) override the creation time of the signature
+ * @param  {Date} date                    (optional) override the creation time of the signature
+ * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
@@ -41310,6 +42785,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
  * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
+ * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
@@ -41317,6 +42793,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
   var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(literalDataPacket, privateKeys) {
     var signature = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
+    var userId = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
     var packetlist, signatureType, existingSigPacketlist;
     return _regenerator2.default.wrap(function _callee16$(_context16) {
       while (1) {
@@ -41344,7 +42821,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
 
                       case 2:
                         _context15.next = 4;
-                        return privateKey.getSigningKeyPacket(undefined, date);
+                        return privateKey.getSigningKeyPacket(undefined, date, userId);
 
                       case 4:
                         signingKeyPacket = _context15.sent;
@@ -41370,7 +42847,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
                         signaturePacket.signatureType = signatureType;
                         signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
                         _context15.next = 14;
-                        return (0, _key.getPreferredHashAlgo)(privateKey, date);
+                        return (0, _key.getPreferredHashAlgo)(privateKey, date, userId);
 
                       case 14:
                         signaturePacket.hashAlgorithm = _context15.sent;
@@ -41388,7 +42865,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
                 }, _callee15, this);
               }));
 
-              return function (_x41) {
+              return function (_x46) {
                 return _ref16.apply(this, arguments);
               };
             }())).then(function (signatureList) {
@@ -41414,7 +42891,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
     }, _callee16, this);
   }));
 
-  return function createSignaturePackets(_x37, _x38) {
+  return function createSignaturePackets(_x41, _x42) {
     return _ref15.apply(this, arguments);
   };
 }();
@@ -41480,7 +42957,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
                             }, _callee17, this);
                           }));
 
-                          return function (_x49) {
+                          return function (_x54) {
                             return _ref19.apply(this, arguments);
                           };
                         }()));
@@ -41525,7 +43002,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
                 }, _callee18, this);
               }));
 
-              return function (_x48) {
+              return function (_x53) {
                 return _ref18.apply(this, arguments);
               };
             }())));
@@ -41538,7 +43015,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
     }, _callee19, this);
   }));
 
-  return function createVerificationObjects(_x44, _x45, _x46) {
+  return function createVerificationObjects(_x49, _x50, _x51) {
     return _ref17.apply(this, arguments);
   };
 }();
@@ -42040,6 +43517,7 @@ Message.prototype.getText = function () {
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
+ * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
@@ -42047,6 +43525,7 @@ Message.prototype.encrypt = function () {
   var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee7(keys, passwords, sessionKey) {
     var wildcard = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
     var date = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : new Date();
+    var userId = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
     var symAlgo, aeadAlgo, symEncryptedPacket, msg;
     return _regenerator2.default.wrap(function _callee7$(_context7) {
       while (1) {
@@ -42084,7 +43563,7 @@ Message.prototype.encrypt = function () {
             _context7.t0 = _enums2.default;
             _context7.t1 = _enums2.default.symmetric;
             _context7.next = 16;
-            return (0, _key.getPreferredAlgo)('symmetric', keys, date);
+            return (0, _key.getPreferredAlgo)('symmetric', keys, date, userId);
 
           case 16:
             _context7.t2 = _context7.sent;
@@ -42097,7 +43576,7 @@ Message.prototype.encrypt = function () {
             }
 
             _context7.next = 22;
-            return (0, _key.isAeadSupported)(keys, date);
+            return (0, _key.isAeadSupported)(keys, date, userId);
 
           case 22:
             _context7.t3 = _context7.sent;
@@ -42111,7 +43590,7 @@ Message.prototype.encrypt = function () {
             _context7.t4 = _enums2.default;
             _context7.t5 = _enums2.default.aead;
             _context7.next = 28;
-            return (0, _key.getPreferredAlgo)('aead', keys, date);
+            return (0, _key.getPreferredAlgo)('aead', keys, date, userId);
 
           case 28:
             _context7.t6 = _context7.sent;
@@ -42149,7 +43628,7 @@ Message.prototype.encrypt = function () {
 
           case 42:
             _context7.next = 44;
-            return encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date);
+            return encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userId);
 
           case 44:
             msg = _context7.sent;
@@ -42197,6 +43676,7 @@ Message.prototype.encrypt = function () {
     var privateKeys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
     var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
+    var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     var packetlist, literalDataPacket, i, existingSigPacketlist, signatureType, signaturePacket, onePassSig;
     return _regenerator2.default.wrap(function _callee13$(_context13) {
       while (1) {
@@ -42254,7 +43734,7 @@ Message.prototype.encrypt = function () {
 
                       case 2:
                         _context12.next = 4;
-                        return privateKey.getSigningKeyPacket(undefined, date);
+                        return privateKey.getSigningKeyPacket(undefined, date, userId);
 
                       case 4:
                         signingKeyPacket = _context12.sent;
@@ -42271,7 +43751,7 @@ Message.prototype.encrypt = function () {
 
                         onePassSig.type = signatureType;
                         _context12.next = 11;
-                        return (0, _key.getPreferredHashAlgo)(privateKey, date);
+                        return (0, _key.getPreferredHashAlgo)(privateKey, date, userId);
 
                       case 11:
                         onePassSig.hashAlgorithm = _context12.sent;
@@ -42291,7 +43771,7 @@ Message.prototype.encrypt = function () {
                 }, _callee12, this);
               }));
 
-              return function (_x32, _x33) {
+              return function (_x35, _x36) {
                 return _ref13.apply(this, arguments);
               };
             }())).then(function (onePassSignatureList) {
@@ -42352,6 +43832,7 @@ Message.prototype.compress = function (compression) {
  * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
+ * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
@@ -42360,6 +43841,7 @@ Message.prototype.signDetached = function () {
     var privateKeys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
     var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
+    var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     var literalDataPacket;
     return _regenerator2.default.wrap(function _callee14$(_context14) {
       while (1) {
@@ -42377,7 +43859,7 @@ Message.prototype.signDetached = function () {
           case 3:
             _context14.t0 = _signature.Signature;
             _context14.next = 6;
-            return createSignaturePackets(literalDataPacket, privateKeys, signature, date);
+            return createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId);
 
           case 6:
             _context14.t1 = _context14.sent;
@@ -42524,7 +44006,7 @@ function fromBinary(bytes, filename) {
   return new Message(literalDataPacketlist);
 }
 
-},{"./config":309,"./crypto":324,"./encoding/armor":341,"./enums":343,"./key":346,"./packet":355,"./signature":375,"./type/keyid":378,"./util":382,"babel-runtime/core-js/array/from":19,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],351:[function(_dereq_,module,exports){
+},{"./config":325,"./crypto":340,"./encoding/armor":357,"./enums":359,"./key":362,"./packet":371,"./signature":391,"./type/keyid":394,"./util":398,"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],367:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42716,7 +44198,7 @@ function generateKey(_ref2) {
       _ref2$subkeys = _ref2.subkeys,
       subkeys = _ref2$subkeys === undefined ? [{}] : _ref2$subkeys;
 
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   var options = { userIds: userIds, passphrase: passphrase, numBits: numBits, keyExpirationTime: keyExpirationTime, curve: curve, date: date, subkeys: subkeys };
   if (_util2.default.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
@@ -42759,7 +44241,7 @@ function reformatKey(_ref3) {
       keyExpirationTime = _ref3$keyExpirationTi === undefined ? 0 : _ref3$keyExpirationTi,
       date = _ref3.date;
 
-  userIds = formatUserIds(userIds);
+  userIds = toArray(userIds);
   var options = { privateKey: privateKey, userIds: userIds, passphrase: passphrase, keyExpirationTime: keyExpirationTime, date: date };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
@@ -42876,6 +44358,8 @@ function encryptKey(_ref6) {
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                            (optional) override the creation date of the message and the message signature
+ * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -42903,13 +44387,17 @@ function encrypt(_ref8) {
       _ref8$wildcard = _ref8.wildcard,
       wildcard = _ref8$wildcard === undefined ? false : _ref8$wildcard,
       _ref8$date = _ref8.date,
-      date = _ref8$date === undefined ? new Date() : _ref8$date;
+      date = _ref8$date === undefined ? new Date() : _ref8$date,
+      _ref8$fromUserId = _ref8.fromUserId,
+      fromUserId = _ref8$fromUserId === undefined ? {} : _ref8$fromUserId,
+      _ref8$toUserId = _ref8.toUserId,
+      toUserId = _ref8$toUserId === undefined ? {} : _ref8$toUserId;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) {
     // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data: data, dataType: dataType, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, sessionKey: sessionKey, filename: filename, compression: compression, armor: armor, detached: detached, signature: signature, returnSessionKey: returnSessionKey, wildcard: wildcard, date: date });
+    return asyncProxy.delegate('encrypt', { data: data, dataType: dataType, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, sessionKey: sessionKey, filename: filename, compression: compression, armor: armor, detached: detached, signature: signature, returnSessionKey: returnSessionKey, wildcard: wildcard, date: date, fromUserId: fromUserId, toUserId: toUserId });
   }
   var result = {};
   return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3() {
@@ -42935,7 +44423,7 @@ function encrypt(_ref8) {
             }
 
             _context3.next = 6;
-            return message.signDetached(privateKeys, signature, date);
+            return message.signDetached(privateKeys, signature, date, fromUserId);
 
           case 6:
             detachedSignature = _context3.sent;
@@ -42946,14 +44434,14 @@ function encrypt(_ref8) {
 
           case 10:
             _context3.next = 12;
-            return message.sign(privateKeys, signature, date);
+            return message.sign(privateKeys, signature, date, fromUserId);
 
           case 12:
             message = _context3.sent;
 
           case 13:
             message = message.compress(compression);
-            return _context3.abrupt('return', message.encrypt(publicKeys, passwords, sessionKey, wildcard, date));
+            return _context3.abrupt('return', message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId));
 
           case 15:
           case 'end':
@@ -43077,6 +44565,7 @@ function decrypt(_ref10) {
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
  * @param  {Date} date                          (optional) override the creation date signature
+ * @param  {Object} fromUserId                  (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
  *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -43092,7 +44581,9 @@ function sign(_ref12) {
       _ref12$detached = _ref12.detached,
       detached = _ref12$detached === undefined ? false : _ref12$detached,
       _ref12$date = _ref12.date,
-      date = _ref12$date === undefined ? new Date() : _ref12$date;
+      date = _ref12$date === undefined ? new Date() : _ref12$date,
+      _ref12$fromUserId = _ref12.fromUserId,
+      fromUserId = _ref12$fromUserId === undefined ? {} : _ref12$fromUserId;
 
   checkData(data);
   privateKeys = toArray(privateKeys);
@@ -43100,7 +44591,7 @@ function sign(_ref12) {
   if (asyncProxy) {
     // use web worker if available
     return asyncProxy.delegate('sign', {
-      data: data, dataType: dataType, privateKeys: privateKeys, armor: armor, detached: detached, date: date
+      data: data, dataType: dataType, privateKeys: privateKeys, armor: armor, detached: detached, date: date, fromUserId: fromUserId
     });
   }
 
@@ -43119,7 +44610,7 @@ function sign(_ref12) {
             }
 
             _context5.next = 4;
-            return message.signDetached(privateKeys, undefined, date);
+            return message.signDetached(privateKeys, undefined, date, fromUserId);
 
           case 4:
             signature = _context5.sent;
@@ -43130,7 +44621,7 @@ function sign(_ref12) {
 
           case 8:
             _context5.next = 10;
-            return message.sign(privateKeys, undefined, date);
+            return message.sign(privateKeys, undefined, date, fromUserId);
 
           case 10:
             message = _context5.sent;
@@ -43239,6 +44730,8 @@ function verify(_ref14) {
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Date} date                        (optional) override the date
+ * @param  {Object} toUserId                  (optional) user ID to encrypt for, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
  * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @async
  * @static
@@ -43250,13 +44743,17 @@ function encryptSessionKey(_ref16) {
       publicKeys = _ref16.publicKeys,
       passwords = _ref16.passwords,
       _ref16$wildcard = _ref16.wildcard,
-      wildcard = _ref16$wildcard === undefined ? false : _ref16$wildcard;
+      wildcard = _ref16$wildcard === undefined ? false : _ref16$wildcard,
+      _ref16$date = _ref16.date,
+      date = _ref16$date === undefined ? new Date() : _ref16$date,
+      _ref16$toUserId = _ref16.toUserId,
+      toUserId = _ref16$toUserId === undefined ? {} : _ref16$toUserId;
 
   checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
 
   if (asyncProxy) {
     // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data: data, algorithm: algorithm, aeadAlgorithm: aeadAlgorithm, publicKeys: publicKeys, passwords: passwords, wildcard: wildcard });
+    return asyncProxy.delegate('encryptSessionKey', { data: data, algorithm: algorithm, aeadAlgorithm: aeadAlgorithm, publicKeys: publicKeys, passwords: passwords, wildcard: wildcard, date: date, toUserId: toUserId });
   }
 
   return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee7() {
@@ -43265,7 +44762,7 @@ function encryptSessionKey(_ref16) {
         switch (_context7.prev = _context7.next) {
           case 0:
             _context7.next = 2;
-            return messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard);
+            return messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserId);
 
           case 2:
             _context7.t0 = _context7.sent;
@@ -43359,36 +44856,6 @@ function checkCleartextOrMessage(message) {
 }
 
 /**
- * Format user ids for internal use.
- */
-function formatUserIds(userIds) {
-  if (!userIds) {
-    return userIds;
-  }
-  userIds = toArray(userIds); // normalize to array
-  userIds = userIds.map(function (id) {
-    if (_util2.default.isString(id) && !_util2.default.isUserId(id)) {
-      throw new Error('Invalid user id format');
-    }
-    if (_util2.default.isUserId(id)) {
-      return id; // user id is already in correct format... no conversion necessary
-    }
-    // name and email address can be empty but must be of the correct type
-    id.name = id.name || '';
-    id.email = id.email || '';
-    if (!_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email)) {
-      throw new Error('Invalid user id format');
-    }
-    id.name = id.name.trim();
-    if (id.name.length > 0) {
-      id.name += ' ';
-    }
-    return id.name + '<' + id.email + '>';
-  });
-  return userIds;
-}
-
-/**
  * Normalize parameter to an array if it is not undefined.
  * @param  {Object} param              the parameter to be normalized
  * @returns {Array<Object>|undefined}   the resulting array or undefined
@@ -43472,13 +44939,17 @@ function nativeAEAD() {
   return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
 }
 
-},{"./cleartext":306,"./config/config":308,"./enums":343,"./key":346,"./message":350,"./polyfills":374,"./util":382,"./worker/async_proxy":383,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],352:[function(_dereq_,module,exports){
+},{"./cleartext":322,"./config/config":324,"./enums":359,"./key":362,"./message":366,"./polyfills":390,"./util":398,"./worker/async_proxy":399,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],368:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Trust = exports.Signature = exports.SecretSubkey = exports.Userid = exports.SecretKey = exports.OnePassSignature = exports.UserAttribute = exports.PublicSubkey = exports.Marker = exports.SymmetricallyEncrypted = exports.PublicKey = exports.Literal = exports.SymEncryptedSessionKey = exports.PublicKeyEncryptedSessionKey = exports.SymEncryptedAEADProtected = exports.SymEncryptedIntegrityProtected = exports.Compressed = undefined;
+
+var _assign = _dereq_('babel-runtime/core-js/object/assign');
+
+var _assign2 = _interopRequireDefault(_assign);
 
 var _compressed = _dereq_('./compressed.js');
 
@@ -43669,11 +45140,7 @@ function newPacketFromTag(tag) {
 function fromStructuredClone(packetClone) {
   var tagName = _enums2.default.read(_enums2.default.packet, packetClone.tag);
   var packet = newPacketFromTag(tagName);
-  for (var attr in packetClone) {
-    if (packetClone.hasOwnProperty(attr)) {
-      packet[attr] = packetClone[attr];
-    }
-  }
+  (0, _assign2.default)(packet, packetClone);
   if (packet.postCloneTypeFix) {
     packet.postCloneTypeFix();
   }
@@ -43690,7 +45157,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":343,"./all_packets.js":352,"./compressed.js":354,"./literal.js":356,"./marker.js":357,"./one_pass_signature.js":358,"./public_key.js":361,"./public_key_encrypted_session_key.js":362,"./public_subkey.js":363,"./secret_key.js":364,"./secret_subkey.js":365,"./signature.js":366,"./sym_encrypted_aead_protected.js":367,"./sym_encrypted_integrity_protected.js":368,"./sym_encrypted_session_key.js":369,"./symmetrically_encrypted.js":370,"./trust.js":371,"./user_attribute.js":372,"./userid.js":373}],353:[function(_dereq_,module,exports){
+},{"../enums.js":359,"./all_packets.js":368,"./compressed.js":370,"./literal.js":372,"./marker.js":373,"./one_pass_signature.js":374,"./public_key.js":377,"./public_key_encrypted_session_key.js":378,"./public_subkey.js":379,"./secret_key.js":380,"./secret_subkey.js":381,"./signature.js":382,"./sym_encrypted_aead_protected.js":383,"./sym_encrypted_integrity_protected.js":384,"./sym_encrypted_session_key.js":385,"./symmetrically_encrypted.js":386,"./trust.js":387,"./user_attribute.js":388,"./userid.js":389,"babel-runtime/core-js/object/assign":24}],369:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43867,7 +45334,7 @@ function packetlistCloneToSignature(clone) {
   return new _signature.Signature(packetlist);
 }
 
-},{"../cleartext":306,"../key":346,"../message":350,"../signature":375,"../type/keyid":378,"../util":382,"./packetlist":360}],354:[function(_dereq_,module,exports){
+},{"../cleartext":322,"../key":362,"../message":366,"../signature":391,"../type/keyid":394,"../util":398,"./packetlist":376}],370:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44016,7 +45483,6 @@ exports.default = Compressed;
 
 
 var nodeZlib = _util2.default.getNodeZlib();
-var Buffer = _util2.default.getNodeBuffer();
 
 function node_zlib(func) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -44070,12 +45536,16 @@ if (nodeZlib) {
   };
 }
 
-},{"../compression/bzip2.build.js":307,"../config":309,"../enums":343,"../util":382,"pako":285}],355:[function(_dereq_,module,exports){
+},{"../compression/bzip2.build.js":323,"../config":325,"../enums":359,"../util":398,"pako":301}],371:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _assign = _dereq_('babel-runtime/core-js/object/assign');
+
+var _assign2 = _interopRequireDefault(_assign);
 
 var _all_packets = _dereq_('./all_packets');
 
@@ -44089,9 +45559,9 @@ var _packetlist = _dereq_('./packetlist');
 
 var _packetlist2 = _interopRequireDefault(_packetlist);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var mod = {
   List: _packetlist2.default,
@@ -44104,13 +45574,11 @@ var mod = {
     * @module packet
     */
 
-for (var i in packets) {
-  mod[i] = packets[i];
-}
+(0, _assign2.default)(mod, packets);
 
 exports.default = mod;
 
-},{"./all_packets":352,"./clone":353,"./packetlist":360}],356:[function(_dereq_,module,exports){
+},{"./all_packets":368,"./clone":369,"./packetlist":376,"babel-runtime/core-js/object/assign":24}],372:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44281,7 +45749,7 @@ Literal.prototype.write = function () {
 
 exports.default = Literal;
 
-},{"../enums":343,"../util":382}],357:[function(_dereq_,module,exports){
+},{"../enums":359,"../util":398}],373:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44356,7 +45824,7 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums":343}],358:[function(_dereq_,module,exports){
+},{"../enums":359}],374:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44500,7 +45968,7 @@ OnePassSignature.prototype.postCloneTypeFix = function () {
 
 exports.default = OnePassSignature;
 
-},{"../enums":343,"../type/keyid":378,"../util":382}],359:[function(_dereq_,module,exports){
+},{"../enums":359,"../type/keyid":394,"../util":398}],375:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44758,7 +46226,7 @@ exports.default = {
  * @module packet/packet
  */
 
-},{"../util":382,"babel-runtime/helpers/slicedToArray":36}],360:[function(_dereq_,module,exports){
+},{"../util":398,"babel-runtime/helpers/slicedToArray":40}],376:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44921,7 +46389,6 @@ List.prototype.filter = function (callback) {
  */
 List.prototype.filterByTag = function () {
   var filtered = new List();
-  var that = this;
 
   var handle = function handle(tag) {
     return function (packetType) {
@@ -44934,7 +46401,7 @@ List.prototype.filterByTag = function () {
   }
 
   for (var i = 0; i < this.length; i++) {
-    if (args.some(handle(that[i].tag))) {
+    if (args.some(handle(this[i].tag))) {
       filtered.push(this[i]);
     }
   }
@@ -45127,7 +46594,7 @@ List.fromStructuredClone = function (packetlistClone) {
 
 exports.default = List;
 
-},{"../config":309,"../enums":343,"../util":382,"./all_packets":352,"./packet":359,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],361:[function(_dereq_,module,exports){
+},{"../config":325,"../enums":359,"../util":398,"./all_packets":368,"./packet":375,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],377:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45427,7 +46894,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKey;
 
-},{"../config":309,"../crypto":324,"../enums":343,"../type/keyid":378,"../type/mpi":379,"../util":382}],362:[function(_dereq_,module,exports){
+},{"../config":325,"../crypto":340,"../enums":359,"../type/keyid":394,"../type/mpi":395,"../util":398}],378:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45441,10 +46908,6 @@ var _regenerator2 = _interopRequireDefault(_regenerator);
 var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
-
-var _ecdh_symkey = _dereq_('../type/ecdh_symkey');
-
-var _ecdh_symkey2 = _interopRequireDefault(_ecdh_symkey);
 
 var _keyid = _dereq_('../type/keyid');
 
@@ -45486,32 +46949,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @memberof module:packet
  * @constructor
  */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @requires type/ecdh_symkey
- * @requires type/keyid
- * @requires type/mpi
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 function PublicKeyEncryptedSessionKey() {
   this.tag = _enums2.default.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
@@ -45532,6 +46969,31 @@ function PublicKeyEncryptedSessionKey() {
  *            input at position
  * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
   this.publicKeyId.read(bytes.subarray(1, bytes.length));
@@ -45702,7 +47164,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":324,"../enums":343,"../type/ecdh_symkey":376,"../type/keyid":378,"../type/mpi":379,"../util":382,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],363:[function(_dereq_,module,exports){
+},{"../crypto":340,"../enums":359,"../type/keyid":394,"../type/mpi":395,"../util":398,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],379:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45761,7 +47223,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums":343,"./public_key":361}],364:[function(_dereq_,module,exports){
+},{"../enums":359,"./public_key":377}],380:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -46220,14 +47682,34 @@ SecretKey.prototype.decrypt = function () {
   };
 }();
 
-SecretKey.prototype.generate = function (bits, curve) {
-  var that = this;
-  var algo = _enums2.default.write(_enums2.default.publicKey, that.algorithm);
-  return _crypto2.default.generateParams(algo, bits, curve).then(function (params) {
-    that.params = params;
-    that.isDecrypted = true;
-  });
-};
+SecretKey.prototype.generate = function () {
+  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(bits, curve) {
+    var algo;
+    return _regenerator2.default.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
+            _context3.next = 3;
+            return _crypto2.default.generateParams(algo, bits, curve);
+
+          case 3:
+            this.params = _context3.sent;
+
+            this.isDecrypted = true;
+
+          case 5:
+          case 'end':
+            return _context3.stop();
+        }
+      }
+    }, _callee3, this);
+  }));
+
+  return function (_x4, _x5) {
+    return _ref3.apply(this, arguments);
+  };
+}();
 
 /**
  * Clear private params, return to initial state
@@ -46258,7 +47740,7 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":324,"../enums":343,"../type/keyid.js":378,"../type/s2k":381,"../util":382,"./public_key":361,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],365:[function(_dereq_,module,exports){
+},{"../crypto":340,"../enums":359,"../type/keyid.js":394,"../type/s2k":397,"../util":398,"./public_key":377,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],381:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -46316,12 +47798,20 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums":343,"./secret_key":364}],366:[function(_dereq_,module,exports){
+},{"../enums":359,"./secret_key":380}],382:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _slicedToArray2 = _dereq_('babel-runtime/helpers/slicedToArray');
+
+var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+
+var _entries = _dereq_('babel-runtime/core-js/object/entries');
+
+var _entries2 = _interopRequireDefault(_entries);
 
 var _regenerator = _dereq_('babel-runtime/regenerator');
 
@@ -46454,10 +47944,12 @@ function Signature() {
  * @returns {module:packet.Signature} object representation
  */
 Signature.prototype.read = function (bytes) {
+  var _this = this;
+
   var i = 0;
   this.version = bytes[i++];
 
-  function subpackets(bytes) {
+  var subpackets = function subpackets(bytes) {
     // Two-octet scalar octet count for following subpacket data.
     var subpacket_length = _util2.default.readNumber(bytes.subarray(0, 2));
 
@@ -46468,13 +47960,13 @@ Signature.prototype.read = function (bytes) {
       var len = _packet3.default.readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
-      this.read_sub_packet(bytes.subarray(i, i + len.len));
+      _this.read_sub_packet(bytes.subarray(i, i + len.len));
 
       i += len.len;
     }
 
     return i;
-  }
+  };
 
   // switch on version (3 and 4)
   switch (this.version) {
@@ -46514,7 +48006,7 @@ Signature.prototype.read = function (bytes) {
         this.hashAlgorithm = bytes[i++];
 
         // hashed subpackets
-        i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
+        i += subpackets(bytes.subarray(i, bytes.length), true);
 
         // A V4 signature hashes the packet body
         // starting from its first field, the version number, through the end
@@ -46526,7 +48018,7 @@ Signature.prototype.read = function (bytes) {
         var sigDataLength = i;
 
         // unhashed subpackets
-        i += subpackets.call(this, bytes.subarray(i, bytes.length), false);
+        i += subpackets(bytes.subarray(i, bytes.length), false);
         this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
         break;
@@ -46684,19 +48176,20 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
-    for (var name in this.notation) {
-      if (this.notation.hasOwnProperty(name)) {
-        var value = this.notation[name];
-        bytes = [new Uint8Array([0x80, 0, 0, 0])];
-        // 2 octets of name length
-        bytes.push(_util2.default.writeNumber(name.length, 2));
-        // 2 octets of value length
-        bytes.push(_util2.default.writeNumber(value.length, 2));
-        bytes.push(_util2.default.str_to_Uint8Array(name + value));
-        bytes = _util2.default.concatUint8Array(bytes);
-        arr.push(write_sub_packet(sub.notation_data, bytes));
-      }
-    }
+    (0, _entries2.default)(this.notation).forEach(function (_ref2) {
+      var _ref3 = (0, _slicedToArray3.default)(_ref2, 2),
+          name = _ref3[0],
+          value = _ref3[1];
+
+      bytes = [new Uint8Array([0x80, 0, 0, 0])];
+      // 2 octets of name length
+      bytes.push(_util2.default.writeNumber(name.length, 2));
+      // 2 octets of value length
+      bytes.push(_util2.default.writeNumber(value.length, 2));
+      bytes.push(_util2.default.str_to_Uint8Array(name + value));
+      bytes = _util2.default.concatUint8Array(bytes);
+      arr.push(write_sub_packet(sub.notation_data, bytes));
+    });
   }
   if (this.preferredHashAlgorithms !== null) {
     bytes = _util2.default.str_to_Uint8Array(_util2.default.Uint8Array_to_str(this.preferredHashAlgorithms));
@@ -46779,15 +48272,17 @@ function write_sub_packet(type, data) {
 // V4 signature sub packets
 
 Signature.prototype.read_sub_packet = function (bytes) {
+  var _this2 = this;
+
   var mypos = 0;
 
-  function read_array(prop, bytes) {
-    this[prop] = [];
+  var read_array = function read_array(prop, bytes) {
+    _this2[prop] = [];
 
     for (var i = 0; i < bytes.length; i++) {
-      this[prop].push(bytes[i]);
+      _this2[prop].push(bytes[i]);
     }
-  }
+  };
 
   // The leftwost bit denotes a "critical" packet, but we ignore it.
   var type = bytes[mypos++] & 0x7F;
@@ -46834,7 +48329,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 11:
       // Preferred Symmetric Algorithms
-      read_array.call(this, 'preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 12:
       // Revocation Key
@@ -46873,15 +48368,15 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 21:
       // Preferred Hash Algorithms
-      read_array.call(this, 'preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 22:
       // Preferred Compression Algorithms
-      read_array.call(this, 'preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
+      read_array('preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
     case 23:
       // Key Server Preferences
-      read_array.call(this, 'keyServerPreferences', bytes.subarray(mypos, bytes.length));
+      read_array('keyServerPreferences', bytes.subarray(mypos, bytes.length));
       break;
     case 24:
       // Preferred Key Server
@@ -46897,7 +48392,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 27:
       // Key Flags
-      read_array.call(this, 'keyFlags', bytes.subarray(mypos, bytes.length));
+      read_array('keyFlags', bytes.subarray(mypos, bytes.length));
       break;
     case 28:
       // Signer's User ID
@@ -46910,7 +48405,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 30:
       // Features
-      read_array.call(this, 'features', bytes.subarray(mypos, bytes.length));
+      read_array('features', bytes.subarray(mypos, bytes.length));
       break;
     case 31:
       {
@@ -47038,7 +48533,7 @@ Signature.prototype.calculateTrailer = function () {
  * @async
  */
 Signature.prototype.verify = function () {
-  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(key, data) {
+  var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(key, data) {
     var signatureType, publicKeyAlgorithm, hashAlgorithm, bytes, trailer, mpicount, endian, mpi, i, j;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -47090,7 +48585,7 @@ Signature.prototype.verify = function () {
   }));
 
   return function (_x4, _x5) {
-    return _ref2.apply(this, arguments);
+    return _ref4.apply(this, arguments);
   };
 }();
 
@@ -47127,7 +48622,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":324,"../enums":343,"../type/keyid.js":378,"../type/mpi.js":379,"../util":382,"./packet":359,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],367:[function(_dereq_,module,exports){
+},{"../crypto":340,"../enums":359,"../type/keyid.js":394,"../type/mpi.js":395,"../util":398,"./packet":375,"babel-runtime/core-js/object/entries":27,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/slicedToArray":40,"babel-runtime/regenerator":42}],383:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -47431,7 +48926,7 @@ SymEncryptedAEADProtected.prototype.crypt = function () {
   };
 }();
 
-},{"../config":309,"../crypto":324,"../enums":343,"../util":382,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],368:[function(_dereq_,module,exports){
+},{"../config":325,"../crypto":340,"../enums":359,"../util":398,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],384:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -47689,7 +49184,7 @@ function nodeDecrypt(algo, ct, key) {
   return new Uint8Array(pt);
 }
 
-},{"../crypto":324,"../enums":343,"../util":382,"asmcrypto.js/src/aes/cfb/exports":6,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],369:[function(_dereq_,module,exports){
+},{"../crypto":340,"../enums":359,"../util":398,"asmcrypto.js/src/aes/cfb/exports":7,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],385:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48005,7 +49500,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../config":309,"../crypto":324,"../enums":343,"../type/s2k":381,"../util":382,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],370:[function(_dereq_,module,exports){
+},{"../config":325,"../crypto":340,"../enums":359,"../type/s2k":397,"../util":398,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],386:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48113,14 +49608,14 @@ SymmetricallyEncrypted.prototype.decrypt = function () {
         switch (_context.prev = _context.next) {
           case 0:
             decrypted = _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
-            // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
+            // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
 
-            if (!(!this.ignore_mdc_error && (sessionKeyAlgorithm === 'aes128' || sessionKeyAlgorithm === 'aes192' || sessionKeyAlgorithm === 'aes256'))) {
+            if (this.ignore_mdc_error) {
               _context.next = 3;
               break;
             }
 
-            throw new Error('Decryption failed due to missing MDC in combination with modern cipher.');
+            throw new Error('Decryption failed due to missing MDC.');
 
           case 3:
             this.packets.read(decrypted);
@@ -48183,7 +49678,7 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":309,"../crypto":324,"../enums":343,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}],371:[function(_dereq_,module,exports){
+},{"../config":325,"../crypto":340,"../enums":359,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],387:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48230,7 +49725,7 @@ Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums":343}],372:[function(_dereq_,module,exports){
+},{"../enums":359}],388:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48342,12 +49837,16 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums":343,"../util":382,"./packet":359}],373:[function(_dereq_,module,exports){
+},{"../enums":359,"../util":398,"./packet":375}],389:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _assign = _dereq_('babel-runtime/core-js/object/assign');
+
+var _assign2 = _interopRequireDefault(_assign);
 
 var _enums = _dereq_('../enums');
 
@@ -48399,6 +49898,10 @@ function Userid() {
    * @type {String}
    */
   this.userid = '';
+
+  this.name = '';
+  this.email = '';
+  this.comment = '';
 }
 
 /**
@@ -48406,7 +49909,17 @@ function Userid() {
  * @param {Uint8Array} input payload of a tag 13 packet
  */
 Userid.prototype.read = function (bytes) {
-  this.userid = _util2.default.decode_utf8(_util2.default.Uint8Array_to_str(bytes));
+  this.parse(_util2.default.decode_utf8(_util2.default.Uint8Array_to_str(bytes)));
+};
+
+/**
+ * Parse userid string, e.g. 'John Doe <john@example.com>'
+ */
+Userid.prototype.parse = function (userid) {
+  try {
+    (0, _assign2.default)(this, _util2.default.parseUserId(userid));
+  } catch (e) {}
+  this.userid = userid;
 };
 
 /**
@@ -48417,10 +49930,25 @@ Userid.prototype.write = function () {
   return _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(this.userid));
 };
 
+/**
+ * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
+ */
+Userid.prototype.format = function (userid) {
+  if (_util2.default.isString(userid)) {
+    userid = _util2.default.parseUserId(userid);
+  }
+  (0, _assign2.default)(this, userid);
+  this.userid = _util2.default.formatUserId(userid);
+};
+
 exports.default = Userid;
 
-},{"../enums":343,"../util":382}],374:[function(_dereq_,module,exports){
+},{"../enums":359,"../util":398,"babel-runtime/core-js/object/assign":24}],390:[function(_dereq_,module,exports){
 'use strict';
+
+var _assign = _dereq_('babel-runtime/core-js/object/assign');
+
+var _assign2 = _interopRequireDefault(_assign);
 
 var _symbol = _dereq_('babel-runtime/core-js/symbol');
 
@@ -48465,8 +49993,11 @@ if (typeof String.prototype.repeat === 'undefined') {
 if (typeof _symbol2.default === 'undefined') {
   _dereq_('core-js/fn/symbol');
 }
+if (typeof _assign2.default === 'undefined') {
+  _dereq_('core-js/fn/object/assign');
+}
 
-},{"babel-runtime/core-js/array/from":19,"babel-runtime/core-js/promise":28,"babel-runtime/core-js/symbol":29,"core-js/fn/array/fill":44,"core-js/fn/array/find":45,"core-js/fn/array/from":46,"core-js/fn/promise":47,"core-js/fn/string/repeat":48,"core-js/fn/symbol":49,"core-js/fn/typed/uint8-array":50,"whatwg-fetch":305}],375:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/promise":32,"babel-runtime/core-js/symbol":33,"core-js/fn/array/fill":48,"core-js/fn/array/find":49,"core-js/fn/array/from":50,"core-js/fn/object/assign":51,"core-js/fn/promise":52,"core-js/fn/string/repeat":53,"core-js/fn/symbol":54,"core-js/fn/typed/uint8-array":55,"whatwg-fetch":321}],391:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48557,7 +50088,7 @@ function read(input) {
   return new Signature(packetlist);
 }
 
-},{"./encoding/armor":341,"./enums":343,"./packet":355}],376:[function(_dereq_,module,exports){
+},{"./encoding/armor":357,"./enums":359,"./packet":371}],392:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48638,7 +50169,7 @@ ECDHSymmetricKey.fromClone = function (clone) {
 
 exports.default = ECDHSymmetricKey;
 
-},{"../util":382}],377:[function(_dereq_,module,exports){
+},{"../util":398}],393:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48723,7 +50254,7 @@ KDFParams.fromClone = function (clone) {
 
 exports.default = KDFParams;
 
-},{"../enums.js":343}],378:[function(_dereq_,module,exports){
+},{"../enums.js":359}],394:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48832,7 +50363,7 @@ Keyid.wildcard = function () {
 
 exports.default = Keyid;
 
-},{"../util.js":382}],379:[function(_dereq_,module,exports){
+},{"../util.js":398}],395:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48996,7 +50527,7 @@ MPI.fromClone = function (clone) {
 
 exports.default = MPI;
 
-},{"../util":382,"bn.js":40}],380:[function(_dereq_,module,exports){
+},{"../util":398,"bn.js":44}],396:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49121,7 +50652,7 @@ OID.fromClone = function (clone) {
 
 exports.default = OID;
 
-},{"../enums":343,"../util":382}],381:[function(_dereq_,module,exports){
+},{"../enums":359,"../util":398}],397:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49349,12 +50880,24 @@ S2K.fromClone = function (clone) {
 
 exports.default = S2K;
 
-},{"../config":309,"../crypto":324,"../enums.js":343,"../util.js":382}],382:[function(_dereq_,module,exports){
+},{"../config":325,"../crypto":340,"../enums.js":359,"../util.js":398}],398:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _slicedToArray2 = _dereq_('babel-runtime/helpers/slicedToArray');
+
+var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+
+var _values = _dereq_('babel-runtime/core-js/object/values');
+
+var _values2 = _interopRequireDefault(_values);
+
+var _addressRfc = _dereq_('address-rfc2822');
+
+var _addressRfc2 = _interopRequireDefault(_addressRfc);
 
 var _config = _dereq_('./config');
 
@@ -49369,6 +50912,33 @@ var _base = _dereq_('./encoding/base64');
 var _base2 = _interopRequireDefault(_base);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/* eslint-disable no-console */
+
+/**
+ * This object contains utility functions
+ * @requires address-rfc2822
+ * @requires config
+ * @requires encoding/base64
+ * @module util
+ */
 
 exports.default = {
 
@@ -49407,10 +50977,10 @@ exports.default = {
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      for (var key in obj) {
+      (0, _values2.default)(obj).forEach(function (value) {
         // recursively search all children
-        _util2.default.collectBuffers(obj[key], collection);
-      }
+        _util2.default.collectBuffers(value, collection);
+      });
     }
   },
 
@@ -49507,8 +51077,8 @@ exports.default = {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function b64_to_Uint8Array(base64) {
-    //    atob(base64.replace(/\-/g, '+').replace(/_/g, '/'));
-    return _base2.default.decode(base64.replace(/\-/g, '+').replace(/_/g, '/'));
+    //    atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+    return _base2.default.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
   /**
@@ -49912,16 +51482,37 @@ exports.default = {
     if (!_util2.default.isString(data)) {
       return false;
     }
-    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
+    var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
     return re.test(data);
   },
 
-  isUserId: function isUserId(data) {
-    if (!_util2.default.isString(data)) {
-      return false;
+  /**
+   * Format user id for internal use.
+   */
+  formatUserId: function formatUserId(id) {
+    // name and email address can be empty but must be of the correct type
+    if (id.name && !_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email)) {
+      throw new Error('Invalid user id format');
     }
-    return (/</.test(data) && />$/.test(data)
-    );
+    return new _addressRfc2.default.Address(id.name, id.email, id.comment).format();
+  },
+
+  /**
+   * Parse user id.
+   */
+  parseUserId: function parseUserId(userid) {
+    try {
+      var _rfc2822$parse = _addressRfc2.default.parse(userid),
+          _rfc2822$parse2 = (0, _slicedToArray3.default)(_rfc2822$parse, 1),
+          _rfc2822$parse2$ = _rfc2822$parse2[0],
+          name = _rfc2822$parse2$.phrase,
+          email = _rfc2822$parse2$.address,
+          comment = _rfc2822$parse2$.comment;
+
+      return { name: name, email: email, comment: comment.replace(/^\(|\)$/g, '') };
+    } catch (e) {
+      throw new Error('Invalid user id format');
+    }
   },
 
   /**
@@ -49945,31 +51536,8 @@ exports.default = {
     return text.replace(/[ \t]+$/mg, "");
   }
 }; // re-import module to access util functions
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * This object contains utility functions
- * @requires config
- * @requires encoding/base64
- * @module util
- */
-
-},{"./config":309,"./encoding/base64":342,"./util":382,"crypto":"crypto","zlib":"zlib"}],383:[function(_dereq_,module,exports){
+},{"./config":325,"./encoding/base64":358,"./util":398,"address-rfc2822":1,"babel-runtime/core-js/object/values":31,"babel-runtime/helpers/slicedToArray":40,"crypto":"crypto","zlib":"zlib"}],399:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50003,36 +51571,6 @@ var _packet2 = _interopRequireDefault(_packet);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * Message handling
- */
-function handleMessage(workerId) {
-  return function (event) {
-    var msg = event.data;
-    switch (msg.event) {
-      case 'method-return':
-        if (msg.err) {
-          // fail
-          var err = new Error(msg.err);
-          // add worker stack
-          err.workerStack = msg.stack;
-          this.tasks[msg.id].reject(err);
-        } else {
-          // success
-          this.tasks[msg.id].resolve(msg.data);
-        }
-        delete this.tasks[msg.id];
-        this.workers[workerId].requests--;
-        break;
-      case 'request-seed':
-        this.seedRandom(workerId, msg.amount);
-        break;
-      default:
-        throw new Error('Unknown Worker Event.');
-    }
-  };
-}
-
-/**
  * Initializes a new proxy and loads the web worker
  * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
  * @param {Number} n               number of workers to initialize if path given
@@ -50040,6 +51578,79 @@ function handleMessage(workerId) {
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  * @constructor
  */
+function AsyncProxy() {
+  var _this = this;
+
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$path = _ref.path,
+      path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path,
+      _ref$n = _ref.n,
+      n = _ref$n === undefined ? 1 : _ref$n,
+      _ref$workers = _ref.workers,
+      workers = _ref$workers === undefined ? [] : _ref$workers,
+      config = _ref.config;
+
+  /**
+   * Message handling
+   */
+  var handleMessage = function handleMessage(workerId) {
+    return function (event) {
+      var msg = event.data;
+      switch (msg.event) {
+        case 'method-return':
+          if (msg.err) {
+            // fail
+            var err = new Error(msg.err);
+            // add worker stack
+            err.workerStack = msg.stack;
+            _this.tasks[msg.id].reject(err);
+          } else {
+            // success
+            _this.tasks[msg.id].resolve(msg.data);
+          }
+          delete _this.tasks[msg.id];
+          _this.workers[workerId].requests--;
+          break;
+        case 'request-seed':
+          _this.seedRandom(workerId, msg.amount);
+          break;
+        default:
+          throw new Error('Unknown Worker Event.');
+      }
+    };
+  };
+
+  if (workers.length) {
+    this.workers = workers;
+  } else {
+    this.workers = [];
+    while (this.workers.length < n) {
+      this.workers.push(new Worker(path));
+    }
+  }
+
+  var workerId = 0;
+  this.workers.forEach(function (worker) {
+    worker.requests = 0;
+    worker.onmessage = handleMessage(workerId++);
+    worker.onerror = function (e) {
+      throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+    };
+
+    if (config) {
+      worker.postMessage({ event: 'configure', config: config });
+    }
+  });
+
+  // Cannot rely on task order being maintained, use object keyed by request ID to track tasks
+  this.tasks = {};
+  this.currentID = 0;
+}
+
+/**
+ * Get new request ID
+ * @returns {integer}          New unique request ID
+*/
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -50069,49 +51680,6 @@ function handleMessage(workerId) {
  * @module worker/async_proxy
  */
 
-function AsyncProxy() {
-  var _this = this;
-
-  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-      _ref$path = _ref.path,
-      path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path,
-      _ref$n = _ref.n,
-      n = _ref$n === undefined ? 1 : _ref$n,
-      _ref$workers = _ref.workers,
-      workers = _ref$workers === undefined ? [] : _ref$workers,
-      config = _ref.config;
-
-  if (workers.length) {
-    this.workers = workers;
-  } else {
-    this.workers = [];
-    while (this.workers.length < n) {
-      this.workers.push(new Worker(path));
-    }
-  }
-
-  var workerId = 0;
-  this.workers.forEach(function (worker) {
-    worker.requests = 0;
-    worker.onmessage = handleMessage(workerId++).bind(_this);
-    worker.onerror = function (e) {
-      throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
-    };
-
-    if (config) {
-      worker.postMessage({ event: 'configure', config: config });
-    }
-  });
-
-  // Cannot rely on task order being maintained, use object keyed by request ID to track tasks
-  this.tasks = {};
-  this.currentID = 0;
-}
-
-/**
- * Get new request ID
- * @returns {integer}          New unique request ID
-*/
 AsyncProxy.prototype.getID = function () {
   return this.currentID++;
 };
@@ -50194,5 +51762,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../crypto":324,"../packet":355,"../util.js":382,"babel-runtime/core-js/promise":28,"babel-runtime/helpers/asyncToGenerator":31,"babel-runtime/regenerator":38}]},{},[345])(345)
+},{"../crypto":340,"../packet":371,"../util.js":398,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}]},{},[361])(361)
 });
