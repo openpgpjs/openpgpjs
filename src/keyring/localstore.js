@@ -19,12 +19,14 @@
  * @fileoverview Provides the LocalStore class
  * @requires config
  * @requires key
+ * @requires stream
  * @requires util
  * @module keyring/localstore
  */
 
 import config from '../config';
 import { readArmored } from '../key';
+import stream from '../stream';
 import util from '../util';
 
 /**
@@ -54,7 +56,7 @@ LocalStore.prototype.privateKeysItem = 'private-keys';
  * Load the public keys from HTML5 local storage.
  * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
-LocalStore.prototype.loadPublic = function () {
+LocalStore.prototype.loadPublic = async function () {
   return loadKeys(this.storage, this.publicKeysItem);
 };
 
@@ -62,17 +64,17 @@ LocalStore.prototype.loadPublic = function () {
  * Load the private keys from HTML5 local storage.
  * @returns {Array<module:key.Key>} array of keys retrieved from localstore
  */
-LocalStore.prototype.loadPrivate = function () {
+LocalStore.prototype.loadPrivate = async function () {
   return loadKeys(this.storage, this.privateKeysItem);
 };
 
-function loadKeys(storage, itemname) {
+async function loadKeys(storage, itemname) {
   const armoredKeys = JSON.parse(storage.getItem(itemname));
   const keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
-      key = readArmored(armoredKeys[i]);
+      key = await readArmored(armoredKeys[i]);
       if (!key.err) {
         keys.push(key.keys[0]);
       } else {
@@ -88,8 +90,8 @@ function loadKeys(storage, itemname) {
  * The key array gets stringified using JSON
  * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
-LocalStore.prototype.storePublic = function (keys) {
-  storeKeys(this.storage, this.publicKeysItem, keys);
+LocalStore.prototype.storePublic = async function (keys) {
+  await storeKeys(this.storage, this.publicKeysItem, keys);
 };
 
 /**
@@ -97,16 +99,13 @@ LocalStore.prototype.storePublic = function (keys) {
  * The key array gets stringified using JSON
  * @param {Array<module:key.Key>} keys array of keys to save in localstore
  */
-LocalStore.prototype.storePrivate = function (keys) {
-  storeKeys(this.storage, this.privateKeysItem, keys);
+LocalStore.prototype.storePrivate = async function (keys) {
+  await storeKeys(this.storage, this.privateKeysItem, keys);
 };
 
-function storeKeys(storage, itemname, keys) {
-  const armoredKeys = [];
+async function storeKeys(storage, itemname, keys) {
   if (keys.length) {
-    for (let i = 0; i < keys.length; i++) {
-      armoredKeys.push(keys[i].armor());
-    }
+    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor())));
     storage.setItem(itemname, JSON.stringify(armoredKeys));
   } else {
     storage.removeItem(itemname);

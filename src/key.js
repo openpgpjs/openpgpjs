@@ -694,9 +694,9 @@ Key.prototype.getRevocationCertificate = function() {
  * @return {module:key~Key} new revoked key
  */
 Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
-  const input = armor.decode(revocationCertificate);
+  const input = await armor.decode(revocationCertificate);
   const packetlist = new packet.List();
-  packetlist.read(input.data);
+  await packetlist.read(input.data);
   const revocationSignature = packetlist.findPacket(enums.packet.signature);
   if (!revocationSignature || revocationSignature.signatureType !== enums.signature.key_revocation) {
     throw new Error('Could not find revocation signature packet');
@@ -1192,12 +1192,12 @@ SubKey.prototype.revoke = async function(primaryKey, {
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
-export function read(data) {
+export async function read(data) {
   const result = {};
   result.keys = [];
   try {
     const packetlist = new packet.List();
-    packetlist.read(data);
+    await packetlist.read(data);
     const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
       throw new Error('No key packet found');
@@ -1226,9 +1226,9 @@ export function read(data) {
  *            err: (Array<Error>|null)}} result object with key and error arrays
  * @static
  */
-export function readArmored(armoredText) {
+export async function readArmored(armoredText) {
   try {
-    const input = armor.decode(armoredText);
+    const input = await armor.decode(armoredText);
     if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
       throw new Error('Armored text not of type key');
     }

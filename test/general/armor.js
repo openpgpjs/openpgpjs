@@ -26,61 +26,61 @@ describe("ASCII armor", function() {
       ).join('\n');
   }
 
-  it('Parse cleartext signed message', function () {
+  it('Parse cleartext signed message', async function () {
     let msg = getArmor(['Hash: SHA1']);
-    msg = openpgp.cleartext.readArmored(msg);
+    msg = await openpgp.cleartext.readArmored(msg);
     expect(msg).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
   });
 
-  it('Exception if mismatch in armor header and signature', function () {
+  it('Exception if mismatch in armor header and signature', async function () {
     let msg = getArmor(['Hash: SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Hash algorithm mismatch in armor header and signature/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
   });
 
-  it('Exception if no header and non-MD5 signature', function () {
+  it('Exception if no header and non-MD5 signature', async function () {
     let msg = getArmor(null);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /If no "Hash" header in cleartext signed message, then only MD5 signatures allowed/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /If no "Hash" header in cleartext signed message, then only MD5 signatures allowed/);
   });
 
-  it('Exception if unknown hash algorithm', function () {
+  it('Exception if unknown hash algorithm', async function () {
     let msg = getArmor(['Hash: LAV750']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Unknown hash algorithm in armor header/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Unknown hash algorithm in armor header/);
   });
 
-  it('Multiple hash values', function () {
+  it('Multiple hash values', async function () {
     let msg = getArmor(['Hash: SHA1, SHA256']);
-    msg = openpgp.cleartext.readArmored(msg);
+    msg = await openpgp.cleartext.readArmored(msg);
     expect(msg).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
   });
 
-  it('Multiple hash header lines', function () {
+  it('Multiple hash header lines', async function () {
     let msg = getArmor(['Hash: SHA1', 'Hash: SHA256']);
-    msg = openpgp.cleartext.readArmored(msg);
+    msg = await openpgp.cleartext.readArmored(msg);
     expect(msg).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
   });
 
-  it('Non-hash header line throws exception', function () {
+  it('Non-hash header line throws exception', async function () {
     let msg = getArmor(['Hash: SHA1', 'Comment: could be anything']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Only "Hash" header allowed in cleartext signed message/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Only "Hash" header allowed in cleartext signed message/);
   });
 
-  it('Multiple wrong hash values', function () {
+  it('Multiple wrong hash values', async function () {
     let msg = getArmor(['Hash: SHA512, SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Hash algorithm mismatch in armor header and signature/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
   });
 
-  it('Multiple wrong hash values', function () {
+  it('Multiple wrong hash values', async function () {
     let msg = getArmor(['Hash: SHA512, SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Hash algorithm mismatch in armor header and signature/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
   });
 
-  it('Filter whitespace in blank line', function () {
+  it('Filter whitespace in blank line', async function () {
     let msg =
       ['-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
@@ -96,37 +96,37 @@ describe("ASCII armor", function() {
       '=e/eA',
       '-----END PGP SIGNATURE-----'].join('\n');
 
-    msg = openpgp.cleartext.readArmored(msg);
+    msg = await openpgp.cleartext.readArmored(msg);
     expect(msg).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
   });
 
-  it('Exception if improperly formatted armor header - plaintext section', function () {
+  it('Exception if improperly formatted armor header - plaintext section', async function () {
     let msg = getArmor(['Hash:SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Improperly formatted armor header/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Improperly formatted armor header/);
     msg = getArmor(['Ha sh: SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Only "Hash" header allowed in cleartext signed message/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Only "Hash" header allowed in cleartext signed message/);
     msg = getArmor(['Hash SHA256']);
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Improperly formatted armor header/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Improperly formatted armor header/);
   });
 
   it('Exception if improperly formatted armor header - signature section', function () {
     [' Space: leading', 'Space : trailing', 'Space :switched', ': empty', 'none', 'Space:missing'].forEach(function (invalidHeader) {
-      expect(openpgp.cleartext.readArmored.bind(null, getArmor(['Hash: SHA1'], [invalidHeader]))).to.throw(Error, /Improperly formatted armor header/);
+      expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [invalidHeader]))).to.be.rejectedWith(Error, /Improperly formatted armor header/);
     });
   });
 
-  it('Ignore unknown armor header - signature section', function () {
+  it('Ignore unknown armor header - signature section', async function () {
     const validHeaders = ['Version: BCPG C# v1.7.4114.6375', 'Independent Reserve Pty. Ltd. 2017: 1.0.0.0'];
-    expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], validHeaders))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
-    ['A: Hello', 'Ab: 1.2.3', 'Abcd: #!/yah', 'Acd 123 5.6.$.8: Hello', '_: Hello', '*: Hello', '* & ## ?? ()(): Hello', '( ): Weird'].forEach(function (validHeader) {
-      expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [validHeader]))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
+    expect(await openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], validHeaders))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
+    ['A: Hello', 'Ab: 1.2.3', 'Abcd: #!/yah', 'Acd 123 5.6.$.8: Hello', '_: Hello', '*: Hello', '* & ## ?? ()(): Hello', '( ): Weird'].forEach(async function (validHeader) {
+      expect(await openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [validHeader]))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
     });
   });
 
-  it('Exception if wrong armor header type', function () {
+  it('Exception if wrong armor header type', async function () {
     let msg =
       ['-----BEGIN PGP SIGNED MESSAGE\u2010\u2010\u2010\u2010\u2010\nHash:SHA1\n\nIs this properly-----',
       '',
@@ -141,11 +141,11 @@ describe("ASCII armor", function() {
       '=e/eA',
       '-----END PGP SIGNNATURE-----'].join('\n');
 
-    msg = openpgp.cleartext.readArmored.bind(null, msg);
-    expect(msg).to.throw(Error, /Unknown ASCII armor type/);
+    msg = openpgp.cleartext.readArmored(msg);
+    await expect(msg).to.be.rejectedWith(Error, /Unknown ASCII armor type/);
   });
 
-  it('Armor checksum validation - mismatch', function () {
+  it('Armor checksum validation - mismatch', async function () {
     const privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: OpenPGP.js v0.3.0',
@@ -167,13 +167,13 @@ describe("ASCII armor", function() {
       '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = openpgp.key.readArmored(privKey);
+    const result_1 = await openpgp.key.readArmored(privKey);
     expect(result_1.err).to.exist;
     expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = openpgp.key.readArmored(privKey);
+    const result_2 = await openpgp.key.readArmored(privKey);
     expect(result_2.err).to.exist;
     expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
 
@@ -181,7 +181,7 @@ describe("ASCII armor", function() {
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
   });
 
-  it('Armor checksum validation - valid', function () {
+  it('Armor checksum validation - valid', async function () {
     const privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
@@ -203,19 +203,19 @@ describe("ASCII armor", function() {
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = openpgp.key.readArmored(privKey);
+    const result_1 = await openpgp.key.readArmored(privKey);
     expect(result_1.err).to.not.exist;
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = openpgp.key.readArmored(privKey);
+    const result_2 = await openpgp.key.readArmored(privKey);
     expect(result_2.err).to.not.exist;
 
     // back to default
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
   });
 
-  it('Armor checksum validation - missing', function () {
+  it('Armor checksum validation - missing', async function () {
     const privKeyNoCheckSum =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
@@ -236,7 +236,7 @@ describe("ASCII armor", function() {
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = openpgp.key.readArmored(privKeyNoCheckSum);
+    const result_1 = await openpgp.key.readArmored(privKeyNoCheckSum);
     if(openpgp.config.checksum_required) {
       expect(result_1.err).to.exist;
       expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
@@ -246,7 +246,7 @@ describe("ASCII armor", function() {
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = openpgp.key.readArmored(privKeyNoCheckSum);
+    const result_2 = await openpgp.key.readArmored(privKeyNoCheckSum);
     if(openpgp.config.checksum_required) {
       expect(result_2.err).to.exist;
       expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
@@ -258,7 +258,7 @@ describe("ASCII armor", function() {
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
   });
 
-  it('Armor checksum validation - missing - trailing newline', function () {
+  it('Armor checksum validation - missing - trailing newline', async function () {
     const privKeyNoCheckSumWithTrailingNewline =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
         'Version: OpenPGP.js v0.3.0',
@@ -280,7 +280,7 @@ describe("ASCII armor", function() {
         ''].join('\n');
 
     // try with default config
-    const result_1 = openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
+    const result_1 = await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
     if(openpgp.config.checksum_required) {
       expect(result_1.err).to.exist;
       expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
@@ -290,7 +290,7 @@ describe("ASCII armor", function() {
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
+    const result_2 = await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
     if(openpgp.config.checksum_required) {
       expect(result_2.err).to.exist;
       expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
@@ -302,7 +302,7 @@ describe("ASCII armor", function() {
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
   });
 
-  it('Accept header with trailing whitespace', function () {
+  it('Accept header with trailing whitespace', async function () {
     const privKey =
       ['-----BEGIN PGP PRIVATE KEY BLOCK-----\t \r',
       'Version: OpenPGP.js v0.3.0',
@@ -323,14 +323,14 @@ describe("ASCII armor", function() {
       '=wJNM',
       '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-    const result = openpgp.key.readArmored(privKey);
+    const result = await openpgp.key.readArmored(privKey);
     expect(result.err).to.not.exist;
     expect(result.keys[0]).to.be.an.instanceof(openpgp.key.Key);
   });
 
-  it('Do not filter blank lines after header', function () {
+  it('Do not filter blank lines after header', async function () {
     let msg = getArmor(['Hash: SHA1', '']);
-    msg = openpgp.cleartext.readArmored(msg);
+    msg = await openpgp.cleartext.readArmored(msg);
     expect(msg.text).to.equal('\r\nsign this');
   });
 

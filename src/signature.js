@@ -53,9 +53,9 @@ Signature.prototype.armor = function() {
  * @returns {Signature} new signature object
  * @static
  */
-export function readArmored(armoredText) {
-  const input = armor.decode(armoredText).data;
-  return read(input);
+export async function readArmored(armoredText) {
+  const input = await armor.decode(armoredText);
+  return read(input.data);
 }
 
 /**
@@ -64,8 +64,8 @@ export function readArmored(armoredText) {
  * @returns {Signature}         new signature object
  * @static
  */
-export function read(input) {
+export async function read(input) {
   const packetlist = new packet.List();
-  packetlist.read(input);
+  await packetlist.read(input);
   return new Signature(packetlist);
 }

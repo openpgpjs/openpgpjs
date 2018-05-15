@@ -135,7 +135,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
   } else {
-    await this.packets.readStream(bytesClone.subarray(0, -2));
+    await this.packets.read(bytesClone.subarray(0, -2));
   }
 
   return true;

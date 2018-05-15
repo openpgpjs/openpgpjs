@@ -151,13 +151,13 @@ CleartextMessage.prototype.armor = function() {
  * @returns {module:cleartext.CleartextMessage} new cleartext message object
  * @static
  */
-export function readArmored(armoredText) {
-  const input = armor.decode(armoredText);
+export async function readArmored(armoredText) {
+  const input = await armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
   const packetlist = new packet.List();
-  packetlist.read(input.data);
+  await packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);

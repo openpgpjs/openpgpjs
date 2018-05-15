@@ -27,22 +27,29 @@ import LocalStore from './localstore';
 
 /**
  * Initialization routine for the keyring.
- * This method reads the keyring from HTML5 local storage and initializes this instance.
  * @constructor
  * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
 function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new LocalStore();
-  this.publicKeys = new KeyArray(this.storeHandler.loadPublic());
-  this.privateKeys = new KeyArray(this.storeHandler.loadPrivate());
 }
+
+/**
+ * Calls the storeHandler to load the keys
+ */
+Keyring.prototype.load = async function () {
+  this.publicKeys = new KeyArray(await this.storeHandler.loadPublic());
+  this.privateKeys = new KeyArray(await this.storeHandler.loadPrivate());
+};
 
 /**
  * Calls the storeHandler to save the keys
  */
-Keyring.prototype.store = function () {
-  this.storeHandler.storePublic(this.publicKeys.keys);
-  this.storeHandler.storePrivate(this.privateKeys.keys);
+Keyring.prototype.store = async function () {
+  await Promise.all([
+    this.storeHandler.storePublic(this.publicKeys.keys),
+    this.storeHandler.storePrivate(this.privateKeys.keys)
+  ]);
 };
 
 /**
@@ -178,7 +185,7 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  * @async
  */
 KeyArray.prototype.importKey = async function (armored) {
-  const imported = readArmored(armored);
+  const imported = await readArmored(armored);
   for (let i = 0; i < imported.keys.length; i++) {
     const key = imported.keys[i];
     // check if key already in key array

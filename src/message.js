@@ -607,8 +607,8 @@ Message.prototype.unwrapCompressed = function() {
  * Append signature to unencrypted message object
  * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
  */
-Message.prototype.appendSignature = function(detachedSignature) {
-  this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : armor.decode(detachedSignature).data);
+Message.prototype.appendSignature = async function(detachedSignature) {
+  await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await armor.decode(detachedSignature)).data);
 };
 
 /**
@@ -625,51 +625,26 @@ Message.prototype.armor = function() {
  * @returns {module:message.Message} new message object
  * @static
  */
-async function readArmoredStream(armoredText) {
-  const input = await armor.decodeStream(armoredText);
-  return readStream(input.data);
-}
-
-/**
- * reads an OpenPGP armored message and returns a message object
- * @param {String} armoredText text to be parsed
- * @returns {module:message.Message} new message object
- * @static
- */
-export function readArmored(armoredText) {
-  if (util.isStream(armoredText)) {
-    return readArmoredStream(armoredText);
-  }
+export async function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
-  const input = armor.decode(armoredText).data;
-  return read(input);
+  const input = await armor.decode(armoredText);
+  return read(input.data, util.isStream(armoredText));
 }
 
 /**
  * reads an OpenPGP message as byte array and returns a message object
- * @param {Uint8Array} input   binary message
+ * @param {Uint8Array} input    binary message
+ * @param {Boolean} fromStream  whether the message was created from a Stream
  * @returns {Message}           new message object
  * @static
  */
-async function readStream(input) {
+export async function read(input, fromStream) {
   const packetlist = new packet.List();
-  await packetlist.readStream(input);
+  await packetlist.read(input);
   const message = new Message(packetlist);
-  message.fromStream = true;
+  message.fromStream = fromStream;
   return message;
-}
-
-/**
- * reads an OpenPGP message as byte array and returns a message object
- * @param {Uint8Array} input   binary message
- * @returns {Message}           new message object
- * @static
- */
-export function read(input) {
-  const packetlist = new packet.List();
-  packetlist.read(input);
-  return new Message(packetlist);
 }
 
 /**

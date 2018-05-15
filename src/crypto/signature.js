@@ -29,6 +29,7 @@ export default {
    * @async
    */
   verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data) {
+    data = await data.readToEnd();
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
@@ -82,6 +83,7 @@ export default {
    * @async
    */
   sign: async function(algo, hash_algo, key_params, data) {
+    data = await data.readToEnd();
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:

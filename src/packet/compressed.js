@@ -67,14 +67,14 @@ function Compressed() {
  * Parsing function for the packet.
  * @param {String} bytes Payload of a tag 8 packet
  */
-Compressed.prototype.read = function (bytes) {
+Compressed.prototype.read = async function (bytes) {
   // One octet that gives the algorithm used to compress the packet.
   this.algorithm = enums.read(enums.compression, bytes[0]);
 
   // Compressed data, which makes up the remainder of the packet.
   this.compressed = bytes.subarray(1, bytes.length);
 
-  this.decompress();
+  await this.decompress();
 };
 
 
@@ -95,13 +95,13 @@ Compressed.prototype.write = function () {
  * Decompression method for decompressing the compressed data
  * read by read_packet
  */
-Compressed.prototype.decompress = function () {
+Compressed.prototype.decompress = async function () {
 
   if (!decompress_fns[this.algorithm]) {
     throw new Error("Compression algorithm unknown :" + this.algorithm);
   }
 
-  this.packets.read(decompress_fns[this.algorithm](this.compressed));
+  await this.packets.read(decompress_fns[this.algorithm](this.compressed));
 };
 
 /**

@@ -97,10 +97,10 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
   if (config.aead_protect_version === 4) {
     const data = this.encrypted.subarray(0, -mode.tagLength);
     const authTag = this.encrypted.subarray(-mode.tagLength);
-    this.packets.read(await this.crypt('decrypt', key, data, authTag));
+    await this.packets.read(await this.crypt('decrypt', key, data, authTag));
   } else {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-    this.packets.read(await this.crypt('decrypt', key, this.encrypted));
+    await this.packets.read(await this.crypt('decrypt', key, this.encrypted));
   }
   return true;
 };

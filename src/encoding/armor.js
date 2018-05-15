@@ -269,7 +269,10 @@ function splitChecksum(text) {
  * an attribute "data" containing the bytes and "type" for the ASCII armor type
  * @static
  */
-function dearmorStream(text) {
+function dearmor(text) {
+  if (util.isString(text)) {
+    text = util.str_to_Uint8Array(text);
+  }
   return new Promise(async (resolve, reject) => {
     const reSplit = /^-----[^-]+-----$/;
     const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
@@ -348,7 +351,7 @@ function dearmorStream(text) {
  * an attribute "data" containing the bytes and "type" for the ASCII armor type
  * @static
  */
-function dearmor(text) {
+/*function dearmor(text) {
   const reSplit = /^-----[^-]+-----$\n/m;
 
   // trim string and remove trailing whitespace at end of lines
@@ -409,7 +412,7 @@ function dearmor(text) {
   verifyHeaders(result.headers);
 
   return result;
-}
+}*/
 
 
 /**
@@ -491,6 +494,5 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
 
 export default {
   encode: armor,
-  decode: dearmor,
-  decodeStream: dearmorStream
+  decode: dearmor
 };

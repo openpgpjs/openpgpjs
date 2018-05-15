@@ -22,7 +22,7 @@ describe('Streaming', function() {
       passwords: ['test'],
     });
     const msgAsciiArmored = util.Uint8Array_to_str(await encrypted.data.readToEnd());
-    const message = openpgp.message.readArmored(msgAsciiArmored);
+    const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message
@@ -49,7 +49,7 @@ describe('Streaming', function() {
       passwords: ['test'],
     });
     const msgAsciiArmored = util.Uint8Array_to_str(await encrypted.data.readToEnd());
-    const message = openpgp.message.readArmored(msgAsciiArmored);
+    const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message,

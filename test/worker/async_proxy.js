@@ -36,9 +36,9 @@ let pubKey;
 
 tryTests('Async Proxy', tests, {
   if: typeof window !== 'undefined' && window.Worker,
-  before: function() {
+  before: async function() {
     openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    pubKey = openpgp.key.readArmored(pub_key).keys[0];
+    pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
   },
   after: function() {
     openpgp.destroyWorker();

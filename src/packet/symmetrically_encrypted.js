@@ -81,7 +81,7 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
   if (!this.ignore_mdc_error) {
     throw new Error('Decryption failed due to missing MDC.');
   }
-  this.packets.read(decrypted);
+  await this.packets.read(decrypted);
 
   return true;
 };

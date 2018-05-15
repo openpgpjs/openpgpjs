@@ -33,10 +33,10 @@ function List() {
  * Reads a stream of binary data and interprents it as a list of packets.
  * @param {Uint8Array} A Uint8Array of bytes.
  */
-List.prototype.readStream = async function (bytes) {
+List.prototype.read = async function (bytes) {
   const reader = bytes.getReader();
   while (true) {
-    const parsed = await packetParser.readStream(reader);
+    const parsed = await packetParser.read(reader);
 
     let pushed = false;
     try {
@@ -44,47 +44,10 @@ List.prototype.readStream = async function (bytes) {
       const packet = packets.newPacketFromTag(tag);
       this.push(packet);
       pushed = true;
-      if (packet.readStream) {
-        await packet.readStream(parsed.packet);
-      } else {
-        await packet.read(parsed.packet);
-      }
+      await packet.read(parsed.packet);
       if (parsed.done) {
         break;
       }
-    } catch (e) {
-      if (!config.tolerant ||
-          parsed.tag === enums.packet.symmetricallyEncrypted ||
-          parsed.tag === enums.packet.literal ||
-          parsed.tag === enums.packet.compressed) {
-        throw e;
-      }
-      util.print_debug_error(e);
-      if (pushed) {
-        this.pop(); // drop unsupported packet
-      }
-    }
-  }
-};
-
-/**
- * Reads a stream of binary data and interprents it as a list of packets.
- * @param {Uint8Array} A Uint8Array of bytes.
- */
-List.prototype.read = function (bytes) {
-  let i = 0;
-
-  while (i < bytes.length) {
-    const parsed = packetParser.read(bytes, i, bytes.length - i);
-    i = parsed.offset;
-
-    let pushed = false;
-    try {
-      const tag = enums.read(enums.packet, parsed.tag);
-      const packet = packets.newPacketFromTag(tag);
-      this.push(packet);
-      pushed = true;
-      packet.read(parsed.packet);
     } catch (e) {
       if (!config.tolerant ||
           parsed.tag === enums.packet.symmetricallyEncrypted ||
