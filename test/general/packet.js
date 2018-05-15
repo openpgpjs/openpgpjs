@@ -9,7 +9,7 @@ const input = require('./testInputs.js');
 
 function stringify(array) {
   if (openpgp.util.isStream(array)) {
-    return array.readToEnd().then(stringify);
+    return openpgp.stream.readToEnd(array).then(stringify);
   }
 
   if (!openpgp.util.isUint8Array(array)) {

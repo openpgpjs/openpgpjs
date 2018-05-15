@@ -4,6 +4,7 @@
  * @requires crypto/public_key
  * @requires crypto/pkcs1
  * @requires enums
+ * @requires stream
  * @requires util
  * @module crypto/signature
 */
@@ -12,6 +13,7 @@ import BN from 'bn.js';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1';
 import enums from '../enums';
+import stream from '../stream';
 import util from '../util';
 
 export default {
@@ -29,7 +31,7 @@ export default {
    * @async
    */
   verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data) {
-    data = await data.readToEnd();
+    data = await stream.readToEnd(data);
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
@@ -83,7 +85,7 @@ export default {
    * @async
    */
   sign: async function(algo, hash_algo, key_params, data) {
-    data = await data.readToEnd();
+    data = await stream.readToEnd(data);
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:

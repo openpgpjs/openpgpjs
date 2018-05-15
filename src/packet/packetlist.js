@@ -4,6 +4,7 @@
  * @requires packet/packet
  * @requires config
  * @requires enums
+ * @requires stream
  * @requires util
  */
 
@@ -11,6 +12,7 @@ import * as packets from './all_packets';
 import packetParser from './packet';
 import config from '../config';
 import enums from '../enums';
+import stream from '../stream';
 import util from '../util';
 
 /**
@@ -34,7 +36,7 @@ function List() {
  * @param {Uint8Array} A Uint8Array of bytes.
  */
 List.prototype.read = async function (bytes) {
-  const reader = bytes.getReader();
+  const reader = stream.getReader(bytes);
   while (true) {
     const parsed = await packetParser.read(reader);
 
@@ -78,7 +80,7 @@ List.prototype.write = function () {
       let bufferLength = 0;
       const minLength = 512;
       arr.push(packetParser.writeTag(this[i].tag));
-      arr.push(packetbytes.transform((done, value) => {
+      arr.push(stream.transform(packetbytes, (done, value) => {
         if (!done) {
           buffer.push(value);
           bufferLength += value.length;

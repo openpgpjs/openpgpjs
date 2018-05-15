@@ -21,7 +21,7 @@ describe('Streaming', function() {
       data,
       passwords: ['test'],
     });
-    const msgAsciiArmored = util.Uint8Array_to_str(await encrypted.data.readToEnd());
+    const msgAsciiArmored = util.Uint8Array_to_str(await openpgp.stream.readToEnd(encrypted.data));
     const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
@@ -48,7 +48,7 @@ describe('Streaming', function() {
       data,
       passwords: ['test'],
     });
-    const msgAsciiArmored = util.Uint8Array_to_str(await encrypted.data.readToEnd());
+    const msgAsciiArmored = util.Uint8Array_to_str(await openpgp.stream.readToEnd(encrypted.data));
     const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
@@ -85,6 +85,6 @@ describe('Streaming', function() {
       format: 'binary'
     });
     expect(util.isStream(decrypted.data)).to.be.true;
-    expect(await decrypted.data.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
+    expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
   });
 });

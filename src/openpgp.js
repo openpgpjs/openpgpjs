@@ -24,6 +24,7 @@
  * @requires key
  * @requires config
  * @requires enums
+ * @requires stream
  * @requires util
  * @requires polyfills
  * @requires worker/async_proxy
@@ -43,6 +44,7 @@ import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
 import enums from './enums';
+import stream from './stream';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
 
@@ -596,12 +598,12 @@ async function parseMessage(message, format, asStream) {
   if (format === 'binary') {
     data = message.getLiteralData();
     if (!asStream && util.isStream(data)) {
-      data = await data.readToEnd();
+      data = await stream.readToEnd(data);
     }
   } else if (format === 'utf8') {
     data = message.getText();
     if (!asStream && util.isStream(data)) {
-      data = await data.readToEnd(chunks => chunks.join(''));
+      data = await stream.readToEnd(data, chunks => chunks.join(''));
     }
   } else {
     throw new Error('Invalid format');

@@ -7,6 +7,7 @@
  * @requires asmcrypto.js
  * @requires hash.js
  * @requires crypto/hash/md5
+ * @requires stream
  * @requires util
  * @module crypto/hash
  */
@@ -19,6 +20,7 @@ import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
 import md5 from './md5';
+import stream from '../../stream';
 import util from '../../util';
 
 const rusha = new Rusha();
@@ -36,7 +38,7 @@ function node_hash(type) {
 function hashjs_hash(hash) {
   return function(data) {
     const hashInstance = hash();
-    return data.transform((done, value) => {
+    return stream.transform(data, (done, value) => {
       if (!done) {
         hashInstance.update(value);
       } else {

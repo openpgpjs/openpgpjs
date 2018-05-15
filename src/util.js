@@ -29,7 +29,7 @@ import rfc2822 from 'address-rfc2822';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
-import Stream from './type/stream';
+import Stream from './stream';
 
 const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
@@ -421,7 +421,7 @@ export default {
 
   print_entire_stream: function (str, stream, fn = result => result) {
     const teed = stream.tee();
-    teed[1].readToEnd().then(result => {
+    stream.readToEnd(teed[1]).then(result => {
       console.log(str + ': ', fn(result));
     });
     return teed[0];

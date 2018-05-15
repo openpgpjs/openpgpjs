@@ -19,6 +19,7 @@
  * @requires asmcrypto.js
  * @requires crypto
  * @requires enums
+ * @requires stream
  * @requires util
  */
 
@@ -26,6 +27,7 @@ import { AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/expor
 
 import crypto from '../crypto';
 import enums from '../enums';
+import stream from '../stream';
 import util from '../util';
 
 const nodeCrypto = util.getNodeCrypto();
@@ -61,7 +63,7 @@ function SymEncryptedIntegrityProtected() {
 }
 
 SymEncryptedIntegrityProtected.prototype.read = async function (bytes) {
-  const reader = bytes.getReader();
+  const reader = stream.getReader(bytes);
 
   // - A one-octet version number. The only currently defined value is 1.
   if (await reader.readByte() !== VERSION) {
@@ -92,7 +94,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const prefix = util.concatUint8Array([prefixrandom, repeat]);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let [tohash, tohashClone] = util.concatUint8Array([bytes, mdc]).tee();
+  let [tohash, tohashClone] = stream.tee(util.concatUint8Array([bytes, mdc]));
   const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohashClone]));
   tohash = util.concatUint8Array([tohash, hash]);
 
@@ -100,7 +102,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
     this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concatUint8Array([prefix, tohash]), key);
   } else {
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
-    this.encrypted = this.encrypted.subarray(0, prefix.length + tohash.length);
+    this.encrypted = stream.subarray(this.encrypted, 0, prefix.length + tohash.length);
   }
   return true;
 };
@@ -113,7 +115,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @async
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
-  const [encrypted, encryptedClone] = this.encrypted.tee();
+  const [encrypted, encryptedClone] = stream.tee(this.encrypted);
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key);
@@ -122,20 +124,20 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   }
 
   let decryptedClone;
-  [decrypted, decryptedClone] = decrypted.tee();
+  [decrypted, decryptedClone] = stream.tee(decrypted);
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  const encryptedPrefix = await encryptedClone.subarray(0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2).readToEnd();
+  const encryptedPrefix = await stream.readToEnd(stream.subarray(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
-  let [bytes, bytesClone] = decrypted.subarray(0, -20).tee();
+  let [bytes, bytesClone] = stream.tee(stream.subarray(decrypted, 0, -20));
   const tohash = util.concatUint8Array([prefix, bytes]);
-  this.hash = util.Uint8Array_to_str(await crypto.hash.sha1(tohash).readToEnd());
-  const mdc = util.Uint8Array_to_str(await decryptedClone.subarray(-20).readToEnd());
+  this.hash = util.Uint8Array_to_str(await stream.readToEnd(crypto.hash.sha1(tohash)));
+  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.subarray(decryptedClone, -20)));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
   } else {
-    await this.packets.read(bytesClone.subarray(0, -2));
+    await this.packets.read(stream.subarray(bytesClone, 0, -2));
   }
 
   return true;
@@ -156,7 +158,7 @@ function aesEncrypt(algo, pt, key) {
     return nodeEncrypt(algo, pt, key);
   } // asm.js fallback
   const cfb = new AES_CFB_Encrypt(key);
-  return pt.transform((done, value) => {
+  return stream.transform(pt, (done, value) => {
     if (!done) {
       return cfb.process(value).result;
     }
@@ -170,14 +172,14 @@ function aesDecrypt(algo, ct, key) {
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
     const cfb = new AES_CFB_Decrypt(key);
-    pt = ct.transform((done, value) => {
+    pt = stream.transform(ct, (done, value) => {
       if (!done) {
         return cfb.process(value).result;
       }
       return cfb.finish().result;
     });
   }
-  return pt.subarray(crypto.cipher[algo].blockSize + 2); // Remove random prefix
+  return stream.subarray(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
 }
 
 function nodeEncrypt(algo, prefix, pt, key) {

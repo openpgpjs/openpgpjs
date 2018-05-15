@@ -19,6 +19,7 @@
  * @requires encoding/base64
  * @requires enums
  * @requires config
+ * @requires stream
  * @requires util
  * @module encoding/armor
  */
@@ -26,6 +27,7 @@
 import base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';
+import stream from '../stream';
 import util from '../util';
 
 /**
@@ -166,7 +168,7 @@ const crc_table = [
 
 function createcrc24(input) {
   let crc = 0xB704CE;
-  return input.transform((done, value) => {
+  return stream.transform(input, (done, value) => {
     if (!done) {
       for (let index = 0; index < value.length; index++) {
         crc = (crc << 8) ^ crc_table[((crc >> 16) ^ value[index]) & 0xff];
@@ -311,7 +313,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
     body = body.data;
   }
   let bodyClone;
-  [body, bodyClone] = body.tee();
+  [body, bodyClone] = stream.tee(body);
   const result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:

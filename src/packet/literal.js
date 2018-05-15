@@ -17,10 +17,12 @@
 
 /**
  * @requires enums
+ * @requires stream
  * @requires util
  */
 
 import enums from '../enums';
+import stream from '../stream';
 import util from '../util';
 
 /**
@@ -67,7 +69,7 @@ Literal.prototype.getText = function() {
   let text;
   if (this.text === null) {
     let lastChar = '';
-    [this.data, this.text] = this.data.tee();
+    [this.data, this.text] = stream.tee(this.data);
     this.text = stream.transform(this.text, value => {
       const text = lastChar + util.Uint8Array_to_str(value);
       // decode UTF8 and normalize EOL to \n
@@ -82,7 +84,7 @@ Literal.prototype.getText = function() {
       return normalized.slice(0, -1);
     }, () => lastChar);
   }
-  [text, this.text] = this.text.tee();
+  [text, this.text] = stream.tee(this.text);
   return text;
 };
 
@@ -140,7 +142,7 @@ Literal.prototype.getFilename = function() {
  * @returns {module:packet.Literal} object representation
  */
 Literal.prototype.read = async function(bytes) {
-  const reader = bytes.getReader();
+  const reader = stream.getReader(bytes);
   // - A one-octet field that describes how the data is formatted.
   const format = enums.read(enums.literal, await reader.readByte());
 

@@ -12,10 +12,12 @@
  */
 
 /**
+ * @requires stream
  * @requires util
  * @module encoding/base64
  */
 
+import stream from '../stream';
 import util from '../util';
 
 const b64s = util.str_to_Uint8Array('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'); // Standard radix-64
@@ -37,7 +39,7 @@ function s2r(t, u = false) {
   let l = 0;
   let s = 0;
 
-  return t.transform((done, value) => {
+  return stream.transform(t, (done, value) => {
     const r = [];
 
     if (!done) {
@@ -106,7 +108,7 @@ function r2s(t, u) {
   let s = 0;
   let a = 0;
 
-  return t.transform((done, value) => {
+  return stream.transform(t, (done, value) => {
     if (!done) {
       const r = [];
       const tl = value.length;
