@@ -120,135 +120,139 @@ export default {
    */
   read: function(reader) {
     return new Promise(async (resolve, reject) => {
-      const peekedBytes = await reader.peekBytes(2);
-      // some sanity checks
-      if (!peekedBytes || peekedBytes.length < 2 || (peekedBytes[0] & 0x80) === 0) {
-        reject(new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format."));
-        return;
-      }
-      const headerByte = await reader.readByte();
-      let tag = -1;
-      let format = -1;
-      let packet_length;
-
-      format = 0; // 0 = old format; 1 = new format
-      if ((headerByte & 0x40) !== 0) {
-        format = 1;
-      }
-
-      let packet_length_type;
-      if (format) {
-        // new format header
-        tag = headerByte & 0x3F; // bit 5-0
-      } else {
-        // old format header
-        tag = (headerByte & 0x3F) >> 2; // bit 5-2
-        packet_length_type = headerByte & 0x03; // bit 1-0
-      }
-
       let controller;
-      let bodydata = null;
-      if (!format) {
-        // 4.2.1. Old Format Packet Lengths
-        switch (packet_length_type) {
-          case 0:
-            // The packet has a one-octet length. The header is 2 octets
-            // long.
-            packet_length = await reader.readByte();
-            break;
-          case 1:
-            // The packet has a two-octet length. The header is 3 octets
-            // long.
-            packet_length = (await reader.readByte() << 8) | await reader.readByte();
-            break;
-          case 2:
-            // The packet has a four-octet length. The header is 5
-            // octets long.
+      try {
+        const peekedBytes = await reader.peekBytes(2);
+        // some sanity checks
+        if (!peekedBytes || peekedBytes.length < 2 || (peekedBytes[0] & 0x80) === 0) {
+          reject(new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format."));
+          return;
+        }
+        const headerByte = await reader.readByte();
+        let tag = -1;
+        let format = -1;
+        let packet_length;
+
+        format = 0; // 0 = old format; 1 = new format
+        if ((headerByte & 0x40) !== 0) {
+          format = 1;
+        }
+
+        let packet_length_type;
+        if (format) {
+          // new format header
+          tag = headerByte & 0x3F; // bit 5-0
+        } else {
+          // old format header
+          tag = (headerByte & 0x3F) >> 2; // bit 5-2
+          packet_length_type = headerByte & 0x03; // bit 1-0
+        }
+
+        let bodydata = null;
+        if (!format) {
+          // 4.2.1. Old Format Packet Lengths
+          switch (packet_length_type) {
+            case 0:
+              // The packet has a one-octet length. The header is 2 octets
+              // long.
+              packet_length = await reader.readByte();
+              break;
+            case 1:
+              // The packet has a two-octet length. The header is 3 octets
+              // long.
+              packet_length = (await reader.readByte() << 8) | await reader.readByte();
+              break;
+            case 2:
+              // The packet has a four-octet length. The header is 5
+              // octets long.
+              packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
+                8) | await reader.readByte();
+              break;
+            default:
+              // 3 - The packet is of indeterminate length. The header is 1
+              // octet long, and the implementation must determine how long
+              // the packet is. If the packet is in a file, this means that
+              // the packet extends until the end of the file. In general,
+              // an implementation SHOULD NOT use indeterminate-length
+              // packets except where the end of the data will be clear
+              // from the context, and even then it is better to use a
+              // definite length, or a new format header. The new format
+              // headers described below have a mechanism for precisely
+              // encoding data of indeterminate length.
+              packet_length = Infinity;
+              break;
+          }
+        } else { // 4.2.2. New Format Packet Lengths
+          // 4.2.2.1. One-Octet Lengths
+          const lengthByte = await reader.readByte();
+          if (lengthByte < 192) {
+            packet_length = lengthByte;
+            // 4.2.2.2. Two-Octet Lengths
+          } else if (lengthByte >= 192 && lengthByte < 224) {
+            packet_length = ((lengthByte - 192) << 8) + (await reader.readByte()) + 192;
+            // 4.2.2.4. Partial Body Lengths
+          } else if (lengthByte > 223 && lengthByte < 255) {
+            packet_length = 1 << (lengthByte & 0x1F);
+            bodydata = new ReadableStream({
+              async start(_controller) {
+                controller = _controller;
+              }
+            });
+            resolve({
+              tag: tag,
+              packet: bodydata,
+              done: true
+            });
+            controller.enqueue(await reader.readBytes(packet_length));
+            let tmplen;
+            while (true) {
+              const tmplenByte = await reader.readByte();
+              if (tmplenByte < 192) {
+                tmplen = tmplenByte;
+                controller.enqueue(await reader.readBytes(tmplen));
+                break;
+              } else if (tmplenByte >= 192 && tmplenByte < 224) {
+                tmplen = ((tmplenByte - 192) << 8) + (await reader.readByte()) + 192;
+                controller.enqueue(await reader.readBytes(tmplen));
+                break;
+              } else if (tmplenByte > 223 && tmplenByte < 255) {
+                tmplen = 1 << (tmplenByte & 0x1F);
+                controller.enqueue(await reader.readBytes(tmplen));
+              } else {
+                tmplen = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() << 8) | await reader.readByte();
+                controller.enqueue(await reader.readBytes(tmplen));
+                break;
+              }
+            }
+            // 4.2.2.3. Five-Octet Lengths
+          } else {
             packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
               8) | await reader.readByte();
-            break;
-          default:
-            // 3 - The packet is of indeterminate length. The header is 1
-            // octet long, and the implementation must determine how long
-            // the packet is. If the packet is in a file, this means that
-            // the packet extends until the end of the file. In general,
-            // an implementation SHOULD NOT use indeterminate-length
-            // packets except where the end of the data will be clear
-            // from the context, and even then it is better to use a
-            // definite length, or a new format header. The new format
-            // headers described below have a mechanism for precisely
-            // encoding data of indeterminate length.
-            packet_length = Infinity;
-            break;
+          }
         }
-      } else { // 4.2.2. New Format Packet Lengths
-        // 4.2.2.1. One-Octet Lengths
-        const lengthByte = await reader.readByte();
-        if (lengthByte < 192) {
-          packet_length = lengthByte;
-          // 4.2.2.2. Two-Octet Lengths
-        } else if (lengthByte >= 192 && lengthByte < 224) {
-          packet_length = ((lengthByte - 192) << 8) + (await reader.readByte()) + 192;
-          // 4.2.2.4. Partial Body Lengths
-        } else if (lengthByte > 223 && lengthByte < 255) {
-          packet_length = 1 << (lengthByte & 0x1F);
-          bodydata = new ReadableStream({
-            async start(_controller) {
-              controller = _controller;
-            }
-          });
+
+        // if there wasn't a partial body length
+        if (bodydata === null) {
+          bodydata = await reader.readBytes(packet_length);
+
           resolve({
             tag: tag,
             packet: bodydata,
-            done: true
+            done: !await reader.peekBytes(1)
           });
-          controller.enqueue(await reader.readBytes(packet_length));
-          let tmplen;
-          while (true) {
-            const tmplenByte = await reader.readByte();
-            if (tmplenByte < 192) {
-              tmplen = tmplenByte;
-              controller.enqueue(await reader.readBytes(tmplen));
-              break;
-            } else if (tmplenByte >= 192 && tmplenByte < 224) {
-              tmplen = ((tmplenByte - 192) << 8) + (await reader.readByte()) + 192;
-              controller.enqueue(await reader.readBytes(tmplen));
-              break;
-            } else if (tmplenByte > 223 && tmplenByte < 255) {
-              tmplen = 1 << (tmplenByte & 0x1F);
-              controller.enqueue(await reader.readBytes(tmplen));
-            } else {
-              tmplen = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() << 8) | await reader.readByte();
-              controller.enqueue(await reader.readBytes(tmplen));
-              break;
-            }
-          }
-          // 4.2.2.3. Five-Octet Lengths
         } else {
-          packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
-            8) | await reader.readByte();
-        }
-      }
-
-      // if there wasn't a partial body length
-      if (bodydata === null) {
-        bodydata = await reader.readBytes(packet_length);
-
-        resolve({
-          tag: tag,
-          packet: bodydata,
-          done: !await reader.peekBytes(1)
-        });
-      } else {
-        try {
           const { done } = await reader.read();
           if (!done) {
             throw new Error('Packets after a packet with partial lengths are not supported');
           } else {
             controller.close();
           }
-        } catch(e) {
+        }
+      } catch(e) {
+        if (controller) {
           controller.error(e);
+        } else {
+          reject(e);
         }
       }
     });

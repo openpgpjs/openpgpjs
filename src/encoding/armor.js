@@ -124,23 +124,6 @@ function getCheckSum(data) {
   return base64.encode(crc);
 }
 
-function getCheckSumString(data) {
-  return util.Uint8Array_to_str(getCheckSum(data));
-}
-
-/**
- * Calculates the checksum over the given data and compares it with the
- * given base64 encoded checksum
- * @param {String} data Data to create a CRC-24 checksum for
- * @param {String} checksum Base64 encoded checksum
- * @returns {Boolean} True if the given checksum is correct; otherwise false
- */
-function verifyCheckSum(data, checksum) {
-  const c = getCheckSumString(data);
-  const d = checksum;
-  return c[0] === d[0] && c[1] === d[1] && c[2] === d[2] && c[3] === d[3];
-}
-
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
  * @param {String} data Data to create a CRC-24 checksum for
@@ -196,34 +179,6 @@ function createcrc24(input) {
 }
 
 /**
- * Splits a message into two parts, the headers and the body. This is an internal function
- * @param {String} text OpenPGP armored message part
- * @returns {Object} An object with attribute "headers" containing the headers
- * and an attribute "body" containing the body.
- */
-function splitHeaders(text) {
-  // empty line with whitespace characters
-  const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*\n/m;
-  let headers = '';
-  let body = text;
-
-  const matchResult = reEmptyLine.exec(text);
-
-  if (matchResult !== null) {
-    headers = text.slice(0, matchResult.index);
-    body = text.slice(matchResult.index + matchResult[0].length);
-  } else {
-    throw new Error('Mandatory blank line missing between armor headers and armor data');
-  }
-
-  headers = headers.split('\n');
-  // remove empty entry
-  headers.pop();
-
-  return { headers: headers, body: body };
-}
-
-/**
  * Verify armored headers. RFC4880, section 6.3: "OpenPGP should consider improperly formatted
  * Armor Headers to be corruption of the ASCII Armor."
  * @private
@@ -241,27 +196,6 @@ function verifyHeaders(headers) {
 }
 
 /**
- * Splits a message into two parts, the body and the checksum. This is an internal function
- * @param {String} text OpenPGP armored message part
- * @returns {Object} An object with attribute "body" containing the body
- * and an attribute "checksum" containing the checksum.
- */
-function splitChecksum(text) {
-  text = text.trim();
-  let body = text;
-  let checksum = "";
-
-  const lastEquals = text.lastIndexOf("=");
-
-  if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
-    body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1).substr(0, 4);
-  }
-
-  return { body: body, checksum: checksum };
-}
-
-/**
  * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
@@ -269,150 +203,93 @@ function splitChecksum(text) {
  * an attribute "data" containing the bytes and "type" for the ASCII armor type
  * @static
  */
-function dearmor(text) {
-  if (util.isString(text)) {
-    text = util.str_to_Uint8Array(text);
+function dearmor(input) {
+  if (util.isString(input)) {
+    input = util.str_to_Uint8Array(util.encode_utf8(input));
   }
   return new Promise(async (resolve, reject) => {
-    const reSplit = /^-----[^-]+-----$/;
-    const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
+    try {
+      const reSplit = /^-----[^-]+-----$/;
+      const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
 
-    const reader = text.getReader();
-    let lineIndex = 0;
-    let type;
-    const headers = {};
-    let headersDone;
-    let controller;
-    let [data, dataClone] = base64.decode(new ReadableStream({
-      async start(_controller) {
-        controller = _controller;
-      }
-    })).tee();
-    let checksum;
-    const checksumVerified = getCheckSum(dataClone);
-    data = data.transform(async (done, value) => {
-      if (!done) {
-        return value;
-      }
-      const checksumVerifiedString = util.Uint8Array_to_str(await checksumVerified.readToEnd());
-      if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
-        throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-                checksumVerifiedString + "'");
-      }
-    });
-    while (true) {
-      const value = await reader.readLine();
-      if (!value) break;
-      let text = util.Uint8Array_to_str(value);
-      if (lineIndex++ === 0) {
-        // trim string
-        text = text.trim();
-      }
-      // remove trailing whitespace at end of lines
-      text = text.replace(/[\t\r\n ]+$/g, '');
-      if (!type) {
-        if (reSplit.test(text)) {
-          type = getType(text);
+      const reader = stream.getReader(input);
+      let lineIndex = 0;
+      let type;
+      const headers = [];
+      let lastHeaders = headers;
+      let headersDone;
+      let text = [];
+      let textDone;
+      let controller;
+      let [data, dataClone] = stream.tee(base64.decode(new ReadableStream({
+        async start(_controller) {
+          controller = _controller;
         }
-      } else if(!headersDone) {
-        if (reSplit.test(text)) {
-          reject(new Error('Mandatory blank line missing between armor headers and armor data'));
+      })));
+      let checksum;
+      const checksumVerified = getCheckSum(dataClone);
+      data = stream.getReader(data).substream(); // Convert to Stream
+      data = stream.transform(data, value => value, async () => {
+        const checksumVerifiedString = util.Uint8Array_to_str(await stream.readToEnd(checksumVerified));
+        if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
+          throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
+                  checksumVerifiedString + "'");
         }
-        if (!reEmptyLine.test(text)) {
-          // Parse header
-        } else {
-          headersDone = true;
-          resolve({
-            type,
-            data
-          });
+      });
+      while (true) {
+        let line = await reader.readLine();
+        if (!line) break;
+        line = util.decode_utf8(util.Uint8Array_to_str(line));
+        if (lineIndex++ === 0) {
+          // trim string
+          line = line.trim();
         }
-      } else {
-        if (!reSplit.test(text)) {
-          if (text[0] !== '=') {
-            controller.enqueue(util.str_to_Uint8Array(text));
+        // remove trailing whitespace at end of lines
+        line = line.replace(/[\t\r\n ]+$/g, '');
+        if (!type) {
+          if (reSplit.test(line)) {
+            type = getType(line);
+          }
+        } else if (!headersDone) {
+          if (reSplit.test(line)) {
+            reject(new Error('Mandatory blank line missing between armor headers and armor data'));
+          }
+          if (!reEmptyLine.test(line)) {
+            lastHeaders.push(line);
           } else {
-            checksum = text.substr(1);
+            verifyHeaders(lastHeaders);
+            headersDone = true;
+            if (textDone || type !== 2) resolve({ text, data, headers, type });
+          }
+        } else if (!textDone && type === 2) {
+          if (!reSplit.test(line)) {
+            // Reverse dash-escaping for msg
+            text.push(line.replace(/^- /mg, ''));
+          } else {
+            text = text.join('\r\n');
+            textDone = true;
+            verifyHeaders(lastHeaders);
+            lastHeaders = [];
+            headersDone = false;
           }
         } else {
-          controller.close();
-          break;
+          if (!reSplit.test(line)) {
+            if (line[0] !== '=') {
+              controller.enqueue(util.str_to_Uint8Array(line));
+            } else {
+              checksum = line.substr(1);
+            }
+          } else {
+            controller.close();
+            break;
+          }
         }
       }
+    } catch(e) {
+      reject(e);
     }
   });
 }
-
-/**
- * DeArmor an OpenPGP armored message; verify the checksum and return
- * the encoded bytes
- * @param {String} text OpenPGP armored message
- * @returns {Object} An object with attribute "text" containing the message text,
- * an attribute "data" containing the bytes and "type" for the ASCII armor type
- * @static
- */
-/*function dearmor(text) {
-  const reSplit = /^-----[^-]+-----$\n/m;
-
-  // trim string and remove trailing whitespace at end of lines
-  text = text.trim().replace(/[\t\r ]+\n/g, '\n');
-
-  const type = getType(text);
-
-  text = text + "\n";
-  const splittext = text.split(reSplit);
-
-  // IE has a bug in split with a re. If the pattern matches the beginning of the
-  // string it doesn't create an empty array element 0. So we need to detect this
-  // so we know the index of the data we are interested in.
-  let indexBase = 1;
-
-  let result;
-  let checksum;
-  let msg;
-
-  if (text.search(reSplit) !== splittext[0].length) {
-    indexBase = 0;
-  }
-
-  if (type !== 2) {
-    msg = splitHeaders(splittext[indexBase]);
-    const msg_sum = splitChecksum(msg.body);
-
-    result = {
-      data: base64.decode(util.str_to_Uint8Array(msg_sum.body)),
-      headers: msg.headers,
-      type: type
-    };
-
-    checksum = msg_sum.checksum;
-  } else {
-    // Reverse dash-escaping for msg
-    msg = splitHeaders(splittext[indexBase].replace(/^- /mg, ''));
-    const sig = splitHeaders(splittext[indexBase + 1].replace(/^- /mg, ''));
-    verifyHeaders(sig.headers);
-    const sig_sum = splitChecksum(sig.body);
-
-    result = {
-      text: msg.body.replace(/\n$/, '').replace(/\n/g, "\r\n"),
-      data: base64.decode(util.str_to_Uint8Array(sig_sum.body)),
-      headers: msg.headers,
-      type: type
-    };
-
-    checksum = sig_sum.checksum;
-  }
-
-  if (!verifyCheckSum(result.data, checksum) && (checksum || config.checksum_required)) {
-    // will NOT throw error if checksum is empty AND checksum is not required (GPG compatibility)
-    throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-      getCheckSumString(result.data) + "'");
-  }
-
-  verifyHeaders(result.headers);
-
-  return result;
-}*/
 
 
 /**
@@ -427,8 +304,10 @@ function dearmor(text) {
  */
 function armor(messagetype, body, partindex, parttotal, customComment) {
   let text;
+  let hash;
   if (messagetype === enums.armor.signed) {
     text = body.text;
+    hash = body.hash;
     body = body.data;
   }
   let bodyClone;
@@ -451,7 +330,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       break;
     case enums.armor.signed:
       result.push("\r\n-----BEGIN PGP SIGNED MESSAGE-----\r\n");
-      result.push("Hash: " + body.hash + "\r\n\r\n");
+      result.push("Hash: " + hash + "\r\n\r\n");
       result.push(text.replace(/^-/mg, "- -"));
       result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader(customComment));
