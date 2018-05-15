@@ -1,6 +1,6 @@
 {
   "name": "openpgp",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "lockfileVersion": 1,
   "requires": true,
   "dependencies": {
@@ -60,6 +60,14 @@
           "integrity": "sha1-ReN/s56No/JbruP/U2niu18iAXo=",
           "dev": true
         }
+      }
+    },
+    "address-rfc2822": {
+      "version": "2.0.3",
+      "resolved": "https://registry.npmjs.org/address-rfc2822/-/address-rfc2822-2.0.3.tgz",
+      "integrity": "sha1-LzDSHYEVCGLBSJpHL0lARQIa+IE=",
+      "requires": {
+        "email-addresses": "3.0.1"
       }
     },
     "agent-base": {
@@ -2305,6 +2313,11 @@
         "minimalistic-assert": "1.0.0",
         "minimalistic-crypto-utils": "1.0.1"
       }
+    },
+    "email-addresses": {
+      "version": "3.0.1",
+      "resolved": "https://registry.npmjs.org/email-addresses/-/email-addresses-3.0.1.tgz",
+      "integrity": "sha1-wfwgwYnn+W1AEtN121/qzN0kORw="
     },
     "encodeurl": {
       "version": "1.0.1",
