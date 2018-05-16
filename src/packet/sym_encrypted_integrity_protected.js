@@ -94,13 +94,14 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const prefix = util.concat([prefixrandom, repeat]);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let [tohash, tohashClone] = stream.tee(util.concat([bytes, mdc]));
-  const hash = crypto.hash.sha1(util.concat([prefix, tohashClone]));
+  let tohash = util.concat([bytes, mdc]);
+  const hash = crypto.hash.sha1(util.concat([prefix, stream.clone(tohash)]));
   tohash = util.concat([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
   } else {
+    tohash = await stream.readToEnd(tohash);
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
     this.encrypted = stream.subarray(this.encrypted, 0, prefix.length + tohash.length);
   }
@@ -115,29 +116,28 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @async
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
-  const [encrypted, encryptedClone] = stream.tee(this.encrypted);
+  const encrypted = stream.clone(this.encrypted);
+  const encryptedClone = stream.clone(encrypted);
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key);
   } else {
-    decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, false);
+    decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, await stream.readToEnd(encrypted), false);
   }
 
-  let decryptedClone;
-  [decrypted, decryptedClone] = stream.tee(decrypted);
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
   const encryptedPrefix = await stream.readToEnd(stream.subarray(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
-  let [bytes, bytesClone] = stream.tee(stream.subarray(decrypted, 0, -20));
-  const tohash = util.concat([prefix, bytes]);
+  const bytes = stream.subarray(stream.clone(decrypted), 0, -20);
+  const tohash = util.concat([prefix, stream.clone(bytes)]);
   this.hash = util.Uint8Array_to_str(await stream.readToEnd(crypto.hash.sha1(tohash)));
-  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.subarray(decryptedClone, -20)));
+  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.subarray(decrypted, -20)));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
   } else {
-    await this.packets.read(stream.subarray(bytesClone, 0, -2));
+    await this.packets.read(stream.subarray(bytes, 0, -2));
   }
 
   return true;

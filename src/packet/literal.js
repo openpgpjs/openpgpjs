@@ -66,11 +66,9 @@ function normalize(text) {
  * @returns {String} literal data as text
  */
 Literal.prototype.getText = function() {
-  let text;
   if (this.text === null) {
     let lastChar = '';
-    [this.data, this.text] = stream.tee(this.data);
-    this.text = stream.transform(this.text, value => {
+    this.text = stream.transform(stream.clone(this.data), value => {
       const text = lastChar + util.Uint8Array_to_str(value);
       // decode UTF8 and normalize EOL to \n
       const normalized = normalize(text);
@@ -84,8 +82,7 @@ Literal.prototype.getText = function() {
       return normalized.slice(0, -1);
     }, () => lastChar);
   }
-  [text, this.text] = stream.tee(this.text);
-  return text;
+  return stream.clone(this.text);
 };
 
 /**
@@ -105,15 +102,13 @@ Literal.prototype.setBytes = function(bytes, format) {
  * @returns {Uint8Array} A sequence of bytes
  */
 Literal.prototype.getBytes = function() {
-  if (this.data !== null) {
-    return this.data;
+  if (this.data === null) {
+    // normalize EOL to \r\n
+    const text = util.canonicalizeEOL(this.text);
+    // encode UTF8
+    this.data = util.str_to_Uint8Array(util.encode_utf8(text));
   }
-
-  // normalize EOL to \r\n
-  const text = util.canonicalizeEOL(this.text);
-  // encode UTF8
-  this.data = util.str_to_Uint8Array(util.encode_utf8(text));
-  return this.data;
+  return stream.clone(this.data);
 };
 
 

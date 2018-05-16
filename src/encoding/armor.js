@@ -215,13 +215,13 @@ function dearmor(input) {
       let text = [];
       let textDone;
       let controller;
-      let [data, dataClone] = stream.tee(base64.decode(new ReadableStream({
+      let data = base64.decode(new ReadableStream({
         async start(_controller) {
           controller = _controller;
         }
-      })));
+      }));
       let checksum;
-      const checksumVerified = getCheckSum(dataClone);
+      const checksumVerified = getCheckSum(stream.clone(data));
       data = stream.getReader(data).substream(); // Convert to Stream
       data = stream.transform(data, value => value, async () => {
         const checksumVerifiedString = await stream.readToEnd(checksumVerified);
@@ -303,8 +303,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
     hash = body.hash;
     body = body.data;
   }
-  let bodyClone;
-  [body, bodyClone] = stream.tee(body);
+  const bodyClone = stream.clone(body);
   const result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:

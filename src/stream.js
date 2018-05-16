@@ -51,6 +51,16 @@ function tee(input) {
   return [input, input];
 }
 
+function clone(input) {
+  if (util.isStream(input)) {
+    const teed = tee(input);
+    input.getReader = teed[0].getReader.bind(teed[0]);
+    input.tee = teed[0].tee.bind(teed[0]);
+    return teed[1];
+  }
+  return input;
+}
+
 function subarray(input, begin=0, end=Infinity) {
   if (util.isStream(input)) {
     if (begin >= 0 && end >= 0) {
@@ -90,7 +100,7 @@ async function readToEnd(input, join) {
 }
 
 
-export default { concat, getReader, transform, tee, subarray, readToEnd };
+export default { concat, getReader, transform, clone, subarray, readToEnd };
 
 
 /*const readerAcquiredMap = new Map();
@@ -103,6 +113,16 @@ ReadableStream.prototype.getReader = function() {
     readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
   }
   return _getReader.apply(this, arguments);
+};
+
+const _tee = ReadableStream.prototype.tee;
+ReadableStream.prototype.tee = function() {
+  if (readerAcquiredMap.has(this)) {
+    console.error(readerAcquiredMap.get(this));
+  } else {
+    readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
+  }
+  return _tee.apply(this, arguments);
 };*/
 
 

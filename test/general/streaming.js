@@ -6,7 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 
-const { Stream, util } = openpgp;
+const { util } = openpgp;
 
 describe('Streaming', function() {
   it('Encrypt small message', async function() {

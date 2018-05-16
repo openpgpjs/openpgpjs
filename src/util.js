@@ -432,16 +432,14 @@ export default {
     }
   },
 
-  print_entire_stream: function (str, stream, fn = result => result) {
-    const teed = stream.tee();
-    stream.readToEnd(teed[1]).then(result => {
+  print_entire_stream: function (str, input, fn = result => result) {
+    stream.readToEnd(stream.clone(input)).then(result => {
       console.log(str + ': ', fn(result));
     });
-    return teed[0];
   },
 
   print_entire_stream_str: function (str, stream, fn = result => result) {
-    return util.print_entire_stream(str, stream, result => fn(util.Uint8Array_to_str(result)));
+    util.print_entire_stream(str, stream, result => fn(util.Uint8Array_to_str(result)));
   },
 
   getLeftNBits: function (array, bitcount) {
