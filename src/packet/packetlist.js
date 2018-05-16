@@ -197,7 +197,6 @@ List.prototype.map = function (callback) {
  */
 List.prototype.some = async function (callback) {
   for (let i = 0; i < this.length; i++) {
-    // eslint-disable-next-line no-await-in-loop
     if (await callback(this[i], i, this)) {
       return true;
     }

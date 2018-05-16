@@ -192,7 +192,6 @@ KeyArray.prototype.importKey = async function (armored) {
     const keyidHex = key.getKeyId().toHex();
     const keyFound = this.getForId(keyidHex);
     if (keyFound) {
-      // eslint-disable-next-line no-await-in-loop
       await keyFound.update(key);
     } else {
       this.push(key);

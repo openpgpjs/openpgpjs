@@ -63,7 +63,6 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
 async function getPkcs1Padding(length) {
   let result = '';
   while (result.length < length) {
-    // eslint-disable-next-line no-await-in-loop
     const randomBytes = await random.getRandomBytes(length - result.length);
     for (let i = 0; i < randomBytes.length; i++) {
       if (randomBytes[i] !== 0) {

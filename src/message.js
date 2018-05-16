@@ -118,7 +118,6 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
     }
 
     try {
-      // eslint-disable-next-line no-await-in-loop
       await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data);
       break;
     } catch (e) {
