@@ -77,7 +77,7 @@ SymEncryptedIntegrityProtected.prototype.read = async function (bytes) {
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
-  return util.concatUint8Array([new Uint8Array([VERSION]), this.encrypted]);
+  return util.concat([new Uint8Array([VERSION]), this.encrypted]);
 };
 
 /**
@@ -91,15 +91,15 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const bytes = this.packets.write();
   const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  const prefix = util.concatUint8Array([prefixrandom, repeat]);
+  const prefix = util.concat([prefixrandom, repeat]);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let [tohash, tohashClone] = stream.tee(util.concatUint8Array([bytes, mdc]));
-  const hash = crypto.hash.sha1(util.concatUint8Array([prefix, tohashClone]));
-  tohash = util.concatUint8Array([tohash, hash]);
+  let [tohash, tohashClone] = stream.tee(util.concat([bytes, mdc]));
+  const hash = crypto.hash.sha1(util.concat([prefix, tohashClone]));
+  tohash = util.concat([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concatUint8Array([prefix, tohash]), key);
+    this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
   } else {
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
     this.encrypted = stream.subarray(this.encrypted, 0, prefix.length + tohash.length);
@@ -130,7 +130,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   const encryptedPrefix = await stream.readToEnd(stream.subarray(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
   let [bytes, bytesClone] = stream.tee(stream.subarray(decrypted, 0, -20));
-  const tohash = util.concatUint8Array([prefix, bytes]);
+  const tohash = util.concat([prefix, bytes]);
   this.hash = util.Uint8Array_to_str(await stream.readToEnd(crypto.hash.sha1(tohash)));
   const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.subarray(decryptedClone, -20)));
 
@@ -176,7 +176,7 @@ function nodeEncrypt(algo, prefix, pt, key) {
   key = new Buffer(key);
   const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
   const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  const ct = cipherObj.update(new Buffer(util.concatUint8Array([prefix, pt])));
+  const ct = cipherObj.update(new Buffer(util.concat([prefix, pt])));
   return new Uint8Array(ct);
 }
 

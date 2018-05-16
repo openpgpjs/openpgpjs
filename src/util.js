@@ -282,28 +282,29 @@ export default {
   },
 
   /**
-   * Concat a list of Uint8arrays or a list of Strings
-   * @param {Array<Uint8array|String>} Array of Uint8Arrays/Strings to concatenate
-   * @returns {Uint8array|String} Concatenated array
+   * Concat a list of Uint8Arrays, Strings or Streams
+   * The caller must not mix Uint8Arrays with Strings, but may mix Streams with non-Streams.
+   * @param {Array<Uint8array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
+   * @returns {Uint8array|String|ReadableStream} Concatenated array
    */
-  concat: function (arrays) {
-    if (util.isUint8Array(arrays[0])) {
-      return util.concatUint8Array(arrays);
+  concat: function (list) {
+    if (list.some(util.isStream)) {
+      return stream.concat(list);
     }
-    return arrays.join('');
+    if (util.isUint8Array(list[0])) {
+      return util.concatUint8Array(list);
+    }
+    return list.join('');
   },
 
   /**
-   * Concat Uint8arrays
+   * Concat Uint8Arrays
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @returns {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
-      if (util.isStream(arrays[i])) {
-        return stream.concat(arrays);
-      }
       if (!util.isUint8Array(arrays[i])) {
         throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
       }

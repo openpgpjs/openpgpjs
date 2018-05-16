@@ -169,7 +169,7 @@ Literal.prototype.write = function() {
   const date = util.writeDate(this.date);
   const data = this.getBytes();
 
-  return util.concatUint8Array([format, filename_length, filename, date, data]);
+  return util.concat([format, filename_length, filename, date, data]);
 };
 
 export default Literal;

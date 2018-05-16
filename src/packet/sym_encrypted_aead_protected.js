@@ -80,9 +80,9 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
  */
 SymEncryptedAEADProtected.prototype.write = function () {
   if (config.aead_protect_version === 4) {
-    return util.concatUint8Array([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
+    return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
   }
-  return util.concatUint8Array([new Uint8Array([this.version]), this.iv, this.encrypted]);
+  return util.concat([new Uint8Array([this.version]), this.iv, this.encrypted]);
 };
 
 /**

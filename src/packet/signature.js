@@ -208,7 +208,7 @@ Signature.prototype.write = function () {
   }
   arr.push(this.signedHashValue);
   arr.push(this.signature);
-  return util.concatUint8Array(arr);
+  return util.concat(arr);
 };
 
 /**
@@ -237,7 +237,7 @@ Signature.prototype.sign = async function (key, data) {
   // Add hashed subpackets
   arr.push(this.write_all_sub_packets());
 
-  this.signatureData = util.concatUint8Array(arr);
+  this.signatureData = util.concat(arr);
 
   const trailer = this.calculateTrailer();
 
@@ -245,10 +245,10 @@ Signature.prototype.sign = async function (key, data) {
 
   switch (this.version) {
     case 3:
-      toHash = util.concatUint8Array([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
+      toHash = util.concat([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
       break;
     case 4:
-      toHash = util.concatUint8Array([this.toSign(signatureType, data), this.signatureData, trailer]);
+      toHash = util.concat([this.toSign(signatureType, data), this.signatureData, trailer]);
       break;
     default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
@@ -299,7 +299,7 @@ Signature.prototype.write_all_sub_packets = function () {
   }
   if (this.revocationKeyClass !== null) {
     bytes = new Uint8Array([this.revocationKeyClass, this.revocationKeyAlgorithm]);
-    bytes = util.concatUint8Array([bytes, this.revocationKeyFingerprint]);
+    bytes = util.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
   if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
@@ -315,7 +315,7 @@ Signature.prototype.write_all_sub_packets = function () {
       // 2 octets of value length
       bytes.push(util.writeNumber(value.length, 2));
       bytes.push(util.str_to_Uint8Array(name + value));
-      bytes = util.concatUint8Array(bytes);
+      bytes = util.concat(bytes);
       arr.push(write_sub_packet(sub.notation_data, bytes));
     });
   }
@@ -358,7 +358,7 @@ Signature.prototype.write_all_sub_packets = function () {
   if (this.signatureTargetPublicKeyAlgorithm !== null) {
     bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
     bytes.push(util.str_to_Uint8Array(this.signatureTargetHash));
-    bytes = util.concatUint8Array(bytes);
+    bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.signature_target, bytes));
   }
   if (this.embeddedSignature !== null) {
@@ -366,7 +366,7 @@ Signature.prototype.write_all_sub_packets = function () {
   }
   if (this.issuerFingerprint !== null) {
     bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
-    bytes = util.concatUint8Array(bytes);
+    bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.issuer_fingerprint, bytes));
   }
   if (this.preferredAeadAlgorithms !== null) {
@@ -374,10 +374,10 @@ Signature.prototype.write_all_sub_packets = function () {
     arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
   }
 
-  const result = util.concatUint8Array(arr);
+  const result = util.concat(arr);
   const length = util.writeNumber(result.length, 2);
 
-  return util.concatUint8Array([length, result]);
+  return util.concat([length, result]);
 };
 
 /**
@@ -394,7 +394,7 @@ function write_sub_packet(type, data) {
   arr.push(packet.writeSimpleLength(data.length + 1));
   arr.push(new Uint8Array([type]));
   arr.push(data);
-  return util.concatUint8Array(arr);
+  return util.concat(arr);
 }
 
 // V4 signature sub packets
@@ -611,12 +611,12 @@ Signature.prototype.toSign = function (type, data) {
       const bytes = packet.write();
 
       if (this.version === 4) {
-        return util.concatUint8Array([this.toSign(t.key, data),
+        return util.concat([this.toSign(t.key, data),
           new Uint8Array([tag]),
           util.writeNumber(bytes.length, 4),
           bytes]);
       } else if (this.version === 3) {
-        return util.concatUint8Array([this.toSign(t.key, data),
+        return util.concat([this.toSign(t.key, data),
           bytes]);
       }
       break;
@@ -624,7 +624,7 @@ Signature.prototype.toSign = function (type, data) {
     case t.subkey_binding:
     case t.subkey_revocation:
     case t.key_binding:
-      return util.concatUint8Array([this.toSign(t.key, data), this.toSign(t.key, {
+      return util.concat([this.toSign(t.key, data), this.toSign(t.key, {
         key: data.bind
       })]);
 
@@ -653,7 +653,7 @@ Signature.prototype.calculateTrailer = function () {
     return new Uint8Array(0);
   }
   const first = new Uint8Array([4, 0xFF]); //Version, ?
-  return util.concatUint8Array([first, util.writeNumber(this.signatureData.length, 4)]);
+  return util.concat([first, util.writeNumber(this.signatureData.length, 4)]);
 };
 
 
@@ -700,7 +700,7 @@ Signature.prototype.verify = async function (key, data) {
 
   this.verified = await crypto.signature.verify(
     publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
-    util.concatUint8Array([bytes, this.signatureData, trailer])
+    util.concat([bytes, this.signatureData, trailer])
   );
 
   return this.verified;
