@@ -112,18 +112,18 @@ describe("ASCII armor", function() {
     await expect(msg).to.be.rejectedWith(Error, /Improperly formatted armor header/);
   });
 
-  it('Exception if improperly formatted armor header - signature section', function () {
-    [' Space: leading', 'Space : trailing', 'Space :switched', ': empty', 'none', 'Space:missing'].forEach(function (invalidHeader) {
-      expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [invalidHeader]))).to.be.rejectedWith(Error, /Improperly formatted armor header/);
-    });
+  it('Exception if improperly formatted armor header - signature section', async function () {
+    await Promise.all(['Space : trailing', 'Space :switched', ': empty', 'none', 'Space:missing'].map(async function (invalidHeader) {
+      await expect(openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [invalidHeader]))).to.be.rejectedWith(Error, /Improperly formatted armor header/);
+    }));
   });
 
   it('Ignore unknown armor header - signature section', async function () {
     const validHeaders = ['Version: BCPG C# v1.7.4114.6375', 'Independent Reserve Pty. Ltd. 2017: 1.0.0.0'];
     expect(await openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], validHeaders))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
-    ['A: Hello', 'Ab: 1.2.3', 'Abcd: #!/yah', 'Acd 123 5.6.$.8: Hello', '_: Hello', '*: Hello', '* & ## ?? ()(): Hello', '( ): Weird'].forEach(async function (validHeader) {
+    await Promise.all(['A: Hello', 'Ab: 1.2.3', 'Abcd: #!/yah', 'Acd 123 5.6.$.8: Hello', '_: Hello', '*: Hello', '* & ## ?? ()(): Hello', '( ): Weird'].map(async function (validHeader) {
       expect(await openpgp.cleartext.readArmored(getArmor(['Hash: SHA1'], [validHeader]))).to.be.an.instanceof(openpgp.cleartext.CleartextMessage);
-    });
+    }));
   });
 
   it('Exception if wrong armor header type', async function () {

@@ -523,7 +523,7 @@ describe("Signature", function() {
     expect(pubKey2.getKeys(keyids[1])).to.not.be.empty;
     expect(pubKey3.getKeys(keyids[0])).to.not.be.empty;
 
-    expect(sMsg.getText()).to.equal(plaintext);
+    expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
 
     return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
       expect(verifiedSig).to.exist;
@@ -720,7 +720,7 @@ yYDnCgA=
       const csMsg = await openpgp.message.readArmored(signed.data);
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
-    }).then(function(cleartextSig) {
+    }).then(async function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.data).to.deep.equal(plaintext);
       expect(cleartextSig.signatures).to.have.length(1);

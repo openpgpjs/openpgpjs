@@ -112,7 +112,7 @@ AsyncProxy.prototype.getID = function() {
  */
 AsyncProxy.prototype.seedRandom = async function(workerId, size) {
   const buf = await crypto.random.getRandomBytes(size);
-  this.workers[workerId].postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
+  this.workers[workerId].postMessage({ event:'seed-random', buf }, await util.prepareBuffers(buf));
 };
 
 /**
@@ -143,9 +143,10 @@ AsyncProxy.prototype.delegate = function(method, options) {
     }
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options));
+    const transferables = await util.prepareBuffers(options);
+    this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, transferables);
     this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker

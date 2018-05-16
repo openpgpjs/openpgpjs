@@ -127,15 +127,15 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return generate(options).then(key => {
+  return generate(options).then(async key => {
     const revocationCertificate = key.getRevocationCertificate();
     key.revocationSignatures = [];
 
     return {
 
       key: key,
-      privateKeyArmored: key.armor(),
-      publicKeyArmored: key.toPublic().armor(),
+      privateKeyArmored: await stream.readToEnd(key.armor()),
+      publicKeyArmored: await stream.readToEnd(key.toPublic().armor())
       revocationCertificate: revocationCertificate
 
     };
@@ -453,6 +453,9 @@ export function verify({ message, publicKeys, signature=null, date=new Date() })
   return Promise.resolve().then(async function() {
     const result = {};
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    if (!message.fromStream) {
+      result.data = await stream.readToEnd(result.data);
+    }
     result.signatures = signature ?
       await message.verifyDetached(signature, publicKeys, date) :
       await message.verify(publicKeys, date);

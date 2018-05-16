@@ -165,7 +165,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
         cryptedBytes += chunk.length - tagLengthIfDecrypting;
         queuedBytes += chunk.length - tagLengthIfDecrypting;
         latestPromise = latestPromise.then(() => cryptedPromise).then(crypted => {
-          if (crypted.length) controller.enqueue(crypted);
+          controller.enqueue(crypted);
           queuedBytes -= chunk.length;
         }).catch(err => controller.error(err));
         // console.log(fn, done, queuedBytes, controller.desiredSize);
@@ -181,6 +181,6 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
       }
     });
   } else {
-    return modeInstance[fn](data, this.iv);
+    return modeInstance[fn](await stream.readToEnd(data), this.iv);
   }
 };

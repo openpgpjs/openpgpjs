@@ -249,10 +249,10 @@ describe("Packet", function() {
 
     return parsed[0].decrypt('test').then(() => {
       const key = parsed[0].sessionKey;
-      return parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key).then(() => {
+      return parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key).then(async () => {
         const compressed = parsed[1].packets[0];
 
-        const result = stringify(compressed.packets[0].data);
+        const result = await stringify(compressed.packets[0].data);
 
         expect(result).to.equal('Hello world!\n');
       });
@@ -393,7 +393,7 @@ describe("Packet", function() {
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-      const text = stringify(msg[1].packets[0].packets[0].data);
+      const text = await stringify(msg[1].packets[0].packets[0].data);
 
       expect(text).to.equal('Hello world!');
     });
@@ -654,7 +654,7 @@ describe("Packet", function() {
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-      const text = stringify(msg[1].packets[0].packets[0].data);
+      const text = await stringify(msg[1].packets[0].packets[0].data);
 
       expect(text).to.equal('Hello world!');
     });

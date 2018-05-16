@@ -53,33 +53,38 @@ export default {
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
+   * Also, convert ReadableStreams to Uint8Arrays
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
-  getTransferables: function(obj) {
+  prepareBuffers: async function(obj) {
     // Internet Explorer does not support Transferable objects.
     if (isIE11) {
       return undefined;
     }
-    if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
-      const transferables = [];
-      util.collectBuffers(obj, transferables);
-      return transferables.length ? transferables : undefined;
-    }
+    const transferables = [];
+    await util.collectBuffers(obj, transferables);
+    return transferables.length ? transferables : undefined;
   },
 
-  collectBuffers: function(obj, collection) {
+  collectBuffers: async function(obj, collection) {
     if (!obj) {
       return;
     }
+
     if (util.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
-      collection.push(obj.buffer);
+      if (config.zero_copy) {
+        collection.push(obj.buffer);
+      }
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      Object.values(obj).forEach(value => { // recursively search all children
-        util.collectBuffers(value, collection);
-      });
+      await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
+        if (util.isStream(value)) {
+          obj[key] = value = await stream.readToEnd(value);
+        }
+        await util.collectBuffers(value, collection);
+      }));
     }
   },
 

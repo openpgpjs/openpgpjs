@@ -235,14 +235,15 @@ export default {
         if (bodydata === null) {
           bodydata = await reader.readBytes(packet_length);
 
+          const peekedByte = await reader.peekBytes(1);
           resolve({
             tag: tag,
             packet: bodydata,
-            done: !await reader.peekBytes(1)
+            done: !(peekedByte && peekedByte.length)
           });
         } else {
-          const { done } = await reader.read();
-          if (!done) {
+          const { done, value } = await reader.read();
+          if (!done && value.length) {
             throw new Error('Packets after a packet with partial lengths are not supported');
           } else {
             controller.close();
