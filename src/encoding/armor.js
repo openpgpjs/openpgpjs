@@ -119,7 +119,7 @@ function addheader(customComment) {
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
  * @param {String} data Data to create a CRC-24 checksum for
- * @returns {Uint8Array} Base64 encoded checksum
+ * @returns {String} Base64 encoded checksum
  */
 function getCheckSum(data) {
   const crc = createcrc24(data);
@@ -201,9 +201,6 @@ function verifyHeaders(headers) {
  * @static
  */
 function dearmor(input) {
-  if (util.isString(input)) {
-    input = util.str_to_Uint8Array(util.encode_utf8(input));
-  }
   return new Promise(async (resolve, reject) => {
     try {
       const reSplit = /^-----[^-]+-----$/;
@@ -227,7 +224,7 @@ function dearmor(input) {
       const checksumVerified = getCheckSum(dataClone);
       data = stream.getReader(data).substream(); // Convert to Stream
       data = stream.transform(data, value => value, async () => {
-        const checksumVerifiedString = util.Uint8Array_to_str(await stream.readToEnd(checksumVerified));
+        const checksumVerifiedString = await stream.readToEnd(checksumVerified);
         if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
           throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
                   checksumVerifiedString + "'");
@@ -236,7 +233,6 @@ function dearmor(input) {
       while (true) {
         let line = await reader.readLine();
         if (!line) break;
-        line = util.decode_utf8(util.Uint8Array_to_str(line));
         if (lineIndex++ === 0) {
           // trim string
           line = line.trim();
@@ -272,7 +268,7 @@ function dearmor(input) {
         } else {
           if (!reSplit.test(line)) {
             if (line[0] !== '=') {
-              controller.enqueue(util.str_to_Uint8Array(line));
+              controller.enqueue(line);
             } else {
               checksum = line.substr(1);
             }
@@ -365,7 +361,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       break;
   }
 
-  return util.concatUint8Array(result.map(part => (util.isString(part) ? util.str_to_Uint8Array(part) : part)));
+  return stream.concat(result);
 }
 
 export default {

@@ -145,8 +145,8 @@ describe("Packet", function() {
     return enc.encrypt(algo, key).then(async function() {
       await msg2.read(msg.write());
       return msg2[0].decrypt(algo, key);
-    }).then(function() {
-      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    }).then(async function() {
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     });
   });
 
@@ -173,8 +173,8 @@ describe("Packet", function() {
     return enc.encrypt(algo, key).then(async function() {
       await msg2.read(msg.write());
       return msg2[0].decrypt(algo, key);
-    }).then(function() {
-      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    }).then(async function() {
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     }).finally(function() {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
@@ -218,12 +218,12 @@ describe("Packet", function() {
     randomBytesStub.returns(resolves(iv));
 
     return enc.encrypt(algo, key).then(async function() {
-      const data = msg.write();
-      expect(data).to.deep.equal(packetBytes);
+      const [data, dataClone] = openpgp.stream.tee(msg.write());
+      expect(await openpgp.stream.readToEnd(dataClone)).to.deep.equal(packetBytes);
       await msg2.read(data);
       return msg2[0].decrypt(algo, key);
-    }).then(function() {
-      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
+    }).then(async function() {
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     }).finally(function() {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
@@ -531,8 +531,8 @@ describe("Packet", function() {
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
 
-      const data = msg.write();
-      expect(data).to.deep.equal(packetBytes);
+      const [data, dataClone] = openpgp.stream.tee(msg.write());
+      expect(await openpgp.stream.readToEnd(dataClone)).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.packet.List();
       await msg2.read(data);
@@ -610,8 +610,8 @@ describe("Packet", function() {
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
 
-      const data = msg.write();
-      expect(data).to.deep.equal(packetBytes);
+      const [data, dataClone] = openpgp.stream.tee(msg.write());
+      expect(await openpgp.stream.readToEnd(dataClone)).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.packet.List();
       await msg2.read(data);

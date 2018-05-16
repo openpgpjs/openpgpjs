@@ -174,7 +174,7 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
-    return b64.decode(util.str_to_Uint8Array(base64.replace(/-/g, '+').replace(/_/g, '/')));
+    return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
   /**
@@ -279,6 +279,18 @@ export default {
     } catch (e) {
       return utf8;
     }
+  },
+
+  /**
+   * Concat a list of Uint8arrays or a list of Strings
+   * @param {Array<Uint8array|String>} Array of Uint8Arrays/Strings to concatenate
+   * @returns {Uint8array|String} Concatenated array
+   */
+  concat: function (arrays) {
+    if (util.isUint8Array(arrays[0])) {
+      return util.concatUint8Array(arrays);
+    }
+    return arrays.join('');
   },
 
   /**

@@ -75,7 +75,7 @@ Literal.prototype.getText = function() {
       // decode UTF8 and normalize EOL to \n
       const normalized = normalize(text);
       // if last two bytes are \r\n or an UTF8 sequence, return them immediately
-      if (text.length >= 2 && normalize(text.slice(-2)).length === 1) {
+      if (text.length >= 2 && text.slice(-2) !== normalized.slice(-2)) {
         lastChar = '';
         return normalized;
       }

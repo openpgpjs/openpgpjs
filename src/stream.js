@@ -29,7 +29,7 @@ function transform(input, process = () => undefined, finish = () => undefined) {
         try {
           const { done, value } = await reader.read();
           const result = await (!done ? process : finish)(value);
-          if (result) controller.enqueue(result);
+          if (result !== undefined) controller.enqueue(result);
           else if (!done) await this.pull(controller); // ??? Chrome bug?
           if (done) controller.close();
         } catch(e) {
@@ -40,8 +40,8 @@ function transform(input, process = () => undefined, finish = () => undefined) {
   }
   const result1 = process(input);
   const result2 = finish(undefined);
-  if (result1 && result2) return util.concatUint8Array([result1, result2]);
-  return result1 || result2;
+  if (result1 !== undefined && result2 !== undefined) return util.concat([result1, result2]);
+  return result1 !== undefined ? result1 : result2;
 }
 
 function tee(input) {
@@ -136,16 +136,16 @@ Reader.prototype.readLine = async function() {
   while (!returnVal) {
     const { done, value } = await this.read();
     if (done) {
-      if (buffer.length) return util.concatUint8Array(buffer);
+      if (buffer.length) return util.concat(buffer);
       return;
     }
-    const lineEndIndex = value.indexOf(10) + 1; // Position after the first "\n"
+    const lineEndIndex = value.indexOf('\n') + 1;
     if (lineEndIndex) {
-      returnVal = util.concatUint8Array(buffer.concat(value.subarray(0, lineEndIndex)));
+      returnVal = util.concat(buffer.concat(value.substr(0, lineEndIndex)));
       buffer = [];
     }
     if (lineEndIndex !== value.length) {
-      buffer.push(value.subarray(lineEndIndex));
+      buffer.push(value.substr(lineEndIndex));
     }
   }
   this.unshift(...buffer);
@@ -166,13 +166,13 @@ Reader.prototype.readBytes = async function(length) {
   while (true) {
     const { done, value } = await this.read();
     if (done) {
-      if (buffer.length) return util.concatUint8Array(buffer);
+      if (buffer.length) return util.concat(buffer);
       return;
     }
     buffer.push(value);
     bufferLength += value.length;
     if (bufferLength >= length) {
-      const bufferConcat = util.concatUint8Array(buffer);
+      const bufferConcat = util.concat(buffer);
       this.unshift(bufferConcat.subarray(length));
       return bufferConcat.subarray(0, length);
     }
@@ -207,7 +207,7 @@ function pullFrom(reader) {
   };
 }
 
-Reader.prototype.readToEnd = async function(join=util.concatUint8Array) {
+Reader.prototype.readToEnd = async function(join=util.concat) {
   const result = [];
   while (true) {
     const { done, value } = await this.read();

@@ -323,12 +323,15 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
     message = message.compress(compression);
     return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId);
 
-  }).then(encrypted => {
+  }).then(async encrypted => {
+    let message = encrypted.message;
     if (armor) {
-      result.data = encrypted.message.armor();
-    } else {
-      result.message = encrypted.message;
+      message = message.armor();
     }
+    if (util.isStream(message) && !util.isStream(data)) {
+      message = await stream.readToEnd(message);
+    }
+    result[armor ? 'data' : 'message'] = message;
     if (returnSessionKey) {
       result.sessionKey = encrypted.sessionKey;
     }
@@ -597,16 +600,13 @@ async function parseMessage(message, format, asStream) {
   let data;
   if (format === 'binary') {
     data = message.getLiteralData();
-    if (!asStream && util.isStream(data)) {
-      data = await stream.readToEnd(data);
-    }
   } else if (format === 'utf8') {
     data = message.getText();
-    if (!asStream && util.isStream(data)) {
-      data = await stream.readToEnd(data, chunks => chunks.join(''));
-    }
   } else {
     throw new Error('Invalid format');
+  }
+  if (!asStream && util.isStream(data)) {
+    data = await stream.readToEnd(data);
   }
   const filename = message.getFilename();
   return { data, filename };

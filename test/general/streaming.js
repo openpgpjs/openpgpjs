@@ -21,7 +21,7 @@ describe('Streaming', function() {
       data,
       passwords: ['test'],
     });
-    const msgAsciiArmored = util.Uint8Array_to_str(await openpgp.stream.readToEnd(encrypted.data));
+    const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted.data);
     const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
@@ -48,7 +48,7 @@ describe('Streaming', function() {
       data,
       passwords: ['test'],
     });
-    const msgAsciiArmored = util.Uint8Array_to_str(await openpgp.stream.readToEnd(encrypted.data));
+    const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted.data);
     const message = await openpgp.message.readArmored(msgAsciiArmored);
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
@@ -86,5 +86,41 @@ describe('Streaming', function() {
     });
     expect(util.isStream(decrypted.data)).to.be.true;
     expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+  });
+
+  it('Encrypt and decrypt larger message roundtrip (draft04)', async function() {
+    let aead_protectValue = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = true;
+    try {
+      let plaintext = [];
+      let i = 0;
+      const data = new ReadableStream({
+        async pull(controller) {
+          if (i++ < 10) {
+            let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+            controller.enqueue(randomBytes);
+            plaintext.push(randomBytes);
+          } else {
+            controller.close();
+          }
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        data,
+        passwords: ['test'],
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.aead_protect = aead_protectValue;
+    }
   });
 });
