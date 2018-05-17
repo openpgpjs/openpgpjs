@@ -1,5 +1,9 @@
 import util from './util';
 
+if (typeof ReadableStream === 'undefined') {
+  Object.assign(typeof window !== 'undefined' ? window : global, require('web-streams-polyfill'));
+}
+
 function concat(arrays) {
   const readers = arrays.map(getReader);
   let current = 0;
