@@ -116,7 +116,7 @@ describe('Util unit tests', function() {
     });
   });
 
-  describe('prepareBuffers', function() {
+  describe('getTransferables', function() {
     let zero_copyVal;
     const buf1 = new Uint8Array(1);
     const buf2 = new Uint8Array(1);
@@ -137,18 +137,18 @@ describe('Util unit tests', function() {
       openpgp.config.zero_copy = zero_copyVal;
     });
 
-    it('should return undefined when zero_copy is false', async function() {
+    it('should return undefined when zero_copy is false', function() {
       openpgp.config.zero_copy = false;
-      expect(await openpgp.util.prepareBuffers(obj)).to.be.undefined;
+      expect(openpgp.util.getTransferables(obj)).to.be.undefined;
     });
-    it('should return undefined for no input', async function() {
-      expect(await openpgp.util.prepareBuffers()).to.be.undefined;
+    it('should return undefined for no input', function() {
+      expect(openpgp.util.getTransferables()).to.be.undefined;
     });
-    it('should return undefined for an empty oject', async function() {
-      expect(await openpgp.util.prepareBuffers({})).to.be.undefined;
+    it('should return undefined for an empty oject', function() {
+      expect(openpgp.util.getTransferables({})).to.be.undefined;
     });
-    it('should return two buffers', async function() {
-      expect(await openpgp.util.prepareBuffers(obj)).to.deep.equal([buf1.buffer, buf2.buffer]);
+    it('should return two buffers', function() {
+      expect(openpgp.util.getTransferables(obj)).to.deep.equal([buf1.buffer, buf2.buffer]);
     });
   });
 

@@ -57,17 +57,17 @@ export default {
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
-  prepareBuffers: async function(obj) {
+  getTransferables: function(obj) {
     // Internet Explorer does not support Transferable objects.
     if (isIE11) {
       return undefined;
     }
     const transferables = [];
-    await util.collectBuffers(obj, transferables);
+    util.collectTransferables(obj, transferables);
     return transferables.length ? transferables : undefined;
   },
 
-  collectBuffers: async function(obj, collection) {
+  collectTransferables: function(obj, collection) {
     if (!obj) {
       return;
     }
@@ -79,13 +79,48 @@ export default {
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
+      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
         if (util.isStream(value)) {
-          obj[key] = value = await stream.readToEnd(value);
+          const reader = stream.getReader(value);
+          const { port1, port2 } = new MessageChannel();
+          port1.onmessage = async function() {
+            port1.postMessage(await reader.read());
+          };
+          obj[key] = port2;
+          collection.push(port2);
+          return;
         }
-        await util.collectBuffers(value, collection);
-      }));
+        util.collectTransferables(value, collection);
+      });
     }
+  },
+
+  restoreStreams: function(obj) {
+    if (Object.prototype.isPrototypeOf(obj)) {
+      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
+        if (MessagePort.prototype.isPrototypeOf(value)) {
+          obj[key] = new ReadableStream({
+            pull(controller) {
+              return new Promise(resolve => {
+                value.onmessage = evt => {
+                  const { done, value } = evt.data;
+                  if (!done) {
+                    controller.enqueue(value);
+                  } else {
+                    controller.close();
+                  }
+                  resolve();
+                };
+                value.postMessage(undefined);
+              });
+            }
+          });
+          return;
+        }
+        util.restoreStreams(value);
+      });
+    }
+    return obj;
   },
 
   readNumber: function (bytes) {

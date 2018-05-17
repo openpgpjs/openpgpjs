@@ -359,7 +359,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       break;
   }
 
-  return stream.concat(result);
+  return util.concat(result);
 }
 
 export default {
