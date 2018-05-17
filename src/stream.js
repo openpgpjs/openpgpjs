@@ -4,6 +4,8 @@ if (typeof ReadableStream === 'undefined') {
   Object.assign(typeof window !== 'undefined' ? window : global, require('web-streams-polyfill'));
 }
 
+const nodeStream = util.getNodeStream();
+
 function concat(arrays) {
   const readers = arrays.map(getReader);
   let current = 0;
@@ -104,7 +106,76 @@ async function readToEnd(input, join) {
 }
 
 
-export default { concat, getReader, transform, clone, subarray, readToEnd };
+/**
+ * Web / node stream conversion functions
+ * From https://github.com/gwicke/node-web-streams
+ */
+
+let nodeToWeb;
+let webToNode;
+
+if (nodeStream) {
+
+  nodeToWeb = function(nodeStream) {
+    return new ReadableStream({
+      start(controller) {
+        nodeStream.pause();
+        nodeStream.on('data', chunk => {
+          controller.enqueue(chunk);
+          nodeStream.pause();
+        });
+        nodeStream.on('end', () => controller.close());
+        nodeStream.on('error', e => controller.error(e));
+      },
+      pull() {
+        nodeStream.resume();
+      },
+      cancel() {
+        nodeStream.pause();
+      }
+    });
+  };
+
+
+  class NodeReadable extends nodeStream.Readable {
+    constructor(webStream, options) {
+      super(options);
+      this._webStream = webStream;
+      this._reader = getReader(webStream);
+      this._reading = false;
+    }
+
+    _read(size) {
+      if (this._reading) {
+        return;
+      }
+      this._reading = true;
+      const doRead = () => {
+        this._reader.read()
+          .then(res => {
+            if (res.done) {
+              this.push(null);
+              return;
+            }
+            if (this.push(res.value)) {
+              return doRead(size);
+            } else {
+              this._reading = false;
+            }
+          });
+      };
+      doRead();
+    }
+  }
+
+  webToNode = function(webStream) {
+    return new NodeReadable(webStream);
+  };
+
+}
+
+
+export default { concat, getReader, transform, clone, subarray, readToEnd, nodeToWeb, webToNode };
 
 
 /*const readerAcquiredMap = new Map();

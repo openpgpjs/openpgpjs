@@ -133,7 +133,7 @@ const nodeZlib = util.getNodeZlib();
 
 function node_zlib(func, options = {}) {
   return function (data) {
-    return func(data, options);
+    return stream.nodeToWeb(stream.webToNode(data).pipe(func(options)));
   };
 }
 
@@ -163,17 +163,17 @@ let decompress_fns;
 if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   compress_fns = {
     // eslint-disable-next-line no-sync
-    zip: node_zlib(nodeZlib.deflateRawSync, { level: config.deflate_level }),
+    zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflate_level }),
     // eslint-disable-next-line no-sync
-    zlib: node_zlib(nodeZlib.deflateSync, { level: config.deflate_level }),
+    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflate_level }),
     bzip2: bzip2(Bzip2.compressFile)
   };
 
   decompress_fns = {
     // eslint-disable-next-line no-sync
-    zip: node_zlib(nodeZlib.inflateRawSync),
+    zip: node_zlib(nodeZlib.createInflateRaw),
     // eslint-disable-next-line no-sync
-    zlib: node_zlib(nodeZlib.inflateSync),
+    zlib: node_zlib(nodeZlib.createInflate),
     bzip2: bzip2(Bzip2.decompressFile)
   };
 } else { // Use JS fallbacks

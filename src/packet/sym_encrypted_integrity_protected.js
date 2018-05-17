@@ -172,19 +172,16 @@ function aesDecrypt(algo, ct, key) {
   return stream.subarray(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
 }
 
-function nodeEncrypt(algo, prefix, pt, key) {
+function nodeEncrypt(algo, pt, key) {
   key = new Buffer(key);
   const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
   const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  const ct = cipherObj.update(new Buffer(util.concat([prefix, pt])));
-  return new Uint8Array(ct);
+  return stream.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
 }
 
 function nodeDecrypt(algo, ct, key) {
-  ct = new Buffer(ct);
   key = new Buffer(key);
   const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
   const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  const pt = decipherObj.update(ct);
-  return new Uint8Array(pt);
+  return stream.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
 }

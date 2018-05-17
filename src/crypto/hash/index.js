@@ -30,8 +30,9 @@ const Buffer = util.getNodeBuffer();
 function node_hash(type) {
   return function (data) {
     const shasum = nodeCrypto.createHash(type);
-    shasum.update(new Buffer(data));
-    return new Uint8Array(shasum.digest());
+    return stream.transform(data, value => {
+      shasum.update(new Buffer(value));
+    }, () => new Uint8Array(shasum.digest()));
   };
 }
 

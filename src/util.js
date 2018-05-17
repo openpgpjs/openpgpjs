@@ -630,7 +630,7 @@ export default {
     // This "hack" allows us to access the native node buffer module.
     // otherwise, it gets replaced with the browserified version
     // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('buf'+'fer').Buffer;
+    return require('buffer'+'').Buffer;
   },
 
   getNodeZlib: function() {
@@ -639,6 +639,17 @@ export default {
     }
 
     return require('zlib');
+  },
+
+  getNodeStream: function() {
+    if (!util.detectNode()) {
+      return;
+    }
+
+    // This "hack" allows us to access the native node buffer module.
+    // otherwise, it gets replaced with the browserified version
+    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
+    return require('stream'+'');
   },
 
   isEmailAddress: function(data) {
