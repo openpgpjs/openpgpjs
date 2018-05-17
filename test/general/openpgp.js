@@ -2124,6 +2124,36 @@ describe('OpenPGP.js public api tests', function() {
               verifyCompressionDecrypted(decrypted);
             });
           });
+
+          it('Streaming encrypt and decrypt small message roundtrip', async function() {
+            let plaintext = [];
+            let i = 0;
+            const data = new ReadableStream({
+              async pull(controller) {
+                if (i++ < 4) {
+                  let randomBytes = await openpgp.crypto.random.getRandomBytes(10);
+                  controller.enqueue(randomBytes);
+                  plaintext.push(randomBytes);
+                } else {
+                  controller.close();
+                }
+              }
+            });
+            const encrypted = await openpgp.encrypt(modifyCompressionEncryptOptions({
+              data,
+              passwords: ['test'],
+            }));
+
+            const msgAsciiArmored = encrypted.data;
+            const message = await openpgp.message.readArmored(msgAsciiArmored);
+            const decrypted = await openpgp.decrypt({
+              passwords: ['test'],
+              message,
+              format: 'binary'
+            });
+            expect(openpgp.util.isStream(decrypted.data)).to.be.true;
+            expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(openpgp.util.concatUint8Array(plaintext));
+          });
         });
       });
 
