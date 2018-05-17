@@ -4,6 +4,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 
 const spy = require('sinon/lib/sinon/spy');
 const stub = require('sinon/lib/sinon/stub');
+const input = require('./testInputs.js');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -286,7 +287,7 @@ DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
-const plaintext = 'short message\nnext line\n한국어/조선말';
+const plaintext = input.createSomeMessage() + '\n한국어/조선말';
 const password1 = 'I am a password';
 const password2 = 'I am another password';
 const password3 = 'I am a third password';
@@ -1991,7 +1992,7 @@ describe('OpenPGP.js public api tests', function() {
             passwords: password2
           };
           return openpgp.decrypt(decOpt).then(function (decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.data).to.equal('short message\nnext line\n한국어/조선말');
             expect(decrypted.signatures.length).to.equal(0);
           });
         });

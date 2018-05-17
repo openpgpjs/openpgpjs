@@ -6,6 +6,7 @@ const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
+const input = require('./testInputs');
 
 describe('X25519 Cryptography', function () {
   const data = {
@@ -169,14 +170,15 @@ describe('X25519 Cryptography', function () {
 
   it('Sign message', async function () {
     const name = 'light';
+    const randomdata = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], data: data[name].message + "\n" });
+    const signed = await openpgp.sign({ privateKeys: [priv], data: randomdata});
     const pub = load_pub_key(name);
     const msg = openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data[name].message);
+    expect(result.data.trim()).to.equal(randomdata);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -197,7 +199,8 @@ describe('X25519 Cryptography', function () {
   it('Encrypt and sign message', async function () {
     const nightPublic = load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
-    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: data.light.message + "\n" });
+    const randomdata = input.createSomeMessage();
+    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: randomdata });
 
     const message = openpgp.message.readArmored(encrypted.data);
     const lightPublic = load_pub_key('light');
@@ -205,7 +208,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.decrypt({ privateKeys: nightPrivate, publicKeys: [lightPublic], message: message });
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data.light.message);
+    expect(result.data.trim()).to.equal(randomdata);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
