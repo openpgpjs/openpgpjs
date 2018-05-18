@@ -52,7 +52,9 @@ function transform(input, process = () => undefined, finish = () => undefined) {
 
 function tee(input) {
   if (util.isStream(input)) {
-    return input.tee();
+    const teed = input.tee();
+    teed[0].externalBuffer = teed[1].externalBuffer = input.externalBuffer;
+    return teed;
   }
   return [input, input];
 }
@@ -202,9 +204,14 @@ ReadableStream.prototype.tee = function() {
 
 
 function Reader(input) {
+  this.stream = input;
+  if (input.externalBuffer) {
+    this.externalBuffer = input.externalBuffer.slice();
+  }
   if (util.isStream(input)) {
     const reader = input.getReader();
     this._read = reader.read.bind(reader);
+    this._releaseLock = reader.releaseLock.bind(reader);
     return;
   }
   let doneReading = false;
@@ -215,6 +222,7 @@ function Reader(input) {
     doneReading = true;
     return { value: input, done: false };
   };
+  this._releaseLock = () => {};
 }
 
 Reader.prototype.read = async function() {
@@ -223,6 +231,11 @@ Reader.prototype.read = async function() {
     return { done: false, value };
   }
   return this._read();
+};
+
+Reader.prototype.releaseLock = function() {
+  this.stream.externalBuffer = this.externalBuffer;
+  this._releaseLock();
 };
 
 Reader.prototype.readLine = async function() {

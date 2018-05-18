@@ -36,31 +36,40 @@ function List() {
  * @param {Uint8Array} A Uint8Array of bytes.
  */
 List.prototype.read = async function (bytes) {
-  const reader = stream.getReader(bytes);
-  while (true) {
-    const parsed = await packetParser.read(reader);
+  this.stream = new ReadableStream({
+    pull: async controller => {
+      if (!await packetParser.read(bytes, async parsed => {
+        try {
+          const tag = enums.read(enums.packet, parsed.tag);
+          const packet = packets.newPacketFromTag(tag);
+          packet.packets = new List();
+          packet.fromStream = util.isStream(parsed.packet);
+          await packet.read(parsed.packet);
+          controller.enqueue(packet);
+        } catch (e) {
+          if (!config.tolerant ||
+              parsed.tag === enums.packet.symmetricallyEncrypted ||
+              parsed.tag === enums.packet.literal ||
+              parsed.tag === enums.packet.compressed) {
+            controller.error(e);
+          }
+          util.print_debug_error(e);
+        }
+      })) {
+        controller.close();
+      }
+    }
+  });
 
-    let pushed = false;
-    try {
-      const tag = enums.read(enums.packet, parsed.tag);
-      const packet = packets.newPacketFromTag(tag);
-      this.push(packet);
-      pushed = true;
-      await packet.read(parsed.packet);
-      if (parsed.done) {
-        break;
-      }
-    } catch (e) {
-      if (!config.tolerant ||
-          parsed.tag === enums.packet.symmetricallyEncrypted ||
-          parsed.tag === enums.packet.literal ||
-          parsed.tag === enums.packet.compressed) {
-        throw e;
-      }
-      util.print_debug_error(e);
-      if (pushed) {
-        this.pop(); // drop unsupported packet
-      }
+  // Wait until first few packets have been read
+  const reader = stream.getReader(stream.clone(this.stream));
+  while (true) {
+    const { done, value } = await reader.read();
+    if (!done) {
+      this.push(value);
+    }
+    if (done || value.fromStream) {
+      break;
     }
   }
 };
@@ -76,6 +85,9 @@ List.prototype.write = function () {
   for (let i = 0; i < this.length; i++) {
     const packetbytes = this[i].write();
     if (util.isStream(packetbytes)) {
+      if (!packetParser.supportsStreaming(this[i].tag)) {
+        throw new Error('This packet type does not support partial lengths.');
+      }
       let buffer = [];
       let bufferLength = 0;
       const minLength = 512;
