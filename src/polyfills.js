@@ -15,9 +15,10 @@ if (typeof Array.prototype.find === 'undefined') {
 if (typeof Array.from === 'undefined') {
   require('core-js/fn/array/from');
 }
-if (typeof Promise === 'undefined') {
-  require('core-js/fn/promise');
-}
+
+// No if-statement on Promise because of IE11. Otherwise Promise is undefined in the service worker.
+require('core-js/fn/promise');
+
 if (typeof Uint8Array.from === 'undefined') {
   require('core-js/fn/typed/uint8-array');
 }

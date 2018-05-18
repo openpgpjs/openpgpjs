@@ -30,8 +30,9 @@ import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
 
-export default {
+const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
+export default {
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },
@@ -51,6 +52,10 @@ export default {
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
+    // Internet Explorer does not support Transferable objects.
+    if (isIE11) {
+      return undefined;
+    }
     if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       const transferables = [];
       util.collectBuffers(obj, transferables);
