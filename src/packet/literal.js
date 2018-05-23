@@ -86,15 +86,17 @@ Literal.prototype.setBytes = function(bytes, format) {
  * Get the byte sequence representing the literal packet data
  * @returns {Uint8Array} A sequence of bytes
  */
-Literal.prototype.getBytes = function() {
+Literal.prototype.getBytes = function(textMode=false) {
   if (this.data !== null) {
     return this.data;
   }
 
-  // normalize EOL to \r\n
-  const text = util.canonicalizeEOL(this.text);
-  // encode UTF8
-  this.data = util.str_to_Uint8Array(util.encode_utf8(text));
+  if (textMode) {
+    // normalize EOL to \r\n and UTF-8 encode
+    this.data = util.str_to_Uint8Array(util.encode_utf8(util.canonicalizeEOL(this.text)));
+  } else {
+    this.data = util.str_to_Uint8Array(this.text);
+  }
   return this.data;
 };
 
@@ -148,7 +150,7 @@ Literal.prototype.write = function() {
 
   const format = new Uint8Array([enums.write(enums.literal, this.format)]);
   const date = util.writeDate(this.date);
-  const data = this.getBytes();
+  const data = this.getBytes(format !== 'binary');
 
   return util.concatUint8Array([format, filename_length, filename, date, data]);
 };

@@ -765,6 +765,23 @@ yYDnCgA=
     });
   });
 
+  it('Should verify cleartext message correctly when using a detached binary signature and text literal data', async function () {
+    const plaintext = 'short message\nnext line\n한국어/조선말';
+    const plaintextArray = openpgp.util.str_to_Uint8Array(plaintext);
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    await privKey.decrypt('hello world');
+    return openpgp.sign({ privateKeys:[privKey], data:plaintextArray, detached: true}).then(function(signed) {
+      const signature = openpgp.signature.readArmored(signed.signature);
+      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromText(plaintext), signature: signature });
+    }).then(function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
   it('Should verify encrypted cleartext message correctly when encrypting binary literal data with a canonical text signature', async function () {
     const plaintext = 'short message\nnext line\n한국어/조선말';
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
