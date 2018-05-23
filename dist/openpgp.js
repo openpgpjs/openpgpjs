@@ -29609,7 +29609,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.10",
+  versionstring: "OpenPGP.js v3.0.11",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -45684,14 +45684,18 @@ Literal.prototype.setBytes = function (bytes, format) {
  * @returns {Uint8Array} A sequence of bytes
  */
 Literal.prototype.getBytes = function () {
+  var textMode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
   if (this.data !== null) {
     return this.data;
   }
 
-  // normalize EOL to \r\n
-  var text = _util2.default.canonicalizeEOL(this.text);
-  // encode UTF8
-  this.data = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(text));
+  if (textMode) {
+    // normalize EOL to \r\n and UTF-8 encode
+    this.data = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(_util2.default.canonicalizeEOL(this.text)));
+  } else {
+    this.data = _util2.default.str_to_Uint8Array(this.text);
+  }
   return this.data;
 };
 
@@ -45742,7 +45746,7 @@ Literal.prototype.write = function () {
 
   var format = new Uint8Array([_enums2.default.write(_enums2.default.literal, this.format)]);
   var date = _util2.default.writeDate(this.date);
-  var data = this.getBytes();
+  var data = this.getBytes(format !== 'binary');
 
   return _util2.default.concatUint8Array([format, filename_length, filename, date, data]);
 };
@@ -49954,10 +49958,6 @@ var _symbol = _dereq_('babel-runtime/core-js/symbol');
 
 var _symbol2 = _interopRequireDefault(_symbol);
 
-var _promise = _dereq_('babel-runtime/core-js/promise');
-
-var _promise2 = _interopRequireDefault(_promise);
-
 var _from = _dereq_('babel-runtime/core-js/array/from');
 
 var _from2 = _interopRequireDefault(_from);
@@ -49981,9 +49981,10 @@ if (typeof Array.prototype.find === 'undefined') {
 if (typeof _from2.default === 'undefined') {
   _dereq_('core-js/fn/array/from');
 }
-if (typeof _promise2.default === 'undefined') {
-  _dereq_('core-js/fn/promise');
-}
+
+// No if-statement on Promise because of IE11. Otherwise Promise is undefined in the service worker.
+_dereq_('core-js/fn/promise');
+
 if (typeof Uint8Array.from === 'undefined') {
   _dereq_('core-js/fn/typed/uint8-array');
 }
@@ -49997,7 +49998,7 @@ if (typeof _assign2.default === 'undefined') {
   _dereq_('core-js/fn/object/assign');
 }
 
-},{"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/promise":32,"babel-runtime/core-js/symbol":33,"core-js/fn/array/fill":48,"core-js/fn/array/find":49,"core-js/fn/array/from":50,"core-js/fn/object/assign":51,"core-js/fn/promise":52,"core-js/fn/string/repeat":53,"core-js/fn/symbol":54,"core-js/fn/typed/uint8-array":55,"whatwg-fetch":321}],391:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/symbol":33,"core-js/fn/array/fill":48,"core-js/fn/array/find":49,"core-js/fn/array/from":50,"core-js/fn/object/assign":51,"core-js/fn/promise":52,"core-js/fn/string/repeat":53,"core-js/fn/symbol":54,"core-js/fn/typed/uint8-array":55,"whatwg-fetch":321}],391:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50940,8 +50941,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @module util
  */
 
+var isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/); // re-import module to access util functions
 exports.default = {
-
   isString: function isString(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },
@@ -50961,6 +50962,10 @@ exports.default = {
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function getTransferables(obj) {
+    // Internet Explorer does not support Transferable objects.
+    if (isIE11) {
+      return undefined;
+    }
     if (_config2.default.zero_copy && Object.prototype.isPrototypeOf(obj)) {
       var transferables = [];
       _util2.default.collectBuffers(obj, transferables);
@@ -51535,7 +51540,7 @@ exports.default = {
   removeTrailingSpaces: function removeTrailingSpaces(text) {
     return text.replace(/[ \t]+$/mg, "");
   }
-}; // re-import module to access util functions
+};
 
 },{"./config":325,"./encoding/base64":358,"./util":398,"address-rfc2822":1,"babel-runtime/core-js/object/values":31,"babel-runtime/helpers/slicedToArray":40,"crypto":"crypto","zlib":"zlib"}],399:[function(_dereq_,module,exports){
 'use strict';
