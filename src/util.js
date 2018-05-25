@@ -620,5 +620,41 @@ export default {
    */
   removeTrailingSpaces: function(text) {
     return text.replace(/[ \t]+$/mg, "");
+  },
+
+  /**
+   * Encode input buffer using Z-Base32 encoding.
+   * See: https://tools.ietf.org/html/rfc6189#section-5.1.6
+   *
+   * @param {Uint8Array} data The binary data to encode
+   * @returns {String} Binary data encoded using Z-Base32
+   */
+  encodeZBase32: function(data) {
+    if (data.length === 0) {
+      return "";
+    }
+    const ALPHABET = "ybndrfg8ejkmcpqxot1uwisza345h769";
+    const SHIFT = 5;
+    const MASK = 31;
+    let buffer = data[0];
+    let index = 1;
+    let bitsLeft = 8;
+    let result = '';
+    while (bitsLeft > 0 || index < data.length) {
+      if (bitsLeft < SHIFT) {
+        if (index < data.length) {
+          buffer <<= 8;
+          buffer |= data[index++] & 0xff;
+          bitsLeft += 8;
+        } else {
+          const pad = SHIFT - bitsLeft;
+          buffer <<= pad;
+          bitsLeft += pad;
+        }
+      }
+      bitsLeft -= SHIFT;
+      result += ALPHABET[MASK & (buffer >> bitsLeft)];
+    }
+    return result;
   }
 };
