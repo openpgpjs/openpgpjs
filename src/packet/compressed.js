@@ -149,12 +149,7 @@ function pako_zlib(constructor, options = {}) {
 
 function bzip2(func) {
   return function(data) {
-    return new ReadableStream({
-      async start(controller) {
-        controller.enqueue(func(await stream.readToEnd(data)));
-        controller.close();
-      }
-    });
+    return stream.fromAsync(async () => func(await stream.readToEnd(data)));
   };
 }
 

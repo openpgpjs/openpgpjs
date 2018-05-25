@@ -19,7 +19,7 @@
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
  * @requires crypto/public_key/elliptic/curves
- * @requires crypto/hash
+ * @requires stream
  * @requires util
  * @requires enums
  * @requires asn1.js
@@ -28,7 +28,7 @@
 
 import BN from 'bn.js';
 import { webCurves } from './curves';
-import hash from '../../hash';
+import stream from '../../../stream';
 import util from '../../../util';
 import enums from '../../../enums';
 
@@ -44,37 +44,43 @@ function KeyPair(curve, options) {
   this.keyPair = this.curve.curve.keyPair(options);
 }
 
-KeyPair.prototype.sign = async function (message, hash_algo) {
-  if (this.curve.web && util.getWebCrypto()) {
-    // If browser doesn't support a curve, we'll catch it
-    try {
-      // need to await to make sure browser succeeds
-      const signature = await webSign(this.curve, hash_algo, message, this.keyPair);
-      return signature;
-    } catch (err) {
-      util.print_debug("Browser did not support signing: " + err.message);
+KeyPair.prototype.sign = async function (message, hash_algo, hashed) {
+  if (!message.locked) {
+    message = await stream.readToEnd(message);
+    if (this.curve.web && util.getWebCrypto()) {
+      // If browser doesn't support a curve, we'll catch it
+      try {
+        // need to await to make sure browser succeeds
+        const signature = await webSign(this.curve, hash_algo, message, this.keyPair);
+        return signature;
+      } catch (err) {
+        util.print_debug("Browser did not support signing: " + err.message);
+      }
+    } else if (this.curve.node && util.getNodeCrypto()) {
+      return nodeSign(this.curve, hash_algo, message, this.keyPair);
     }
-  } else if (this.curve.node && util.getNodeCrypto()) {
-    return nodeSign(this.curve, hash_algo, message, this.keyPair);
   }
-  const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
+  const digest = (typeof hash_algo === 'undefined') ? message : hashed;
   return this.keyPair.sign(digest);
 };
 
-KeyPair.prototype.verify = async function (message, signature, hash_algo) {
-  if (this.curve.web && util.getWebCrypto()) {
-    // If browser doesn't support a curve, we'll catch it
-    try {
-      // need to await to make sure browser succeeds
-      const result = await webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
-      return result;
-    } catch (err) {
-      util.print_debug("Browser did not support signing: " + err.message);
+KeyPair.prototype.verify = async function (message, signature, hash_algo, hashed) {
+  if (!message.locked) {
+    message = await stream.readToEnd(message);
+    if (this.curve.web && util.getWebCrypto()) {
+      // If browser doesn't support a curve, we'll catch it
+      try {
+        // need to await to make sure browser succeeds
+        const result = await webVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
+        return result;
+      } catch (err) {
+        util.print_debug("Browser did not support signing: " + err.message);
+      }
+    } else if (this.curve.node && util.getNodeCrypto()) {
+      return nodeVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
     }
-  } else if (this.curve.node && util.getNodeCrypto()) {
-    return nodeVerify(this.curve, hash_algo, signature, message, this.keyPair.getPublic());
   }
-  const digest = (typeof hash_algo === 'undefined') ? message : hash.digest(hash_algo, message);
+  const digest = (typeof hash_algo === 'undefined') ? message : hashed;
   return this.keyPair.verify(digest, signature);
 };
 

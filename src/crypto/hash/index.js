@@ -16,6 +16,7 @@ import Rusha from 'rusha';
 import { SHA256 } from 'asmcrypto.js/src/hash/sha256/exports';
 import sha1 from 'hash.js/lib/hash/sha/1';
 import sha224 from 'hash.js/lib/hash/sha/224';
+import sha256 from 'hash.js/lib/hash/sha/256';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
@@ -64,7 +65,7 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
       return util.hex_to_Uint8Array(rusha.digest(data));
     },*/
     sha224: hashjs_hash(sha224),
-    sha256: SHA256.bytes,
+    sha256: hashjs_hash(sha256),
     sha384: hashjs_hash(sha384),
     // TODO, benchmark this vs asmCrypto's SHA512
     sha512: hashjs_hash(sha512),

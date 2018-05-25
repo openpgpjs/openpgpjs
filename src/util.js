@@ -81,13 +81,17 @@ export default {
     if (Object.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => { // recursively search all children
         if (util.isStream(value)) {
-          const reader = stream.getReader(value);
-          const { port1, port2 } = new MessageChannel();
-          port1.onmessage = async function() {
-            port1.postMessage(await reader.read());
-          };
-          obj[key] = port2;
-          collection.push(port2);
+          if (value.locked) {
+            obj[key] = null;
+          } else {
+            const reader = stream.getReader(value);
+            const { port1, port2 } = new MessageChannel();
+            port1.onmessage = async function() {
+              port1.postMessage(await reader.read());
+            };
+            obj[key] = port2;
+            collection.push(port2);
+          }
           return;
         }
         util.collectTransferables(value, collection);

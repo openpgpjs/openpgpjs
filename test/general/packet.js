@@ -705,6 +705,7 @@ describe("Packet", function() {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const payload = msg[1].packets[0].packets;
+      await openpgp.stream.readToEnd(payload.stream, packets => packets.forEach(payload.push.bind(payload)));
 
       await expect(payload[2].verify(
         key[0], payload[1]

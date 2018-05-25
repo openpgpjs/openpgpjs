@@ -56,7 +56,7 @@ function tee(input) {
     teed[0].externalBuffer = teed[1].externalBuffer = input.externalBuffer;
     return teed;
   }
-  return [input, input];
+  return [subarray(input), subarray(input)];
 }
 
 function clone(input) {
@@ -66,7 +66,7 @@ function clone(input) {
     input.tee = teed[0].tee.bind(teed[0]);
     return teed[1];
   }
-  return input;
+  return subarray(input);
 }
 
 function subarray(input, begin=0, end=Infinity) {
@@ -89,13 +89,14 @@ function subarray(input, begin=0, end=Infinity) {
         }
       });
     }
-    return new ReadableStream({
-      pull: async controller => {
-        // TODO: Don't read entire stream into memory here.
-        controller.enqueue((await readToEnd(input)).subarray(begin, end));
-        controller.close();
-      }
-    });
+    // TODO: Don't read entire stream into memory here.
+    return fromAsync(async () => (await readToEnd(input)).subarray(begin, end));
+  }
+  if (util.isString(input)) {
+    return input.substr(begin, end);
+  }
+  if (input.externalBuffer) {
+    input = util.concat(input.externalBuffer.concat([input]));
   }
   return input.subarray(begin, end);
 }
@@ -105,6 +106,15 @@ async function readToEnd(input, join) {
     return getReader(input).readToEnd(join);
   }
   return input;
+}
+
+function fromAsync(fn) {
+  return new ReadableStream({
+    pull: async controller => {
+      controller.enqueue(await fn());
+      controller.close();
+    }
+  });
 }
 
 
@@ -177,7 +187,7 @@ if (nodeStream) {
 }
 
 
-export default { concat, getReader, transform, clone, subarray, readToEnd, nodeToWeb, webToNode };
+export default { concat, getReader, transform, clone, subarray, readToEnd, nodeToWeb, webToNode, fromAsync };
 
 
 /*const readerAcquiredMap = new Map();
@@ -189,7 +199,14 @@ ReadableStream.prototype.getReader = function() {
   } else {
     readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
   }
-  return _getReader.apply(this, arguments);
+  const _this = this;
+  const reader = _getReader.apply(this, arguments);
+  const _releaseLock = reader.releaseLock;
+  reader.releaseLock = function() {
+    readerAcquiredMap.delete(_this);
+    return _releaseLock.apply(this, arguments);
+  };
+  return reader;
 };
 
 const _tee = ReadableStream.prototype.tee;
@@ -203,6 +220,7 @@ ReadableStream.prototype.tee = function() {
 };*/
 
 
+const doneReadingSet = new WeakSet();
 function Reader(input) {
   this.stream = input;
   if (input.externalBuffer) {
@@ -216,13 +234,17 @@ function Reader(input) {
   }
   let doneReading = false;
   this._read = async () => {
-    if (doneReading) {
+    if (doneReading || doneReadingSet.has(input)) {
       return { value: undefined, done: true };
     }
     doneReading = true;
     return { value: input, done: false };
   };
-  this._releaseLock = () => {};
+  this._releaseLock = () => {
+    if (doneReading) {
+      doneReadingSet.add(input);
+    }
+  };
 }
 
 Reader.prototype.read = async function() {

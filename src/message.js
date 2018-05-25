@@ -21,6 +21,7 @@
  * @requires config
  * @requires crypto
  * @requires enums
+ * @requires stream
  * @requires util
  * @requires packet
  * @requires signature
@@ -33,6 +34,7 @@ import type_keyid from './type/keyid';
 import config from './config';
 import crypto from './crypto';
 import enums from './enums';
+import stream from './stream';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
@@ -77,7 +79,7 @@ Message.prototype.getSigningKeyIds = function() {
   // search for one pass signatures
   const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
   onePassSigList.forEach(function(packet) {
-    keyIds.push(packet.signingKeyId);
+    keyIds.push(packet.issuerKeyId);
   });
   // if nothing found look for signature packets
   if (!keyIds.length) {
@@ -406,10 +408,10 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
       const signaturePacket = existingSigPacketlist[i];
       const onePassSig = new packet.OnePassSignature();
-      onePassSig.type = signatureType;
+      onePassSig.signatureType = signatureType;
       onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
       onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
-      onePassSig.signingKeyId = signaturePacket.issuerKeyId;
+      onePassSig.issuerKeyId = signaturePacket.issuerKeyId;
       if (!privateKeys.length && i === 0) {
         onePassSig.flags = 1;
       }
@@ -427,10 +429,10 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
                       privateKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
-    onePassSig.type = signatureType;
+    onePassSig.signatureType = signatureType;
     onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
-    onePassSig.signingKeyId = signingKey.getKeyId();
+    onePassSig.issuerKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
@@ -527,11 +529,34 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verify = function(keys, date=new Date()) {
+Message.prototype.verify = async function(keys, date=new Date()) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
+  }
+  if (msg.packets.stream) {
+    let onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+    onePassSigList = Array.from(onePassSigList).reverse();
+    if (onePassSigList.length) {
+      onePassSigList.forEach(onePassSig => {
+        onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
+          onePassSig.signatureDataResolve = resolve;
+        }));
+        onePassSig.hash(literalDataList[0]);
+      });
+      const reader = stream.getReader(msg.packets.stream);
+      for (let i = 0; ; i++) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        onePassSigList[i].signatureDataResolve(value.signatureData);
+        value.hashed = onePassSigList[i].hashed;
+        value.hashedData = onePassSigList[i].hashedData;
+        msg.packets.push(value);
+      }
+    }
   }
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   return createVerificationObjects(signatureList, literalDataList, keys, date);

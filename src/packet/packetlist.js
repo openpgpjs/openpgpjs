@@ -62,7 +62,7 @@ List.prototype.read = async function (bytes) {
   });
 
   // Wait until first few packets have been read
-  const reader = stream.getReader(stream.clone(this.stream));
+  const reader = stream.getReader(this.stream);
   while (true) {
     const { done, value } = await reader.read();
     if (!done) {
@@ -72,6 +72,7 @@ List.prototype.read = async function (bytes) {
       break;
     }
   }
+  reader.releaseLock();
 };
 
 /**

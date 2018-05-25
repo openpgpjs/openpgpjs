@@ -239,12 +239,12 @@ describe('API functional testing', function() {
       //Originally we passed public and secret MPI separately, now they are joined. Is this what we want to do long term?
       // RSA
       return crypto.signature.sign(
-        1, 2, RSApubMPIs.concat(RSAsecMPIs), data
+        1, 2, RSApubMPIs.concat(RSAsecMPIs), data, crypto.hash.digest(2, data)
       ).then(RSAsignedData => {
         const RSAsignedDataMPI = new openpgp.MPI();
         RSAsignedDataMPI.read(RSAsignedData);
         return crypto.signature.verify(
-          1, 2, [RSAsignedDataMPI], RSApubMPIs, data
+          1, 2, [RSAsignedDataMPI], RSApubMPIs, data, crypto.hash.digest(2, data)
         ).then(success => {
           return expect(success).to.be.true;
         });
@@ -254,7 +254,7 @@ describe('API functional testing', function() {
     it('DSA', function () {
       // DSA
       return crypto.signature.sign(
-        17, 2, DSApubMPIs.concat(DSAsecMPIs), data
+        17, 2, DSApubMPIs.concat(DSAsecMPIs), data, crypto.hash.digest(2, data)
       ).then(DSAsignedData => {
         DSAsignedData = util.Uint8Array_to_str(DSAsignedData);
         const DSAmsgMPIs = [];
@@ -263,7 +263,7 @@ describe('API functional testing', function() {
         DSAmsgMPIs[0].read(DSAsignedData.substring(0,34));
         DSAmsgMPIs[1].read(DSAsignedData.substring(34,68));
         return crypto.signature.verify(
-          17, 2, DSAmsgMPIs, DSApubMPIs, data
+          17, 2, DSAmsgMPIs, DSApubMPIs, data, crypto.hash.digest(2, data)
         ).then(success => {
           return expect(success).to.be.true;
         });

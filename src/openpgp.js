@@ -455,11 +455,11 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
-    result.data = await convertStream(result.data, asStream);
     result.signatures = signature ?
       await message.verifyDetached(signature, publicKeys, date) :
       await message.verify(publicKeys, date);
+    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    result.data = await convertStream(result.data, asStream);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }

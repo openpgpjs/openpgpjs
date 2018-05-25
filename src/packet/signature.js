@@ -21,6 +21,7 @@
  * @requires type/mpi
  * @requires crypto
  * @requires enums
+ * @requires stream
  * @requires util
  */
 
@@ -29,6 +30,7 @@ import type_keyid from '../type/keyid.js';
 import type_mpi from '../type/mpi.js';
 import crypto from '../crypto';
 import enums from '../enums';
+import stream from '../stream';
 import util from '../util';
 
 /**
@@ -124,7 +126,7 @@ Signature.prototype.read = function (bytes) {
 
   // switch on version (3 and 4)
   switch (this.version) {
-    case 3: {
+    case 3:
       // One-octet length of following hashed material. MUST be 5.
       if (bytes[i++] !== 5) {
         util.print_debug("packet/signature.js\n" +
@@ -132,16 +134,12 @@ Signature.prototype.read = function (bytes) {
           'MUST be 5. @:' + (i - 1));
       }
 
-      const sigpos = i;
       // One-octet signature type.
       this.signatureType = bytes[i++];
 
       // Four-octet creation time.
       this.created = util.readDate(bytes.subarray(i, i + 4));
       i += 4;
-
-      // storing data appended to data which gets verified
-      this.signatureData = bytes.subarray(sigpos, i);
 
       // Eight-octet Key ID of signer.
       this.issuerKeyId.read(bytes.subarray(i, i + 8));
@@ -153,7 +151,6 @@ Signature.prototype.read = function (bytes) {
       // One-octet hash algorithm.
       this.hashAlgorithm = bytes[i++];
       break;
-    }
     case 4: {
       this.signatureType = bytes[i++];
       this.publicKeyAlgorithm = bytes[i++];
@@ -223,42 +220,31 @@ Signature.prototype.sign = async function (key, data) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+  if (this.version === 4) {
+    const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
-  if (key.version === 5) {
-    // We could also generate this subpacket for version 4 keys, but for
-    // now we don't.
-    this.issuerKeyVersion = key.version;
-    this.issuerFingerprint = key.getFingerprintBytes();
+    if (key.version === 5) {
+      // We could also generate this subpacket for version 4 keys, but for
+      // now we don't.
+      this.issuerKeyVersion = key.version;
+      this.issuerFingerprint = key.getFingerprintBytes();
+    }
+
+    this.issuerKeyId = key.getKeyId();
+
+    // Add hashed subpackets
+    arr.push(this.write_all_sub_packets());
+
+    this.signatureData = util.concat(arr);
   }
 
-  this.issuerKeyId = key.getKeyId();
-
-  // Add hashed subpackets
-  arr.push(this.write_all_sub_packets());
-
-  this.signatureData = util.concat(arr);
-
-  const trailer = this.calculateTrailer();
-
-  let toHash = null;
-
-  switch (this.version) {
-    case 3:
-      toHash = util.concat([this.toSign(signatureType, data), new Uint8Array([signatureType]), util.writeDate(this.created)]);
-      break;
-    case 4:
-      toHash = util.concat([this.toSign(signatureType, data), this.signatureData, trailer]);
-      break;
-    default: throw new Error('Version ' + this.version + ' of the signature is unsupported.');
-  }
-
-  const hash = crypto.hash.digest(hashAlgorithm, toHash);
+  const toHash = this.toHash(data);
+  const hash = await stream.readToEnd(this.hash(data, toHash));
 
   this.signedHashValue = hash.subarray(0, 2);
 
   this.signature = await crypto.signature.sign(
-    publicKeyAlgorithm, hashAlgorithm, key.params, toHash
+    publicKeyAlgorithm, hashAlgorithm, key.params, toHash, hash
   );
   return true;
 };
@@ -647,13 +633,37 @@ Signature.prototype.toSign = function (type, data) {
 
 
 Signature.prototype.calculateTrailer = function () {
-  // calculating the trailer
-  // V3 signatures don't have a trailer
-  if (this.version === 3) {
-    return new Uint8Array(0);
+  let length = 0;
+  return stream.transform(stream.clone(this.signatureData), value => {
+    length += value.length;
+  }, () => {
+    const first = new Uint8Array([4, 0xFF]); //Version, ?
+    return util.concat([first, util.writeNumber(length, 4)]);
+  });
+};
+
+
+Signature.prototype.toHash = function(data) {
+  const signatureType = enums.write(enums.signature, this.signatureType);
+
+  const bytes = this.toSign(signatureType, data);
+
+  switch (this.version) {
+    case 3:
+      return util.concat([bytes, new Uint8Array([signatureType]), util.writeDate(this.created)]);
+    case 4:
+      return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
+    default:
+      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
-  const first = new Uint8Array([4, 0xFF]); //Version, ?
-  return util.concat([first, util.writeNumber(this.signatureData.length, 4)]);
+};
+
+Signature.prototype.hash = function(data, toHash) {
+  if (!this.hashed) {
+    const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
+    this.hashed = crypto.hash.digest(hashAlgorithm, toHash || this.toHash(data));
+  }
+  return this.hashed;
 };
 
 
@@ -666,43 +676,46 @@ Signature.prototype.calculateTrailer = function () {
  * @async
  */
 Signature.prototype.verify = async function (key, data) {
-  const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  const bytes = this.toSign(signatureType, data);
-  const trailer = this.calculateTrailer();
+  const toHash = this.toHash(data);
+  const hash = await stream.readToEnd(this.hash(data, toHash));
 
-  let mpicount = 0;
-  // Algorithm-Specific Fields for RSA signatures:
-  //      - multiprecision number (MPI) of RSA signature value m**d mod n.
-  if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
-    mpicount = 1;
+  if (this.signedHashValue[0] !== hash[0] ||
+      this.signedHashValue[1] !== hash[1]) {
+    this.verified = false;
+  } else {
+    let mpicount = 0;
+    // Algorithm-Specific Fields for RSA signatures:
+    //      - multiprecision number (MPI) of RSA signature value m**d mod n.
+    if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
+      mpicount = 1;
 
-  //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
-  //      - MPI of DSA value r.
-  //      - MPI of DSA value s.
-  } else if (publicKeyAlgorithm === enums.publicKey.dsa ||
-           publicKeyAlgorithm === enums.publicKey.ecdsa ||
-           publicKeyAlgorithm === enums.publicKey.eddsa) {
-    mpicount = 2;
+    //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
+    //      - MPI of DSA value r.
+    //      - MPI of DSA value s.
+    } else if (publicKeyAlgorithm === enums.publicKey.dsa ||
+             publicKeyAlgorithm === enums.publicKey.ecdsa ||
+             publicKeyAlgorithm === enums.publicKey.eddsa) {
+      mpicount = 2;
+    }
+
+    // EdDSA signature parameters are encoded in little-endian format
+    // https://tools.ietf.org/html/rfc8032#section-5.1.2
+    const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
+    const mpi = [];
+    let i = 0;
+    for (let j = 0; j < mpicount; j++) {
+      mpi[j] = new type_mpi();
+      i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
+    }
+
+    this.verified = await crypto.signature.verify(
+      publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
+      toHash, hash
+    );
   }
-
-  // EdDSA signature parameters are encoded in little-endian format
-  // https://tools.ietf.org/html/rfc8032#section-5.1.2
-  const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
-  const mpi = [];
-  let i = 0;
-  for (let j = 0; j < mpicount; j++) {
-    mpi[j] = new type_mpi();
-    i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
-  }
-
-  this.verified = await crypto.signature.verify(
-    publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
-    util.concat([bytes, this.signatureData, trailer])
-  );
-
   return this.verified;
 };
 

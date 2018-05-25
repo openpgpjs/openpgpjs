@@ -184,7 +184,8 @@ describe('Elliptic Curve Cryptography', function () {
     it('Signature generation', function () {
       const curve = new elliptic_curves.Curve('p256');
       let key = curve.keyFromPrivate(key_data.p256.priv);
-      return key.sign(signature_data.message, 8).then(async signature => {
+      return key.sign(signature_data.message, 8).then(async ({ r, s }) => {
+        const signature = { r: new Uint8Array(r.toArray()), s: new Uint8Array(s.toArray()) };
         key = curve.keyFromPublic(key_data.p256.pub);
         await expect(
           key.verify(signature_data.message, signature, 8)

@@ -16,11 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires packet/signature
  * @requires type/keyid
  * @requires enums
  * @requires util
-*/
+ */
 
+import Signature from './signature';
 import type_keyid from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
@@ -50,7 +52,7 @@ function OnePassSignature() {
    * Signature types are described in
    * {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
    */
-  this.type = null;
+  this.signatureType = null;
   /**
    * A one-octet number describing the hash algorithm used.
    * @see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4}
@@ -62,7 +64,7 @@ function OnePassSignature() {
    */
   this.publicKeyAlgorithm = null;
   /** An eight-octet number holding the Key ID of the signing key. */
-  this.signingKeyId = null;
+  this.issuerKeyId = null;
    /**
     * A one-octet number holding a flag showing whether the signature is nested.
     * A zero value indicates that the next packet is another One-Pass Signature packet
@@ -83,7 +85,7 @@ OnePassSignature.prototype.read = function (bytes) {
 
   // A one-octet signature type.  Signature types are described in
   //   Section 5.2.1.
-  this.type = enums.read(enums.signature, bytes[mypos++]);
+  this.signatureType = enums.read(enums.signature, bytes[mypos++]);
 
   // A one-octet number describing the hash algorithm used.
   this.hashAlgorithm = enums.read(enums.hash, bytes[mypos++]);
@@ -92,8 +94,8 @@ OnePassSignature.prototype.read = function (bytes) {
   this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[mypos++]);
 
   // An eight-octet number holding the Key ID of the signing key.
-  this.signingKeyId = new type_keyid();
-  this.signingKeyId.read(bytes.subarray(mypos, mypos + 8));
+  this.issuerKeyId = new type_keyid();
+  this.issuerKeyId.read(bytes.subarray(mypos, mypos + 8));
   mypos += 8;
 
   // A one-octet number holding a flag showing whether the signature
@@ -109,20 +111,33 @@ OnePassSignature.prototype.read = function (bytes) {
  * @returns {Uint8Array} a Uint8Array representation of a one-pass signature packet
  */
 OnePassSignature.prototype.write = function () {
-  const start = new Uint8Array([3, enums.write(enums.signature, this.type),
+  const start = new Uint8Array([3, enums.write(enums.signature, this.signatureType),
     enums.write(enums.hash, this.hashAlgorithm),
     enums.write(enums.publicKey, this.publicKeyAlgorithm)]);
 
   const end = new Uint8Array([this.flags]);
 
-  return util.concatUint8Array([start, this.signingKeyId.write(), end]);
+  return util.concatUint8Array([start, this.issuerKeyId.write(), end]);
 };
 
 /**
  * Fix custom types after cloning
  */
 OnePassSignature.prototype.postCloneTypeFix = function() {
-  this.signingKeyId = type_keyid.fromClone(this.signingKeyId);
+  this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };
+
+OnePassSignature.prototype.hash = function() {
+  const version = this.version;
+  this.version = 4;
+  try {
+    return Signature.prototype.hash.apply(this, arguments);
+  } finally {
+    this.version = version;
+  }
+};
+OnePassSignature.prototype.toHash = Signature.prototype.toHash;
+OnePassSignature.prototype.toSign = Signature.prototype.toSign;
+OnePassSignature.prototype.calculateTrailer = Signature.prototype.calculateTrailer;
 
 export default OnePassSignature;

@@ -128,14 +128,13 @@ eme.decode = function(EM) {
  * Create a EMSA-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3}
  * @param {Integer} algo Hash algorithm type used
- * @param {String} M message to be encoded
+ * @param {Uint8Array} hashed message to be encoded
  * @param {Integer} emLen intended length in octets of the encoded message
  * @returns {String} encoded message
  */
-emsa.encode = function(algo, M, emLen) {
+emsa.encode = async function(algo, hashed, emLen) {
   let i;
-  // Apply the hash function to the message M to produce a hash value H
-  const H = util.Uint8Array_to_str(hash.digest(algo, util.str_to_Uint8Array(M)));
+  const H = util.Uint8Array_to_str(hashed);
   if (H.length !== hash.getHashByteLength(algo)) {
     throw new Error('Invalid hash length');
   }

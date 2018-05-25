@@ -649,6 +649,43 @@ yYDnCgA=
     });
   });
 
+  it('Streaming verify signed message with trailing spaces from GPG', async function() {
+    const msg_armor =
+      `-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1
+
+owGbwMvMyMT4oOW7S46CznTG01El3MUFicmpxbolqcUlUTev14K5Vgq8XGCGQmJe
+ikJJYpKVAicvV16+QklRYmZOZl66AliWl0sBqBAkzQmmwKohBnAqdMxhYWRkYmBj
+ZQIZy8DFKQCztusM8z+Vt/svG80IS/etn90utv/T16jquk69zPvp6t9F16ryrwpb
+kfVlS5Xl38KnVYxWvIor0nao6WUczA4vvZX9TXPWnnW3tt1vbZoiqWUjYjjjhuKG
+4DtmMTuL3TW6/zNzVfWp/Q11+71O8RGnXMsBvWM6mSqX75uLiPo6HRaUDHnvrfCP
+yYDnCgA=
+=15ki
+-----END PGP MESSAGE-----`.split('');
+
+    const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+    const sMsg = await openpgp.message.readArmored(new ReadableStream({
+      async pull(controller) {
+        await new Promise(setTimeout);
+        controller.enqueue(msg_armor.shift());
+        if (!msg_armor.length) controller.close();
+      }
+    }));
+    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+
+    const keyids = sMsg.getSigningKeyIds();
+
+    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+
+    return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(async function(cleartextSig) {
+      expect(cleartextSig).to.exist;
+      expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+      expect(cleartextSig.signatures).to.have.length(1);
+      expect(cleartextSig.signatures[0].valid).to.be.true;
+      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+    });
+  });
+
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', async function() {
     const plaintext = 'short message\nnext line\n한국어/조선말';
     const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
