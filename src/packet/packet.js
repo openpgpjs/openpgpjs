@@ -169,6 +169,7 @@ export default {
         packet_length_type = headerByte & 0x03; // bit 1-0
       }
 
+      const streaming = this.supportsStreaming(tag);
       let packet = null;
       if (!format) {
         // 4.2.1. Old Format Packet Lengths
@@ -204,7 +205,6 @@ export default {
             break;
         }
       } else { // 4.2.2. New Format Packet Lengths
-        const streaming = this.supportsStreaming(tag);
         let wasPartialLength;
         do {
           // 4.2.2.1. One-Octet Lengths
@@ -235,26 +235,26 @@ export default {
             packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
               8) | await reader.readByte();
           }
-          if (streaming) {
-            if (controller) {
-              controller.enqueue(await reader.readBytes(packet_length));
-            } else {
-              // Send the remainder of the packet to the callback as a stream
-              reader.releaseLock();
-              packet = stream.subarray(stream.clone(input), 0, packet_length);
-              await callback({ tag, packet });
-
-              // Read the entire packet before parsing the next one
-              reader = stream.getReader(input);
-              await reader.readBytes(packet_length);
-            }
+          if (controller) {
+            controller.enqueue(await reader.readBytes(packet_length));
           }
         } while(wasPartialLength);
       }
 
       if (!packet) {
-        packet = await reader.readBytes(packet_length);
-        await callback({ tag, packet });
+        if (streaming) {
+          // Send the remainder of the packet to the callback as a stream
+          reader.releaseLock();
+          packet = stream.subarray(stream.clone(input), 0, packet_length);
+          await callback({ tag, packet });
+
+          // Read the entire packet before parsing the next one
+          reader = stream.getReader(input);
+          await reader.readBytes(packet_length);
+        } else {
+          packet = await reader.readBytes(packet_length);
+          await callback({ tag, packet });
+        }
       } else if (controller) {
         controller.close();
       }
