@@ -141,3 +141,9 @@ export { default as AsyncProxy } from './worker/async_proxy';
  * @name module:openpgp.HKP
  */
 export { default as HKP } from './hkp';
+
+/**
+ * @see module:wkd
+ * @name module:openpgp.WKD
+ */
+export { default as WKD } from './wkd';
