@@ -56,10 +56,6 @@ Literal.prototype.setText = function(text, format='utf8') {
   this.data = null;
 };
 
-function normalize(text) {
-  return util.nativeEOL(util.decode_utf8(text));
-}
-
 /**
  * Returns literal data packets as native JavaScript string
  * with normalized end of line to \n
@@ -68,19 +64,22 @@ function normalize(text) {
 Literal.prototype.getText = function() {
   if (this.text === null) {
     let lastChar = '';
-    this.text = stream.transform(stream.clone(this.data), value => {
-      const text = lastChar + util.Uint8Array_to_str(value);
-      // decode UTF8 and normalize EOL to \n
-      const normalized = normalize(text);
-      // if last two bytes are \r\n or an UTF8 sequence, return them immediately
-      if (text.length >= 2 && text.slice(-2) !== normalized.slice(-2)) {
-        lastChar = '';
-        return normalized;
+    const decoder = new TextDecoder('utf8');
+    // eslint-disable-next-line no-inner-declarations
+    function process(value, lastChunk=false) {
+      // decode UTF8
+      const text = lastChar + decoder.decode(value, { stream: !lastChunk });
+      // normalize EOL to \n
+      const normalized = util.nativeEOL(text);
+      // if last char is \r, store it for the next chunk so we can normalize \r\n
+      if (normalized[normalized.length - 1] === '\r') {
+        lastChar = '\r';
+        return normalized.slice(0, -1);
       }
-      // else, store the last character for the next chunk in case it's \r or half an UTF8 sequence
-      lastChar = text[text.length - 1];
-      return normalized.slice(0, -1);
-    }, () => lastChar);
+      lastChar = '';
+      return normalized;
+    }
+    this.text = stream.transform(stream.clone(this.data), process, () => process(new Uint8Array(), true));
   }
   return stream.clone(this.text);
 };
