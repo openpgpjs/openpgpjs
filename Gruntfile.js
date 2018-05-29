@@ -24,6 +24,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             standalone: 'openpgp'
           },
+          cacheFile: 'browserify-cache.json',
           // Don't bundle these packages with openpgp.js
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
           transform: [
@@ -52,12 +53,14 @@ module.exports = function(grunt) {
             debug: true,
             standalone: 'openpgp'
           },
+          cacheFile: 'browserify-cache-debug.json',
+          // Don't bundle these packages with openpgp.js
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify asmcrypto and address-rfc2822 in node_modules
+              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
@@ -72,6 +75,9 @@ module.exports = function(grunt) {
       worker: {
         files: {
           'dist/openpgp.worker.js': ['./src/worker/worker.js']
+        },
+        options: {
+          cacheFile: 'browserify-cache-worker.json'
         }
       },
       unittests: {
@@ -79,6 +85,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': ['./test/unittests.js']
         },
         options: {
+          cacheFile: 'browserify-cache-unittests.json',
           external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp'],
           transform: [
             ["babelify", {
