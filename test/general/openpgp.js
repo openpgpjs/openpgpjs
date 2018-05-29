@@ -817,9 +817,13 @@ describe('OpenPGP.js public api tests', function() {
       describe('encryptSessionKey, decryptSessionKeys', function() {
         const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
+        let decryptedPrivateKey;
         beforeEach(async function() {
-          expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
-          return true;
+          if (!decryptedPrivateKey) {
+            expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
+            decryptedPrivateKey = privateKey;
+          }
+          privateKey = decryptedPrivateKey;
         });
 
         it('should encrypt with public key', function() {
@@ -981,9 +985,13 @@ describe('OpenPGP.js public api tests', function() {
           '=6XMW\r\n' +
           '-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n';
 
-        beforeEach(async function () {
-          expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
-          return true;
+        let decryptedPrivateKey;
+        beforeEach(async function() {
+          if (!decryptedPrivateKey) {
+            expect(await privateKey.keys[0].decrypt(passphrase)).to.be.true;
+            decryptedPrivateKey = privateKey;
+          }
+          privateKey = decryptedPrivateKey;
         });
 
         it('should encrypt then decrypt', function () {
