@@ -45,7 +45,7 @@ function KeyPair(curve, options) {
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo, hashed) {
-  if (!message.locked) {
+  if (message && !message.locked) {
     message = await stream.readToEnd(message);
     if (this.curve.web && util.getWebCrypto()) {
       // If browser doesn't support a curve, we'll catch it
@@ -65,7 +65,7 @@ KeyPair.prototype.sign = async function (message, hash_algo, hashed) {
 };
 
 KeyPair.prototype.verify = async function (message, signature, hash_algo, hashed) {
-  if (!message.locked) {
+  if (message && !message.locked) {
     message = await stream.readToEnd(message);
     if (this.curve.web && util.getWebCrypto()) {
       // If browser doesn't support a curve, we'll catch it

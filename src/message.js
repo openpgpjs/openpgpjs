@@ -127,6 +127,9 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
       exception = e;
     }
   }
+  // We don't await stream.cancel here because... it sometimes hangs indefinitely. No clue why.
+  stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
+  symEncryptedPacket.encrypted = null;
 
   if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
     throw exception || new Error('Decryption failed.');
@@ -163,6 +166,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           util.print_debug_error(err);
         }
       }));
+      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+      keyPacket.encrypted = null;
     }));
   } else if (privateKeys) {
     const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
@@ -188,6 +193,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           util.print_debug_error(err);
         }
       }));
+      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+      keyPacket.encrypted = null;
     }));
   } else {
     throw new Error('No key or password specified.');
@@ -543,7 +550,7 @@ Message.prototype.verify = async function(keys, date=new Date()) {
         onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
           onePassSig.signatureDataResolve = resolve;
         }));
-        onePassSig.hash(literalDataList[0]);
+        onePassSig.hashed = onePassSig.hash(literalDataList[0]);
       });
       const reader = stream.getReader(msg.packets.stream);
       for (let i = 0; ; i++) {

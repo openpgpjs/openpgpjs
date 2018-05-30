@@ -561,12 +561,12 @@ Signature.prototype.toSign = function (type, data) {
   switch (type) {
     case t.binary:
       if (data.text !== null) {
-        return util.str_to_Uint8Array(data.getText());
+        return util.str_to_Uint8Array(data.getText(true));
       }
-      return data.getBytes();
+      return data.getBytes(true);
 
     case t.text: {
-      let text = data.getText();
+      let text = data.getText(true);
       // normalize EOL to \r\n
       text = util.canonicalizeEOL(text);
       // encode UTF8
@@ -659,11 +659,8 @@ Signature.prototype.toHash = function(data) {
 };
 
 Signature.prototype.hash = function(data, toHash) {
-  if (!this.hashed) {
-    const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-    this.hashed = crypto.hash.digest(hashAlgorithm, toHash || this.toHash(data));
-  }
-  return this.hashed;
+  const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
+  return crypto.hash.digest(hashAlgorithm, toHash || this.toHash(data));
 };
 
 
@@ -679,8 +676,15 @@ Signature.prototype.verify = async function (key, data) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  const toHash = this.toHash(data);
-  const hash = await stream.readToEnd(this.hash(data, toHash));
+  let toHash;
+  let hash;
+  if (this.hashed) {
+    hash = this.hashed;
+  } else {
+    toHash = this.toHash(data);
+    hash = this.hash(data, toHash);
+  }
+  hash = await stream.readToEnd(hash);
 
   if (this.signedHashValue[0] !== hash[0] ||
       this.signedHashValue[1] !== hash[1]) {

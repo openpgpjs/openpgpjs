@@ -62,8 +62,16 @@ function tee(input) {
 function clone(input) {
   if (util.isStream(input)) {
     const teed = tee(input);
-    input.getReader = teed[0].getReader.bind(teed[0]);
-    input.tee = teed[0].tee.bind(teed[0]);
+    // Overwrite input.getReader, input.locked, etc to point to teed[0]
+    Object.entries(Object.getOwnPropertyDescriptors(ReadableStream.prototype)).forEach(([name, descriptor]) => {
+      if (name === 'constructor') return;
+      if (descriptor.value) {
+        descriptor.value = descriptor.value.bind(teed[0]);
+      } else {
+        descriptor.get = descriptor.get.bind(teed[0]);
+      }
+      Object.defineProperty(input, name, descriptor);
+    });
     return teed[1];
   }
   return subarray(input);
@@ -106,6 +114,12 @@ async function readToEnd(input, join) {
     return getReader(input).readToEnd(join);
   }
   return input;
+}
+
+async function cancel(input) {
+  if (util.isStream(input)) {
+    return input.cancel();
+  }
 }
 
 function fromAsync(fn) {
@@ -187,7 +201,7 @@ if (nodeStream) {
 }
 
 
-export default { concat, getReader, transform, clone, subarray, readToEnd, nodeToWeb, webToNode, fromAsync };
+export default { concat, getReader, transform, clone, subarray, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
 
 
 /*const readerAcquiredMap = new Map();

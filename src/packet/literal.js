@@ -61,8 +61,8 @@ Literal.prototype.setText = function(text, format='utf8') {
  * with normalized end of line to \n
  * @returns {String} literal data as text
  */
-Literal.prototype.getText = function() {
-  if (this.text === null) {
+Literal.prototype.getText = function(clone=false) {
+  if (this.text === null || this.text.locked) {
     let lastChar = '';
     const decoder = new TextDecoder('utf8');
     // eslint-disable-next-line no-inner-declarations
@@ -79,9 +79,9 @@ Literal.prototype.getText = function() {
       lastChar = '';
       return normalized;
     }
-    this.text = stream.transform(stream.clone(this.data), process, () => process(new Uint8Array(), true));
+    this.text = stream.transform(this.getBytes(clone), process, () => process(new Uint8Array(), true));
   }
-  return stream.clone(this.text);
+  return this.text;
 };
 
 /**
@@ -100,14 +100,17 @@ Literal.prototype.setBytes = function(bytes, format) {
  * Get the byte sequence representing the literal packet data
  * @returns {Uint8Array} A sequence of bytes
  */
-Literal.prototype.getBytes = function() {
+Literal.prototype.getBytes = function(clone=false) {
   if (this.data === null) {
     // normalize EOL to \r\n
     const text = util.canonicalizeEOL(this.text);
     // encode UTF8
     this.data = util.str_to_Uint8Array(util.encode_utf8(text));
   }
-  return stream.clone(this.data);
+  if (clone) {
+    return stream.clone(this.data);
+  }
+  return this.data;
 };
 
 

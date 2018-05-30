@@ -523,15 +523,15 @@ describe("Signature", function() {
     expect(pubKey2.getKeys(keyids[1])).to.not.be.empty;
     expect(pubKey3.getKeys(keyids[0])).to.not.be.empty;
 
-    expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
-
-    return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
+    return sMsg.verify([pubKey2, pubKey3]).then(async verifiedSig => {
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
       expect(verifiedSig[0].valid).to.be.true;
       expect(verifiedSig[1].valid).to.be.true;
       expect(verifiedSig[0].signature.packets.length).to.equal(1);
       expect(verifiedSig[1].signature.packets.length).to.equal(1);
+
+      expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
     });
   });
 

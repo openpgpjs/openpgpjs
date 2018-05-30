@@ -365,14 +365,15 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
   }
 
   return message.decrypt(privateKeys, passwords, sessionKeys).then(async function(message) {
-
-    const result = await parseMessage(message, format, asStream);
-
     if (!publicKeys) {
       publicKeys = [];
     }
 
+    const result = {};
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
+    result.data = format === 'binary' ? message.getLiteralData() : message.getText();
+    result.data = await convertStream(result.data, asStream);
+    result.filename = message.getFilename();
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -594,27 +595,6 @@ function createMessage(data, filename, date=new Date(), type) {
     throw new Error('Data must be of type String or Uint8Array');
   }
   return msg;
-}
-
-/**
- * Parse the message given a certain format.
- * @param  {Message} message   the message object to be parse
- * @param  {String} format     the output format e.g. 'utf8' or 'binary'
- * @param  {Boolean} asStream  whether to return a ReadableStream
- * @returns {Object}            the parse data in the respective format
- */
-async function parseMessage(message, format, asStream) {
-  let data;
-  if (format === 'binary') {
-    data = message.getLiteralData();
-  } else if (format === 'utf8') {
-    data = message.getText();
-  } else {
-    throw new Error('Invalid format');
-  }
-  data = await convertStream(data, asStream);
-  const filename = message.getFilename();
-  return { data, filename };
 }
 
 /**
