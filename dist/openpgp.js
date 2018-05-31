@@ -16947,7 +16947,7 @@ module.exports={
   "name": "elliptic",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/indutny/elliptic.git"
+    "url": "https://github.com/indutny/elliptic.git"
   },
   "scripts": {
     "jscs": "jscs benchmarks/*.js lib/*.js lib/**/*.js lib/**/**/*.js test/index.js",
