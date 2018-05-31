@@ -813,9 +813,9 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 
         signature.hashAlgorithm = 'sha256';
         signature.publicKeyAlgorithm = 'rsa_sign';
-        signature.signatureType = 'binary';
+        signature.signatureType = 'text';
 
-        signature.sign(key, literal).then(async () => {
+        return signature.sign(key, literal).then(async () => {
 
           signed.push(literal);
           signed.push(signature);

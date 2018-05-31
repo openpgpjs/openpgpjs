@@ -574,6 +574,9 @@ Signature.prototype.toSign = function (type, data) {
 
   switch (type) {
     case t.binary:
+      if (data.text !== null) {
+        return util.str_to_Uint8Array(data.getText());
+      }
       return data.getBytes();
 
     case t.text: {
