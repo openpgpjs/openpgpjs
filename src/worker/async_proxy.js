@@ -149,7 +149,7 @@ AsyncProxy.prototype.delegate = function(method, options) {
     this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker
-    this.tasks[id] = { resolve: data => resolve(util.restoreStreams(packet.clone.parseClonedPackets(data, method))), reject };
+    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(util.restoreStreams(data), method)), reject };
   });
 };
 

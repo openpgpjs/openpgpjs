@@ -370,7 +370,8 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     }
 
     const result = {};
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
+    result.signatures = signature ? message.verifyDetached(signature, publicKeys, date) : message.verify(publicKeys, date);
+    if (!asStream) result.signatures = await result.signatures;
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     result.data = await convertStream(result.data, asStream);
     result.filename = message.getFilename();
@@ -456,9 +457,8 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.signatures = signature ?
-      await message.verifyDetached(signature, publicKeys, date) :
-      await message.verify(publicKeys, date);
+    result.signatures = signature ? message.verifyDetached(signature, publicKeys, date) : message.verify(publicKeys, date);
+    if (!asStream) result.signatures = await result.signatures;
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
     return result;

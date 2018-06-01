@@ -28,6 +28,7 @@ import { CleartextMessage } from '../cleartext';
 import { Signature } from '../signature';
 import List from './packetlist';
 import type_keyid from '../type/keyid';
+import stream from '../stream';
 import util from '../util';
 
 
@@ -68,7 +69,12 @@ export function clonePackets(options) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
-    options.signatures = options.signatures.map(sig => verificationObjectToClone(sig));
+    if (options.signatures instanceof Promise) {
+      const signatures = options.signatures;
+      options.signatures = stream.fromAsync(async () => (await signatures).map(verificationObjectToClone));
+    } else {
+      options.signatures.forEach(verificationObjectToClone);
+    }
   }
   return options;
 }
@@ -110,7 +116,13 @@ export function parseClonedPackets(options) {
     options.message = packetlistCloneToMessage(options.message);
   }
   if (options.signatures) {
-    options.signatures = options.signatures.map(packetlistCloneToSignatures);
+    if (util.isStream(options.signatures)) {
+      options.signatures = stream.readToEnd(options.signatures, arr => arr).then(([signatures]) => {
+        return signatures.map(packetlistCloneToSignatures);
+      });
+    } else {
+      options.signatures = options.signatures.map(packetlistCloneToSignatures);
+    }
   }
   if (options.signature) {
     options.signature = packetlistCloneToSignature(options.signature);
