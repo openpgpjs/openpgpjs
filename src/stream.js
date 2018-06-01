@@ -11,13 +11,17 @@ function concat(arrays) {
   let current = 0;
   return new ReadableStream({
     async pull(controller) {
-      const { done, value } = await readers[current].read();
-      if (!done) {
-        controller.enqueue(value);
-      } else if (++current === arrays.length) {
-        controller.close();
-      } else {
-        await this.pull(controller); // ??? Chrome bug?
+      try {
+        const { done, value } = await readers[current].read();
+        if (!done) {
+          controller.enqueue(value);
+        } else if (++current === arrays.length) {
+          controller.close();
+        } else {
+          await this.pull(controller); // ??? Chrome bug?
+        }
+      } catch(e) {
+        controller.error(e);
       }
     }
   });
@@ -97,7 +101,27 @@ function slice(input, begin=0, end=Infinity) {
         }
       });
     }
+    if (begin < 0 && (end < 0 || end === Infinity)) {
+      let lastBytes = [];
+      return transform(input, value => {
+        if (value.length >= -begin) lastBytes = [value];
+        else lastBytes.push(value);
+      }, () => slice(util.concat(lastBytes), begin, end));
+    }
+    if (begin === 0 && end < 0) {
+      let lastBytes;
+      return transform(input, value => {
+        const returnValue = lastBytes ? util.concat([lastBytes, value]) : value;
+        if (returnValue.length >= -end) {
+          lastBytes = slice(returnValue, end);
+          return slice(returnValue, begin, end);
+        } else {
+          lastBytes = returnValue;
+        }
+      });
+    }
     // TODO: Don't read entire stream into memory here.
+    util.print_debug_error(`stream.slice(input, ${begin}, ${end}) not implemented efficiently.`);
     return fromAsync(async () => slice(await readToEnd(input), begin, end));
   }
   if (input.externalBuffer) {
@@ -125,8 +149,12 @@ async function cancel(input) {
 function fromAsync(fn) {
   return new ReadableStream({
     pull: async controller => {
-      controller.enqueue(await fn());
-      controller.close();
+      try {
+        controller.enqueue(await fn());
+        controller.close();
+      } catch(e) {
+        controller.error(e);
+      }
     }
   });
 }

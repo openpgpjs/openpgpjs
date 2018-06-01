@@ -38,25 +38,29 @@ function List() {
 List.prototype.read = async function (bytes) {
   this.stream = new ReadableStream({
     pull: async controller => {
-      if (!await packetParser.read(bytes, async parsed => {
-        try {
-          const tag = enums.read(enums.packet, parsed.tag);
-          const packet = packets.newPacketFromTag(tag);
-          packet.packets = new List();
-          packet.fromStream = util.isStream(parsed.packet);
-          await packet.read(parsed.packet);
-          controller.enqueue(packet);
-        } catch (e) {
-          if (!config.tolerant ||
-              parsed.tag === enums.packet.symmetricallyEncrypted ||
-              parsed.tag === enums.packet.literal ||
-              parsed.tag === enums.packet.compressed) {
-            controller.error(e);
+      try {
+        if (!await packetParser.read(bytes, async parsed => {
+          try {
+            const tag = enums.read(enums.packet, parsed.tag);
+            const packet = packets.newPacketFromTag(tag);
+            packet.packets = new List();
+            packet.fromStream = util.isStream(parsed.packet);
+            await packet.read(parsed.packet);
+            controller.enqueue(packet);
+          } catch (e) {
+            if (!config.tolerant ||
+                parsed.tag === enums.packet.symmetricallyEncrypted ||
+                parsed.tag === enums.packet.literal ||
+                parsed.tag === enums.packet.compressed) {
+              controller.error(e);
+            }
+            util.print_debug_error(e);
           }
-          util.print_debug_error(e);
+        })) {
+          controller.close();
         }
-      })) {
-        controller.close();
+      } catch(e) {
+        controller.error(e);
       }
     }
   });

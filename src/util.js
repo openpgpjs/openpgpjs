@@ -347,6 +347,8 @@ export default {
    * @returns {Uint8array} Concatenated array
    */
   concatUint8Array: function (arrays) {
+    if (arrays.length === 1) return arrays[0];
+
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
       if (!util.isUint8Array(arrays[i])) {

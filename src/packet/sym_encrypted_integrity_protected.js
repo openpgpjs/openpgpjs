@@ -17,6 +17,7 @@
 
 /**
  * @requires asmcrypto.js
+ * @requires config
  * @requires crypto
  * @requires enums
  * @requires stream
@@ -25,6 +26,7 @@
 
 import { AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/exports';
 
+import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import stream from '../stream';
@@ -131,15 +133,21 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
   const bytes = stream.slice(stream.clone(decrypted), 0, -20);
   const tohash = util.concat([prefix, stream.clone(bytes)]);
-  this.hash = util.Uint8Array_to_str(await stream.readToEnd(crypto.hash.sha1(tohash)));
-  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.slice(decrypted, -20)));
-
-  if (this.hash !== mdc) {
-    throw new Error('Modification detected.');
+  const verifyHash = Promise.all([
+    stream.readToEnd(crypto.hash.sha1(tohash)),
+    stream.readToEnd(stream.slice(decrypted, -20))
+  ]).then(([hash, mdc]) => {
+    if (!util.equalsUint8Array(hash, mdc)) {
+      throw new Error('Modification detected.');
+    }
+  });
+  let packetbytes = stream.slice(bytes, 0, -2);
+  if (!util.isStream(encrypted) || !config.unsafe_stream) {
+    await verifyHash;
   } else {
-    await this.packets.read(stream.slice(bytes, 0, -2));
+    packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
   }
-
+  await this.packets.read(packetbytes);
   return true;
 };
 

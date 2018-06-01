@@ -545,24 +545,22 @@ Message.prototype.verify = async function(keys, date=new Date()) {
   if (msg.packets.stream) {
     let onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
     onePassSigList = Array.from(onePassSigList).reverse();
-    if (onePassSigList.length) {
-      onePassSigList.forEach(onePassSig => {
-        onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
-          onePassSig.signatureDataResolve = resolve;
-        }));
-        onePassSig.hashed = onePassSig.hash(literalDataList[0]);
-      });
-      const reader = stream.getReader(msg.packets.stream);
-      for (let i = 0; ; i++) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        onePassSigList[i].signatureDataResolve(value.signatureData);
-        value.hashed = onePassSigList[i].hashed;
-        value.hashedData = onePassSigList[i].hashedData;
-        msg.packets.push(value);
+    onePassSigList.forEach(onePassSig => {
+      onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
+        onePassSig.signatureDataResolve = resolve;
+      }));
+      onePassSig.hashed = onePassSig.hash(literalDataList[0]);
+    });
+    const reader = stream.getReader(msg.packets.stream);
+    for (let i = 0; ; i++) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
       }
+      onePassSigList[i].signatureDataResolve(value.signatureData);
+      value.hashed = onePassSigList[i].hashed;
+      value.hashedData = onePassSigList[i].hashedData;
+      msg.packets.push(value);
     }
   }
   const signatureList = msg.packets.filterByTag(enums.packet.signature);

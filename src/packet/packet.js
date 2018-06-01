@@ -142,9 +142,6 @@ export default {
     let controller;
     try {
       const peekedBytes = await reader.peekBytes(2);
-      if (!peekedBytes || !peekedBytes.length) {
-        return false;
-      }
       // some sanity checks
       if (!peekedBytes || peekedBytes.length < 2 || (peekedBytes[0] & 0x80) === 0) {
         throw new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format.");
@@ -255,9 +252,13 @@ export default {
           packet = await reader.readBytes(packet_length);
           await callback({ tag, packet });
         }
-      } else if (controller) {
+      }
+      const { done, value } = await reader.read();
+      if (!done) reader.unshift(value);
+      if (controller) {
         controller.close();
       }
+      return !done && value && value.length;
     } catch(e) {
       if (controller) {
         controller.error(e);
@@ -267,6 +268,5 @@ export default {
     } finally {
       reader.releaseLock();
     }
-    return true;
   }
 };
