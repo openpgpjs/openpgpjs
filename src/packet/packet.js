@@ -245,7 +245,7 @@ export default {
         if (streaming) {
           // Send the remainder of the packet to the callback as a stream
           reader.releaseLock();
-          packet = stream.subarray(stream.clone(input), 0, packet_length);
+          packet = stream.slice(stream.clone(input), 0, packet_length);
           await callback({ tag, packet });
 
           // Read the entire packet before parsing the next one

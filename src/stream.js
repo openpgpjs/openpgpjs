@@ -56,7 +56,7 @@ function tee(input) {
     teed[0].externalBuffer = teed[1].externalBuffer = input.externalBuffer;
     return teed;
   }
-  return [subarray(input), subarray(input)];
+  return [slice(input), slice(input)];
 }
 
 function clone(input) {
@@ -74,10 +74,10 @@ function clone(input) {
     });
     return teed[1];
   }
-  return subarray(input);
+  return slice(input);
 }
 
-function subarray(input, begin=0, end=Infinity) {
+function slice(input, begin=0, end=Infinity) {
   if (util.isStream(input)) {
     if (begin >= 0 && end >= 0) {
       const reader = getReader(input);
@@ -87,7 +87,7 @@ function subarray(input, begin=0, end=Infinity) {
           const { done, value } = await reader.read();
           if (!done && bytesRead < end) {
             if (bytesRead + value.length >= begin) {
-              controller.enqueue(value.subarray(Math.max(begin - bytesRead, 0), end - bytesRead));
+              controller.enqueue(slice(value, Math.max(begin - bytesRead, 0), end - bytesRead));
             }
             bytesRead += value.length;
             await this.pull(controller); // Only necessary if the above call to enqueue() didn't happen
@@ -98,15 +98,15 @@ function subarray(input, begin=0, end=Infinity) {
       });
     }
     // TODO: Don't read entire stream into memory here.
-    return fromAsync(async () => (await readToEnd(input)).subarray(begin, end));
-  }
-  if (util.isString(input)) {
-    return input.substr(begin, end);
+    return fromAsync(async () => slice(await readToEnd(input), begin, end));
   }
   if (input.externalBuffer) {
     input = util.concat(input.externalBuffer.concat([input]));
   }
-  return input.subarray(begin, end);
+  if (util.isUint8Array(input)) {
+    return input.subarray(begin, end);
+  }
+  return input.slice(begin, end);
 }
 
 async function readToEnd(input, join) {
@@ -201,7 +201,7 @@ if (nodeStream) {
 }
 
 
-export default { concat, getReader, transform, clone, subarray, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
+export default { concat, getReader, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
 
 
 /*const readerAcquiredMap = new Map();
@@ -300,7 +300,7 @@ Reader.prototype.readByte = async function() {
   const { done, value } = await this.read();
   if (done) return;
   const byte = value[0];
-  this.unshift(value.subarray(1));
+  this.unshift(slice(value, 1));
   return byte;
 };
 
@@ -317,8 +317,8 @@ Reader.prototype.readBytes = async function(length) {
     bufferLength += value.length;
     if (bufferLength >= length) {
       const bufferConcat = util.concat(buffer);
-      this.unshift(bufferConcat.subarray(length));
-      return bufferConcat.subarray(0, length);
+      this.unshift(slice(bufferConcat, length));
+      return slice(bufferConcat, 0, length);
     }
   }
 };

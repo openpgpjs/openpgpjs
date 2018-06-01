@@ -103,7 +103,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   } else {
     tohash = await stream.readToEnd(tohash);
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
-    this.encrypted = stream.subarray(this.encrypted, 0, prefix.length + tohash.length);
+    this.encrypted = stream.slice(this.encrypted, 0, prefix.length + tohash.length);
   }
   return true;
 };
@@ -127,17 +127,17 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  const encryptedPrefix = await stream.readToEnd(stream.subarray(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
+  const encryptedPrefix = await stream.readToEnd(stream.slice(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
-  const bytes = stream.subarray(stream.clone(decrypted), 0, -20);
+  const bytes = stream.slice(stream.clone(decrypted), 0, -20);
   const tohash = util.concat([prefix, stream.clone(bytes)]);
   this.hash = util.Uint8Array_to_str(await stream.readToEnd(crypto.hash.sha1(tohash)));
-  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.subarray(decrypted, -20)));
+  const mdc = util.Uint8Array_to_str(await stream.readToEnd(stream.slice(decrypted, -20)));
 
   if (this.hash !== mdc) {
     throw new Error('Modification detected.');
   } else {
-    await this.packets.read(stream.subarray(bytes, 0, -2));
+    await this.packets.read(stream.slice(bytes, 0, -2));
   }
 
   return true;
@@ -169,7 +169,7 @@ function aesDecrypt(algo, ct, key) {
     const cfb = new AES_CFB_Decrypt(key);
     pt = stream.transform(ct, value => cfb.process(value).result, () => cfb.finish().result);
   }
-  return stream.subarray(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
+  return stream.slice(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
 }
 
 function nodeEncrypt(algo, pt, key) {
