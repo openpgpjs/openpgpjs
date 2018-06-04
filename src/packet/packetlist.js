@@ -89,10 +89,7 @@ List.prototype.write = function () {
 
   for (let i = 0; i < this.length; i++) {
     const packetbytes = this[i].write();
-    if (util.isStream(packetbytes)) {
-      if (!packetParser.supportsStreaming(this[i].tag)) {
-        throw new Error('This packet type does not support partial lengths.');
-      }
+    if (util.isStream(packetbytes) && packetParser.supportsStreaming(this[i].tag)) {
       let buffer = [];
       let bufferLength = 0;
       const minLength = 512;
@@ -110,7 +107,14 @@ List.prototype.write = function () {
         }
       }, () => util.concat([packetParser.writeSimpleLength(bufferLength)].concat(buffer))));
     } else {
-      arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+      if (util.isStream(packetbytes)) {
+        let length = 0;
+        arr.push(stream.transform(stream.clone(packetbytes), value => {
+          length += value.length;
+        }, () => packetParser.writeHeader(this[i].tag, length)));
+      } else {
+        arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+      }
       arr.push(packetbytes);
     }
   }

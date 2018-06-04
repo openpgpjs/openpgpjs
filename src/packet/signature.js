@@ -239,13 +239,13 @@ Signature.prototype.sign = async function (key, data) {
   }
 
   const toHash = this.toHash(data);
-  const hash = await stream.readToEnd(this.hash(data, toHash));
+  const hash = this.hash(data, toHash);
 
-  this.signedHashValue = hash.subarray(0, 2);
+  this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
-  this.signature = await crypto.signature.sign(
-    publicKeyAlgorithm, hashAlgorithm, key.params, toHash, hash
-  );
+  this.signature = stream.fromAsync(async () => crypto.signature.sign(
+    publicKeyAlgorithm, hashAlgorithm, key.params, toHash, await stream.readToEnd(hash)
+  ));
   return true;
 };
 

@@ -199,6 +199,51 @@ describe('Streaming', function() {
     }
   });
 
+  it('Encrypt and decrypt larger message roundtrip using public keys (unsafe_stream=true)', async function() {
+    let unsafe_streamValue = openpgp.config.unsafe_stream;
+    openpgp.config.unsafe_stream = true;
+    try {
+      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
+      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+      await privKey.decrypt(passphrase);
+
+      let plaintext = [];
+      let i = 0;
+      const data = new ReadableStream({
+        async pull(controller) {
+          await new Promise(setTimeout);
+          if (i++ < 10) {
+            let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+            controller.enqueue(randomBytes);
+            plaintext.push(randomBytes);
+          } else {
+            controller.close();
+          }
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        data,
+        publicKeys: pubKey,
+        privateKeys: privKey
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        publicKeys: pubKey,
+        privateKeys: privKey,
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(1024)).to.deep.equal(plaintext[0]);
+      if (i > 10) throw new Error('Data did not arrive early.');
+      expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.unsafe_stream = unsafe_streamValue;
+    }
+  });
+
   it('Detect MDC modifications (unsafe_stream=true)', async function() {
     let unsafe_streamValue = openpgp.config.unsafe_stream;
     openpgp.config.unsafe_stream = true;
