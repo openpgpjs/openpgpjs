@@ -127,6 +127,38 @@ describe('Streaming', function() {
     expect(decrypted.data).to.deep.equal(util.concatUint8Array(plaintext));
   });
 
+  it('Input stream should be canceled when canceling encrypted stream', async function() {
+    let plaintext = [];
+    let i = 0;
+    let canceled = false;
+    const data = new ReadableStream({
+      async pull(controller) {
+        if (i++ < 10) {
+          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          controller.enqueue(randomBytes);
+          plaintext.push(randomBytes);
+        } else {
+          controller.close();
+        }
+      },
+      cancel() {
+        canceled = true;
+      }
+    });
+    const encrypted = await openpgp.encrypt({
+      data,
+      passwords: ['test'],
+    });
+    const reader = openpgp.stream.getReader(encrypted.data);
+    console.log('read start');
+    expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: https:\/\/openpgpjs.org\r\n\r\n/);
+    console.log('read end');
+    if (i > 10) throw new Error('Data did not arrive early.');
+    reader.releaseLock();
+    await openpgp.stream.cancel(encrypted.data);
+    expect(canceled).to.be.true;
+  });
+
   it('Encrypt and decrypt larger message roundtrip', async function() {
     let plaintext = [];
     let i = 0;
@@ -373,6 +405,55 @@ describe('Streaming', function() {
       expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(1024)).to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.aead_protect = aead_protectValue;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
+    }
+  });
+
+  it('Input stream should be canceled when canceling decrypted stream (draft04)', async function() {
+    let aead_protectValue = openpgp.config.aead_protect;
+    let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 4;
+    try {
+      let plaintext = [];
+      let i = 0;
+      let canceled = false;
+      const data = new ReadableStream({
+        async pull(controller) {
+          await new Promise(setTimeout);
+          if (i++ < 10) {
+            let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+            controller.enqueue(randomBytes);
+            plaintext.push(randomBytes);
+          } else {
+            controller.close();
+          }
+        },
+        cancel() {
+          canceled = true;
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        data,
+        passwords: ['test'],
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      const reader = openpgp.stream.getReader(openpgp.stream.clone(decrypted.data));
+      expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
+      if (i > 10) throw new Error('Data did not arrive early.');
+      reader.releaseLock();
+      await openpgp.stream.cancel(decrypted.data);
+      expect(canceled).to.be.true;
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;

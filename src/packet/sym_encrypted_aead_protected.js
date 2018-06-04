@@ -138,14 +138,13 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
     adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    const reader = stream.getReader(data);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;
     let queuedBytes = 0;
     const iv = this.iv;
-    return new ReadableStream({
-      async pull(controller) {
+    return stream.from(data, {
+      async pull(controller, reader) {
         let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
         const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
         chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
@@ -174,7 +173,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
         }
         if (!done) {
           adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-          await this.pull(controller);
+          await this.pull(controller, reader);
         } else {
           controller.close();
         }

@@ -206,17 +206,18 @@ function dearmor(input) {
       const reSplit = /^-----[^-]+-----$/;
       const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
 
-      const reader = stream.getReader(input);
       let type;
       const headers = [];
       let lastHeaders = headers;
       let headersDone;
       let text = [];
       let textDone;
+      let reader;
       let controller;
-      let data = base64.decode(new ReadableStream({
-        async start(_controller) {
+      let data = base64.decode(stream.from(input, {
+        start(_controller, _reader) {
           controller = _controller;
+          reader = _reader;
         }
       }));
       let checksum;

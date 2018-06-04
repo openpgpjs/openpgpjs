@@ -1,15 +1,15 @@
 import util from './util';
 
-if (typeof ReadableStream === 'undefined') {
+// if (typeof ReadableStream === 'undefined') {
   Object.assign(typeof window !== 'undefined' ? window : global, require('web-streams-polyfill'));
-}
+// }
 
 const nodeStream = util.getNodeStream();
 
 function concat(arrays) {
   const readers = arrays.map(getReader);
   let current = 0;
-  return new ReadableStream({
+  return create({
     async pull(controller) {
       try {
         const { done, value } = await readers[current].read();
@@ -18,11 +18,15 @@ function concat(arrays) {
         } else if (++current === arrays.length) {
           controller.close();
         } else {
-          await this.pull(controller); // ??? Chrome bug?
+          await this.pull(controller);
         }
       } catch(e) {
         controller.error(e);
       }
+    },
+    cancel() {
+      readers.forEach(reader => reader.releaseLock());
+      return Promise.all(arrays.map(cancel));
     }
   });
 }
@@ -31,16 +35,55 @@ function getReader(input) {
   return new Reader(input);
 }
 
+function create(options, extraArg) {
+  const promises = new Map();
+  const wrap = fn => fn && (controller => {
+    const returnValue = fn.call(options, controller, extraArg);
+    promises.set(fn, returnValue);
+    return returnValue;
+  });
+  options.start = wrap(options.start);
+  options.pull = wrap(options.pull);
+  const _cancel = options.cancel;
+  options.cancel = async controller => {
+    try {
+      console.log('cancel wrapper', options);
+      await promises.get(options.start);
+      console.log('awaited start');
+      await promises.get(options.pull);
+      console.log('awaited pull');
+    } finally {
+      if (_cancel) return _cancel.call(options, controller, extraArg);
+    }
+  };
+  options.options = options;
+  return new ReadableStream(options);
+}
+
+function from(input, options) {
+  const reader = getReader(input);
+  if (!options.cancel) {
+    options.cancel = (controller, reader) => {
+      console.log('from() cancel', stream, input);
+      reader.releaseLock();
+      return cancel(input);
+    };
+  }
+  options.from = input;
+  const stream = create(options, reader);
+  stream.from = input;
+  return stream;
+}
+
 function transform(input, process = () => undefined, finish = () => undefined) {
   if (util.isStream(input)) {
-    const reader = getReader(input);
-    return new ReadableStream({
-      async pull(controller) {
+    return from(input, {
+      async pull(controller, reader) {
         try {
           const { done, value } = await reader.read();
           const result = await (!done ? process : finish)(value);
           if (result !== undefined) controller.enqueue(result);
-          else if (!done) await this.pull(controller); // ??? Chrome bug?
+          else if (!done) await this.pull(controller, reader);
           if (done) controller.close();
         } catch(e) {
           controller.error(e);
@@ -68,7 +111,9 @@ function clone(input) {
     const teed = tee(input);
     // Overwrite input.getReader, input.locked, etc to point to teed[0]
     Object.entries(Object.getOwnPropertyDescriptors(ReadableStream.prototype)).forEach(([name, descriptor]) => {
-      if (name === 'constructor') return;
+      if (name === 'constructor') {
+        return;
+      }
       if (descriptor.value) {
         descriptor.value = descriptor.value.bind(teed[0]);
       } else {
@@ -84,17 +129,16 @@ function clone(input) {
 function slice(input, begin=0, end=Infinity) {
   if (util.isStream(input)) {
     if (begin >= 0 && end >= 0) {
-      const reader = getReader(input);
       let bytesRead = 0;
-      return new ReadableStream({
-        async pull (controller) {
+      return from(input, {
+        async pull (controller, reader) {
           const { done, value } = await reader.read();
           if (!done && bytesRead < end) {
             if (bytesRead + value.length >= begin) {
               controller.enqueue(slice(value, Math.max(begin - bytesRead, 0), end - bytesRead));
             }
             bytesRead += value.length;
-            await this.pull(controller); // Only necessary if the above call to enqueue() didn't happen
+            await this.pull(controller, reader); // Only necessary if the above call to enqueue() didn't happen
           } else {
             controller.close();
           }
@@ -229,10 +273,10 @@ if (nodeStream) {
 }
 
 
-export default { concat, getReader, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
+export default { concat, getReader, from, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
 
 
-/*const readerAcquiredMap = new Map();
+const readerAcquiredMap = new Map();
 
 const _getReader = ReadableStream.prototype.getReader;
 ReadableStream.prototype.getReader = function() {
@@ -245,7 +289,9 @@ ReadableStream.prototype.getReader = function() {
   const reader = _getReader.apply(this, arguments);
   const _releaseLock = reader.releaseLock;
   reader.releaseLock = function() {
-    readerAcquiredMap.delete(_this);
+    try {
+      readerAcquiredMap.delete(_this);
+    } catch(e) {}
     return _releaseLock.apply(this, arguments);
   };
   return reader;
@@ -259,7 +305,20 @@ ReadableStream.prototype.tee = function() {
     readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
   }
   return _tee.apply(this, arguments);
-};*/
+};
+
+const _cancel = ReadableStream.prototype.cancel;
+ReadableStream.prototype.cancel = function() {
+  try {
+    return _cancel.apply(this, arguments);
+  } finally {
+    if (readerAcquiredMap.has(this)) {
+      console.error(readerAcquiredMap.get(this));
+    } else {
+      readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
+    }
+  }
+};
 
 
 const doneReadingSet = new WeakSet();
@@ -284,7 +343,9 @@ function Reader(input) {
   };
   this._releaseLock = () => {
     if (doneReading) {
-      doneReadingSet.add(input);
+      try {
+        doneReadingSet.add(input);
+      } catch(e) {}
     }
   };
 }
@@ -298,7 +359,9 @@ Reader.prototype.read = async function() {
 };
 
 Reader.prototype.releaseLock = function() {
-  this.stream.externalBuffer = this.externalBuffer;
+  if (this.externalBuffer) {
+    this.stream.externalBuffer = this.externalBuffer;
+  }
   this._releaseLock();
 };
 
@@ -365,19 +428,21 @@ Reader.prototype.unshift = function(...values) {
 };
 
 Reader.prototype.substream = function() {
-  return new ReadableStream({ pull: pullFrom(this) });
-};
-
-function pullFrom(reader) {
-  return async controller => {
-    const { done, value } = await reader.read();
-    if (!done) {
-      controller.enqueue(value);
-    } else {
-      controller.close();
+  return Object.assign(create({
+    pull: async controller => {
+      const { done, value } = await this.read();
+      if (!done) {
+        controller.enqueue(value);
+      } else {
+        controller.close();
+      }
+    },
+    cancel: () => {
+      this.releaseLock();
+      return cancel(this.stream);
     }
-  };
-}
+  }), { from: this.stream });
+};
 
 Reader.prototype.readToEnd = async function(join=util.concat) {
   const result = [];

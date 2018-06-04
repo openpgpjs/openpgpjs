@@ -62,7 +62,8 @@ List.prototype.read = async function (bytes) {
       } catch(e) {
         controller.error(e);
       }
-    }
+    },
+    cancel: stream.cancel.bind(bytes)
   });
 
   // Wait until first few packets have been read

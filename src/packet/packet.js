@@ -223,7 +223,8 @@ export default {
                 // eslint-disable-next-line no-loop-func
                 async start(_controller) {
                   controller = _controller;
-                }
+                },
+                cancel: stream.cancel.bind(input)
               });
               callback({ tag, packet });
             }
