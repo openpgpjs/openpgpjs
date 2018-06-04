@@ -170,15 +170,15 @@ describe('X25519 Cryptography', function () {
 
   it('Sign message', async function () {
     const name = 'light';
-    const randomdata = input.createSomeMessage();
+    const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], data: randomdata});
+    const signed = await openpgp.sign({ privateKeys: [priv], data: randomData});
     const pub = load_pub_key(name);
     const msg = openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(randomdata);
+    expect(result.data.trim()).to.equal(randomData);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -199,8 +199,8 @@ describe('X25519 Cryptography', function () {
   it('Encrypt and sign message', async function () {
     const nightPublic = load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
-    const randomdata = input.createSomeMessage();
-    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: randomdata });
+    const randomData = input.createSomeMessage();
+    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: randomData });
 
     const message = openpgp.message.readArmored(encrypted.data);
     const lightPublic = load_pub_key('light');
@@ -208,7 +208,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.decrypt({ privateKeys: nightPrivate, publicKeys: [lightPublic], message: message });
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(randomdata);
+    expect(result.data.trim()).to.equal(randomData);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });

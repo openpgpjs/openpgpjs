@@ -59,10 +59,10 @@ describe("Packet", function() {
 
   it('Symmetrically encrypted packet', async function() {
     const message = new openpgp.packet.List();
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
 
     const literal = new openpgp.packet.Literal();
-    literal.setText(testtext);
+    literal.setText(testText);
 
     const enc = new openpgp.packet.SymmetricallyEncrypted();
     message.push(enc);
@@ -83,10 +83,10 @@ describe("Packet", function() {
 
   it('Symmetrically encrypted packet - MDC error for modern cipher', async function() {
     const message = new openpgp.packet.List();
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
 
     const literal = new openpgp.packet.Literal();
-    literal.setText(testtext);
+    literal.setText(testText);
 
     const enc = new openpgp.packet.SymmetricallyEncrypted();
     message.push(enc);
@@ -105,14 +105,14 @@ describe("Packet", function() {
   it('Sym. encrypted integrity protected packet', async function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
 
     const literal = new openpgp.packet.Literal();
     const enc = new openpgp.packet.SymEncryptedIntegrityProtected();
     const msg = new openpgp.packet.List();
 
     msg.push(enc);
-    literal.setText(testtext);
+    literal.setText(testText);
     enc.packets.push(literal);
     await enc.encrypt(algo, key);
 
@@ -127,13 +127,13 @@ describe("Packet", function() {
   it('Sym. encrypted AEAD protected packet', function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
     const literal = new openpgp.packet.Literal();
     const enc = new openpgp.packet.SymEncryptedAEADProtected();
     const msg = new openpgp.packet.List();
 
     msg.push(enc);
-    literal.setText(testtext);
+    literal.setText(testText);
     enc.packets.push(literal);
 
     const msg2 = new openpgp.packet.List();
@@ -151,7 +151,7 @@ describe("Packet", function() {
     let aead_protect_versionVal = openpgp.config.aead_protect_version;
     openpgp.config.aead_protect = true;
     openpgp.config.aead_protect_version = 4;
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
 
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
@@ -161,7 +161,7 @@ describe("Packet", function() {
     const msg = new openpgp.packet.List();
 
     msg.push(enc);
-    literal.setText(testtext);
+    literal.setText(testText);
     enc.packets.push(literal);
 
     const msg2 = new openpgp.packet.List();
@@ -398,7 +398,7 @@ describe("Packet", function() {
   it('Sym. encrypted session key reading/writing', async function() {
     const passphrase = 'hello';
     const algo = 'aes256';
-    const testtext = input.createSomeMessage();
+    const testText = input.createSomeMessage();
 
     const literal = new openpgp.packet.Literal();
     const key_enc = new openpgp.packet.SymEncryptedSessionKey();
@@ -413,7 +413,7 @@ describe("Packet", function() {
 
     const key = key_enc.sessionKey;
 
-    literal.setText(testtext);
+    literal.setText(testText);
     enc.packets.push(literal);
     await enc.encrypt(algo, key);
 
@@ -436,7 +436,7 @@ describe("Packet", function() {
     try {
       const passphrase = 'hello';
       const algo = 'aes256';
-      const testtext = input.createSomeMessage();
+      const testText = input.createSomeMessage();
 
       const literal = new openpgp.packet.Literal();
       const key_enc = new openpgp.packet.SymEncryptedSessionKey();
@@ -451,7 +451,7 @@ describe("Packet", function() {
 
       const key = key_enc.sessionKey;
 
-      literal.setText(testtext);
+      literal.setText(testText);
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
 
@@ -781,7 +781,7 @@ describe("Packet", function() {
         mpi = mpi.map(function(k) {
           return new openpgp.MPI(k);
         });
-        const testtext = input.createSomeMessage();
+        const testText = input.createSomeMessage();
 
         key.params = mpi;
         key.algorithm = "rsa_sign";
@@ -790,7 +790,7 @@ describe("Packet", function() {
         const literal = new openpgp.packet.Literal();
         const signature = new openpgp.packet.Signature();
 
-        literal.setText(testtext);
+        literal.setText(testText);
 
         signature.hashAlgorithm = 'sha256';
         signature.publicKeyAlgorithm = 'rsa_sign';

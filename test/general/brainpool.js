@@ -223,12 +223,12 @@ describe('Brainpool Cryptography', function () {
           const bye = secondKey.key;
           const pubBye = bye.toPublic();
 
-          const testdata = input.createSomeMessage();
-          const testdata2 = input.createSomeMessage();
+          const testData = input.createSomeMessage();
+          const testData2 = input.createSomeMessage();
           return Promise.all([
             // Signing message
             openpgp.sign(
-              { data: testdata, privateKeys: hi }
+              { data: testData, privateKeys: hi }
             ).then(signed => {
               const msg = openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message
@@ -238,7 +238,7 @@ describe('Brainpool Cryptography', function () {
                 ).then(output => expect(output.signatures[0].valid).to.be.true),
                 // Verifying detached signature
                 openpgp.verify(
-                  { message: openpgp.message.fromText(testdata),
+                  { message: openpgp.message.fromText(testData),
                     publicKeys: pubHi,
                     signature: openpgp.signature.readArmored(signed.data) }
                 ).then(output => expect(output.signatures[0].valid).to.be.true)
@@ -246,7 +246,7 @@ describe('Brainpool Cryptography', function () {
             }),
             // Encrypting and signing
             openpgp.encrypt(
-              { data: testdata2,
+              { data: testData2,
                 publicKeys: [pubBye],
                 privateKeys: [hi] }
             ).then(encrypted => {
@@ -257,7 +257,7 @@ describe('Brainpool Cryptography', function () {
                   privateKeys: bye,
                   publicKeys: [pubHi] }
               ).then(output => {
-                expect(output.data).to.equal(testdata2);
+                expect(output.data).to.equal(testData2);
                 expect(output.signatures[0].valid).to.be.true;
               });
             })

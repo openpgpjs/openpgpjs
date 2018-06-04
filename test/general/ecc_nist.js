@@ -239,8 +239,8 @@ describe('Elliptic Curve Cryptography', function () {
   function omnibus() {
     it('Omnibus NIST P-256 Test', function () {
       const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "p256" };
-      const testdata = input.createSomeMessage();
-      const testdata2 = input.createSomeMessage();
+      const testData = input.createSomeMessage();
+      const testData2 = input.createSomeMessage();
       return openpgp.generateKey(options).then(function (firstKey) {
         const hi = firstKey.key;
         const pubHi = hi.toPublic();
@@ -254,7 +254,7 @@ describe('Elliptic Curve Cryptography', function () {
             // Signing message
 
             openpgp.sign(
-              { data: testdata, privateKeys: hi }
+              { data: testData, privateKeys: hi }
             ).then(signed => {
               const msg = openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message
@@ -264,7 +264,7 @@ describe('Elliptic Curve Cryptography', function () {
                 ).then(output => expect(output.signatures[0].valid).to.be.true),
                 // Verifying detached signature
                 openpgp.verify(
-                  { message: openpgp.message.fromText(testdata),
+                  { message: openpgp.message.fromText(testData),
                     publicKeys: pubHi,
                     signature: openpgp.signature.readArmored(signed.data) }
                 ).then(output => expect(output.signatures[0].valid).to.be.true)
@@ -272,7 +272,7 @@ describe('Elliptic Curve Cryptography', function () {
             }),
             // Encrypting and signing
             openpgp.encrypt(
-              { data: testdata2,
+              { data: testData2,
                 publicKeys: [pubBye],
                 privateKeys: [hi] }
             ).then(encrypted => {
@@ -283,7 +283,7 @@ describe('Elliptic Curve Cryptography', function () {
                   privateKeys: bye,
                   publicKeys: [pubHi] }
               ).then(output => {
-                expect(output.data).to.equal(testdata2);
+                expect(output.data).to.equal(testData2);
                 expect(output.signatures[0].valid).to.be.true;
               });
             })
