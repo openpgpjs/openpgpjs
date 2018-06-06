@@ -544,24 +544,19 @@ Message.prototype.verify = async function(keys, date=new Date()) {
   }
   if (msg.packets.stream) {
     let onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
-    onePassSigList = Array.from(onePassSigList).reverse();
     onePassSigList.forEach(onePassSig => {
       onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
         onePassSig.signatureDataResolve = resolve;
       }));
       onePassSig.hashed = onePassSig.hash(literalDataList[0]);
     });
-    const reader = stream.getReader(msg.packets.stream);
-    for (let i = 0; ; i++) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      onePassSigList[i].signatureDataResolve(value.signatureData);
-      value.hashed = onePassSigList[i].hashed;
-      value.hashedData = onePassSigList[i].hashedData;
-      msg.packets.push(value);
-    }
+    return stream.transform(msg.packets.stream, signature => {
+      const onePassSig = onePassSigList.pop();
+      onePassSig.signatureDataResolve(signature.signatureData);
+      signature.hashed = onePassSig.hashed;
+      signature.hashedData = onePassSig.hashedData;
+      return createVerificationObject(signature, literalDataList, keys, date);
+    });
   }
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   return createVerificationObjects(signatureList, literalDataList, keys, date);
@@ -586,6 +581,39 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
 };
 
 /**
+ * Create object containing signer's keyid and validity of signature
+ * @param {module:packet.Signature} signature signature packets
+ * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
+ * @param {Date} date Verify the signature against the given date,
+ *                    i.e. check signature creation time < date < expiration time
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @async
+ */
+async function createVerificationObject(signature, literalDataList, keys, date=new Date()) {
+  let keyPacket = null;
+  await Promise.all(keys.map(async function(key) {
+    // Look for the unique key that matches issuerKeyId of signature
+    const result = await key.getSigningKey(signature.issuerKeyId, date);
+    if (result) {
+      keyPacket = result.keyPacket;
+    }
+  }));
+
+  const verifiedSig = {
+    keyid: signature.issuerKeyId,
+    valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
+  };
+
+  const packetlist = new packet.List();
+  packetlist.push(signature);
+  verifiedSig.signature = new Signature(packetlist);
+
+  return verifiedSig;
+}
+
+/**
  * Create list of objects containing signer's keyid and validity of signature
  * @param {Array<module:packet.Signature>} signatureList array of signature packets
  * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
@@ -598,25 +626,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
-    let keyPacket = null;
-    await Promise.all(keys.map(async function(key) {
-      // Look for the unique key that matches issuerKeyId of signature
-      const result = await key.getSigningKey(signature.issuerKeyId, date);
-      if (result) {
-        keyPacket = result.keyPacket;
-      }
-    }));
-
-    const verifiedSig = {
-      keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
-    };
-
-    const packetlist = new packet.List();
-    packetlist.push(signature);
-    verifiedSig.signature = new Signature(packetlist);
-
-    return verifiedSig;
+    return createVerificationObject(signature, literalDataList, keys, date);
   }));
 }
 

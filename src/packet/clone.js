@@ -69,9 +69,8 @@ export function clonePackets(options) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
-    if (options.signatures instanceof Promise) {
-      const signatures = options.signatures;
-      options.signatures = stream.fromAsync(async () => (await signatures).map(verificationObjectToClone));
+    if (util.isStream(options.signatures)) {
+      options.signatures = stream.transform(options.signatures, verificationObjectToClone);
     } else {
       options.signatures.forEach(verificationObjectToClone);
     }
@@ -117,9 +116,7 @@ export function parseClonedPackets(options) {
   }
   if (options.signatures) {
     if (util.isStream(options.signatures)) {
-      options.signatures = stream.readToEnd(options.signatures, arr => arr).then(([signatures]) => {
-        return signatures.map(packetlistCloneToSignatures);
-      });
+      options.signatures = stream.transform(options.signatures, packetlistCloneToSignatures);
     } else {
       options.signatures = options.signatures.map(packetlistCloneToSignatures);
     }

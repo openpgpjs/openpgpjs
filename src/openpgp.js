@@ -329,6 +329,7 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
     if (armor) {
       result.data = encrypted.message.armor();
       result.data = await convertStream(result.data, asStream);
+      // result.cancel = stream.cancel.bind(result.data);
     } else {
       result.message = encrypted.message;
     }
@@ -370,11 +371,12 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     }
 
     const result = {};
-    result.signatures = signature ? message.verifyDetached(signature, publicKeys, date) : message.verify(publicKeys, date);
-    if (!asStream) result.signatures = await result.signatures;
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     result.data = await convertStream(result.data, asStream);
+    result.signatures = await convertStreamArray(result.signatures, asStream);
     result.filename = message.getFilename();
+    // result.cancel = stream.cancel.bind(message.packets);
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -426,6 +428,7 @@ export function sign({ data, dataType, privateKeys, armor=true, asStream, detach
       if (armor) {
         result.data = message.armor();
         result.data = await convertStream(result.data, asStream);
+        // result.cancel = stream.cancel.bind(result.data);
       } else {
         result.message = message;
       }
@@ -457,10 +460,11 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.signatures = signature ? message.verifyDetached(signature, publicKeys, date) : message.verify(publicKeys, date);
-    if (!asStream) result.signatures = await result.signatures;
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
+    result.signatures = await convertStreamArray(result.signatures, asStream);
+    // result.cancel = stream.cancel.bind(message.packets);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
@@ -611,6 +615,27 @@ async function convertStream(data, asStream) {
     return new ReadableStream({
       start(controller) {
         controller.enqueue(data);
+        controller.close();
+      }
+    });
+  }
+  return data;
+}
+
+/**
+ * Convert data array to or from Stream
+ * @param  {Object} data       the data to convert
+ * @param  {Boolean} asStream  whether to return a ReadableStream
+ * @returns {Object}            the parse data in the respective format
+ */
+async function convertStreamArray(data, asStream) {
+  if (!asStream && util.isStream(data)) {
+    return stream.readToEnd(data, arr => arr);
+  }
+  if (asStream && !util.isStream(data)) {
+    return new ReadableStream({
+      start(controller) {
+        data.forEach(controller.enqueue.bind(controller));
         controller.close();
       }
     });

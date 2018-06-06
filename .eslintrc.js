@@ -26,7 +26,8 @@ module.exports = {
     "unescape": true,
     "postMessage": true,
     "resolves": true,
-    "rejects": true
+    "rejects": true,
+    "TransformStream": true
   },
 
   "rules": {

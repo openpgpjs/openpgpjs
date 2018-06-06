@@ -58,20 +58,21 @@ export default SymEncryptedAEADProtected;
  * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
  */
 SymEncryptedAEADProtected.prototype.read = async function (bytes) {
-  const reader = stream.getReader(bytes);
-  if (await reader.readByte() !== VERSION) { // The only currently defined value is 1.
-    throw new Error('Invalid packet version.');
-  }
-  if (config.aead_protect_version === 4) {
-    this.cipherAlgo = await reader.readByte();
-    this.aeadAlgo = await reader.readByte();
-    this.chunkSizeByte = await reader.readByte();
-  } else {
-    this.aeadAlgo = enums.aead.experimental_gcm;
-  }
-  const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
-  this.iv = await reader.readBytes(mode.ivLength);
-  this.encrypted = reader.substream();
+  await stream.parse(bytes, async reader => {
+    if (await reader.readByte() !== VERSION) { // The only currently defined value is 1.
+      throw new Error('Invalid packet version.');
+    }
+    if (config.aead_protect_version === 4) {
+      this.cipherAlgo = await reader.readByte();
+      this.aeadAlgo = await reader.readByte();
+      this.chunkSizeByte = await reader.readByte();
+    } else {
+      this.aeadAlgo = enums.aead.experimental_gcm;
+    }
+    const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+    this.iv = await reader.readBytes(mode.ivLength);
+    this.encrypted = reader.remainder();
+  });
 };
 
 /**
@@ -143,15 +144,23 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     let cryptedBytes = 0;
     let queuedBytes = 0;
     const iv = this.iv;
-    return stream.from(data, {
-      async pull(controller, reader) {
-        let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
+    let buffer = [];
+    return stream.transformRaw(data, {
+      transform: process,
+      flush: controller => process(undefined, controller, true)
+    });
+    async function process(value, controller, final) {
+      if (!final) buffer.push(value);
+      while (buffer.reduce(((acc, value) => acc + value.length), 0) >= (final ? 0 : chunkSize) + tagLengthIfDecrypting) {
+        const bufferConcat = util.concatUint8Array(buffer);
+        let chunk = bufferConcat.subarray(0, chunkSize + tagLengthIfDecrypting);
+        buffer = [bufferConcat.subarray(chunkSize + tagLengthIfDecrypting)];
         const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
         chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
         let cryptedPromise;
         let done;
         if (!chunkIndex || chunk.length) {
-          reader.unshift(finalChunk);
+          buffer.unshift(finalChunk);
           cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
         } else {
           // After the last chunk, we either encrypt a final, empty
@@ -173,12 +182,12 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
         }
         if (!done) {
           adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-          await this.pull(controller, reader);
         } else {
-          controller.close();
+          controller.terminate();
+          return;
         }
       }
-    });
+    }
   } else {
     return modeInstance[fn](await stream.readToEnd(data), this.iv);
   }

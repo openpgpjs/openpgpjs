@@ -680,7 +680,7 @@ yYDnCgA=
     return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(async function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
-      cleartextSig.signatures = await cleartextSig.signatures;
+      cleartextSig.signatures = await openpgp.stream.readToEnd(cleartextSig.signatures, arr => arr);
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);

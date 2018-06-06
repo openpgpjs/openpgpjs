@@ -214,11 +214,10 @@ function dearmor(input) {
       let textDone;
       let reader;
       let controller;
-      let data = base64.decode(stream.from(input, {
-        start(_controller, _reader) {
-          controller = _controller;
-          reader = _reader;
-        }
+      let buffer = '';
+      let data = base64.decode(stream.transformRaw(input, {
+        transform: (value, controller) => process(buffer + value, controller),
+        flush: controller => process(buffer, controller)
       }));
       let checksum;
       const checksumVerified = getCheckSum(stream.clone(data));
@@ -230,53 +229,59 @@ function dearmor(input) {
                   checksumVerifiedString + "'");
         }
       });
-      while (true) {
-        let line = await reader.readLine();
-        if (line === undefined) {
-          controller.error('Misformed armored text');
-          break;
-        }
-        // remove trailing whitespace at end of lines
-        // remove leading whitespace for compat with older versions of OpenPGP.js
-        line = line.trim();
-        if (!type) {
-          if (reSplit.test(line)) {
-            type = getType(line);
-          }
-        } else if (!headersDone) {
-          if (reSplit.test(line)) {
-            reject(new Error('Mandatory blank line missing between armor headers and armor data'));
-          }
-          if (!reEmptyLine.test(line)) {
-            lastHeaders.push(line);
-          } else {
-            verifyHeaders(lastHeaders);
-            headersDone = true;
-            if (textDone || type !== 2) resolve({ text, data, headers, type });
-          }
-        } else if (!textDone && type === 2) {
-          if (!reSplit.test(line)) {
-            // Reverse dash-escaping for msg
-            text.push(line.replace(/^- /, ''));
-          } else {
-            text = text.join('\r\n');
-            textDone = true;
-            verifyHeaders(lastHeaders);
-            lastHeaders = [];
-            headersDone = false;
-          }
-        } else {
-          if (!reSplit.test(line)) {
-            if (line[0] !== '=') {
-              controller.enqueue(line);
+      function process(value, controller) {
+        const lineEndIndex = value.indexOf('\n') + 1;
+        if (lineEndIndex) {
+          let line = value.substr(0, lineEndIndex);
+          // remove trailing whitespace at end of lines
+          // remove leading whitespace for compat with older versions of OpenPGP.js
+          line = line.trim();
+          if (!type) {
+            if (reSplit.test(line)) {
+              type = getType(line);
+            }
+          } else if (!headersDone) {
+            if (reSplit.test(line)) {
+              reject(new Error('Mandatory blank line missing between armor headers and armor data'));
+            }
+            if (!reEmptyLine.test(line)) {
+              lastHeaders.push(line);
             } else {
-              checksum = line.substr(1);
+              verifyHeaders(lastHeaders);
+              headersDone = true;
+              if (textDone || type !== 2) resolve({ text, data, headers, type });
+            }
+          } else if (!textDone && type === 2) {
+            if (!reSplit.test(line)) {
+              // Reverse dash-escaping for msg
+              text.push(line.replace(/^- /, ''));
+            } else {
+              text = text.join('\r\n');
+              textDone = true;
+              verifyHeaders(lastHeaders);
+              lastHeaders = [];
+              headersDone = false;
             }
           } else {
-            controller.close();
-            break;
+            if (!reSplit.test(line)) {
+              if (line[0] !== '=') {
+                controller.enqueue(line);
+              } else {
+                checksum = line.substr(1);
+              }
+            } else {
+              controller.close();
+              return;
+            }
           }
+          process(value.substr(lineEndIndex), controller);
+        } else {
+          buffer = value;
         }
+        // if (line === undefined) {
+        //   controller.error('Misformed armored text');
+        //   break;
+        // }
       }
     } catch(e) {
       reject(e);

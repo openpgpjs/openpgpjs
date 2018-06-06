@@ -6,29 +6,52 @@ import util from './util';
 
 const nodeStream = util.getNodeStream();
 
-function concat(arrays) {
-  const readers = arrays.map(getReader);
-  let current = 0;
+function toStream(input) {
+  if (util.isStream(input)) {
+    return input;
+  }
   return create({
-    async pull(controller) {
-      try {
-        const { done, value } = await readers[current].read();
-        if (!done) {
-          controller.enqueue(value);
-        } else if (++current === arrays.length) {
-          controller.close();
-        } else {
-          await this.pull(controller);
-        }
-      } catch(e) {
-        controller.error(e);
-      }
+    start(controller) {
+      controller.enqueue(input);
+      controller.close();
+    }
+  });
+}
+
+function pipeThrough(input, target, options) {
+  if (!util.isStream(input)) {
+    input = toStream(input);
+  }
+  return input.pipeThrough(target, options);
+}
+
+function concat(arrays) {
+  arrays = arrays.map(toStream);
+  let controller;
+  const transform = new TransformStream({
+    start(_controller) {
+      controller = _controller;
     },
-    cancel() {
-      readers.forEach(reader => reader.releaseLock());
+    cancel: () => {
       return Promise.all(arrays.map(cancel));
     }
   });
+  (async () => {
+    for (let i = 0; i < arrays.length; i++) {
+      // await new Promise(resolve => {
+      try {
+        await arrays[i].pipeTo(transform.writable, {
+          preventClose: i !== arrays.length - 1
+        });
+      } catch(e) {
+        console.log(e);
+        // controller.error(e);
+        return;
+      }
+      // });
+    }
+  })();
+  return transform.readable;
 }
 
 function getReader(input) {
@@ -45,46 +68,47 @@ function create(options, extraArg) {
   options.start = wrap(options.start);
   options.pull = wrap(options.pull);
   const _cancel = options.cancel;
-  options.cancel = async controller => {
+  options.cancel = async reason => {
     try {
-      console.log('cancel wrapper', options);
+      console.log('cancel wrapper', reason, options);
       await promises.get(options.start);
       console.log('awaited start');
       await promises.get(options.pull);
       console.log('awaited pull');
     } finally {
-      if (_cancel) return _cancel.call(options, controller, extraArg);
+      if (_cancel) return _cancel.call(options, reason, extraArg);
     }
   };
   options.options = options;
   return new ReadableStream(options);
 }
 
-function from(input, options) {
-  const reader = getReader(input);
-  if (!options.cancel) {
-    options.cancel = (controller, reader) => {
-      console.log('from() cancel', stream, input);
-      reader.releaseLock();
-      return cancel(input);
-    };
-  }
-  options.from = input;
-  const stream = create(options, reader);
-  stream.from = input;
-  return stream;
+function transformRaw(input, options) {
+  options.start = controller => {
+    if (input.externalBuffer) {
+      input.externalBuffer.forEach(chunk => {
+        options.transform(chunk, controller);
+      });
+    }
+  };
+  return toStream(input).pipeThrough(new TransformStream(options));
 }
 
 function transform(input, process = () => undefined, finish = () => undefined) {
   if (util.isStream(input)) {
-    return from(input, {
-      async pull(controller, reader) {
+    return transformRaw(input, {
+      async transform(value, controller) {
         try {
-          const { done, value } = await reader.read();
-          const result = await (!done ? process : finish)(value);
+          const result = await process(value);
           if (result !== undefined) controller.enqueue(result);
-          else if (!done) await this.pull(controller, reader);
-          if (done) controller.close();
+        } catch(e) {
+          controller.error(e);
+        }
+      },
+      async flush(controller) {
+        try {
+          const result = await finish();
+          if (result !== undefined) controller.enqueue(result);
         } catch(e) {
           controller.error(e);
         }
@@ -92,7 +116,7 @@ function transform(input, process = () => undefined, finish = () => undefined) {
     });
   }
   const result1 = process(input);
-  const result2 = finish(undefined);
+  const result2 = finish();
   if (result1 !== undefined && result2 !== undefined) return util.concat([result1, result2]);
   return result1 !== undefined ? result1 : result2;
 }
@@ -130,15 +154,13 @@ function slice(input, begin=0, end=Infinity) {
   if (util.isStream(input)) {
     if (begin >= 0 && end >= 0) {
       let bytesRead = 0;
-      return from(input, {
-        async pull (controller, reader) {
-          const { done, value } = await reader.read();
-          if (!done && bytesRead < end) {
+      return transformRaw(input, {
+        transform(value, controller) {
+          if (bytesRead < end) {
             if (bytesRead + value.length >= begin) {
               controller.enqueue(slice(value, Math.max(begin - bytesRead, 0), end - bytesRead));
             }
             bytesRead += value.length;
-            await this.pull(controller, reader); // Only necessary if the above call to enqueue() didn't happen
           } else {
             controller.close();
           }
@@ -175,6 +197,41 @@ function slice(input, begin=0, end=Infinity) {
     return input.subarray(begin, end);
   }
   return input.slice(begin, end);
+}
+
+async function parse(input, parser) {
+  let controller;
+  const transformed = transformRaw(input, {
+    start(_controller) {
+      controller = _controller;
+    },
+    cancel: cancel.bind(input)
+  });
+  transformed[stream.cancelReadsSym] = controller.error.bind(controller);
+  toStream(input).pipeTo(target);
+  const reader = getReader(transformed.readable);
+  await parser(reader);
+
+
+  new ReadableStream({
+    start(_controller) {
+      controller = _controller;
+    },
+    pull: () => {
+
+    },
+    cancel: () => {
+      
+    }
+  });
+  new ReadableStream({
+    pull: () => {
+
+    },
+    cancel: () => {
+
+    }
+  });
 }
 
 async function readToEnd(input, join) {
@@ -273,7 +330,7 @@ if (nodeStream) {
 }
 
 
-export default { concat, getReader, from, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
+export default { toStream, concat, getReader, transformRaw, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync, readerAcquiredMap };
 
 
 const readerAcquiredMap = new Map();
@@ -442,6 +499,8 @@ Reader.prototype.substream = function() {
       return cancel(this.stream);
     }
   }), { from: this.stream });
+  this.releaseLock();
+  return this.stream;
 };
 
 Reader.prototype.readToEnd = async function(join=util.concat) {
