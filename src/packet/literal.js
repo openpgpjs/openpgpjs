@@ -139,18 +139,19 @@ Literal.prototype.getFilename = function() {
  * @returns {module:packet.Literal} object representation
  */
 Literal.prototype.read = async function(bytes) {
-  const reader = stream.getReader(bytes);
-  // - A one-octet field that describes how the data is formatted.
-  const format = enums.read(enums.literal, await reader.readByte());
+  await stream.parse(bytes, async reader => {
+    // - A one-octet field that describes how the data is formatted.
+    const format = enums.read(enums.literal, await reader.readByte());
 
-  const filename_len = await reader.readByte();
-  this.filename = util.decode_utf8(util.Uint8Array_to_str(await reader.readBytes(filename_len)));
+    const filename_len = await reader.readByte();
+    this.filename = util.decode_utf8(util.Uint8Array_to_str(await reader.readBytes(filename_len)));
 
-  this.date = util.readDate(await reader.readBytes(4));
+    this.date = util.readDate(await reader.readBytes(4));
 
-  const data = reader.substream();
+    const data = reader.remainder();
 
-  this.setBytes(data, format);
+    this.setBytes(data, format);
+  });
 };
 
 /**

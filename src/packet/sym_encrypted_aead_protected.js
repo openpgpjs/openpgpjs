@@ -144,23 +144,18 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     let cryptedBytes = 0;
     let queuedBytes = 0;
     const iv = this.iv;
-    let buffer = [];
-    return stream.transformRaw(data, {
-      transform: process,
-      flush: controller => process(undefined, controller, true)
-    });
-    async function process(value, controller, final) {
-      if (!final) buffer.push(value);
-      while (buffer.reduce(((acc, value) => acc + value.length), 0) >= (final ? 0 : chunkSize) + tagLengthIfDecrypting) {
-        const bufferConcat = util.concatUint8Array(buffer);
-        let chunk = bufferConcat.subarray(0, chunkSize + tagLengthIfDecrypting);
-        buffer = [bufferConcat.subarray(chunkSize + tagLengthIfDecrypting)];
+    return stream.transformPair(data, async (readable, writable) => {
+      const reader = stream.getReader(readable);
+      const writer = stream.getWriter(writable);
+      while (true) {
+        await writer.ready;
+        let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
         const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
         chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
         let cryptedPromise;
         let done;
         if (!chunkIndex || chunk.length) {
-          buffer.unshift(finalChunk);
+          reader.unshift(finalChunk);
           cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
         } else {
           // After the last chunk, we either encrypt a final, empty
@@ -172,22 +167,23 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
         }
         cryptedBytes += chunk.length - tagLengthIfDecrypting;
         queuedBytes += chunk.length - tagLengthIfDecrypting;
+        // eslint-disable-next-line no-loop-func
         latestPromise = latestPromise.then(() => cryptedPromise).then(crypted => {
-          controller.enqueue(crypted);
+          writer.write(crypted);
           queuedBytes -= chunk.length;
-        }).catch(err => controller.error(err));
-        // console.log(fn, done, queuedBytes, controller.desiredSize);
-        if (done || queuedBytes > controller.desiredSize) {
+        }).catch(err => writer.abort(err));
+        // console.log(fn, done, queuedBytes, writer.desiredSize);
+        if (done || queuedBytes > writer.desiredSize) {
           await latestPromise; // Respect backpressure
         }
         if (!done) {
           adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
         } else {
-          controller.terminate();
-          return;
+          writer.close();
+          break;
         }
       }
-    }
+    });
   } else {
     return modeInstance[fn](await stream.readToEnd(data), this.iv);
   }

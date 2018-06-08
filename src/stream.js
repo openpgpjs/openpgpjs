@@ -1,7 +1,7 @@
 import util from './util';
 
-// if (typeof ReadableStream === 'undefined') {
-  Object.assign(typeof window !== 'undefined' ? window : global, require('web-streams-polyfill'));
+// if (typeof TransformStream === 'undefined') {
+  Object.assign(typeof window !== 'undefined' ? window : global, require('@mattiasbuelens/web-streams-polyfill'));
 // }
 
 const nodeStream = util.getNodeStream();
@@ -18,44 +18,40 @@ function toStream(input) {
   });
 }
 
-function pipeThrough(input, target, options) {
-  if (!util.isStream(input)) {
-    input = toStream(input);
-  }
-  return input.pipeThrough(target, options);
-}
-
 function concat(arrays) {
   arrays = arrays.map(toStream);
-  let controller;
-  const transform = new TransformStream({
-    start(_controller) {
-      controller = _controller;
-    },
-    cancel: () => {
-      return Promise.all(arrays.map(cancel));
-    }
-  });
-  (async () => {
-    for (let i = 0; i < arrays.length; i++) {
-      // await new Promise(resolve => {
-      try {
-        await arrays[i].pipeTo(transform.writable, {
-          preventClose: i !== arrays.length - 1
-        });
-      } catch(e) {
-        console.log(e);
-        // controller.error(e);
-        return;
+  let outputController;
+  const transform = {
+    readable: new ReadableStream({
+      start(_controller) {
+        outputController = _controller;
+      },
+      async cancel(reason) {
+        await Promise.all(transforms.map(array => cancel(array, reason)));
       }
-      // });
-    }
-  })();
+    }),
+    writable: new WritableStream({
+      write: outputController.enqueue.bind(outputController),
+      close: outputController.close.bind(outputController),
+      abort: outputController.error.bind(outputController)
+    })
+  };
+  let prev = Promise.resolve();
+  const transforms = arrays.map((array, i) => transformPair(array, (readable, writable) => {
+    prev = prev.then(() => pipe(readable, transform.writable, {
+      preventClose: i !== arrays.length - 1
+    }));
+    return prev;
+  }));
   return transform.readable;
 }
 
 function getReader(input) {
   return new Reader(input);
+}
+
+function getWriter(input) {
+  return input.getWriter();
 }
 
 function create(options, extraArg) {
@@ -65,33 +61,32 @@ function create(options, extraArg) {
     promises.set(fn, returnValue);
     return returnValue;
   });
+  options.options = Object.assign({}, options);
   options.start = wrap(options.start);
   options.pull = wrap(options.pull);
-  const _cancel = options.cancel;
-  options.cancel = async reason => {
-    try {
-      console.log('cancel wrapper', reason, options);
-      await promises.get(options.start);
-      console.log('awaited start');
-      await promises.get(options.pull);
-      console.log('awaited pull');
-    } finally {
-      if (_cancel) return _cancel.call(options, reason, extraArg);
-    }
-  };
-  options.options = options;
   return new ReadableStream(options);
 }
 
-function transformRaw(input, options) {
-  options.start = controller => {
-    if (input.externalBuffer) {
-      input.externalBuffer.forEach(chunk => {
-        options.transform(chunk, controller);
-      });
+async function pipe(input, target, options) {
+  if (!util.isStream(input)) {
+    input = toStream(input);
+  }
+  if (input.externalBuffer) {
+    const writer = target.getWriter();
+    for (let i = 0; i < input.externalBuffer.length; i++) {
+      await writer.ready;
+      writer.write(input.externalBuffer[i]);
     }
-  };
-  return toStream(input).pipeThrough(new TransformStream(options));
+    writer.releaseLock();
+  }
+  return input.pipeTo(target, options);
+}
+
+function transformRaw(input, options) {
+  options.cancel = cancel.bind(input);
+  const transformStream = new TransformStream(options);
+  pipe(input, transformStream.writable);
+  return transformStream.readable;
 }
 
 function transform(input, process = () => undefined, finish = () => undefined) {
@@ -119,6 +114,60 @@ function transform(input, process = () => undefined, finish = () => undefined) {
   const result2 = finish();
   if (result1 !== undefined && result2 !== undefined) return util.concat([result1, result2]);
   return result1 !== undefined ? result1 : result2;
+}
+
+function transformPair(input, fn) {
+  let incomingTransformController;
+  const incoming = new TransformStream({
+    start(controller) {
+      incomingTransformController = controller;
+    }
+  });
+
+  const canceledErr = new Error('Readable side was canceled.');
+  const pipeDonePromise = pipe(input, incoming.writable).catch(e => {
+    if (e !== canceledErr) {
+      throw e;
+    }
+  });
+
+  let outputController;
+  const outgoing = {
+    readable: new ReadableStream({
+      start(_controller) {
+        outputController = _controller;
+      },
+      async cancel() {
+        incomingTransformController.error(canceledErr);
+        await pipeDonePromise;
+      }
+    }),
+    writable: new WritableStream({
+      write: outputController.enqueue.bind(outputController),
+      close: outputController.close.bind(outputController),
+      abort: outputController.error.bind(outputController)
+    })
+  };
+  Promise.resolve(fn(incoming.readable, outgoing.writable)).catch(e => {
+    if (e !== canceledErr) {
+      throw e;
+    }
+  });
+  return outgoing.readable;
+}
+
+function parse(input, fn) {
+  let returnValue;
+  const transformed = transformPair(input, (readable, writable) => {
+    const reader = getReader(readable);
+    reader.remainder = () => {
+      reader.releaseLock();
+      pipe(readable, writable);
+      return transformed;
+    };
+    returnValue = fn(reader);
+  });
+  return returnValue;
 }
 
 function tee(input) {
@@ -162,7 +211,7 @@ function slice(input, begin=0, end=Infinity) {
             }
             bytesRead += value.length;
           } else {
-            controller.close();
+            controller.terminate();
           }
         }
       });
@@ -199,41 +248,6 @@ function slice(input, begin=0, end=Infinity) {
   return input.slice(begin, end);
 }
 
-async function parse(input, parser) {
-  let controller;
-  const transformed = transformRaw(input, {
-    start(_controller) {
-      controller = _controller;
-    },
-    cancel: cancel.bind(input)
-  });
-  transformed[stream.cancelReadsSym] = controller.error.bind(controller);
-  toStream(input).pipeTo(target);
-  const reader = getReader(transformed.readable);
-  await parser(reader);
-
-
-  new ReadableStream({
-    start(_controller) {
-      controller = _controller;
-    },
-    pull: () => {
-
-    },
-    cancel: () => {
-      
-    }
-  });
-  new ReadableStream({
-    pull: () => {
-
-    },
-    cancel: () => {
-
-    }
-  });
-}
-
 async function readToEnd(input, join) {
   if (util.isStream(input)) {
     return getReader(input).readToEnd(join);
@@ -241,9 +255,9 @@ async function readToEnd(input, join) {
   return input;
 }
 
-async function cancel(input) {
+async function cancel(input, reason) {
   if (util.isStream(input)) {
-    return input.cancel();
+    return input.cancel(reason);
   }
 }
 
@@ -330,52 +344,7 @@ if (nodeStream) {
 }
 
 
-export default { toStream, concat, getReader, transformRaw, transform, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync, readerAcquiredMap };
-
-
-const readerAcquiredMap = new Map();
-
-const _getReader = ReadableStream.prototype.getReader;
-ReadableStream.prototype.getReader = function() {
-  if (readerAcquiredMap.has(this)) {
-    console.error(readerAcquiredMap.get(this));
-  } else {
-    readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
-  }
-  const _this = this;
-  const reader = _getReader.apply(this, arguments);
-  const _releaseLock = reader.releaseLock;
-  reader.releaseLock = function() {
-    try {
-      readerAcquiredMap.delete(_this);
-    } catch(e) {}
-    return _releaseLock.apply(this, arguments);
-  };
-  return reader;
-};
-
-const _tee = ReadableStream.prototype.tee;
-ReadableStream.prototype.tee = function() {
-  if (readerAcquiredMap.has(this)) {
-    console.error(readerAcquiredMap.get(this));
-  } else {
-    readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
-  }
-  return _tee.apply(this, arguments);
-};
-
-const _cancel = ReadableStream.prototype.cancel;
-ReadableStream.prototype.cancel = function() {
-  try {
-    return _cancel.apply(this, arguments);
-  } finally {
-    if (readerAcquiredMap.has(this)) {
-      console.error(readerAcquiredMap.get(this));
-    } else {
-      readerAcquiredMap.set(this, new Error('Reader for this ReadableStream already acquired here.'));
-    }
-  }
-};
+export default { toStream, concat, getReader, getWriter, pipe, transformRaw, transform, transformPair, parse, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
 
 
 const doneReadingSet = new WeakSet();
@@ -482,25 +451,6 @@ Reader.prototype.unshift = function(...values) {
     this.externalBuffer = [];
   }
   this.externalBuffer.unshift(...values.filter(value => value && value.length));
-};
-
-Reader.prototype.substream = function() {
-  return Object.assign(create({
-    pull: async controller => {
-      const { done, value } = await this.read();
-      if (!done) {
-        controller.enqueue(value);
-      } else {
-        controller.close();
-      }
-    },
-    cancel: () => {
-      this.releaseLock();
-      return cancel(this.stream);
-    }
-  }), { from: this.stream });
-  this.releaseLock();
-  return this.stream;
 };
 
 Reader.prototype.readToEnd = async function(join=util.concat) {

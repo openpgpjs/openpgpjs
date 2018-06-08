@@ -127,7 +127,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
       exception = e;
     }
   }
-  // We don't await stream.cancel here because... it sometimes hangs indefinitely. No clue why.
+  // We don't await stream.cancel here because it only returns when the other copy is canceled too.
   stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
   symEncryptedPacket.encrypted = null;
 
@@ -543,7 +543,7 @@ Message.prototype.verify = async function(keys, date=new Date()) {
     throw new Error('Can only verify message with one literal data packet.');
   }
   if (msg.packets.stream) {
-    let onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+    const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
     onePassSigList.forEach(onePassSig => {
       onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
         onePassSig.signatureDataResolve = resolve;

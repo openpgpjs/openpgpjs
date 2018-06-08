@@ -212,27 +212,17 @@ function dearmor(input) {
       let headersDone;
       let text = [];
       let textDone;
-      let reader;
-      let controller;
-      let buffer = '';
-      let data = base64.decode(stream.transformRaw(input, {
-        transform: (value, controller) => process(buffer + value, controller),
-        flush: controller => process(buffer, controller)
-      }));
       let checksum;
-      const checksumVerified = getCheckSum(stream.clone(data));
-      data = stream.getReader(data).substream(); // Convert to Stream
-      data = stream.transform(data, value => value, async () => {
-        const checksumVerifiedString = await stream.readToEnd(checksumVerified);
-        if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
-          throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-                  checksumVerifiedString + "'");
-        }
-      });
-      function process(value, controller) {
-        const lineEndIndex = value.indexOf('\n') + 1;
-        if (lineEndIndex) {
-          let line = value.substr(0, lineEndIndex);
+      let data = base64.decode(stream.transformPair(input, async (readable, writable) => {
+        const reader = stream.getReader(readable);
+        const writer = stream.getWriter(writable);
+        while (true) {
+          await writer.ready;
+          let line = await reader.readLine();
+          if (line === undefined) {
+            writer.abort('Misformed armored text');
+            break;
+          }
           // remove trailing whitespace at end of lines
           // remove leading whitespace for compat with older versions of OpenPGP.js
           line = line.trim();
@@ -265,24 +255,32 @@ function dearmor(input) {
           } else {
             if (!reSplit.test(line)) {
               if (line[0] !== '=') {
-                controller.enqueue(line);
+                writer.write(line);
               } else {
                 checksum = line.substr(1);
               }
             } else {
-              controller.close();
-              return;
+              writer.close();
+              break;
             }
           }
-          process(value.substr(lineEndIndex), controller);
-        } else {
-          buffer = value;
         }
-        // if (line === undefined) {
-        //   controller.error('Misformed armored text');
-        //   break;
-        // }
-      }
+      }));
+      data = stream.transformPair(data, async (readable, writable) => {
+        const checksumVerified = getCheckSum(stream.clone(readable));
+        stream.pipe(readable, writable, {
+          preventClose: true
+        });
+        const checksumVerifiedString = await stream.readToEnd(checksumVerified);
+        const writer = stream.getWriter(writable);
+        await writer.ready;
+        if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
+          writer.abort(new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
+                  checksumVerifiedString + "'"));
+        } else {
+          writer.close();
+        }
+      });
     } catch(e) {
       reject(e);
     }

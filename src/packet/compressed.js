@@ -70,15 +70,16 @@ function Compressed() {
  * @param {String} bytes Payload of a tag 8 packet
  */
 Compressed.prototype.read = async function (bytes) {
-  const reader = stream.getReader(bytes);
+  await stream.parse(bytes, async reader => {
 
-  // One octet that gives the algorithm used to compress the packet.
-  this.algorithm = enums.read(enums.compression, await reader.readByte());
+    // One octet that gives the algorithm used to compress the packet.
+    this.algorithm = enums.read(enums.compression, await reader.readByte());
 
-  // Compressed data, which makes up the remainder of the packet.
-  this.compressed = reader.substream();
+    // Compressed data, which makes up the remainder of the packet.
+    this.compressed = reader.remainder();
 
-  await this.decompress();
+    await this.decompress();
+  });
 };
 
 

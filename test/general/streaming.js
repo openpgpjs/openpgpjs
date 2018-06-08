@@ -6,7 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 
-const { util } = openpgp;
+const { stream, util } = openpgp;
 
 const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -102,6 +102,7 @@ describe('Streaming', function() {
     let i = 0;
     const data = new ReadableStream({
       async pull(controller) {
+        await new Promise(setTimeout);
         if (i++ < 10) {
           let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
@@ -115,7 +116,7 @@ describe('Streaming', function() {
       data,
       passwords: ['test'],
     });
-    expect(await openpgp.stream.getReader(openpgp.stream.clone(encrypted.data)).readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: https:\/\/openpgpjs.org\r\n\r\n/);
+    expect(await openpgp.stream.getReader(openpgp.stream.clone(encrypted.data)).readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
     if (i > 10) throw new Error('Data did not arrive early.');
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted.data);
     const message = await openpgp.message.readArmored(msgAsciiArmored);
@@ -133,6 +134,7 @@ describe('Streaming', function() {
     let canceled = false;
     const data = new ReadableStream({
       async pull(controller) {
+        await new Promise(setTimeout);
         if (i++ < 10) {
           let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
@@ -150,9 +152,7 @@ describe('Streaming', function() {
       passwords: ['test'],
     });
     const reader = openpgp.stream.getReader(encrypted.data);
-    console.log('read start');
-    expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\nVersion: OpenPGP.js VERSION\r\nComment: https:\/\/openpgpjs.org\r\n\r\n/);
-    console.log('read end');
+    expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
     if (i > 10) throw new Error('Data did not arrive early.');
     reader.releaseLock();
     await openpgp.stream.cancel(encrypted.data);
@@ -380,7 +380,7 @@ describe('Streaming', function() {
       let i = 0;
       const data = new ReadableStream({
         async pull(controller) {
-          await new Promise(setTimeout);
+          await new Promise(resolve => setTimeout(resolve, 10));
           if (i++ < 10) {
             let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
             controller.enqueue(randomBytes);
@@ -412,6 +412,46 @@ describe('Streaming', function() {
     }
   });
 
+  it('stream.transformPair()', async function() {
+    let plaintext = [];
+    let i = 0;
+    let canceled = false;
+    let controller;
+    const data = new ReadableStream({
+      start(_controller) {
+        controller = _controller;
+      },
+      async pull(controller) {
+        await new Promise(setTimeout);
+        if (i++ < 10) {
+          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          controller.enqueue(randomBytes);
+          plaintext.push(randomBytes);
+        } else {
+          controller.close();
+        }
+      },
+      cancel() {
+        canceled = true;
+      }
+    });
+    data.controller = controller;
+
+    const transformed = stream.transformPair(stream.slice(data, 0, 5000), async (readable, writable) => {
+      const reader = stream.getReader(readable);
+      const writer = stream.getWriter(writable);
+      while (true) {
+        await writer.ready;
+        const { done, value } = await reader.read();
+        if (done) return writer.close();
+        writer.write(value);
+      }
+    });
+    await new Promise(resolve => setTimeout(resolve));
+    await stream.cancel(transformed);
+    expect(canceled).to.be.true;
+  });
+
   it('Input stream should be canceled when canceling decrypted stream (draft04)', async function() {
     let aead_protectValue = openpgp.config.aead_protect;
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
@@ -423,7 +463,7 @@ describe('Streaming', function() {
       let canceled = false;
       const data = new ReadableStream({
         async pull(controller) {
-          await new Promise(setTimeout);
+          await new Promise(resolve => setTimeout(resolve, 10));
           if (i++ < 10) {
             let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
             controller.enqueue(randomBytes);
@@ -449,11 +489,11 @@ describe('Streaming', function() {
         format: 'binary'
       });
       expect(util.isStream(decrypted.data)).to.be.true;
-      const reader = openpgp.stream.getReader(openpgp.stream.clone(decrypted.data));
+      const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       reader.releaseLock();
-      await openpgp.stream.cancel(decrypted.data);
+      await openpgp.stream.cancel(decrypted.data, new Error('canceled by test'));
       expect(canceled).to.be.true;
     } finally {
       openpgp.config.aead_protect = aead_protectValue;

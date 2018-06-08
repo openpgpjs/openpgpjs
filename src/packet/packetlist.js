@@ -36,34 +36,34 @@ function List() {
  * @param {Uint8Array} A Uint8Array of bytes.
  */
 List.prototype.read = async function (bytes) {
-  this.stream = new ReadableStream({
-    pull: async controller => {
-      try {
-        if (!await packetParser.read(bytes, async parsed => {
-          try {
-            const tag = enums.read(enums.packet, parsed.tag);
-            const packet = packets.newPacketFromTag(tag);
-            packet.packets = new List();
-            packet.fromStream = util.isStream(parsed.packet);
-            await packet.read(parsed.packet);
-            controller.enqueue(packet);
-          } catch (e) {
-            if (!config.tolerant ||
-                parsed.tag === enums.packet.symmetricallyEncrypted ||
-                parsed.tag === enums.packet.literal ||
-                parsed.tag === enums.packet.compressed) {
-              controller.error(e);
-            }
-            util.print_debug_error(e);
+  this.stream = stream.transformPair(bytes, async (readable, writable) => {
+    const writer = stream.getWriter(writable);
+    while (true) {
+      await writer.ready;
+      const done = await packetParser.read(readable, async parsed => {
+        try {
+          const tag = enums.read(enums.packet, parsed.tag);
+          const packet = packets.newPacketFromTag(tag);
+          packet.packets = new List();
+          packet.fromStream = util.isStream(parsed.packet);
+          await packet.read(parsed.packet);
+          writer.write(packet);
+        } catch (e) {
+          if (!config.tolerant ||
+              parsed.tag === enums.packet.symmetricallyEncrypted ||
+              parsed.tag === enums.packet.literal ||
+              parsed.tag === enums.packet.compressed) {
+            writer.abort(e);
           }
-        })) {
-          controller.close();
+          util.print_debug_error(e);
         }
-      } catch(e) {
-        controller.error(e);
+      });
+      if (done) {
+        await writer.ready;
+        writer.close();
+        return;
       }
-    },
-    cancel: stream.cancel.bind(bytes)
+    }
   });
 
   // Wait until first few packets have been read

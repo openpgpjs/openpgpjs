@@ -84,13 +84,16 @@ export default {
           if (value.locked) {
             obj[key] = null;
           } else {
-            const reader = stream.getReader(value);
-            const { port1, port2 } = new MessageChannel();
-            port1.onmessage = async function() {
-              port1.postMessage(await reader.read());
-            };
-            obj[key] = port2;
-            collection.push(port2);
+            const transformed = stream.transformPair(value, async readable => {
+              const reader = stream.getReader(readable);
+              const { port1, port2 } = new MessageChannel();
+              port1.onmessage = async function({ data: { action } }) {
+                if (action === 'read') port1.postMessage(await reader.read());
+                else if (action === 'cancel') port1.postMessage(await transformed.cancel());
+              };
+              obj[key] = port2;
+              collection.push(port2);
+            });
           }
           return;
         }
@@ -115,7 +118,13 @@ export default {
                   }
                   resolve();
                 };
-                value.postMessage(undefined);
+                value.postMessage({ action: 'read' });
+              });
+            },
+            cancel() {
+              return new Promise(resolve => {
+                value.onmessage = resolve;
+                value.postMessage({ action: 'cancel' });
               });
             }
           });

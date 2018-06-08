@@ -259,10 +259,11 @@ export default {
       if (controller) {
         controller.close();
       }
-      return !done && value && value.length;
+      return done || !value || !value.length;
     } catch(e) {
       if (controller) {
         controller.error(e);
+        return true;
       } else {
         throw e;
       }

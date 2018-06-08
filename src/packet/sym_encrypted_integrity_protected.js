@@ -65,17 +65,18 @@ function SymEncryptedIntegrityProtected() {
 }
 
 SymEncryptedIntegrityProtected.prototype.read = async function (bytes) {
-  const reader = stream.getReader(bytes);
+  await stream.parse(bytes, async reader => {
 
-  // - A one-octet version number. The only currently defined value is 1.
-  if (await reader.readByte() !== VERSION) {
-    throw new Error('Invalid packet version.');
-  }
+    // - A one-octet version number. The only currently defined value is 1.
+    if (await reader.readByte() !== VERSION) {
+      throw new Error('Invalid packet version.');
+    }
 
-  // - Encrypted data, the output of the selected symmetric-key cipher
-  //   operating in Cipher Feedback mode with shift amount equal to the
-  //   block size of the cipher (CFB-n where n is the block size).
-  this.encrypted = reader.substream();
+    // - Encrypted data, the output of the selected symmetric-key cipher
+    //   operating in Cipher Feedback mode with shift amount equal to the
+    //   block size of the cipher (CFB-n where n is the block size).
+    this.encrypted = reader.remainder();
+  });
 };
 
 SymEncryptedIntegrityProtected.prototype.write = function () {
