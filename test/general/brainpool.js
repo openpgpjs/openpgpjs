@@ -4,6 +4,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
+const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
@@ -222,10 +223,12 @@ describe('Brainpool Cryptography', function () {
           const bye = secondKey.key;
           const pubBye = bye.toPublic();
 
+          const testData = input.createSomeMessage();
+          const testData2 = input.createSomeMessage();
           return Promise.all([
             // Signing message
             openpgp.sign(
-              { data: 'Hi, this is me, Hi!', privateKeys: hi }
+              { data: testData, privateKeys: hi }
             ).then(signed => {
               const msg = openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message
@@ -235,7 +238,7 @@ describe('Brainpool Cryptography', function () {
                 ).then(output => expect(output.signatures[0].valid).to.be.true),
                 // Verifying detached signature
                 openpgp.verify(
-                  { message: openpgp.message.fromText('Hi, this is me, Hi!'),
+                  { message: openpgp.message.fromText(testData),
                     publicKeys: pubHi,
                     signature: openpgp.signature.readArmored(signed.data) }
                 ).then(output => expect(output.signatures[0].valid).to.be.true)
@@ -243,7 +246,7 @@ describe('Brainpool Cryptography', function () {
             }),
             // Encrypting and signing
             openpgp.encrypt(
-              { data: 'Hi, Hi wrote this but only Bye can read it!',
+              { data: testData2,
                 publicKeys: [pubBye],
                 privateKeys: [hi] }
             ).then(encrypted => {
@@ -254,7 +257,7 @@ describe('Brainpool Cryptography', function () {
                   privateKeys: bye,
                   publicKeys: [pubHi] }
               ).then(output => {
-                expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
+                expect(output.data).to.equal(testData2);
                 expect(output.signatures[0].valid).to.be.true;
               });
             })
