@@ -47,7 +47,7 @@ List.prototype.read = async function (bytes) {
           packet.packets = new List();
           packet.fromStream = util.isStream(parsed.packet);
           await packet.read(parsed.packet);
-          writer.write(packet);
+          await writer.write(packet);
         } catch (e) {
           if (!config.tolerant ||
               parsed.tag === enums.packet.symmetricallyEncrypted ||
