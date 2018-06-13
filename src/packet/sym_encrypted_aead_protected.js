@@ -147,41 +147,45 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     return stream.transformPair(data, async (readable, writable) => {
       const reader = stream.getReader(readable);
       const writer = stream.getWriter(writable);
-      while (true) {
-        await writer.ready;
-        let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
-        const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
-        chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
-        let cryptedPromise;
-        let done;
-        if (!chunkIndex || chunk.length) {
-          reader.unshift(finalChunk);
-          cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
-        } else {
-          // After the last chunk, we either encrypt a final, empty
-          // data chunk to get the final authentication tag or
-          // validate that final authentication tag.
-          adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
-          cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
-          done = true;
+      try {
+        while (true) {
+          await writer.ready;
+          let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
+          const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
+          chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
+          let cryptedPromise;
+          let done;
+          if (!chunkIndex || chunk.length) {
+            reader.unshift(finalChunk);
+            cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
+          } else {
+            // After the last chunk, we either encrypt a final, empty
+            // data chunk to get the final authentication tag or
+            // validate that final authentication tag.
+            adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
+            cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
+            done = true;
+          }
+          cryptedBytes += chunk.length - tagLengthIfDecrypting;
+          queuedBytes += chunk.length - tagLengthIfDecrypting;
+          // eslint-disable-next-line no-loop-func
+          latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
+            await writer.write(crypted);
+            queuedBytes -= chunk.length;
+          }).catch(err => writer.abort(err));
+          // console.log(fn, done, queuedBytes, writer.desiredSize);
+          if (done || queuedBytes > writer.desiredSize) {
+            await latestPromise; // Respect backpressure
+          }
+          if (!done) {
+            adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+          } else {
+            await writer.close();
+            break;
+          }
         }
-        cryptedBytes += chunk.length - tagLengthIfDecrypting;
-        queuedBytes += chunk.length - tagLengthIfDecrypting;
-        // eslint-disable-next-line no-loop-func
-        latestPromise = latestPromise.then(() => cryptedPromise).then(crypted => {
-          writer.write(crypted);
-          queuedBytes -= chunk.length;
-        }).catch(err => writer.abort(err));
-        // console.log(fn, done, queuedBytes, writer.desiredSize);
-        if (done || queuedBytes > writer.desiredSize) {
-          await latestPromise; // Respect backpressure
-        }
-        if (!done) {
-          adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-        } else {
-          writer.close();
-          break;
-        }
+      } catch(e) {
+        await writer.abort(e);
       }
     });
   } else {

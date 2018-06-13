@@ -212,57 +212,69 @@ function dearmor(input) {
       let headersDone;
       let text = [];
       let textDone;
+      let resolved = false;
       let checksum;
       let data = base64.decode(stream.transformPair(input, async (readable, writable) => {
         const reader = stream.getReader(readable);
         const writer = stream.getWriter(writable);
         while (true) {
-          await writer.ready;
-          let line = await reader.readLine();
-          if (line === undefined) {
-            writer.abort('Misformed armored text');
-            break;
-          }
-          // remove trailing whitespace at end of lines
-          // remove leading whitespace for compat with older versions of OpenPGP.js
-          line = line.trim();
-          if (!type) {
-            if (reSplit.test(line)) {
-              type = getType(line);
+          if (resolved) await writer.ready;
+          try {
+            let line = await reader.readLine();
+            if (line === undefined) {
+              throw new Error('Misformed armored text');
             }
-          } else if (!headersDone) {
-            if (reSplit.test(line)) {
-              reject(new Error('Mandatory blank line missing between armor headers and armor data'));
-            }
-            if (!reEmptyLine.test(line)) {
-              lastHeaders.push(line);
-            } else {
-              verifyHeaders(lastHeaders);
-              headersDone = true;
-              if (textDone || type !== 2) resolve({ text, data, headers, type });
-            }
-          } else if (!textDone && type === 2) {
-            if (!reSplit.test(line)) {
-              // Reverse dash-escaping for msg
-              text.push(line.replace(/^- /, ''));
-            } else {
-              text = text.join('\r\n');
-              textDone = true;
-              verifyHeaders(lastHeaders);
-              lastHeaders = [];
-              headersDone = false;
-            }
-          } else {
-            if (!reSplit.test(line)) {
-              if (line[0] !== '=') {
-                writer.write(line);
+            // remove trailing whitespace at end of lines
+            // remove leading whitespace for compat with older versions of OpenPGP.js
+            line = line.trim();
+            if (!type) {
+              if (reSplit.test(line)) {
+                type = getType(line);
+              }
+            } else if (!headersDone) {
+              if (reSplit.test(line)) {
+                reject(new Error('Mandatory blank line missing between armor headers and armor data'));
+              }
+              if (!reEmptyLine.test(line)) {
+                lastHeaders.push(line);
               } else {
-                checksum = line.substr(1);
+                verifyHeaders(lastHeaders);
+                headersDone = true;
+                if (textDone || type !== 2) {
+                  resolve({ text, data, headers, type });
+                  resolved = true;
+                }
+              }
+            } else if (!textDone && type === 2) {
+              if (!reSplit.test(line)) {
+                // Reverse dash-escaping for msg
+                text.push(line.replace(/^- /, ''));
+              } else {
+                text = text.join('\r\n');
+                textDone = true;
+                verifyHeaders(lastHeaders);
+                lastHeaders = [];
+                headersDone = false;
               }
             } else {
-              writer.close();
-              break;
+              if (!reSplit.test(line)) {
+                if (line[0] !== '=') {
+                  await writer.write(line);
+                } else {
+                  checksum = line.substr(1);
+                }
+              } else {
+                await writer.close();
+                break;
+              }
             }
+          } catch(e) {
+            if (resolved) {
+              await writer.abort(e);
+            } else {
+              reject(e);
+            }
+            break;
           }
         }
       }));
@@ -275,10 +287,10 @@ function dearmor(input) {
         const writer = stream.getWriter(writable);
         await writer.ready;
         if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
-          writer.abort(new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
+          await writer.abort(new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
                   checksumVerifiedString + "'"));
         } else {
-          writer.close();
+          await writer.close();
         }
       });
     } catch(e) {

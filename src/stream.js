@@ -53,7 +53,7 @@ async function pipe(input, target, options) {
     }
     writer.releaseLock();
   }
-  return input.pipeTo(target, options);
+  return input.pipeTo(target, options).catch(function() {});
 }
 
 function transformRaw(input, options) {
@@ -125,22 +125,13 @@ function transformPair(input, fn) {
     }
   });
 
-  const canceledErr = new Error('Readable side was canceled.');
-  const pipeDonePromise = pipe(input, incoming.writable).catch(e => {
-    if (e !== canceledErr) {
-      throw e;
-    }
-  });
+  const pipeDonePromise = pipe(input, incoming.writable);
 
   const outgoing = transformWithCancel(async function() {
-    incomingTransformController.error(canceledErr);
+    incomingTransformController.error(new Error('Readable side was canceled.'));
     await pipeDonePromise;
   });
-  Promise.resolve(fn(incoming.readable, outgoing.writable)).catch(e => {
-    if (e !== canceledErr) {
-      throw e;
-    }
-  });
+  fn(incoming.readable, outgoing.writable);
   return outgoing.readable;
 }
 
@@ -183,16 +174,20 @@ function passiveClone(input) {
         const transformed = transformPair(input, async (readable, writable) => {
           const reader = getReader(readable);
           const writer = getWriter(writable);
-          while (true) {
-            await writer.ready;
-            const { done, value } = await reader.read();
-            if (done) {
-              try { controller.close(); } catch(e) {}
-              await writer.close();
-              return;
+          try {
+            while (true) {
+              await writer.ready;
+              const { done, value } = await reader.read();
+              if (done) {
+                try { controller.close(); } catch(e) {}
+                await writer.close();
+                return;
+              }
+              try { controller.enqueue(value); } catch(e) {}
+              await writer.write(value);
             }
-            try { controller.enqueue(value); } catch(e) {}
-            await writer.write(value);
+          } catch(e) {
+            await writer.abort(e);
           }
         });
         overwrite(input, transformed);

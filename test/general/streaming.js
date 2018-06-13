@@ -416,11 +416,7 @@ describe('Streaming', function() {
     let plaintext = [];
     let i = 0;
     let canceled = false;
-    let controller;
     const data = new ReadableStream({
-      start(_controller) {
-        controller = _controller;
-      },
       async pull(controller) {
         await new Promise(setTimeout);
         if (i++ < 10) {
@@ -435,16 +431,22 @@ describe('Streaming', function() {
         canceled = true;
       }
     });
-    data.controller = controller;
 
     const transformed = stream.transformPair(stream.slice(data, 0, 5000), async (readable, writable) => {
       const reader = stream.getReader(readable);
       const writer = stream.getWriter(writable);
-      while (true) {
-        await writer.ready;
-        const { done, value } = await reader.read();
-        if (done) return writer.close();
-        writer.write(value);
+      try {
+        while (true) {
+          await writer.ready;
+          const { done, value } = await reader.read();
+          if (done) {
+            await writer.close();
+            break;
+          }
+          await writer.write(value);
+        }
+      } catch(e) {
+        await writer.abort(e);
       }
     });
     await new Promise(resolve => setTimeout(resolve));
