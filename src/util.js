@@ -169,7 +169,6 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function (base64) {
-//    atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
     return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
@@ -180,8 +179,7 @@ export default {
    * @returns {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function (bytes, url) {
-//    btoa(util.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
-    return b64.encode(bytes, url).replace('\n', '');
+    return b64.encode(bytes, url).replace(/(\n)/g, '');
   },
 
   /**
