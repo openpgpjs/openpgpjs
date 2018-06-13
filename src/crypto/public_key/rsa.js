@@ -57,7 +57,7 @@ export default {
    */
   sign: async function(m, n, e, d) {
     if (n.cmp(m) <= 0) {
-      throw new Error('Data too large.');
+      throw new Error('Message size cannot exceed modulus size');
     }
     const nred = new BN.red(n);
     return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
@@ -73,7 +73,7 @@ export default {
    */
   verify: async function(s, n, e) {
     if (n.cmp(s) <= 0) {
-      throw new Error('Data too large.');
+      throw new Error('Signature size cannot exceed modulus size');
     }
     const nred = new BN.red(n);
     return s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
@@ -89,7 +89,7 @@ export default {
    */
   encrypt: async function(m, n, e) {
     if (n.cmp(m) <= 0) {
-      throw new Error('Data too large.');
+      throw new Error('Message size cannot exceed modulus size');
     }
     const nred = new BN.red(n);
     return m.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
