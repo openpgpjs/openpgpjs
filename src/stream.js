@@ -10,7 +10,7 @@ function toStream(input) {
   if (util.isStream(input)) {
     return input;
   }
-  return create({
+  return new ReadableStream({
     start(controller) {
       controller.enqueue(input);
       controller.close();
@@ -20,22 +20,9 @@ function toStream(input) {
 
 function concat(arrays) {
   arrays = arrays.map(toStream);
-  let outputController;
-  const transform = {
-    readable: new ReadableStream({
-      start(_controller) {
-        outputController = _controller;
-      },
-      async cancel(reason) {
-        await Promise.all(transforms.map(array => cancel(array, reason)));
-      }
-    }),
-    writable: new WritableStream({
-      write: outputController.enqueue.bind(outputController),
-      close: outputController.close.bind(outputController),
-      abort: outputController.error.bind(outputController)
-    })
-  };
+  const transform = transformWithCancel(async function(reason) {
+    await Promise.all(transforms.map(array => cancel(array, reason)));
+  });
   let prev = Promise.resolve();
   const transforms = arrays.map((array, i) => transformPair(array, (readable, writable) => {
     prev = prev.then(() => pipe(readable, transform.writable, {
@@ -54,19 +41,6 @@ function getWriter(input) {
   return input.getWriter();
 }
 
-function create(options, extraArg) {
-  const promises = new Map();
-  const wrap = fn => fn && (controller => {
-    const returnValue = fn.call(options, controller, extraArg);
-    promises.set(fn, returnValue);
-    return returnValue;
-  });
-  options.options = Object.assign({}, options);
-  options.start = wrap(options.start);
-  options.pull = wrap(options.pull);
-  return new ReadableStream(options);
-}
-
 async function pipe(input, target, options) {
   if (!util.isStream(input)) {
     input = toStream(input);
@@ -83,10 +57,37 @@ async function pipe(input, target, options) {
 }
 
 function transformRaw(input, options) {
-  options.cancel = cancel.bind(input);
   const transformStream = new TransformStream(options);
   pipe(input, transformStream.writable);
   return transformStream.readable;
+}
+
+function transformWithCancel(cancel) {
+  let backpressureChangePromiseResolve = function() {};
+  let outputController;
+  return {
+    readable: new ReadableStream({
+      start(controller) {
+        outputController = controller;
+      },
+      pull() {
+        backpressureChangePromiseResolve();
+      },
+      cancel
+    }),
+    writable: new WritableStream({
+      write: async function(chunk) {
+        outputController.enqueue(chunk);
+        if (outputController.desiredSize <= 0) {
+          await new Promise(resolve => {
+            backpressureChangePromiseResolve = resolve;
+          });
+        }
+      },
+      close: outputController.close.bind(outputController),
+      abort: outputController.error.bind(outputController)
+    })
+  };
 }
 
 function transform(input, process = () => undefined, finish = () => undefined) {
@@ -131,23 +132,10 @@ function transformPair(input, fn) {
     }
   });
 
-  let outputController;
-  const outgoing = {
-    readable: new ReadableStream({
-      start(_controller) {
-        outputController = _controller;
-      },
-      async cancel() {
-        incomingTransformController.error(canceledErr);
-        await pipeDonePromise;
-      }
-    }),
-    writable: new WritableStream({
-      write: outputController.enqueue.bind(outputController),
-      close: outputController.close.bind(outputController),
-      abort: outputController.error.bind(outputController)
-    })
-  };
+  const outgoing = transformWithCancel(async function() {
+    incomingTransformController.error(canceledErr);
+    await pipeDonePromise;
+  });
   Promise.resolve(fn(incoming.readable, outgoing.writable)).catch(e => {
     if (e !== canceledErr) {
       throw e;
@@ -182,21 +170,51 @@ function tee(input) {
 function clone(input) {
   if (util.isStream(input)) {
     const teed = tee(input);
-    // Overwrite input.getReader, input.locked, etc to point to teed[0]
-    Object.entries(Object.getOwnPropertyDescriptors(ReadableStream.prototype)).forEach(([name, descriptor]) => {
-      if (name === 'constructor') {
-        return;
-      }
-      if (descriptor.value) {
-        descriptor.value = descriptor.value.bind(teed[0]);
-      } else {
-        descriptor.get = descriptor.get.bind(teed[0]);
-      }
-      Object.defineProperty(input, name, descriptor);
-    });
+    overwrite(input, teed[0]);
     return teed[1];
   }
   return slice(input);
+}
+
+function passiveClone(input) {
+  if (util.isStream(input)) {
+    return new ReadableStream({
+      start(controller) {
+        const transformed = transformPair(input, async (readable, writable) => {
+          const reader = getReader(readable);
+          const writer = getWriter(writable);
+          while (true) {
+            await writer.ready;
+            const { done, value } = await reader.read();
+            if (done) {
+              try { controller.close(); } catch(e) {}
+              await writer.close();
+              return;
+            }
+            try { controller.enqueue(value); } catch(e) {}
+            await writer.write(value);
+          }
+        });
+        overwrite(input, transformed);
+      }
+    });
+  }
+  return slice(input);
+}
+
+function overwrite(input, clone) {
+  // Overwrite input.getReader, input.locked, etc to point to clone
+  Object.entries(Object.getOwnPropertyDescriptors(ReadableStream.prototype)).forEach(([name, descriptor]) => {
+    if (name === 'constructor') {
+      return;
+    }
+    if (descriptor.value) {
+      descriptor.value = descriptor.value.bind(clone);
+    } else {
+      descriptor.get = descriptor.get.bind(clone);
+    }
+    Object.defineProperty(input, name, descriptor);
+  });
 }
 
 function slice(input, begin=0, end=Infinity) {
@@ -344,7 +362,7 @@ if (nodeStream) {
 }
 
 
-export default { toStream, concat, getReader, getWriter, pipe, transformRaw, transform, transformPair, parse, clone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
+export default { toStream, concat, getReader, getWriter, pipe, transformRaw, transform, transformPair, parse, clone, passiveClone, slice, readToEnd, cancel, nodeToWeb, webToNode, fromAsync };
 
 
 const doneReadingSet = new WeakSet();

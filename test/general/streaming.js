@@ -500,4 +500,73 @@ describe('Streaming', function() {
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
     }
   });
+
+  it("Don't pull entire input stream when we're not pulling encrypted stream", async function() {
+    let plaintext = [];
+    let i = 0;
+    const data = new ReadableStream({
+      async pull(controller) {
+        if (i++ < 100) {
+          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          controller.enqueue(randomBytes);
+          plaintext.push(randomBytes);
+        } else {
+          controller.close();
+        }
+        await new Promise(setTimeout);
+      }
+    });
+    const encrypted = await openpgp.encrypt({
+      data,
+      passwords: ['test'],
+    });
+    const reader = openpgp.stream.getReader(encrypted.data);
+    expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
+    if (i > 10) throw new Error('Data did not arrive early.');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    expect(i).to.be.lessThan(50);
+  });
+
+  it("Don't pull entire input stream when we're not pulling decrypted stream (draft04)", async function() {
+    let aead_protectValue = openpgp.config.aead_protect;
+    let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 4;
+    try {
+      let plaintext = [];
+      let i = 0;
+      const data = new ReadableStream({
+        async pull(controller) {
+          if (i++ < 100) {
+            let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+            controller.enqueue(randomBytes);
+            plaintext.push(randomBytes);
+          } else {
+            controller.close();
+          }
+          await new Promise(setTimeout);
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        data,
+        passwords: ['test'],
+      });
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      const reader = openpgp.stream.getReader(decrypted.data);
+      expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
+      if (i > 10) throw new Error('Data did not arrive early.');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      expect(i).to.be.lessThan(50);
+    } finally {
+      openpgp.config.aead_protect = aead_protectValue;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
+    }
+  });
 });

@@ -98,7 +98,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
   let tohash = util.concat([bytes, mdc]);
-  const hash = crypto.hash.sha1(util.concat([prefix, stream.clone(tohash)]));
+  const hash = crypto.hash.sha1(util.concat([prefix, stream.passiveClone(tohash)]));
   tohash = util.concat([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
@@ -120,7 +120,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   const encrypted = stream.clone(this.encrypted);
-  const encryptedClone = stream.clone(encrypted);
+  const encryptedClone = stream.passiveClone(encrypted);
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
     decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key);
@@ -132,21 +132,22 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   // last packet and everything gets hashed except the hash itself
   const encryptedPrefix = await stream.readToEnd(stream.slice(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
   const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
-  const bytes = stream.slice(stream.clone(decrypted), 0, -20);
-  const tohash = util.concat([prefix, stream.clone(bytes)]);
+  const realHash = stream.slice(stream.passiveClone(decrypted), -20);
+  const bytes = stream.slice(decrypted, 0, -20);
+  const tohash = util.concat([prefix, stream.passiveClone(bytes)]);
   const verifyHash = Promise.all([
     stream.readToEnd(crypto.hash.sha1(tohash)),
-    stream.readToEnd(stream.slice(decrypted, -20))
+    stream.readToEnd(realHash)
   ]).then(([hash, mdc]) => {
     if (!util.equalsUint8Array(hash, mdc)) {
       throw new Error('Modification detected.');
     }
+    return new Uint8Array();
   });
   let packetbytes = stream.slice(bytes, 0, -2);
+  packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
   if (!util.isStream(encrypted) || !config.unsafe_stream) {
-    await verifyHash;
-  } else {
-    packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
+    packetbytes = await stream.readToEnd(packetbytes);
   }
   await this.packets.read(packetbytes);
   return true;

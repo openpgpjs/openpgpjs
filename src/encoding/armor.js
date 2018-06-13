@@ -267,8 +267,8 @@ function dearmor(input) {
         }
       }));
       data = stream.transformPair(data, async (readable, writable) => {
-        const checksumVerified = getCheckSum(stream.clone(readable));
-        stream.pipe(readable, writable, {
+        const checksumVerified = getCheckSum(stream.passiveClone(readable));
+        await stream.pipe(readable, writable, {
           preventClose: true
         });
         const checksumVerifiedString = await stream.readToEnd(checksumVerified);
@@ -306,7 +306,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
     hash = body.hash;
     body = body.data;
   }
-  const bodyClone = stream.clone(body);
+  const bodyClone = stream.passiveClone(body);
   const result = [];
   switch (messagetype) {
     case enums.armor.multipart_section:
