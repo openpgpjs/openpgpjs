@@ -710,6 +710,7 @@ Signature.prototype.verify = async function (key, data) {
     const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
     const mpi = [];
     let i = 0;
+    this.signature = await stream.readToEnd(this.signature);
     for (let j = 0; j < mpicount; j++) {
       mpi[j] = new type_mpi();
       i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
