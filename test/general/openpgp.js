@@ -1704,16 +1704,15 @@ describe('OpenPGP.js public api tests', function() {
                 data: plaintext,
                 privateKeys: privateKey_1337.keys,
                 detached: true,
-                date: past,
-                armor: false
+                date: past
             };
             const verifyOpt = {
                 publicKeys: publicKey_1337.keys,
                 date: past
             };
-            return openpgp.sign(signOpt).then(function (signed) {
+            return openpgp.sign(signOpt).then(async function (signed) {
                 verifyOpt.message = new openpgp.cleartext.CleartextMessage(plaintext);
-                verifyOpt.signature = signed.signature;
+                verifyOpt.signature = await openpgp.signature.readArmored(signed.signature);
                 return openpgp.verify(verifyOpt).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(plaintext);
@@ -1828,7 +1827,8 @@ describe('OpenPGP.js public api tests', function() {
                 const literals = packets.packets.filterByTag(openpgp.enums.packet.literal);
                 expect(literals.length).to.equal(1);
                 expect(+literals[0].date).to.equal(+past);
-                const signatures = await packets.verify(encryptOpt.publicKeys, past);
+                let signatures = await packets.verify(encryptOpt.publicKeys, past);
+                signatures = await openpgp.stream.readToEnd(signatures, arr => arr);
                 expect(+signatures[0].signature.packets[0].created).to.equal(+past);
                 expect(signatures[0].valid).to.be.true;
                 expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, past))
@@ -1856,7 +1856,8 @@ describe('OpenPGP.js public api tests', function() {
                 expect(literals.length).to.equal(1);
                 expect(literals[0].format).to.equal('binary');
                 expect(+literals[0].date).to.equal(+future);
-                const signatures = await packets.verify(encryptOpt.publicKeys, future);
+                let signatures = await packets.verify(encryptOpt.publicKeys, future);
+                signatures = await openpgp.stream.readToEnd(signatures, arr => arr);
                 expect(+signatures[0].signature.packets[0].created).to.equal(+future);
                 expect(signatures[0].valid).to.be.true;
                 expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))
@@ -1885,7 +1886,8 @@ describe('OpenPGP.js public api tests', function() {
                 expect(literals.length).to.equal(1);
                 expect(literals[0].format).to.equal('mime');
                 expect(+literals[0].date).to.equal(+future);
-                const signatures = await packets.verify(encryptOpt.publicKeys, future);
+                let signatures = await packets.verify(encryptOpt.publicKeys, future);
+                signatures = await openpgp.stream.readToEnd(signatures, arr => arr);
                 expect(+signatures[0].signature.packets[0].created).to.equal(+future);
                 expect(signatures[0].valid).to.be.true;
                 expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))

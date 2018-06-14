@@ -213,14 +213,14 @@ describe('Brainpool Cryptography', function () {
   function omnibus() {
     it('Omnibus BrainpoolP256r1 Test', function () {
       const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "brainpoolP256r1" };
-      return openpgp.generateKey(options).then(function (firstKey) {
-        const hi = firstKey.key;
-        const pubHi = hi.toPublic();
+      return openpgp.generateKey(options).then(async function (firstKey) {
+        const hi = (await openpgp.key.readArmored(firstKey.privateKeyArmored)).keys[0];
+        const pubHi = (await openpgp.key.readArmored(firstKey.publicKeyArmored)).keys[0];
 
         const options = { userIds: { name: "Bye", email: "bye@good.bye" }, curve: "brainpoolP256r1" };
-        return openpgp.generateKey(options).then(function (secondKey) {
-          const bye = secondKey.key;
-          const pubBye = bye.toPublic();
+        return openpgp.generateKey(options).then(async function (secondKey) {
+          const bye = (await openpgp.key.readArmored(secondKey.privateKeyArmored)).keys[0];
+          const pubBye = (await openpgp.key.readArmored(secondKey.publicKeyArmored)).keys[0];
 
           const testData = input.createSomeMessage();
           const testData2 = input.createSomeMessage();

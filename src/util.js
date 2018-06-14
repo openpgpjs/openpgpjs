@@ -97,6 +97,9 @@ export default {
           }
           return;
         }
+        if (typeof MessagePort !== 'undefined' && MessagePort.prototype.isPrototypeOf(value)) {
+          throw new Error("Can't transfer the same stream twice.");
+        }
         util.collectTransferables(value, collection);
       });
     }
@@ -344,10 +347,10 @@ export default {
     if (list.some(util.isStream)) {
       return stream.concat(list);
     }
-    if (util.isUint8Array(list[0])) {
-      return util.concatUint8Array(list);
+    if (util.isString(list[0])) {
+      return list.join('');
     }
-    return list.join('');
+    return util.concatUint8Array(list);
   },
 
   /**

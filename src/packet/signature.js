@@ -160,7 +160,7 @@ Signature.prototype.write = function () {
   arr.push(this.signatureData);
   arr.push(this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2));
   arr.push(this.signedHashValue);
-  arr.push(this.signature);
+  arr.push(stream.clone(this.signature));
   return util.concat(arr);
 };
 

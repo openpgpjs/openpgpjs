@@ -727,7 +727,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 =wEIR
 -----END PGP SIGNATURE-----`;
 
-    const signature = openpgp.signature.readArmored(armored_sig);
+    const signature = await openpgp.signature.readArmored(armored_sig);
 
     expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
   });
@@ -829,6 +829,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 
           const signed2 = new openpgp.packet.List();
           await signed2.read(raw);
+          signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
           await expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true;
         });

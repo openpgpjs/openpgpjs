@@ -317,7 +317,7 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
         const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserId);
-        result.signature = armor ? detachedSignature.armor() : detachedSignature;
+        result.signature = armor ? await convertStream(detachedSignature.armor(), asStream) : detachedSignature;
       } else {
         message = await message.sign(privateKeys, signature, date, fromUserId);
       }
@@ -425,7 +425,7 @@ export function sign({ data, dataType, privateKeys, armor=true, asStream, detach
 
     if (detached) {
       const signature = await message.signDetached(privateKeys, undefined, date, fromUserId);
-      result.signature = armor ? signature.armor() : signature;
+      result.signature = armor ? await convertStream(signature.armor(), asStream) : signature;
     } else {
       message = await message.sign(privateKeys, undefined, date, fromUserId);
       if (armor) {

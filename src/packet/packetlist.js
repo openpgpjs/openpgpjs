@@ -76,6 +76,8 @@ List.prototype.read = async function (bytes) {
     const { done, value } = await reader.read();
     if (!done) {
       this.push(value);
+    } else {
+      this.stream = null;
     }
     if (done || value.fromStream) {
       break;
