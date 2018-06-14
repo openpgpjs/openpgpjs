@@ -1,8 +1,8 @@
 import util from './util';
 
-// if (typeof TransformStream === 'undefined') {
-  Object.assign(typeof window !== 'undefined' ? window : global, require('@mattiasbuelens/web-streams-polyfill'));
-// }
+if (typeof TransformStream === 'undefined') {
+  require('@mattiasbuelens/web-streams-polyfill');
+}
 
 const nodeStream = util.getNodeStream();
 
@@ -130,6 +130,7 @@ function transformPair(input, fn) {
   const outgoing = transformWithCancel(async function() {
     incomingTransformController.error(new Error('Readable side was canceled.'));
     await pipeDonePromise;
+    await new Promise(setTimeout);
   });
   fn(incoming.readable, outgoing.writable);
   return outgoing.readable;
