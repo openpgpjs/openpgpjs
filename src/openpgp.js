@@ -323,7 +323,7 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
       }
     }
     message = message.compress(compression);
-    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId, asStream);
 
   }).then(async encrypted => {
     if (armor) {
@@ -364,13 +364,13 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, asStream, signature, date });
   }
 
-  return message.decrypt(privateKeys, passwords, sessionKeys).then(async function(decrypted) {
+  return message.decrypt(privateKeys, passwords, sessionKeys, asStream).then(async function(decrypted) {
     if (!publicKeys) {
       publicKeys = [];
     }
 
     const result = {};
-    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date);
+    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date, asStream);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.data = await convertStream(result.data, asStream);
     result.signatures = await convertStreamArray(result.signatures, asStream);
@@ -462,7 +462,7 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date);
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
     result.signatures = await convertStreamArray(result.signatures, asStream);

@@ -24,7 +24,7 @@
  * @requires util
  */
 
-import { AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/exports';
+import { AES_CFB, AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/exports';
 
 import config from '../config';
 import crypto from '../crypto';
@@ -90,8 +90,9 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
-  const bytes = this.packets.write();
+SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, asStream) {
+  let bytes = this.packets.write();
+  if (!asStream) bytes = await stream.readToEnd(bytes);
   const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   const prefix = util.concat([prefixrandom, repeat]);
@@ -118,12 +119,13 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, asStream) {
+  if (!asStream) this.encrypted = await stream.readToEnd(this.encrypted);
   const encrypted = stream.clone(this.encrypted);
   const encryptedClone = stream.passiveClone(encrypted);
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key);
+    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, asStream);
   } else {
     decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, await stream.readToEnd(encrypted), false);
   }
@@ -176,8 +178,12 @@ function aesDecrypt(algo, ct, key) {
   if (nodeCrypto) { // Node crypto library.
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
-    const cfb = new AES_CFB_Decrypt(key);
-    pt = stream.transform(ct, value => cfb.process(value).result, () => cfb.finish().result);
+    if (util.isStream(ct)) {
+      const cfb = new AES_CFB_Decrypt(key);
+      pt = stream.transform(ct, value => cfb.process(value).result, () => cfb.finish().result);
+    } else {
+      pt = AES_CFB.decrypt(ct, key);
+    }
   }
   return stream.slice(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
 }

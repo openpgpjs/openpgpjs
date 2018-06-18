@@ -43,10 +43,14 @@ function hashjs_hash(hash) {
 
 function asmcrypto_hash(hash) {
   return function(data) {
-    const hashInstance = new hash();
-    return stream.transform(data, value => {
-      hashInstance.process(value);
-    }, () => hashInstance.finish().result);
+    if (util.isStream(data)) {
+      const hashInstance = new hash();
+      return stream.transform(data, value => {
+        hashInstance.process(value);
+      }, () => hashInstance.finish().result);
+    } else {
+      return hash.bytes(data);
+    }
   };
 }
 

@@ -658,9 +658,13 @@ Signature.prototype.toHash = function(data) {
   }
 };
 
-Signature.prototype.hash = function(data, toHash) {
+Signature.prototype.hash = function(data, toHash, asStream=true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-  return crypto.hash.digest(hashAlgorithm, toHash || this.toHash(data));
+  if (!toHash) toHash = this.toHash(data);
+  if (!asStream && util.isStream(toHash)) {
+    return stream.fromAsync(async () => this.hash(data, await stream.readToEnd(toHash)));
+  }
+  return crypto.hash.digest(hashAlgorithm, toHash);
 };
 
 
