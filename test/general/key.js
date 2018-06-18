@@ -348,35 +348,6 @@ zoGJ6s48HcP591pN93uAitCcYcinY2ZslmdiCXw+zbeoX4spNrV4T4CYxBjNQdIa
       '=OqO3',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  const pub_v3 =
-      ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
-      'Version: SKS 1.1.3',
-      '',
-      'mQENAy9J/w4AAAEIALBDDD4vWqG/Jg59ghhMYAa+E7ECCTv2At8hxsM5cMP8P9sMLjs+GMfD',
-      'IdQSOqlQXbunYADvM1l/h2fOuUMoYFIIGaUsO5Daxvd9uWceM4DVzhXMeJZb9wc5jEJEF21+',
-      'qidKj5OGsMyTrg++mn4Gh/aFXvvy3N3KWaQpPfNi3NRZUpNLz0IlfbXVBQGD6reLoxPptJun',
-      'NqpClyRiesgq8HCscmB2oQo+b9KzSSgzU9qQJA4SljMYVmJ2sDE/sjREI8iKL8lIgUMhJG9q',
-      'NggWjuxFTpVcGKkuQFJIvdL+UhTVvEBuqw6n4cmFAzfZ/AInJM032qLtsaIf5begFKI3up0A',
-      'BRGJARUDBSAxm7HC5begFKI3up0BAbdDB/0TOcI0ec+OPxC5RTZAltgIgyUc0yOjHoTD/yBh',
-      'WjZdQ9YVrLGMWTW4fjhm4rFnppVZKS/N71bwI76SnN9zO4pPfx86aQPR7StmSLJxB+cfh2GL',
-      'gudJoG9ifhJWdNYMUD/yhA0TpJkdHMD5yTDE5Ce/PqKLviiX9C5MPW0AT1MDvafQlzeUXfb5',
-      '1a71vQNPw7W1NBAVZRwztm7TNUaxWMFuOmUtOJpq4F/qDQTIHW2zGPJvl47rpf6JSiyIyU70',
-      'l0deiQcZOXPC80tgInhNoBrz3zbEXhXRJo1fHkr2YSLclpJaoUOHsPxoyrNB28ASL5ZknPwI',
-      'Zx3+cFxaGpRprfSdtCFKb2huIEEuIFBlcnJ5IDxwZXJyeUBwaG9lbml4Lm5ldD6JARUDBRAv',
-      'Sf8k5begFKI3up0BAcbGB/0eLod2qrQxoE2/RUWQtqklOPUj/p/ZTmvZm8BgsdIflb0AMeey',
-      '9o8AbxyAgA3pcrcCjcye79M1Ma2trEvRksvs8hViuq3BXXjDbjPZi3wTtKSvbAC022OV52Sb',
-      '8/sgiTGp7xC8QMqS8w4ZeKoxJGh1TVMYrevUA8a2Rr5aDqrR3EA4rifSHwkVjJWOPF69xiKt',
-      'IVA0LcYJvGsPOQCf2ag+nOcnDrF4dvcmg6XZ/RyLepve+1qkhXsA/oq+yHoaqWfe+bwgssk/',
-      'qw1aEUk7Di8x7vY+cfjvWaazcYGw8kkIwSSqqIq0pkKFz2xDDfSaDJl6OW/2GUK0wDpJmYZo',
-      'PN40iJUDBRAvSgDsU5OkROGu2G8BAeUqBACbC45t4+wYxWCxxp81pkFRb8RWBvEvbXI+Spwd',
-      '4NcKs8jc5OVC8V02yiq4KbKFDRxdw2OWpUCSRAJe1gjsfFrZ+2RivpKk06kbAYthES03MjXg',
-      'cfcV3z2d7IWanJzdcOlzsHzPe1+RoUAaqBjvcqPRCGRlk0ogkYHyWYxElc6574iVAwUQL9iL',
-      'CXr7ES8bepftAQGPywP/d9GSpEmS7LLIqazl4rgN1nkXN5KqduiH8Whu3xcBrdOAn7IYnGTp',
-      'O+Ag4qwKKH+y/ke9CeZL6AnrU9c0pux150dHsDeHtpTPyInkjgKI7BofprydvpiFNd0nlAi4',
-      'J4SAEYr3q92Qn/IiKpnLgo6Ls/GFb7q6y1O/2LL8PC2zrYU=',
-      '=eoGb',
-      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-
   const pub_sig_test =
    ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
     'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -1328,7 +1299,7 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
     expect(key).to.exist;
   });
 
-  it('Testing key ID and fingerprint for V3 and V4 keys', async function() {
+  it('Testing key ID and fingerprint for V4 keys', async function() {
     const pubKeysV4 = await openpgp.key.readArmored(twoKeys);
     expect(pubKeysV4).to.exist;
     expect(pubKeysV4.err).to.not.exist;
@@ -1337,19 +1308,8 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
     const pubKeyV4 = pubKeysV4.keys[0];
     expect(pubKeyV4).to.exist;
 
-    const pubKeysV3 = await openpgp.key.readArmored(pub_v3);
-
-    expect(pubKeysV3).to.exist;
-    expect(pubKeysV3.err).to.not.exist;
-    expect(pubKeysV3.keys).to.have.length(1);
-
-    const pubKeyV3 = pubKeysV3.keys[0];
-    expect(pubKeyV3).to.exist;
-
     expect(pubKeyV4.getKeyId().toHex()).to.equal('4a63613a4d6e4094');
     expect(pubKeyV4.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
-    expect(pubKeyV3.getKeyId().toHex()).to.equal('e5b7a014a237ba9d');
-    expect(pubKeyV3.getFingerprint()).to.equal('a44fcee620436a443bc4913640ab3e49');
   });
 
   it('Create new key ID with fromId()', async function() {

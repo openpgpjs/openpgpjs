@@ -337,7 +337,6 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
-    // V3: keys MUST NOT have subkeys
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
@@ -477,28 +476,23 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
  * @async
  */
 Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
-  if (this.keyPacket.version === 3) {
-    return getExpirationTime(this.keyPacket);
+  const primaryUser = await this.getPrimaryUser(null);
+  if (!primaryUser) {
+    throw new Error('Could not find primary user');
   }
-  if (this.keyPacket.version >= 4) {
-    const primaryUser = await this.getPrimaryUser(null);
-    if (!primaryUser) {
-      throw new Error('Could not find primary user');
-    }
-    const selfCert = primaryUser.selfCertification;
-    const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
-    const sigExpiry = selfCert.getExpirationTime();
-    let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
-    if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-      const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
-      if (encryptExpiry < expiry) expiry = encryptExpiry;
-    }
-    if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-      const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
-      if (signExpiry < expiry) expiry = signExpiry;
-    }
-    return expiry;
+  const selfCert = primaryUser.selfCertification;
+  const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
+  const sigExpiry = selfCert.getExpirationTime();
+  let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
+  if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
+    const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
+    if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
+  if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
+    const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
+    if (signExpiry < expiry) expiry = signExpiry;
+  }
+  return expiry;
 };
 
 /**
@@ -1075,10 +1069,6 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
 SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
-  // check for V3 expiration time
-  if (this.keyPacket.version === 3 && isDataExpired(this.keyPacket, null, date)) {
-    return enums.keyStatus.expired;
-  }
   // check subkey binding signatures
   const bindingSignature = getLatestSignature(this.bindingSignatures, date);
   // check binding signature is verified
@@ -1557,12 +1547,8 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
 
 function getExpirationTime(keyPacket, signature) {
   let expirationTime;
-  // check V3 expiration time
-  if (keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0) {
-    expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
-  }
   // check V4 expiration time
-  if (keyPacket.version >= 4 && signature.keyNeverExpires === false) {
+  if (signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;

@@ -105,6 +105,10 @@ Signature.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
 
+  if (this.version !== 4) {
+    throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+  }
+
   const subpackets = bytes => {
     // Two-octet scalar octet count for following subpacket data.
     const subpacket_length = util.readNumber(bytes.subarray(0, 2));
@@ -124,59 +128,25 @@ Signature.prototype.read = function (bytes) {
     return i;
   };
 
-  // switch on version (3 and 4)
-  switch (this.version) {
-    case 3:
-      // One-octet length of following hashed material. MUST be 5.
-      if (bytes[i++] !== 5) {
-        util.print_debug("packet/signature.js\n" +
-          'invalid One-octet length of following hashed material.' +
-          'MUST be 5. @:' + (i - 1));
-      }
+  this.signatureType = bytes[i++];
+  this.publicKeyAlgorithm = bytes[i++];
+  this.hashAlgorithm = bytes[i++];
 
-      // One-octet signature type.
-      this.signatureType = bytes[i++];
+  // hashed subpackets
+  i += subpackets(bytes.subarray(i, bytes.length), true);
 
-      // Four-octet creation time.
-      this.created = util.readDate(bytes.subarray(i, i + 4));
-      i += 4;
+  // A V4 signature hashes the packet body
+  // starting from its first field, the version number, through the end
+  // of the hashed subpacket data.  Thus, the fields hashed are the
+  // signature version, the signature type, the public-key algorithm, the
+  // hash algorithm, the hashed subpacket length, and the hashed
+  // subpacket body.
+  this.signatureData = bytes.subarray(0, i);
+  const sigDataLength = i;
 
-      // Eight-octet Key ID of signer.
-      this.issuerKeyId.read(bytes.subarray(i, i + 8));
-      i += 8;
-
-      // One-octet public-key algorithm.
-      this.publicKeyAlgorithm = bytes[i++];
-
-      // One-octet hash algorithm.
-      this.hashAlgorithm = bytes[i++];
-      break;
-    case 4: {
-      this.signatureType = bytes[i++];
-      this.publicKeyAlgorithm = bytes[i++];
-      this.hashAlgorithm = bytes[i++];
-
-      // hashed subpackets
-      i += subpackets(bytes.subarray(i, bytes.length), true);
-
-      // A V4 signature hashes the packet body
-      // starting from its first field, the version number, through the end
-      // of the hashed subpacket data.  Thus, the fields hashed are the
-      // signature version, the signature type, the public-key algorithm, the
-      // hash algorithm, the hashed subpacket length, and the hashed
-      // subpacket body.
-      this.signatureData = bytes.subarray(0, i);
-      const sigDataLength = i;
-
-      // unhashed subpackets
-      i += subpackets(bytes.subarray(i, bytes.length), false);
-      this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
-
-      break;
-    }
-    default:
-      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
-  }
+  // unhashed subpackets
+  i += subpackets(bytes.subarray(i, bytes.length), false);
+  this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
   // Two-octet field holding left 16 bits of signed hash value.
   this.signedHashValue = bytes.subarray(i, i + 2);
@@ -187,22 +157,8 @@ Signature.prototype.read = function (bytes) {
 
 Signature.prototype.write = function () {
   const arr = [];
-  switch (this.version) {
-    case 3:
-      arr.push(new Uint8Array([3, 5])); // version, One-octet length of following hashed material.  MUST be 5
-      arr.push(new Uint8Array([this.signatureType]));
-      arr.push(util.writeDate(this.created));
-      arr.push(this.issuerKeyId.write());
-      arr.push(new Uint8Array([
-        enums.write(enums.publicKey, this.publicKeyAlgorithm),
-        enums.write(enums.hash, this.hashAlgorithm)
-      ]));
-      break;
-    case 4:
-      arr.push(this.signatureData);
-      arr.push(this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2));
-      break;
-  }
+  arr.push(this.signatureData);
+  arr.push(this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2));
   arr.push(this.signedHashValue);
   arr.push(this.signature);
   return util.concat(arr);
@@ -220,23 +176,21 @@ Signature.prototype.sign = async function (key, data) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  if (this.version === 4) {
-    const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+  const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
-    if (key.version === 5) {
-      // We could also generate this subpacket for version 4 keys, but for
-      // now we don't.
-      this.issuerKeyVersion = key.version;
-      this.issuerFingerprint = key.getFingerprintBytes();
-    }
-
-    this.issuerKeyId = key.getKeyId();
-
-    // Add hashed subpackets
-    arr.push(this.write_all_sub_packets());
-
-    this.signatureData = util.concat(arr);
+  if (key.version === 5) {
+    // We could also generate this subpacket for version 4 keys, but for
+    // now we don't.
+    this.issuerKeyVersion = key.version;
+    this.issuerFingerprint = key.getFingerprintBytes();
   }
+
+  this.issuerKeyId = key.getKeyId();
+
+  // Add hashed subpackets
+  arr.push(this.write_all_sub_packets());
+
+  this.signatureData = util.concat(arr);
 
   const toHash = this.toHash(data);
   const hash = this.hash(data, toHash);
@@ -596,16 +550,10 @@ Signature.prototype.toSign = function (type, data) {
 
       const bytes = packet.write();
 
-      if (this.version === 4) {
-        return util.concat([this.toSign(t.key, data),
-          new Uint8Array([tag]),
-          util.writeNumber(bytes.length, 4),
-          bytes]);
-      } else if (this.version === 3) {
-        return util.concat([this.toSign(t.key, data),
-          bytes]);
-      }
-      break;
+      return util.concat([this.toSign(t.key, data),
+        new Uint8Array([tag]),
+        util.writeNumber(bytes.length, 4),
+        bytes]);
     }
     case t.subkey_binding:
     case t.subkey_revocation:
@@ -648,14 +596,7 @@ Signature.prototype.toHash = function(data) {
 
   const bytes = this.toSign(signatureType, data);
 
-  switch (this.version) {
-    case 3:
-      return util.concat([bytes, new Uint8Array([signatureType]), util.writeDate(this.created)]);
-    case 4:
-      return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
-    default:
-      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
-  }
+  return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
 };
 
 Signature.prototype.hash = function(data, toHash, asStream=true) {

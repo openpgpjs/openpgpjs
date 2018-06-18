@@ -220,35 +220,6 @@ describe("Signature", function() {
       '=ok+o',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  const pub_v3 =
-    ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
-      'Version: SKS 1.1.3',
-      '',
-      'mQENAy9J/w4AAAEIALBDDD4vWqG/Jg59ghhMYAa+E7ECCTv2At8hxsM5cMP8P9sMLjs+GMfD',
-      'IdQSOqlQXbunYADvM1l/h2fOuUMoYFIIGaUsO5Daxvd9uWceM4DVzhXMeJZb9wc5jEJEF21+',
-      'qidKj5OGsMyTrg++mn4Gh/aFXvvy3N3KWaQpPfNi3NRZUpNLz0IlfbXVBQGD6reLoxPptJun',
-      'NqpClyRiesgq8HCscmB2oQo+b9KzSSgzU9qQJA4SljMYVmJ2sDE/sjREI8iKL8lIgUMhJG9q',
-      'NggWjuxFTpVcGKkuQFJIvdL+UhTVvEBuqw6n4cmFAzfZ/AInJM032qLtsaIf5begFKI3up0A',
-      'BRGJARUDBSAxm7HC5begFKI3up0BAbdDB/0TOcI0ec+OPxC5RTZAltgIgyUc0yOjHoTD/yBh',
-      'WjZdQ9YVrLGMWTW4fjhm4rFnppVZKS/N71bwI76SnN9zO4pPfx86aQPR7StmSLJxB+cfh2GL',
-      'gudJoG9ifhJWdNYMUD/yhA0TpJkdHMD5yTDE5Ce/PqKLviiX9C5MPW0AT1MDvafQlzeUXfb5',
-      '1a71vQNPw7W1NBAVZRwztm7TNUaxWMFuOmUtOJpq4F/qDQTIHW2zGPJvl47rpf6JSiyIyU70',
-      'l0deiQcZOXPC80tgInhNoBrz3zbEXhXRJo1fHkr2YSLclpJaoUOHsPxoyrNB28ASL5ZknPwI',
-      'Zx3+cFxaGpRprfSdtCFKb2huIEEuIFBlcnJ5IDxwZXJyeUBwaG9lbml4Lm5ldD6JARUDBRAv',
-      'Sf8k5begFKI3up0BAcbGB/0eLod2qrQxoE2/RUWQtqklOPUj/p/ZTmvZm8BgsdIflb0AMeey',
-      '9o8AbxyAgA3pcrcCjcye79M1Ma2trEvRksvs8hViuq3BXXjDbjPZi3wTtKSvbAC022OV52Sb',
-      '8/sgiTGp7xC8QMqS8w4ZeKoxJGh1TVMYrevUA8a2Rr5aDqrR3EA4rifSHwkVjJWOPF69xiKt',
-      'IVA0LcYJvGsPOQCf2ag+nOcnDrF4dvcmg6XZ/RyLepve+1qkhXsA/oq+yHoaqWfe+bwgssk/',
-      'qw1aEUk7Di8x7vY+cfjvWaazcYGw8kkIwSSqqIq0pkKFz2xDDfSaDJl6OW/2GUK0wDpJmYZo',
-      'PN40iJUDBRAvSgDsU5OkROGu2G8BAeUqBACbC45t4+wYxWCxxp81pkFRb8RWBvEvbXI+Spwd',
-      '4NcKs8jc5OVC8V02yiq4KbKFDRxdw2OWpUCSRAJe1gjsfFrZ+2RivpKk06kbAYthES03MjXg',
-      'cfcV3z2d7IWanJzdcOlzsHzPe1+RoUAaqBjvcqPRCGRlk0ogkYHyWYxElc6574iVAwUQL9iL',
-      'CXr7ES8bepftAQGPywP/d9GSpEmS7LLIqazl4rgN1nkXN5KqduiH8Whu3xcBrdOAn7IYnGTp',
-      'O+Ag4qwKKH+y/ke9CeZL6AnrU9c0pux150dHsDeHtpTPyInkjgKI7BofprydvpiFNd0nlAi4',
-      'J4SAEYr3q92Qn/IiKpnLgo6Ls/GFb7q6y1O/2LL8PC2zrYU=',
-      '=eoGb',
-      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-
   const pub_expired =
     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Comment: GPGTools - https://gpgtools.org',
@@ -403,29 +374,6 @@ describe("Signature", function() {
     });
   });
 
-  it('Verify V3 signature. Hash: MD5. PK: RSA. Signature Type: 0x01 (text document)', async function() {
-    const signedArmor =
-      ['-----BEGIN PGP MESSAGE-----',
-        'Version: GnuPG v2.0.19 (GNU/Linux)',
-        '',
-        'owGbwMvMyMj4oOW7S46CznTG09YlLCWpFSVBU47xFGfkF5Uo5KYWFyemp/Jy5QGF',
-        'FXIy84DMt1PnvNq69s20LfpvFm5407Lg9fIJvFy8XJ0MU5lZGUFa4eYxxiQz/6+/',
-        'aFt4/6+e76O6s1afLi65emmK9xsdh7Mr60UnT2UN0LwocWnT7t/nOMJubnypvzTu',
-        'aPJyvm9TTpobW/O+P1n2THLS4UCvWt12Oa2lJ04GLwk/bDF1u+8ZpfPCpsxLVzcs',
-        'ZGtbq/f23XxV/jkL47hr3s3Ic4yoZTW4oZO27GYf37TPp9L3VboCAA==',
-        '=pa6B',
-        '-----END PGP MESSAGE-----'].join('\n');
-
-    const sMsg = await openpgp.message.readArmored(signedArmor);
-    const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
-    return sMsg.verify([pub_key]).then(verified => {
-      expect(verified).to.exist;
-      expect(verified).to.have.length(1);
-      expect(verified[0].valid).to.be.true;
-      expect(verified[0].signature.packets.length).to.equal(1);
-    });
-  });
-
   it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', async function() {
     const msg_armor =
       ['-----BEGIN PGP MESSAGE-----',
@@ -457,41 +405,6 @@ describe("Signature", function() {
       expect(decrypted.signatures[0].valid).to.be.true;
       expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
     });
-  });
-
-  it('Verify signature of signed and encrypted message from PGP 10.3.0 with openpgp.decrypt', async function() {
-    const msg_armor =
-      ['-----BEGIN PGP MESSAGE-----',
-        'Version: Encryption Desktop 10.3.0 (Build 9307)',
-        'Charset: utf-8',
-        '',
-        'qANQR1DBjAPghPdEbCAslwED/2S4oNvCjO5TdLUMMUuVOQc8fi6c5XIBu7Y09fEX',
-        'Jm/UrkDHVgmPojLGBDF0CYENNZOVrNfpahY7A3r4HPzGucBzCO1uxuUIKjhtNAAM',
-        'mjD939ernjooOZrM6xDuRaX8adG0LSxpNaVJGxXd/EdlmKDJbYDI6aJ5INrUxzAR',
-        'DAqw0sBSAXgRWgiH6IIiAo5y5WFEDEN9sGStaEQT2wd32kX73M4iZuMt/GM2agiB',
-        'sWb7yLcNHiJ/3OnTfDg9+T543kFq9FlwFbwqygO/wm9e/kgMBq0ZsFOfV+GRtXep',
-        '3qNbJsmzGvdqiUHb/+hkdE191jaSVcO/zaMW4N0Vc1IwIEhZ8I9+9bKwusdVhHT5',
-        'MySnhIogv+0Ilag/aY+UiCt+Zcie69T7Eix48fC/VVW5w3INf1T2CMmDm5ZLZFRN',
-        'oyqzb9Vsgu1gS7SCb6qTbnbV9PlSyU4wJB6siX8hz/U0urokT5se3uYRjiV0KbkA',
-        'zl1/r/wCrmwX4Gl9VN9+33cQgYZAlJLsRw8N82GhbVweZS8qwv24GQ==',
-        '=nx90',
-        '-----END PGP MESSAGE-----'].join('\n');
-
-    const plaintext = 'short message\nnext line\n한국어/조선말\n\n';
-    const esMsg = await openpgp.message.readArmored(msg_armor);
-    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
-    const privKey = (await openpgp.key.readArmored(priv_key_arm2)).keys[0];
-
-    await Promise.all(esMsg.getEncryptionKeyIds().map(keyId => privKey.decrypt('hello world', keyId)));
-
-    return openpgp.decrypt({ privateKeys: privKey, publicKeys:[pubKey], message:esMsg }).then(function(decrypted) {
-      expect(decrypted.data).to.exist;
-      expect(decrypted.data).to.equal(plaintext);
-      expect(decrypted.signatures).to.have.length(1);
-      expect(decrypted.signatures[0].valid).to.be.true;
-      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
-    });
-
   });
 
   it('Verify signed message with two one pass signatures', async function() {
@@ -911,23 +824,11 @@ yYDnCgA=
     expect(pubKey.users[0].selfCertifications[0].keyExpirationTime).to.equal(5*365*24*60*60);
   });
 
-  it('Verify V3 certification signature', async function() {
-    const pubKey = (await openpgp.key.readArmored(pub_v3)).keys[0];
-    await expect(pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userId: pubKey.users[0].userId})).to.eventually.be.true;
-  });
-
   it('Write unhashed subpackets', async function() {
     let pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
     expect(pubKey.users[0].selfCertifications).to.exist;
     pubKey = (await openpgp.key.readArmored(pubKey.armor())).keys[0];
     expect(pubKey.users[0].selfCertifications).to.exist;
-  });
-
-  it('Write V3 signatures', async function() {
-    const pubKey = (await openpgp.key.readArmored(pub_v3)).keys[0];
-    const pubKey2 = (await openpgp.key.readArmored(pubKey.armor())).keys[0];
-    expect(pubKey2).to.exist;
-    expect(pubKey.users[0].selfCertifications).to.eql(pubKey2.users[0].selfCertifications);
   });
 
   it('Write V4 signatures', async function() {

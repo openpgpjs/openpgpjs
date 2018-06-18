@@ -93,17 +93,10 @@ PublicKey.prototype.read = function (bytes) {
   // A one-octet version number (3, 4 or 5).
   this.version = bytes[pos++];
 
-  if (this.version === 3 || this.version === 4 || this.version === 5) {
+  if (this.version === 4 || this.version === 5) {
     // - A four-octet number denoting the time that the key was created.
     this.created = util.readDate(bytes.subarray(pos, pos + 4));
     pos += 4;
-
-    if (this.version === 3) {
-      // - A two-octet number denoting the time in days that this key is
-      //   valid.  If this number is zero, then it does not expire.
-      this.expirationTimeV3 = util.readNumber(bytes.subarray(pos, pos + 2));
-      pos += 2;
-    }
 
     // - A one-octet number denoting the public-key algorithm of this key.
     this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
@@ -147,9 +140,6 @@ PublicKey.prototype.write = function () {
   // Version
   arr.push(new Uint8Array([this.version]));
   arr.push(util.writeDate(this.created));
-  if (this.version === 3) {
-    arr.push(util.writeNumber(this.expirationTimeV3, 2));
-  }
   // A one-octet number denoting the public-key algorithm of this key
   const algo = enums.write(enums.publicKey, this.algorithm);
   arr.push(new Uint8Array([algo]));
@@ -209,9 +199,6 @@ PublicKey.prototype.getKeyId = function () {
     this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(0, 8));
   } else if (this.version === 4) {
     this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(12, 20));
-  } else if (this.version === 3) {
-    const arr = this.params[0].write();
-    this.keyid.read(arr.subarray(arr.length - 8, arr.length));
   }
   return this.keyid;
 };
@@ -232,14 +219,6 @@ PublicKey.prototype.getFingerprintBytes = function () {
   } else if (this.version === 4) {
     toHash = this.writeOld();
     this.fingerprint = crypto.hash.sha1(toHash);
-  } else if (this.version === 3) {
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    const paramCount = crypto.getPubKeyParamTypes(algo).length;
-    toHash = '';
-    for (let i = 0; i < paramCount; i++) {
-      toHash += this.params[i].toString();
-    }
-    this.fingerprint = crypto.hash.md5(util.str_to_Uint8Array(toHash));
   }
   return this.fingerprint;
 };
