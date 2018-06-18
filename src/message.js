@@ -415,7 +415,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
       const signaturePacket = existingSigPacketlist[i];
       const onePassSig = new packet.OnePassSignature();
-      onePassSig.signatureType = signatureType;
+      onePassSig.signatureType = signaturePacket.signatureType;
       onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
       onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
       onePassSig.issuerKeyId = signaturePacket.issuerKeyId;
