@@ -1,9 +1,5 @@
 import util from './util';
 
-if (typeof TransformStream === 'undefined') {
-  require('@mattiasbuelens/web-streams-polyfill');
-}
-
 const nodeStream = util.getNodeStream();
 
 function toStream(input) {

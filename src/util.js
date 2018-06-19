@@ -664,10 +664,17 @@ export default {
       return;
     }
 
-    // This "hack" allows us to access the native node buffer module.
-    // otherwise, it gets replaced with the browserified version
     // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
     return require('stream'+'');
+  },
+
+  getNodeTextDecoder: function() {
+    if (!util.detectNode()) {
+      return;
+    }
+
+    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
+    return require('util'+'').TextDecoder;
   },
 
   isEmailAddress: function(data) {

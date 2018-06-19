@@ -44,14 +44,10 @@ import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
 import enums from './enums';
+import './polyfills';
 import stream from './stream';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
-
-// Old browser polyfills
-if (typeof window !== 'undefined') {
-  require('./polyfills');
-}
 
 //////////////////////////
 //                      //

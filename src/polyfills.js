@@ -1,33 +1,52 @@
+/**
+ * @fileoverview Old browser polyfills
+ * All are listed as dev dependencies because Node does not need them
+ * and for browser babel will take care of it
+ * @requires util
+ * @module polyfills
+ */
+
+import util from './util';
+
 /* eslint-disable import/no-extraneous-dependencies */
-// Old browser polyfills
-// All are listed as dev dependencies because Node does not need them
-// and for browser babel will take care of it
 
-if (typeof window.fetch === 'undefined') {
-  require('whatwg-fetch');
-}
-if (typeof Array.prototype.fill === 'undefined') {
-  require('core-js/fn/array/fill');
-}
-if (typeof Array.prototype.find === 'undefined') {
-  require('core-js/fn/array/find');
-}
-if (typeof Array.from === 'undefined') {
-  require('core-js/fn/array/from');
+if (typeof window !== 'undefined') {
+  if (typeof window.fetch === 'undefined') {
+    require('whatwg-fetch');
+  }
+  if (typeof Array.prototype.fill === 'undefined') {
+    require('core-js/fn/array/fill');
+  }
+  if (typeof Array.prototype.find === 'undefined') {
+    require('core-js/fn/array/find');
+  }
+  if (typeof Array.from === 'undefined') {
+    require('core-js/fn/array/from');
+  }
+
+  // No if-statement on Promise because of IE11. Otherwise Promise is undefined in the service worker.
+  require('core-js/fn/promise');
+
+  if (typeof Uint8Array.from === 'undefined') {
+    require('core-js/fn/typed/uint8-array');
+  }
+  if (typeof String.prototype.repeat === 'undefined') {
+    require('core-js/fn/string/repeat');
+  }
+  if (typeof Symbol === 'undefined') {
+    require('core-js/fn/symbol');
+  }
+  if (typeof Object.assign === 'undefined') {
+    require('core-js/fn/object/assign');
+  }
 }
 
-// No if-statement on Promise because of IE11. Otherwise Promise is undefined in the service worker.
-require('core-js/fn/promise');
-
-if (typeof Uint8Array.from === 'undefined') {
-  require('core-js/fn/typed/uint8-array');
+if (typeof TransformStream === 'undefined') {
+  require('@mattiasbuelens/web-streams-polyfill');
 }
-if (typeof String.prototype.repeat === 'undefined') {
-  require('core-js/fn/string/repeat');
+if (typeof TextDecoder === 'undefined') {
+  global.TextDecoder = util.getNodeTextDecoder();
 }
-if (typeof Symbol === 'undefined') {
-  require('core-js/fn/symbol');
-}
-if (typeof Object.assign === 'undefined') {
-  require('core-js/fn/object/assign');
+if (typeof TextDecoder === 'undefined') {
+  global.TextDecoder = require('text-encoder-lite');
 }
