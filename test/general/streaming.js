@@ -222,11 +222,11 @@ describe('Streaming', function() {
         format: 'binary'
       });
       expect(util.isStream(decrypted.data)).to.be.true;
-      expect(util.isStream(decrypted.signatures)).to.be.true;
+      expect(util.isStream(decrypted.signatures)).to.be.false;
       expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(1024)).to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
-      expect(await openpgp.stream.readToEnd(decrypted.signatures, arr => arr)).to.exist.and.have.length(0);
+      expect(await decrypted.signatures).to.exist.and.have.length(0);
     } finally {
       openpgp.config.unsafe_stream = unsafe_streamValue;
     }
@@ -363,8 +363,8 @@ describe('Streaming', function() {
       expect(util.isStream(decrypted.data)).to.be.true;
       expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(10)).not.to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
-      await openpgp.stream.readToEnd(decrypted.data);
-      expect(openpgp.stream.readToEnd(decrypted.signatures, arr => arr)).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      await expect(decrypted.signatures).to.be.rejectedWith('Ascii armor integrity check on message failed');
     } finally {
       openpgp.config.unsafe_stream = unsafe_streamValue;
     }

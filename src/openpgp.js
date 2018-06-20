@@ -369,11 +369,22 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date, asStream);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.data = await convertStream(result.data, asStream);
-    result.signatures = await convertStreamArray(result.signatures, asStream);
+    result.signatures = stream.readToEnd(result.signatures, arr => arr);
     if (asStream) {
       result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
-        await stream.pipe(result.data, writable);
+        await stream.pipe(result.data, writable, {
+          preventClose: true
+        });
+        const writer = stream.getWriter(writable);
+        try {
+          await result.signatures;
+          await writer.close();
+        } catch(e) {
+          await writer.abort(e);
+        }
       });
+    } else {
+      result.signatures = await result.signatures;
     }
     result.filename = decrypted.getFilename();
     return result;
@@ -461,7 +472,7 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
-    result.signatures = await convertStreamArray(result.signatures, asStream);
+    result.signatures = stream.readToEnd(result.signatures, arr => arr);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
@@ -612,27 +623,6 @@ async function convertStream(data, asStream) {
     return new ReadableStream({
       start(controller) {
         controller.enqueue(data);
-        controller.close();
-      }
-    });
-  }
-  return data;
-}
-
-/**
- * Convert data array to or from Stream
- * @param  {Object} data       the data to convert
- * @param  {Boolean} asStream  whether to return a ReadableStream
- * @returns {Object}            the parse data in the respective format
- */
-async function convertStreamArray(data, asStream) {
-  if (!asStream && util.isStream(data)) {
-    return stream.readToEnd(data, arr => arr);
-  }
-  if (asStream && !util.isStream(data)) {
-    return new ReadableStream({
-      start(controller) {
-        data.forEach(controller.enqueue.bind(controller));
         controller.close();
       }
     });
