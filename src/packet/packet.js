@@ -266,7 +266,7 @@ export default {
       return done || !value || !value.length;
     } catch(e) {
       if (writer) {
-        writer.abort(e);
+        await writer.abort(e);
         return true;
       } else {
         throw e;

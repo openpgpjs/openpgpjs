@@ -41,15 +41,19 @@ async function pipe(input, target, options) {
   if (!util.isStream(input)) {
     input = toStream(input);
   }
-  if (input.externalBuffer) {
-    const writer = target.getWriter();
-    for (let i = 0; i < input.externalBuffer.length; i++) {
-      await writer.ready;
-      writer.write(input.externalBuffer[i]);
+  try {
+    if (input.externalBuffer) {
+      const writer = target.getWriter();
+      for (let i = 0; i < input.externalBuffer.length; i++) {
+        await writer.ready;
+        await writer.write(input.externalBuffer[i]);
+      }
+      writer.releaseLock();
     }
-    writer.releaseLock();
+    return await input.pipeTo(target, options).catch(function() {});
+  } catch(e) {
+    util.print_debug_error(e);
   }
-  return input.pipeTo(target, options).catch(function() {});
 }
 
 function transformRaw(input, options) {
@@ -184,6 +188,7 @@ function passiveClone(input) {
               await writer.write(value);
             }
           } catch(e) {
+            controller.error(e);
             await writer.abort(e);
           }
         });

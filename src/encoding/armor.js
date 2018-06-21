@@ -283,14 +283,17 @@ function dearmor(input) {
         await stream.pipe(readable, writable, {
           preventClose: true
         });
-        const checksumVerifiedString = await stream.readToEnd(checksumVerified);
         const writer = stream.getWriter(writable);
-        await writer.ready;
-        if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
-          await writer.abort(new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-                  checksumVerifiedString + "'"));
-        } else {
+        try {
+          const checksumVerifiedString = await stream.readToEnd(checksumVerified);
+          if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
+            throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
+                    checksumVerifiedString + "'");
+          }
+          await writer.ready;
           await writer.close();
+        } catch(e) {
+          await writer.abort(e);
         }
       });
     } catch(e) {

@@ -297,9 +297,8 @@ export function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, asStream, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={} }) {
+export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, asStream=util.isStream(data), detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={} }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
-  if (asStream === undefined) asStream = util.isStream(data);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('encrypt', { data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, asStream, detached, signature, returnSessionKey, wildcard, date, fromUserId, toUserId });
@@ -352,9 +351,8 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
  * @async
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', asStream, signature=null, date=new Date() }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', asStream=message.fromStream, signature=null, date=new Date() }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
-  if (asStream === undefined) asStream = message.fromStream;
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, asStream, signature, date });
@@ -416,10 +414,9 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ data, dataType, privateKeys, armor=true, asStream, detached=false, date=new Date(), fromUserId={} }) {
+export function sign({ data, dataType, privateKeys, armor=true, asStream=util.isStream(data), detached=false, date=new Date(), fromUserId={} }) {
   checkData(data);
   privateKeys = toArray(privateKeys);
-  if (asStream === undefined) asStream = util.isStream(data);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
@@ -459,10 +456,9 @@ export function sign({ data, dataType, privateKeys, armor=true, asStream, detach
  * @async
  * @static
  */
-export function verify({ message, publicKeys, asStream, signature=null, date=new Date() }) {
+export function verify({ message, publicKeys, asStream=message.fromStream, signature=null, date=new Date() }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
-  if (asStream === undefined) asStream = message.fromStream;
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('verify', { message, publicKeys, asStream, signature, date });
@@ -470,10 +466,27 @@ export function verify({ message, publicKeys, asStream, signature=null, date=new
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
+    const signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
-    result.signatures = stream.readToEnd(result.signatures, arr => arr);
+    if (asStream) {
+      result.data = stream.transformPair(signatures, async (readable, writable) => {
+        const signatures = stream.readToEnd(readable, arr => arr);
+        result.signatures = signatures.catch(() => []);
+        await stream.pipe(result.data, writable, {
+          preventClose: true
+        });
+        const writer = stream.getWriter(writable);
+        try {
+          await signatures;
+          await writer.close();
+        } catch(e) {
+          await writer.abort(e);
+        }
+      });
+    } else {
+      result.signatures = await stream.readToEnd(signatures, arr => arr);
+    }
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
