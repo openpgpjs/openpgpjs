@@ -366,25 +366,26 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     }
 
     const result = {};
-    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date, asStream);
+    let signatures = signature ? decrypted.verifyDetached(signature, publicKeys, date) : decrypted.verify(publicKeys, date, asStream);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.data = await convertStream(result.data, asStream);
-    result.signatures = stream.readToEnd(result.signatures, arr => arr);
+    signatures = signatures.then(signatures => stream.readToEnd(signatures, arr => arr));
     if (asStream) {
+      result.signatures = signatures.catch(() => []);
       result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
         await stream.pipe(result.data, writable, {
           preventClose: true
         });
         const writer = stream.getWriter(writable);
         try {
-          await result.signatures;
+          await signatures;
           await writer.close();
         } catch(e) {
           await writer.abort(e);
         }
       });
     } else {
-      result.signatures = await result.signatures;
+      result.signatures = await signatures;
     }
     result.filename = decrypted.getFilename();
     return result;

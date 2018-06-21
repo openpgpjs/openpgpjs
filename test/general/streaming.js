@@ -364,7 +364,55 @@ describe('Streaming', function() {
       expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(10)).not.to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Ascii armor integrity check on message failed');
-      await expect(decrypted.signatures).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      expect(await decrypted.signatures).to.exist.and.have.length(0);
+    } finally {
+      openpgp.config.unsafe_stream = unsafe_streamValue;
+    }
+  });
+
+  it('Detect armor checksum error when not passing public keys (unsafe_stream=true)', async function() {
+    let unsafe_streamValue = openpgp.config.unsafe_stream;
+    openpgp.config.unsafe_stream = true;
+    try {
+      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
+      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+      await privKey.decrypt(passphrase);
+
+      let plaintext = [];
+      let i = 0;
+      const data = new ReadableStream({
+        async pull(controller) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          if (i++ < 10) {
+            let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+            controller.enqueue(randomBytes);
+            plaintext.push(randomBytes);
+          } else {
+            controller.close();
+          }
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        data,
+        publicKeys: pubKey,
+        privateKeys: privKey
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
+        if (value.length > 1000) return value.slice(0, 499) + 'a' + value.slice(500);
+        return value;
+      }));
+      const decrypted = await openpgp.decrypt({
+        privateKeys: privKey,
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(10)).not.to.deep.equal(plaintext[0]);
+      if (i > 10) throw new Error('Data did not arrive early.');
+      await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      expect(await decrypted.signatures).to.exist.and.have.length(0);
     } finally {
       openpgp.config.unsafe_stream = unsafe_streamValue;
     }
