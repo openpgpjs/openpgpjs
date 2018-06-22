@@ -705,11 +705,14 @@ describe("Packet", function() {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const payload = msg[1].packets[0].packets;
-      await openpgp.stream.readToEnd(payload.stream, packets => packets.forEach(payload.push.bind(payload)));
+      payload.concat(await openpgp.stream.readToEnd(payload.stream, arr => arr));
 
-      await expect(payload[2].verify(
-        key[0], payload[1]
-      )).to.eventually.be.true;
+      await Promise.all([
+        expect(payload[2].verify(
+          key[0], payload[1]
+        )).to.eventually.be.true,
+        openpgp.stream.pipe(payload[1].getBytes(), new WritableStream())
+      ]);
     });
   });
 
@@ -831,7 +834,10 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
           await signed2.read(raw);
           signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
-          await expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true;
+          await Promise.all([
+            expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true,
+            openpgp.stream.pipe(signed2[0].getBytes(), new WritableStream())
+          ]);
         });
     });
   });

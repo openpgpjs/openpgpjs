@@ -343,6 +343,7 @@ describe("Signature", function() {
     await priv_key_gnupg_ext.subKeys[0].keyPacket.decrypt("abcd");
     return msg.decrypt([priv_key_gnupg_ext]).then(function(msg) {
       return msg.verify([pub_key]).then(async verified => {
+        openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
         verified = await openpgp.stream.readToEnd(verified, arr => arr);
         expect(verified).to.exist;
         expect(verified).to.have.length(1);
@@ -368,6 +369,7 @@ describe("Signature", function() {
     const sMsg = await openpgp.message.readArmored(signedArmor);
     const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
     return sMsg.verify([pub_key]).then(async verified => {
+      openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
       verified = await openpgp.stream.readToEnd(verified, arr => arr);
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
@@ -439,6 +441,7 @@ describe("Signature", function() {
     expect(pubKey3.getKeys(keyids[0])).to.not.be.empty;
 
     return sMsg.verify([pubKey2, pubKey3]).then(async verifiedSig => {
+      expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
       verifiedSig = await openpgp.stream.readToEnd(verifiedSig, arr => arr);
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
@@ -446,8 +449,6 @@ describe("Signature", function() {
       expect(verifiedSig[1].valid).to.be.true;
       expect(verifiedSig[0].signature.packets.length).to.equal(1);
       expect(verifiedSig[1].signature.packets.length).to.equal(1);
-
-      expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
     });
   });
 
@@ -884,6 +885,7 @@ yYDnCgA=
     const msg = openpgp.message.fromText(content);
     await msg.appendSignature(detachedSig);
     return msg.verify(publicKeys).then(async result => {
+      openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
       result = await openpgp.stream.readToEnd(result, arr => arr);
       expect(result[0].valid).to.be.true;
     });

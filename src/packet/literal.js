@@ -108,7 +108,7 @@ Literal.prototype.getBytes = function(clone=false) {
     this.data = util.str_to_Uint8Array(util.encode_utf8(text));
   }
   if (clone) {
-    return stream.clone(this.data);
+    return stream.passiveClone(this.data);
   }
   return this.data;
 };
