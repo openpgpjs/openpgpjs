@@ -140,4 +140,10 @@ OnePassSignature.prototype.toHash = Signature.prototype.toHash;
 OnePassSignature.prototype.toSign = Signature.prototype.toSign;
 OnePassSignature.prototype.calculateTrailer = Signature.prototype.calculateTrailer;
 
+OnePassSignature.prototype.verify = async function() {
+  const correspondingSig = await this.correspondingSig;
+  correspondingSig.hashed = this.hashed;
+  return correspondingSig.verify.apply(correspondingSig, arguments);
+};
+
 export default OnePassSignature;

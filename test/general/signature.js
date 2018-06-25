@@ -344,11 +344,10 @@ describe("Signature", function() {
     return msg.decrypt([priv_key_gnupg_ext]).then(function(msg) {
       return msg.verify([pub_key]).then(async verified => {
         openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
-        verified = await openpgp.stream.readToEnd(verified, arr => arr);
         expect(verified).to.exist;
         expect(verified).to.have.length(1);
-        expect(verified[0].valid).to.be.true;
-        expect(verified[0].signature.packets.length).to.equal(1);
+        expect(await verified[0].verified).to.be.true;
+        expect((await verified[0].signature).packets.length).to.equal(1);
       });
     });
   });
@@ -370,11 +369,10 @@ describe("Signature", function() {
     const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
     return sMsg.verify([pub_key]).then(async verified => {
       openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
-      verified = await openpgp.stream.readToEnd(verified, arr => arr);
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
-      expect(verified[0].valid).to.be.true;
-      expect(verified[0].signature.packets.length).to.equal(1);
+      expect(await verified[0].verified).to.be.true;
+      expect((await verified[0].signature).packets.length).to.equal(1);
     });
   });
 
@@ -442,13 +440,12 @@ describe("Signature", function() {
 
     return sMsg.verify([pubKey2, pubKey3]).then(async verifiedSig => {
       expect(await openpgp.stream.readToEnd(sMsg.getText())).to.equal(plaintext);
-      verifiedSig = await openpgp.stream.readToEnd(verifiedSig, arr => arr);
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
-      expect(verifiedSig[0].valid).to.be.true;
-      expect(verifiedSig[1].valid).to.be.true;
-      expect(verifiedSig[0].signature.packets.length).to.equal(1);
-      expect(verifiedSig[1].signature.packets.length).to.equal(1);
+      expect(await verifiedSig[0].verified).to.be.true;
+      expect(await verifiedSig[1].verified).to.be.true;
+      expect((await verifiedSig[0].signature).packets.length).to.equal(1);
+      expect((await verifiedSig[1].signature).packets.length).to.equal(1);
     });
   });
 
@@ -597,10 +594,9 @@ yYDnCgA=
     return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(async function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
-      cleartextSig.signatures = await openpgp.stream.readToEnd(cleartextSig.signatures, arr => arr);
       expect(cleartextSig.signatures).to.have.length(1);
-      expect(cleartextSig.signatures[0].valid).to.be.true;
-      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      expect(await cleartextSig.signatures[0].verified).to.be.true;
+      expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(1);
     });
   });
 
@@ -886,8 +882,7 @@ yYDnCgA=
     await msg.appendSignature(detachedSig);
     return msg.verify(publicKeys).then(async result => {
       openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
-      result = await openpgp.stream.readToEnd(result, arr => arr);
-      expect(result[0].valid).to.be.true;
+      expect(await result[0].verified).to.be.true;
     });
   });
 
@@ -902,9 +897,9 @@ yYDnCgA=
     return openpgp.generateKey(opt).then(function(gen) {
       const generatedKey = gen.key;
       return msg.signDetached([generatedKey, privKey2]).then(detachedSig => {
-        return msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]).then(result => {
-          expect(result[0].valid).to.be.true;
-          expect(result[1].valid).to.be.true;
+        return msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]).then(async result => {
+          expect(await result[0].verified).to.be.true;
+          expect(await result[1].verified).to.be.true;
         });
       });
     });

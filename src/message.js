@@ -542,23 +542,36 @@ Message.prototype.verify = async function(keys, date=new Date(), asStream) {
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
-  if (msg.packets.stream) {
-    const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+  const signatureList = msg.packets.filterByTag(enums.packet.signature);
+  if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
     onePassSigList.forEach(onePassSig => {
-      onePassSig.signatureData = stream.fromAsync(() => new Promise(resolve => {
-        onePassSig.signatureDataResolve = resolve;
-      }));
+      onePassSig.correspondingSig = new Promise(resolve => {
+        onePassSig.correspondingSigResolve = resolve;
+      });
+      onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
       onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, asStream);
     });
-    return stream.transform(msg.packets.stream, signature => {
-      const onePassSig = onePassSigList.pop();
-      onePassSig.signatureDataResolve(signature.signatureData);
-      signature.hashed = onePassSig.hashed;
-      signature.hashedData = onePassSig.hashedData;
-      return createVerificationObject(signature, literalDataList, keys, date);
+    const verificationObjects = await createVerificationObjects(onePassSigList, literalDataList, keys, date);
+    msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
+      const writer = stream.getWriter(writable);
+      try {
+        await stream.readToEnd(stream.transform(readable, signature => {
+          onePassSigList.pop().correspondingSigResolve(signature);
+        }));
+        await writer.ready;
+        await writer.close();
+      } catch(e) {
+        onePassSigList.forEach(onePassSig => {
+          onePassSig.correspondingSigResolve({
+            verify: () => undefined
+          });
+        });
+        await writer.abort(e);
+      }
     });
+    return verificationObjects.reverse();
   }
-  const signatureList = msg.packets.filterByTag(enums.packet.signature);
   return createVerificationObjects(signatureList, literalDataList, keys, date);
 };
 
@@ -603,12 +616,14 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
 
   const verifiedSig = {
     keyid: signature.issuerKeyId,
-    valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
+    verified: keyPacket ? signature.verify(keyPacket, literalDataList[0]) : Promise.resolve(null)
   };
 
-  const packetlist = new packet.List();
-  packetlist.push(signature);
-  verifiedSig.signature = new Signature(packetlist);
+  verifiedSig.signature = Promise.resolve(signature.correspondingSig || signature).then(signature => {
+    const packetlist = new packet.List();
+    packetlist.push(signature);
+    return new Signature(packetlist);
+  });
 
   return verifiedSig;
 }

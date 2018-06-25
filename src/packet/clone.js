@@ -69,18 +69,20 @@ export function clonePackets(options) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
-    if (options.signatures instanceof Promise) {
-      const signatures = options.signatures;
-      options.signatures = stream.fromAsync(async () => (await signatures).map(verificationObjectToClone));
-    } else {
-      options.signatures.forEach(verificationObjectToClone);
-    }
+    options.signatures.forEach(verificationObjectToClone);
   }
   return options;
 }
 
 function verificationObjectToClone(verObject) {
-  verObject.signature = verObject.signature.packets;
+  if (verObject.signature instanceof Promise) {
+    const signature = verObject.signature;
+    verObject.signature = stream.fromAsync(async () => (await signature).packets);
+  } else {
+    verObject.signature = verObject.signature.packets;
+  }
+  const verified = verObject.verified;
+  verObject.verified = stream.fromAsync(() => verified);
   return verObject;
 }
 
@@ -116,11 +118,7 @@ export function parseClonedPackets(options) {
     options.message = packetlistCloneToMessage(options.message);
   }
   if (options.signatures) {
-    if (util.isStream(options.signatures)) {
-      options.signatures = stream.readToEnd(options.signatures, arr => arr).then(signatures => signatures.map(packetlistCloneToSignatures));
-    } else {
-      options.signatures = options.signatures.map(packetlistCloneToSignatures);
-    }
+    options.signatures = options.signatures.map(packetlistCloneToSignatures);
   }
   if (options.signature) {
     options.signature = packetlistCloneToSignature(options.signature);
@@ -146,8 +144,12 @@ function packetlistCloneToCleartextMessage(clone) {
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
-  const packetlist = List.fromStructuredClone(clone.signature);
-  clone.signature = new Signature(packetlist);
+  if (util.isStream(clone.signature)) {
+    clone.signature = stream.readToEnd(clone.signature, ([signature]) => new Signature(List.fromStructuredClone(signature)));
+  } else {
+    clone.signature = new Signature(List.fromStructuredClone(clone.signature));
+  }
+  clone.verified = stream.readToEnd(clone.verified, ([verified]) => verified);
   return clone;
 }
 

@@ -364,26 +364,27 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     }
 
     const result = {};
-    let signatures = signature ? decrypted.verifyDetached(signature, publicKeys, date) : decrypted.verify(publicKeys, date, asStream);
+    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date, asStream);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.data = await convertStream(result.data, asStream);
-    signatures = signatures.then(signatures => stream.readToEnd(signatures, arr => arr));
     if (asStream) {
-      result.signatures = signatures.catch(() => []);
       result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
         await stream.pipe(result.data, writable, {
           preventClose: true
         });
         const writer = stream.getWriter(writable);
         try {
-          await signatures;
+          await stream.readToEnd(decrypted.packets.stream, arr => arr);
           await writer.close();
         } catch(e) {
           await writer.abort(e);
         }
       });
     } else {
-      result.signatures = await signatures;
+      await Promise.all(result.signatures.map(async signature => {
+        signature.signature = await signature.signature;
+        signature.valid = await signature.verified;
+      }));
     }
     result.filename = decrypted.getFilename();
     return result;
@@ -466,26 +467,27 @@ export function verify({ message, publicKeys, asStream=message.fromStream, signa
 
   return Promise.resolve().then(async function() {
     const result = {};
-    const signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
     result.data = await convertStream(result.data, asStream);
     if (asStream) {
-      result.data = stream.transformPair(signatures, async (readable, writable) => {
-        const signatures = stream.readToEnd(readable, arr => arr);
-        result.signatures = signatures.catch(() => []);
+      result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
         await stream.pipe(result.data, writable, {
           preventClose: true
         });
         const writer = stream.getWriter(writable);
         try {
-          await signatures;
+          await stream.readToEnd(readable, arr => arr);
           await writer.close();
         } catch(e) {
           await writer.abort(e);
         }
       });
     } else {
-      result.signatures = await stream.readToEnd(signatures, arr => arr);
+      await Promise.all(result.signatures.map(async signature => {
+        signature.signature = await signature.signature;
+        signature.valid = await signature.verified;
+      }));
     }
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
