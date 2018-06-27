@@ -172,7 +172,7 @@ describe('X25519 Cryptography', function () {
     const name = 'light';
     const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], data: randomData});
+    const signed = await openpgp.sign({ privateKeys: [priv], message: new openpgp.cleartext.CleartextMessage(randomData)});
     const pub = await load_pub_key(name);
     const msg = await openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
@@ -199,7 +199,7 @@ describe('X25519 Cryptography', function () {
     const nightPublic = await load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
     const randomData = input.createSomeMessage();
-    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], data: randomData });
+    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: openpgp.message.fromText(randomData) });
 
     const message = await openpgp.message.readArmored(encrypted.data);
     const lightPublic = await load_pub_key('light');
@@ -276,7 +276,7 @@ describe('X25519 Cryptography', function () {
             }),
             // Signing message
             openpgp.sign(
-              { data: 'Hi, this is me, Hi!', privateKeys: hi }
+              { message: new openpgp.cleartext.CleartextMessage('Hi, this is me, Hi!'), privateKeys: hi }
             ).then(async signed => {
               const msg = await openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message
@@ -294,7 +294,7 @@ describe('X25519 Cryptography', function () {
             }),
             // Encrypting and signing
             openpgp.encrypt(
-              { data: 'Hi, Hi wrote this but only Bye can read it!',
+              { message: openpgp.message.fromText('Hi, Hi wrote this but only Bye can read it!'),
                 publicKeys: [pubBye],
                 privateKeys: [hi] }
             ).then(async encrypted => {

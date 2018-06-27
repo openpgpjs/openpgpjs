@@ -274,13 +274,11 @@ export function encryptKey({ privateKey, passphrase }) {
 /**
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
- * @param  {String|Uint8Array} data               text/data to be encrypted as JavaScript binary string or Uint8Array
- * @param  {utf8|binary|text|mime} dataType       (optional) data packet type
+ * @param  {Message} message                      message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary
  * @param  {Key|Array<Key>} publicKeys            (optional) array of keys or single key, used to encrypt the message
  * @param  {Key|Array<Key>} privateKeys           (optional) private keys for signing. If omitted message will not be signed
  * @param  {String|Array<String>} passwords       (optional) array of passwords or a single password to encrypt the message
  * @param  {Object} sessionKey                    (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {String} filename                      (optional) a filename for the literal data packet
  * @param  {module:enums.compression} compression (optional) which compression algorithm to compress the message with, defaults to what is specified in config
  * @param  {Boolean} armor                        (optional) if the return values should be ascii armored or the message/signature objects
  * @param  {Boolean} asStream                     (optional) whether to return data as a ReadableStream. Defaults to true if data is a Stream.
@@ -288,7 +286,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Signature} signature                  (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                            (optional) override the creation date of the message and the message signature
+ * @param  {Date} date                            (optional) override the creation date of the message signature
  * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
@@ -297,15 +295,14 @@ export function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, asStream=util.isStream(data), detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={} }) {
-  checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression=config.compression, armor=true, asStream=message&&message.fromStream, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={} }) {
+  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression, armor, asStream, detached, signature, returnSessionKey, wildcard, date, fromUserId, toUserId });
+    return asyncProxy.delegate('encrypt', { message, publicKeys, privateKeys, passwords, sessionKey, compression, armor, asStream, detached, signature, returnSessionKey, wildcard, date, fromUserId, toUserId });
   }
   const result = {};
   return Promise.resolve().then(async function() {
-    let message = createMessage(data, filename, date, dataType);
     if (!privateKeys) {
       privateKeys = [];
     }
@@ -351,7 +348,7 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
  * @async
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', asStream=message.fromStream, signature=null, date=new Date() }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', asStream=message&&message.fromStream, signature=null, date=new Date() }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -401,13 +398,12 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 
 /**
  * Signs a cleartext message.
- * @param  {String | Uint8Array} data           cleartext input to be signed
- * @param  {utf8|binary|text|mime} dataType     (optional) data packet type
+ * @param  {CleartextMessage | Message} message (cleartext) message to be signed
  * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
  * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
  * @param  {Boolean} asStream                   (optional) whether to return data as a ReadableStream. Defaults to true if data is a Stream.
  * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
- * @param  {Date} date                          (optional) override the creation date signature
+ * @param  {Date} date                          (optional) override the creation date of the signature
  * @param  {Object} fromUserId                  (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<Object>}                    signed cleartext in the form:
  *                                                {data: ASCII armored message if 'armor' is true,
@@ -415,20 +411,18 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ data, dataType, privateKeys, armor=true, asStream=util.isStream(data), detached=false, date=new Date(), fromUserId={} }) {
-  checkData(data);
+export function sign({ message, privateKeys, armor=true, asStream=message&&message.fromStream, detached=false, date=new Date(), fromUserId={} }) {
+  checkCleartextOrMessage(message);
   privateKeys = toArray(privateKeys);
 
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
-      data, dataType, privateKeys, armor, asStream, detached, date, fromUserId
+      message, privateKeys, armor, asStream, detached, date, fromUserId
     });
   }
 
   const result = {};
   return Promise.resolve().then(async function() {
-    let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data, dataType);
-
     if (detached) {
       const signature = await message.signDetached(privateKeys, undefined, date, fromUserId);
       result.signature = armor ? await convertStream(signature.armor(), asStream) : signature;
@@ -457,7 +451,7 @@ export function sign({ data, dataType, privateKeys, armor=true, asStream=util.is
  * @async
  * @static
  */
-export function verify({ message, publicKeys, asStream=message.fromStream, signature=null, date=new Date() }) {
+export function verify({ message, publicKeys, asStream=message&&message.fromStream, signature=null, date=new Date() }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
@@ -577,11 +571,6 @@ function checkBinary(data, name) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type Uint8Array');
   }
 }
-function checkData(data, name) {
-  if (!util.isUint8Array(data) && !util.isString(data) && !util.isStream(data)) {
-    throw new Error('Parameter [' + (name || 'data') + '] must be of type String, Uint8Array or ReadableStream');
-  }
-}
 function checkMessage(message) {
   if (!(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message');
@@ -603,26 +592,6 @@ function toArray(param) {
     param = [param];
   }
   return param;
-}
-
-/**
- * Creates a message obejct either from a Uint8Array or a string.
- * @param  {String|Uint8Array} data   the payload for the message
- * @param  {String} filename          the literal data packet's filename
- * @param  {Date} date      the creation date of the package
- * @param  {utf8|binary|text|mime} type (optional) data packet type
- * @returns {Message}                  a message object
- */
-function createMessage(data, filename, date=new Date(), type) {
-  let msg;
-  if (util.isUint8Array(data) || util.isStream(data)) {
-    msg = messageLib.fromBinary(data, filename, date, type);
-  } else if (util.isString(data)) {
-    msg = messageLib.fromText(data, filename, date, type);
-  } else {
-    throw new Error('Data must be of type String or Uint8Array');
-  }
-  return msg;
 }
 
 /**

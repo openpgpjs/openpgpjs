@@ -52,7 +52,7 @@ function tests() {
       const worker = new Worker('../dist/openpgp.worker.js');
       const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', workers: [worker] });
 
-      return wProxy.delegate('encrypt', { publicKeys:[pubKey], data:plaintext });
+      return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
     });
   });
 

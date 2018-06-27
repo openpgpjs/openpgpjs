@@ -719,7 +719,9 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
   }
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  return new Message(literalDataPacketlist);
+  const message = new Message(literalDataPacketlist);
+  message.fromStream = util.isStream(text);
+  return message;
 }
 
 /**
@@ -743,5 +745,7 @@ export function fromBinary(bytes, filename, date=new Date(), type='binary') {
   }
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  return new Message(literalDataPacketlist);
+  const message = new Message(literalDataPacketlist);
+  message.fromStream = util.isStream(bytes);
+  return message;
 }

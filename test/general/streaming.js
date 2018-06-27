@@ -3,6 +3,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
+const input = require('./testInputs.js');
 
 const { expect } = chai;
 
@@ -85,7 +86,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.encrypt({
-      data,
+      message: openpgp.message.fromBinary(data),
       passwords: ['test'],
     });
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted.data);
@@ -113,7 +114,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.encrypt({
-      data,
+      message: openpgp.message.fromBinary(data),
       passwords: ['test'],
     });
     expect(await openpgp.stream.getReader(openpgp.stream.clone(encrypted.data)).readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
@@ -148,7 +149,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.encrypt({
-      data,
+      message: openpgp.message.fromBinary(data),
       passwords: ['test'],
     });
     const reader = openpgp.stream.getReader(encrypted.data);
@@ -182,7 +183,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.sign({
-      data,
+      message: openpgp.message.fromBinary(data),
       privateKeys: privKey
     });
     const reader = openpgp.stream.getReader(encrypted.data);
@@ -208,7 +209,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.encrypt({
-      data,
+      message: openpgp.message.fromBinary(data),
       passwords: ['test'],
     });
 
@@ -244,7 +245,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         passwords: ['test'],
       });
 
@@ -289,7 +290,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey
       });
@@ -330,7 +331,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         passwords: ['test'],
       });
 
@@ -378,7 +379,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey
       });
@@ -427,7 +428,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey
       });
@@ -476,7 +477,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.sign({
-        data,
+        message: openpgp.message.fromBinary(data),
         privateKeys: privKey
       });
 
@@ -520,7 +521,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         passwords: ['test'],
       });
 
@@ -535,6 +536,47 @@ describe('Streaming', function() {
       expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(1024)).to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.aead_protect = aead_protectValue;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
+    }
+  });
+
+  it('Encrypt and decrypt larger text message roundtrip (draft04)', async function() {
+    let aead_protectValue = openpgp.config.aead_protect;
+    let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 0;
+    try {
+      let plaintext = [];
+      let i = 0;
+      const data = new ReadableStream({
+        async pull(controller) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          if (i++ < 10) {
+            let randomData = input.createSomeMessage();
+            controller.enqueue(randomData);
+            plaintext.push(randomData);
+          } else {
+            controller.close();
+          }
+        }
+      });
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromText(data),
+        passwords: ['test'],
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message
+      });
+      expect(util.isStream(decrypted.data)).to.be.true;
+      expect(await openpgp.stream.getReader(openpgp.stream.clone(decrypted.data)).readBytes(50)).to.equal(plaintext[0]);
+      if (i > 10) throw new Error('Data did not arrive early.');
+      expect(await openpgp.stream.readToEnd(decrypted.data)).to.equal(util.concat(plaintext));
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
@@ -608,7 +650,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         passwords: ['test'],
       });
 
@@ -661,7 +703,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.sign({
-        data,
+        message: openpgp.message.fromBinary(data),
         privateKeys: privKey
       });
 
@@ -702,7 +744,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.encrypt({
-      data,
+      message: openpgp.message.fromBinary(data),
       passwords: ['test'],
     });
     const reader = openpgp.stream.getReader(encrypted.data);
@@ -732,7 +774,7 @@ describe('Streaming', function() {
       }
     });
     const encrypted = await openpgp.sign({
-      data,
+      message: openpgp.message.fromBinary(data),
       privateKeys: privKey
     });
     const reader = openpgp.stream.getReader(encrypted.data);
@@ -763,7 +805,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.encrypt({
-        data,
+        message: openpgp.message.fromBinary(data),
         passwords: ['test'],
       });
       const msgAsciiArmored = encrypted.data;
@@ -810,7 +852,7 @@ describe('Streaming', function() {
         }
       });
       const encrypted = await openpgp.sign({
-        data,
+        message: openpgp.message.fromBinary(data),
         privateKeys: privKey
       });
       const msgAsciiArmored = encrypted.data;
