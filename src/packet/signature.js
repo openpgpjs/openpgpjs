@@ -522,7 +522,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 28:
       // Signer's User ID
-      this.signersUserId += util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.signersUserId = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 29:
       // Reason for Revocation

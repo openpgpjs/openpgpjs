@@ -708,6 +708,25 @@ describe("Packet", function() {
     });
   });
 
+  it('Reading signersUserId from armored signature', async function() {
+    const armored_sig =
+`-----BEGIN PGP SIGNATURE-----
+
+iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
+QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
+vlcnVqj6N4Xqi1ahRVw19/Jx36mGyijxNwqqGrziqRiPCdT0pKfCfv7nXQf2Up1Z
+LoR1StqpBMSDQfuF6JAJmJuB9T+mPQO8wYeUp+O63vQnm5CgqyoRlIoqX8MN6GTY
+xK5PdTRjw6IEIGr9uLgSoUwTd0ECY1F9ptyuLGD5ET5ZtyUenQSbX+cw5WCGLFzi
+7TwKTY+kGQpkwDJKZJSGpoP7ob6xdDfZx6dHV6IfIJg8/F9gtAXFp8uE51L90cV2
+kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
+=wEIR
+-----END PGP SIGNATURE-----`;
+
+    const signature = openpgp.signature.readArmored(armored_sig);
+
+    expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
+  });
+
   it('Writing and encryption of a secret key packet.', function() {
     const key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
