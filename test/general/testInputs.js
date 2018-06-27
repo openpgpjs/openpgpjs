@@ -9,7 +9,7 @@ function createSomeMessage(){
         arr.push(String.fromCharCode(
             Math.floor(Math.random() * 10174) + 1));
     }
-    return arr.join('');
+    return arr.join('').replace(/\r/g, '\n');
 }
 
  module.exports = {

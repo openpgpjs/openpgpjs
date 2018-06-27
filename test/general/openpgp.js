@@ -1550,7 +1550,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.message = await openpgp.cleartext.readArmored(signed.data);
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1575,7 +1575,7 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
             let signingKey;
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.true;
             signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1601,7 +1601,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.signature = await openpgp.signature.readArmored(signed.signature);
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1621,7 +1621,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.message = await openpgp.cleartext.readArmored(signed.data);
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.null;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1643,7 +1643,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.signature = await openpgp.signature.readArmored(signed.signature);
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.null;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1664,7 +1664,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.message = signed.message;
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(verified.data).to.equal(plaintext);
+            expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
             expect(verified.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
@@ -1688,7 +1688,7 @@ describe('OpenPGP.js public api tests', function() {
                 verifyOpt.signature = signed.signature;
                 return openpgp.verify(verifyOpt);
             }).then(async function (verified) {
-                expect(verified.data).to.equal(plaintext);
+                expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
                 expect(+verified.signatures[0].signature.packets[0].created).to.be.lte(+openpgp.util.normalizeDate());
                 expect(+verified.signatures[0].signature.packets[0].created).to.be.gte(+start);
                 expect(verified.signatures[0].valid).to.be.true;
@@ -1715,7 +1715,7 @@ describe('OpenPGP.js public api tests', function() {
                 verifyOpt.signature = await openpgp.signature.readArmored(signed.signature);
                 return openpgp.verify(verifyOpt).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
-                  expect(verified.data).to.equal(plaintext);
+                  expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
                   expect(verified.signatures[0].valid).to.be.true;
                   expect(signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, past))
                       .to.be.not.null;
@@ -1725,7 +1725,7 @@ describe('OpenPGP.js public api tests', function() {
                   return openpgp.verify(verifyOpt);
                 }).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
-                  expect(verified.data).to.equal(plaintext);
+                  expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
                   expect(verified.signatures[0].valid).to.be.true;
                   expect(signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, null))
                       .to.be.not.null;

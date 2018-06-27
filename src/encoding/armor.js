@@ -220,13 +220,13 @@ function dearmor(input) {
         while (true) {
           if (resolved) await writer.ready;
           try {
-            let line = await reader.readLine();
-            if (line === undefined) {
+            const lineUntrimmed = await reader.readLine();
+            if (lineUntrimmed === undefined) {
               throw new Error('Misformed armored text');
             }
             // remove trailing whitespace at end of lines
             // remove leading whitespace for compat with older versions of OpenPGP.js
-            line = line.trim();
+            const line = lineUntrimmed.trim();
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -248,7 +248,7 @@ function dearmor(input) {
             } else if (!textDone && type === 2) {
               if (!reSplit.test(line)) {
                 // Reverse dash-escaping for msg
-                text.push(line.replace(/^- /, ''));
+                text.push(util.removeTrailingSpaces(lineUntrimmed.replace(/^- /, '').replace(/[\r\n]+$/, '')));
               } else {
                 text = text.join('\r\n');
                 textDone = true;
