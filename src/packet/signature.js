@@ -197,8 +197,9 @@ Signature.prototype.sign = async function (key, data) {
 
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
+  const params = key.params;
   this.signature = stream.fromAsync(async () => crypto.signature.sign(
-    publicKeyAlgorithm, hashAlgorithm, key.params, toHash, await stream.readToEnd(hash)
+    publicKeyAlgorithm, hashAlgorithm, params, toHash, await stream.readToEnd(hash)
   ));
   return true;
 };
