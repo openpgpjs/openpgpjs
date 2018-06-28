@@ -148,7 +148,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   });
   let packetbytes = stream.slice(bytes, 0, -2);
   packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
-  if (!util.isStream(encrypted) || !config.unsafe_stream) {
+  if (!util.isStream(encrypted) || !config.allow_unauthenticated_stream) {
     packetbytes = await stream.readToEnd(packetbytes);
   }
   await this.packets.read(packetbytes);

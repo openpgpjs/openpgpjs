@@ -226,9 +226,9 @@ describe('Streaming', function() {
     expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
   });
 
-  it('Encrypt and decrypt larger message roundtrip (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Encrypt and decrypt larger message roundtrip (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       let plaintext = [];
       let i = 0;
@@ -263,13 +263,13 @@ describe('Streaming', function() {
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
-  it('Encrypt and decrypt larger message roundtrip using public keys (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Encrypt and decrypt larger message roundtrip using public keys (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
       const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
@@ -308,13 +308,13 @@ describe('Streaming', function() {
       if (i > 10) throw new Error('Data did not arrive early.');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
-  it('Detect MDC modifications (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Detect MDC modifications (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       let plaintext = [];
       let i = 0;
@@ -352,13 +352,13 @@ describe('Streaming', function() {
       await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Modification detected.');
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
-  it('Detect armor checksum error (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Detect armor checksum error (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
       const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
@@ -401,13 +401,13 @@ describe('Streaming', function() {
       await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
-  it('Detect armor checksum error when not passing public keys (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Detect armor checksum error when not passing public keys (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
       const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
@@ -450,13 +450,13 @@ describe('Streaming', function() {
       expect(decrypted.signatures).to.exist.and.have.length(1);
       expect(await decrypted.signatures[0].verified).to.be.null;
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
-  it('Sign/verify: Detect armor checksum error (unsafe_stream=true)', async function() {
-    let unsafe_streamValue = openpgp.config.unsafe_stream;
-    openpgp.config.unsafe_stream = true;
+  it('Sign/verify: Detect armor checksum error (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
     try {
       const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
       const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
@@ -496,7 +496,7 @@ describe('Streaming', function() {
       await expect(openpgp.stream.readToEnd(decrypted.data)).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
     } finally {
-      openpgp.config.unsafe_stream = unsafe_streamValue;
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
   });
 
