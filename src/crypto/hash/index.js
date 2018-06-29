@@ -10,9 +10,9 @@
  * @module crypto/hash
  */
 
-import { SHA1 } from 'asmcrypto.js/src/hash/sha1/exports';
-import { SHA256 } from 'asmcrypto.js/src/hash/sha256/exports';
-import { SHA512 } from 'asmcrypto.js/src/hash/sha512/exports';
+import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
+import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
+import { Sha512 } from 'asmcrypto.js/dist_es8/hash/sha512/sha512';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
@@ -68,11 +68,11 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
 } else { // Use JS fallbacks
   hash_fns = {
     md5: md5,
-    sha1: asmcrypto_hash(SHA1),
+    sha1: asmcrypto_hash(Sha1),
     sha224: hashjs_hash(sha224),
-    sha256: asmcrypto_hash(SHA256),
+    sha256: asmcrypto_hash(Sha256),
     sha384: hashjs_hash(sha384),
-    sha512: asmcrypto_hash(SHA512),
+    sha512: asmcrypto_hash(Sha512),
     ripemd: hashjs_hash(ripemd160)
   };
 }

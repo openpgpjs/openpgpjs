@@ -24,7 +24,7 @@
  * @requires util
  */
 
-import { AES_CFB, AES_CFB_Decrypt, AES_CFB_Encrypt } from 'asmcrypto.js/src/aes/cfb/exports';
+import { AES_CFB } from 'asmcrypto.js/dist_es8/aes/cfb';
 
 import config from '../config';
 import crypto from '../crypto';
@@ -169,8 +169,8 @@ function aesEncrypt(algo, pt, key) {
   if (nodeCrypto) { // Node crypto library.
     return nodeEncrypt(algo, pt, key);
   } // asm.js fallback
-  const cfb = new AES_CFB_Encrypt(key);
-  return stream.transform(pt, value => cfb.process(value).result, () => cfb.finish().result);
+  const cfb = new AES_CFB(key);
+  return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
 }
 
 function aesDecrypt(algo, ct, key) {
@@ -179,8 +179,8 @@ function aesDecrypt(algo, ct, key) {
     pt = nodeDecrypt(algo, ct, key);
   } else { // asm.js fallback
     if (util.isStream(ct)) {
-      const cfb = new AES_CFB_Decrypt(key);
-      pt = stream.transform(ct, value => cfb.process(value).result, () => cfb.finish().result);
+      const cfb = new AES_CFB(key);
+      pt = stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
     } else {
       pt = AES_CFB.decrypt(ct, key);
     }

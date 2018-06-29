@@ -2,7 +2,7 @@
  * @requires asmcrypto.js
  */
 
-import { AES_ECB } from 'asmcrypto.js/src/aes/ecb/ecb';
+import { AES_ECB } from 'asmcrypto.js/dist_es8/aes/ecb';
 
 // TODO use webCrypto or nodeCrypto when possible.
 function aes(length) {
@@ -10,11 +10,11 @@ function aes(length) {
     const aes_ecb = new AES_ECB(key);
 
     this.encrypt = function(block) {
-      return aes_ecb.encrypt(block).result;
+      return aes_ecb.encrypt(block);
     };
 
     this.decrypt = function(block) {
-      return aes_ecb.decrypt(block).result;
+      return aes_ecb.decrypt(block);
     };
   };
 
