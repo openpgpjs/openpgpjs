@@ -167,5 +167,11 @@ export default {
    * @memberof module:config
    * @property {String} node_store
    */
-  node_store:    "./openpgp.store"
+  node_store:    "./openpgp.store",
+  /**
+   * Max userid string length (used for parsing)
+   * @memberof module:config
+   * @property {Integer} max_userid_length
+   */
+  max_userid_length: 1024 * 5
 };
