@@ -591,7 +591,7 @@ export default {
    * Parse user id.
    */
   parseUserId: function(userid) {
-    if(userid.length > config.max_userid_length) {
+    if (userid.length > config.max_userid_length) {
       throw new Error('User id string is too long');
     }
     try {
