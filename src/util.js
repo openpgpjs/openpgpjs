@@ -591,6 +591,9 @@ export default {
    * Parse user id.
    */
   parseUserId: function(userid) {
+    if(userid.length > config.max_userid_length) {
+      throw new Error('User id string is too long');
+    }
     try {
       const [{ phrase: name, address: email, comment }] = rfc2822.parse(userid);
       return { name, email, comment: comment.replace(/^\(|\)$/g, '') };
