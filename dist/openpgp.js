@@ -16879,6 +16879,7 @@ module.exports={
   "_from": "github:openpgpjs/elliptic",
   "_id": "elliptic@6.4.0",
   "_inBundle": false,
+  "_integrity": "",
   "_location": "/elliptic",
   "_phantomChildren": {},
   "_requested": {
@@ -29609,7 +29610,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.11",
+  versionstring: "OpenPGP.js v3.0.12",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -29625,7 +29626,13 @@ exports.default = {
    * @memberof module:config
    * @property {String} node_store
    */
-  node_store: "./openpgp.store"
+  node_store: "./openpgp.store",
+  /**
+   * Max userid string length (used for parsing)
+   * @memberof module:config
+   * @property {Integer} max_userid_length
+   */
+  max_userid_length: 1024 * 5
 }; // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -36387,7 +36394,7 @@ exports.default = {
                 break;
               }
 
-              throw new Error('Data too large.');
+              throw new Error('Message size cannot exceed modulus size');
 
             case 2:
               nred = new _bn2.default.red(n);
@@ -36428,7 +36435,7 @@ exports.default = {
                 break;
               }
 
-              throw new Error('Data too large.');
+              throw new Error('Signature size cannot exceed modulus size');
 
             case 2:
               nred = new _bn2.default.red(n);
@@ -36469,7 +36476,7 @@ exports.default = {
                 break;
               }
 
-              throw new Error('Data too large.');
+              throw new Error('Message size cannot exceed modulus size');
 
             case 2:
               nred = new _bn2.default.red(n);
@@ -38369,7 +38376,7 @@ exports.default = HKP;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.HKP = exports.AsyncProxy = exports.Keyring = exports.crypto = exports.config = exports.enums = exports.armor = exports.OID = exports.KDFParams = exports.ECDHSymmetricKey = exports.Keyid = exports.S2K = exports.MPI = exports.packet = exports.util = exports.cleartext = exports.message = exports.signature = exports.key = exports.destroyWorker = exports.getWorker = exports.initWorker = exports.decryptSessionKeys = exports.encryptSessionKey = exports.decryptKey = exports.reformatKey = exports.generateKey = exports.verify = exports.sign = exports.decrypt = exports.encrypt = undefined;
+exports.WKD = exports.HKP = exports.AsyncProxy = exports.Keyring = exports.crypto = exports.config = exports.enums = exports.armor = exports.OID = exports.KDFParams = exports.ECDHSymmetricKey = exports.Keyid = exports.S2K = exports.MPI = exports.packet = exports.util = exports.cleartext = exports.message = exports.signature = exports.key = exports.destroyWorker = exports.getWorker = exports.initWorker = exports.decryptSessionKeys = exports.encryptSessionKey = exports.decryptKey = exports.reformatKey = exports.generateKey = exports.verify = exports.sign = exports.decrypt = exports.encrypt = undefined;
 
 var _openpgp = _dereq_('./openpgp');
 
@@ -38581,6 +38588,15 @@ Object.defineProperty(exports, 'HKP', {
   }
 });
 
+var _wkd = _dereq_('./wkd');
+
+Object.defineProperty(exports, 'WKD', {
+  enumerable: true,
+  get: function get() {
+    return _interopRequireDefault(_wkd).default;
+  }
+});
+
 var openpgp = _interopRequireWildcard(_openpgp);
 
 var _key = _dereq_('./key');
@@ -38653,7 +38669,7 @@ var cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":322,"./config/config":324,"./crypto":340,"./encoding/armor":357,"./enums":359,"./hkp":360,"./key":362,"./keyring":363,"./message":366,"./openpgp":367,"./packet":371,"./signature":391,"./type/ecdh_symkey":392,"./type/kdf_params":393,"./type/keyid":394,"./type/mpi":395,"./type/oid":396,"./type/s2k":397,"./util":398,"./worker/async_proxy":399}],362:[function(_dereq_,module,exports){
+},{"./cleartext":322,"./config/config":324,"./crypto":340,"./encoding/armor":357,"./enums":359,"./hkp":360,"./key":362,"./keyring":363,"./message":366,"./openpgp":367,"./packet":371,"./signature":391,"./type/ecdh_symkey":392,"./type/kdf_params":393,"./type/keyid":394,"./type/mpi":395,"./type/oid":396,"./type/s2k":397,"./util":398,"./wkd":399,"./worker/async_proxy":400}],362:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44939,7 +44955,7 @@ function nativeAEAD() {
   return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
 }
 
-},{"./cleartext":322,"./config/config":324,"./enums":359,"./key":362,"./message":366,"./polyfills":390,"./util":398,"./worker/async_proxy":399,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],368:[function(_dereq_,module,exports){
+},{"./cleartext":322,"./config/config":324,"./enums":359,"./key":362,"./message":366,"./polyfills":390,"./util":398,"./worker/async_proxy":400,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":42}],368:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48400,7 +48416,7 @@ Signature.prototype.read_sub_packet = function (bytes) {
       break;
     case 28:
       // Signer's User ID
-      this.signersUserId += _util2.default.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.signersUserId = _util2.default.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
       break;
     case 29:
       // Reason for Revocation
@@ -51082,7 +51098,6 @@ exports.default = {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   b64_to_Uint8Array: function b64_to_Uint8Array(base64) {
-    //    atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
     return _base2.default.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
@@ -51093,8 +51108,7 @@ exports.default = {
    * @returns {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function Uint8Array_to_b64(bytes, url) {
-    //    btoa(util.Uint8Array_to_str(bytes)).replace(/\+/g, '-').replace(/\//g, '_');
-    return _base2.default.encode(bytes, url).replace('\n', '');
+    return _base2.default.encode(bytes, url).replace(/(\n)/g, '');
   },
 
   /**
@@ -51506,6 +51520,9 @@ exports.default = {
    * Parse user id.
    */
   parseUserId: function parseUserId(userid) {
+    if (userid.length > _config2.default.max_userid_length) {
+      throw new Error('User id string is too long');
+    }
     try {
       var _rfc2822$parse = _addressRfc2.default.parse(userid),
           _rfc2822$parse2 = (0, _slicedToArray3.default)(_rfc2822$parse, 1),
@@ -51539,10 +51556,151 @@ exports.default = {
    */
   removeTrailingSpaces: function removeTrailingSpaces(text) {
     return text.replace(/[ \t]+$/mg, "");
+  },
+
+  /**
+   * Encode input buffer using Z-Base32 encoding.
+   * See: https://tools.ietf.org/html/rfc6189#section-5.1.6
+   *
+   * @param {Uint8Array} data The binary data to encode
+   * @returns {String} Binary data encoded using Z-Base32
+   */
+  encodeZBase32: function encodeZBase32(data) {
+    if (data.length === 0) {
+      return "";
+    }
+    var ALPHABET = "ybndrfg8ejkmcpqxot1uwisza345h769";
+    var SHIFT = 5;
+    var MASK = 31;
+    var buffer = data[0];
+    var index = 1;
+    var bitsLeft = 8;
+    var result = '';
+    while (bitsLeft > 0 || index < data.length) {
+      if (bitsLeft < SHIFT) {
+        if (index < data.length) {
+          buffer <<= 8;
+          buffer |= data[index++] & 0xff;
+          bitsLeft += 8;
+        } else {
+          var pad = SHIFT - bitsLeft;
+          buffer <<= pad;
+          bitsLeft += pad;
+        }
+      }
+      bitsLeft -= SHIFT;
+      result += ALPHABET[MASK & buffer >> bitsLeft];
+    }
+    return result;
   }
 };
 
 },{"./config":325,"./encoding/base64":358,"./util":398,"address-rfc2822":1,"babel-runtime/core-js/object/values":31,"babel-runtime/helpers/slicedToArray":40,"crypto":"crypto","zlib":"zlib"}],399:[function(_dereq_,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _slicedToArray2 = _dereq_('babel-runtime/helpers/slicedToArray');
+
+var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+
+var _util = _dereq_('./util');
+
+var _util2 = _interopRequireDefault(_util);
+
+var _crypto = _dereq_('./crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _key = _dereq_('./key');
+
+var keyMod = _interopRequireWildcard(_key);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Initialize the WKD client
+ * @constructor
+ */
+function WKD() {
+  this._fetch = typeof window !== 'undefined' ? window.fetch : _dereq_('node-fetch');
+}
+
+/**
+ * Search for a public key using Web Key Directory protocol.
+ * @param   {String}   options.email         User's email.
+ * @param   {Boolean}  options.rawBytes      Returns Uint8Array instead of parsed key.
+ * @returns {Promise<Uint8Array|
+ *           {keys: Array<module:key.Key>,
+ *            err: (Array<Error>|null)}>}     The public key.
+ * @async
+ */
+// OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2018 Wiktor Kwapisiewicz
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview This class implements a client for the Web Key Directory (wkd) protocol
+ * in order to lookup keys on designated servers.
+ * See: https://datatracker.ietf.org/doc/draft-koch-openpgp-webkey-service/
+ * @module wkd
+ */
+
+WKD.prototype.lookup = function (options) {
+  var fetch = this._fetch;
+
+  if (!options.email) {
+    throw new Error('You must provide an email parameter!');
+  }
+
+  if (!_util2.default.isEmailAddress(options.email)) {
+    throw new Error('Invalid e-mail address.');
+  }
+
+  var _$exec = /(.*)@(.*)/.exec(options.email),
+      _$exec2 = (0, _slicedToArray3.default)(_$exec, 3),
+      localPart = _$exec2[1],
+      domain = _$exec2[2];
+
+  var localEncoded = _util2.default.encodeZBase32(_crypto2.default.hash.sha1(_util2.default.str_to_Uint8Array(localPart.toLowerCase())));
+
+  var url = 'https://' + domain + '/.well-known/openpgpkey/hu/' + localEncoded;
+
+  return fetch(url).then(function (response) {
+    if (response.status === 200) {
+      return response.arrayBuffer();
+    }
+  }).then(function (publicKey) {
+    if (publicKey) {
+      var rawBytes = new Uint8Array(publicKey);
+      if (options.rawBytes) {
+        return rawBytes;
+      }
+      return keyMod.read(rawBytes);
+    }
+  });
+};
+
+exports.default = WKD;
+
+},{"./crypto":340,"./key":362,"./util":398,"babel-runtime/helpers/slicedToArray":40,"node-fetch":"node-fetch"}],400:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
