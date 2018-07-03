@@ -75,7 +75,7 @@
   "dependencies": {
     "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.4",
     "address-rfc2822": "^2.0.3",
-    "asmcrypto.js": "^2.3.0",
+    "asmcrypto.js": "github:openpgpjs/asmcrypto",
     "asn1.js": "^5.0.0",
     "bn.js": "^4.11.8",
     "buffer": "^5.0.8",
