@@ -1712,15 +1712,16 @@ describe('OpenPGP.js public api tests', function() {
                 message,
                 privateKeys: privateKey_1337.keys,
                 detached: true,
-                date: past
+                date: past,
+                armor: false
             };
             const verifyOpt = {
                 message,
                 publicKeys: publicKey_1337.keys,
                 date: past
             };
-            return openpgp.sign(signOpt).then(async function (signed) {
-                verifyOpt.signature = await openpgp.signature.readArmored(signed.signature);
+            return openpgp.sign(signOpt).then(function (signed) {
+                verifyOpt.signature = signed.signature;
                 return openpgp.verify(verifyOpt).then(function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
