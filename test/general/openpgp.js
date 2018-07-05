@@ -1722,21 +1722,21 @@ describe('OpenPGP.js public api tests', function() {
             };
             return openpgp.sign(signOpt).then(function (signed) {
                 verifyOpt.signature = signed.signature;
-                return openpgp.verify(verifyOpt).then(function (verified) {
+                return openpgp.verify(verifyOpt).then(async function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, past))
+                  expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, past))
                       .to.be.not.null;
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
                   // now check with expiration checking disabled
                   verifyOpt.date = null;
                   return openpgp.verify(verifyOpt);
-                }).then(function (verified) {
+                }).then(async function (verified) {
                   expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
                   expect(verified.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
                   expect(verified.signatures[0].valid).to.be.true;
-                  expect(signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, null))
+                  expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, null))
                       .to.be.not.null;
                   expect(verified.signatures[0].signature.packets.length).to.equal(1);
                 });
@@ -1761,13 +1761,65 @@ describe('OpenPGP.js public api tests', function() {
               verifyOpt.message = openpgp.message.fromBinary(data);
               verifyOpt.signature = signed.signature;
               return openpgp.verify(verifyOpt);
-            }).then(function (verified) {
+            }).then(async function (verified) {
               expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
               expect([].slice.call(verified.data)).to.deep.equal([].slice.call(data));
               expect(verified.signatures[0].valid).to.be.true;
-              expect(signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, future))
+              expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid, future))
                   .to.be.not.null;
               expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            });
+        });
+
+        it('should sign and verify binary data without one-pass signature', function () {
+            const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+            const signOpt = {
+              message: openpgp.message.fromBinary(data),
+              privateKeys: privateKey.keys,
+              armor: false
+            };
+            const verifyOpt = {
+              publicKeys: publicKey.keys
+            };
+            return openpgp.sign(signOpt).then(function (signed) {
+              const packets = new openpgp.packet.List();
+              packets.push(signed.message.packets.findPacket(openpgp.enums.packet.signature));
+              packets.push(signed.message.packets.findPacket(openpgp.enums.packet.literal));
+              verifyOpt.message = new openpgp.message.Message(packets);
+              return openpgp.verify(verifyOpt);
+            }).then(async function (verified) {
+              expect([].slice.call(verified.data)).to.deep.equal([].slice.call(data));
+              expect(verified.signatures[0].valid).to.be.true;
+              expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid))
+                  .to.be.not.null;
+              expect(verified.signatures[0].signature.packets.length).to.equal(1);
+            });
+        });
+
+        it('should streaming sign and verify binary data without one-pass signature', function () {
+            const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+            const signOpt = {
+              message: openpgp.message.fromBinary(data),
+              privateKeys: privateKey.keys,
+              armor: false,
+              asStream: true
+            };
+            const verifyOpt = {
+              publicKeys: publicKey.keys,
+              asStream: true
+            };
+            return openpgp.sign(signOpt).then(function (signed) {
+              const packets = new openpgp.packet.List();
+              packets.push(signed.message.packets.findPacket(openpgp.enums.packet.signature));
+              packets.push(signed.message.packets.findPacket(openpgp.enums.packet.literal));
+              verifyOpt.message = new openpgp.message.Message(packets);
+              return openpgp.verify(verifyOpt);
+            }).then(async function (verified) {
+              expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
+              expect(await verified.signatures[0].verified).to.be.true;
+              expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid))
+                  .to.be.not.null;
+              expect((await verified.signatures[0].signature).packets.length).to.equal(1);
             });
         });
 
@@ -1840,7 +1892,7 @@ describe('OpenPGP.js public api tests', function() {
                 expect(await openpgp.stream.readToEnd(packets.getText())).to.equal(plaintext);
                 expect(+(await signatures[0].signature).packets[0].created).to.equal(+past);
                 expect(await signatures[0].verified).to.be.true;
-                expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, past))
+                expect(await encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, past))
                     .to.be.not.null;
                 expect((await signatures[0].signature).packets.length).to.equal(1);
             });
@@ -1868,7 +1920,7 @@ describe('OpenPGP.js public api tests', function() {
                 expect(await openpgp.stream.readToEnd(packets.getLiteralData())).to.deep.equal(data);
                 expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
                 expect(await signatures[0].verified).to.be.true;
-                expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))
+                expect(await encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))
                     .to.be.not.null;
                 expect((await signatures[0].signature).packets.length).to.equal(1);
             });
@@ -1896,7 +1948,7 @@ describe('OpenPGP.js public api tests', function() {
                 expect(await openpgp.stream.readToEnd(packets.getLiteralData())).to.deep.equal(data);
                 expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
                 expect(await signatures[0].verified).to.be.true;
-                expect(encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))
+                expect(await encryptOpt.privateKeys[0].getSigningKey(signatures[0].keyid, future))
                     .to.be.not.null;
                 expect((await signatures[0].signature).packets.length).to.equal(1);
             });
