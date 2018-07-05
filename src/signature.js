@@ -41,7 +41,7 @@ export function Signature(packetlist) {
 
 /**
  * Returns ASCII armored text of signature
- * @returns {String} ASCII armor
+ * @returns {ReadableStream<String>} ASCII armor
  */
 Signature.prototype.armor = function() {
   return armor.encode(enums.armor.signature, this.packets.write());
@@ -49,8 +49,9 @@ Signature.prototype.armor = function() {
 
 /**
  * reads an OpenPGP armored signature and returns a signature object
- * @param {String} armoredText text to be parsed
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
  * @returns {Signature} new signature object
+ * @async
  * @static
  */
 export async function readArmored(armoredText) {
@@ -60,8 +61,9 @@ export async function readArmored(armoredText) {
 
 /**
  * reads an OpenPGP signature as byte array and returns a signature object
- * @param {Uint8Array} input   binary signature
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input   binary signature
  * @returns {Signature}         new signature object
+ * @async
  * @static
  */
 export async function read(input) {

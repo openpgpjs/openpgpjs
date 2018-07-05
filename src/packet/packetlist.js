@@ -33,7 +33,7 @@ function List() {
 
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
- * @param {Uint8Array} A Uint8Array of bytes.
+ * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
  */
 List.prototype.read = async function (bytes) {
   this.stream = stream.transformPair(bytes, async (readable, writable) => {

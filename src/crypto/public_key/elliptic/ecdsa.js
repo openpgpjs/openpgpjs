@@ -29,6 +29,7 @@ import Curve from './curves';
  * @param  {module:enums.hash} hash_algo Hash algorithm used to sign
  * @param  {Uint8Array}        m         Message to sign
  * @param  {Uint8Array}        d         Private key used to sign the message
+ * @param  {Uint8Array}        hashed    The hashed message
  * @returns {{r: Uint8Array,
  *            s: Uint8Array}}            Signature of the message
  * @async
@@ -49,6 +50,7 @@ async function sign(oid, hash_algo, m, d, hashed) {
              s: Uint8Array}}   signature Signature to verify
  * @param  {Uint8Array}        m         Message to verify
  * @param  {Uint8Array}        Q         Public key used to verify the message
+ * @param  {Uint8Array}        hashed    The hashed message
  * @returns {Boolean}
  * @async
  */

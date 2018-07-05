@@ -56,6 +56,7 @@ export default SymEncryptedAEADProtected;
 
 /**
  * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
  */
 SymEncryptedAEADProtected.prototype.read = async function (bytes) {
   await stream.parse(bytes, async reader => {
@@ -77,7 +78,7 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
 
 /**
  * Write the encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
- * @returns {Uint8Array} The encrypted payload
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
   if (config.aead_protect_version === 4) {
@@ -90,7 +91,7 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * Decrypt the encrypted payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
- * @returns {Promise<Boolean>}
+ * @returns {Boolean}
  * @async
  */
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
@@ -105,7 +106,6 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * Encrypt the packet list payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
- * @returns {Promise<Boolean>}
  * @async
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
@@ -122,8 +122,8 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
  * En/decrypt the payload.
  * @param  {encrypt|decrypt} fn      Whether to encrypt or decrypt
  * @param  {Uint8Array} key          The session key used to en/decrypt the payload
- * @param  {Uint8Array} data         The data to en/decrypt
- * @returns {Promise<Uint8Array>}
+ * @param  {Uint8Array | ReadableStream<Uint8Array>} data         The data to en/decrypt
+ * @returns {Uint8Array | ReadableStream<Uint8Array>}
  * @async
  */
 SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {

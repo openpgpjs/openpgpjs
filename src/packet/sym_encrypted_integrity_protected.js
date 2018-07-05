@@ -87,6 +87,7 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * Encrypt the payload in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @param  {Boolean} asStream             Whether to set this.encrypted to a stream
  * @returns {Promise<Boolean>}
  * @async
  */
@@ -116,6 +117,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * Decrypts the encrypted data contained in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+ * @param  {Boolean} asStream             Whether to read this.encrypted as a stream
  * @returns {Promise<Boolean>}
  * @async
  */

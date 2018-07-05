@@ -133,7 +133,7 @@ export default {
   /**
    * Generic static Packet Parser function
    *
-   * @param {Uint8Array} input Input stream as string
+   * @param {Uint8Array | ReadableStream<Uint8Array>} input Input stream as string
    * @param {Function} callback Function to call with the parsed packet
    * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
    */

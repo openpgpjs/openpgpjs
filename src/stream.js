@@ -1,7 +1,12 @@
 import util from './util';
 
-const nodeStream = util.getNodeStream();
+const NodeReadableStream = util.getNodeStream();
 
+/**
+ * Convert data to Stream
+ * @param {ReadableStream|Uint8array|String} input  data to convert
+ * @returns {ReadableStream} Converted data
+ */
 function toStream(input) {
   if (util.isStream(input)) {
     return input;
@@ -14,39 +19,61 @@ function toStream(input) {
   });
 }
 
-function concat(arrays) {
-  arrays = arrays.map(toStream);
+/**
+ * Concat a list of Streams
+ * @param {Array<ReadableStream|Uint8array|String>} list  Array of Uint8Arrays/Strings/Streams to concatenate
+ * @returns {ReadableStream} Concatenated array
+ */
+function concat(list) {
+  list = list.map(toStream);
   const transform = transformWithCancel(async function(reason) {
     await Promise.all(transforms.map(array => cancel(array, reason)));
   });
   let prev = Promise.resolve();
-  const transforms = arrays.map((array, i) => transformPair(array, (readable, writable) => {
+  const transforms = list.map((array, i) => transformPair(array, (readable, writable) => {
     prev = prev.then(() => pipe(readable, transform.writable, {
-      preventClose: i !== arrays.length - 1
+      preventClose: i !== list.length - 1
     }));
     return prev;
   }));
   return transform.readable;
 }
 
+/**
+ * Get a Reader
+ * @param {ReadableStream|Uint8array|String} input
+ * @returns {Reader}
+ */
 function getReader(input) {
   return new Reader(input);
 }
 
+/**
+ * Get a Writer
+ * @param {WritableStream} input
+ * @returns {WritableStreamDefaultWriter}
+ */
 function getWriter(input) {
   return input.getWriter();
 }
 
+/**
+ * Pipe a readable stream to a writable stream. Don't throw on input stream errors, but forward them to the output stream.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {WritableStream} target
+ * @param {Object} (optional) options
+ * @returns {Promise<undefined>} Promise indicating when piping has finished (input stream closed or errored)
+ */
 async function pipe(input, target, options) {
   if (!util.isStream(input)) {
     input = toStream(input);
   }
   try {
-    if (input.externalBuffer) {
+    if (input[externalBuffer]) {
       const writer = target.getWriter();
-      for (let i = 0; i < input.externalBuffer.length; i++) {
+      for (let i = 0; i < input[externalBuffer].length; i++) {
         await writer.ready;
-        await writer.write(input.externalBuffer[i]);
+        await writer.write(input[externalBuffer][i]);
       }
       writer.releaseLock();
     }
@@ -56,12 +83,23 @@ async function pipe(input, target, options) {
   }
 }
 
+/**
+ * Pipe a readable stream through a transform stream.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Object} (optional) options
+ * @returns {ReadableStream} transformed stream
+ */
 function transformRaw(input, options) {
   const transformStream = new TransformStream(options);
   pipe(input, transformStream.writable);
   return transformStream.readable;
 }
 
+/**
+ * Create a cancelable TransformStream.
+ * @param {Function} cancel
+ * @returns {TransformStream}
+ */
 function transformWithCancel(cancel) {
   let backpressureChangePromiseResolve = function() {};
   let outputController;
@@ -90,6 +128,13 @@ function transformWithCancel(cancel) {
   };
 }
 
+/**
+ * Transform a stream using helper functions which are called on each chunk, and on stream close, respectively.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Function} process
+ * @param {Function} finish
+ * @returns {ReadableStream|Uint8array|String}
+ */
 function transform(input, process = () => undefined, finish = () => undefined) {
   if (util.isStream(input)) {
     return transformRaw(input, {
@@ -117,6 +162,15 @@ function transform(input, process = () => undefined, finish = () => undefined) {
   return result1 !== undefined ? result1 : result2;
 }
 
+/**
+ * Transform a stream using a helper function which is passed a readable and a writable stream.
+ *   This function also maintains the possibility to cancel the input stream,
+ *   and does so on cancelation of the output stream, despite cancelation
+ *   normally being impossible when the input stream is being read from.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Function} fn
+ * @returns {ReadableStream}
+ */
 function transformPair(input, fn) {
   let incomingTransformController;
   const incoming = new TransformStream({
@@ -136,6 +190,15 @@ function transformPair(input, fn) {
   return outgoing.readable;
 }
 
+/**
+ * Parse a stream using a helper function which is passed a Reader.
+ *   The reader additionally has a remainder() method which returns a
+ *   stream pointing to the remainder of input, and is linked to input
+ *   for cancelation.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Function} fn
+ * @returns {Any} the return value of fn()
+ */
 function parse(input, fn) {
   let returnValue;
   const transformed = transformPair(input, (readable, writable) => {
@@ -150,15 +213,29 @@ function parse(input, fn) {
   return returnValue;
 }
 
+/**
+ * Tee a Stream for reading it twice. The input stream can no longer be read after tee()ing.
+ *   Reading either of the two returned streams will pull from the input stream.
+ *   The input stream will only be canceled if both of the returned streams are canceled.
+ * @param {ReadableStream|Uint8array|String} input
+ * @returns {Array<ReadableStream|Uint8array|String>} array containing two copies of input
+ */
 function tee(input) {
   if (util.isStream(input)) {
     const teed = input.tee();
-    teed[0].externalBuffer = teed[1].externalBuffer = input.externalBuffer;
+    teed[0][externalBuffer] = teed[1][externalBuffer] = input[externalBuffer];
     return teed;
   }
   return [slice(input), slice(input)];
 }
 
+/**
+ * Clone a Stream for reading it twice. The input stream can still be read after clone()ing.
+ *   Reading from the clone will pull from the input stream.
+ *   The input stream will only be canceled if both the clone and the input stream are canceled.
+ * @param {ReadableStream|Uint8array|String} input
+ * @returns {ReadableStream|Uint8array|String} cloned input
+ */
 function clone(input) {
   if (util.isStream(input)) {
     const teed = tee(input);
@@ -168,6 +245,14 @@ function clone(input) {
   return slice(input);
 }
 
+/**
+ * Clone a Stream for reading it twice. Data will arrive at the same rate as the input stream is being read.
+ *   Reading from the clone will NOT pull from the input stream. Data only arrives when reading the input stream.
+ *   The input stream will NOT be canceled if the clone is canceled, only if the input stream are canceled.
+ *   If the input stream is canceled, the clone will be errored.
+ * @param {ReadableStream|Uint8array|String} input
+ * @returns {ReadableStream|Uint8array|String} cloned input
+ */
 function passiveClone(input) {
   if (util.isStream(input)) {
     return new ReadableStream({
@@ -199,6 +284,12 @@ function passiveClone(input) {
   return slice(input);
 }
 
+/**
+ * Modify a stream object to point to a different stream object.
+ *   This is used internally by clone() and passiveClone() to provide an abstraction over tee().
+ * @param {ReadableStream} input
+ * @param {ReadableStream} clone
+ */
 function overwrite(input, clone) {
   // Overwrite input.getReader, input.locked, etc to point to clone
   Object.entries(Object.getOwnPropertyDescriptors(ReadableStream.prototype)).forEach(([name, descriptor]) => {
@@ -214,6 +305,11 @@ function overwrite(input, clone) {
   });
 }
 
+/**
+ * Return a stream pointing to a part of the input stream.
+ * @param {ReadableStream|Uint8array|String} input
+ * @returns {ReadableStream|Uint8array|String} clone
+ */
 function slice(input, begin=0, end=Infinity) {
   if (util.isStream(input)) {
     if (begin >= 0 && end >= 0) {
@@ -254,8 +350,8 @@ function slice(input, begin=0, end=Infinity) {
     util.print_debug_error(`stream.slice(input, ${begin}, ${end}) not implemented efficiently.`);
     return fromAsync(async () => slice(await readToEnd(input), begin, end));
   }
-  if (input.externalBuffer) {
-    input = util.concat(input.externalBuffer.concat([input]));
+  if (input[externalBuffer]) {
+    input = util.concat(input[externalBuffer].concat([input]));
   }
   if (util.isUint8Array(input)) {
     return input.subarray(begin, end);
@@ -263,19 +359,36 @@ function slice(input, begin=0, end=Infinity) {
   return input.slice(begin, end);
 }
 
-async function readToEnd(input, join) {
+/**
+ * Read a stream to the end and return its contents, concatenated by the concat function (defaults to util.concat).
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Function} concat
+ * @returns {Uint8array|String|Any} the return value of concat()
+ */
+async function readToEnd(input, concat) {
   if (util.isStream(input)) {
-    return getReader(input).readToEnd(join);
+    return getReader(input).readToEnd(concat);
   }
   return input;
 }
 
+/**
+ * Cancel a stream.
+ * @param {ReadableStream|Uint8array|String} input
+ * @param {Any} reason
+ * @returns {Promise<Any>} indicates when the stream has been canceled
+ */
 async function cancel(input, reason) {
   if (util.isStream(input)) {
     return input.cancel(reason);
   }
 }
 
+/**
+ * Convert an async function to a Stream. When the function returns, its return value is enqueued to the stream.
+ * @param {Function} fn
+ * @returns {ReadableStream}
+ */
 function fromAsync(fn) {
   return new ReadableStream({
     pull: async controller => {
@@ -298,8 +411,13 @@ function fromAsync(fn) {
 let nodeToWeb;
 let webToNode;
 
-if (nodeStream) {
+if (NodeReadableStream) {
 
+  /**
+   * Convert a Node Readable Stream to a Web ReadableStream
+   * @param {Readable} nodeStream
+   * @returns {ReadableStream}
+   */
   nodeToWeb = function(nodeStream) {
     return new ReadableStream({
       start(controller) {
@@ -321,7 +439,7 @@ if (nodeStream) {
   };
 
 
-  class NodeReadable extends nodeStream.Readable {
+  class NodeReadable extends NodeReadableStream {
     constructor(webStream, options) {
       super(options);
       this._webStream = webStream;
@@ -352,6 +470,11 @@ if (nodeStream) {
     }
   }
 
+  /**
+   * Convert a Web ReadableStream to a Node Readable Stream
+   * @param {ReadableStream} webStream
+   * @returns {Readable}
+   */
   webToNode = function(webStream) {
     return new NodeReadable(webStream);
   };
@@ -363,10 +486,11 @@ export default { toStream, concat, getReader, getWriter, pipe, transformRaw, tra
 
 
 const doneReadingSet = new WeakSet();
+const externalBuffer = Symbol('externalBuffer');
 function Reader(input) {
   this.stream = input;
-  if (input.externalBuffer) {
-    this.externalBuffer = input.externalBuffer.slice();
+  if (input[externalBuffer]) {
+    this[externalBuffer] = input[externalBuffer].slice();
   }
   if (util.isStream(input)) {
     const reader = input.getReader();
@@ -391,21 +515,32 @@ function Reader(input) {
   };
 }
 
+/**
+ * Read a chunk of data.
+ * @returns {Object} Either { done: false, value: Uint8Array | String } or { done: true, value: undefined }
+ */
 Reader.prototype.read = async function() {
-  if (this.externalBuffer && this.externalBuffer.length) {
-    const value = this.externalBuffer.shift();
+  if (this[externalBuffer] && this[externalBuffer].length) {
+    const value = this[externalBuffer].shift();
     return { done: false, value };
   }
   return this._read();
 };
 
+/**
+ * Allow others to read the stream.
+ */
 Reader.prototype.releaseLock = function() {
-  if (this.externalBuffer) {
-    this.stream.externalBuffer = this.externalBuffer;
+  if (this[externalBuffer]) {
+    this.stream[externalBuffer] = this[externalBuffer];
   }
   this._releaseLock();
 };
 
+/**
+ * Read up to and including the first \n character.
+ * @returns {String|Undefined}
+ */
 Reader.prototype.readLine = async function() {
   let buffer = [];
   let returnVal;
@@ -428,6 +563,10 @@ Reader.prototype.readLine = async function() {
   return returnVal;
 };
 
+/**
+ * Read a single byte/character.
+ * @returns {Number|String|Undefined}
+ */
 Reader.prototype.readByte = async function() {
   const { done, value } = await this.read();
   if (done) return;
@@ -436,6 +575,10 @@ Reader.prototype.readByte = async function() {
   return byte;
 };
 
+/**
+ * Read a specific amount of bytes/characters, unless the stream ends before that amount.
+ * @returns {Uint8Array|String|Undefined}
+ */
 Reader.prototype.readBytes = async function(length) {
   const buffer = [];
   let bufferLength = 0;
@@ -455,25 +598,38 @@ Reader.prototype.readBytes = async function(length) {
   }
 };
 
+/**
+ * Peek (look ahead) a specific amount of bytes/characters, unless the stream ends before that amount.
+ * @returns {Uint8Array|String|Undefined}
+ */
 Reader.prototype.peekBytes = async function(length) {
   const bytes = await this.readBytes(length);
   this.unshift(bytes);
   return bytes;
 };
 
+/**
+ * Push data to the front of the stream.
+ * @param {Uint8Array|String|Undefined} ...values
+ */
 Reader.prototype.unshift = function(...values) {
-  if (!this.externalBuffer) {
-    this.externalBuffer = [];
+  if (!this[externalBuffer]) {
+    this[externalBuffer] = [];
   }
-  this.externalBuffer.unshift(...values.filter(value => value && value.length));
+  this[externalBuffer].unshift(...values.filter(value => value && value.length));
 };
 
-Reader.prototype.readToEnd = async function(join=util.concat) {
+/**
+ * Read the stream to the end and return its contents, concatenated by the concat function (defaults to util.concat).
+ * @param {Function} concat
+ * @returns {Uint8array|String|Any} the return value of concat()
+ */
+Reader.prototype.readToEnd = async function(concat=util.concat) {
   const result = [];
   while (true) {
     const { done, value } = await this.read();
     if (done) break;
     result.push(value);
   }
-  return join(result);
+  return concat(result);
 };

@@ -36,6 +36,7 @@ function Keyring(storeHandler) {
 
 /**
  * Calls the storeHandler to load the keys
+ * @async
  */
 Keyring.prototype.load = async function () {
   this.publicKeys = new KeyArray(await this.storeHandler.loadPublic());
@@ -44,6 +45,7 @@ Keyring.prototype.load = async function () {
 
 /**
  * Calls the storeHandler to save the keys
+ * @async
  */
 Keyring.prototype.store = async function () {
   await Promise.all([

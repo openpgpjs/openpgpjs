@@ -60,14 +60,14 @@ function Compressed() {
 
   /**
    * Compressed packet data
-   * @type {String}
+   * @type {Uint8Array | ReadableStream<Uint8Array>}
    */
   this.compressed = null;
 }
 
 /**
  * Parsing function for the packet.
- * @param {String} bytes Payload of a tag 8 packet
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
  */
 Compressed.prototype.read = async function (bytes) {
   await stream.parse(bytes, async reader => {
@@ -85,7 +85,7 @@ Compressed.prototype.read = async function (bytes) {
 
 /**
  * Return the compressed packet.
- * @returns {String} binary compressed packet
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
  */
 Compressed.prototype.write = function () {
   if (this.compressed === null) {

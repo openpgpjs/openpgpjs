@@ -23,9 +23,9 @@ const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 /**
  * Convert binary array to radix-64
- * @param {Uint8Array} t Uint8Array to convert
+ * @param {Uint8Array | ReadableStream<Uint8Array>} t Uint8Array to convert
  * @param {bool} u if true, output is URL-safe
- * @returns {string} radix-64 version of input string
+ * @returns {String | ReadableStream<String>} radix-64 version of input string
  * @static
  */
 function s2r(t, u = false) {
@@ -92,9 +92,9 @@ function s2r(t, u = false) {
 
 /**
  * Convert radix-64 to binary array
- * @param {String} t radix-64 string to convert
+ * @param {String | ReadableStream<String>} t radix-64 string to convert
  * @param {bool} u if true, input is interpreted as URL-safe
- * @returns {Uint8Array} binary array version of input string
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
  * @static
  */
 function r2s(t, u) {

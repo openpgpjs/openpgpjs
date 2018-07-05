@@ -248,7 +248,7 @@ Key.prototype.toPublic = function() {
 
 /**
  * Returns ASCII armored text of key
- * @returns {String} ASCII armor
+ * @returns {ReadableStream<String>} ASCII armor
  */
 Key.prototype.armor = function() {
   const type = this.isPublic() ? enums.armor.public_key : enums.armor.private_key;
@@ -1207,9 +1207,10 @@ export async function read(data) {
 
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
- * @param {String} armoredText text to be parsed
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
  * @returns {{keys: Array<module:key.Key>,
  *            err: (Array<Error>|null)}} result object with key and error arrays
+ * @async
  * @static
  */
 export async function readArmored(armoredText) {

@@ -118,19 +118,14 @@ function addheader(customComment) {
 
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
- * @param {String} data Data to create a CRC-24 checksum for
- * @returns {String} Base64 encoded checksum
+ * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
+ * @returns {String | ReadableStream<String>} Base64 encoded checksum
  */
 function getCheckSum(data) {
   const crc = createcrc24(data);
   return base64.encode(crc);
 }
 
-/**
- * Internal function to calculate a CRC-24 checksum over a given string (data)
- * @param {String} data Data to create a CRC-24 checksum for
- * @returns {Integer} The CRC-24 checksum as number
- */
 const crc_table = [
   0x00000000, 0x00864cfb, 0x018ad50d, 0x010c99f6, 0x0393e6e1, 0x0315aa1a, 0x021933ec, 0x029f7f17, 0x07a18139,
   0x0727cdc2, 0x062b5434, 0x06ad18cf, 0x043267d8, 0x04b42b23, 0x05b8b2d5, 0x053efe2e, 0x0fc54e89, 0x0f430272,
@@ -166,6 +161,11 @@ const crc_table = [
   0x57dd8538
 ];
 
+/**
+ * Internal function to calculate a CRC-24 checksum over a given string (data)
+ * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} The CRC-24 checksum
+ */
 function createcrc24(input) {
   let crc = 0xB704CE;
   return stream.transform(input, value => {
@@ -197,7 +197,8 @@ function verifyHeaders(headers) {
  * the encoded bytes
  * @param {String} text OpenPGP armored message
  * @returns {Object} An object with attribute "text" containing the message text,
- * an attribute "data" containing the bytes and "type" for the ASCII armor type
+ * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
+ * @async
  * @static
  */
 function dearmor(input) {
@@ -310,7 +311,7 @@ function dearmor(input) {
  * @param {Integer} partindex
  * @param {Integer} parttotal
  * @param {String} customComment (optional) additional comment to add to the armored string
- * @returns {String} Armored text
+ * @returns {String | ReadableStream<String>} Armored text
  * @static
  */
 function armor(messagetype, body, partindex, parttotal, customComment) {

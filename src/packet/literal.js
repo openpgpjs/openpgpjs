@@ -47,7 +47,7 @@ function Literal(date=new Date()) {
 /**
  * Set the packet data to a javascript native string, end of line
  * will be normalized to \r\n and by default text is converted to UTF8
- * @param {String} text Any native javascript string
+ * @param {String | ReadableStream<String>} text Any native javascript string
  * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
 Literal.prototype.setText = function(text, format='utf8') {
@@ -59,7 +59,8 @@ Literal.prototype.setText = function(text, format='utf8') {
 /**
  * Returns literal data packets as native JavaScript string
  * with normalized end of line to \n
- * @returns {String} literal data as text
+ * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
+ * @returns {String | ReadableStream<String>} literal data as text
  */
 Literal.prototype.getText = function(clone=false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
@@ -86,7 +87,7 @@ Literal.prototype.getText = function(clone=false) {
 
 /**
  * Set the packet data to value represented by the provided string of bytes.
- * @param {Uint8Array} bytes The string of bytes
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes The string of bytes
  * @param {utf8|binary|text|mime} format The format of the string of bytes
  */
 Literal.prototype.setBytes = function(bytes, format) {
@@ -98,7 +99,8 @@ Literal.prototype.setBytes = function(bytes, format) {
 
 /**
  * Get the byte sequence representing the literal packet data
- * @returns {Uint8Array} A sequence of bytes
+ * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes
  */
 Literal.prototype.getBytes = function(clone=false) {
   if (this.data === null) {
@@ -135,7 +137,7 @@ Literal.prototype.getFilename = function() {
 /**
  * Parsing function for a literal data packet (tag 11).
  *
- * @param {Uint8Array} input Payload of a tag 11 packet
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input Payload of a tag 11 packet
  * @returns {module:packet.Literal} object representation
  */
 Literal.prototype.read = async function(bytes) {
@@ -157,7 +159,7 @@ Literal.prototype.read = async function(bytes) {
 /**
  * Creates a string representation of the packet
  *
- * @returns {Uint8Array} Uint8Array representation of the packet
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
   const filename = util.str_to_Uint8Array(util.encode_utf8(this.filename));

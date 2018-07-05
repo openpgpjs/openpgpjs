@@ -53,7 +53,7 @@ export default {
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
-   * Also, convert ReadableStreams to Uint8Arrays
+   * Also, convert ReadableStreams to MessagePorts
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
@@ -105,6 +105,11 @@ export default {
     }
   },
 
+  /**
+   * Convert MessagePorts back to ReadableStreams
+   * @param  {Object} obj
+   * @returns {Object}
+   */
   restoreStreams: function(obj) {
     if (Object.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => { // recursively search all children
@@ -490,14 +495,16 @@ export default {
     }
   },
 
-  print_entire_stream: function (str, input, fn = result => result) {
-    stream.readToEnd(stream.clone(input)).then(result => {
-      console.log(str + ': ', fn(result));
+  /**
+   * Read a stream to the end and print it to the console when it's closed.
+   * @param {String} str String of the debug message
+   * @param {ReadableStream|Uint8array|String} input Stream to print
+   * @param {Function} concat Function to concatenate chunks of the stream (defaults to util.concat).
+   */
+  print_entire_stream: function (str, input, concat) {
+    stream.readToEnd(stream.clone(input), concat).then(result => {
+      console.log(str + ': ', result);
     });
-  },
-
-  print_entire_stream_str: function (str, stream, fn = result => result) {
-    util.print_entire_stream(str, stream, result => fn(util.Uint8Array_to_str(result)));
   },
 
   getLeftNBits: function (array, bitcount) {
@@ -623,16 +630,40 @@ export default {
   },
 
   /**
+   * Get native Node.js module
+   * @param {String}     The module to require
+   * @returns {Object}   The required module or 'undefined'
+   */
+  nodeRequire: function(module) {
+    if (!util.detectNode()) {
+      return;
+    }
+
+    // Requiring the module dynamically allows us to access the native node module.
+    // otherwise, it gets replaced with the browserified version
+    // eslint-disable-next-line import/no-dynamic-require
+    return require(module);
+  },
+
+  /**
    * Get native Node.js crypto api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.use_native
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!util.detectNode() || !config.use_native) {
+    if (!config.use_native) {
       return;
     }
 
-    return require('crypto');
+    return util.nodeRequire('crypto');
+  },
+
+  getNodeZlib: function() {
+    if (!config.use_native) {
+      return;
+    }
+
+    return util.nodeRequire('zlib');
   },
 
   /**
@@ -641,40 +672,15 @@ export default {
    * @returns {Function}   The Buffer constructor or 'undefined'
    */
   getNodeBuffer: function() {
-    if (!util.detectNode()) {
-      return;
-    }
-
-    // This "hack" allows us to access the native node buffer module.
-    // otherwise, it gets replaced with the browserified version
-    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('buffer'+'').Buffer;
-  },
-
-  getNodeZlib: function() {
-    if (!util.detectNode() || !config.use_native) {
-      return;
-    }
-
-    return require('zlib');
+    return (util.nodeRequire('buffer') || {}).Buffer;
   },
 
   getNodeStream: function() {
-    if (!util.detectNode()) {
-      return;
-    }
-
-    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('stream'+'');
+    return (util.nodeRequire('stream') || {}).Readable;
   },
 
   getNodeTextDecoder: function() {
-    if (!util.detectNode()) {
-      return;
-    }
-
-    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('util'+'').TextDecoder;
+    return (util.nodeRequire('util') || {}).TextDecoder;
   },
 
   isEmailAddress: function(data) {

@@ -362,27 +362,8 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     const result = {};
     result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date) : await decrypted.verify(publicKeys, date, asStream);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
-    result.data = await convertStream(result.data, asStream);
-    if (asStream) {
-      result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
-        await stream.pipe(result.data, writable, {
-          preventClose: true
-        });
-        const writer = stream.getWriter(writable);
-        try {
-          await stream.readToEnd(decrypted.packets.stream, arr => arr);
-          await writer.close();
-        } catch(e) {
-          await writer.abort(e);
-        }
-      });
-    } else {
-      await Promise.all(result.signatures.map(async signature => {
-        signature.signature = await signature.signature;
-        signature.valid = await signature.verified;
-      }));
-    }
     result.filename = decrypted.getFilename();
+    await postProcess(result, asStream, message, decrypted.packets.stream);
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -461,26 +442,7 @@ export function verify({ message, publicKeys, asStream=message&&message.fromStre
     const result = {};
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date) : await message.verify(publicKeys, date, asStream);
     result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
-    result.data = await convertStream(result.data, asStream);
-    if (asStream) {
-      result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
-        await stream.pipe(result.data, writable, {
-          preventClose: true
-        });
-        const writer = stream.getWriter(writable);
-        try {
-          await stream.readToEnd(readable, arr => arr);
-          await writer.close();
-        } catch(e) {
-          await writer.abort(e);
-        }
-      });
-    } else {
-      await Promise.all(result.signatures.map(async signature => {
-        signature.signature = await signature.signature;
-        signature.valid = await signature.verified;
-      }));
-    }
+    await postProcess(result, asStream, message);
     return result;
   }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
@@ -631,6 +593,42 @@ async function convertStreams(obj, asStream, keys=[]) {
     }));
   }
   return obj;
+}
+
+/**
+ * Post process the result of decrypt() and verify() before returning.
+ * See comments in the function body for more details.
+ * @param  {Object} result               the data to convert
+ * @param  {Boolean} asStream            whether to return ReadableStreams
+ * @param  {Message} message             message object
+ * @param  {ReadableStream} errorStream  (optional) stream which either errors or gets closed without data
+ * @returns {Object}                     the data in the respective format
+ */
+async function postProcess(result, asStream, message, errorStream) {
+  // Convert result.data to a stream or Uint8Array depending on asStream
+  result.data = await convertStream(result.data, asStream);
+  if (asStream) {
+    // Link result.data to the message stream for cancellation
+    result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
+      await stream.pipe(result.data, writable, {
+        preventClose: true
+      });
+      const writer = stream.getWriter(writable);
+      try {
+        // Forward errors in errorStream (defaults to the message stream) to result.data
+        await stream.readToEnd(errorStream || readable, arr => arr);
+        await writer.close();
+      } catch(e) {
+        await writer.abort(e);
+      }
+    });
+  } else {
+    // Convert signature promises to values
+    await Promise.all(result.signatures.map(async signature => {
+      signature.signature = await signature.signature;
+      signature.valid = await signature.verified;
+    }));
+  }
 }
 
 

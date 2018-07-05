@@ -129,7 +129,7 @@ CleartextMessage.prototype.getText = function() {
 
 /**
  * Returns ASCII armored text of cleartext signed message
- * @returns {String} ASCII armor
+ * @returns {String | ReadableStream<String>} ASCII armor
  */
 CleartextMessage.prototype.armor = function() {
   let hashes = this.signature.packets.map(function(packet) {
@@ -147,8 +147,9 @@ CleartextMessage.prototype.armor = function() {
 
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
- * @param {String} armoredText text to be parsed
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
  * @returns {module:cleartext.CleartextMessage} new cleartext message object
+ * @async
  * @static
  */
 export async function readArmored(armoredText) {
