@@ -91,14 +91,15 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * Decrypt the encrypted payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @param  {Boolean} asStream             Whether the top-level function will return a stream
  * @returns {Boolean}
  * @async
  */
-SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, asStream) {
   if (config.aead_protect_version !== 4) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
   }
-  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted)));
+  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), asStream));
   return true;
 };
 
@@ -106,16 +107,17 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * Encrypt the packet list payload.
  * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
  * @param  {Uint8Array} key               The session key used to encrypt the payload
+ * @param  {Boolean} asStream             Whether the top-level function will return a stream
  * @async
  */
-SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key) {
+SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, asStream) {
   this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
   this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.experimental_gcm;
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   this.chunkSizeByte = config.aead_chunk_size_byte;
   const data = this.packets.write();
-  this.encrypted = await this.crypt('encrypt', key, data);
+  this.encrypted = await this.crypt('encrypt', key, data, asStream);
 };
 
 /**
@@ -123,10 +125,11 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
  * @param  {encrypt|decrypt} fn      Whether to encrypt or decrypt
  * @param  {Uint8Array} key          The session key used to en/decrypt the payload
  * @param  {Uint8Array | ReadableStream<Uint8Array>} data         The data to en/decrypt
+ * @param  {Boolean} asStream        Whether the top-level function will return a stream
  * @returns {Uint8Array | ReadableStream<Uint8Array>}
  * @async
  */
-SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
+SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, asStream) {
   const cipher = enums.read(enums.symmetric, this.cipherAlgo);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   const modeInstance = await mode(cipher, key);
@@ -147,7 +150,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     return stream.transformPair(data, async (readable, writable) => {
       const reader = stream.getReader(readable);
       const buffer = new TransformStream({}, {
-        highWaterMark: util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6),
+        highWaterMark: asStream ? util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6) : Infinity,
         size: array => array.length
       });
       stream.pipe(buffer.readable, writable);
