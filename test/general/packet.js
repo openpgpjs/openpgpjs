@@ -181,6 +181,70 @@ describe("Packet", function() {
     });
   });
 
+  function cryptStub(webCrypto, method) {
+    const crypt = webCrypto[method];
+    const cryptStub = stub(webCrypto, method);
+    let cryptCallsActive = 0;
+    cryptStub.onCall(0).callsFake(async function() {
+      cryptCallsActive++;
+      try {
+        return await crypt.apply(this, arguments);
+      } finally {
+        cryptCallsActive--;
+      }
+    });
+    cryptStub.onCall(1).callsFake(function() {
+      expect(cryptCallsActive).to.equal(1);
+      return crypt.apply(this, arguments);
+    });
+    cryptStub.callThrough();
+    return cryptStub;
+  }
+
+  it('Sym. encrypted AEAD protected packet is encrypted in parallel (GCM, draft04)', function() {
+    const webCrypto = openpgp.util.getWebCrypto();
+    if (!webCrypto) return;
+    const encryptStub = cryptStub(webCrypto, 'encrypt');
+    const decryptStub = cryptStub(webCrypto, 'decrypt');
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_protect_versionVal = openpgp.config.aead_protect_version;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_protect_version = 4;
+    openpgp.config.aead_chunk_size_byte = 0;
+    const testText = input.createSomeMessage();
+
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+    enc.aeadAlgorithm = 'experimental_gcm';
+
+    msg.push(enc);
+    literal.setText(testText);
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    return enc.encrypt(algo, key).then(async function() {
+      await msg2.read(msg.write());
+      return msg2[0].decrypt(algo, key);
+    }).then(async function() {
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+      expect(encryptStub.callCount > 1).to.be.true;
+      expect(decryptStub.callCount > 1).to.be.true;
+    }).finally(function() {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_protect_version = aead_protect_versionVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      encryptStub.restore();
+      decryptStub.restore();
+    });
+  });
+
   it('Sym. encrypted AEAD protected packet test vector (draft04)', function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
 

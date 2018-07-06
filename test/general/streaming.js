@@ -789,6 +789,8 @@ describe('Streaming', function() {
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
     openpgp.config.aead_protect = true;
     openpgp.config.aead_chunk_size_byte = 4;
+    let coresStub = stub(openpgp.util, 'getHardwareConcurrency');
+    coresStub.returns(1);
     try {
       let plaintext = [];
       let i = 0;
@@ -824,6 +826,7 @@ describe('Streaming', function() {
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
+      coresStub.restore();
     }
   });
 

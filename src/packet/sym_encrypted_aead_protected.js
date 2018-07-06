@@ -146,10 +146,14 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
     const iv = this.iv;
     return stream.transformPair(data, async (readable, writable) => {
       const reader = stream.getReader(readable);
-      const writer = stream.getWriter(writable);
+      const buffer = new TransformStream({}, {
+        highWaterMark: util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6),
+        size: array => array.length
+      });
+      stream.pipe(buffer.readable, writable);
+      const writer = stream.getWriter(buffer.writable);
       try {
         while (true) {
-          await writer.ready;
           let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
           const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
           chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
@@ -170,10 +174,10 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data) {
           queuedBytes += chunk.length - tagLengthIfDecrypting;
           // eslint-disable-next-line no-loop-func
           latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
+            await writer.ready;
             await writer.write(crypted);
             queuedBytes -= chunk.length;
           }).catch(err => writer.abort(err));
-          // console.log(fn, done, queuedBytes, writer.desiredSize);
           if (done || queuedBytes > writer.desiredSize) {
             await latestPromise; // Respect backpressure
           }

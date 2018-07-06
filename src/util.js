@@ -683,6 +683,15 @@ export default {
     return (util.nodeRequire('util') || {}).TextDecoder;
   },
 
+  getHardwareConcurrency: function() {
+    if (util.detectNode()) {
+      const os = util.nodeRequire('os');
+      return os.cpus().length;
+    }
+
+    return navigator.hardwareConcurrency || 1;
+  },
+
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
       return false;
