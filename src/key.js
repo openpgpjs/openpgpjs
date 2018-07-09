@@ -32,7 +32,7 @@ import packet from './packet';
 import config from './config';
 import enums from './enums';
 import util from './util';
-import signature from './signature';
+import Signature from './signature';
 
 /**
  * @class
@@ -647,7 +647,7 @@ Key.prototype.revoke = async function(reasonFlag, reasonString){
     // TODO can't revoke if we don't have the private Key
     return false;
   }
-  const revSig = new signature.Signature();
+  const revSig = new Signature();
   const data = revSig.toSign(
     enums.signature.key_revocation, this.primaryKey);
     revSig.reasonForRevocationFlag = reasonFlag;
