@@ -101,7 +101,8 @@ function transformRaw(input, options) {
  * @returns {TransformStream}
  */
 function transformWithCancel(cancel) {
-  let backpressureChangePromiseResolve = function() {};
+  let pulled = false;
+  let backpressureChangePromiseResolve;
   let outputController;
   return {
     readable: new ReadableStream({
@@ -109,17 +110,24 @@ function transformWithCancel(cancel) {
         outputController = controller;
       },
       pull() {
-        backpressureChangePromiseResolve();
+        if (backpressureChangePromiseResolve) {
+          backpressureChangePromiseResolve();
+        } else {
+          pulled = true;
+        }
       },
       cancel
-    }),
+    }, {highWaterMark: 0}),
     writable: new WritableStream({
       write: async function(chunk) {
         outputController.enqueue(chunk);
-        if (outputController.desiredSize <= 0) {
+        if (!pulled) {
           await new Promise(resolve => {
             backpressureChangePromiseResolve = resolve;
           });
+          backpressureChangePromiseResolve = null;
+        } else {
+          pulled = false;
         }
       },
       close: outputController.close.bind(outputController),
