@@ -379,6 +379,19 @@ export default {
     preferred_aead_algorithms: 34
   },
 
+  /** Signature revocation reasons
+   * @enum {Integer}
+   * @readonly
+   */
+  signatureRevocation: {
+    no_reason: 0,
+    key_is_superseeded: 1,
+    key_compromised: 2,
+    key_retired: 3,
+    userId_no_longer_valid: 32
+    // 100-110 - Private Use
+  },
+
   /** Key flags
    * @enum {Integer}
    * @readonly

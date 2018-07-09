@@ -22,6 +22,7 @@
  * @requires config
  * @requires enums
  * @requires util
+ * @requires signature
  * @module key
  */
 
@@ -31,6 +32,7 @@ import packet from './packet';
 import config from './config';
 import enums from './enums';
 import util from './util';
+import Signature from './signature';
 
 /**
  * @class
@@ -623,9 +625,38 @@ async function mergeSignatures(source, dest, attr, checkFn) {
   }
 }
 
-// TODO
-Key.prototype.revoke = function() {
-
+/**
+ * Revokes a Key
+ * @param {Integer} reasonFlag optional reason for revocation
+ * @param {Integer} reasonString optional additional description string
+ * @async
+ */
+Key.prototype.revoke = async function(reasonFlag, reasonString){
+  if (!reasonFlag){
+    reasonFlag = enums.signatureRevocation.no_reason;
+  }
+  if (!Number.isInteger(reasonFlag) || reasonFlag < 0 || reasonFlag > 110) {
+    return false;
+    // TODO error- reason flag is not valid
+  }
+  if (reasonString !== undefined && !util.isString(reasonString)){
+    // TODO error- reason is not valid
+    return false;
+  }
+  if (Key.isPrivate !== true) {
+    // TODO can't revoke if we don't have the private Key
+    return false;
+  }
+  const revSig = new Signature();
+  const data = revSig.toSign(
+    enums.signature.key_revocation, this.primaryKey);
+    revSig.reasonForRevocationFlag = reasonFlag;
+  if (reasonString !== undefined){
+    revSig.reasonForRevocationString = reasonString;
+  }
+  await revSig.sign(this.primaryKey, data);
+  this.revocationSignatures.push(revSig.signature);
+  return true;
 };
 
 /**
