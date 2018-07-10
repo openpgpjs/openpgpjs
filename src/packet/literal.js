@@ -65,7 +65,7 @@ Literal.prototype.setText = function(text, format='utf8') {
 Literal.prototype.getText = function(clone=false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
     let lastChar = '';
-    const decoder = new TextDecoder('utf8');
+    const decoder = new TextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk=false) {
       // decode UTF8

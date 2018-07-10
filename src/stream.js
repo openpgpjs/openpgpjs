@@ -361,7 +361,7 @@ function slice(input, begin=0, end=Infinity) {
   if (input[externalBuffer]) {
     input = util.concat(input[externalBuffer].concat([input]));
   }
-  if (util.isUint8Array(input)) {
+  if (util.isUint8Array(input) && !util.isIE11) { // IE11 subarray is buggy
     return input.subarray(begin, end);
   }
   return input.slice(begin, end);

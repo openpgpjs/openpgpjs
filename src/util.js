@@ -34,6 +34,8 @@ import stream from './stream';
 const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
 export default {
+  isIE11,
+
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },

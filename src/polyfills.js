@@ -20,6 +20,9 @@ if (typeof window !== 'undefined') {
   if (typeof Array.prototype.find === 'undefined') {
     require('core-js/fn/array/find');
   }
+  if (typeof Array.prototype.includes === 'undefined') {
+    require('core-js/fn/array/includes');
+  }
   if (typeof Array.from === 'undefined') {
     require('core-js/fn/array/from');
   }
@@ -48,5 +51,5 @@ if (typeof TextDecoder === 'undefined') {
   global.TextDecoder = util.getNodeTextDecoder();
 }
 if (typeof TextDecoder === 'undefined') {
-  global.TextDecoder = require('text-encoder-lite');
+  global.TextDecoder = require('text-encoding-utf-8').TextDecoder;
 }
