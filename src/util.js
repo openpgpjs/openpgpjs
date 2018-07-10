@@ -60,10 +60,6 @@ export default {
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
-    // Internet Explorer does not support Transferable objects.
-    if (isIE11) {
-      return undefined;
-    }
     const transferables = [];
     util.collectTransferables(obj, transferables);
     return transferables.length ? transferables : undefined;
