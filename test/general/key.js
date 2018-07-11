@@ -1761,4 +1761,34 @@ p92yZgB3r2+f6/GIe2+7
       expect(answer).to.be.true;
     });
   });
+
+  it('Generate and revoke a subkey', function() {
+    const opt = {
+      numBits: 512,
+      userIds: { name: 'Test User', email: 'text@example.com' },
+      passphrase: 'secret'
+    };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    let newKey;
+    let pk;
+    return openpgp.generateKey(opt).then(function(key) {
+      expect(key.key.subKeys).to.exist;
+      pk = key.key.primaryKey;
+      newKey = key.key.subKeys[0];
+      expect(newKey).to.exist;
+      // return newKey.decrypt('secret');
+    }).then(function(){
+      return newKey.isRevoked(pk);
+    }).then(function(answer){
+      expect(answer).to.be.false;
+      return newKey.revoke(pk, {passphrase: 'secret'});
+    }).then(function(){
+      return newKey.isRevoked(pk);
+    }).then(function(answer){
+      expect(answer).to.be.true;
+      return newKey.verify(pk);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.revoked);
+    });
+  });
 }

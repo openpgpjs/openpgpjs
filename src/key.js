@@ -997,6 +997,63 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
 };
 
 /**
+ * revokes the subkey
+ * @param  {module:packet.SecretKey} primaryKey    The primary key packet
+ * @param {string} reason: optional additional description string
+ * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
+ * @returns {Promise<module:packet.Signature>} if successful.
+ * @async
+ */
+SubKey.prototype.revoke = async function(primaryKey, reason, options) {
+  if (typeof reason === 'object') {
+    options = reason;
+    reason = undefined;
+  }
+  if (!options) options = {};
+  let reasonFlag = options.reasonFlag;
+  if (!reasonFlag){
+    reasonFlag = enums.signatureRevocation.no_reason;
+  }
+  if (!Number.isInteger(reasonFlag) || reasonFlag < 0 || reasonFlag > 110) {
+    throw new Error('reason flag is not valid');
+  }
+  if (reason !== undefined && !util.isString(reason)){
+    throw new Error('reason should be a string');
+  }
+  if (primaryKey.tag !== enums.packet.secretKey) {
+    throw new Error("Nothing to revoke in a public key");
+  }
+
+  if (!primaryKey.isDecrypted && options.passphrase) {
+    await primaryKey.decrypt(options.passphrase);
+  }
+  if (!primaryKey.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
+
+  const dataToSign = {
+    key: primaryKey,
+    bind: this.subKey
+  };
+  const revocationSignaturePacket = new packet.Signature(options.date);
+  revocationSignaturePacket.signatureType = enums.signature.subkey_revocation;
+  revocationSignaturePacket.reasonForRevocationFlag = reasonFlag;
+  if (reason !== undefined) {
+    revocationSignaturePacket.reasonForRevocationString = reason;
+  }
+  revocationSignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
+  revocationSignaturePacket.hashAlgorithm = await getPreferredHashAlgo(primaryKey);
+  // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
+  if (options.signatureExpirationTime > 0) {
+    revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
+    revocationSignaturePacket.signatureNeverExpires = false;
+  }
+  await revocationSignaturePacket.sign(primaryKey, dataToSign);
+  this.revocationSignatures.push(revocationSignaturePacket);
+  return revocationSignaturePacket;
+};
+
+/**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature
  * @param  {module:packet.SecretKey|
