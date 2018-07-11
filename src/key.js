@@ -571,7 +571,8 @@ Key.prototype.update = async function(key) {
   await Promise.all(key.users.map(async srcUser => {
     let found = false;
     await Promise.all(this.users.map(async dstUser => {
-      if ((srcUser.userId && (srcUser.userId.userid === dstUser.userId.userid)) ||
+      if ((srcUser.userId && dstUser.userId &&
+            (srcUser.userId.userid === dstUser.userId.userid)) ||
           (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
         await dstUser.update(srcUser, this.primaryKey);
         found = true;

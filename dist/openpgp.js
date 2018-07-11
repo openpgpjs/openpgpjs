@@ -40814,7 +40814,7 @@ Key.prototype.update = function () {
                               while (1) {
                                 switch (_context12.prev = _context12.next) {
                                   case 0:
-                                    if (!(srcUser.userId && srcUser.userId.userid === dstUser.userId.userid || srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))) {
+                                    if (!(srcUser.userId && dstUser.userId && srcUser.userId.userid === dstUser.userId.userid || srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))) {
                                       _context12.next = 4;
                                       break;
                                     }
@@ -40935,7 +40935,7 @@ Key.prototype.update = function () {
           case 0:
             if ((typeof reason === 'undefined' ? 'undefined' : (0, _typeof3.default)(reason)) === 'object') {
               options = reason;
-              reason = undefined;
+              reason = options.reason;
             }
             if (!options) options = {};
             reasonFlag = options.reasonFlag;
@@ -41943,7 +41943,7 @@ SubKey.prototype.revoke = function () {
           case 0:
             if ((typeof reason === 'undefined' ? 'undefined' : (0, _typeof3.default)(reason)) === 'object') {
               options = reason;
-              reason = undefined;
+              reason = options.reason;
             }
             if (!options) options = {};
             reasonFlag = options.reasonFlag;
