@@ -633,7 +633,7 @@ async function mergeSignatures(source, dest, attr, checkFn) {
 Key.prototype.revoke = async function(reason, options){
   if (typeof reason === 'object') {
     options = reason;
-    reason = undefined;
+    reason = options.reason;
   }
   if (!options) options = {};
   let reasonFlag = options.reasonFlag;
@@ -1007,7 +1007,7 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
 SubKey.prototype.revoke = async function(primaryKey, reason, options) {
   if (typeof reason === 'object') {
     options = reason;
-    reason = undefined;
+    reason = options.reason;
   }
   if (!options) options = {};
   let reasonFlag = options.reasonFlag;
