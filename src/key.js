@@ -710,6 +710,114 @@ Key.prototype.verifyAllUsers = async function(keys) {
 };
 
 /**
+ * generate a new subkey to a Key
+ * @param  {Object} options   (optional) options for creating subkey, e.g. {sign: true, passphrase: '123', algorithm:..., curve:...}
+ *
+ * @returns {Promise<module:key.SubKey>} return the subkey if successful.
+ * @async
+ */
+Key.prototype.generateSubkey = async function(options){
+  if (!options) options = {};
+  if (options.curve) {
+    try {
+      options.curve = enums.write(enums.curve, options.curve);
+    } catch (e) {
+      throw new Error('Not valid curve.');
+    }
+    if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+      if (options.sign) {
+        options.algorithm = enums.publicKey.eddsa;
+        options.curve = enums.curve.ed25519;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+        options.curve = enums.curve.curve25519;
+      }
+    } else {
+      if (options.sign) {
+        options.algorithm = enums.publicKey.ecdsa;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+      }
+    }
+  } else if (options.numBits) {
+    options.algorithm = enums.publicKey.rsa_encrypt_sign;
+  } else {
+    const algo = this.primaryKey.algorithm;
+    if (algo.indexOf('rsa') === 0) {
+      options.algorithm = enums.publicKey.rsa_encrypt_sign;
+      options.numBits = 2048;
+    } else {
+      if (options.sign) {
+        options.algorithm = enums.publicKey.eddsa;
+        options.curve = enums.curve.ed25519;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+        options.curve = enums.curve.curve25519;
+      }
+    }
+  }
+  const secretSubKeyPacket = await generateSecretSubkey(options);
+  const result = await this.addSubkey(secretSubKeyPacket, options);
+  return result;
+};
+
+/**
+ * add a subkey packet to a Key
+ * @param {module:packet.PublicSubkey|module:packet.SecretSubkey} the subkey packet to add
+ * @param  {Object} options   (optional) options for subkey, e.g. {sign: true, passphrase: '123'}
+ *
+ * @returns {Promise<module:key.SubKey>} return the subkey if successful.
+ * @async
+ */
+Key.prototype.addSubkey = async function(subkeyPacket, options){
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to addSubkey in a public key");
+  }
+  if (!options) options = {};
+  // if (!this.primaryKey.isDecrypted) throw new Error('Key not decrypted');
+
+  try {
+    const isDecrypted = this.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
+    if (!isDecrypted) {
+      await this.decrypt(options.passphrase);
+    }
+  } catch (err) {
+    throw new Error('Key not decrypted');
+  }
+
+  const packetlist = this.toPacketlist();
+  const secretKeyPacket = packetlist.findPacket(enums.packet.secretKey);
+  if (!secretKeyPacket) {
+    throw new Error('Key does not contain a secret key packet');
+  }
+  if (options.passphrase) {
+    await subkeyPacket.encrypt(options.passphrase);
+  }
+
+  //sign the subkey here
+  const dataToSign = {};
+  dataToSign.key = secretKeyPacket;
+  dataToSign.bind = subkeyPacket;
+  const subkeySignaturePacket = new packet.Signature(options.date);
+  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(subkeyPacket);
+  subkeySignaturePacket.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  if (options.keyExpirationTime > 0) {
+    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyNeverExpires = false;
+  }
+  await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+  if (options.passphrase) {
+    subkeyPacket.clearPrivateParams();
+  }
+  const subKey = new SubKey(subkeyPacket);
+  subKey.bindingSignatures.push(subkeySignaturePacket);
+  this.subKeys.push(subKey);
+  return subKey;
+};
+
+/**
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
@@ -1166,14 +1274,14 @@ export async function generate(options) {
     await secretKeyPacket.generate(options.numBits, options.curve);
     return secretKeyPacket;
   }
+}
 
-  async function generateSecretSubkey(options) {
-    const secretSubkeyPacket = new packet.SecretSubkey(options.date);
-    secretSubkeyPacket.packets = null;
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-    await secretSubkeyPacket.generate(options.numBits, options.curve);
-    return secretSubkeyPacket;
-  }
+async function generateSecretSubkey(options) {
+  const secretSubkeyPacket = new packet.SecretSubkey(options.date);
+  secretSubkeyPacket.packets = null;
+  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  await secretSubkeyPacket.generate(options.numBits, options.curve);
+  return secretSubkeyPacket;
 }
 
 /**

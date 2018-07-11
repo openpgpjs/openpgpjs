@@ -1936,4 +1936,53 @@ VYGdb3eNlV8CfoEC
       done();
     });
   });
+
+  it('create and add a new rsa subkey to a rsa key', function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    const total = privateKey.subKeys.length;
+    return privateKey.generateSubkey({passphrase: 'hello world'}).then(function(answer){
+      expect(answer).to.exist;
+      expect(privateKey.subKeys.length).to.be.equal(total+1);
+      expect(answer).to.be.equal(privateKey.subKeys[total]);
+      expect(answer.subKey.algorithm).to.be.equal('rsa_encrypt_sign');
+      return answer.verify(privateKey.primaryKey);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
+    });
+  });
+
+  it('create and add a new ec subkey to a ec key', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
+    let privateKey;
+    let total;
+    return openpgp.generateKey(opt).then(function(key) {
+      privateKey = key.key;
+      total = privateKey.subKeys.length;
+      return privateKey.generateSubkey({passphrase: '123'});
+    }).then(function(answer){
+      expect(answer).to.exist;
+      expect(privateKey.subKeys.length).to.be.equal(total+1);
+      expect(answer).to.be.equal(privateKey.subKeys[total]);
+      expect(answer.subKey.algorithm).to.be.equal('ecdh');
+      return answer.verify(privateKey.primaryKey);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
+    });
+  });
+
+  it('create and add a new ec subkey to a rsa key', function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    privateKey.subKeys = [];
+    const total = privateKey.subKeys.length;
+    return privateKey.generateSubkey({passphrase: 'hello world', curve: 'ed25519'}).then(function(answer){
+      expect(answer).to.exist;
+      expect(privateKey.subKeys.length).to.be.equal(total+1);
+      expect(answer).to.be.equal(privateKey.subKeys[total]);
+      expect(answer.subKey.algorithm).to.be.equal('ecdh');
+      return answer.verify(privateKey.primaryKey);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
+    });
+  });
 }
