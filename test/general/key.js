@@ -927,6 +927,172 @@ p92yZgB3r2+f6/GIe2+7
 =jZgG
 -----END PGP PUBLIC KEY BLOCK-----`;
 
+const mergeKey1 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
+'\n' +
+'mQENBFtDaAIBCACX5Y/YO7CuP6PMBIJWUMXFb50cGgzzowCbhdzpYU589iz1npjR\n' +
+'yBmZPmnKK4KfEMz0buY+763/LFwihbfBh5jsh3oV14rqg+P6VNLeCATuGWO/5JKy\n' +
+'jRNzjmQZFLcmbStF1W3+vIvJJDibMqvjHLE33z7t17BLU/fVu4F2BuuKVsM5xm/J\n' +
+'HIYFzCeWR5O8+0s6Kd1SKZwzy7ySBV0w3Pk0go076RnyKyv8vneogTubA0qSAKJx\n' +
+'jm6k94wJSSt3CyH5ogcLd4wjsylA65wOPIy7ROvcg05hdWO83qto4tE8o2mpB+Wc\n' +
+'MZ6gkyLZnQEvKBKlh1H2BBrnI2w4iDRVSCOVABEBAAG0JVN1YktleU1lcmdlIFRl\n' +
+'c3QgPG5vc3VjaEBleGFtcGxlLm9yZz6JAVQEEwEIAD4WIQSJdpCFeXsnZzf+xlKb\n' +
+'N/Be0N878AUCW0NoAgIbAwUJA8JnAAULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAK\n' +
+'CRCbN/Be0N878MfWB/4wEIXGoYc8sYcFIjeRsIniQN+TaOhKY4kOdbk/MJh5hDcc\n' +
+'OwXpahc6C14pzSh7C5bkwRzWrm0hsONR5uhrx09154GU5ie88yIKTYC58ef4TwB+\n' +
+'Kq4UvOV0xbkFGmyGhlDWgA9nSCotHzt//9fLqY26m7pZ1JVczDWVHIqwTv4lAF5G\n' +
+'fBuDEV9w6fcbvIiqSrTx/lekNQjCE4+JhBahindko4jeP4bj/699Q0f+j2pHJ5xU\n' +
+'zHoWAI8RowX7EDzwydnTG0Rrx9QoN2QcUjw6Lsg9//i7fk5PochYa7kGYcHGLvXP\n' +
+'8fwk7K1be8ZnRwUx8dqzoQVtYRxdHP19P796PD5guQENBFtDaAIBCAC3FKAMPRU/\n' +
+'t03vbsVibHkpCI6KVaInTu7+HWksYQ8gp89w2nzQZLvAfIMKJBVdZa+nRoTTjZ6B\n' +
+'zwmvtiCjv202/9L8BcBmsNFnKapgi8bD4L8r/9lSMngD1ebSdVuopNQXzDXLYsKl\n' +
+'8OLup1AFPQPEwDnn72pHF7fIJBOJkuXnS9syCViLlFeziBGsY/RD0hWE7YgIK+m0\n' +
+'0M+57EzDntjsVTI5d3V8EwEUJU1nADtnbkjQoyCXBfqxYe4+SmiWkyFKFVfIQeX/\n' +
+'muoq79b9/NVM7G+vTcSzTCPKKKdw1Zefb1i/S/O1HWwA3KJCFYOMPtqLLf2hIF/5\n' +
+'3LC1SRVCJ7bHABEBAAGJATwEGAEIACYWIQSJdpCFeXsnZzf+xlKbN/Be0N878AUC\n' +
+'W0NoAgIbDAUJA8JnAAAKCRCbN/Be0N878Hf6B/4nun5NklDp/X5EvhHKdTgOMlIC\n' +
+'f0RsrqRGvQTOMmoxeQ8w88GkTuGIUSHWPxXPracNfqxETOY+D91dQDKpgIMSPqDk\n' +
+'tAEnXhX2S36Eb/68hkkwOF2I5Ngcv39n6BLvREGf8JiUR7O/MRgfcjebfH4Trc/K\n' +
+'XorBDo4y3g2wg68ueuEQHfi8HprWec2QjiSgTTaNfG0oS+UKLJB9ZsPhVB59lE4B\n' +
+'giI/4DD0FYR9pUfo9SG2sQKWlD5jIWob5S8x2QYZKFXYDEGX7V9/yjReGAfqjhQY\n' +
+'EPmHvKuRRWbzEP0ckFPVsyc6E07OzZyfnHOPIGXH/IFO0OF7Zj8Cvh8BaPYW\n' +
+'=hJLN\n' +
+'-----END PGP PUBLIC KEY BLOCK-----\n';
+const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
+'\n' +
+'mQENBFtDaAIBCACX5Y/YO7CuP6PMBIJWUMXFb50cGgzzowCbhdzpYU589iz1npjR\n' +
+'yBmZPmnKK4KfEMz0buY+763/LFwihbfBh5jsh3oV14rqg+P6VNLeCATuGWO/5JKy\n' +
+'jRNzjmQZFLcmbStF1W3+vIvJJDibMqvjHLE33z7t17BLU/fVu4F2BuuKVsM5xm/J\n' +
+'HIYFzCeWR5O8+0s6Kd1SKZwzy7ySBV0w3Pk0go076RnyKyv8vneogTubA0qSAKJx\n' +
+'jm6k94wJSSt3CyH5ogcLd4wjsylA65wOPIy7ROvcg05hdWO83qto4tE8o2mpB+Wc\n' +
+'MZ6gkyLZnQEvKBKlh1H2BBrnI2w4iDRVSCOVABEBAAG0JVN1YktleU1lcmdlIFRl\n' +
+'c3QgPG5vc3VjaEBleGFtcGxlLm9yZz6JAVQEEwEIAD4WIQSJdpCFeXsnZzf+xlKb\n' +
+'N/Be0N878AUCW0NoAgIbAwUJA8JnAAULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAK\n' +
+'CRCbN/Be0N878MfWB/4wEIXGoYc8sYcFIjeRsIniQN+TaOhKY4kOdbk/MJh5hDcc\n' +
+'OwXpahc6C14pzSh7C5bkwRzWrm0hsONR5uhrx09154GU5ie88yIKTYC58ef4TwB+\n' +
+'Kq4UvOV0xbkFGmyGhlDWgA9nSCotHzt//9fLqY26m7pZ1JVczDWVHIqwTv4lAF5G\n' +
+'fBuDEV9w6fcbvIiqSrTx/lekNQjCE4+JhBahindko4jeP4bj/699Q0f+j2pHJ5xU\n' +
+'zHoWAI8RowX7EDzwydnTG0Rrx9QoN2QcUjw6Lsg9//i7fk5PochYa7kGYcHGLvXP\n' +
+'8fwk7K1be8ZnRwUx8dqzoQVtYRxdHP19P796PD5g0dFT0VEBEAABAQAAAAAAAAAA\n' +
+'AAAAAP/Y/+AAEEpGSUYAAQEBASwBLAAA/+EN2kV4aWYAAElJKgAIAAAABQAaAQUA\n' +
+'AQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIADAAAAFoAAAAyAQIA\n' +
+'FAAAAGYAAAB6AAAALAEAAAEAAAAsAQAAAQAAAEdJTVAgMi4xMC40ADIwMTg6MDc6\n' +
+'MDkgMTU6NTY6NDAACAAAAQQAAQAAAAABAAABAQQAAQAAAAABAAACAQMAAwAAAOAA\n' +
+'AAADAQMAAQAAAAYAAAAGAQMAAQAAAAYAAAAVAQMAAQAAAAMAAAABAgQAAQAAAOYA\n' +
+'AAACAgQAAQAAAOsMAAAAAAAACAAIAAgA/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD\n' +
+'AAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcp\n' +
+'LDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIy\n' +
+'MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAEAAQAD\n' +
+'ASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA\n' +
+'AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAk\n' +
+'M2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlq\n' +
+'c3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXG\n' +
+'x8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEB\n' +
+'AQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSEx\n' +
+'BhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5\n' +
+'OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaX\n' +
+'mJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq\n' +
+'8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKA\n' +
+'CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKA\n' +
+'CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKA\n' +
+'CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKA\n' +
+'CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKK+QPib8Tf8AhY39l/8A\n' +
+'Eo/s/wCweb/y8+bv37P9hcY2e/WgDv8A/hpr/qUf/Kl/9qo/4aa/6lH/AMqX/wBq\n' +
+'rwCigD6/+GXxN/4WN/an/Eo/s/7B5X/Lz5u/fv8A9hcY2e/WvQK+AK+v/hl8Tf8A\n' +
+'hY39qf8AEo/s/wCweV/y8+bv37/9hcY2e/WgD0CiiigAooooAKKKKACiiigAoooo\n' +
+'AKKKKACiivkD4m/E3/hY39l/8Sj+z/sHm/8ALz5u/fs/2FxjZ79aAO//AOGmv+pR\n' +
+'/wDKl/8AaqP+Gmv+pR/8qX/2qvAKKAPr/wCGXxN/4WN/an/Eo/s/7B5X/Lz5u/fv\n' +
+'/wBhcY2e/WvQK+AK+v8A4ZfE3/hY39qf8Sj+z/sHlf8ALz5u/fv/ANhcY2e/WgD0\n' +
+'CiiigAooooAKKKKACiiigAr4Ar7/AK+AKACiiigAr3/9mX/maf8At0/9rV4BXv8A\n' +
+'+zL/AMzT/wBun/tagD6AooooAKKKKACiiigAooooAKKKKACiiigAr4Ar7/r4AoAK\n' +
+'KKKACvf/ANmX/maf+3T/ANrV4BXv/wCzL/zNP/bp/wC1qAPoCiiigAooooAKKKKA\n' +
+'CiiigArz/wCJvwy/4WN/Zf8AxN/7P+web/y7ebv37P8AbXGNnv1r0CigD4Aor7/o\n' +
+'oA+QPhl8Mv8AhY39qf8AE3/s/wCweV/y7ebv37/9tcY2e/Wvr+iigAooooAKKKKA\n' +
+'CiiigAooooAKKKKACiiigArz/wCJvwy/4WN/Zf8AxN/7P+web/y7ebv37P8AbXGN\n' +
+'nv1r0CigD4Aor7/ooA+QPhl8Mv8AhY39qf8AE3/s/wCweV/y7ebv37/9tcY2e/Wv\n' +
+'r+iigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKA\n' +
+'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\n' +
+'v+Xbytmzf/ttnO/26V6BQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFA\n' +
+'BRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFA\n' +
+'BRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFA\n' +
+'BRRRQAUUUUAFFFFABRRRQB//2QD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6\n' +
+'PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARwe\n' +
+'HigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSk\n' +
+'pKSkpKSkpKSkpKSkpKT/wgARCABAAEADAREAAhEBAxEB/8QAGQABAQEBAQEAAAAA\n' +
+'AAAAAAAAAAQFAwEC/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEAMQAAAB\n' +
+'0wAAACY6nQHyTFYMsrKQcTONcAAAAiPSwAGSWk5mGkVHhARm4UEJmnEHc1ygAAAA\n' +
+'/8QAHhAAAwACAgMBAAAAAAAAAAAAAQIDAAQQEhETMCD/2gAIAQEAAQUC+NLpMo4d\n' +
+'eCQoTYR24vF2pBDOfFV7zlrv7PjexmYW9n5tsN3g5pPan5wEqZ7QwWmcN5jLbHcK\n' +
+'pYxn60yuuHwyoOVjRjKQkPj/AP/EABQRAQAAAAAAAAAAAAAAAAAAAGD/2gAIAQMB\n' +
+'AT8BAf/EABQRAQAAAAAAAAAAAAAAAAAAAGD/2gAIAQIBAT8BAf/EACMQAAIBAwQB\n' +
+'BQAAAAAAAAAAAAERAAIQIRIwMTKBIEFRYXH/2gAIAQEABj8C2UefqMXZ4iyP2+qn\n' +
+'LiPNzTASEBtAAZiPb0qg4jPM1j2jHMVY8ztO0004EQDis6cGdDdaT5nydr//xAAi\n' +
+'EAEBAAEDBAIDAAAAAAAAAAABEQAhMUEQMGGBUXEgkbH/2gAIAQEAAT8h7OoZ+HDA\n' +
+'z6fzq5eDnABo7dTgI9JnOE366qUxcDVS73tGmUXXNWEGumyfjoiBzvc4wmfeMSyi\n' +
+'J4wy8HOQCr8MfgfemJRPouLBU3eXKZLxm5arXowtX9OOx9BcRGJEwFYFXIAXkTGI\n' +
+'NN3tf//aAAwDAQACAAMAAAAQAAAAAgAAEAEAAAAAEAAggAgkAkgAAAAA/8QAFBEB\n' +
+'AAAAAAAAAAAAAAAAAAAAYP/aAAgBAwEBPxAB/8QAFBEBAAAAAAAAAAAAAAAAAAAA\n' +
+'YP/aAAgBAgEBPxAB/8QAJBABAAEDAwQCAwAAAAAAAAAAAREAITFBUWEQMIGRIPBx\n' +
+'scH/2gAIAQEAAT8Q7JCzpQHylqYMsjlbPPUgJZVWvEAALtZz1NOQkkSANW+KnASm\n' +
+'G4COcdTDBIXEiP8AKDEA1EoZiz2pSwLiFzRzaiI5ZAeQbZ+6fACsziEuuTFRgJTT\n' +
+'YDPGat0gRi5nxP2KYC2QVCgMCMjymniaUDoTan2xT9pNwewik+Sw2NuD90JedBjl\n' +
+'2OaiVfmYmDHFuhhnCj5nh+6zQxVScX2TSJyIRIRoE5EAEq0J3CgB+WnEplyJjBGm\n' +
+'e1//2YkBVAQTAQgAPhYhBIl2kIV5eydnN/7GUps38F7Q3zvwBQJbQ2nuAhsDBQkD\n' +
+'wmcABQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEJs38F7Q3zvwjvsH/jrxLY5X\n' +
+'7qTHTBzsAt8yGRpFB0RBo4CI184t6KA7NpSmjeBiy2J5kz0RjdvEdj4bs5JKQkDk\n' +
+'ikUr+3r79w/W04+KDrue1fXCKK9KfWmi/b3qcNBPkpgAhyROtCHHC7OaX6LHnm8w\n' +
+'IPO4oMoyqW4wbwPdOyBLde3FkzOx8XPmvgzzBwyC3Wve3CC/PvEnmiT0EjYqAU1j\n' +
+'piz7cVLsawElBi7rtA6Ryiz1/xY/LYPprGsLhvG3/wtD+dWVPPSd7xS2sl6C5KJB\n' +
+'ZhKI1uIwdTCGO/Th6FKqO/9djRzOgRaPwxe5uR+HTcgWRAUXlzU9AKzWikIBo8Iu\n' +
+'eQc3Ss7SlRnwn365AQ0EW0NoAgEIALcUoAw9FT+3Te9uxWJseSkIjopVoidO7v4d\n' +
+'aSxhDyCnz3DafNBku8B8gwokFV1lr6dGhNONnoHPCa+2IKO/bTb/0vwFwGaw0Wcp\n' +
+'qmCLxsPgvyv/2VIyeAPV5tJ1W6ik1BfMNctiwqXw4u6nUAU9A8TAOefvakcXt8gk\n' +
+'E4mS5edL2zIJWIuUV7OIEaxj9EPSFYTtiAgr6bTQz7nsTMOe2OxVMjl3dXwTARQl\n' +
+'TWcAO2duSNCjIJcF+rFh7j5KaJaTIUoVV8hB5f+a6irv1v381Uzsb69NxLNMI8oo\n' +
+'p3DVl59vWL9L87UdbADcokIVg4w+2ost/aEgX/ncsLVJFUIntscAEQEAAYkBPAQY\n' +
+'AQgAJhYhBIl2kIV5eydnN/7GUps38F7Q3zvwBQJbQ2gCAhsMBQkDwmcAAAoJEJs3\n' +
+'8F7Q3zvwd/oH/ie6fk2SUOn9fkS+Ecp1OA4yUgJ/RGyupEa9BM4yajF5DzDzwaRO\n' +
+'4YhRIdY/Fc+tpw1+rERM5j4P3V1AMqmAgxI+oOS0ASdeFfZLfoRv/ryGSTA4XYjk\n' +
+'2By/f2foEu9EQZ/wmJRHs78xGB9yN5t8fhOtz8peisEOjjLeDbCDry564RAd+Lwe\n' +
+'mtZ5zZCOJKBNNo18bShL5QoskH1mw+FUHn2UTgGCIj/gMPQVhH2lR+j1IbaxApaU\n' +
+'PmMhahvlLzHZBhkoVdgMQZftX3/KNF4YB+qOFBgQ+Ye8q5FFZvMQ/RyQU9WzJzoT\n' +
+'Ts7NnJ+cc48gZcf8gU7Q4XtmPwK+HwFo9hY=\n' +
+'=REGo\n' +
+'-----END PGP PUBLIC KEY BLOCK-----\n';
+
+
   it('Parsing armored text with two keys', function(done) {
     const pubKeys = openpgp.key.readArmored(twoKeys);
     expect(pubKeys).to.exist;
@@ -1735,6 +1901,21 @@ p92yZgB3r2+f6/GIe2+7
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
       expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
+    });
+  });
+
+  it('Merge Key with another Key with non-ID user attributes', function(done) {
+    const key = openpgp.key.readArmored(mergeKey1).keys[0];
+    const updatekey = openpgp.key.readArmored(mergeKey2).keys[0];
+    expect(key).to.exist;
+    expect(updatekey).to.exist;
+    expect(key.users).to.have.length(1);
+    key.update(updatekey).then(() => {
+      expect(key.primaryKey.getFingerprint()).to.equal(
+        updatekey.primaryKey.getFingerprint());
+      expect(key.users).to.have.length(2);
+      expect(key.users[1].userId).to.be.null;
+      done();
     });
   });
 }
