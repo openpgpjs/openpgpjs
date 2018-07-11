@@ -628,7 +628,7 @@ async function mergeSignatures(source, dest, attr, checkFn) {
  * Revokes a Key
  * @param {string} reason: optional additional description string
  * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
- * @returns {module:packet.Signature} if successful.
+ * @returns {Promise<module:packet.Signature>} if successful.
  * @async
  */
 Key.prototype.revoke = async function(reason, options){
