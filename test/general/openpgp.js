@@ -485,10 +485,7 @@ describe('OpenPGP.js public api tests', function() {
             }
           };
         },
-        getRevocationCertificate: function() {},
-        removeRevocationCertificate: function() {
-          return this;
-        }
+        getRevocationCertificate: function() {}
       };
       keyGenStub = stub(openpgp.key, 'generate');
       keyGenStub.returns(resolves(keyObjStub));
@@ -517,9 +514,7 @@ describe('OpenPGP.js public api tests', function() {
           keyExpirationTime: 0,
           curve: "",
           date: now,
-          subkeys: [],
-          revocationCertificate: true,
-          revoked: true,
+          subkeys: []
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
@@ -1862,7 +1857,7 @@ describe('OpenPGP.js public api tests', function() {
             });
         });
 
-        it.skip('should fail to encrypt with revoked key', function() {
+        it('should fail to encrypt with revoked key', function() {
           return openpgp.revokeKey({
             key: privateKey.keys[0]
           }).then(function(revKey) {
@@ -1877,13 +1872,15 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it.skip('should fail to encrypt with revoked subkey', function() {
-          let clonedKey = privateKey.keys[0].toPublic();
-          return clonedKey.subKeys[0].revoke(clonedKey.primaryKey, privateKey.keys[0]).then(function(revSubKey) {
-            clonedKey.subKeys[0] = revSubKey;
+        it('should fail to encrypt with revoked subkey', async function() {
+          const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+          const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          await privKeyDE.decrypt(passphrase);
+          return privKeyDE.subKeys[0].revoke(privKeyDE.primaryKey).then(function(revSubKey) {
+            pubKeyDE.subKeys[0] = revSubKey;
             return openpgp.encrypt({
               data: plaintext,
-              publicKeys: clonedKey
+              publicKeys: pubKeyDE
             }).then(function(encrypted) {
               throw new Error('Should not encrypt with revoked subkey');
             }).catch(function(error) {

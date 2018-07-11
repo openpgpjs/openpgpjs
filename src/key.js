@@ -626,27 +626,26 @@ async function mergeSignatures(source, dest, attr, checkFn) {
 
 /**
  * Revokes the key
- * @param  {module:key~Key} privateKey decrypted private key for revocation
  * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
  * @return {module:key~Key} new key with revocation signature
  */
-Key.prototype.revoke = async function(privateKey, {
+Key.prototype.revoke = async function({
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
   string: reasonForRevocationString=''
 } = {}, date=new Date()) {
-  if (privateKey.primaryKey.getFingerprint() !== this.primaryKey.getFingerprint()) {
-    throw new Error('Private key does not match public key');
+  if (this.isPublic()) {
+    throw new Error('Need private key for revoking');
   }
   const dataToSign = { key: this.primaryKey };
   const key = new Key(this.toPacketlist());
-  key.revocationSignature = await createSignaturePacket(dataToSign, privateKey, {
+  key.revocationSignatures.push(await createSignaturePacket(dataToSign, null, this.primaryKey, {
     signatureType: enums.signature.key_revocation,
     reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
     reasonForRevocationString
-  }, date);
+  }, date));
   return key;
 };
 
@@ -656,30 +655,22 @@ Key.prototype.revoke = async function(privateKey, {
  * @return {String} armored revocation certificate
  */
 Key.prototype.getRevocationCertificate = function() {
-  if (this.revocationSignature) {
-    const commentstring = config.commentstring;
-    config.commentstring = 'This is a revocation certificate';
-    try {
-      const packetlist = new packet.List();
-      packetlist.push(this.revocationSignature);
-      return armor.encode(enums.armor.public_key, packetlist.write());
-    } finally {
-      // Restore comment string. armor.encode() shouldn't throw, but just to be sure it's wrapped in a try/finally
-      config.commentstring = commentstring;
-    }
+  if (this.revocationSignatures.length) {
+    const packetlist = new packet.List();
+    packetlist.push(getLatestSignature(this.revocationSignatures));
+    return armor.encode(enums.armor.public_key, packetlist.write(), null, null, 'This is a revocation certificate');
   }
 };
 
 /**
  * Applies a revocation certificate to a key
+ * This adds the first signature packet in the armored text to the key,
+ * if it is a valid revocation signature.
  * @param  {String} revocationCertificate armored revocation certificate
  * @return {module:key~Key} new revoked key
  */
 Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
   const input = armor.decode(revocationCertificate);
-  if (input.type !== enums.armor.public_key) {
-    throw new Error('Armored text not of type public key');
-  }
   const packetlist = new packet.List();
   packetlist.read(input.data);
   const revocationSignature = packetlist.findPacket(enums.packet.signature);
@@ -696,7 +687,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
     throw new Error('Could not verify revocation signature');
   }
   const key = new Key(this.toPacketlist());
-  key.revocationSignature = revocationSignature;
+  key.revocationSignatures.push(revocationSignature);
   return key;
 };
 
@@ -818,11 +809,22 @@ User.prototype.toPacketlist = function() {
 User.prototype.sign = async function(primaryKey, privateKeys) {
   const dataToSign = { userid: this.userId || this.userAttribute, key: primaryKey };
   const user = new User(dataToSign.userid);
-  user.otherCertifications = await Promise.all(privateKeys.map(function(privateKey) {
+  user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
+    if (privateKey.isPublic()) {
+      throw new Error('Need private key for signing');
+    }
     if (privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint()) {
       throw new Error('Not implemented for self signing');
     }
-    return createSignaturePacket(dataToSign, privateKey, {
+    const signingKeyPacket = await privateKey.getSigningKeyPacket();
+    if (!signingKeyPacket) {
+      throw new Error('Could not find valid signing key packet in key ' +
+                      privateKey.primaryKey.getKeyId().toHex());
+    }
+    if (!signingKeyPacket.isDecrypted) {
+      throw new Error('Private key is not decrypted.');
+    }
+    return createSignaturePacket(dataToSign, privateKey, signingKeyPacket, {
       // Most OpenPGP implementations use generic certification (0x10)
       signatureType: enums.signature.cert_generic,
       keyFlags: [enums.keyFlags.certify_keys | enums.keyFlags.sign_data]
@@ -857,31 +859,21 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
 /**
  * Create signature packet
  * @param  {Object}                          dataToSign Contains packets to be signed
- * @param  {module:key~Key}                  privateKey private key with decrypted secret key data for signing
+ * @param  {module:packet.SecretKey|
+ *          module:packet.SecretSubkey}      signingKeyPacket secret key packet for signing
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
  * @return {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signatureProperties, date, userId) {
-  if (privateKey.isPublic()) {
-    throw new Error('Need private key for signing');
-  }
-  await privateKey.verifyPrimaryUser();
-  const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date, userId);
-  if (!signingKeyPacket) {
-    throw new Error(`Could not find valid signing key packet in key ${
-        privateKey.primaryKey.getKeyId().toHex()}`);
-  }
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
   if (!signingKeyPacket.isDecrypted) {
     throw new Error('Private key is not decrypted.');
   }
   const signaturePacket = new packet.Signature(date);
-  for(const [prop, value] of Object.entries(signatureProperties)) {
-    signaturePacket[prop] = value;
-  }
+  Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, date, userId);
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
   await signaturePacket.sign(signingKeyPacket, dataToSign);
   return signaturePacket;
 }
@@ -1125,28 +1117,24 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
 
 /**
  * Revokes the subkey
- * @param  {module:packet/signature} primaryKey primary key used for revocation
- * @param  {module:key~Key} privateKey decrypted private key for revocation
+ * @param  {module:packet.SecretKey} primaryKey decrypted private primary key for revocation
  * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
  * @return {module:key~SubKey} new subkey with revocation signature
  */
-SubKey.prototype.revoke = async function(primaryKey, privateKey, {
+SubKey.prototype.revoke = async function(primaryKey, {
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
   string: reasonForRevocationString=''
 } = {}, date=new Date()) {
-  if (privateKey.primaryKey.getFingerprint() !== primaryKey.getFingerprint()) {
-    throw new Error('Private key does not match public key');
-  }
   const dataToSign = { key: primaryKey, bind: this.subKey };
   const subKey = new SubKey(this.subKey);
-  subKey.revocationSignature = await createSignaturePacket(dataToSign, privateKey, {
+  subKey.revocationSignatures.push(await createSignaturePacket(dataToSign, null, primaryKey, {
     signatureType: enums.signature.subkey_revocation,
     reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
     reasonForRevocationString
-  }, date);
+  }, date));
   await subKey.update(this, primaryKey);
   return subKey;
 };
@@ -1223,7 +1211,6 @@ export function readArmored(armoredText) {
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @param {Boolean} [options.revoked=false] Whether the key should include a revocation signature
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -1384,7 +1371,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     const signaturePacket = new packet.Signature(options.date);
     signaturePacket.signatureType = enums.signature.cert_generic;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretKeyPacket);
+    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
     signaturePacket.preferredSymmetricAlgorithms = [];
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -1440,7 +1427,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     const subkeySignaturePacket = new packet.Signature(subkeyOptions.date);
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretSubkeyPacket);
+    subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretSubkeyPacket);
     subkeySignaturePacket.keyFlags = subkeyOptions.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
     if (subkeyOptions.keyExpirationTime > 0) {
       subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
@@ -1456,18 +1443,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     });
   });
 
-  if (options.revoked) {
-    const dataToSign = {};
-    dataToSign.key = secretKeyPacket;
-    const revocationSignaturePacket = new packet.Signature();
-    revocationSignaturePacket.signatureType = enums.signature.key_revocation;
-    revocationSignaturePacket.reasonForRevocationFlag = enums.reasonForRevocation.no_reason;
-    revocationSignaturePacket.reasonForRevocationString = '';
-    revocationSignaturePacket.publicKeyAlgorithm = options.keyType;
-    revocationSignaturePacket.hashAlgorithm = getPreferredHashAlgo(secretKeyPacket);
-    await revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
-    packetlist.push(revocationSignaturePacket);
-  }
+  // Add revocation signature packet for creating a revocation certificate.
+  // This packet should be removed before returning the key.
+  const dataToSign = { key: secretKeyPacket };
+  packetlist.push(await createSignaturePacket(dataToSign, null, secretKeyPacket, {
+    signatureType: enums.signature.key_revocation,
+    reasonForRevocationFlag: enums.reasonForRevocation.no_reason,
+    reasonForRevocationString: ''
+  }, options.date));
 
   // set passphrase protection
   if (options.passphrase) {
@@ -1546,13 +1529,14 @@ function getExpirationTime(keyPacket, signature) {
 
 /**
  * Returns the preferred signature hash algorithm of a key
- * @param  {object} key
+ * @param  {module:key.Key} key (optional) the key to get preferences from
+ * @param  {module:packet.SecretKey|module:packet.SecretSubkey} keyPacket key packet used for signing
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key, date=new Date(), userId={}) {
+export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), userId={}) {
   let hash_algo = config.prefer_hash_algorithm;
   let pref_algo = hash_algo;
   if (key instanceof Key) {
@@ -1562,19 +1546,17 @@ export async function getPreferredHashAlgo(key, date=new Date(), userId={}) {
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
         pref_algo : hash_algo;
     }
-    // disable expiration checks
-    key = key.getSigningKeyPacket(undefined, null, userId);
   }
-  switch (Object.getPrototypeOf(key)) {
+  switch (Object.getPrototypeOf(keyPacket)) {
     case packet.SecretKey.prototype:
     case packet.PublicKey.prototype:
     case packet.SecretSubkey.prototype:
     case packet.PublicSubkey.prototype:
-      switch (key.algorithm) {
+      switch (keyPacket.algorithm) {
         case 'ecdh':
         case 'ecdsa':
         case 'eddsa':
-          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(key.params[0]);
+          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.params[0]);
       }
   }
   return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?

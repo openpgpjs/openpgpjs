@@ -114,7 +114,7 @@ function tests() {
       'hz3tYjKhoFTKEIq3y3Pp',
       '=h/aX',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-      
+
   const pub_key_arm4 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG 2.1.15 (GNU/Linux)
 
@@ -1329,7 +1329,7 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
   });
 
   it('Verify status of revoked primary key', function(done) {
-    const pubKey = openpgp.key.readArmored(pub_revoked).keys[0];
+    const pubKey = openpgp.key.readArmored(pub_revoked_subkeys).keys[0];
     expect(pubKey.verifyPrimaryKey()).to.eventually.equal(openpgp.enums.keyStatus.revoked).notify(done);
   });
 
@@ -1520,41 +1520,40 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     });
   });
 
-  it('revoke() - primary key', function(done) {
-    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+  it('revoke() - primary key', async function() {
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
-    pubKey.revoke(privKey, {
+    await privKey.revoke({
       flag: openpgp.enums.reasonForRevocation.key_retired,
       string: 'Testing key revocation'
-    }).then(revKey => {
-      expect(revKey.revocationSignature).to.exist;
-      expect(revKey.revocationSignature.signatureType).to.equal(openpgp.enums.signature.key_revocation);
-      expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_retired);
-      expect(revKey.revocationSignature.reasonForRevocationString).to.equal('Testing key revocation');
+    }).then(async revKey => {
+      expect(revKey.revocationSignatures).to.exist.and.have.length(1);
+      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.key_revocation);
+      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_retired);
+      expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
 
-      expect(pubKey.verifyPrimaryKey()).to.eventually.equal(openpgp.enums.keyStatus.valid);
-      expect(revKey.verifyPrimaryKey()).to.eventually.equal(openpgp.enums.keyStatus.revoked).notify(done);
+      expect(await privKey.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+      expect(await revKey.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.revoked);
     });
   });
 
-  it('revoke() - subkey', function(done) {
+  it('revoke() - subkey', async function() {
     const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
     const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
-    privKey.decrypt('hello world');
+    await privKey.decrypt('hello world');
 
     const subKey = pubKey.subKeys[0];
-    subKey.revoke(pubKey.primaryKey, privKey, {
+    await subKey.revoke(privKey.primaryKey, {
       flag: openpgp.enums.reasonForRevocation.key_superseded
-    }).then(revKey => {
-      expect(revKey.revocationSignature).to.exist;
-      expect(revKey.revocationSignature.signatureType).to.equal(openpgp.enums.signature.subkey_revocation);
-      expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_superseded);
-      expect(revKey.revocationSignature.reasonForRevocationString).to.equal('');
+    }).then(async revKey => {
+      expect(revKey.revocationSignatures).to.exist.and.have.length(1);
+      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.subkey_revocation);
+      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_superseded);
+      expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
 
-      expect(subKey.verify(pubKey.primaryKey)).to.eventually.equal(openpgp.enums.keyStatus.valid);
-      expect(revKey.verify(pubKey.primaryKey)).to.eventually.equal(openpgp.enums.keyStatus.revoked).notify(done);
+      expect(await subKey.verify(pubKey.primaryKey)).to.equal(openpgp.enums.keyStatus.valid);
+      expect(await revKey.verify(pubKey.primaryKey)).to.equal(openpgp.enums.keyStatus.revoked);
     });
   });
 
@@ -1575,7 +1574,7 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     packetlist.read(input.data);
     const armored = openpgp.armor.encode(openpgp.enums.armor.public_key, packetlist.write());
 
-    expect(revocationCertificate.replace(/^Comment: .*$/m, '')).to.equal(armored.replace(/^Comment: .*$/m, ''));
+    expect(revocationCertificate.replace(/^Comment: .*$\r\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\r\n/mg, ''));
   });
 
   it('getRevocationCertificate() should have an appropriate comment', function() {
@@ -2137,8 +2136,8 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(function(revKey) {
         revKey = revKey.publicKey;
-        expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
-        expect(revKey.revocationSignature.reasonForRevocationString).to.equal('');
+        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
         return revKey.verifyPrimaryKey().then(function(status) {
           expect(status).to.equal(openpgp.enums.keyStatus.revoked);
         });
@@ -2149,12 +2148,12 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
   it('Revoke generated key with private key', function() {
     const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    return openpgp.generateKey(opt).then(function(original) {
-      original.key.decrypt('1234');
+    return openpgp.generateKey(opt).then(async function(original) {
+      await original.key.decrypt('1234');
       return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(function(revKey) {
         revKey = revKey.publicKey;
-        expect(revKey.revocationSignature.reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
-        expect(revKey.revocationSignature.reasonForRevocationString).to.equal('Testing key revocation');
+        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
         return revKey.verifyPrimaryKey().then(function(status) {
           expect(status).to.equal(openpgp.enums.keyStatus.revoked);
         });

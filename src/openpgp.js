@@ -108,16 +108,15 @@ export function destroyWorker() {
  * @param  {Date} date               (optional) override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}], revocationCertificate=true }) {
+export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
   userIds = toArray(userIds);
-  const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys, revocationCertificate };
+  const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
   }
@@ -126,11 +125,9 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
     return asyncProxy.delegate('generateKey', options);
   }
 
-  options.revoked = options.revocationCertificate;
-
   return generate(options).then(key => {
     const revocationCertificate = key.getRevocationCertificate();
-    key.revocationSignature = null;
+    key.revocationSignatures = [];
 
     return {
 
@@ -157,7 +154,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  */
 export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date, revocationCertificate=true}) {
   userIds = toArray(userIds);
-  const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate=true};
+  const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
@@ -166,7 +163,7 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
 
   return reformat(options).then(key => {
     const revocationCertificate = key.getRevocationCertificate();
-    key.revocationSignature = null;
+    key.revocationSignatures = [];
 
     return {
 
@@ -207,10 +204,10 @@ export function revokeKey({
     if (revocationCertificate) {
       return key.applyRevocationCertificate(revocationCertificate);
     } else {
-      return key.revoke(key, reasonForRevocation);
+      return key.revoke(reasonForRevocation);
     }
   }).then(key => {
-    if(key.isPrivate()) {
+    if (key.isPrivate()) {
       const publicKey = key.toPublic();
       return {
         privateKey: key,
