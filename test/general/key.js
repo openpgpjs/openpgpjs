@@ -1737,4 +1737,28 @@ p92yZgB3r2+f6/GIe2+7
       expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.primaryKey.getKeyId().toHex());
     });
   });
+
+  it('Generate and revoke key', function() {
+    const opt = {
+      numBits: 512,
+      userIds: { name: 'Test User', email: 'text@example.com' },
+      passphrase: 'secret'
+    };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    let newKey;
+    return openpgp.generateKey(opt).then(function(key) {
+      expect(key.key).to.exist;
+      newKey = key.key;
+      // return newKey.decrypt('secret');
+    }).then(function(){
+      return newKey.isRevoked();
+    }).then(function(answer){
+      expect(answer).to.be.false;
+      return newKey.revoke({passphrase: 'secret'});
+    }).then(function(){
+      return newKey.isRevoked();
+    }).then(function(answer){
+      expect(answer).to.be.true;
+    });
+  });
 }

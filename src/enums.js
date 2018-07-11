@@ -379,6 +379,24 @@ export default {
     preferred_aead_algorithms: 34
   },
 
+  /** Signature revocation reasons
+   * @enum {Integer}
+   * @readonly
+   */
+  signatureRevocation: {
+    // No reason specified (key revocations or cert revocations)
+    no_reason: 0,
+    // Key is superseded (key revocations)
+    key_is_superseeded: 1,
+    // Key material has been compromised (key revocations)
+    key_compromised: 2,
+    // Key is retired and no longer used (key revocations)
+    key_retired: 3,
+    // User ID information is no longer valid (cert revocations)
+    userId_no_longer_valid: 32
+    // 100-110 - Private Use
+  },
+
   /** Key flags
    * @enum {Integer}
    * @readonly

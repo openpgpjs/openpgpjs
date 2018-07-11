@@ -623,9 +623,57 @@ async function mergeSignatures(source, dest, attr, checkFn) {
   }
 }
 
-// TODO
-Key.prototype.revoke = function() {
+/**
+ * Revokes a Key
+ * @param {string} reason: optional additional description string
+ * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
+ * @returns {module:packet.Signature} if successful.
+ * @async
+ */
+Key.prototype.revoke = async function(reason, options){
+  if (typeof reason === 'object') {
+    options = reason;
+    reason = undefined;
+  }
+  if (!options) options = {};
+  let reasonFlag = options.reasonFlag;
+  if (!reasonFlag){
+    reasonFlag = enums.signatureRevocation.no_reason;
+  }
+  if (!Number.isInteger(reasonFlag) || reasonFlag < 0 || reasonFlag > 110) {
+    throw new Error('reason flag is not valid');
+  }
+  if (reason !== undefined && !util.isString(reason)){
+    throw new Error('reason should be a string');
+  }
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to revoke in a public key");
+  }
+  const secretKeyPacket = this.primaryKey;
+  if (!secretKeyPacket.isDecrypted && options.passphrase) {
+    await secretKeyPacket.decrypt(options.passphrase);
+  }
+  if (!secretKeyPacket.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
 
+  const dataToSign = { key: secretKeyPacket };
+  const revocationSignaturePacket = new packet.Signature(options.date);
+  revocationSignaturePacket.signatureType = enums.signature.key_revocation;
+  revocationSignaturePacket.reasonForRevocationFlag = reasonFlag;
+  if (reason !== undefined) {
+    revocationSignaturePacket.reasonForRevocationString = reason;
+  }
+  revocationSignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+  revocationSignaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretKeyPacket);
+  // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
+  if (options.signatureExpirationTime > 0) {
+    revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
+    revocationSignaturePacket.signatureNeverExpires = false;
+  }
+  await revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
+  this.revocationSignatures.push(revocationSignaturePacket);
+  return revocationSignaturePacket;
 };
 
 /**
