@@ -1904,15 +1904,15 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     });
   });
 
-  it('Merge Key with another Key with non-ID user attributes', function(done) {
+  it('Merge key with another key with non-ID user attributes', function(done) {
     const key = openpgp.key.readArmored(mergeKey1).keys[0];
-    const updatekey = openpgp.key.readArmored(mergeKey2).keys[0];
+    const updateKey = openpgp.key.readArmored(mergeKey2).keys[0];
     expect(key).to.exist;
-    expect(updatekey).to.exist;
+    expect(updateKey).to.exist;
     expect(key.users).to.have.length(1);
-    key.update(updatekey).then(() => {
+    key.update(updateKey).then(() => {
       expect(key.primaryKey.getFingerprint()).to.equal(
-        updatekey.primaryKey.getFingerprint());
+        updateKey.primaryKey.getFingerprint());
       expect(key.users).to.have.length(2);
       expect(key.users[1].userId).to.be.null;
       done();
