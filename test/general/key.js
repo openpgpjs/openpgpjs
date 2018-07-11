@@ -7,27 +7,17 @@ chai.use(require('chai-as-promised'));
 const { expect } = chai;
 
 describe('Key', function() {
-  let webCrypto = openpgp.util.getWebCryptoAll();
+  let rsaGenStub;
+  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
 
-  if (webCrypto) {
-    let generateKey = webCrypto.generateKey;
-    let keyGenStub;
-    let keyGenValue;
+  beforeEach(function() {
+    rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
+    rsaGenStub.returns(rsaGenValue);
+  });
 
-    beforeEach(function() {
-      keyGenStub = stub(webCrypto, 'generateKey');
-      keyGenStub.callsFake(function() {
-        if (!keyGenValue) {
-          keyGenValue = generateKey.apply(webCrypto, arguments);
-        }
-        return keyGenValue;
-      });
-    });
-
-    afterEach(function() {
-      keyGenStub.restore();
-    });
-  }
+  afterEach(function() {
+    rsaGenStub.restore();
+  });
 
   describe('V4', tests);
 
@@ -1763,10 +1753,12 @@ VYGdb3eNlV8CfoEC
   it('Generate key - setting date to the past', function() {
     const past = new Date(0);
     const opt = {
+      numBits: 512,
       userIds: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
       date: past
     };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
     return openpgp.generateKey(opt).then(function(newKey) {
       expect(newKey.key).to.exist;
@@ -1821,7 +1813,8 @@ VYGdb3eNlV8CfoEC
 
   it('Generate key - override main key options for subkey', function() {
     const userId = 'test <a@b.com>';
-    const opt = {numBits: 2048, userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}]};
+    const opt = {numBits: 512, userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}]};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);

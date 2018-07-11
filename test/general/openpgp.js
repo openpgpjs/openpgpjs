@@ -374,7 +374,7 @@ describe('OpenPGP.js public api tests', function() {
 
   describe('generateKey - validate user ids', function() {
     let rsaGenStub;
-    let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(2048, "10001");
+    let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
 
     beforeEach(function() {
       rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
