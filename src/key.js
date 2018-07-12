@@ -717,48 +717,52 @@ Key.prototype.verifyAllUsers = async function(keys) {
  * @async
  */
 Key.prototype.generateSubkey = async function(options){
-  if (!options) options = {};
-  if (options.curve) {
-    try {
-      options.curve = enums.write(enums.curve, options.curve);
-    } catch (e) {
-      throw new Error('Not valid curve.');
-    }
-    if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-      if (options.sign) {
-        options.algorithm = enums.publicKey.eddsa;
-        options.curve = enums.curve.ed25519;
-      } else {
-        options.algorithm = enums.publicKey.ecdh;
-        options.curve = enums.curve.curve25519;
-      }
-    } else {
-      if (options.sign) {
-        options.algorithm = enums.publicKey.ecdsa;
-      } else {
-        options.algorithm = enums.publicKey.ecdh;
-      }
-    }
-  } else if (options.numBits) {
-    options.algorithm = enums.publicKey.rsa_encrypt_sign;
-  } else {
-    const algo = this.primaryKey.algorithm;
-    if (algo.indexOf('rsa') === 0) {
-      options.algorithm = enums.publicKey.rsa_encrypt_sign;
-      options.numBits = 2048;
-    } else {
-      if (options.sign) {
-        options.algorithm = enums.publicKey.eddsa;
-        options.curve = enums.curve.ed25519;
-      } else {
-        options.algorithm = enums.publicKey.ecdh;
-        options.curve = enums.curve.curve25519;
-      }
-    }
-  }
+  options = sanitizeKeyOption(options, this.primaryKey.algorithm);
   const secretSubKeyPacket = await generateSecretSubkey(options);
   const result = await this.addSubkey(secretSubKeyPacket, options);
   return result;
+
+  function sanitizeKeyOption(options, algo) {
+    if (!options) options = {};
+    if (options.curve) {
+      try {
+        options.curve = enums.write(enums.curve, options.curve);
+      } catch (e) {
+        throw new Error('Not valid curve.');
+      }
+      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+        if (options.sign) {
+          options.algorithm = enums.publicKey.eddsa;
+          options.curve = enums.curve.ed25519;
+        } else {
+          options.algorithm = enums.publicKey.ecdh;
+          options.curve = enums.curve.curve25519;
+        }
+      } else {
+        if (options.sign) {
+          options.algorithm = enums.publicKey.ecdsa;
+        } else {
+          options.algorithm = enums.publicKey.ecdh;
+        }
+      }
+    } else if (options.numBits) {
+      options.algorithm = enums.publicKey.rsa_encrypt_sign;
+    } else {
+      if (algo.indexOf('rsa') === 0) {
+        options.algorithm = enums.publicKey.rsa_encrypt_sign;
+        options.numBits = 2048;
+      } else {
+        if (options.sign) {
+          options.algorithm = enums.publicKey.eddsa;
+          options.curve = enums.curve.ed25519;
+        } else {
+          options.algorithm = enums.publicKey.ecdh;
+          options.curve = enums.curve.curve25519;
+        }
+      }
+    }
+    return options;
+  }
 };
 
 /**
@@ -775,16 +779,6 @@ Key.prototype.addSubkey = async function(subkeyPacket, options){
   }
   if (!options) options = {};
   let needRelocked;
-
-  // try {
-  //   const isDecrypted = this.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
-  //   if (!isDecrypted) {
-  //     await this.decrypt(options.passphrase);
-  //     relocked = true;
-  //   }
-  // } catch (err) {
-  //   throw new Error('Key not decrypted');
-  // }
 
   const packetlist = this.toPacketlist();
   const secretKeyPacket = packetlist.findPacket(enums.packet.secretKey);
