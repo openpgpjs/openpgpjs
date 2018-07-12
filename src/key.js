@@ -651,8 +651,10 @@ Key.prototype.revoke = async function(reason, options){
     throw new Error("Nothing to revoke in a public key");
   }
   const secretKeyPacket = this.primaryKey;
+  let needRelocked;
   if (!secretKeyPacket.isDecrypted && options.passphrase) {
     await secretKeyPacket.decrypt(options.passphrase);
+    needRelocked = true;
   }
   if (!secretKeyPacket.isDecrypted) {
     throw new Error('Private key is not decrypted.');
@@ -674,6 +676,10 @@ Key.prototype.revoke = async function(reason, options){
   }
   await revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
   this.revocationSignatures.push(revocationSignaturePacket);
+  if (needRelocked) {
+    await secretKeyPacket.encrypt(options.passphrase);
+    secretKeyPacket.clearPrivateParams();
+  }
   return revocationSignaturePacket;
 };
 
@@ -1025,8 +1031,10 @@ SubKey.prototype.revoke = async function(primaryKey, reason, options) {
     throw new Error("Nothing to revoke in a public key");
   }
 
+  let needRelocked;
   if (!primaryKey.isDecrypted && options.passphrase) {
     await primaryKey.decrypt(options.passphrase);
+    needRelocked = true;
   }
   if (!primaryKey.isDecrypted) {
     throw new Error('Private key is not decrypted.');
@@ -1051,6 +1059,10 @@ SubKey.prototype.revoke = async function(primaryKey, reason, options) {
   }
   await revocationSignaturePacket.sign(primaryKey, dataToSign);
   this.revocationSignatures.push(revocationSignaturePacket);
+  if (needRelocked) {
+    await primaryKey.encrypt(options.passphrase);
+    primaryKey.clearPrivateParams();
+  }
   return revocationSignaturePacket;
 };
 

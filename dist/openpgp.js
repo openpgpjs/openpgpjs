@@ -38855,7 +38855,7 @@ var mergeSignatures = function () {
  * Revokes a Key
  * @param {string} reason: optional additional description string
  * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
- * @returns {module:packet.Signature} if successful.
+ * @returns {Promise<module:packet.Signature>} if successful.
  * @async
  */
 
@@ -40928,7 +40928,7 @@ Key.prototype.update = function () {
   };
 }();Key.prototype.revoke = function () {
   var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(reason, options) {
-    var reasonFlag, secretKeyPacket, dataToSign, revocationSignaturePacket;
+    var reasonFlag, secretKeyPacket, needRelocked, dataToSign, revocationSignaturePacket;
     return _regenerator2.default.wrap(function _callee19$(_context19) {
       while (1) {
         switch (_context19.prev = _context19.next) {
@@ -40969,24 +40969,28 @@ Key.prototype.update = function () {
 
           case 10:
             secretKeyPacket = this.primaryKey;
+            needRelocked = void 0;
 
             if (!(!secretKeyPacket.isDecrypted && options.passphrase)) {
-              _context19.next = 14;
+              _context19.next = 16;
               break;
             }
 
-            _context19.next = 14;
+            _context19.next = 15;
             return secretKeyPacket.decrypt(options.passphrase);
 
-          case 14:
+          case 15:
+            needRelocked = true;
+
+          case 16:
             if (secretKeyPacket.isDecrypted) {
-              _context19.next = 16;
+              _context19.next = 18;
               break;
             }
 
             throw new Error('Private key is not decrypted.');
 
-          case 16:
+          case 18:
             dataToSign = { key: secretKeyPacket };
             revocationSignaturePacket = new _packet2.default.Signature(options.date);
 
@@ -40996,10 +41000,10 @@ Key.prototype.update = function () {
               revocationSignaturePacket.reasonForRevocationString = reason;
             }
             revocationSignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-            _context19.next = 24;
+            _context19.next = 26;
             return getPreferredHashAlgo(secretKeyPacket);
 
-          case 24:
+          case 26:
             revocationSignaturePacket.hashAlgorithm = _context19.sent;
 
             // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
@@ -41007,14 +41011,27 @@ Key.prototype.update = function () {
               revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
               revocationSignaturePacket.signatureNeverExpires = false;
             }
-            _context19.next = 28;
+            _context19.next = 30;
             return revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
 
-          case 28:
+          case 30:
             this.revocationSignatures.push(revocationSignaturePacket);
+
+            if (!needRelocked) {
+              _context19.next = 35;
+              break;
+            }
+
+            _context19.next = 34;
+            return secretKeyPacket.encrypt(options.passphrase);
+
+          case 34:
+            secretKeyPacket.clearPrivateParams();
+
+          case 35:
             return _context19.abrupt('return', revocationSignaturePacket);
 
-          case 30:
+          case 36:
           case 'end':
             return _context19.stop();
         }
@@ -41936,7 +41953,7 @@ SubKey.prototype.isRevoked = function () {
  */
 SubKey.prototype.revoke = function () {
   var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee37(primaryKey, reason, options) {
-    var reasonFlag, dataToSign, revocationSignaturePacket;
+    var reasonFlag, needRelocked, dataToSign, revocationSignaturePacket;
     return _regenerator2.default.wrap(function _callee37$(_context37) {
       while (1) {
         switch (_context37.prev = _context37.next) {
@@ -41976,23 +41993,28 @@ SubKey.prototype.revoke = function () {
             throw new Error("Nothing to revoke in a public key");
 
           case 10:
+            needRelocked = void 0;
+
             if (!(!primaryKey.isDecrypted && options.passphrase)) {
-              _context37.next = 13;
+              _context37.next = 15;
               break;
             }
 
-            _context37.next = 13;
+            _context37.next = 14;
             return primaryKey.decrypt(options.passphrase);
 
-          case 13:
+          case 14:
+            needRelocked = true;
+
+          case 15:
             if (primaryKey.isDecrypted) {
-              _context37.next = 15;
+              _context37.next = 17;
               break;
             }
 
             throw new Error('Private key is not decrypted.');
 
-          case 15:
+          case 17:
             dataToSign = {
               key: primaryKey,
               bind: this.subKey
@@ -42005,10 +42027,10 @@ SubKey.prototype.revoke = function () {
               revocationSignaturePacket.reasonForRevocationString = reason;
             }
             revocationSignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-            _context37.next = 23;
+            _context37.next = 25;
             return getPreferredHashAlgo(primaryKey);
 
-          case 23:
+          case 25:
             revocationSignaturePacket.hashAlgorithm = _context37.sent;
 
             // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
@@ -42016,14 +42038,27 @@ SubKey.prototype.revoke = function () {
               revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
               revocationSignaturePacket.signatureNeverExpires = false;
             }
-            _context37.next = 27;
+            _context37.next = 29;
             return revocationSignaturePacket.sign(primaryKey, dataToSign);
 
-          case 27:
+          case 29:
             this.revocationSignatures.push(revocationSignaturePacket);
+
+            if (!needRelocked) {
+              _context37.next = 34;
+              break;
+            }
+
+            _context37.next = 33;
+            return primaryKey.encrypt(options.passphrase);
+
+          case 33:
+            primaryKey.clearPrivateParams();
+
+          case 34:
             return _context37.abrupt('return', revocationSignaturePacket);
 
-          case 29:
+          case 35:
           case 'end':
             return _context37.stop();
         }
