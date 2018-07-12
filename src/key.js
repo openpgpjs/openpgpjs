@@ -774,22 +774,33 @@ Key.prototype.addSubkey = async function(subkeyPacket, options){
     throw new Error("Nothing to addSubkey in a public key");
   }
   if (!options) options = {};
-  // if (!this.primaryKey.isDecrypted) throw new Error('Key not decrypted');
+  let needRelocked;
 
-  try {
-    const isDecrypted = this.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
-    if (!isDecrypted) {
-      await this.decrypt(options.passphrase);
-    }
-  } catch (err) {
-    throw new Error('Key not decrypted');
-  }
+  // try {
+  //   const isDecrypted = this.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
+  //   if (!isDecrypted) {
+  //     await this.decrypt(options.passphrase);
+  //     relocked = true;
+  //   }
+  // } catch (err) {
+  //   throw new Error('Key not decrypted');
+  // }
 
   const packetlist = this.toPacketlist();
   const secretKeyPacket = packetlist.findPacket(enums.packet.secretKey);
   if (!secretKeyPacket) {
     throw new Error('Key does not contain a secret key packet');
   }
+
+  if (!secretKeyPacket.isDecrypted) {
+    try {
+      await secretKeyPacket.decrypt(options.passphrase);
+      needRelocked = true;
+    } catch (err) {
+      throw new Error('Key not decrypted');
+    }
+  }
+
   if (options.passphrase) {
     await subkeyPacket.encrypt(options.passphrase);
   }
@@ -814,6 +825,10 @@ Key.prototype.addSubkey = async function(subkeyPacket, options){
   const subKey = new SubKey(subkeyPacket);
   subKey.bindingSignatures.push(subkeySignaturePacket);
   this.subKeys.push(subKey);
+  if (needRelocked) {
+    await secretKeyPacket.encrypt(options.passphrase);
+    secretKeyPacket.clearPrivateParams();
+  }
   return subKey;
 };
 

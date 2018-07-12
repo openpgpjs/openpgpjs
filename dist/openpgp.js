@@ -41266,7 +41266,7 @@ Key.prototype.generateSubkey = function () {
  */
 Key.prototype.addSubkey = function () {
   var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(subkeyPacket, options) {
-    var isDecrypted, packetlist, secretKeyPacket, dataToSign, subkeySignaturePacket, subKey;
+    var needRelocked, packetlist, secretKeyPacket, dataToSign, subkeySignaturePacket, subKey;
     return _regenerator2.default.wrap(function _callee25$(_context25) {
       while (1) {
         switch (_context25.prev = _context25.next) {
@@ -41280,51 +41280,58 @@ Key.prototype.addSubkey = function () {
 
           case 2:
             if (!options) options = {};
-            // if (!this.primaryKey.isDecrypted) throw new Error('Key not decrypted');
+            needRelocked = void 0;
 
-            _context25.prev = 3;
-            isDecrypted = this.getKeyPackets().every(function (keyPacket) {
-              return keyPacket.isDecrypted;
-            });
+            // try {
+            //   const isDecrypted = this.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
+            //   if (!isDecrypted) {
+            //     await this.decrypt(options.passphrase);
+            //     relocked = true;
+            //   }
+            // } catch (err) {
+            //   throw new Error('Key not decrypted');
+            // }
 
-            if (isDecrypted) {
-              _context25.next = 8;
-              break;
-            }
-
-            _context25.next = 8;
-            return this.decrypt(options.passphrase);
-
-          case 8:
-            _context25.next = 13;
-            break;
-
-          case 10:
-            _context25.prev = 10;
-            _context25.t0 = _context25['catch'](3);
-            throw new Error('Key not decrypted');
-
-          case 13:
             packetlist = this.toPacketlist();
             secretKeyPacket = packetlist.findPacket(_enums2.default.packet.secretKey);
 
             if (secretKeyPacket) {
-              _context25.next = 17;
+              _context25.next = 8;
               break;
             }
 
             throw new Error('Key does not contain a secret key packet');
 
-          case 17:
-            if (!options.passphrase) {
-              _context25.next = 20;
+          case 8:
+            if (secretKeyPacket.isDecrypted) {
+              _context25.next = 18;
               break;
             }
 
-            _context25.next = 20;
+            _context25.prev = 9;
+            _context25.next = 12;
+            return secretKeyPacket.decrypt(options.passphrase);
+
+          case 12:
+            needRelocked = true;
+            _context25.next = 18;
+            break;
+
+          case 15:
+            _context25.prev = 15;
+            _context25.t0 = _context25['catch'](9);
+            throw new Error('Key not decrypted');
+
+          case 18:
+            if (!options.passphrase) {
+              _context25.next = 21;
+              break;
+            }
+
+            _context25.next = 21;
             return subkeyPacket.encrypt(options.passphrase);
 
-          case 20:
+          case 21:
 
             //sign the subkey here
             dataToSign = {};
@@ -41335,10 +41342,10 @@ Key.prototype.addSubkey = function () {
 
             subkeySignaturePacket.signatureType = _enums2.default.signature.subkey_binding;
             subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-            _context25.next = 28;
+            _context25.next = 29;
             return getPreferredHashAlgo(subkeyPacket);
 
-          case 28:
+          case 29:
             subkeySignaturePacket.hashAlgorithm = _context25.sent;
 
             subkeySignaturePacket.keyFlags = options.sign ? _enums2.default.keyFlags.sign_data : [_enums2.default.keyFlags.encrypt_communication | _enums2.default.keyFlags.encrypt_storage];
@@ -41346,10 +41353,10 @@ Key.prototype.addSubkey = function () {
               subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
               subkeySignaturePacket.keyNeverExpires = false;
             }
-            _context25.next = 33;
+            _context25.next = 34;
             return subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-          case 33:
+          case 34:
             if (options.passphrase) {
               subkeyPacket.clearPrivateParams();
             }
@@ -41357,14 +41364,27 @@ Key.prototype.addSubkey = function () {
 
             subKey.bindingSignatures.push(subkeySignaturePacket);
             this.subKeys.push(subKey);
+
+            if (!needRelocked) {
+              _context25.next = 42;
+              break;
+            }
+
+            _context25.next = 41;
+            return secretKeyPacket.encrypt(options.passphrase);
+
+          case 41:
+            secretKeyPacket.clearPrivateParams();
+
+          case 42:
             return _context25.abrupt('return', subKey);
 
-          case 38:
+          case 43:
           case 'end':
             return _context25.stop();
         }
       }
-    }, _callee25, this, [[3, 10]]);
+    }, _callee25, this, [[9, 15]]);
   }));
 
   return function (_x43, _x44) {
