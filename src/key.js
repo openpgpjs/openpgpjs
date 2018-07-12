@@ -494,15 +494,16 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   const users = this.users.map(function(user, index) {
     const selfCertification = getLatestSignature(user.selfCertifications, date);
     return { index, user, selfCertification };
-  }).filter(({ user }) => {
-    return user.userId && (
+  }).filter(({ user, selfCertification }) => {
+    return user.userId && selfCertification && (
       (userId.name === undefined || user.userId.name === userId.name) &&
       (userId.email === undefined || user.userId.email === userId.email) &&
       (userId.comment === undefined || user.userId.comment === userId.comment)
     );
   });
   if (!users.length) {
-    if (userId) {
+    if (userId.name !== undefined || userId.email !== undefined ||
+        userId.comment !== undefined) {
       throw new Error('Could not find user that matches that user ID');
     }
     return null;
