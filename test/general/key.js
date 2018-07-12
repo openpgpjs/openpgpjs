@@ -1469,8 +1469,8 @@ const mergeKey2 = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     expect(primUser.selfCertification).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
-  it('getPrimaryUser() should return null if no UIDs are bound', async function() {
-    const keyWithoundBoundUid = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+  it('getPrimaryUser() should return null if no UserIDs are bound', async function() {
+    const keyWithoutUserID = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xVgEWxpFkRYJKwYBBAHaRw8BAQdAYjjZLkp4qG7KAqJeVQlxQT6uCPq6rylV02nC
 c6D/a8YAAP0YtS4UeLzeJGSgjGTlvSd3TWEsjxdGyzwfHCOejXMRbg2+zSFVbmJv
@@ -1481,9 +1481,8 @@ goBAhIyVH+pmvWpuDJbfu1Vaj5KiQxsKxJgP/MJ+BBgWCgAwApsMBYJbGkWRBYkB
 Vz/bMCJoAShgybW1r6kRWejybzIjFSLnx/YA/iLZeo5UNdlXRJco+15RbFiNSAbw
 VYGdb3eNlV8CfoEC
 =FYbP
------END PGP PRIVATE KEY BLOCK-----
-`;
-    const key = openpgp.key.readArmored(keyWithoundBoundUid).keys[0];
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const key = openpgp.key.readArmored(keyWithoutUserID).keys[0];
     const primUser = await key.getPrimaryUser();
     expect(primUser).to.be.null;
   });
