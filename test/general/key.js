@@ -1922,6 +1922,38 @@ VYGdb3eNlV8CfoEC
     });
   });
 
+  it('revoke a key', function() {
+    const newKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    return newKey.isRevoked().then(function(answer){
+      expect(answer).to.be.false;
+      return newKey.revoke({passphrase: 'hello world'});
+    }).then(function(){
+      return newKey.isRevoked();
+    }).then(function(answer){
+      expect(answer).to.be.true;
+      return newKey.verifyPrimaryKey();
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.revoked);
+    });
+  });
+
+  it('revoke a subkey', function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    const pk = privateKey.primaryKey;
+    const newKey = privateKey.subKeys[0];
+    return newKey.isRevoked(pk).then(function(answer){
+      expect(answer).to.be.false;
+      return newKey.revoke(pk, {passphrase: 'hello world'});
+    }).then(function(){
+      return newKey.isRevoked(pk);
+    }).then(function(answer){
+      expect(answer).to.be.true;
+      return newKey.verify(pk);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.revoked);
+    });
+  });
+
   it('Merge key with another key with non-ID user attributes', function(done) {
     const key = openpgp.key.readArmored(mergeKey1).keys[0];
     const updateKey = openpgp.key.readArmored(mergeKey2).keys[0];

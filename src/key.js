@@ -625,9 +625,63 @@ async function mergeSignatures(source, dest, attr, checkFn) {
   }
 }
 
-// TODO
-Key.prototype.revoke = function() {
+/**
+ * Revokes a Key
+ * @param {string} reason: optional additional description string
+ * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
+ * @returns {Promise<module:packet.Signature>} if successful.
+ * @async
+ */
+Key.prototype.revoke = async function(reason, options){
+  if (typeof reason === 'object') {
+    options = reason;
+    reason = options.reason;
+  }
+  if (!options) options = {};
+  let reasonFlag = options.reasonFlag;
+  if (!reasonFlag){
+    reasonFlag = enums.signatureRevocation.no_reason;
+  }
+  if (!Number.isInteger(reasonFlag) || reasonFlag < 0 || reasonFlag > 110) {
+    throw new Error('reason flag is not valid');
+  }
+  if (reason !== undefined && !util.isString(reason)){
+    throw new Error('reason should be a string');
+  }
+  if (!this.isPrivate()) {
+    throw new Error("Nothing to revoke in a public key");
+  }
+  const secretKeyPacket = this.primaryKey;
+  let needRelocked;
+  if (!secretKeyPacket.isDecrypted && options.passphrase) {
+    await secretKeyPacket.decrypt(options.passphrase);
+    needRelocked = true;
+  }
+  if (!secretKeyPacket.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
 
+  const dataToSign = { key: secretKeyPacket };
+  const revocationSignaturePacket = new packet.Signature(options.date);
+  revocationSignaturePacket.signatureType = enums.signature.key_revocation;
+  revocationSignaturePacket.reasonForRevocationFlag = reasonFlag;
+  if (reason !== undefined) {
+    revocationSignaturePacket.reasonForRevocationString = reason;
+  }
+  revocationSignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+  revocationSignaturePacket.hashAlgorithm = await getPreferredHashAlgo(secretKeyPacket);
+  // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
+  if (options.signatureExpirationTime > 0) {
+    revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
+    revocationSignaturePacket.signatureNeverExpires = false;
+  }
+  await revocationSignaturePacket.sign(secretKeyPacket, dataToSign);
+  this.revocationSignatures.push(revocationSignaturePacket);
+  if (needRelocked) {
+    await secretKeyPacket.encrypt(options.passphrase);
+    secretKeyPacket.clearPrivateParams();
+  }
+  return revocationSignaturePacket;
 };
 
 /**
@@ -948,6 +1002,69 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
       bind: this.subKey
     }, this.revocationSignatures, signature, key, date
   );
+};
+
+/**
+ * revokes the subkey
+ * @param  {module:packet.SecretKey} primaryKey    The primary key packet
+ * @param {string} reason: optional additional description string
+ * @param {module:enums.signatureRevocation}  option.reasonFlag optional reason for revocation
+ * @returns {Promise<module:packet.Signature>} if successful.
+ * @async
+ */
+SubKey.prototype.revoke = async function(primaryKey, reason, options) {
+  if (typeof reason === 'object') {
+    options = reason;
+    reason = options.reason;
+  }
+  if (!options) options = {};
+  let reasonFlag = options.reasonFlag;
+  if (!reasonFlag){
+    reasonFlag = enums.signatureRevocation.no_reason;
+  }
+  if (!Number.isInteger(reasonFlag) || reasonFlag < 0 || reasonFlag > 110) {
+    throw new Error('reason flag is not valid');
+  }
+  if (reason !== undefined && !util.isString(reason)){
+    throw new Error('reason should be a string');
+  }
+  if (primaryKey.tag !== enums.packet.secretKey) {
+    throw new Error("Nothing to revoke in a public key");
+  }
+
+  let needRelocked;
+  if (!primaryKey.isDecrypted && options.passphrase) {
+    await primaryKey.decrypt(options.passphrase);
+    needRelocked = true;
+  }
+  if (!primaryKey.isDecrypted) {
+    throw new Error('Private key is not decrypted.');
+  }
+
+  const dataToSign = {
+    key: primaryKey,
+    bind: this.subKey
+  };
+  const revocationSignaturePacket = new packet.Signature(options.date);
+  revocationSignaturePacket.signatureType = enums.signature.subkey_revocation;
+  revocationSignaturePacket.reasonForRevocationFlag = reasonFlag;
+  if (reason !== undefined) {
+    revocationSignaturePacket.reasonForRevocationString = reason;
+  }
+  revocationSignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
+  revocationSignaturePacket.hashAlgorithm = await getPreferredHashAlgo(primaryKey);
+  // revocationSignaturePacket.keyFlags = enums.keyFlags.sign_data;
+  if (options.signatureExpirationTime > 0) {
+    revocationSignaturePacket.signatureExpirationTime = options.signatureExpirationTime;
+    revocationSignaturePacket.signatureNeverExpires = false;
+  }
+  await revocationSignaturePacket.sign(primaryKey, dataToSign);
+  this.revocationSignatures.push(revocationSignaturePacket);
+  if (needRelocked) {
+    await primaryKey.encrypt(options.passphrase);
+    primaryKey.clearPrivateParams();
+  }
+  return revocationSignaturePacket;
 };
 
 /**
