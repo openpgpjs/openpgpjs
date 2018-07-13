@@ -484,7 +484,8 @@ describe('OpenPGP.js public api tests', function() {
               return 'pub_key';
             }
           };
-        }
+        },
+        getRevocationCertificate: function() {}
       };
       keyGenStub = stub(openpgp.key, 'generate');
       keyGenStub.returns(resolves(keyObjStub));
@@ -513,7 +514,7 @@ describe('OpenPGP.js public api tests', function() {
           keyExpirationTime: 0,
           curve: "",
           date: now,
-          subkeys: [],
+          subkeys: []
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
@@ -1854,6 +1855,38 @@ describe('OpenPGP.js public api tests', function() {
                     .to.be.not.null;
                 expect(signatures[0].signature.packets.length).to.equal(1);
             });
+        });
+
+        it('should fail to encrypt with revoked key', function() {
+          return openpgp.revokeKey({
+            key: privateKey.keys[0]
+          }).then(function(revKey) {
+            return openpgp.encrypt({
+              data: plaintext,
+              publicKeys: revKey.publicKey
+            }).then(function(encrypted) {
+              throw new Error('Should not encrypt with revoked key');
+            }).catch(function(error) {
+              expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            });
+          });
+        });
+
+        it('should fail to encrypt with revoked subkey', async function() {
+          const pubKeyDE = openpgp.key.readArmored(pub_key_de).keys[0];
+          const privKeyDE = openpgp.key.readArmored(priv_key_de).keys[0];
+          await privKeyDE.decrypt(passphrase);
+          return privKeyDE.subKeys[0].revoke(privKeyDE.primaryKey).then(function(revSubKey) {
+            pubKeyDE.subKeys[0] = revSubKey;
+            return openpgp.encrypt({
+              data: plaintext,
+              publicKeys: pubKeyDE
+            }).then(function(encrypted) {
+              throw new Error('Should not encrypt with revoked subkey');
+            }).catch(function(error) {
+              expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            });
+          });
         });
       });
 

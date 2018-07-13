@@ -109,7 +109,7 @@ export function destroyWorker() {
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<Object>}         The generated key object in the form:
- *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
@@ -125,13 +125,19 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return generate(options).then(key => ({
+  return generate(options).then(key => {
+    const revocationCertificate = key.getRevocationCertificate();
+    key.revocationSignatures = [];
 
-    key: key,
-    privateKeyArmored: key.armor(),
-    publicKeyArmored: key.toPublic().armor()
+    return {
 
-  })).catch(onError.bind(null, 'Error generating keypair'));
+      key: key,
+      privateKeyArmored: key.armor(),
+      publicKeyArmored: key.toPublic().armor(),
+      revocationCertificate: revocationCertificate
+
+    };
+  }).catch(onError.bind(null, 'Error generating keypair'));
 }
 
 /**
@@ -140,25 +146,81 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
  * @returns {Promise<Object>}         The generated key object in the form:
- *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
-export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date}) {
+export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date, revocationCertificate=true}) {
   userIds = toArray(userIds);
-  const options = { privateKey, userIds, passphrase, keyExpirationTime, date};
+  const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
 
-  return reformat(options).then(key => ({
+  options.revoked = options.revocationCertificate;
 
-    key: key,
-    privateKeyArmored: key.armor(),
-    publicKeyArmored: key.toPublic().armor()
+  return reformat(options).then(key => {
+    const revocationCertificate = key.getRevocationCertificate();
+    key.revocationSignatures = [];
 
-  })).catch(onError.bind(null, 'Error reformatting keypair'));
+    return {
+
+      key: key,
+      privateKeyArmored: key.armor(),
+      publicKeyArmored: key.toPublic().armor(),
+      revocationCertificate: revocationCertificate
+
+    };
+  }).catch(onError.bind(null, 'Error reformatting keypair'));
+}
+
+/**
+ * Revokes a key. Requires either a private key or a revocation certificate.
+ *   If a revocation certificate is passed, the reasonForRevocation parameters will be ignored.
+ * @param  {Key} key                 (optional) public or private key to revoke
+ * @param  {String} revocationCertificate (optional) revocation certificate to revoke the key with
+ * @param  {Object} reasonForRevocation (optional) object indicating the reason for revocation
+ * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag (optional) flag indicating the reason for revocation
+ * @param  {String} reasonForRevocation.string (optional) string explaining the reason for revocation
+ * @return {Promise<Object>}         The revoked key object in the form:
+ *                                     { privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }
+ *                                     (if private key is passed) or { publicKey:Key, publicKeyArmored:String } (otherwise)
+ * @static
+ */
+export function revokeKey({
+  key, revocationCertificate, reasonForRevocation
+} = {}) {
+  const options = {
+    key, revocationCertificate, reasonForRevocation
+  };
+
+  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
+    return asyncProxy.delegate('revokeKey', options);
+  }
+
+  return Promise.resolve().then(() => {
+    if (revocationCertificate) {
+      return key.applyRevocationCertificate(revocationCertificate);
+    } else {
+      return key.revoke(reasonForRevocation);
+    }
+  }).then(key => {
+    if (key.isPrivate()) {
+      const publicKey = key.toPublic();
+      return {
+        privateKey: key,
+        privateKeyArmored: key.armor(),
+        publicKey: publicKey,
+        publicKeyArmored: publicKey.armor()
+      };
+    }
+    return {
+      publicKey: key,
+      publicKeyArmored: key.armor()
+    };
+  }).catch(onError.bind(null, 'Error revoking key'));
 }
 
 /**

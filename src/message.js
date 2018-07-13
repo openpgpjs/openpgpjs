@@ -36,7 +36,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported } from './key';
+import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported, createSignaturePacket } from './key';
 
 
 /**
@@ -428,7 +428,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, date, userId);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
     onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
     onePassSig.signingKeyId = signingKeyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -499,24 +499,16 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
   const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
-  await Promise.all(privateKeys.map(async function(privateKey) {
+  await Promise.all(privateKeys.map(async privateKey => {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
     const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date, userId);
     if (!signingKeyPacket) {
-      throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKey.primaryKey.getKeyId().toHex());
+      throw new Error(`Could not find valid signing key packet in key ${
+          privateKey.primaryKey.getKeyId().toHex()}`);
     }
-    if (!signingKeyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
-    }
-    const signaturePacket = new packet.Signature(date);
-    signaturePacket.signatureType = signatureType;
-    signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, date, userId);
-    await signaturePacket.sign(signingKeyPacket, literalDataPacket);
-    return signaturePacket;
+    return createSignaturePacket(literalDataPacket, privateKey, signingKeyPacket, {signatureType}, date, userId);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
