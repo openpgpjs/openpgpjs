@@ -1293,7 +1293,6 @@ export async function generate(options) {
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *
- * @param {Boolean} [options.revoked=false] Whether the key should include a revocation signature
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
