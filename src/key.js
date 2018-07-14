@@ -862,19 +862,18 @@ Key.prototype.addSubkey = async function(subkeyPacket, options){
   }
 
   //sign the subkey here
-  const dataToSign = {};
-  dataToSign.key = secretKeyPacket;
-  dataToSign.bind = subkeyPacket;
-  const subkeySignaturePacket = new packet.Signature(options.date);
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(subkeyPacket);
-  subkeySignaturePacket.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  const subkeySignatureOpts = {};
+  subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
+  subkeySignatureOpts.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   if (options.keyExpirationTime > 0) {
-    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
-    subkeySignaturePacket.keyNeverExpires = false;
+    subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
+    subkeySignatureOpts.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+  const dataToSign = {key: secretKeyPacket, bind: subkeyPacket};
+  const subkeySignaturePacket = await createSignaturePacket(
+    dataToSign, this, secretKeyPacket,
+    subkeySignatureOpts, options.date, options.userId
+  );
   if (options.passphrase) {
     subkeyPacket.clearPrivateParams();
   }
