@@ -842,11 +842,7 @@ Key.prototype.addSubkey = async function(subkeyPacket, options){
   if (!options) options = {};
   let needRelocked;
 
-  const packetlist = this.toPacketlist();
-  const secretKeyPacket = packetlist.findPacket(enums.packet.secretKey);
-  if (!secretKeyPacket) {
-    throw new Error('Key does not contain a secret key packet');
-  }
+  const secretKeyPacket = this.primaryKey;
 
   if (!secretKeyPacket.isDecrypted) {
     try {
