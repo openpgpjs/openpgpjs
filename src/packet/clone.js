@@ -75,14 +75,19 @@ export function clonePackets(options) {
 }
 
 function verificationObjectToClone(verObject) {
+  const verified = verObject.verified;
+  verObject.verified = stream.fromAsync(() => verified);
   if (verObject.signature instanceof Promise) {
     const signature = verObject.signature;
-    verObject.signature = stream.fromAsync(async () => (await signature).packets);
+    verObject.signature = stream.fromAsync(async () => {
+      const packets = (await signature).packets;
+      await verified;
+      delete packets[0].signature;
+      return packets;
+    });
   } else {
     verObject.signature = verObject.signature.packets;
   }
-  const verified = verObject.verified;
-  verObject.verified = stream.fromAsync(() => verified);
   return verObject;
 }
 
