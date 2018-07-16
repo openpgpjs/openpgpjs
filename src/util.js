@@ -31,11 +31,7 @@ import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
 import stream from './stream';
 
-const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
-
 export default {
-  isIE11,
-
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },
@@ -44,13 +40,9 @@ export default {
     return Array.prototype.isPrototypeOf(data);
   },
 
-  isUint8Array: function(data) {
-    return Uint8Array.prototype.isPrototypeOf(data);
-  },
+  isUint8Array: stream.isUint8Array,
 
-  isStream: function(data) {
-    return ReadableStream.prototype.isPrototypeOf(data);
-  },
+  isStream: stream.isStream,
 
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
@@ -346,57 +338,14 @@ export default {
    * @param {Array<Uint8array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
    * @returns {Uint8array|String|ReadableStream} Concatenated array
    */
-  concat: function (list) {
-    if (list.some(util.isStream)) {
-      return stream.concat(list);
-    }
-    if (util.isString(list[0])) {
-      return list.join('');
-    }
-    return util.concatUint8Array(list);
-  },
+  concat: stream.concat,
 
   /**
    * Concat Uint8Arrays
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @returns {Uint8array} Concatenated array
    */
-  concatUint8Array: function (arrays) {
-    if (arrays.length === 1) return arrays[0];
-
-    let totalLength = 0;
-    for (let i = 0; i < arrays.length; i++) {
-      if (!util.isUint8Array(arrays[i])) {
-        throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
-      }
-
-      totalLength += arrays[i].length;
-    }
-
-    const result = new Uint8Array(totalLength);
-    let pos = 0;
-    arrays.forEach(function (element) {
-      result.set(element, pos);
-      pos += element.length;
-    });
-
-    return result;
-  },
-
-  /**
-   * Deep copy Uint8Array
-   * @param {Uint8Array} Array to copy
-   * @returns {Uint8Array} new Uint8Array
-   */
-  copyUint8Array: function (array) {
-    if (!util.isUint8Array(array)) {
-      throw new Error('Data must be in the form of a Uint8Array');
-    }
-
-    const copy = new Uint8Array(array.length);
-    copy.set(array);
-    return copy;
-  },
+  concatUint8Array: stream.concatUint8Array,
 
   /**
    * Check Uint8Array equality
