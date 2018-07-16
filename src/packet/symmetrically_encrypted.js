@@ -16,16 +16,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires config
  * @requires crypto
  * @requires enums
- * @requires stream
  */
 
+import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
-import stream from '../stream';
 
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)

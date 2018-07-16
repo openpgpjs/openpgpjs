@@ -4,8 +4,8 @@
  * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @requires asmcrypto.js
  * @requires hash.js
+ * @requires web-stream-tools
  * @requires crypto/hash/md5
- * @requires stream
  * @requires util
  * @module crypto/hash
  */
@@ -16,8 +16,8 @@ import { Sha512 } from 'asmcrypto.js/dist_es8/hash/sha512/sha512';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
+import stream from 'web-stream-tools';
 import md5 from './md5';
-import stream from '../../stream';
 import util from '../../util';
 
 const nodeCrypto = util.getNodeCrypto();

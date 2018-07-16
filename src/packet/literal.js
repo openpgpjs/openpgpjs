@@ -16,13 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires enums
- * @requires stream
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 /**

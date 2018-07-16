@@ -16,18 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires encoding/base64
  * @requires enums
  * @requires config
- * @requires stream
  * @requires util
  * @module encoding/armor
  */
 
+import stream from 'web-stream-tools';
 import base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';
-import stream from '../stream';
 import util from '../util';
 
 /**

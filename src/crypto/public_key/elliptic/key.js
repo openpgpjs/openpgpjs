@@ -18,8 +18,8 @@
 /**
  * @fileoverview Wrapper for a KeyPair of an Elliptic Curve
  * @requires bn.js
+ * @requires web-stream-tools
  * @requires crypto/public_key/elliptic/curves
- * @requires stream
  * @requires util
  * @requires enums
  * @requires asn1.js
@@ -27,8 +27,8 @@
  */
 
 import BN from 'bn.js';
+import stream from 'web-stream-tools';
 import { webCurves } from './curves';
-import stream from '../../../stream';
 import util from '../../../util';
 import enums from '../../../enums';
 

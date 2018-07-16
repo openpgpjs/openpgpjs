@@ -26,12 +26,12 @@ module.exports = function(grunt) {
           },
           cacheFile: 'browserify-cache.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream'],
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto and address-rfc2822 in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify web-stream-tools, asmcrypto and address-rfc2822 in node_modules
+              only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",
@@ -55,12 +55,12 @@ module.exports = function(grunt) {
           },
           cacheFile: 'browserify-cache-debug.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream'],
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto and address-rfc2822 in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify web-stream-tools, asmcrypto and address-rfc2822 in node_modules
+              only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",

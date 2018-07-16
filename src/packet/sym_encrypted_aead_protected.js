@@ -16,17 +16,17 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires config
  * @requires crypto
  * @requires enums
- * @requires stream
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 const VERSION = 1; // A one-octet version number of the data packet.

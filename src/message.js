@@ -16,12 +16,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires encoding/armor
  * @requires type/keyid
  * @requires config
  * @requires crypto
  * @requires enums
- * @requires stream
  * @requires util
  * @requires packet
  * @requires signature
@@ -29,12 +29,12 @@
  * @module message
  */
 
+import stream from 'web-stream-tools';
 import armor from './encoding/armor';
 import type_keyid from './type/keyid';
 import config from './config';
 import crypto from './crypto';
 import enums from './enums';
-import stream from './stream';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';

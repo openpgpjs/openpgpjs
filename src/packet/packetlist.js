@@ -1,18 +1,18 @@
 /* eslint-disable callback-return */
 /**
+ * @requires web-stream-tools
  * @requires packet/all_packets
  * @requires packet/packet
  * @requires config
  * @requires enums
- * @requires stream
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import * as packets from './all_packets';
 import packetParser from './packet';
 import config from '../config';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 /**

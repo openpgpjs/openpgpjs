@@ -20,16 +20,17 @@
 /**
  * This object contains utility functions
  * @requires address-rfc2822
+ * @requires web-stream-tools
  * @requires config
  * @requires encoding/base64
  * @module util
  */
 
 import rfc2822 from 'address-rfc2822';
+import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
-import stream from './stream';
 
 export default {
   isString: function(data) {

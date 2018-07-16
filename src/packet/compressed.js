@@ -16,18 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires pako
  * @requires config
  * @requires enums
- * @requires stream
  * @requires util
  * @requires compression/bzip2
  */
 
 import pako from 'pako';
+import stream from 'web-stream-tools';
 import config from '../config';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 import Bzip2 from '../compression/bzip2.build.js';
 

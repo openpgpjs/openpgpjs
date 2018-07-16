@@ -12,11 +12,11 @@
  */
 
 /**
- * @requires stream
+ * @requires web-stream-tools
  * @module encoding/base64
  */
 
-import stream from '../stream';
+import stream from 'web-stream-tools';
 
 const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
 const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64

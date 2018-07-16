@@ -17,19 +17,19 @@
 
 /**
  * @requires asmcrypto.js
+ * @requires web-stream-tools
  * @requires config
  * @requires crypto
  * @requires enums
- * @requires stream
  * @requires util
  */
 
 import { AES_CFB } from 'asmcrypto.js/dist_es8/aes/cfb';
 
+import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 const nodeCrypto = util.getNodeCrypto();

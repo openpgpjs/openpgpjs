@@ -16,21 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires packet/packet
  * @requires type/keyid
  * @requires type/mpi
  * @requires crypto
  * @requires enums
- * @requires stream
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import packet from './packet';
 import type_keyid from '../type/keyid.js';
 import type_mpi from '../type/mpi.js';
 import crypto from '../crypto';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 /**

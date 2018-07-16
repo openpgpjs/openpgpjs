@@ -22,13 +22,13 @@
  * @module packet/clone
  */
 
+import stream from 'web-stream-tools';
 import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';
 import { Signature } from '../signature';
 import List from './packetlist';
 import type_keyid from '../type/keyid';
-import stream from '../stream';
 import util from '../util';
 
 

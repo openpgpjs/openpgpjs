@@ -17,16 +17,16 @@
 
 /**
  * @fileoverview Provides the LocalStore class
+ * @requires web-stream-tools
  * @requires config
  * @requires key
- * @requires stream
  * @requires util
  * @module keyring/localstore
  */
 
+import stream from 'web-stream-tools';
 import config from '../config';
 import { readArmored } from '../key';
-import stream from '../stream';
 import util from '../util';
 
 /**

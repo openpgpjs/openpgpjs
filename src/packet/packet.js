@@ -19,14 +19,14 @@
 
 /**
  * @fileoverview Functions for reading and writing packets
+ * @requires web-stream-tools
  * @requires enums
- * @requires stream
  * @requires util
  * @module packet/packet
  */
 
+import stream from 'web-stream-tools';
 import enums from '../enums';
-import stream from '../stream';
 import util from '../util';
 
 export default {

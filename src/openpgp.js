@@ -19,12 +19,12 @@
  * @fileoverview The openpgp base module should provide all of the functionality
  * to consume the openpgp.js library. All additional classes are documented
  * for extending and developing on top of the base library.
+ * @requires web-stream-tools
  * @requires message
  * @requires cleartext
  * @requires key
  * @requires config
  * @requires enums
- * @requires stream
  * @requires util
  * @requires polyfills
  * @requires worker/async_proxy
@@ -39,13 +39,13 @@
  * {@link module:openpgp}
  */
 
+import stream from 'web-stream-tools';
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
 import enums from './enums';
 import './polyfills';
-import stream from './stream';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
 
