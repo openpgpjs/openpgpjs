@@ -779,52 +779,18 @@ Key.prototype.verifyAllUsers = async function(keys) {
  * @async
  */
 Key.prototype.generateSubkey = async function(options){
-  options = sanitizeKeyOption(options, this.primaryKey.algorithm);
+  const defaultOptions = {};
+  if (this.primaryKey.algorithm.indexOf('rsa') === 0) {
+    defaultOptions.numBits = 2048;
+  }
+  else {
+    defaultOptions.curve = enums.curve.ed25519;
+  }
+
+  options = sanitizeKeyOptions(options, defaultOptions);
   const secretSubKeyPacket = await generateSecretSubkey(options);
   const result = await this.addSubkey(secretSubKeyPacket, options);
   return result;
-
-  function sanitizeKeyOption(options, algo) {
-    if (!options) options = {};
-    if (options.curve) {
-      try {
-        options.curve = enums.write(enums.curve, options.curve);
-      } catch (e) {
-        throw new Error('Not valid curve.');
-      }
-      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.eddsa;
-          options.curve = enums.curve.ed25519;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-          options.curve = enums.curve.curve25519;
-        }
-      } else {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.ecdsa;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-        }
-      }
-    } else if (options.numBits) {
-      options.algorithm = enums.publicKey.rsa_encrypt_sign;
-    } else {
-      if (algo.indexOf('rsa') === 0) {
-        options.algorithm = enums.publicKey.rsa_encrypt_sign;
-        options.numBits = 2048;
-      } else {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.eddsa;
-          options.curve = enums.curve.ed25519;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-          options.curve = enums.curve.curve25519;
-        }
-      }
-    }
-    return options;
-  }
 };
 
 /**
@@ -1337,44 +1303,6 @@ export async function generate(options) {
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
   return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
 
-  function sanitizeKeyOptions(options, subkeyDefaults={}) {
-    options.curve = options.curve || subkeyDefaults.curve;
-    options.numBits = options.numBits || subkeyDefaults.numBits;
-    options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
-    options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
-    options.date = options.date || subkeyDefaults.date;
-
-    options.sign = options.sign || false;
-
-    if (options.curve) {
-      try {
-        options.curve = enums.write(enums.curve, options.curve);
-      } catch (e) {
-        throw new Error('Not valid curve.');
-      }
-      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.eddsa;
-          options.curve = enums.curve.ed25519;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-          options.curve = enums.curve.curve25519;
-        }
-      } else {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.ecdsa;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-        }
-      }
-    } else if (options.numBits) {
-      options.algorithm = enums.publicKey.rsa_encrypt_sign;
-    } else {
-      throw new Error('Unrecognized key type');
-    }
-    return options;
-  }
-
   async function generateSecretKey(options) {
     const secretKeyPacket = new packet.SecretKey(options.date);
     secretKeyPacket.packets = null;
@@ -1382,6 +1310,44 @@ export async function generate(options) {
     await secretKeyPacket.generate(options.numBits, options.curve);
     return secretKeyPacket;
   }
+}
+
+function sanitizeKeyOptions(options={}, subkeyDefaults={}) {
+  options.curve = options.curve || subkeyDefaults.curve;
+  options.numBits = options.numBits || subkeyDefaults.numBits;
+  options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
+  options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+  options.date = options.date || subkeyDefaults.date;
+
+  options.sign = options.sign || false;
+
+  if (options.curve) {
+    try {
+      options.curve = enums.write(enums.curve, options.curve);
+    } catch (e) {
+      throw new Error('Not valid curve.');
+    }
+    if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+      if (options.sign) {
+        options.algorithm = enums.publicKey.eddsa;
+        options.curve = enums.curve.ed25519;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+        options.curve = enums.curve.curve25519;
+      }
+    } else {
+      if (options.sign) {
+        options.algorithm = enums.publicKey.ecdsa;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+      }
+    }
+  } else if (options.numBits) {
+    options.algorithm = enums.publicKey.rsa_encrypt_sign;
+  } else {
+    throw new Error('Unrecognized key type');
+  }
+  return options;
 }
 
 async function generateSecretSubkey(options) {
