@@ -99,7 +99,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @returns {Promise<Message>}             new message with decrypted content
  * @async
  */
-Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, asStream) {
+Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, streaming) {
   const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
 
   const symEncryptedPacketlist = this.packets.filterByTag(
@@ -120,7 +120,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, 
     }
 
     try {
-      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data, asStream);
+      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data, streaming);
       break;
     } catch (e) {
       util.print_debug_error(e);
@@ -260,7 +260,7 @@ Message.prototype.getText = function() {
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}, asStream) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}, streaming) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -300,7 +300,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
   }
   symEncryptedPacket.packets = this.packets;
 
-  await symEncryptedPacket.encrypt(symAlgo, sessionKey, asStream);
+  await symEncryptedPacket.encrypt(symAlgo, sessionKey, streaming);
 
   msg.packets.push(symEncryptedPacket);
   symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
@@ -536,7 +536,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verify = async function(keys, date=new Date(), asStream) {
+Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
@@ -550,7 +550,7 @@ Message.prototype.verify = async function(keys, date=new Date(), asStream) {
         onePassSig.correspondingSigResolve = resolve;
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, asStream);
+      onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
     });
     const verificationObjects = await createVerificationObjects(onePassSigList, literalDataList, keys, date);
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {

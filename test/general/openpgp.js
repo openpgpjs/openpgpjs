@@ -1802,11 +1802,11 @@ describe('OpenPGP.js public api tests', function() {
               message: openpgp.message.fromBinary(data),
               privateKeys: privateKey.keys,
               armor: false,
-              asStream: true
+              streaming: 'web'
             };
             const verifyOpt = {
               publicKeys: publicKey.keys,
-              asStream: true
+              streaming: 'web'
             };
             return openpgp.sign(signOpt).then(function (signed) {
               const packets = new openpgp.packet.List();
@@ -1815,6 +1815,7 @@ describe('OpenPGP.js public api tests', function() {
               verifyOpt.message = new openpgp.message.Message(packets);
               return openpgp.verify(verifyOpt);
             }).then(async function (verified) {
+              expect(openpgp.stream.isStream(verified.data)).to.equal('web');
               expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
               expect(await verified.signatures[0].verified).to.be.true;
               expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid))
