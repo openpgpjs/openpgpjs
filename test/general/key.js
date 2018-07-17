@@ -1993,7 +1993,7 @@ VYGdb3eNlV8CfoEC
     privateKey.users[0].userId.parse('Test User <b@c.com>');
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
-    const signed = await openpgp.sign({message: new openpgp.cleartext.CleartextMessage('hello'), privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
+    const signed = await openpgp.sign({message: openpgp.cleartext.fromText('hello'), privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
     expect(signed.message.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
     expect(encrypted.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
@@ -2064,7 +2064,7 @@ VYGdb3eNlV8CfoEC
       expect(newKey.users.length).to.equal(1);
       expect(newKey.users[0].userId.userid).to.equal(userId);
       expect(newKey.isDecrypted()).to.be.true;
-      return openpgp.sign({message: new openpgp.cleartext.CleartextMessage('hello'), privateKeys: newKey, armor: true}).then(async function(signed) {
+      return openpgp.sign({message: openpgp.cleartext.fromText('hello'), privateKeys: newKey, armor: true}).then(async function(signed) {
         return openpgp.verify(
           {message: await openpgp.cleartext.readArmored(signed.data), publicKeys: newKey.toPublic()}
         ).then(async function(verified) {

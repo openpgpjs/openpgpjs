@@ -209,3 +209,12 @@ function verifyHeaders(headers, packetlist) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }
+
+/**
+ * Creates a new CleartextMessage object from text
+ * @param {String} text
+ * @static
+ */
+export function fromText(text) {
+  return new CleartextMessage(text);
+}

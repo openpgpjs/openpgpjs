@@ -185,7 +185,7 @@ describe('Elliptic Curve Cryptography', function () {
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: new openpgp.cleartext.CleartextMessage(data.romeo.message)});
+    const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: openpgp.cleartext.fromText(data.romeo.message)});
     const romeoPublic = await load_pub_key('romeo');
     const msg = await openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
@@ -254,7 +254,7 @@ describe('Elliptic Curve Cryptography', function () {
             // Signing message
 
             openpgp.sign(
-              { message: new openpgp.cleartext.CleartextMessage(testData), privateKeys: hi }
+              { message: openpgp.cleartext.fromText(testData), privateKeys: hi }
             ).then(async signed => {
               const msg = await openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message
@@ -264,7 +264,7 @@ describe('Elliptic Curve Cryptography', function () {
                 ).then(output => expect(output.signatures[0].valid).to.be.true),
                 // Verifying detached signature
                 openpgp.verify(
-                  { message: new openpgp.cleartext.CleartextMessage(testData),
+                  { message: openpgp.cleartext.fromText(testData),
                     publicKeys: pubHi,
                     signature: await openpgp.signature.readArmored(signed.data) }
                 ).then(output => expect(output.signatures[0].valid).to.be.true)

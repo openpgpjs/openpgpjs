@@ -172,7 +172,7 @@ describe('X25519 Cryptography', function () {
     const name = 'light';
     const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], message: new openpgp.cleartext.CleartextMessage(randomData)});
+    const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.cleartext.fromText(randomData)});
     const pub = await load_pub_key(name);
     const msg = await openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
@@ -274,7 +274,7 @@ describe('X25519 Cryptography', function () {
             }),
             // Signing message
             openpgp.sign(
-              { message: new openpgp.cleartext.CleartextMessage('Hi, this is me, Hi!'), privateKeys: hi }
+              { message: openpgp.cleartext.fromText('Hi, this is me, Hi!'), privateKeys: hi }
             ).then(async signed => {
               const msg = await openpgp.cleartext.readArmored(signed.data);
               // Verifying signed message

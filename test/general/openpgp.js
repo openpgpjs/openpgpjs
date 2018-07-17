@@ -1538,7 +1538,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data', function () {
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: privateKey.keys
@@ -1563,7 +1563,7 @@ describe('OpenPGP.js public api tests', function() {
           const privKeyDE = (await openpgp.key.readArmored(priv_key_de)).keys[0];
           await privKeyDE.decrypt(passphrase);
 
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: [privateKey.keys[0], privKeyDE]
@@ -1590,7 +1590,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data with detached signatures', function () {
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: privateKey.keys,
@@ -1613,7 +1613,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and fail to verify cleartext data with wrong public pgp key', async function () {
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: privateKey.keys
@@ -1634,7 +1634,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and fail to verify cleartext data with wrong public pgp key with detached signature', async function () {
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: privateKey.keys,
@@ -1657,7 +1657,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data and not armor', function () {
-          const message = new openpgp.cleartext.CleartextMessage(plaintext);
+          const message = openpgp.cleartext.fromText(plaintext);
           const signOpt = {
             message,
             privateKeys: privateKey.keys,
@@ -1680,7 +1680,7 @@ describe('OpenPGP.js public api tests', function() {
 
         it('should sign and verify cleartext data and not armor with detached signatures', function () {
             const start = openpgp.util.normalizeDate();
-            const message = new openpgp.cleartext.CleartextMessage(plaintext);
+            const message = openpgp.cleartext.fromText(plaintext);
             const signOpt = {
                 message,
                 privateKeys: privateKey.keys,
@@ -1706,7 +1706,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data with a date in the past', function () {
-            const message = new openpgp.cleartext.CleartextMessage(plaintext);
+            const message = openpgp.cleartext.fromText(plaintext);
             const past = new Date(2000);
             const signOpt = {
                 message,
