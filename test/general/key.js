@@ -2200,6 +2200,10 @@ VYGdb3eNlV8CfoEC
     return privateKey.generateSubkey({passphrase: 'hello world'}).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
+      const subkeyN = answer.subKey.params[0];
+      const pkN = privateKey.primaryKey.params[0];
+      // console.log(subkeyN.data[0], pkN.data[0], openpgp.util.nbits(subkeyN.data[0]), openpgp.util.nbits(pkN.data[0]))
+      expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
       expect(answer).to.be.equal(privateKey.subKeys[total]);
       expect(answer.subKey.algorithm).to.be.equal('rsa_encrypt_sign');
       return answer.verify(privateKey.primaryKey);
