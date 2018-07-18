@@ -276,7 +276,7 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
 }
 
 /**
- * Returns first key packet or key packet by given keyId that is available for signing and verification
+ * Returns last created key packet or key packet by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
@@ -287,13 +287,14 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
 Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
+    const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
+    for (let i = 0; i < subKeys.length; i++) {
+      if (!keyId || subKeys[i].subKey.getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
-          const bindingSignature = getLatestSignature(this.subKeys[i].bindingSignatures, date);
-          if (isValidSigningKeyPacket(this.subKeys[i].subKey, bindingSignature, date)) {
-            return this.subKeys[i].subKey;
+        if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
+          if (isValidSigningKeyPacket(subKeys[i].subKey, bindingSignature, date)) {
+            return subKeys[i].subKey;
           }
         }
       }
@@ -320,7 +321,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
 }
 
 /**
- * Returns first key packet or key packet by given keyId that is available for encryption or decryption
+ * Returns last created key packet or key packet by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
@@ -335,13 +336,14 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), us
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
     // V3: keys MUST NOT have subkeys
-    for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId)) {
+    const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
+    for (let i = 0; i < subKeys.length; i++) {
+      if (!keyId || subKeys[i].subKey.getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        if (await this.subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
-          const bindingSignature = getLatestSignature(this.subKeys[i].bindingSignatures, date);
-          if (isValidEncryptionKeyPacket(this.subKeys[i].subKey, bindingSignature, date)) {
-            return this.subKeys[i].subKey;
+        if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+          const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
+          if (isValidEncryptionKeyPacket(subKeys[i].subKey, bindingSignature, date)) {
+            return subKeys[i].subKey;
           }
         }
       }
