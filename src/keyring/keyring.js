@@ -157,12 +157,12 @@ function keyIdCheck(keyId, keypacket) {
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (let i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+    if (keyIdCheck(keyId, this.keys[i].keyPacket)) {
       return this.keys[i];
     }
     if (deep && this.keys[i].subKeys.length) {
       for (let j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j].keyPacket)) {
           return this.keys[i];
         }
       }
@@ -182,7 +182,7 @@ KeyArray.prototype.importKey = async function (armored) {
   for (let i = 0; i < imported.keys.length; i++) {
     const key = imported.keys[i];
     // check if key already in key array
-    const keyidHex = key.primaryKey.getKeyId().toHex();
+    const keyidHex = key.keyPacket.getKeyId().toHex();
     const keyFound = this.getForId(keyidHex);
     if (keyFound) {
       // eslint-disable-next-line no-await-in-loop
@@ -211,7 +211,7 @@ KeyArray.prototype.push = function (key) {
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (let i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+    if (keyIdCheck(keyId, this.keys[i].keyPacket)) {
       return this.keys.splice(i, 1)[0];
     }
   }

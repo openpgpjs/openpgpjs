@@ -227,11 +227,11 @@ describe('X25519 Cryptography', function () {
         expect(firstKey.key).to.exist;
         expect(firstKey.key.primaryKey).to.exist;
         expect(firstKey.key.subKeys).to.have.length(1);
-        expect(firstKey.key.subKeys[0].subKey).to.exist;
+        expect(firstKey.key.subKeys[0].keyPacket).to.exist;
 
         const hi = firstKey.key;
         const primaryKey = hi.primaryKey;
-        const subKey = hi.subKeys[0].subKey;
+        const subKey = hi.subKeys[0].keyPacket;
         expect(primaryKey.params[0].getName()).to.equal("ed25519");
         expect(primaryKey.algorithm).to.equal('eddsa');
         expect(subKey.params[0].getName()).to.equal('curve25519');
@@ -254,8 +254,8 @@ describe('X25519 Cryptography', function () {
           const bye = secondKey.key;
           expect(bye.primaryKey.params[0].getName()).to.equal('ed25519');
           expect(bye.primaryKey.algorithm).to.equal('eddsa');
-          expect(bye.subKeys[0].subKey.params[0].getName()).to.equal('curve25519');
-          expect(bye.subKeys[0].subKey.algorithm).to.equal('ecdh');
+          expect(bye.subKeys[0].keyPacket.params[0].getName()).to.equal('curve25519');
+          expect(bye.subKeys[0].keyPacket.algorithm).to.equal('ecdh');
 
           // Self Certificate is valid
           const user = bye.users[0];

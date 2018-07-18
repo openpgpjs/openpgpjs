@@ -323,17 +323,17 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
 
   if (publicKeys) {
     const results = await Promise.all(publicKeys.map(async function(publicKey) {
-      const encryptionKeyPacket = await publicKey.getEncryptionKeyPacket(undefined, date, userId);
-      if (!encryptionKeyPacket) {
+      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId);
+      if (!encryptionKey) {
         throw new Error('Could not find valid key packet for encryption in key ' +
-                        publicKey.primaryKey.getKeyId().toHex());
+                        publicKey.keyPacket.getKeyId().toHex());
       }
       const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKeyPacket.getKeyId();
-      pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.keyPacket.getKeyId();
+      pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
       pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
-      await pkESKeyPacket.encrypt(encryptionKeyPacket);
+      await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
       delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
       return pkESKeyPacket;
     }));
@@ -421,16 +421,16 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date, userId);
-    if (!signingKeyPacket) {
+    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKey.primaryKey.getKeyId().toHex());
+                      privateKey.keyPacket.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
-    onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
-    onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
+    onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
+    onePassSig.signingKeyId = signingKey.keyPacket.getKeyId();
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
@@ -503,12 +503,12 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKeyPacket = await privateKey.getSigningKeyPacket(undefined, date, userId);
-    if (!signingKeyPacket) {
+    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
-          privateKey.primaryKey.getKeyId().toHex()}`);
+          privateKey.keyPacket.getKeyId().toHex()}`);
     }
-    return createSignaturePacket(literalDataPacket, privateKey, signingKeyPacket, {signatureType}, date, userId);
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, {signatureType}, date, userId);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
@@ -570,10 +570,10 @@ export async function createVerificationObjects(signatureList, literalDataList, 
   return Promise.all(signatureList.map(async function(signature) {
     let keyPacket = null;
     await Promise.all(keys.map(async function(key) {
-      // Look for the unique key packet that matches issuerKeyId of signature
-      const result = await key.getSigningKeyPacket(signature.issuerKeyId, date);
+      // Look for the unique key that matches issuerKeyId of signature
+      const result = await key.getSigningKey(signature.issuerKeyId, date);
       if (result) {
-        keyPacket = result;
+        keyPacket = result.keyPacket;
       }
     }));
 

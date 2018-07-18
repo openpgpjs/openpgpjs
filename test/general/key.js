@@ -1415,8 +1415,8 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
     // remove subkeys
     pubKey.subKeys = [];
     // primary key has only key flags for signing
-    const keyPacket = await pubKey.getEncryptionKeyPacket();
-    expect(keyPacket).to.not.exist;
+    const encryptionKey = await pubKey.getEncryptionKey();
+    expect(encryptionKey).to.not.exist;
   });
 
   it('Method getExpirationTime V4 Key', async function() {
@@ -1506,8 +1506,8 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
     dest.update(source).then(() => {
       expect(dest.subKeys[1]).to.exist;
       expect(
-        dest.subKeys[1].subKey.getKeyId().toHex()
-      ).to.equal(source.subKeys[1].subKey.getKeyId().toHex());
+        dest.subKeys[1].keyPacket.getKeyId().toHex()
+      ).to.equal(source.subKeys[1].keyPacket.getKeyId().toHex());
       done();
     });
   });
@@ -1818,7 +1818,7 @@ VYGdb3eNlV8CfoEC
     return openpgp.generateKey(opt).then(function(newKey) {
       expect(newKey.key).to.exist;
       expect(+newKey.key.primaryKey.created).to.equal(+past);
-      expect(+newKey.key.subKeys[0].subKey.created).to.equal(+past);
+      expect(+newKey.key.subKeys[0].keyPacket.created).to.equal(+past);
       expect(+newKey.key.subKeys[0].bindingSignatures[0].created).to.equal(+past);
     });
   })
@@ -1847,8 +1847,8 @@ VYGdb3eNlV8CfoEC
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.lengthOf(2);
-      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
-      expect(key.subKeys[1].subKey.algorithm).to.equal('ecdh');
+      expect(key.subKeys[0].keyPacket.algorithm).to.equal('ecdh');
+      expect(key.subKeys[1].keyPacket.algorithm).to.equal('ecdh');
     });
   });
 
@@ -1861,8 +1861,8 @@ VYGdb3eNlV8CfoEC
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.lengthOf(2);
-      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
-      expect(key.subKeys[1].subKey.algorithm).to.equal('eddsa');
+      expect(key.subKeys[0].keyPacket.algorithm).to.equal('ecdh');
+      expect(key.subKeys[1].keyPacket.algorithm).to.equal('eddsa');
     });
   });
 
@@ -1875,7 +1875,7 @@ VYGdb3eNlV8CfoEC
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.primaryKey.algorithm).to.equal('rsa_encrypt_sign');
-      expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
+      expect(key.subKeys[0].keyPacket.algorithm).to.equal('ecdh');
     });
   });
 
@@ -1927,8 +1927,8 @@ VYGdb3eNlV8CfoEC
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signPrimaryUser([privateKey]);
     const signatures = await publicKey.verifyPrimaryUser([privateKey]);
-    const publicKeyPacket = await publicKey.getSigningKeyPacket();
-    const privateKeyPacket = await privateKey.getSigningKeyPacket();
+    const publicKeyPacket = (await publicKey.getSigningKey()).keyPacket;
+    const privateKeyPacket = (await privateKey.getSigningKey()).keyPacket;
     expect(signatures.length).to.equal(2);
     expect(signatures[0].keyid.toHex()).to.equal(publicKeyPacket.getKeyId().toHex());
     expect(signatures[0].valid).to.be.null;
@@ -1943,8 +1943,8 @@ VYGdb3eNlV8CfoEC
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signPrimaryUser([privateKey]);
     const signatures = await publicKey.verifyPrimaryUser([wrongKey]);
-    const publicKeyPacket = await publicKey.getSigningKeyPacket();
-    const privateKeyPacket = await privateKey.getSigningKeyPacket();
+    const publicKeyPacket = (await publicKey.getSigningKey()).keyPacket;
+    const privateKeyPacket = (await privateKey.getSigningKey()).keyPacket;
     expect(signatures.length).to.equal(2);
     expect(signatures[0].keyid.toHex()).to.equal(publicKeyPacket.getKeyId().toHex());
     expect(signatures[0].valid).to.be.null;
@@ -1958,8 +1958,8 @@ VYGdb3eNlV8CfoEC
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signAllUsers([privateKey]);
     const signatures = await publicKey.verifyAllUsers([privateKey]);
-    const publicKeyPacket = await publicKey.getSigningKeyPacket();
-    const privateKeyPacket = await privateKey.getSigningKeyPacket();
+    const publicKeyPacket = (await publicKey.getSigningKey()).keyPacket;
+    const privateKeyPacket = (await privateKey.getSigningKey()).keyPacket;
     expect(signatures.length).to.equal(4);
     expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[0].keyid.toHex()).to.equal(publicKeyPacket.getKeyId().toHex());
@@ -1982,8 +1982,8 @@ VYGdb3eNlV8CfoEC
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signAllUsers([privateKey]);
     const signatures = await publicKey.verifyAllUsers([wrongKey]);
-    const publicKeyPacket = await publicKey.getSigningKeyPacket();
-    const privateKeyPacket = await privateKey.getSigningKeyPacket()
+    const publicKeyPacket = (await publicKey.getSigningKey()).keyPacket;
+    const privateKeyPacket = (await privateKey.getSigningKey()).keyPacket;
     expect(signatures.length).to.equal(4);
     expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[0].keyid.toHex()).to.equal(publicKeyPacket.getKeyId().toHex());
@@ -2097,7 +2097,7 @@ VYGdb3eNlV8CfoEC
       newKey = newKey.key;
       expect(newKey.users[0].userId.userid).to.equal(userId1);
       expect(+newKey.primaryKey.created).to.equal(+now);
-      expect(+newKey.subKeys[0].subKey.created).to.equal(+now);
+      expect(+newKey.subKeys[0].keyPacket.created).to.equal(+now);
       expect(+newKey.subKeys[0].bindingSignatures[0].created).to.equal(+now);
       const opt2 = {privateKey: newKey, userIds: [userId2], date: before};
       return openpgp.reformatKey(opt2).then(function(refKey) {
@@ -2123,7 +2123,7 @@ VYGdb3eNlV8CfoEC
           {message: openpgp.cleartext.readArmored(signed.data), publicKeys: newKey.toPublic()}
         ).then(async function(verified) {
           expect(verified.signatures[0].valid).to.be.true;
-          const newKeyPacket = await newKey.getSigningKeyPacket();
+          const newKeyPacket = (await newKey.getSigningKey()).keyPacket;
           expect(verified.signatures[0].keyid.toHex()).to.equal(newKeyPacket.getKeyId().toHex());
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
@@ -2188,7 +2188,7 @@ VYGdb3eNlV8CfoEC
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {
     const key = openpgp.key.readArmored(valid_binding_sig_among_many_expired_sigs_pub).keys[0];
-    expect(await key.getEncryptionKeyPacket()).to.not.be.null;
+    expect(await key.getEncryptionKey()).to.not.be.null;
   });
 
   it('Selects the most recent subkey binding signature', async function() {
