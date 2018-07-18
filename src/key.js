@@ -772,9 +772,15 @@ Key.prototype.verifyAllUsers = async function(keys) {
 };
 
 /**
- * generate a new subkey to a Key
- * @param  {Object} options   (optional) options for creating subkey, e.g. {sign: true, passphrase: '123', algorithm:..., curve:...}
- *
+ * generate and add a new subkey to a Key
+ * @param {String}  options.passphrase (optional) The passphrase used to encrypt the resulting private subkey and decrypt the security key
+ * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @param {Integer} options.numBits (optional) number of bits for the key creation.
+ * @param  {String} options.curve (optional) elliptic curve for ECC keys
+ * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Object} userId                   (optional) user ID
  * @returns {Promise<module:key.SubKey>} return the subkey if successful.
  * @async
  */
@@ -796,16 +802,22 @@ Key.prototype.generateSubkey = async function(options){
 /**
  * add a subkey packet to a Key
  * @param {module:packet.PublicSubkey|module:packet.SecretSubkey} the subkey packet to add
- * @param  {Object} options   (optional) options for subkey, e.g. {sign: true, passphrase: '123'}
+ * @param {String}  options.passphrase (optional) The passphrase used to encrypt the resulting private subkey and decrypt the security key
+ * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @param {Integer} options.numBits (optional) number of bits for the key creation.
+ * @param  {String} options.curve (optional) elliptic curve for ECC keys
+ * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Object} userId                   (optional) user ID
  *
  * @returns {Promise<module:key.SubKey>} return the subkey if successful.
  * @async
  */
-Key.prototype.addSubkey = async function(subkeyPacket, options){
+Key.prototype.addSubkey = async function(subkeyPacket, options={}){
   if (!this.isPrivate()) {
-    throw new Error("Nothing to addSubkey in a public key");
+    throw new Error("Cannot add a subkey to a public key");
   }
-  if (!options) options = {};
   let needRelocked;
 
   const secretKeyPacket = this.primaryKey;
