@@ -276,15 +276,14 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
 }
 
 /**
- * Returns last created key packet or key packet by given keyId that is available for signing and verification
+ * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
- * @returns {Promise<module:packet.SecretSubkey|
- *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
+ * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(), userId={}) {
+Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
@@ -294,7 +293,7 @@ Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(),
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidSigningKeyPacket(subKeys[i].subKey, bindingSignature, date)) {
-            return subKeys[i].subKey;
+            return subKeys[i];
           }
         }
       }
@@ -302,10 +301,24 @@ Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(),
     const primaryUser = await this.getPrimaryUser(date, userId);
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
         isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
-      return primaryKey;
+      return this;
     }
   }
   return null;
+};
+
+/**
+ * Returns last created key packet or key packet by given keyId that is available for signing and verification
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Object} userId, optional user ID
+ * @returns {Promise<module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
+ * @async
+ */
+Key.prototype.getSigningKeyPacket = async function (keyId=null, date=new Date(), userId={}) {
+  const signingKey = await this.getSigningKey(keyId, date, userId);
+  return signingKey && (signingKey.subKey || signingKey.primaryKey);
 };
 
 function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
@@ -321,17 +334,14 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
 }
 
 /**
- * Returns last created key packet or key packet by given keyId that is available for encryption or decryption
+ * Returns last created key or key by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
- * @returns {Promise<module:packet.PublicSubkey|
- *                   module:packet.SecretSubkey|
- *                   module:packet.SecretKey|
- *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
+ * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
  * @async
  */
-Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), userId={}) {
+Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}) {
   const primaryKey = this.primaryKey;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
@@ -343,7 +353,7 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), us
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidEncryptionKeyPacket(subKeys[i].subKey, bindingSignature, date)) {
-            return subKeys[i].subKey;
+            return subKeys[i];
           }
         }
       }
@@ -352,10 +362,26 @@ Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), us
     const primaryUser = await this.getPrimaryUser(date, userId);
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
         isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
-      return primaryKey;
+      return this;
     }
   }
   return null;
+};
+
+/**
+ * Returns last created key packet or key packet by given keyId that is available for encryption or decryption
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Date}              date, optional
+ * @param  {String}            userId, optional
+ * @returns {Promise<module:packet.PublicSubkey|
+ *                   module:packet.SecretSubkey|
+ *                   module:packet.SecretKey|
+ *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
+ * @async
+ */
+Key.prototype.getEncryptionKeyPacket = async function(keyId, date=new Date(), userId={}) {
+  const encryptionKey = await this.getEncryptionKey(keyId, date, userId);
+  return encryptionKey && (encryptionKey.subKey || encryptionKey.primaryKey);
 };
 
 /**
@@ -465,11 +491,16 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
 };
 
 /**
- * Returns the expiration time of the primary key or Infinity if key does not expire
+ * Returns the latest date when the key can be used for encrypting, signing, or both, depending on the `capabilities` paramater.
+ * When `capabilities` is null, defaults to returning the expiry date of the primary key.
+ * Returns Infinity if the key doesn't expire.
+ * @param  {encrypt|sign|encrypt_sign} capabilities, optional
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Object} userId, optional user ID
  * @returns {Promise<Date>}
  * @async
  */
-Key.prototype.getExpirationTime = async function() {
+Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
   if (this.primaryKey.version === 3) {
     return getExpirationTime(this.primaryKey);
   }
@@ -478,7 +509,16 @@ Key.prototype.getExpirationTime = async function() {
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = getExpirationTime(this.primaryKey, selfCert);
     const sigExpiry = selfCert.getExpirationTime();
-    return keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
+    let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
+    if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
+      const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
+      if (encryptExpiry < expiry) expiry = encryptExpiry;
+    }
+    if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
+      const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
+      if (signExpiry < expiry) expiry = signExpiry;
+    }
+    return expiry;
   }
 };
 
