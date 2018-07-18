@@ -600,10 +600,10 @@ Signature.prototype.toHash = function(data) {
   return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
 };
 
-Signature.prototype.hash = function(data, toHash, asStream=true) {
+Signature.prototype.hash = function(data, toHash, streaming=true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
   if (!toHash) toHash = this.toHash(data);
-  if (!asStream && util.isStream(toHash)) {
+  if (!streaming && util.isStream(toHash)) {
     return stream.fromAsync(async () => this.hash(data, await stream.readToEnd(toHash)));
   }
   return crypto.hash.digest(hashAlgorithm, toHash);

@@ -87,13 +87,13 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * Encrypt the payload in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @param  {Boolean} asStream             Whether to set this.encrypted to a stream
+ * @param  {Boolean} streaming            Whether to set this.encrypted to a stream
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, asStream) {
+SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let bytes = this.packets.write();
-  if (!asStream) bytes = await stream.readToEnd(bytes);
+  if (!streaming) bytes = await stream.readToEnd(bytes);
   const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   const prefix = util.concat([prefixrandom, repeat]);
@@ -117,17 +117,17 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * Decrypts the encrypted data contained in the packet.
  * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
  * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @param  {Boolean} asStream             Whether to read this.encrypted as a stream
+ * @param  {Boolean} streaming            Whether to read this.encrypted as a stream
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, asStream) {
-  if (!asStream) this.encrypted = await stream.readToEnd(this.encrypted);
+SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
+  if (!streaming) this.encrypted = await stream.readToEnd(this.encrypted);
   const encrypted = stream.clone(this.encrypted);
   const encryptedClone = stream.passiveClone(encrypted);
   let decrypted;
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, asStream);
+    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, streaming);
   } else {
     decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, await stream.readToEnd(encrypted), false);
   }

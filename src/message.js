@@ -96,6 +96,7 @@ Message.prototype.getSigningKeyIds = function() {
  * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
  * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+ * @param  {Boolean} streaming          (optional) whether to process data as a stream
  * @returns {Promise<Message>}             new message with decrypted content
  * @async
  */
@@ -257,6 +258,7 @@ Message.prototype.getText = function() {
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Boolean} streaming         (optional) whether to process data as a stream
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
@@ -533,6 +535,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * Verify message signatures
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+ * @param  {Boolean} streaming (optional) whether to process data as a stream
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
@@ -683,8 +686,12 @@ Message.prototype.armor = function() {
 export async function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
+  const streamType = util.isStream(armoredText);
+  if (streamType === 'node') {
+    armoredText = stream.nodeToWeb(armoredText);
+  }
   const input = await armor.decode(armoredText);
-  return read(input.data, util.isStream(armoredText));
+  return read(input.data, streamType);
 }
 
 /**
@@ -695,7 +702,11 @@ export async function readArmored(armoredText) {
  * @async
  * @static
  */
-export async function read(input, fromStream) {
+export async function read(input, fromStream=util.isStream(input)) {
+  const streamType = util.isStream(input);
+  if (streamType === 'node') {
+    input = stream.nodeToWeb(input);
+  }
   const packetlist = new packet.List();
   await packetlist.read(input);
   const message = new Message(packetlist);
@@ -713,6 +724,10 @@ export async function read(input, fromStream) {
  * @static
  */
 export function fromText(text, filename, date=new Date(), type='utf8') {
+  const streamType = util.isStream(text);
+  if (streamType === 'node') {
+    text = stream.nodeToWeb(text);
+  }
   const literalDataPacket = new packet.Literal(date);
   // text will be converted to UTF8
   literalDataPacket.setText(text, type);
@@ -722,7 +737,7 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   const message = new Message(literalDataPacketlist);
-  message.fromStream = util.isStream(text);
+  message.fromStream = streamType;
   return message;
 }
 
@@ -736,8 +751,12 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date(), type='binary') {
-  if (!util.isUint8Array(bytes) && !util.isStream(bytes)) {
-    throw new Error('Data must be in the form of a Uint8Array');
+  const streamType = util.isStream(bytes);
+  if (!util.isUint8Array(bytes) && !streamType) {
+    throw new Error('Data must be in the form of a Uint8Array or Stream');
+  }
+  if (streamType === 'node') {
+    bytes = stream.nodeToWeb(bytes);
   }
 
   const literalDataPacket = new packet.Literal(date);
@@ -748,6 +767,6 @@ export function fromBinary(bytes, filename, date=new Date(), type='binary') {
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
   const message = new Message(literalDataPacketlist);
-  message.fromStream = util.isStream(bytes);
+  message.fromStream = streamType;
   return message;
 }

@@ -2216,7 +2216,7 @@ describe('OpenPGP.js public api tests', function() {
               message,
               format: 'binary'
             });
-            expect(openpgp.util.isStream(decrypted.data)).to.be.true;
+            expect(openpgp.util.isStream(decrypted.data)).to.equal('web');
             expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(openpgp.util.concatUint8Array(plaintext));
           });
         });
