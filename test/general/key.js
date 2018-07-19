@@ -2220,7 +2220,7 @@ VYGdb3eNlV8CfoEC
     return openpgp.generateKey(opt).then(function(key) {
       privateKey = key.key;
       total = privateKey.subKeys.length;
-      return privateKey.generateSubkey({passphrase: '123'});
+      return privateKey.generateSubkey({passphrase: '123', sign: true});
     }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
@@ -2228,7 +2228,7 @@ VYGdb3eNlV8CfoEC
       const subkeyOid = answer.subKey.params[0];
       const pkOid = privateKey.primaryKey.params[0];
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(answer.subKey.algorithm).to.be.equal('ecdh');
+      expect(answer.subKey.algorithm).to.be.equal('eddsa');
       return answer.verify(privateKey.primaryKey);
     }).then(function(answer){
       expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
