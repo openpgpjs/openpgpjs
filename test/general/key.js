@@ -2212,7 +2212,7 @@ VYGdb3eNlV8CfoEC
     });
   });
 
-  it('create and add a new ec subkey to a ec key', function() {
+  it.only('create and add a new ec subkey to a ec key', function() {
     const userId = 'test <a@b.com>';
     const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
     let privateKey;
@@ -2225,6 +2225,9 @@ VYGdb3eNlV8CfoEC
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
       expect(answer).to.be.equal(privateKey.subKeys[total]);
+      const subkeyOid = answer.subKey.params[0];
+      const pkOid = privateKey.primaryKey.params[0];
+      expect(subkeyOid.name).to.be.equal(pkOid.name);
       expect(answer.subKey.algorithm).to.be.equal('ecdh');
       return answer.verify(privateKey.primaryKey);
     }).then(function(answer){

@@ -786,8 +786,12 @@ Key.prototype.verifyAllUsers = async function(keys) {
  */
 Key.prototype.generateSubkey = async function(options){
   const defaultOptions = {};
-  if (this.primaryKey.algorithm.indexOf('rsa') === 0) {
+  const defaultAlgo = this.primaryKey.algorithm;
+  if (defaultAlgo.indexOf('rsa') === 0) {
     defaultOptions.numBits = this.primaryKey.params[0].bitLength();
+  }
+  else if (defaultAlgo.indexOf('ec') === 0 || defaultAlgo.indexOf('ed') === 0) {
+    defaultOptions.curve = this.primaryKey.params[0].name;
   }
   else {
     defaultOptions.curve = enums.curve.ed25519;
