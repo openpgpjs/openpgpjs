@@ -1106,7 +1106,7 @@ SubKey.generate = async function(options) {
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
  * @param  {Object} userId                   (optional) user ID
  *
- * @returns {Promise<module:packet.Signature>} return the subkey if successful.
+ * @returns {Promise<module:packet.Signature>} return the signature if successful.
  * @async
  */
 SubKey.prototype.bindSignature = async function(primaryKey, options) {
