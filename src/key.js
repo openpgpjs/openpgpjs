@@ -791,21 +791,20 @@ Key.prototype.generateSubkey = async function(options){
     defaultOptions.numBits = this.primaryKey.params[0].bitLength();
   }
   else if (defaultAlgo.indexOf('ec') === 0 || defaultAlgo.indexOf('ed') === 0) {
-    defaultOptions.curve = this.primaryKey.params[0].name;
+    defaultOptions.curve = this.primaryKey.params[0].getName();
   }
   else {
     defaultOptions.curve = enums.curve.ed25519;
   }
 
   options = sanitizeKeyOptions(options, defaultOptions);
-  const secretSubKeyPacket = await generateSecretSubkey(options);
-  const result = await this.addSubkey(secretSubKeyPacket, options);
+  const result = await this.addSubkey(await SubKey.generate(options), options);
   return result;
 };
 
 /**
  * add a subkey packet to a Key
- * @param {module:packet.PublicSubkey|module:packet.SecretSubkey} the subkey packet to add
+ * @param {module:key.SubKey|module:packet.PublicSubkey|module:packet.SecretSubkey} the subkey to add
  * @param {String}  options.passphrase (optional) The passphrase used to encrypt the resulting private subkey and decrypt the security key
  * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {Number} [options.keyExpirationTime=0]
@@ -818,7 +817,7 @@ Key.prototype.generateSubkey = async function(options){
  * @returns {Promise<module:key.SubKey>} return the subkey if successful.
  * @async
  */
-Key.prototype.addSubkey = async function(subkeyPacket, options={}){
+Key.prototype.addSubkey = async function(subkey, options={}){
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
@@ -834,35 +833,28 @@ Key.prototype.addSubkey = async function(subkeyPacket, options={}){
       throw new Error('Key not decrypted');
     }
   }
+  let subkeyPacket = subkey;
+  if (subkey instanceof SubKey) {
+    subkeyPacket = subkey.subKey;
+  } else {
+    subkey = new SubKey(subkeyPacket);
+  }
 
   if (options.passphrase) {
     await subkeyPacket.encrypt(options.passphrase);
   }
 
-  //sign the subkey here
-  const subkeySignatureOpts = {};
-  subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
-  subkeySignatureOpts.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-  if (options.keyExpirationTime > 0) {
-    subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
-    subkeySignatureOpts.keyNeverExpires = false;
-  }
-  const dataToSign = {key: secretKeyPacket, bind: subkeyPacket};
-  const subkeySignaturePacket = await createSignaturePacket(
-    dataToSign, this, secretKeyPacket,
-    subkeySignatureOpts, options.date, options.userId
-  );
+  // sign the subkey here
+  await subkey.bindSignature(secretKeyPacket, options);
   if (options.passphrase) {
     subkeyPacket.clearPrivateParams();
   }
-  const subKey = new SubKey(subkeyPacket);
-  subKey.bindingSignatures.push(subkeySignaturePacket);
-  this.subKeys.push(subKey);
+  this.subKeys.push(subkey);
   if (needRelocked) {
     await secretKeyPacket.encrypt(options.passphrase);
     secretKeyPacket.clearPrivateParams();
   }
-  return subKey;
+  return subkey;
 };
 
 /**
@@ -1089,6 +1081,50 @@ function SubKey(subKeyPacket) {
   this.bindingSignatures = [];
   this.revocationSignatures = [];
 }
+
+/**
+ * generate a new SubKey.
+ * @param {Integer} options.numBits (optional) number of bits for the key creation.
+ * @param  {String} options.curve (optional) elliptic curve for ECC keys
+ * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ *
+ * @returns {Promise<module:key.SubKey>} return the subkey if successful.
+ * @async
+ */
+SubKey.generate = async function(options) {
+  const result = new SubKey();
+  result.subKey = await generateSecretSubkey(options);
+  return result;
+};
+
+/**
+ * create the subkey binding signature
+ * @param  {module:packet.SecretKey} primaryKey The primary key packet
+ * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Object} userId                   (optional) user ID
+ *
+ * @returns {Promise<module:packet.Signature>} return the subkey if successful.
+ * @async
+ */
+SubKey.prototype.bindSignature = async function(primaryKey, options) {
+  const subkeySignatureOpts = {};
+  subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
+  subkeySignatureOpts.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  if (options.keyExpirationTime > 0) {
+    subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
+    subkeySignatureOpts.keyNeverExpires = false;
+  }
+  const dataToSign = {key: primaryKey, bind: this.subKey};
+  const subkeySignaturePacket = await createSignaturePacket(
+    dataToSign, this, primaryKey,
+    subkeySignatureOpts, options.date, options.userId
+  );
+  this.bindingSignatures.push(subkeySignaturePacket);
+  return subkeySignaturePacket;
+};
 
 /**
  * Transforms structured subkey data to packetlist
