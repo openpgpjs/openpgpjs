@@ -138,14 +138,14 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:packet.SecretKey|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
- * @returns {Boolean} True if keypacket has the specified keyid
+ * @param {module:key.Key|module:key.SubKey} key The key to be checked
+ * @returns {Boolean} True if key has the specified keyid
  */
-function keyIdCheck(keyId, keypacket) {
+function keyIdCheck(keyId, key) {
   if (keyId.length === 16) {
-    return keyId === keypacket.getKeyId().toHex();
+    return keyId === key.getKeyId().toHex();
   }
-  return keyId === keypacket.getFingerprint();
+  return keyId === key.getFingerprint();
 }
 
 /**
@@ -157,12 +157,12 @@ function keyIdCheck(keyId, keypacket) {
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (let i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].keyPacket)) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys[i];
     }
     if (deep && this.keys[i].subKeys.length) {
       for (let j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (keyIdCheck(keyId, this.keys[i].subKeys[j].keyPacket)) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j])) {
           return this.keys[i];
         }
       }
@@ -182,7 +182,7 @@ KeyArray.prototype.importKey = async function (armored) {
   for (let i = 0; i < imported.keys.length; i++) {
     const key = imported.keys[i];
     // check if key already in key array
-    const keyidHex = key.keyPacket.getKeyId().toHex();
+    const keyidHex = key.getKeyId().toHex();
     const keyFound = this.getForId(keyidHex);
     if (keyFound) {
       // eslint-disable-next-line no-await-in-loop
@@ -211,7 +211,7 @@ KeyArray.prototype.push = function (key) {
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (let i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].keyPacket)) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys.splice(i, 1)[0];
     }
   }

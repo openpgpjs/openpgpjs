@@ -1009,9 +1009,9 @@ yYDnCgA=
     const signerKey = openpgp.key.readArmored(priv_key_arm1).keys[0];
     return signedKey.verifyPrimaryUser([signerKey]).then(signatures => {
       expect(signatures[0].valid).to.be.null;
-      expect(signatures[0].keyid.toHex()).to.equal(signedKey.primaryKey.getKeyId().toHex());
+      expect(signatures[0].keyid.toHex()).to.equal(signedKey.getKeyId().toHex());
       expect(signatures[1].valid).to.be.true;
-      expect(signatures[1].keyid.toHex()).to.equal(signerKey.primaryKey.getKeyId().toHex());
+      expect(signatures[1].keyid.toHex()).to.equal(signerKey.getKeyId().toHex());
     });
   });
 

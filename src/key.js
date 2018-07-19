@@ -75,7 +75,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
       case enums.packet.publicKey:
       case enums.packet.secretKey:
         this.keyPacket = packetlist[i];
-        primaryKeyId = this.keyPacket.getKeyId();
+        primaryKeyId = this.getKeyId();
         break;
       case enums.packet.userid:
       case enums.packet.userAttribute:
@@ -160,7 +160,7 @@ Key.prototype.toPacketlist = function() {
 Key.prototype.getSubkeyPackets = function(keyId=null) {
   const packets = new packet.List();
   this.subKeys.forEach(subKey => {
-    if (!keyId || subKey.keyPacket.getKeyId().equals(keyId, true)) {
+    if (!keyId || subKey.getKeyId().equals(keyId, true)) {
       packets.push(subKey.keyPacket);
     }
   });
@@ -175,7 +175,7 @@ Key.prototype.getSubkeyPackets = function(keyId=null) {
  */
 Key.prototype.getKeyPackets = function(keyId=null) {
   const packets = new packet.List();
-  if (!keyId || this.keyPacket.getKeyId().equals(keyId, true)) {
+  if (!keyId || this.getKeyId().equals(keyId, true)) {
     packets.push(this.keyPacket);
   }
   packets.concat(this.getSubkeyPackets(keyId));
@@ -296,7 +296,7 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
     for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].keyPacket.getKeyId().equals(keyId)) {
+      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
@@ -342,7 +342,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
     // V3: keys MUST NOT have subkeys
     const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
     for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].keyPacket.getKeyId().equals(keyId)) {
+      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
@@ -382,7 +382,7 @@ Key.prototype.encrypt = async function(passphrases, keyId=null) {
 
   return Promise.all(keyPackets.map(async function(keyPacket, i) {
     await keyPacket.encrypt(passphrases[i]);
-    await keyPacket.clearPrivateParams();
+    keyPacket.clearPrivateParams();
     return keyPacket;
   }));
 };
@@ -565,7 +565,7 @@ Key.prototype.update = async function(key) {
   if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
     return;
   }
-  if (this.keyPacket.getFingerprint() !== key.keyPacket.getFingerprint()) {
+  if (this.getFingerprint() !== key.getFingerprint()) {
     throw new Error('Key update method: fingerprints of keys not equal');
   }
   if (this.isPublic() && key.isPrivate()) {
@@ -573,7 +573,7 @@ Key.prototype.update = async function(key) {
     const equal = (this.subKeys.length === key.subKeys.length) &&
           (this.subKeys.every(destSubKey => {
             return key.subKeys.some(srcSubKey => {
-              return destSubKey.keyPacket.getFingerprint() === srcSubKey.keyPacket.getFingerprint();
+              return destSubKey.getFingerprint() === srcSubKey.getFingerprint();
             });
           }));
     if (!equal) {
@@ -608,7 +608,7 @@ Key.prototype.update = async function(key) {
   await Promise.all(key.subKeys.map(async srcSubKey => {
     let found = false;
     await Promise.all(this.subKeys.map(async dstSubKey => {
-      if (srcSubKey.keyPacket.getFingerprint() === dstSubKey.keyPacket.getFingerprint()) {
+      if (srcSubKey.getFingerprint() === dstSubKey.getFingerprint()) {
         await dstSubKey.update(srcSubKey, this.keyPacket);
         found = true;
       }
@@ -698,7 +698,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
   if (!revocationSignature || revocationSignature.signatureType !== enums.signature.key_revocation) {
     throw new Error('Could not find revocation signature packet');
   }
-  if (!revocationSignature.issuerKeyId.equals(this.keyPacket.getKeyId())) {
+  if (!revocationSignature.issuerKeyId.equals(this.getKeyId())) {
     throw new Error('Revocation signature does not match key');
   }
   if (revocationSignature.isExpired()) {
@@ -834,16 +834,13 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    if (privateKey.keyPacket.getFingerprint() === primaryKey.getFingerprint()) {
+    if (privateKey.getFingerprint() === primaryKey.getFingerprint()) {
       throw new Error('Not implemented for self signing');
     }
     const signingKey = await privateKey.getSigningKey();
     if (!signingKey) {
       throw new Error('Could not find valid signing key packet in key ' +
-                      privateKey.keyPacket.getKeyId().toHex());
-    }
-    if (!signingKey.keyPacket.isDecrypted) {
-      throw new Error('Private key is not decrypted.');
+                      privateKey.getKeyId().toHex());
     }
     return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
       // Most OpenPGP implementations use generic certification (0x10)
@@ -888,7 +885,7 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @return {module:packet/signature}         signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
-  if (!signingKeyPacket.isDecrypted) {
+  if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
   const signaturePacket = new packet.Signature(date);
@@ -1105,7 +1102,7 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
     return;
   }
-  if (this.keyPacket.getFingerprint() !== subKey.keyPacket.getFingerprint()) {
+  if (this.getFingerprint() !== subKey.getFingerprint()) {
     throw new Error('SubKey update method: fingerprints of subkeys not equal');
   }
   // key packet
@@ -1159,6 +1156,14 @@ SubKey.prototype.revoke = async function(primaryKey, {
   await subKey.update(this, primaryKey);
   return subKey;
 };
+
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
+  Key.prototype[name] =
+  SubKey.prototype[name] =
+    function() {
+      return this.keyPacket[name]();
+    };
+});
 
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
@@ -1321,7 +1326,7 @@ export async function reformat(options) {
   options = sanitizeKeyOptions(options);
 
   try {
-    const isDecrypted = options.privateKey.getKeyPackets().every(keyPacket => keyPacket.isDecrypted);
+    const isDecrypted = options.privateKey.getKeyPackets().every(keyPacket => keyPacket.isDecrypted());
     if (!isDecrypted) {
       await options.privateKey.decrypt();
     }

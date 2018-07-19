@@ -181,6 +181,22 @@ PublicKey.prototype.writeOld = function () {
 };
 
 /**
+ * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+ * @returns {Boolean|null}
+ */
+PublicKey.prototype.isDecrypted = function() {
+  return null;
+};
+
+/**
+ * Returns the creation time of the key
+ * @returns {Date}
+ */
+PublicKey.prototype.getCreationTime = function() {
+  return this.created;
+};
+
+/**
  * Calculates the key id of the key
  * @returns {String} A 8 byte key id
  */

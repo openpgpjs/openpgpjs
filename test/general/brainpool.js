@@ -134,7 +134,7 @@ describe('Brainpool Cryptography', function () {
     expect(pub).to.exist;
     expect(pub.err).to.not.exist;
     expect(pub.keys).to.have.length(1);
-    expect(pub.keys[0].primaryKey.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pub.keys[0].getKeyId().toHex()).to.equal(data[name].id);
     data[name].pub_key = pub.keys[0];
     return data[name].pub_key;
   }
@@ -146,7 +146,7 @@ describe('Brainpool Cryptography', function () {
     expect(pk).to.exist;
     expect(pk.err).to.not.exist;
     expect(pk.keys).to.have.length(1);
-    expect(pk.keys[0].primaryKey.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pk.keys[0].getKeyId().toHex()).to.equal(data[name].id);
     expect(await pk.keys[0].decrypt(data[name].pass)).to.be.true;
     data[name].priv_key = pk.keys[0];
     return data[name].priv_key;

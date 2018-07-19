@@ -176,7 +176,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         if (!privateKeyPacket) {
          return;
         }
-        if (!privateKeyPacket.isDecrypted) {
+        if (!privateKeyPacket.isDecrypted()) {
           throw new Error('Private key is not decrypted.');
         }
         try {
@@ -326,10 +326,10 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
       const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId);
       if (!encryptionKey) {
         throw new Error('Could not find valid key packet for encryption in key ' +
-                        publicKey.keyPacket.getKeyId().toHex());
+                        publicKey.getKeyId().toHex());
       }
       const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
-      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.keyPacket.getKeyId();
+      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
       pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
@@ -424,13 +424,13 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     const signingKey = await privateKey.getSigningKey(undefined, date, userId);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKey.keyPacket.getKeyId().toHex());
+                      privateKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
     onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
-    onePassSig.signingKeyId = signingKey.keyPacket.getKeyId();
+    onePassSig.signingKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
@@ -506,7 +506,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     const signingKey = await privateKey.getSigningKey(undefined, date, userId);
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
-          privateKey.keyPacket.getKeyId().toHex()}`);
+          privateKey.getKeyId().toHex()}`);
     }
     return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, {signatureType}, date, userId);
   })).then(signatureList => {
