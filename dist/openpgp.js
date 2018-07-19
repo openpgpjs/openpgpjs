@@ -29612,7 +29612,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.0.13",
+  versionstring: "OpenPGP.js v3.1.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -38824,7 +38824,7 @@ var mergeSignatures = function () {
                 }, _callee17, this);
               }));
 
-              return function (_x36) {
+              return function (_x39) {
                 return _ref20.apply(this, arguments);
               };
             }()));
@@ -38837,7 +38837,7 @@ var mergeSignatures = function () {
     }, _callee18, this);
   }));
 
-  return function mergeSignatures(_x32, _x33, _x34, _x35) {
+  return function mergeSignatures(_x35, _x36, _x37, _x38) {
     return _ref19.apply(this, arguments);
   };
 }();
@@ -38869,7 +38869,7 @@ var createSignaturePacket = exports.createSignaturePacket = function () {
       while (1) {
         switch (_context29.prev = _context29.next) {
           case 0:
-            if (signingKeyPacket.isDecrypted) {
+            if (signingKeyPacket.isDecrypted()) {
               _context29.next = 2;
               break;
             }
@@ -38900,7 +38900,7 @@ var createSignaturePacket = exports.createSignaturePacket = function () {
     }, _callee29, this);
   }));
 
-  return function createSignaturePacket(_x52, _x53, _x54, _x55, _x56, _x57) {
+  return function createSignaturePacket(_x55, _x56, _x57, _x58, _x59, _x60) {
     return _ref34.apply(this, arguments);
   };
 }();
@@ -38965,7 +38965,7 @@ var generate = exports.generate = function () {
         }, _callee43, this);
       }));
 
-      return function generateSecretKey(_x86) {
+      return function generateSecretKey(_x89) {
         return _ref50.apply(this, arguments);
       };
     }();
@@ -38995,7 +38995,7 @@ var generate = exports.generate = function () {
         }, _callee44, this);
       }));
 
-      return function generateSecretSubkey(_x87) {
+      return function generateSecretSubkey(_x90) {
         return _ref51.apply(this, arguments);
       };
     }();
@@ -39066,7 +39066,7 @@ var generate = exports.generate = function () {
     }, _callee45, this);
   }));
 
-  return function generate(_x84) {
+  return function generate(_x87) {
     return _ref49.apply(this, arguments);
   };
 }();
@@ -39084,7 +39084,6 @@ var generate = exports.generate = function () {
  * @param  {Date} date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *
- * @param {Boolean} [options.revoked=false] Whether the key should include a revocation signature
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -39111,8 +39110,8 @@ var reformat = exports.reformat = function () {
             options = sanitizeKeyOptions(options);
 
             _context46.prev = 2;
-            isDecrypted = options.privateKey.getKeyPackets().every(function (keyPacket) {
-              return keyPacket.isDecrypted;
+            isDecrypted = options.privateKey.getKeys().every(function (key) {
+              return key.isDecrypted();
             });
 
             if (isDecrypted) {
@@ -39183,7 +39182,7 @@ var reformat = exports.reformat = function () {
     }, _callee46, this, [[2, 9]]);
   }));
 
-  return function reformat(_x88) {
+  return function reformat(_x91) {
     return _ref52.apply(this, arguments);
   };
 }();
@@ -39230,7 +39229,7 @@ var wrapKeyObject = function () {
                 }, _callee47, this);
               }));
 
-              return function (_x93, _x94) {
+              return function (_x96, _x97) {
                 return _ref54.apply(this, arguments);
               };
             }()));
@@ -39318,7 +39317,7 @@ var wrapKeyObject = function () {
                 }, _callee48, this);
               }));
 
-              return function (_x95, _x96) {
+              return function (_x98, _x99) {
                 return _ref55.apply(this, arguments);
               };
             }())).then(function (list) {
@@ -39374,7 +39373,7 @@ var wrapKeyObject = function () {
                 }, _callee49, this);
               }));
 
-              return function (_x97, _x98) {
+              return function (_x100, _x101) {
                 return _ref57.apply(this, arguments);
               };
             }())).then(function (packets) {
@@ -39432,7 +39431,7 @@ var wrapKeyObject = function () {
                 }, _callee50, this);
               }));
 
-              return function (_x99, _x100) {
+              return function (_x102, _x103) {
                 return _ref59.apply(this, arguments);
               };
             }()));
@@ -39448,7 +39447,7 @@ var wrapKeyObject = function () {
     }, _callee51, this);
   }));
 
-  return function wrapKeyObject(_x90, _x91, _x92) {
+  return function wrapKeyObject(_x93, _x94, _x95) {
     return _ref53.apply(this, arguments);
   };
 }();
@@ -39532,7 +39531,7 @@ var isDataRevoked = function () {
                 }, _callee52, this);
               }));
 
-              return function (_x107) {
+              return function (_x110) {
                 return _ref61.apply(this, arguments);
               };
             }()));
@@ -39559,7 +39558,7 @@ var isDataRevoked = function () {
     }, _callee53, this);
   }));
 
-  return function isDataRevoked(_x101, _x102, _x103, _x104, _x105) {
+  return function isDataRevoked(_x104, _x105, _x106, _x107, _x108) {
     return _ref60.apply(this, arguments);
   };
 }();
@@ -39628,7 +39627,7 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
     }, _callee54, this);
   }));
 
-  return function getPreferredHashAlgo(_x109, _x110) {
+  return function getPreferredHashAlgo(_x112, _x113) {
     return _ref62.apply(this, arguments);
   };
 }();
@@ -39692,7 +39691,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
                 }, _callee55, this);
               }));
 
-              return function (_x117) {
+              return function (_x120) {
                 return _ref64.apply(this, arguments);
               };
             }()));
@@ -39724,7 +39723,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
     }, _callee56, this);
   }));
 
-  return function getPreferredAlgo(_x113, _x114) {
+  return function getPreferredAlgo(_x116, _x117) {
     return _ref63.apply(this, arguments);
   };
 }();
@@ -39776,7 +39775,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
                 }, _callee57, this);
               }));
 
-              return function (_x121) {
+              return function (_x124) {
                 return _ref67.apply(this, arguments);
               };
             }()));
@@ -39792,7 +39791,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
     }, _callee58, this);
   }));
 
-  return function isAeadSupported(_x118) {
+  return function isAeadSupported(_x121) {
     return _ref66.apply(this, arguments);
   };
 }();
@@ -39865,16 +39864,25 @@ function Key(packetlist) {
     return new Key(packetlist);
   }
   // same data as in packetlist but in structured form
-  this.primaryKey = null;
+  this.keyPacket = null;
   this.revocationSignatures = [];
   this.directSignatures = [];
   this.users = [];
   this.subKeys = [];
   this.packetlist2structure(packetlist);
-  if (!this.primaryKey || !this.users.length) {
+  if (!this.keyPacket || !this.users.length) {
     throw new Error('Invalid key: need at least key and user ID packet');
   }
 }
+
+Object.defineProperty(Key.prototype, 'primaryKey', {
+  get: function get() {
+    return this.keyPacket;
+  },
+
+  configurable: true,
+  enumerable: true
+});
 
 /**
  * Transforms packetlist to structured key data
@@ -39888,8 +39896,8 @@ Key.prototype.packetlist2structure = function (packetlist) {
     switch (packetlist[i].tag) {
       case _enums2.default.packet.publicKey:
       case _enums2.default.packet.secretKey:
-        this.primaryKey = packetlist[i];
-        primaryKeyId = this.primaryKey.getKeyId();
+        this.keyPacket = packetlist[i];
+        primaryKeyId = this.getKeyId();
         break;
       case _enums2.default.packet.userid:
       case _enums2.default.packet.userAttribute:
@@ -39957,7 +39965,7 @@ Key.prototype.packetlist2structure = function (packetlist) {
  */
 Key.prototype.toPacketlist = function () {
   var packetlist = new _packet2.default.List();
-  packetlist.push(this.primaryKey);
+  packetlist.push(this.keyPacket);
   packetlist.concat(this.revocationSignatures);
   packetlist.concat(this.directSignatures);
   this.users.map(function (user) {
@@ -39973,35 +39981,34 @@ Key.prototype.toPacketlist = function () {
  * Returns packetlist containing all public or private subkey packets matching keyId;
  * If keyId is not present, returns all subkey packets.
  * @param  {type/keyid} keyId
- * @returns {module:packet.List}
+ * @returns {Array<SubKey>}
  */
-Key.prototype.getSubkeyPackets = function () {
+Key.prototype.getSubkeys = function () {
   var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-  var packets = new _packet2.default.List();
+  var subKeys = [];
   this.subKeys.forEach(function (subKey) {
-    if (!keyId || subKey.subKey.getKeyId().equals(keyId, true)) {
-      packets.push(subKey.subKey);
+    if (!keyId || subKey.getKeyId().equals(keyId, true)) {
+      subKeys.push(subKey);
     }
   });
-  return packets;
+  return subKeys;
 };
 
 /**
  * Returns a packetlist containing all public or private key packets matching keyId.
  * If keyId is not present, returns all key packets starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {module:packet.List}
+ * @returns {Array<Key|SubKey>}
  */
-Key.prototype.getKeyPackets = function () {
+Key.prototype.getKeys = function () {
   var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-  var packets = new _packet2.default.List();
-  if (!keyId || this.primaryKey.getKeyId().equals(keyId, true)) {
-    packets.push(this.primaryKey);
+  var keys = [];
+  if (!keyId || this.getKeyId().equals(keyId, true)) {
+    keys.push(this);
   }
-  packets.concat(this.getSubkeyPackets(keyId));
-  return packets;
+  return keys.concat(this.getSubkeys(keyId));
 };
 
 /**
@@ -40009,8 +40016,8 @@ Key.prototype.getKeyPackets = function () {
  * @returns {Array<module:type/keyid>}
  */
 Key.prototype.getKeyIds = function () {
-  return this.getKeyPackets().map(function (keyPacket) {
-    return keyPacket.getKeyId();
+  return this.getKeys().map(function (key) {
+    return key.getKeyId();
   });
 };
 
@@ -40031,7 +40038,7 @@ Key.prototype.getUserIds = function () {
  * @returns {Boolean}
  */
 Key.prototype.isPublic = function () {
-  return this.primaryKey.tag === _enums2.default.packet.publicKey;
+  return this.keyPacket.tag === _enums2.default.packet.publicKey;
 };
 
 /**
@@ -40039,7 +40046,7 @@ Key.prototype.isPublic = function () {
  * @returns {Boolean}
  */
 Key.prototype.isPrivate = function () {
-  return this.primaryKey.tag === _enums2.default.packet.secretKey;
+  return this.keyPacket.tag === _enums2.default.packet.secretKey;
 };
 
 /**
@@ -40107,25 +40114,24 @@ function isValidSigningKeyPacket(keyPacket, signature) {
 }
 
 /**
- * Returns first key packet or key packet by given keyId that is available for signing and verification
+ * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
- * @returns {Promise<module:packet.SecretSubkey|
- *                   module:packet.SecretKey|null>} key packet or null if no signing key has been found
+ * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKeyPacket = function () {
+Key.prototype.getSigningKey = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
     var keyId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-    var primaryKey, i, bindingSignature, primaryUser;
+    var primaryKey, subKeys, i, bindingSignature, primaryUser;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             _context.next = 3;
             return this.verifyPrimaryKey(date, userId);
 
@@ -40134,67 +40140,70 @@ Key.prototype.getSigningKeyPacket = function () {
             _context.t1 = _enums2.default.keyStatus.valid;
 
             if (!(_context.t0 === _context.t1)) {
-              _context.next = 25;
+              _context.next = 26;
               break;
             }
 
+            subKeys = this.subKeys.slice().sort(function (a, b) {
+              return b.created - a.created;
+            });
             i = 0;
 
-          case 7:
-            if (!(i < this.subKeys.length)) {
-              _context.next = 20;
+          case 8:
+            if (!(i < subKeys.length)) {
+              _context.next = 21;
               break;
             }
 
-            if (!(!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
-              _context.next = 17;
+            if (!(!keyId || subKeys[i].getKeyId().equals(keyId))) {
+              _context.next = 18;
               break;
             }
 
-            _context.next = 11;
-            return this.subKeys[i].verify(primaryKey, date);
+            _context.next = 12;
+            return subKeys[i].verify(primaryKey, date);
 
-          case 11:
+          case 12:
             _context.t2 = _context.sent;
             _context.t3 = _enums2.default.keyStatus.valid;
 
             if (!(_context.t2 === _context.t3)) {
-              _context.next = 17;
+              _context.next = 18;
               break;
             }
 
-            bindingSignature = getLatestSignature(this.subKeys[i].bindingSignatures, date);
+            bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
 
-            if (!isValidSigningKeyPacket(this.subKeys[i].subKey, bindingSignature, date)) {
-              _context.next = 17;
+            if (!isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+              _context.next = 18;
               break;
             }
 
-            return _context.abrupt('return', this.subKeys[i].subKey);
+            return _context.abrupt('return', subKeys[i]);
 
-          case 17:
+          case 18:
             i++;
-            _context.next = 7;
+            _context.next = 8;
             break;
 
-          case 20:
-            _context.next = 22;
+          case 21:
+            _context.next = 23;
             return this.getPrimaryUser(date, userId);
 
-          case 22:
+          case 23:
             primaryUser = _context.sent;
 
             if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
-              _context.next = 25;
+              _context.next = 26;
               break;
             }
 
-            return _context.abrupt('return', primaryKey);
-
-          case 25:
-            return _context.abrupt('return', null);
+            return _context.abrupt('return', this);
 
           case 26:
+            return _context.abrupt('return', null);
+
+          case 27:
           case 'end':
             return _context.stop();
         }
@@ -40214,26 +40223,23 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
 }
 
 /**
- * Returns first key packet or key packet by given keyId that is available for encryption or decryption
+ * Returns last created key or key by given keyId that is available for encryption or decryption
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
- * @returns {Promise<module:packet.PublicSubkey|
- *                   module:packet.SecretSubkey|
- *                   module:packet.SecretKey|
- *                   module:packet.PublicKey|null>} key packet or null if no encryption key has been found
+ * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
  * @async
  */
-Key.prototype.getEncryptionKeyPacket = function () {
+Key.prototype.getEncryptionKey = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(keyId) {
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-    var primaryKey, i, bindingSignature, primaryUser;
+    var primaryKey, subKeys, i, bindingSignature, primaryUser;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             _context2.next = 3;
             return this.verifyPrimaryKey(date, userId);
 
@@ -40242,67 +40248,72 @@ Key.prototype.getEncryptionKeyPacket = function () {
             _context2.t1 = _enums2.default.keyStatus.valid;
 
             if (!(_context2.t0 === _context2.t1)) {
-              _context2.next = 25;
+              _context2.next = 26;
               break;
             }
 
+            // V4: by convention subkeys are preferred for encryption service
+            // V3: keys MUST NOT have subkeys
+            subKeys = this.subKeys.slice().sort(function (a, b) {
+              return b.created - a.created;
+            });
             i = 0;
 
-          case 7:
-            if (!(i < this.subKeys.length)) {
-              _context2.next = 20;
+          case 8:
+            if (!(i < subKeys.length)) {
+              _context2.next = 21;
               break;
             }
 
-            if (!(!keyId || this.subKeys[i].subKey.getKeyId().equals(keyId))) {
-              _context2.next = 17;
+            if (!(!keyId || subKeys[i].getKeyId().equals(keyId))) {
+              _context2.next = 18;
               break;
             }
 
-            _context2.next = 11;
-            return this.subKeys[i].verify(primaryKey, date);
+            _context2.next = 12;
+            return subKeys[i].verify(primaryKey, date);
 
-          case 11:
+          case 12:
             _context2.t2 = _context2.sent;
             _context2.t3 = _enums2.default.keyStatus.valid;
 
             if (!(_context2.t2 === _context2.t3)) {
-              _context2.next = 17;
+              _context2.next = 18;
               break;
             }
 
-            bindingSignature = getLatestSignature(this.subKeys[i].bindingSignatures, date);
+            bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
 
-            if (!isValidEncryptionKeyPacket(this.subKeys[i].subKey, bindingSignature, date)) {
-              _context2.next = 17;
+            if (!isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+              _context2.next = 18;
               break;
             }
 
-            return _context2.abrupt('return', this.subKeys[i].subKey);
+            return _context2.abrupt('return', subKeys[i]);
 
-          case 17:
+          case 18:
             i++;
-            _context2.next = 7;
+            _context2.next = 8;
             break;
 
-          case 20:
-            _context2.next = 22;
+          case 21:
+            _context2.next = 23;
             return this.getPrimaryUser(date, userId);
 
-          case 22:
+          case 23:
             primaryUser = _context2.sent;
 
             if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
-              _context2.next = 25;
+              _context2.next = 26;
               break;
             }
 
-            return _context2.abrupt('return', primaryKey);
-
-          case 25:
-            return _context2.abrupt('return', null);
+            return _context2.abrupt('return', this);
 
           case 26:
+            return _context2.abrupt('return', null);
+
+          case 27:
           case 'end':
             return _context2.stop();
         }
@@ -40325,7 +40336,7 @@ Key.prototype.getEncryptionKeyPacket = function () {
 Key.prototype.encrypt = function () {
   var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(passphrases) {
     var keyId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-    var keyPackets;
+    var keys;
     return _regenerator2.default.wrap(function _callee4$(_context4) {
       while (1) {
         switch (_context4.prev = _context4.next) {
@@ -40338,11 +40349,11 @@ Key.prototype.encrypt = function () {
             throw new Error("Nothing to encrypt in a public key");
 
           case 2:
-            keyPackets = this.getKeyPackets(keyId);
+            keys = this.getKeys(keyId);
 
-            passphrases = _util2.default.isArray(passphrases) ? passphrases : new Array(keyPackets.length).fill(passphrases);
+            passphrases = _util2.default.isArray(passphrases) ? passphrases : new Array(keys.length).fill(passphrases);
 
-            if (!(passphrases.length !== keyPackets.length)) {
+            if (!(passphrases.length !== keys.length)) {
               _context4.next = 6;
               break;
             }
@@ -40350,20 +40361,19 @@ Key.prototype.encrypt = function () {
             throw new Error("Invalid number of passphrases for key");
 
           case 6:
-            return _context4.abrupt('return', _promise2.default.all(keyPackets.map(function () {
-              var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(keyPacket, i) {
+            return _context4.abrupt('return', _promise2.default.all(keys.map(function () {
+              var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(key, i) {
+                var keyPacket;
                 return _regenerator2.default.wrap(function _callee3$(_context3) {
                   while (1) {
                     switch (_context3.prev = _context3.next) {
                       case 0:
-                        _context3.next = 2;
+                        keyPacket = key.keyPacket;
+                        _context3.next = 3;
                         return keyPacket.encrypt(passphrases[i]);
 
-                      case 2:
-                        _context3.next = 4;
-                        return keyPacket.clearPrivateParams();
-
-                      case 4:
+                      case 3:
+                        keyPacket.clearPrivateParams();
                         return _context3.abrupt('return', keyPacket);
 
                       case 5:
@@ -40418,8 +40428,8 @@ Key.prototype.decrypt = function () {
             passphrases = _util2.default.isArray(passphrases) ? passphrases : [passphrases];
 
             _context7.next = 5;
-            return _promise2.default.all(this.getKeyPackets(keyId).map(function () {
-              var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee6(keyPacket) {
+            return _promise2.default.all(this.getKeys(keyId).map(function () {
+              var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee6(key) {
                 var decrypted, error;
                 return _regenerator2.default.wrap(function _callee6$(_context6) {
                   while (1) {
@@ -40436,7 +40446,7 @@ Key.prototype.decrypt = function () {
                                   case 0:
                                     _context5.prev = 0;
                                     _context5.next = 3;
-                                    return keyPacket.decrypt(passphrase);
+                                    return key.keyPacket.decrypt(passphrase);
 
                                   case 3:
                                     decrypted = true;
@@ -40524,7 +40534,7 @@ Key.prototype.isRevoked = function () {
       while (1) {
         switch (_context8.prev = _context8.next) {
           case 0:
-            return _context8.abrupt('return', isDataRevoked(this.primaryKey, { key: this.primaryKey }, this.revocationSignatures, signature, key, date));
+            return _context8.abrupt('return', isDataRevoked(this.keyPacket, { key: this.keyPacket }, this.revocationSignatures, signature, key, date));
 
           case 1:
           case 'end':
@@ -40558,7 +40568,7 @@ Key.prototype.verifyPrimaryKey = function () {
       while (1) {
         switch (_context9.prev = _context9.next) {
           case 0:
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             // check for key revocation signatures
 
             _context9.next = 3;
@@ -40633,46 +40643,87 @@ Key.prototype.verifyPrimaryKey = function () {
 }();
 
 /**
- * Returns the expiration time of the primary key or Infinity if key does not expire
+ * Returns the latest date when the key can be used for encrypting, signing, or both, depending on the `capabilities` paramater.
+ * When `capabilities` is null, defaults to returning the expiry date of the primary key.
+ * Returns Infinity if the key doesn't expire.
+ * @param  {encrypt|sign|encrypt_sign} capabilities, optional
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Object} userId, optional user ID
  * @returns {Promise<Date>}
  * @async
  */
-Key.prototype.getExpirationTime = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10() {
-  var primaryUser, selfCert, keyExpiry, sigExpiry;
-  return _regenerator2.default.wrap(function _callee10$(_context10) {
-    while (1) {
-      switch (_context10.prev = _context10.next) {
-        case 0:
-          if (!(this.primaryKey.version === 3)) {
-            _context10.next = 2;
-            break;
-          }
+Key.prototype.getExpirationTime = function () {
+  var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(capabilities, keyId, userId) {
+    var primaryUser, selfCert, keyExpiry, sigExpiry, expiry, encryptExpiry, signExpiry;
+    return _regenerator2.default.wrap(function _callee10$(_context10) {
+      while (1) {
+        switch (_context10.prev = _context10.next) {
+          case 0:
+            if (!(this.keyPacket.version === 3)) {
+              _context10.next = 2;
+              break;
+            }
 
-          return _context10.abrupt('return', getExpirationTime(this.primaryKey));
+            return _context10.abrupt('return', getExpirationTime(this.keyPacket));
 
-        case 2:
-          if (!(this.primaryKey.version >= 4)) {
-            _context10.next = 10;
-            break;
-          }
+          case 2:
+            if (!(this.keyPacket.version >= 4)) {
+              _context10.next = 21;
+              break;
+            }
 
-          _context10.next = 5;
-          return this.getPrimaryUser(null);
+            _context10.next = 5;
+            return this.getPrimaryUser(null);
 
-        case 5:
-          primaryUser = _context10.sent;
-          selfCert = primaryUser.selfCertification;
-          keyExpiry = getExpirationTime(this.primaryKey, selfCert);
-          sigExpiry = selfCert.getExpirationTime();
-          return _context10.abrupt('return', keyExpiry < sigExpiry ? keyExpiry : sigExpiry);
+          case 5:
+            primaryUser = _context10.sent;
+            selfCert = primaryUser.selfCertification;
+            keyExpiry = getExpirationTime(this.keyPacket, selfCert);
+            sigExpiry = selfCert.getExpirationTime();
+            expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
 
-        case 10:
-        case 'end':
-          return _context10.stop();
+            if (!(capabilities === 'encrypt' || capabilities === 'encrypt_sign')) {
+              _context10.next = 15;
+              break;
+            }
+
+            _context10.next = 13;
+            return this.getEncryptionKey(keyId, null, userId);
+
+          case 13:
+            encryptExpiry = _context10.sent.getExpirationTime();
+
+            if (encryptExpiry < expiry) expiry = encryptExpiry;
+
+          case 15:
+            if (!(capabilities === 'sign' || capabilities === 'encrypt_sign')) {
+              _context10.next = 20;
+              break;
+            }
+
+            _context10.next = 18;
+            return this.getSigningKey(keyId, null, userId);
+
+          case 18:
+            signExpiry = _context10.sent.getExpirationTime();
+
+            if (signExpiry < expiry) expiry = signExpiry;
+
+          case 20:
+            return _context10.abrupt('return', expiry);
+
+          case 21:
+          case 'end':
+            return _context10.stop();
+        }
       }
-    }
-  }, _callee10, this);
-}));
+    }, _callee10, this);
+  }));
+
+  return function (_x25, _x26, _x27) {
+    return _ref11.apply(this, arguments);
+  };
+}();
 
 /**
  * Returns primary user and most significant (latest valid) self signature
@@ -40726,7 +40777,7 @@ Key.prototype.getPrimaryUser = function () {
               return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
             }).pop();
             user = primaryUser.user, cert = primaryUser.selfCertification;
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             dataToVerify = { userid: user.userId, key: primaryKey };
             // skip if certificates is invalid, revoked, or expired
             // eslint-disable-next-line no-await-in-loop
@@ -40831,7 +40882,7 @@ Key.prototype.update = function () {
             return _context16.abrupt('return');
 
           case 6:
-            if (!(this.primaryKey.getFingerprint() !== key.primaryKey.getFingerprint())) {
+            if (!(this.getFingerprint() !== key.getFingerprint())) {
               _context16.next = 8;
               break;
             }
@@ -40847,7 +40898,7 @@ Key.prototype.update = function () {
             // check for equal subkey packets
             equal = this.subKeys.length === key.subKeys.length && this.subKeys.every(function (destSubKey) {
               return key.subKeys.some(function (srcSubKey) {
-                return destSubKey.subKey.getFingerprint() === srcSubKey.subKey.getFingerprint();
+                return destSubKey.getFingerprint() === srcSubKey.getFingerprint();
               });
             });
 
@@ -40859,12 +40910,12 @@ Key.prototype.update = function () {
             throw new Error('Cannot update public key with private key if subkey mismatch');
 
           case 12:
-            this.primaryKey = key.primaryKey;
+            this.keyPacket = key.keyPacket;
 
           case 13:
             _context16.next = 15;
             return mergeSignatures(key, this, 'revocationSignatures', function (srcRevSig) {
-              return isDataRevoked(_this.primaryKey, _this, [srcRevSig], null, key.primaryKey);
+              return isDataRevoked(_this.keyPacket, _this, [srcRevSig], null, key.keyPacket);
             });
 
           case 15:
@@ -40894,7 +40945,7 @@ Key.prototype.update = function () {
                                     }
 
                                     _context12.next = 3;
-                                    return dstUser.update(srcUser, _this.primaryKey);
+                                    return dstUser.update(srcUser, _this.keyPacket);
 
                                   case 3:
                                     found = true;
@@ -40907,7 +40958,7 @@ Key.prototype.update = function () {
                             }, _callee12, _this);
                           }));
 
-                          return function (_x29) {
+                          return function (_x32) {
                             return _ref16.apply(this, arguments);
                           };
                         }()));
@@ -40925,7 +40976,7 @@ Key.prototype.update = function () {
                 }, _callee13, _this);
               }));
 
-              return function (_x28) {
+              return function (_x31) {
                 return _ref15.apply(this, arguments);
               };
             }()));
@@ -40947,13 +40998,13 @@ Key.prototype.update = function () {
                               while (1) {
                                 switch (_context14.prev = _context14.next) {
                                   case 0:
-                                    if (!(srcSubKey.subKey.getFingerprint() === dstSubKey.subKey.getFingerprint())) {
+                                    if (!(srcSubKey.getFingerprint() === dstSubKey.getFingerprint())) {
                                       _context14.next = 4;
                                       break;
                                     }
 
                                     _context14.next = 3;
-                                    return dstSubKey.update(srcSubKey, _this.primaryKey);
+                                    return dstSubKey.update(srcSubKey, _this.keyPacket);
 
                                   case 3:
                                     found = true;
@@ -40966,7 +41017,7 @@ Key.prototype.update = function () {
                             }, _callee14, _this);
                           }));
 
-                          return function (_x31) {
+                          return function (_x34) {
                             return _ref18.apply(this, arguments);
                           };
                         }()));
@@ -40984,7 +41035,7 @@ Key.prototype.update = function () {
                 }, _callee15, _this);
               }));
 
-              return function (_x30) {
+              return function (_x33) {
                 return _ref17.apply(this, arguments);
               };
             }()));
@@ -40997,7 +41048,7 @@ Key.prototype.update = function () {
     }, _callee16, this);
   }));
 
-  return function (_x27) {
+  return function (_x30) {
     return _ref14.apply(this, arguments);
   };
 }();Key.prototype.revoke = function () {
@@ -41022,11 +41073,11 @@ Key.prototype.update = function () {
             throw new Error('Need private key for revoking');
 
           case 2:
-            dataToSign = { key: this.primaryKey };
+            dataToSign = { key: this.keyPacket };
             key = new Key(this.toPacketlist());
             _context19.t0 = key.revocationSignatures;
             _context19.next = 7;
-            return createSignaturePacket(dataToSign, null, this.primaryKey, {
+            return createSignaturePacket(dataToSign, null, this.keyPacket, {
               signatureType: _enums2.default.signature.key_revocation,
               reasonForRevocationFlag: _enums2.default.write(_enums2.default.reasonForRevocation, reasonForRevocationFlag),
               reasonForRevocationString: reasonForRevocationString
@@ -41093,7 +41144,7 @@ Key.prototype.applyRevocationCertificate = function () {
             throw new Error('Could not find revocation signature packet');
 
           case 6:
-            if (revocationSignature.issuerKeyId.equals(this.primaryKey.getKeyId())) {
+            if (revocationSignature.issuerKeyId.equals(this.getKeyId())) {
               _context20.next = 8;
               break;
             }
@@ -41110,7 +41161,7 @@ Key.prototype.applyRevocationCertificate = function () {
 
           case 10:
             _context20.next = 12;
-            return revocationSignature.verify(this.primaryKey, { key: this.primaryKey });
+            return revocationSignature.verify(this.keyPacket, { key: this.keyPacket });
 
           case 12:
             if (_context20.sent) {
@@ -41134,7 +41185,7 @@ Key.prototype.applyRevocationCertificate = function () {
     }, _callee20, this);
   }));
 
-  return function (_x39) {
+  return function (_x42) {
     return _ref23.apply(this, arguments);
   };
 }();
@@ -41180,7 +41231,7 @@ Key.prototype.signPrimaryUser = function () {
 
           case 10:
             _context21.next = 12;
-            return user.sign(this.primaryKey, privateKeys);
+            return user.sign(this.keyPacket, privateKeys);
 
           case 12:
             userSign = _context21.sent;
@@ -41197,7 +41248,7 @@ Key.prototype.signPrimaryUser = function () {
     }, _callee21, this);
   }));
 
-  return function (_x40) {
+  return function (_x43) {
     return _ref24.apply(this, arguments);
   };
 }();
@@ -41219,7 +41270,7 @@ Key.prototype.signAllUsers = function () {
             key = new Key(this.toPacketlist());
             _context22.next = 4;
             return _promise2.default.all(this.users.map(function (user) {
-              return user.sign(that.primaryKey, privateKeys);
+              return user.sign(that.keyPacket, privateKeys);
             }));
 
           case 4:
@@ -41234,7 +41285,7 @@ Key.prototype.signAllUsers = function () {
     }, _callee22, this);
   }));
 
-  return function (_x41) {
+  return function (_x44) {
     return _ref26.apply(this, arguments);
   };
 }();
@@ -41256,7 +41307,7 @@ Key.prototype.verifyPrimaryUser = function () {
       while (1) {
         switch (_context23.prev = _context23.next) {
           case 0:
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             _context23.next = 3;
             return this.getPrimaryUser();
 
@@ -41322,7 +41373,7 @@ Key.prototype.verifyPrimaryUser = function () {
     }, _callee23, this);
   }));
 
-  return function (_x42) {
+  return function (_x45) {
     return _ref27.apply(this, arguments);
   };
 }();
@@ -41345,7 +41396,7 @@ Key.prototype.verifyAllUsers = function () {
         switch (_context25.prev = _context25.next) {
           case 0:
             results = [];
-            primaryKey = this.primaryKey;
+            primaryKey = this.keyPacket;
             _context25.next = 4;
             return _promise2.default.all(this.users.map(function () {
               var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(user) {
@@ -41401,7 +41452,7 @@ Key.prototype.verifyAllUsers = function () {
                 }, _callee24, this);
               }));
 
-              return function (_x44) {
+              return function (_x47) {
                 return _ref30.apply(this, arguments);
               };
             }()));
@@ -41417,7 +41468,7 @@ Key.prototype.verifyAllUsers = function () {
     }, _callee25, this);
   }));
 
-  return function (_x43) {
+  return function (_x46) {
     return _ref29.apply(this, arguments);
   };
 }();
@@ -41470,7 +41521,7 @@ User.prototype.sign = function () {
             _context27.next = 4;
             return _promise2.default.all(privateKeys.map(function () {
               var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(privateKey) {
-                var signingKeyPacket;
+                var signingKey;
                 return _regenerator2.default.wrap(function _callee26$(_context26) {
                   while (1) {
                     switch (_context26.prev = _context26.next) {
@@ -41483,7 +41534,7 @@ User.prototype.sign = function () {
                         throw new Error('Need private key for signing');
 
                       case 2:
-                        if (!(privateKey.primaryKey.getFingerprint() === primaryKey.getFingerprint())) {
+                        if (!(privateKey.getFingerprint() === primaryKey.getFingerprint())) {
                           _context26.next = 4;
                           break;
                         }
@@ -41492,34 +41543,26 @@ User.prototype.sign = function () {
 
                       case 4:
                         _context26.next = 6;
-                        return privateKey.getSigningKeyPacket();
+                        return privateKey.getSigningKey();
 
                       case 6:
-                        signingKeyPacket = _context26.sent;
+                        signingKey = _context26.sent;
 
-                        if (signingKeyPacket) {
+                        if (signingKey) {
                           _context26.next = 9;
                           break;
                         }
 
-                        throw new Error('Could not find valid signing key packet in key ' + privateKey.primaryKey.getKeyId().toHex());
+                        throw new Error('Could not find valid signing key packet in key ' + privateKey.getKeyId().toHex());
 
                       case 9:
-                        if (signingKeyPacket.isDecrypted) {
-                          _context26.next = 11;
-                          break;
-                        }
-
-                        throw new Error('Private key is not decrypted.');
-
-                      case 11:
-                        return _context26.abrupt('return', createSignaturePacket(dataToSign, privateKey, signingKeyPacket, {
+                        return _context26.abrupt('return', createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
                           // Most OpenPGP implementations use generic certification (0x10)
                           signatureType: _enums2.default.signature.cert_generic,
                           keyFlags: [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data]
                         }));
 
-                      case 12:
+                      case 10:
                       case 'end':
                         return _context26.stop();
                     }
@@ -41527,7 +41570,7 @@ User.prototype.sign = function () {
                 }, _callee26, this);
               }));
 
-              return function (_x47) {
+              return function (_x50) {
                 return _ref32.apply(this, arguments);
               };
             }()));
@@ -41548,7 +41591,7 @@ User.prototype.sign = function () {
     }, _callee27, this);
   }));
 
-  return function (_x45, _x46) {
+  return function (_x48, _x49) {
     return _ref31.apply(this, arguments);
   };
 }();
@@ -41586,7 +41629,7 @@ User.prototype.isRevoked = function () {
     }, _callee28, this);
   }));
 
-  return function (_x48, _x49, _x50) {
+  return function (_x51, _x52, _x53) {
     return _ref33.apply(this, arguments);
   };
 }();User.prototype.verifyCertificate = function () {
@@ -41603,7 +41646,7 @@ User.prototype.isRevoked = function () {
             _context31.next = 5;
             return _promise2.default.all(keys.map(function () {
               var _ref36 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee30(key) {
-                var keyPacket;
+                var signingKey;
                 return _regenerator2.default.wrap(function _callee30$(_context30) {
                   while (1) {
                     switch (_context30.prev = _context30.next) {
@@ -41619,10 +41662,10 @@ User.prototype.isRevoked = function () {
 
                       case 2:
                         _context30.next = 4;
-                        return key.getSigningKeyPacket(keyid, date);
+                        return key.getSigningKey(keyid, date);
 
                       case 4:
-                        keyPacket = _context30.sent;
+                        signingKey = _context30.sent;
                         _context30.t0 = certificate.revoked;
 
                         if (_context30.t0) {
@@ -41631,7 +41674,7 @@ User.prototype.isRevoked = function () {
                         }
 
                         _context30.next = 9;
-                        return that.isRevoked(primaryKey, certificate, keyPacket);
+                        return that.isRevoked(primaryKey, certificate, signingKey.keyPacket);
 
                       case 9:
                         _context30.t0 = _context30.sent;
@@ -41653,7 +41696,7 @@ User.prototype.isRevoked = function () {
                         }
 
                         _context30.next = 16;
-                        return certificate.verify(keyPacket, dataToVerify);
+                        return certificate.verify(signingKey.keyPacket, dataToVerify);
 
                       case 16:
                         _context30.t1 = _context30.sent;
@@ -41685,7 +41728,7 @@ User.prototype.isRevoked = function () {
                 }, _callee30, this);
               }));
 
-              return function (_x62) {
+              return function (_x65) {
                 return _ref36.apply(this, arguments);
               };
             }()));
@@ -41704,7 +41747,7 @@ User.prototype.isRevoked = function () {
     }, _callee31, this);
   }));
 
-  return function (_x58, _x59, _x60) {
+  return function (_x61, _x62, _x63) {
     return _ref35.apply(this, arguments);
   };
 }();
@@ -41752,7 +41795,7 @@ User.prototype.verifyAllCertifications = function () {
                 }, _callee32, this);
               }));
 
-              return function (_x65) {
+              return function (_x68) {
                 return _ref38.apply(this, arguments);
               };
             }())));
@@ -41765,7 +41808,7 @@ User.prototype.verifyAllCertifications = function () {
     }, _callee33, this);
   }));
 
-  return function (_x63, _x64) {
+  return function (_x66, _x67) {
     return _ref37.apply(this, arguments);
   };
 }();
@@ -41867,7 +41910,7 @@ User.prototype.verify = function () {
                 }, _callee34, this);
               }));
 
-              return function (_x67) {
+              return function (_x70) {
                 return _ref40.apply(this, arguments);
               };
             }()));
@@ -41887,7 +41930,7 @@ User.prototype.verify = function () {
     }, _callee35, this);
   }));
 
-  return function (_x66) {
+  return function (_x69) {
     return _ref39.apply(this, arguments);
   };
 }();
@@ -41925,7 +41968,7 @@ User.prototype.update = function () {
                 }, _callee36, this);
               }));
 
-              return function (_x70) {
+              return function (_x73) {
                 return _ref42.apply(this, arguments);
               };
             }());
@@ -41948,7 +41991,7 @@ User.prototype.update = function () {
     }, _callee37, this);
   }));
 
-  return function (_x68, _x69) {
+  return function (_x71, _x72) {
     return _ref41.apply(this, arguments);
   };
 }();
@@ -41961,7 +42004,7 @@ function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
     return new SubKey(subKeyPacket);
   }
-  this.subKey = subKeyPacket;
+  this.keyPacket = subKeyPacket;
   this.bindingSignatures = [];
   this.revocationSignatures = [];
 }
@@ -41972,7 +42015,7 @@ function SubKey(subKeyPacket) {
  */
 SubKey.prototype.toPacketlist = function () {
   var packetlist = new _packet2.default.List();
-  packetlist.push(this.subKey);
+  packetlist.push(this.keyPacket);
   packetlist.concat(this.revocationSignatures);
   packetlist.concat(this.bindingSignatures);
   return packetlist;
@@ -42000,7 +42043,7 @@ SubKey.prototype.isRevoked = function () {
           case 0:
             return _context38.abrupt('return', isDataRevoked(primaryKey, {
               key: primaryKey,
-              bind: this.subKey
+              bind: this.keyPacket
             }, this.revocationSignatures, signature, key, date));
 
           case 1:
@@ -42011,7 +42054,7 @@ SubKey.prototype.isRevoked = function () {
     }, _callee38, this);
   }));
 
-  return function (_x71, _x72, _x73) {
+  return function (_x74, _x75, _x76) {
     return _ref43.apply(this, arguments);
   };
 }();
@@ -42034,10 +42077,10 @@ SubKey.prototype.verify = function () {
         switch (_context39.prev = _context39.next) {
           case 0:
             that = this;
-            dataToVerify = { key: primaryKey, bind: this.subKey };
+            dataToVerify = { key: primaryKey, bind: this.keyPacket };
             // check for V3 expiration time
 
-            if (!(this.subKey.version === 3 && isDataExpired(this.subKey, null, date))) {
+            if (!(this.keyPacket.version === 3 && isDataExpired(this.keyPacket, null, date))) {
               _context39.next = 4;
               break;
             }
@@ -42111,7 +42154,7 @@ SubKey.prototype.verify = function () {
     }, _callee39, this);
   }));
 
-  return function (_x75) {
+  return function (_x78) {
     return _ref44.apply(this, arguments);
   };
 }();
@@ -42125,7 +42168,7 @@ SubKey.prototype.getExpirationTime = function () {
   var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
 
   var bindingSignature = getLatestSignature(this.bindingSignatures, date);
-  var keyExpiry = getExpirationTime(this.subKey, bindingSignature);
+  var keyExpiry = getExpirationTime(this.keyPacket, bindingSignature);
   var sigExpiry = bindingSignature.getExpirationTime();
   return keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
 };
@@ -42158,7 +42201,7 @@ SubKey.prototype.update = function () {
             return _context41.abrupt('return');
 
           case 6:
-            if (!(this.subKey.getFingerprint() !== subKey.subKey.getFingerprint())) {
+            if (!(this.getFingerprint() !== subKey.getFingerprint())) {
               _context41.next = 8;
               break;
             }
@@ -42167,12 +42210,12 @@ SubKey.prototype.update = function () {
 
           case 8:
             // key packet
-            if (this.subKey.tag === _enums2.default.packet.publicSubkey && subKey.subKey.tag === _enums2.default.packet.secretSubkey) {
-              this.subKey = subKey.subKey;
+            if (this.keyPacket.tag === _enums2.default.packet.publicSubkey && subKey.keyPacket.tag === _enums2.default.packet.secretSubkey) {
+              this.keyPacket = subKey.keyPacket;
             }
             // update missing binding signatures
             that = this;
-            dataToVerify = { key: primaryKey, bind: that.subKey };
+            dataToVerify = { key: primaryKey, bind: that.keyPacket };
             _context41.next = 13;
             return mergeSignatures(subKey, this, 'bindingSignatures', function () {
               var _ref46 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee40(srcBindSig) {
@@ -42240,7 +42283,7 @@ SubKey.prototype.update = function () {
                 }, _callee40, this);
               }));
 
-              return function (_x80) {
+              return function (_x83) {
                 return _ref46.apply(this, arguments);
               };
             }());
@@ -42259,7 +42302,7 @@ SubKey.prototype.update = function () {
     }, _callee41, this);
   }));
 
-  return function (_x78, _x79) {
+  return function (_x81, _x82) {
     return _ref45.apply(this, arguments);
   };
 }();
@@ -42287,8 +42330,8 @@ SubKey.prototype.revoke = function () {
       while (1) {
         switch (_context42.prev = _context42.next) {
           case 0:
-            dataToSign = { key: primaryKey, bind: this.subKey };
-            subKey = new SubKey(this.subKey);
+            dataToSign = { key: primaryKey, bind: this.keyPacket };
+            subKey = new SubKey(this.keyPacket);
             _context42.t0 = subKey.revocationSignatures;
             _context42.next = 5;
             return createSignaturePacket(dataToSign, null, primaryKey, {
@@ -42316,10 +42359,16 @@ SubKey.prototype.revoke = function () {
     }, _callee42, this);
   }));
 
-  return function (_x81) {
+  return function (_x84) {
     return _ref47.apply(this, arguments);
   };
 }();
+
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(function (name) {
+  Key.prototype[name] = SubKey.prototype[name] = function () {
+    return this.keyPacket[name]();
+  };
+});
 
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
@@ -42587,14 +42636,14 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:packet.SecretKey|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
- * @returns {Boolean} True if keypacket has the specified keyid
+ * @param {module:key.Key|module:key.SubKey} key The key to be checked
+ * @returns {Boolean} True if key has the specified keyid
  */
-function keyIdCheck(keyId, keypacket) {
+function keyIdCheck(keyId, key) {
   if (keyId.length === 16) {
-    return keyId === keypacket.getKeyId().toHex();
+    return keyId === key.getKeyId().toHex();
   }
-  return keyId === keypacket.getFingerprint();
+  return keyId === key.getFingerprint();
 }
 
 /**
@@ -42606,12 +42655,12 @@ function keyIdCheck(keyId, keypacket) {
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
   for (var i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys[i];
     }
     if (deep && this.keys[i].subKeys.length) {
       for (var j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j])) {
           return this.keys[i];
         }
       }
@@ -42645,7 +42694,7 @@ KeyArray.prototype.importKey = function () {
             key = imported.keys[i];
             // check if key already in key array
 
-            keyidHex = key.primaryKey.getKeyId().toHex();
+            keyidHex = key.getKeyId().toHex();
             keyFound = this.getForId(keyidHex);
 
             if (!keyFound) {
@@ -42701,7 +42750,7 @@ KeyArray.prototype.push = function (key) {
  */
 KeyArray.prototype.removeForId = function (keyId) {
   for (var i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys.splice(i, 1)[0];
     }
   }
@@ -42905,33 +42954,33 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
             _context11.next = 4;
             return _promise2.default.all(publicKeys.map(function () {
               var _ref9 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8(publicKey) {
-                var encryptionKeyPacket, pkESKeyPacket;
+                var encryptionKey, pkESKeyPacket;
                 return _regenerator2.default.wrap(function _callee8$(_context8) {
                   while (1) {
                     switch (_context8.prev = _context8.next) {
                       case 0:
                         _context8.next = 2;
-                        return publicKey.getEncryptionKeyPacket(undefined, date, userId);
+                        return publicKey.getEncryptionKey(undefined, date, userId);
 
                       case 2:
-                        encryptionKeyPacket = _context8.sent;
+                        encryptionKey = _context8.sent;
 
-                        if (encryptionKeyPacket) {
+                        if (encryptionKey) {
                           _context8.next = 5;
                           break;
                         }
 
-                        throw new Error('Could not find valid key packet for encryption in key ' + publicKey.primaryKey.getKeyId().toHex());
+                        throw new Error('Could not find valid key packet for encryption in key ' + publicKey.getKeyId().toHex());
 
                       case 5:
                         pkESKeyPacket = new _packet2.default.PublicKeyEncryptedSessionKey();
 
-                        pkESKeyPacket.publicKeyId = wildcard ? _keyid2.default.wildcard() : encryptionKeyPacket.getKeyId();
-                        pkESKeyPacket.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+                        pkESKeyPacket.publicKeyId = wildcard ? _keyid2.default.wildcard() : encryptionKey.getKeyId();
+                        pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
                         pkESKeyPacket.sessionKey = sessionKey;
                         pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
                         _context8.next = 12;
-                        return pkESKeyPacket.encrypt(encryptionKeyPacket);
+                        return pkESKeyPacket.encrypt(encryptionKey.keyPacket);
 
                       case 12:
                         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
@@ -43121,7 +43170,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
             _context16.next = 4;
             return _promise2.default.all(privateKeys.map(function () {
               var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(privateKey) {
-                var signingKeyPacket;
+                var signingKey;
                 return _regenerator2.default.wrap(function _callee15$(_context15) {
                   while (1) {
                     switch (_context15.prev = _context15.next) {
@@ -43135,20 +43184,20 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
 
                       case 2:
                         _context15.next = 4;
-                        return privateKey.getSigningKeyPacket(undefined, date, userId);
+                        return privateKey.getSigningKey(undefined, date, userId);
 
                       case 4:
-                        signingKeyPacket = _context15.sent;
+                        signingKey = _context15.sent;
 
-                        if (signingKeyPacket) {
+                        if (signingKey) {
                           _context15.next = 7;
                           break;
                         }
 
-                        throw new Error('Could not find valid signing key packet in key ' + privateKey.primaryKey.getKeyId().toHex());
+                        throw new Error('Could not find valid signing key packet in key ' + privateKey.getKeyId().toHex());
 
                       case 7:
-                        return _context15.abrupt('return', (0, _key.createSignaturePacket)(literalDataPacket, privateKey, signingKeyPacket, { signatureType: signatureType }, date, userId));
+                        return _context15.abrupt('return', (0, _key.createSignaturePacket)(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType: signatureType }, date, userId));
 
                       case 8:
                       case 'end':
@@ -43233,13 +43282,13 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
                                 switch (_context17.prev = _context17.next) {
                                   case 0:
                                     _context17.next = 2;
-                                    return key.getSigningKeyPacket(signature.issuerKeyId, date);
+                                    return key.getSigningKey(signature.issuerKeyId, date);
 
                                   case 2:
                                     result = _context17.sent;
 
                                     if (result) {
-                                      keyPacket = result;
+                                      keyPacket = result.keyPacket;
                                     }
 
                                   case 4:
@@ -43658,11 +43707,14 @@ Message.prototype.decryptSessionKeys = function () {
                   while (1) {
                     switch (_context5.prev = _context5.next) {
                       case 0:
-                        // TODO improve this
-                        privateKeyPackets = privateKeys.reduce(function (acc, privateKey) {
-                          return acc.concat(privateKey.getKeyPackets(keyPacket.publicKeyId));
-                        }, new _packet2.default.List());
-                        _context5.next = 3;
+                        privateKeyPackets = new _packet2.default.List();
+
+                        privateKeys.forEach(function (privateKey) {
+                          privateKeyPackets.concat(privateKey.getKeys(keyPacket.publicKeyId).map(function (key) {
+                            return key.keyPacket;
+                          }));
+                        });
+                        _context5.next = 4;
                         return _promise2.default.all(privateKeyPackets.map(function () {
                           var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(privateKeyPacket) {
                             return _regenerator2.default.wrap(function _callee4$(_context4) {
@@ -43677,7 +43729,7 @@ Message.prototype.decryptSessionKeys = function () {
                                     return _context4.abrupt('return');
 
                                   case 2:
-                                    if (privateKeyPacket.isDecrypted) {
+                                    if (privateKeyPacket.isDecrypted()) {
                                       _context4.next = 4;
                                       break;
                                     }
@@ -43713,7 +43765,7 @@ Message.prototype.decryptSessionKeys = function () {
                           };
                         }()));
 
-                      case 3:
+                      case 4:
                       case 'end':
                         return _context5.stop();
                     }
@@ -44013,7 +44065,7 @@ Message.prototype.encrypt = function () {
             _context13.next = 10;
             return _promise2.default.all((0, _from2.default)(privateKeys).reverse().map(function () {
               var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(privateKey, i) {
-                var signingKeyPacket, onePassSig;
+                var signingKey, onePassSig;
                 return _regenerator2.default.wrap(function _callee12$(_context12) {
                   while (1) {
                     switch (_context12.prev = _context12.next) {
@@ -44027,30 +44079,30 @@ Message.prototype.encrypt = function () {
 
                       case 2:
                         _context12.next = 4;
-                        return privateKey.getSigningKeyPacket(undefined, date, userId);
+                        return privateKey.getSigningKey(undefined, date, userId);
 
                       case 4:
-                        signingKeyPacket = _context12.sent;
+                        signingKey = _context12.sent;
 
-                        if (signingKeyPacket) {
+                        if (signingKey) {
                           _context12.next = 7;
                           break;
                         }
 
-                        throw new Error('Could not find valid key packet for signing in key ' + privateKey.primaryKey.getKeyId().toHex());
+                        throw new Error('Could not find valid key packet for signing in key ' + privateKey.getKeyId().toHex());
 
                       case 7:
                         onePassSig = new _packet2.default.OnePassSignature();
 
                         onePassSig.type = signatureType;
                         _context12.next = 11;
-                        return (0, _key.getPreferredHashAlgo)(privateKey, signingKeyPacket, date, userId);
+                        return (0, _key.getPreferredHashAlgo)(privateKey, signingKey.keyPacket, date, userId);
 
                       case 11:
                         onePassSig.hashAlgorithm = _context12.sent;
 
-                        onePassSig.publicKeyAlgorithm = signingKeyPacket.algorithm;
-                        onePassSig.signingKeyId = signingKeyPacket.getKeyId();
+                        onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
+                        onePassSig.signingKeyId = signingKey.getKeyId();
                         if (i === privateKeys.length - 1) {
                           onePassSig.flags = 1;
                         }
@@ -47169,6 +47221,22 @@ PublicKey.prototype.writeOld = function () {
 };
 
 /**
+ * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+ * @returns {Boolean|null}
+ */
+PublicKey.prototype.isDecrypted = function () {
+  return null;
+};
+
+/**
+ * Returns the creation time of the key
+ * @returns {Date}
+ */
+PublicKey.prototype.getCreationTime = function () {
+  return this.created;
+};
+
+/**
  * Calculates the key id of the key
  * @returns {String} A 8 byte key id
  */
@@ -47674,9 +47742,9 @@ function SecretKey() {
    */
   this.encrypted = null;
   /**
-   * Indicator if secret-key data is available in decrypted form
+   * Indicator if secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
    */
-  this.isDecrypted = false;
+  this.isEncrypted = null;
 }
 
 SecretKey.prototype = new _public_key2.default();
@@ -47770,13 +47838,14 @@ SecretKey.prototype.read = function (bytes) {
 
   if (isEncrypted) {
     this.encrypted = bytes;
+    this.isEncrypted = true;
   } else {
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
     var privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
     this.params = this.params.concat(privParams);
-    this.isDecrypted = true;
+    this.isEncrypted = false;
   }
 };
 
@@ -47798,8 +47867,16 @@ SecretKey.prototype.write = function () {
 };
 
 /**
+ * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+ * @returns {Boolean|null}
+ */
+SecretKey.prototype.isDecrypted = function () {
+  return this.isEncrypted === false;
+};
+
+/**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
- * to key specifier. If the key is in a decrypted state (isDecrypted === true)
+ * to key specifier. If the key is in a decrypted state (isEncrypted === false)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
@@ -47813,7 +47890,7 @@ SecretKey.prototype.encrypt = function () {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            if (!(this.isDecrypted && !passphrase)) {
+            if (!(this.isDecrypted() && !passphrase)) {
               _context.next = 5;
               break;
             }
@@ -47918,7 +47995,7 @@ SecretKey.prototype.decrypt = function () {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            if (!this.isDecrypted) {
+            if (!this.isDecrypted()) {
               _context2.next = 2;
               break;
             }
@@ -48026,7 +48103,7 @@ SecretKey.prototype.decrypt = function () {
             privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
 
             this.params = this.params.concat(privParams);
-            this.isDecrypted = true;
+            this.isEncrypted = false;
             this.encrypted = null;
 
             return _context2.abrupt('return', true);
@@ -48058,7 +48135,7 @@ SecretKey.prototype.generate = function () {
           case 3:
             this.params = _context3.sent;
 
-            this.isDecrypted = true;
+            this.isEncrypted = false;
 
           case 5:
           case 'end':
@@ -48082,7 +48159,7 @@ SecretKey.prototype.clearPrivateParams = function () {
   }
   var algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
   this.params = this.params.slice(0, _crypto2.default.getPubKeyParamTypes(algo).length);
-  this.isDecrypted = false;
+  this.isEncrypted = true;
 };
 
 /**
