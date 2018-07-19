@@ -2250,4 +2250,33 @@ VYGdb3eNlV8CfoEC
       expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
     });
   });
+
+  it('create and add a new subkey with different password', function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    const total = privateKey.subKeys.length;
+    return privateKey.primaryKey.decrypt('hello world').then(function(){
+      return privateKey.generateSubkey({passphrase: 'otherpass'});
+    }).then(function(answer){
+      expect(answer).to.exist;
+      expect(privateKey.subKeys.length).to.be.equal(total+1);
+      const subkeyN = answer.subKey.params[0];
+      const pkN = privateKey.primaryKey.params[0];
+      // console.log(subkeyN.data[0], pkN.data[0], openpgp.util.nbits(subkeyN.data[0]), openpgp.util.nbits(pkN.data[0]))
+      expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
+      expect(answer).to.be.equal(privateKey.subKeys[total]);
+      expect(answer.subKey.algorithm).to.be.equal('rsa_encrypt_sign');
+      expect(answer.subKey.isDecrypted).to.be.false;
+      return answer;
+    }).then(function(answer){
+      return answer.subKey.decrypt('otherpass').then(function(){
+        expect(answer.subKey.isDecrypted).to.be.true;
+        return answer;
+      })
+    }).then(function(answer){
+      return answer.verify(privateKey.primaryKey);
+    }).then(function(answer){
+      expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
+    });
+  });
+
 }
