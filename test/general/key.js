@@ -1362,7 +1362,7 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
     expect(newKeyId.toHex()).to.equal(keyId.toHex());
   });
 
-  it('Testing key method getSubkeyPackets', function(done) {
+  it('Testing key method getSubkeys', function(done) {
     const pubKeys = openpgp.key.readArmored(pub_sig_test);
 
     expect(pubKeys).to.exist;
@@ -1376,7 +1376,7 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
 
     packetlist.read(openpgp.armor.decode(pub_sig_test).data);
 
-    const subkeys = pubKey.getSubkeyPackets();
+    const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
     expect(subkeys).to.have.length(2);
     expect(subkeys[0].getKeyId().equals(packetlist[8].getKeyId())).to.be.true;

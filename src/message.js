@@ -168,10 +168,10 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
       throw new Error('No public key encrypted session key packet found.');
     }
     await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
-      // TODO improve this
-      const privateKeyPackets = privateKeys.reduce(function(acc, privateKey) {
-        return acc.concat(privateKey.getKeyPackets(keyPacket.publicKeyId));
-      }, new packet.List());
+      const privateKeyPackets = new packet.List();
+      privateKeys.forEach(privateKey => {
+        privateKeyPackets.concat(privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket));
+      });
       await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
         if (!privateKeyPacket) {
          return;

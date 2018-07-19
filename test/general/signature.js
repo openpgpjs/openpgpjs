@@ -520,8 +520,8 @@ describe("Signature", function() {
 
     const keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey2.getKeyPackets(keyids[1])).to.not.be.empty;
-    expect(pubKey3.getKeyPackets(keyids[0])).to.not.be.empty;
+    expect(pubKey2.getKeys(keyids[1])).to.not.be.empty;
+    expect(pubKey3.getKeys(keyids[0])).to.not.be.empty;
 
     expect(sMsg.getText()).to.equal(plaintext);
 
@@ -566,8 +566,8 @@ describe("Signature", function() {
 
     const keyids = csMsg.getSigningKeyIds();
 
-    expect(pubKey2.getKeyPackets(keyids[0])).to.not.be.empty;
-    expect(pubKey3.getKeyPackets(keyids[1])).to.not.be.empty;
+    expect(pubKey2.getKeys(keyids[0])).to.not.be.empty;
+    expect(pubKey3.getKeys(keyids[1])).to.not.be.empty;
 
     return openpgp.verify({ publicKeys:[pubKey2, pubKey3], message:csMsg }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
@@ -607,7 +607,7 @@ zmuVOdNuWQqxT9Sqa84=
 
     const keyids = csMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeyPackets(keyids[0])).to.not.be.empty;
+    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
     return openpgp.verify({ publicKeys:[pubKey], message:csMsg }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
@@ -638,7 +638,7 @@ yYDnCgA=
 
     const keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeyPackets(keyids[0])).to.not.be.empty;
+    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
     return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;

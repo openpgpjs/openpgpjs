@@ -155,31 +155,30 @@ Key.prototype.toPacketlist = function() {
  * Returns packetlist containing all public or private subkey packets matching keyId;
  * If keyId is not present, returns all subkey packets.
  * @param  {type/keyid} keyId
- * @returns {module:packet.List}
+ * @returns {Array<SubKey>}
  */
-Key.prototype.getSubkeyPackets = function(keyId=null) {
-  const packets = new packet.List();
+Key.prototype.getSubkeys = function(keyId=null) {
+  const subKeys = [];
   this.subKeys.forEach(subKey => {
     if (!keyId || subKey.getKeyId().equals(keyId, true)) {
-      packets.push(subKey.keyPacket);
+      subKeys.push(subKey);
     }
   });
-  return packets;
+  return subKeys;
 };
 
 /**
  * Returns a packetlist containing all public or private key packets matching keyId.
  * If keyId is not present, returns all key packets starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {module:packet.List}
+ * @returns {Array<Key|SubKey>}
  */
-Key.prototype.getKeyPackets = function(keyId=null) {
-  const packets = new packet.List();
+Key.prototype.getKeys = function(keyId=null) {
+  const keys = [];
   if (!keyId || this.getKeyId().equals(keyId, true)) {
-    packets.push(this.keyPacket);
+    keys.push(this);
   }
-  packets.concat(this.getSubkeyPackets(keyId));
-  return packets;
+  return keys.concat(this.getSubkeys(keyId));
 };
 
 /**
@@ -187,7 +186,7 @@ Key.prototype.getKeyPackets = function(keyId=null) {
  * @returns {Array<module:type/keyid>}
  */
 Key.prototype.getKeyIds = function() {
-  return this.getKeyPackets().map(keyPacket => keyPacket.getKeyId());
+  return this.getKeys().map(key => key.getKeyId());
 };
 
 /**
@@ -374,13 +373,14 @@ Key.prototype.encrypt = async function(passphrases, keyId=null) {
     throw new Error("Nothing to encrypt in a public key");
   }
 
-  const keyPackets = this.getKeyPackets(keyId);
-  passphrases = util.isArray(passphrases) ? passphrases : new Array(keyPackets.length).fill(passphrases);
-  if (passphrases.length !== keyPackets.length) {
+  const keys = this.getKeys(keyId);
+  passphrases = util.isArray(passphrases) ? passphrases : new Array(keys.length).fill(passphrases);
+  if (passphrases.length !== keys.length) {
     throw new Error("Invalid number of passphrases for key");
   }
 
-  return Promise.all(keyPackets.map(async function(keyPacket, i) {
+  return Promise.all(keys.map(async function(key, i) {
+    const { keyPacket } = key;
     await keyPacket.encrypt(passphrases[i]);
     keyPacket.clearPrivateParams();
     return keyPacket;
@@ -400,12 +400,12 @@ Key.prototype.decrypt = async function(passphrases, keyId=null) {
   }
   passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
 
-  const results = await Promise.all(this.getKeyPackets(keyId).map(async function(keyPacket) {
+  const results = await Promise.all(this.getKeys(keyId).map(async function(key) {
     let decrypted = false;
     let error = null;
     await Promise.all(passphrases.map(async function(passphrase) {
       try {
-        await keyPacket.decrypt(passphrase);
+        await key.keyPacket.decrypt(passphrase);
         decrypted = true;
       } catch (e) {
         error = e;
@@ -1326,7 +1326,7 @@ export async function reformat(options) {
   options = sanitizeKeyOptions(options);
 
   try {
-    const isDecrypted = options.privateKey.getKeyPackets().every(keyPacket => keyPacket.isDecrypted());
+    const isDecrypted = options.privateKey.getKeys().every(key => key.isDecrypted());
     if (!isDecrypted) {
       await options.privateKey.decrypt();
     }
