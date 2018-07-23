@@ -275,7 +275,7 @@
       "dev": true
     },
     "asmcrypto.js": {
-      "version": "github:openpgpjs/asmcrypto#f5c9e523e0ed41f8c52609e9f9259d9b5ceb4201",
+      "version": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
       "from": "github:openpgpjs/asmcrypto"
     },
     "asn1": {
@@ -1830,7 +1830,7 @@
       "dev": true
     },
     "compressjs": {
-      "version": "github:openpgpjs/compressjs#ce5ccbede61f075926081e29573c8a79ddf10d88",
+      "version": "github:openpgpjs/compressjs#bfbb371a34d1750afa34bfa49156461acdab79a9",
       "from": "github:openpgpjs/compressjs",
       "requires": {
         "amdefine": "~1.0.0",

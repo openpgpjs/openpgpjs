@@ -26,7 +26,7 @@ module.exports = function(grunt) {
           },
           cacheFile: 'browserify-cache.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'],
           transform: [
             ["babelify", {
               global: true,
@@ -55,7 +55,7 @@ module.exports = function(grunt) {
           },
           cacheFile: 'browserify-cache-debug.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'],
           transform: [
             ["babelify", {
               global: true,
