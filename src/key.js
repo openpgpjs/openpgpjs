@@ -484,6 +484,9 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
   }
   if (this.keyPacket.version >= 4) {
     const primaryUser = await this.getPrimaryUser(null);
+    if (!primaryUser) {
+      throw new Error('Could not find primary user');
+    }
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
     const sigExpiry = selfCert.getExpirationTime();
