@@ -790,7 +790,7 @@ Key.prototype.generateSubkey = async function(options){
   if (defaultAlgo.indexOf('rsa') === 0) {
     defaultOptions.numBits = this.primaryKey.params[0].bitLength();
   }
-  else if (defaultAlgo.indexOf('ec') === 0 || defaultAlgo.indexOf('ed') === 0) {
+  else if (/^(ecdh|ecdsa|eddsa)$/.test(defaultAlgo)) {
     defaultOptions.curve = this.primaryKey.params[0].getName();
   }
   else {
