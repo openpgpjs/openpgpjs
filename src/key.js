@@ -1099,17 +1099,19 @@ SubKey.generate = async function(options) {
 
 /**
  * create the subkey binding signature
+ * @param  {module:packet.PublicSubkey|module:packet.SecretSubkey} subkey The sub key packet
  * @param  {module:packet.SecretKey} primaryKey The primary key packet
+ * @param  {module:key.Key|module:key.SubKey} options.privateKey (optional) privateKey
  * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
- * @param  {Object} userId                   (optional) user ID
+ * @param  {Object} options.userId                   (optional) user ID
  *
  * @returns {Promise<module:packet.Signature>} return the signature if successful.
  * @async
  */
-SubKey.prototype.bindSignature = async function(primaryKey, options) {
+SubKey.bindSignature = async function(subkey, primaryKey, options={}) {
   const subkeySignatureOpts = {};
   subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
   subkeySignatureOpts.keyFlags = [options.sign ? enums.keyFlags.sign_data : enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
@@ -1117,11 +1119,29 @@ SubKey.prototype.bindSignature = async function(primaryKey, options) {
     subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
     subkeySignatureOpts.keyNeverExpires = false;
   }
-  const dataToSign = {key: primaryKey, bind: this.subKey};
+  const dataToSign = {key: primaryKey, bind: subkey};
   const subkeySignaturePacket = await createSignaturePacket(
-    dataToSign, this, primaryKey,
+    dataToSign, options.privateKey, primaryKey,
     subkeySignatureOpts, options.date, options.userId
   );
+  return subkeySignaturePacket;
+};
+
+/**
+ * create the subkey binding signature
+ * @param  {module:packet.SecretKey} primaryKey The primary key packet
+ * @param  {Boolean} options.sign (optional) defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Object} options.userId                   (optional) user ID
+ *
+ * @returns {Promise<module:packet.Signature>} return the signature if successful.
+ * @async
+ */
+SubKey.prototype.bindSignature = async function(primaryKey, options={}) {
+  options = Object.assign(options, {privateKey: this});
+  const subkeySignaturePacket = await SubKey.bindSignature(this.subKey, primaryKey, options);
   this.bindingSignatures.push(subkeySignaturePacket);
   return subkeySignaturePacket;
 };
@@ -1551,19 +1571,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const dataToSign = {};
-    dataToSign.key = secretKeyPacket;
-    dataToSign.bind = secretSubkeyPacket;
-    const subkeySignaturePacket = new packet.Signature(subkeyOptions.date);
-    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-    subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretSubkeyPacket);
-    subkeySignaturePacket.keyFlags = subkeyOptions.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-    if (subkeyOptions.keyExpirationTime > 0) {
-      subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
-      subkeySignaturePacket.keyNeverExpires = false;
-    }
-    await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
+    const subkeySignaturePacket = await SubKey.bindSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions);
 
     return { secretSubkeyPacket, subkeySignaturePacket};
   })).then(packets => {
