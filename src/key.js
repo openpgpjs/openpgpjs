@@ -1112,7 +1112,7 @@ SubKey.generate = async function(options) {
 SubKey.prototype.bindSignature = async function(primaryKey, options) {
   const subkeySignatureOpts = {};
   subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
-  subkeySignatureOpts.keyFlags = options.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  subkeySignatureOpts.keyFlags = [options.sign ? enums.keyFlags.sign_data : enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
   if (options.keyExpirationTime > 0) {
     subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
     subkeySignatureOpts.keyNeverExpires = false;

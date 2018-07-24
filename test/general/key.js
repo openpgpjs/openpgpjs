@@ -2251,31 +2251,43 @@ VYGdb3eNlV8CfoEC
     });
   });
 
-  it('create and add a new subkey with different password', function() {
-    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
-    const total = privateKey.subKeys.length;
-    return privateKey.primaryKey.decrypt('hello world').then(function(){
-      return privateKey.generateSubkey({passphrase: 'otherpass'});
+  it.only('get the signing subkey correctly', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
+    let privateKey;
+    let total;
+    let newSubkey;
+    return openpgp.generateKey(opt).then(function(key) {
+      privateKey = key.key;
+      total = privateKey.subKeys.length;
+      expect(total).to.be.equal(0);
+      return privateKey.generateSubkey({passphrase: '123', sign: true});
     }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
-      const subkeyN = answer.subKey.params[0];
-      const pkN = privateKey.primaryKey.params[0];
-      // console.log(subkeyN.data[0], pkN.data[0], openpgp.util.nbits(subkeyN.data[0]), openpgp.util.nbits(pkN.data[0]))
-      expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
       expect(answer).to.be.equal(privateKey.subKeys[total]);
-      expect(answer.subKey.algorithm).to.be.equal('rsa_encrypt_sign');
-      expect(answer.subKey.isDecrypted).to.be.false;
-      return answer;
-    }).then(function(answer){
-      return answer.subKey.decrypt('otherpass').then(function(){
-        expect(answer.subKey.isDecrypted).to.be.true;
-        return answer;
-      })
-    }).then(function(answer){
+      const subkeyOid = answer.subKey.params[0];
+      const pkOid = privateKey.primaryKey.params[0];
+      expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
+      expect(answer.subKey.algorithm).to.be.equal('eddsa');
+      newSubkey = answer.subKey;
       return answer.verify(privateKey.primaryKey);
     }).then(function(answer){
       expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
+      return privateKey.decrypt('123');
+    }).then(function(){
+      return privateKey.getSigningKeyPacket();
+    }).then(function(answer){
+      expect(answer).to.be.equal(newSubkey);
+      return openpgp.sign({data: 'the data to signed', privateKeys: privateKey, armor:false})
+    }).then(function(answer){
+      // console.log(newSubkey.getKeyId());
+      return answer.message.verify([privateKey.toPublic()]);
+    }).then(function(answer){
+      expect(answer).to.exist;
+      expect(answer.length).to.be.equal(1);
+      expect(answer[0].keyid).to.be.equal(newSubkey.getKeyId());
+      expect(answer[0].valid).to.be.true;
     });
   });
 
