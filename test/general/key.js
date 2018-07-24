@@ -1789,14 +1789,19 @@ VYGdb3eNlV8CfoEC
   it('Generate key - one signing subkey', function() {
     const userId = 'test <a@b.com>';
     const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{}, {sign: true}]};
+    let privateKey;
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
+      privateKey = key;
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.lengthOf(2);
       expect(key.subKeys[0].subKey.algorithm).to.equal('ecdh');
       expect(key.subKeys[1].subKey.algorithm).to.equal('eddsa');
+      return key.getSigningKeyPacket();
+    }).then(function(result){
+      expect(result).to.equal(privateKey.subKeys[1].subKey);
     });
   });
 
