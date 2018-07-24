@@ -594,14 +594,14 @@ Signature.prototype.toSign = function (type, data) {
       let packet;
       let tag;
 
-      if (data.userid !== undefined) {
+      if (data.userId) {
         tag = 0xB4;
-        packet = data.userid;
-      } else if (data.userattribute !== undefined) {
+        packet = data.userId;
+      } else if (data.userAttribute) {
         tag = 0xD1;
-        packet = data.userattribute;
+        packet = data.userAttribute;
       } else {
-        throw new Error('Either a userid or userattribute packet needs to be ' +
+        throw new Error('Either a userId or userAttribute packet needs to be ' +
           'supplied for certification.');
       }
 

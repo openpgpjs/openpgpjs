@@ -123,7 +123,7 @@ describe("Keyring", function() {
     const keys = keyring.getKeysForId(keyId);
     // we get public and private key
     expect(keys).to.exist.and.have.length(2);
-    expect(keys[0].primaryKey.getKeyId().toHex()).equals(keyId);
+    expect(keys[0].getKeyId().toHex()).equals(keyId);
   });
 
   it('publicKeys.getForId() - unknown id', function() {
@@ -134,7 +134,7 @@ describe("Keyring", function() {
   it('publicKeys.getForId() - valid id', function() {
     const key = keyring.publicKeys.getForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
+    expect(key.getKeyId().toHex()).equals(keyId);
   });
 
   it('privateKeys.getForId() - unknown id', function() {
@@ -145,7 +145,7 @@ describe("Keyring", function() {
   it('privateKeys.getForId() - valid id', function() {
     const key = keyring.privateKeys.getForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
+    expect(key.getKeyId().toHex()).equals(keyId);
   });
 
   it('publicKeys.getForId() - subkey id', function() {
@@ -156,7 +156,7 @@ describe("Keyring", function() {
   it('publicKeys.getForId() - deep, including subkeys - subkey id', function() {
     const key = keyring.publicKeys.getForId(subkeyId2, true);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
+    expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
   it('getKeysForId() - unknown fingerprint', function() {
@@ -167,7 +167,7 @@ describe("Keyring", function() {
   it('getKeysForId() - valid fingerprint', function() {
     const keys = keyring.getKeysForId(keyFingerP2);
     expect(keys).to.exist.and.have.length(1);
-    expect(keys[0].primaryKey.getKeyId().toHex()).equals(keyId2);
+    expect(keys[0].getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForId() - unknown fingerprint', function() {
@@ -178,7 +178,7 @@ describe("Keyring", function() {
   it('publicKeys.getForId() - valid fingerprint', function() {
     const key = keyring.publicKeys.getForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
+    expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForId() - subkey fingerprint', function() {
@@ -189,7 +189,7 @@ describe("Keyring", function() {
   it('publicKeys.getForId() - deep, including subkeys - subkey fingerprint', function() {
     const key = keyring.publicKeys.getForId(subkeyFingerP2, true);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
+    expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
   it('publicKeys.getForAddress() - unknown address', function() {
@@ -248,7 +248,7 @@ describe("Keyring", function() {
   it('publicKeys.removeForId() - valid id', function() {
     const key = keyring.publicKeys.removeForId(keyId);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId);
+    expect(key.getKeyId().toHex()).equals(keyId);
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
 
@@ -261,7 +261,7 @@ describe("Keyring", function() {
   it('publicKeys.removeForId() - valid fingerprint', function() {
     const key = keyring.publicKeys.removeForId(keyFingerP2);
     expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
-    expect(key.primaryKey.getKeyId().toHex()).equals(keyId2);
+    expect(key.getKeyId().toHex()).equals(keyId2);
     expect(keyring.publicKeys.keys).to.be.empty;
   });
 
@@ -272,7 +272,7 @@ describe("Keyring", function() {
     localstore3.storePublic([]);
     const key = openpgp.key.readArmored(pubkey).keys[0];
     localstore1.storePublic([key]);
-    expect(localstore2.loadPublic()[0].primaryKey.getKeyId().equals(key.primaryKey.getKeyId())).to.be.true;
+    expect(localstore2.loadPublic()[0].getKeyId().equals(key.getKeyId())).to.be.true;
     expect(localstore3.loadPublic()).to.have.length(0);
   });
 

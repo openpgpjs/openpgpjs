@@ -123,7 +123,7 @@ describe('X25519 Cryptography', function () {
     expect(pub).to.exist;
     expect(pub.err).to.not.exist;
     expect(pub.keys).to.have.length(1);
-    expect(pub.keys[0].primaryKey.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pub.keys[0].getKeyId().toHex()).to.equal(data[name].id);
     data[name].pub_key = pub.keys[0];
     return data[name].pub_key;
   }
@@ -136,7 +136,7 @@ describe('X25519 Cryptography', function () {
     expect(pk).to.exist;
     expect(pk.err).to.not.exist;
     expect(pk.keys).to.have.length(1);
-    expect(pk.keys[0].primaryKey.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pk.keys[0].getKeyId().toHex()).to.equal(data[name].id);
     expect(await pk.keys[0].decrypt(data[name].pass)).to.be.true;
     data[name].priv_key = pk.keys[0];
     return data[name].priv_key;
@@ -227,20 +227,20 @@ describe('X25519 Cryptography', function () {
         expect(firstKey.key).to.exist;
         expect(firstKey.key.primaryKey).to.exist;
         expect(firstKey.key.subKeys).to.have.length(1);
-        expect(firstKey.key.subKeys[0].subKey).to.exist;
+        expect(firstKey.key.subKeys[0].keyPacket).to.exist;
 
         const hi = firstKey.key;
         const primaryKey = hi.primaryKey;
-        const subKey = hi.subKeys[0].subKey;
-        expect(primaryKey.params[0].getName()).to.equal("ed25519");
-        expect(primaryKey.algorithm).to.equal('eddsa');
-        expect(subKey.params[0].getName()).to.equal('curve25519');
-        expect(subKey.algorithm).to.equal('ecdh');
+        const subKey = hi.subKeys[0];
+        expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
+        expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
+        expect(subKey.getAlgorithmInfo().curve).to.equal('curve25519');
+        expect(subKey.getAlgorithmInfo().algorithm).to.equal('ecdh');
 
         // Self Certificate is valid
         const user = hi.users[0];
         await expect(user.selfCertifications[0].verify(
-          primaryKey, { userid: user.userId, key: primaryKey }
+          primaryKey, { userId: user.userId, key: primaryKey }
         )).to.eventually.be.true;
         await expect(user.verifyCertificate(
           primaryKey, user.selfCertifications[0], [hi.toPublic()]
@@ -252,15 +252,15 @@ describe('X25519 Cryptography', function () {
         };
         return openpgp.generateKey(options).then(async function (secondKey) {
           const bye = secondKey.key;
-          expect(bye.primaryKey.params[0].getName()).to.equal('ed25519');
-          expect(bye.primaryKey.algorithm).to.equal('eddsa');
-          expect(bye.subKeys[0].subKey.params[0].getName()).to.equal('curve25519');
-          expect(bye.subKeys[0].subKey.algorithm).to.equal('ecdh');
+          expect(bye.getAlgorithmInfo().curve).to.equal('ed25519');
+          expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsa');
+          expect(bye.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+          expect(bye.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
 
           // Self Certificate is valid
           const user = bye.users[0];
           await expect(user.selfCertifications[0].verify(
-            bye.primaryKey, { userid: user.userId, key: bye.primaryKey }
+            bye.primaryKey, { userId: user.userId, key: bye.primaryKey }
           )).to.eventually.be.true;
           await expect(user.verifyCertificate(
             bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
@@ -270,7 +270,7 @@ describe('X25519 Cryptography', function () {
             // Hi trusts Bye!
             bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
               expect(trustedBye.users[0].otherCertifications[0].verify(
-                primaryKey, { userid: user.userId, key: bye.toPublic().primaryKey }
+                primaryKey, { userId: user.userId, key: bye.toPublic().primaryKey }
               )).to.eventually.be.true;
             }),
             // Signing message
@@ -539,7 +539,7 @@ describe('X25519 Cryptography', function () {
     expect(results.user).to.exist;
     const user = results.user;
     expect(user.selfCertifications[0].verify(
-      hi.primaryKey, {userid: user.userId, key: hi.primaryKey}
+      hi.primaryKey, {userId: user.userId, key: hi.primaryKey}
     )).to.eventually.be.true;
     expect(user.verifyCertificate(
       hi.primaryKey, user.selfCertifications[0], [hi]

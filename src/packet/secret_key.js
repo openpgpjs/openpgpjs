@@ -51,9 +51,9 @@ function SecretKey(date=new Date()) {
    */
   this.encrypted = null;
   /**
-   * Indicator if secret-key data is available in decrypted form
+   * Indicator if secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
    */
-  this.isDecrypted = false;
+  this.isEncrypted = null;
 }
 
 SecretKey.prototype = new publicKey();
@@ -149,13 +149,14 @@ SecretKey.prototype.read = function (bytes) {
 
   if (isEncrypted) {
     this.encrypted = bytes;
+    this.isEncrypted = true;
   } else {
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
     const privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
     this.params = this.params.concat(privParams);
-    this.isDecrypted = true;
+    this.isEncrypted = false;
   }
 };
 
@@ -176,10 +177,17 @@ SecretKey.prototype.write = function () {
   return util.concatUint8Array(arr);
 };
 
+/**
+ * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+ * @returns {Boolean|null}
+ */
+SecretKey.prototype.isDecrypted = function() {
+  return this.isEncrypted === false;
+};
 
 /**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
- * to key specifier. If the key is in a decrypted state (isDecrypted === true)
+ * to key specifier. If the key is in a decrypted state (isEncrypted === false)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
  * This can be used to remove passphrase protection after calling decrypt().
  * @param {String} passphrase
@@ -187,7 +195,7 @@ SecretKey.prototype.write = function () {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
-  if (this.isDecrypted && !passphrase) {
+  if (this.isDecrypted() && !passphrase) {
     this.encrypted = null;
     return false;
   } else if (!passphrase) {
@@ -242,7 +250,7 @@ function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
-  if (this.isDecrypted) {
+  if (this.isDecrypted()) {
     throw new Error('Key packet is already decrypted.');
   }
 
@@ -323,7 +331,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
 
   const privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
   this.params = this.params.concat(privParams);
-  this.isDecrypted = true;
+  this.isEncrypted = false;
   this.encrypted = null;
 
   return true;
@@ -332,7 +340,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
 SecretKey.prototype.generate = async function (bits, curve) {
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = await crypto.generateParams(algo, bits, curve);
-  this.isDecrypted = true;
+  this.isEncrypted = false;
 };
 
 /**
@@ -344,7 +352,7 @@ SecretKey.prototype.clearPrivateParams = function () {
   }
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = this.params.slice(0, crypto.getPubKeyParamTypes(algo).length);
-  this.isDecrypted = false;
+  this.isEncrypted = true;
 };
 
 /**
