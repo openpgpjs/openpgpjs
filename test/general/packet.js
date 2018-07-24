@@ -662,7 +662,7 @@ describe("Packet", function() {
     return Promise.all([
       expect(key[2].verify(key[0],
         {
-            userid: key[1],
+            userId: key[1],
             key: key[0]
         })).to.eventually.be.true,
       expect(key[4].verify(key[0],

@@ -536,7 +536,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   }).pop();
   const { user, selfCertification: cert } = primaryUser;
   const primaryKey = this.keyPacket;
-  const dataToVerify = { userid: user.userId , key: primaryKey };
+  const dataToVerify = { userId: user.userId, key: primaryKey };
   // skip if certificates is invalid, revoked, or expired
   // eslint-disable-next-line no-await-in-loop
   if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
@@ -828,8 +828,12 @@ User.prototype.toPacketlist = function() {
  * @async
  */
 User.prototype.sign = async function(primaryKey, privateKeys) {
-  const dataToSign = { userid: this.userId || this.userAttribute, key: primaryKey };
-  const user = new User(dataToSign.userid);
+  const dataToSign = {
+    userId: this.userId,
+    userAttribute: this.userAttribute,
+    key: primaryKey
+  };
+  const user = new User(dataToSign.userId || dataToSign.userAttribute);
   user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
@@ -869,7 +873,8 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
   return isDataRevoked(
     primaryKey, {
       key: primaryKey,
-      userid: this.userId || this.userAttribute
+      userId: this.userId,
+      userAttribute: this.userAttribute
     }, this.revocationSignatures, certificate, key, date
   );
 };
@@ -909,7 +914,11 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
 User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date=new Date()) {
   const that = this;
   const keyid = certificate.issuerKeyId;
-  const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  const dataToVerify = {
+    userId: this.userId,
+    userAttribute: this.userAttribute,
+    key: primaryKey
+  };
   const results = await Promise.all(keys.map(async function(key) {
     if (!key.getKeyIds().some(id => id.equals(keyid))) { return; }
     const signingKey = await key.getSigningKey(keyid, date);
@@ -961,7 +970,11 @@ User.prototype.verify = async function(primaryKey) {
     return enums.keyStatus.no_self_cert;
   }
   const that = this;
-  const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  const dataToVerify = {
+    userId: this.userId,
+    userAttribute: this.userAttribute,
+    key: primaryKey
+  };
   // TODO replace when Promise.some or Promise.any are implemented
   const results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.selfCertifications.map(async function(selfCertification) {
@@ -987,7 +1000,11 @@ User.prototype.verify = async function(primaryKey) {
  *          module:packet.SecretSubkey} primaryKey primary key used for validation
  */
 User.prototype.update = async function(user, primaryKey) {
-  const dataToVerify = { userid: this.userId || this.userAttribute, key: primaryKey };
+  const dataToVerify = {
+    userId: this.userId,
+    userAttribute: this.userAttribute,
+    key: primaryKey
+  };
   // self signatures
   await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
     return srcSelfSig.verified || srcSelfSig.verify(primaryKey, dataToVerify);
@@ -1391,7 +1408,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     userIdPacket.format(userId);
 
     const dataToSign = {};
-    dataToSign.userid = userIdPacket;
+    dataToSign.userId = userIdPacket;
     dataToSign.key = secretKeyPacket;
     const signaturePacket = new packet.Signature(options.date);
     signaturePacket.signatureType = enums.signature.cert_generic;

@@ -876,7 +876,7 @@ yYDnCgA=
 
   it('Verify V3 certification signature', function(done) {
     const pubKey = openpgp.key.readArmored(pub_v3).keys[0];
-    expect(pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userid: pubKey.users[0].userId})).to.eventually.be.true.notify(done);
+    expect(pubKey.users[0].selfCertifications[0].verify(pubKey.primaryKey, {key: pubKey.primaryKey, userId: pubKey.users[0].userId})).to.eventually.be.true.notify(done);
   });
 
   it('Write unhashed subpackets', function() {
@@ -1013,6 +1013,37 @@ yYDnCgA=
       expect(signatures[1].valid).to.be.true;
       expect(signatures[1].keyid.toHex()).to.equal(signerKey.getKeyId().toHex());
     });
+  });
+
+  it('Verify signed UserIDs and User Attributes', async function() {
+    const armoredKeyWithPhoto = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EW1CJGAEEAM+BzuFzcYk9HttmDbjGexQ8dfme074Q5PuHas3PBISPm0AwmnDM
+tzjlcrrg2VGuLqHvNF600w2ZgOo2gElNYCOas1q/fVFuIgJ4SUduNOEe/JnIW4uP
+iEGU9l6zOVVgTc/nGVpZdvHgvOL8nl9BKHtWEnMD3Du7UYAm+Avshu9jABEBAAG0
+AViI1AQTAQoAPhYhBKcH118Rrg0wLBrTk5IyMikCym+4BQJbUIkYAhsDBQkDwmcA
+BQsJCAcDBRUKCQgLBRYDAgEAAh4BAheAAAoJEJIyMikCym+4K8oEAJc7YFiNau6V
+HTVK4cTvWU5MuYiejejFZai4ELUJy+WF6cZYrLuF/z/kRt8B7hpumXChPCUlT0q7
+FWypQtA3leu83DGMXqhfS80h2S1+VLmDVVWKQXOwgOb44jT9F08bDU5QK08SkjF8
+/EirIy8ANzdwCA4rHytIS2yx6tLlthvX0cBwwG4BEAABAQAAAAAAAAAAAAAAAP/Y
+/+AAEEpGSUYAAQEAAAEAAQAA/9sAQwABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB
+AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB/9sAQwEBAQEB
+AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB
+AQEBAQEBAQEBAQEB/8AAEQgAAQABAwEiAAIRAQMRAf/EABUAAQEAAAAAAAAAAAAA
+AAAAAAAK/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABQBAQAAAAAAAAAAAAAAAAAA
+AAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwC/gAH/2YjUBBMB
+CgA+FiEEpwfXXxGuDTAsGtOTkjIyKQLKb7gFAltQimUCGwMFCQPCZwAFCwkIBwMF
+FQoJCAsFFgMCAQACHgECF4AACgkQkjIyKQLKb7gm/wQAiyZF89qr8hf3XQNJ6Ir/
+QtaniPcesjrYCIE47ZfeDYpBTPeiMm295o2dZXVJS4ItllYsplASw5DJiIMnQKlJ
+mbXakYFzzclTa/JrKzFYCy/DPT95xK+633omgrIUgJodizoKJE7XeB2U6aRUJJ4O
+iTuGu4fEU1UligAXSrZmCdE=
+=VK6I
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const key = openpgp.key.readArmored(armoredKeyWithPhoto).keys[0];
+    for (const user of key.users) {
+      expect(await user.verify(key.primaryKey)).to.equal(openpgp.enums.keyStatus.valid);
+    }
   });
 
 });
