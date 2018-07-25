@@ -233,7 +233,7 @@ export default {
               8) | await reader.readByte();
           }
         }
-        if (writer) {
+        if (writer && packet_length > 0) {
           let bytesRead = 0;
           while (true) {
             await writer.ready;

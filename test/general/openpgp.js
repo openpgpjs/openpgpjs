@@ -1306,6 +1306,8 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should encrypt and decrypt/verify with detached signature as input and detached flag not set for encryption', async function () {
+          const plaintext = "  \t┍ͤ޵၂༫዇◧˘˻ᙑ᎚⏴ំந⛑nٓኵΉⅶ⋋ŵ⋲΂ͽᣏ₅ᄶɼ┋⌔û᬴Ƚᔡᧅ≃ṱἆ⃷݂૿ӌ᰹෇ٹჵ⛇໶⛌  \t\n한국어/조선말";
+
           const privKeyDE = (await openpgp.key.readArmored(priv_key_de)).keys[0];
           await privKeyDE.decrypt(passphrase);
 
