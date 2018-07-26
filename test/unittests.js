@@ -37,7 +37,8 @@ describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
     afterEach(function () {
-      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100) {
+      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100
+        || openpgp.config.saucelabs) {
         window.scrollTo(0, document.body.scrollHeight);
       }
     });
