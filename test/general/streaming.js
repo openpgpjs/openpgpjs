@@ -240,7 +240,7 @@ function tests() {
       const msgAsciiArmored = encrypted.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
         if (value === '\n=' || value.length === 4) return; // Remove checksum
-        if (value.length > 1000) return value.slice(0, 499) + 'a' + value.slice(500);
+        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -276,7 +276,7 @@ function tests() {
 
       const msgAsciiArmored = encrypted.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
-        if (value.length > 1000) return value.slice(0, 499) + 'a' + value.slice(500);
+        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -288,7 +288,7 @@ function tests() {
       });
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
-      expect(await reader.peekBytes(10)).not.to.deep.equal(plaintext[0]);
+      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
@@ -313,7 +313,7 @@ function tests() {
 
       const msgAsciiArmored = encrypted.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
-        if (value.length > 1000) return value.slice(0, 499) + 'a' + value.slice(500);
+        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -324,7 +324,7 @@ function tests() {
       });
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
-      expect(await reader.peekBytes(10)).not.to.deep.equal(plaintext[0]);
+      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
@@ -349,7 +349,7 @@ function tests() {
 
       const msgAsciiArmored = signed.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
-        if (value.length > 1000) return value.slice(0, 499) + 'a' + value.slice(500);
+        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
         return value;
       }));
       const verified = await openpgp.verify({
@@ -359,7 +359,7 @@ function tests() {
       });
       expect(util.isStream(verified.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(verified.data);
-      expect(await reader.peekBytes(10)).not.to.deep.equal(plaintext[0]);
+      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(verified.signatures).to.exist.and.have.length(1);
