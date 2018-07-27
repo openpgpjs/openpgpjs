@@ -1,6 +1,6 @@
 
 /**
- * Generates a 50 character long javascript string out of the whole utf-8 range.
+ * Generates a 64 character long javascript string out of the whole utf-8 range.
  */
 function createSomeMessage(){
     const length = 50;
@@ -9,7 +9,7 @@ function createSomeMessage(){
         arr.push(String.fromCharCode(
             Math.floor(Math.random() * 10174) + 1));
     }
-    return arr.join('').replace(/\r/g, '\n');
+    return '  \t' + arr.join('').replace(/\r/g, '\n') + '  \t\n한국어/조선말';
 }
 
  module.exports = {

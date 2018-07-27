@@ -118,6 +118,8 @@ describe('Brainpool Cryptography', function () {
         'second test message',
         '',
         '-----BEGIN PGP SIGNATURE-----',
+        'Version: OpenPGP.js v3.1.0',
+        'Comment: https://openpgpjs.org',
         '',
         'wl4EARMKABAFAltbE34JEDfhaphrivmeAABaXQD+LzOhFxTqz8+IcaD3xzww',
         'EjEn0u7qgCFem9PHPD4wqAcA/1WQE3N7DIwRG45HFd+ZBo4vcuRkWK+Q6CHl',
@@ -125,6 +127,7 @@ describe('Brainpool Cryptography', function () {
         '=obwy',
         '-----END PGP SIGNATURE-----'
         ].join('\n')
+
     }
   };
   async function load_pub_key(name) {

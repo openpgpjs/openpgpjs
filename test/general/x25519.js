@@ -54,6 +54,8 @@ describe('X25519 Cryptography', function () {
         'Hi, Light wrote this!',
         '',
         '-----BEGIN PGP SIGNATURE-----',
+        'Version: OpenPGP.js v3.1.0',
+        'Comment: https://openpgpjs.org',
         '',
         'wl4EARYKABAFAltbFNAJEB7N8CbAJFgwAAAhcAEA5b2MIQNxQYj8TAMyuhZJ',
         'UvxEgPS8DU59Kxw5F9+oldQBAN4mA+SOJyTxEx4oyyLh+8RD27dqyeDpmXju',
@@ -178,7 +180,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
-    expect(result.data).to.equal(randomData);
+    expect(result.data).to.equal(openpgp.util.removeTrailingSpaces(randomData));
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
