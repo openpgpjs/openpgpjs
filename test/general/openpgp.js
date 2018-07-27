@@ -354,6 +354,18 @@ function withCompression(tests) {
 
 describe('OpenPGP.js public api tests', function() {
 
+  let rsaGenStub;
+  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
+
+  beforeEach(function() {
+    rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
+    rsaGenStub.returns(rsaGenValue);
+  });
+
+  afterEach(function() {
+    rsaGenStub.restore();
+  });
+
   describe('initWorker, getWorker, destroyWorker - unit tests', function() {
     afterEach(function() {
       openpgp.destroyWorker(); // cleanup worker in case of failure
@@ -373,18 +385,6 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - validate user ids', function() {
-    let rsaGenStub;
-    let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
-
-    beforeEach(function() {
-      rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
-      rsaGenStub.returns(rsaGenValue);
-    });
-
-    afterEach(function() {
-      rsaGenStub.restore();
-    });
-
     it('should fail for invalid user name', async function() {
       const opt = {
         userIds: [{ name: {}, email: 'text@example.com' }]
