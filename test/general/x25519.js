@@ -178,7 +178,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(randomData);
+    expect(result.data).to.equal(randomData);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -208,7 +208,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.decrypt({ privateKeys: nightPrivate, publicKeys: [lightPublic], message: message });
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(randomData);
+    expect(result.data).to.equal(randomData);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
