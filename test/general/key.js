@@ -2268,7 +2268,9 @@ VYGdb3eNlV8CfoEC
   it('create and add a new rsa subkey to a rsa key', function() {
     const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
     const total = privateKey.subKeys.length;
-    return privateKey.generateSubkey({passphrase: 'hello world'}).then(function(answer){
+    return privateKey.decrypt('hello world').then(function(answer){
+      return privateKey.generateSubkey();
+    }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
       const subkeyN = answer.keyPacket.params[0];
@@ -2284,13 +2286,13 @@ VYGdb3eNlV8CfoEC
 
   it('create and add a new ec subkey to a ec key', function() {
     const userId = 'test <a@b.com>';
-    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
+    const opt = {curve: 'curve25519', userIds: [userId], subkeys:[]};
     let privateKey;
     let total;
     return openpgp.generateKey(opt).then(function(key) {
       privateKey = key.key;
       total = privateKey.subKeys.length;
-      return privateKey.generateSubkey({passphrase: '123', sign: true});
+      return privateKey.generateSubkey({sign: true});
     }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
@@ -2309,7 +2311,9 @@ VYGdb3eNlV8CfoEC
     const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
     privateKey.subKeys = [];
     const total = privateKey.subKeys.length;
-    return privateKey.generateSubkey({passphrase: 'hello world', curve: 'ed25519'}).then(function(answer){
+    return privateKey.decrypt('hello world').then(function(answer){
+      return privateKey.generateSubkey({curve: 'ed25519'});
+    }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
       expect(answer).to.be.equal(privateKey.subKeys[total]);
@@ -2323,7 +2327,7 @@ VYGdb3eNlV8CfoEC
 
   it('sign/verify data with the new subkey correctly', function() {
     const userId = 'test <a@b.com>';
-    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
+    const opt = {curve: 'curve25519', userIds: [userId], subkeys:[]};
     let privateKey;
     let total;
     let newSubkey;
@@ -2331,7 +2335,9 @@ VYGdb3eNlV8CfoEC
       privateKey = key.key;
       total = privateKey.subKeys.length;
       expect(total).to.be.equal(0);
-      return privateKey.generateSubkey({passphrase: '123', sign: true});
+    //   return privateKey.decrypt('123');
+    // }).then(function(answer){
+      return privateKey.generateSubkey({sign: true});
     }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
@@ -2344,8 +2350,8 @@ VYGdb3eNlV8CfoEC
       return answer.verify(privateKey.primaryKey);
     }).then(function(answer){
       expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
-      return privateKey.decrypt('123');
-    }).then(function(){
+    //   return privateKey.decrypt('123');
+    // }).then(function(){
       return privateKey.getSigningKey();
     }).then(function(answer){
       expect(answer).to.be.equal(newSubkey);
@@ -2363,7 +2369,7 @@ VYGdb3eNlV8CfoEC
   it('encrypt/decrypt data with the new subkey correctly', function() {
     const userId = 'test <a@b.com>';
     const vData = 'the data to encrypted!';
-    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[]};
+    const opt = {curve: 'curve25519', userIds: [userId], subkeys:[]};
     let privateKey;
     let publicKey;
     let total;
@@ -2372,7 +2378,9 @@ VYGdb3eNlV8CfoEC
       privateKey = key.key;
       total = privateKey.subKeys.length;
       expect(total).to.be.equal(0);
-      return privateKey.generateSubkey({passphrase: '123'});
+    //   return privateKey.decrypt('123');
+    // }).then(function(answer){
+      return privateKey.generateSubkey();
     }).then(function(answer){
       expect(answer).to.exist;
       expect(privateKey.subKeys.length).to.be.equal(total+1);
@@ -2382,8 +2390,8 @@ VYGdb3eNlV8CfoEC
       return answer.verify(privateKey.primaryKey);
     }).then(function(answer){
       expect(answer).to.be.equal(openpgp.enums.keyStatus.valid);
-      return privateKey.decrypt('123');
-    }).then(function(){
+    //   return privateKey.decrypt('123');
+    // }).then(function(){
       return privateKey.getEncryptionKey();
     }).then(function(answer){
       expect(answer).to.be.equal(newSubkey);

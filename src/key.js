@@ -841,18 +841,22 @@ Key.prototype.addSubkey = async function(subkey, options={}){
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
-  let needRelocked;
 
   const secretKeyPacket = this.primaryKey;
-
   if (!secretKeyPacket.isDecrypted()) {
-    try {
-      await secretKeyPacket.decrypt(options.passphrase);
-      needRelocked = true;
-    } catch (err) {
-      throw new Error('Key not decrypted');
-    }
+    throw new Error('Key not decrypted');
   }
+
+  // let needRelocked;
+  // if (!secretKeyPacket.isDecrypted()) {
+  //   try {
+  //     await secretKeyPacket.decrypt(options.passphrase);
+  //     needRelocked = true;
+  //   } catch (err) {
+  //     throw new Error('Key not decrypted');
+  //   }
+  // }
+
   let subkeyPacket = subkey;
   if (subkey instanceof SubKey) {
     subkeyPacket = subkey.keyPacket;
@@ -870,10 +874,10 @@ Key.prototype.addSubkey = async function(subkey, options={}){
     subkeyPacket.clearPrivateParams();
   }
   this.subKeys.push(subkey);
-  if (needRelocked) {
-    await secretKeyPacket.encrypt(options.passphrase);
-    secretKeyPacket.clearPrivateParams();
-  }
+  // if (needRelocked) {
+  //   await secretKeyPacket.encrypt(options.passphrase);
+  //   secretKeyPacket.clearPrivateParams();
+  // }
   return subkey;
 };
 
