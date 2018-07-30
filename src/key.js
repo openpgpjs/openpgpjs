@@ -195,7 +195,7 @@ Key.prototype.getKeyIds = function() {
  */
 Key.prototype.getUserIds = function() {
   return this.users.map(user => {
-    return user.userId ? util.encode_utf8(user.userId.userid) : null;
+    return user.userId ? user.userId.userid : null;
   }).filter(userid => userid !== null);
 };
 

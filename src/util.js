@@ -309,28 +309,31 @@ export default {
   },
 
   /**
-   * Convert a native javascript string to a string of utf8 bytes
-   * @param {String} str The string to convert
-   * @returns {String} A valid squence of utf8 bytes
+   * Convert a native javascript string to a Uint8Array of utf8 bytes
+   * @param {String|ReadableStream} str The string to convert
+   * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes
    */
   encode_utf8: function (str) {
-    return stream.transform(str, value => unescape(encodeURIComponent(value)));
+    const encoder = new TextEncoder('utf-8');
+    // eslint-disable-next-line no-inner-declarations
+    function process(value, lastChunk=false) {
+      return encoder.encode(value, { stream: !lastChunk });
+    }
+    return stream.transform(str, process, () => process('', true));
   },
 
   /**
-   * Convert a string of utf8 bytes to a native javascript string
-   * @param {String} utf8 A valid squence of utf8 bytes
-   * @returns {String} A native javascript string
+   * Convert a Uint8Array of utf8 bytes to a native javascript string
+   * @param {Uint8Array|ReadableStream} utf8 A valid squence of utf8 bytes
+   * @returns {String|ReadableStream} A native javascript string
    */
   decode_utf8: function (utf8) {
-    if (typeof utf8 !== 'string') {
-      throw new Error('Parameter "utf8" is not of type string');
+    const decoder = new TextDecoder('utf-8');
+    // eslint-disable-next-line no-inner-declarations
+    function process(value, lastChunk=false) {
+      return decoder.decode(value, { stream: !lastChunk });
     }
-    try {
-      return decodeURIComponent(escape(utf8));
-    } catch (e) {
-      return utf8;
-    }
+    return stream.transform(utf8, process, () => process(new Uint8Array(), true));
   },
 
   /**
@@ -627,10 +630,6 @@ export default {
     return (util.nodeRequire('stream') || {}).Readable;
   },
 
-  getNodeTextDecoder: function() {
-    return (util.nodeRequire('util') || {}).TextDecoder;
-  },
-
   getHardwareConcurrency: function() {
     if (util.detectNode()) {
       const os = util.nodeRequire('os');
@@ -678,14 +677,24 @@ export default {
    * Normalize line endings to \r\n
    */
   canonicalizeEOL: function(text) {
-    return stream.transform(text, value => value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
+    return stream.transform(util.nativeEOL(text), value => value.replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
   },
 
   /**
    * Convert line endings from canonicalized \r\n to native \n
    */
   nativeEOL: function(text) {
-    return text.replace(/\r\n/g, "\n");
+    let lastChar = '';
+    return stream.transform(text, value => {
+      value = lastChar + value;
+      if (value[value.length - 1] === '\r') {
+        lastChar = '\r';
+        value = value.slice(0, -1);
+      } else {
+        lastChar = '';
+      }
+      return value.replace(/\r\n/g, '\n');
+    }, () => lastChar);
   },
 
   /**

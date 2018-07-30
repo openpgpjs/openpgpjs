@@ -525,7 +525,7 @@ Signature.prototype.toSign = function (type, data) {
       // normalize EOL to \r\n
       text = util.canonicalizeEOL(text);
       // encode UTF8
-      return util.str_to_Uint8Array(util.encode_utf8(text));
+      return util.encode_utf8(text);
     }
     case t.standalone:
       return new Uint8Array(0);

@@ -431,7 +431,7 @@ function tests() {
       });
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
-      expect((await reader.peekBytes(256)).toString('utf8').substr(0, 64)).to.equal(plaintext[0]);
+      expect((await reader.peekBytes(plaintext[0].length * 4)).toString('utf8').substr(0, plaintext[0].length)).to.equal(plaintext[0]);
       if (i > 10) throw new Error('Data did not arrive early.');
       expect((await reader.readToEnd()).toString('utf8')).to.equal(util.concat(plaintext));
     } finally {

@@ -707,7 +707,7 @@ yYDnCgA=
     await privKey.decrypt('hello world');
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.signature.readArmored(signed.signature);
-      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.str_to_Uint8Array(openpgp.util.encode_utf8(plaintext))), signature: signature });
+      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.encode_utf8(plaintext)), signature: signature });
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.signatures).to.have.length(1);
@@ -740,7 +740,7 @@ yYDnCgA=
     await Promise.all([privKey.primaryKey.decrypt('hello world'), privKey.subKeys[0].keyPacket.decrypt('hello world')]);
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.signature.readArmored(signed.signature);
-      return openpgp.encrypt({ message: openpgp.message.fromBinary(openpgp.util.str_to_Uint8Array(openpgp.util.encode_utf8(plaintext))), publicKeys: [pubKey], signature })
+      return openpgp.encrypt({ message: openpgp.message.fromBinary(openpgp.util.encode_utf8(plaintext)), publicKeys: [pubKey], signature })
     }).then(async ({ data }) => {
       const csMsg = await openpgp.message.readArmored(data);
       return openpgp.decrypt({ message: csMsg, privateKeys: [ privKey ], publicKeys: [ pubKey ] });

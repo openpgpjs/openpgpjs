@@ -64,23 +64,7 @@ Literal.prototype.setText = function(text, format='utf8') {
  */
 Literal.prototype.getText = function(clone=false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
-    let lastChar = '';
-    const decoder = new TextDecoder('utf-8');
-    // eslint-disable-next-line no-inner-declarations
-    function process(value, lastChunk=false) {
-      // decode UTF8
-      const text = lastChar + decoder.decode(value, { stream: !lastChunk });
-      // normalize EOL to \n
-      const normalized = util.nativeEOL(text);
-      // if last char is \r, store it for the next chunk so we can normalize \r\n
-      if (normalized[normalized.length - 1] === '\r') {
-        lastChar = '\r';
-        return normalized.slice(0, -1);
-      }
-      lastChar = '';
-      return normalized;
-    }
-    this.text = stream.transform(this.getBytes(clone), process, () => process(new Uint8Array(), true));
+    this.text = util.nativeEOL(util.decode_utf8(this.getBytes(clone)));
   }
   return this.text;
 };
@@ -104,10 +88,8 @@ Literal.prototype.setBytes = function(bytes, format) {
  */
 Literal.prototype.getBytes = function(clone=false) {
   if (this.data === null) {
-    // normalize EOL to \r\n
-    const text = util.canonicalizeEOL(this.text);
-    // encode UTF8
-    this.data = util.str_to_Uint8Array(util.encode_utf8(text));
+    // normalize EOL to \r\n and encode UTF8
+    this.data = util.encode_utf8(util.canonicalizeEOL(this.text));
   }
   if (clone) {
     return stream.passiveClone(this.data);
@@ -146,7 +128,7 @@ Literal.prototype.read = async function(bytes) {
     const format = enums.read(enums.literal, await reader.readByte());
 
     const filename_len = await reader.readByte();
-    this.filename = util.decode_utf8(util.Uint8Array_to_str(await reader.readBytes(filename_len)));
+    this.filename = util.decode_utf8(await reader.readBytes(filename_len));
 
     this.date = util.readDate(await reader.readBytes(4));
 
@@ -162,7 +144,7 @@ Literal.prototype.read = async function(bytes) {
  * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
-  const filename = util.str_to_Uint8Array(util.encode_utf8(this.filename));
+  const filename = util.encode_utf8(this.filename);
   const filename_length = new Uint8Array([filename.length]);
 
   const format = new Uint8Array([enums.write(enums.literal, this.format)]);
