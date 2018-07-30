@@ -767,7 +767,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('GCM mode', tests, {
-      if: true,
+      if: !openpgp.config.saucelabs,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_protect_version = 0;
@@ -801,7 +801,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('OCB mode', tests, {
-      if: true,
+      if: !openpgp.config.saucelabs,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_mode = openpgp.enums.aead.ocb;

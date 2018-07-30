@@ -1,3 +1,5 @@
+/* globals tryTests: true */
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
 const stub = require('sinon/lib/sinon/stub');
@@ -1652,21 +1654,20 @@ describe('Key', function() {
 
   describe('V4', versionSpecificTests);
 
-  describe('V5', function() {
-    let aead_protectVal;
-    let aead_protect_versionVal;
-    beforeEach(function() {
+  let aead_protectVal;
+  let aead_protect_versionVal;
+  tryTests('V5', versionSpecificTests, {
+    if: !openpgp.config.saucelabs,
+    beforeEach: function() {
       aead_protectVal = openpgp.config.aead_protect;
       aead_protect_versionVal = openpgp.config.aead_protect_version;
       openpgp.config.aead_protect = true;
       openpgp.config.aead_protect_version = 4;
-    });
-    afterEach(function() {
+    },
+    afterEach: function() {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
-    });
-
-    versionSpecificTests();
+    }
   });
 
   it('Parsing armored text with RSA key and ECC subkey', async function() {
