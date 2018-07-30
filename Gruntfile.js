@@ -302,14 +302,16 @@ module.exports = function(grunt) {
   }
 
   // Build tasks
-  grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
+  grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('default', ['clean', 'copy:bzip2', 'browserify', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build', ['clean', 'copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build_debug', ['copy:bzip2', 'browserify:openpgp_debug', 'browserify:worker']);
   grunt.registerTask('documentation', ['jsdoc']);
+  grunt.registerTask('default', ['build']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['default', 'copy:browsertest', 'connect:test', 'watch']);
+  grunt.registerTask('saucelabs', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['build', 'copy:browsertest', 'connect:test', 'watch']);
 
 };

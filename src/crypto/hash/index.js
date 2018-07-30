@@ -10,9 +10,9 @@
  * @module crypto/hash
  */
 
-import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
-import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
-import { Sha512 } from 'asmcrypto.js/dist_es8/hash/sha512/sha512';
+import { Sha1 } from 'asmcrypto.js/dist_es5/hash/sha1/sha1';
+import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
+import { Sha512 } from 'asmcrypto.js/dist_es5/hash/sha512/sha512';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
