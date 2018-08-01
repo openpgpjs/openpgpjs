@@ -53,7 +53,7 @@ describe('Elliptic Curve Cryptography', function () {
         '=C3TW',
         '-----END PGP PRIVATE KEY BLOCK-----'
       ].join('\n'),
-      message: 'Shall I hear more, or shall I speak at this?'
+      message: 'Shall I hear more, or shall I speak at this?\n'
     },
     juliet: {
       id: '64116021959bdfe0',
@@ -98,19 +98,21 @@ describe('Elliptic Curve Cryptography', function () {
         '=QvXN',
         '-----END PGP PRIVATE KEY BLOCK-----'
       ].join('\n'),
-      message: 'O Romeo, Romeo! Wherefore art thou Romeo?',
+      message: 'O Romeo, Romeo! Wherefore art thou Romeo?\n',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
         'Hash: SHA256',
         '',
         'O Romeo, Romeo! Wherefore art thou Romeo?',
+        '',
         '-----BEGIN PGP SIGNATURE-----',
         'Version: GnuPG v2',
         'Comment: GnuPG v2.1+libgcrypt-1.7',
         '',
-        'iF4EARMIAAYFAlYxF8oACgkQZBFgIZWb3+BfTwD/b1yKtFnKrRjELuD6/gOH9/er',
-        '6yc7nzn1FBYFzMz8aFIA/3FlcIvR+eLvRTVmfiEatB6IU6JviBnzxR1gA/SOdyS2',
-        '=GCiR',
+        'wl4EARMIABAFAltbFFMJEGQRYCGVm9/gAAAjugD/W/OZ++qiNlhy08OOflAN',
+        'rjjX3rknSZyUkr96HD4VWVsBAPL9QjyHI3714cdkQmwYGiG8TVrtPetnqHho',
+        'Ppmby7/I',
+        '=IyBz',
         '-----END PGP SIGNATURE-----'
       ].join('\n'),
       message_encrypted: [
@@ -177,20 +179,20 @@ describe('Elliptic Curve Cryptography', function () {
     const msg = openpgp.cleartext.readArmored(data.juliet.message_signed);
     return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
       expect(result).to.exist;
-      expect(result.data.trim()).to.equal(data.juliet.message);
+      expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
       expect(result.signatures[0].valid).to.be.true;
     });
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+    const signed = await openpgp.sign({privateKeys: [romeoPrivate], data: data.romeo.message});
     const romeoPublic = load_pub_key('romeo');
     const msg = openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -201,15 +203,14 @@ describe('Elliptic Curve Cryptography', function () {
     const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
 
     expect(result).to.exist;
-    // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
-    expect(result.data.trim()).to.equal(data.juliet.message);
+    expect(result.data).to.equal(data.juliet.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message});
 
     const message = openpgp.message.readArmored(encrypted.data);
     const romeoPublic = load_pub_key('romeo');
@@ -217,7 +218,7 @@ describe('Elliptic Curve Cryptography', function () {
     const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });

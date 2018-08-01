@@ -287,7 +287,7 @@ DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
-const plaintext = input.createSomeMessage() + '\n한국어/조선말';
+const plaintext = input.createSomeMessage();
 const password1 = 'I am a password';
 const password2 = 'I am another password';
 const password3 = 'I am a third password';
@@ -756,7 +756,7 @@ describe('OpenPGP.js public api tests', function() {
           openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
 
           const workerTest = (_, index) => {
-            const plaintext = input.createSomeMessage() + index + '\n한국어/조선말';
+            const plaintext = input.createSomeMessage() + index;
             return openpgp.encrypt({
               publicKeys: publicKey.keys,
               data: plaintext

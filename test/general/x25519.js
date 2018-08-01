@@ -46,18 +46,19 @@ describe('X25519 Cryptography', function () {
         '=wo91',
         '-----END PGP PRIVATE KEY BLOCK-----'
       ].join('\n'),
-      message: 'Hi, Light wrote this!',
+      message: 'Hi, Light wrote this!\n',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
-        'Hash: SHA256',
+        'Hash: SHA512',
         '',
         'Hi, Light wrote this!',
+        '',
         '-----BEGIN PGP SIGNATURE-----',
         '',
-        'iIAEARYIACgWIQSGS0GuVELT3Rs0wocezfAmwCRYMAUCWkyVkAocbGlnaHRAc3Vu',
-        'AAoJEB7N8CbAJFgwdqAA/RwTsy9Nt5HEJLnokUNgHVX8wNr7Ef9wfAG1RaMgMMWs',
-        'AP9KEEohpHqaj8smb1oLjYU9DgOugE40LrkujvnWNbOZBQ==',
-        '=T9p+',
+        'wl4EARYKABAFAltbFNAJEB7N8CbAJFgwAAAhcAEA5b2MIQNxQYj8TAMyuhZJ',
+        'UvxEgPS8DU59Kxw5F9+oldQBAN4mA+SOJyTxEx4oyyLh+8RD27dqyeDpmXju',
+        'xqMRN8oE',
+        '=siSU',
         '-----END PGP SIGNATURE-----'
       ].join('\n')
     },
@@ -97,7 +98,7 @@ describe('X25519 Cryptography', function () {
         '=NDSU',
         '-----END PGP PRIVATE KEY BLOCK-----'
       ].join('\n'),
-      message: 'Oh hi, this is a private message from Light to Night!',
+      message: 'Oh hi, this is a private message from Light to Night!\n',
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
         '',
@@ -162,7 +163,7 @@ describe('X25519 Cryptography', function () {
     const msg = openpgp.cleartext.readArmored(data[name].message_signed);
     return openpgp.verify({ publicKeys: [pub], message: msg }).then(function(result) {
       expect(result).to.exist;
-      expect(result.data.trim()).to.equal(data[name].message);
+      expect(result.data).to.equal(data[name].message);
       expect(result.signatures).to.have.length(1);
       expect(result.signatures[0].valid).to.be.true;
     });
@@ -190,8 +191,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.decrypt({ privateKeys: night, publicKeys: [light], message: msg });
 
     expect(result).to.exist;
-    // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
-    expect(result.data.trim()).to.equal(data.night.message);
+    expect(result.data).to.equal(data.night.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
