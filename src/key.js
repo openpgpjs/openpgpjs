@@ -1421,13 +1421,6 @@ export async function generate(options) {
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
   return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
 
-  async function generateSecretKey(options) {
-    const secretKeyPacket = new packet.SecretKey(options.date);
-    secretKeyPacket.packets = null;
-    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-    await secretKeyPacket.generate(options.numBits, options.curve);
-    return secretKeyPacket;
-  }
 }
 
 function sanitizeKeyOptions(options={}, subkeyDefaults={}) {
@@ -1466,6 +1459,14 @@ function sanitizeKeyOptions(options={}, subkeyDefaults={}) {
     throw new Error('Unrecognized key type');
   }
   return options;
+}
+
+async function generateSecretKey(options) {
+  const secretKeyPacket = new packet.SecretKey(options.date);
+  secretKeyPacket.packets = null;
+  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  await secretKeyPacket.generate(options.numBits, options.curve);
+  return secretKeyPacket;
 }
 
 async function generateSecretSubkey(options) {
