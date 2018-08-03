@@ -27714,7 +27714,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.1.1",
+  versionstring: "OpenPGP.js v3.1.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -38247,7 +38247,7 @@ Key.prototype.getSigningKey = function () {
             }
 
             subKeys = this.subKeys.slice().sort(function (a, b) {
-              return b.created - a.created;
+              return b.keyPacket.created - a.keyPacket.created;
             });
             i = 0;
 
@@ -38357,7 +38357,7 @@ Key.prototype.getEncryptionKey = function () {
             // V4: by convention subkeys are preferred for encryption service
             // V3: keys MUST NOT have subkeys
             subKeys = this.subKeys.slice().sort(function (a, b) {
-              return b.created - a.created;
+              return b.keyPacket.created - a.keyPacket.created;
             });
             i = 0;
 
