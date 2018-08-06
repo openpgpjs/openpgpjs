@@ -136,7 +136,8 @@ function packetlistCloneToCleartextMessage(clone) {
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
-  clone.signature = new Signature(clone.signature);
+  const packetlist = List.fromStructuredClone(clone.signature);
+  clone.signature = new Signature(packetlist);
   return clone;
 }
 

@@ -135,7 +135,7 @@ AsyncProxy.prototype.delegate = function(method, options) {
 
   const id = this.getID();
   const requests = this.workers.map(worker => worker.requests);
-  const minRequests = Math.min(requests);
+  const minRequests = Math.min(...requests);
   let workerId = 0;
   for(; workerId < this.workers.length; workerId++) {
     if (this.workers[workerId].requests === minRequests) {

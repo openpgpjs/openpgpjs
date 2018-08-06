@@ -293,7 +293,7 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
 Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
+    const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
@@ -339,7 +339,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
     // V3: keys MUST NOT have subkeys
-    const subKeys = this.subKeys.slice().sort((a, b) => b.created - a.created);
+    const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
@@ -484,6 +484,9 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
   }
   if (this.keyPacket.version >= 4) {
     const primaryUser = await this.getPrimaryUser(null);
+    if (!primaryUser) {
+      throw new Error('Could not find primary user');
+    }
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
     const sigExpiry = selfCert.getExpirationTime();

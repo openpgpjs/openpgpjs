@@ -287,7 +287,7 @@ DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
-const plaintext = input.createSomeMessage() + '\n한국어/조선말';
+const plaintext = input.createSomeMessage();
 const password1 = 'I am a password';
 const password2 = 'I am another password';
 const password3 = 'I am a third password';
@@ -742,6 +742,40 @@ describe('OpenPGP.js public api tests', function() {
           expect(encrypted.data).not.to.match(/^Version:/);
           expect(encrypted.data).to.match(/Comment: different/);
         });
+      });
+
+      it('Test multiple workers', async function() {
+        openpgp.config.show_version = false;
+        openpgp.config.commentstring = 'different';
+        if (!openpgp.getWorker()) {
+          return;
+        }
+        const { workers } = openpgp.getWorker();
+        try {
+          await privateKey.keys[0].decrypt(passphrase)
+          openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
+
+          const workerTest = (_, index) => {
+            const plaintext = input.createSomeMessage() + index;
+            return openpgp.encrypt({
+              publicKeys: publicKey.keys,
+              data: plaintext
+            }).then(function (encrypted) {
+              expect(encrypted.data).to.exist;
+              expect(encrypted.data).not.to.match(/^Version:/);
+              expect(encrypted.data).to.match(/Comment: different/);
+              return openpgp.decrypt({
+                privateKeys: privateKey.keys[0],
+                message: openpgp.message.readArmored(encrypted.data)
+              });
+            }).then(function (decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+            });
+          };
+          await Promise.all(Array(10).fill(null).map(workerTest));
+        } finally {
+          openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
+        }
       });
 
       it('Calling decrypt with not decrypted key leads to exception', function() {

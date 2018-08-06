@@ -55,7 +55,7 @@ describe('Brainpool Cryptography', function () {
         '=uGZP',
         '-----END PGP PRIVATE KEY BLOCK-----'
         ].join('\n'),
-      message: 'test message',
+      message: 'test message\n',
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
         '',
@@ -110,18 +110,19 @@ describe('Brainpool Cryptography', function () {
         '=3Dct',
         '-----END PGP PRIVATE KEY BLOCK-----'
         ].join('\n'),
-      message: 'second test message',
+      message: 'second test message\n',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
         'Hash: SHA512',
         '',
         'second test message',
+        '',
         '-----BEGIN PGP SIGNATURE-----',
         '',
-        'iHUEARMKAB0WIQQi1GdXVRHGK/mAm7434WqYa4r5ngUCWq8vXQAKCRA34WqYa4r5',
-        'nuLcAP9PvP2XRqhybqRLwa2OCKyAOmUogvx/xLWDwT4HYQDurwD/dnhMrzBQ6kJg',
-        'jpFFbWyAqJavhedwBsFXCUoLH0/BA8w=',
-        '=XwF/',
+        'wl4EARMKABAFAltbE34JEDfhaphrivmeAABaXQD+LzOhFxTqz8+IcaD3xzww',
+        'EjEn0u7qgCFem9PHPD4wqAcA/1WQE3N7DIwRG45HFd+ZBo4vcuRkWK+Q6CHl',
+        'upbAEX7k',
+        '=obwy',
         '-----END PGP SIGNATURE-----'
         ].join('\n')
     }
@@ -166,20 +167,20 @@ describe('Brainpool Cryptography', function () {
     const msg = openpgp.cleartext.readArmored(data.juliet.message_signed);
     return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
       expect(result).to.exist;
-      expect(result.data.trim()).to.equal(data.juliet.message);
+      expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
       expect(result.signatures[0].valid).to.be.true;
     });
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+    const signed = await openpgp.sign({privateKeys: [romeoPrivate], data: data.romeo.message});
     const romeoPublic = load_pub_key('romeo');
     const msg = openpgp.cleartext.readArmored(signed.data);
     const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -190,15 +191,14 @@ describe('Brainpool Cryptography', function () {
     const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
 
     expect(result).to.exist;
-    // trim required because https://github.com/openpgpjs/openpgpjs/issues/311
-    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message + "\n"});
+    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], data: data.romeo.message});
 
     const message = openpgp.message.readArmored(encrypted.data);
     const romeoPublic = load_pub_key('romeo');
@@ -206,7 +206,7 @@ describe('Brainpool Cryptography', function () {
     const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
 
     expect(result).to.exist;
-    expect(result.data.trim()).to.equal(data.romeo.message);
+    expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
