@@ -12,9 +12,9 @@
 
 import { Sha1 } from 'asmcrypto.js/dist_es5/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
-import { Sha512 } from 'asmcrypto.js/dist_es5/hash/sha512/sha512';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
+import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
 import stream from 'web-stream-tools';
 import md5 from './md5';
@@ -72,7 +72,7 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
     sha224: hashjs_hash(sha224),
     sha256: asmcrypto_hash(Sha256),
     sha384: hashjs_hash(sha384),
-    sha512: asmcrypto_hash(Sha512),
+    sha512: hashjs_hash(sha512), // asmcrypto sha512 is huge.
     ripemd: hashjs_hash(ripemd160)
   };
 }
