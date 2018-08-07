@@ -22,38 +22,11 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
+            fullPaths: grunt.option('dev'),
+            debug: grunt.option('dev'),
             standalone: 'openpgp'
           },
           cacheFile: 'browserify-cache.json',
-          // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'],
-          transform: [
-            ["babelify", {
-              global: true,
-              // Only babelify web-stream-tools, asmcrypto and address-rfc2822 in node_modules
-              only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime"],
-              ignore: ['*.min.js'],
-              presets: ["env"]
-            }]
-          ],
-          plugin: ['browserify-derequire']
-        }
-      },
-      openpgp_debug: {
-        files: {
-          'dist/openpgp_debug.js': ['./src/index.js']
-        },
-        options: {
-          browserifyOptions: {
-            fullPaths: true,
-            debug: true,
-            standalone: 'openpgp'
-          },
-          cacheFile: 'browserify-cache-debug.json',
           // Don't bundle these packages with openpgp.js
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'],
           transform: [
@@ -108,14 +81,6 @@ module.exports = function(grunt) {
       openpgp: {
         src: ['dist/openpgp.js'],
         dest: ['dist/openpgp.js'],
-        replacements: [{
-          from: /OpenPGP.js VERSION/g,
-          to: 'OpenPGP.js v<%= pkg.version %>'
-        }]
-      },
-      openpgp_debug: {
-        src: ['dist/openpgp_debug.js'],
-        dest: ['dist/openpgp_debug.js'],
         replacements: [{
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>'
@@ -305,7 +270,6 @@ module.exports = function(grunt) {
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
   grunt.registerTask('build', ['clean', 'copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
-  grunt.registerTask('build_debug', ['copy:bzip2', 'browserify:openpgp_debug', 'browserify:worker']);
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
