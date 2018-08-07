@@ -659,6 +659,7 @@ Signature.prototype.calculateTrailer = function () {
  * @param {String|Object} data data which on the signature applies
  * @param {module:packet.PublicSubkey|module:packet.PublicKey|
  *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
+ * @param {Date} optional the date to verify
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
