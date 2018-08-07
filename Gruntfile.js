@@ -220,7 +220,7 @@ module.exports = function(grunt) {
         options: {
           username: 'openpgpjs',
           key: getSauceKey,
-          urls: ['http://127.0.0.1:3000/test/unittests.html?saucelabs=true'],
+          urls: ['http://localhost:3000/test/unittests.html?saucelabs=true'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
           browsers: [browser_capabilities],
