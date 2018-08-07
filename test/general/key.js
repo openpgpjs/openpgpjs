@@ -921,7 +921,7 @@ zoGJ6s48HcP591pN93uAitCcYcinY2ZslmdiCXw+zbeoX4spNrV4T4CYxBjNQdIa
     '=6XMW',
     '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-    const expiredKey =
+    const signatureExpiredKey =
     `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
     xcA4BAAAAAEBAgCgONc0J8rfO6cJw5YTP38x1ze2tAYIO7EcmRCNYwMkXngb
@@ -934,6 +934,23 @@ zoGJ6s48HcP591pN93uAitCcYcinY2ZslmdiCXw+zbeoX4spNrV4T4CYxBjNQdIa
     GQECGwMCHgEAABAlAfwPehmLZs+gOhOTTaSslqQ50bl/REjmv42Nyr1ZBlQS
     DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
     =/7PI
+    -----END PGP PRIVATE KEY BLOCK-----`;
+
+    const expiredKey =
+    `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+    xVwFAAAFORYAAAAtCSsGAQQB2kcPAQEHQDJxpYVIQNaaSKNgLwkkzfUpZTnO
+    SkL7XvmU8PYGFcmkAAEA0H1I6jt2bt5mmghGNKJURpLzy2G35ETmSgtQYVXZ
+    y84Qfs0EdGVzdMKaBBAWCgBMBQIAAAU5BQkAAAABBgsJBwgDAgQVCAoCAxYC
+    AQIZAQIbAwIeByIhBVVX74cmgpOE/CPj9EV22HJ5fUdHoB0wWc236+MyXbRX
+    AyIBAgAAywsA/1qJ7wyesphwPAGexpVb3TPWrcGGTZMqKdyUUqzCZ3++AQC3
+    fxl7e9bUxRhMM5zQFcKVKB+hY9PPUX51rwahndZCAsdhBQAABTkSAAAAMgor
+    BgEEAZdVAQUBAQdAHiWbxLksFhaDERDvUpGM46Ap9b9dKfMzjhcZ3GUrAT8D
+    AQgHAAD/Uo0YMtBMyC/xwXS/a6nSbj6kT/BKeeu6+qtskXP/8sATw8KABBgW
+    CgAyBQIAAAU5BQkAAAABAhsMIiEFVVfvhyaCk4T8I+P0RXbYcnl9R0egHTBZ
+    zbfr4zJdtFcAALTMAQColke8CHf3gxlpGL5fuXECXdyjw0z8cTiqwmTPPwkP
+    aAEA3TqI3sMIDSE52+SVfjCogAf7XXAcC+lDzSJZqvQLCA4=
+    =g66x
     -----END PGP PRIVATE KEY BLOCK-----`;
 
   const multipleBindingSignatures =
@@ -1428,7 +1445,23 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
   });
 
   it('Method getExpirationTime expired V4 Key', async function() {
+    // let pubKey = await openpgp.generateKey({
+    //   userIds:[{name:'test'}],
+    //   date: new Date('1970-01-01T00:22:17.000Z'),
+    //   keyExpirationTime: 1,
+    //   curve: 'ed25519'
+    // });
+    // console.log(pubKey.privateKeyArmored);
+    // pubKey = pubKey.key;
     const pubKey = openpgp.key.readArmored(expiredKey).keys[0];
+    expect(pubKey).to.exist;
+    expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    const expirationTime = await pubKey.getExpirationTime();
+    expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
+  });
+
+  it('Method getExpirationTime signature expired V4 Key', async function() {
+    const pubKey = openpgp.key.readArmored(signatureExpiredKey).keys[0];
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
     const expirationTime = await pubKey.getExpirationTime();

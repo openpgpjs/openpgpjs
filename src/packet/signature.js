@@ -274,7 +274,7 @@ Signature.prototype.write_all_sub_packets = function () {
   if (this.created !== null) {
     arr.push(write_sub_packet(sub.signature_creation_time, util.writeDate(this.created)));
   }
-  if (this.signatureExpirationTime !== null) {
+  if (this.signatureExpirationTime > 0) {
     arr.push(write_sub_packet(sub.signature_expiration_time, util.writeNumber(this.signatureExpirationTime, 4)));
   }
   if (this.exportable !== null) {
@@ -662,7 +662,7 @@ Signature.prototype.calculateTrailer = function () {
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, data) {
+Signature.prototype.verify = async function (key, data, date) {
   const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -700,6 +700,10 @@ Signature.prototype.verify = async function (key, data) {
     util.concatUint8Array([bytes, this.signatureData, trailer])
   );
 
+  if (this.verified && date) {
+    this.verified = !this.isExpired(date);
+  }
+
   return this.verified;
 };
 
@@ -710,11 +714,14 @@ Signature.prototype.verify = async function (key, data) {
  */
 Signature.prototype.isExpired = function (date=new Date()) {
   const normDate = util.normalizeDate(date);
+  let result;
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate < expirationTime);
+    result = !(this.created <= normDate && normDate < expirationTime);
+    // result = normDate >= expirationTime;
   }
-  return false;
+  // console.log('sigIsExpired',this.created, normDate, this.getExpirationTime());
+  return result;
 };
 
 /**

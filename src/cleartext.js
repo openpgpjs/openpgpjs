@@ -29,7 +29,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import { createVerificationObjects, createSignaturePackets } from './message';
+import { createVerificationObjects, createSignaturePackets, createSignaturePacketsEx } from './message';
 
 /**
  * @class
@@ -38,15 +38,16 @@ import { createVerificationObjects, createSignaturePackets } from './message';
  * @param  {String}           text       The cleartext of the signed message
  * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
  */
-export function CleartextMessage(text, signature) {
+export function CleartextMessage(text, signature, date=new Date()) {
   if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(text, signature);
+    return new CleartextMessage(text, signature, date);
   }
   // normalize EOL to canonical form <CR><LF>
   this.text = util.canonicalizeEOL(util.removeTrailingSpaces(text));
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
+  this.date = date;
   this.signature = signature || new Signature(new packet.List());
 }
 
@@ -73,7 +74,21 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @async
  */
 CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date(), userId={}) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userId));
+  // TODO: Why create a new CleartextMessage instance here?
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userId), this.date);
+};
+
+/**
+ * Sign the cleartext message
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} options.signature             (optional) any existing detached signature
+ * @param  {Date} options.date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} options.userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
+ * @async
+ */
+CleartextMessage.prototype.signEx = async function(privateKeys, options={signature:null, date:new Date(), userId:{}}) {
+  return new CleartextMessage(this.text, await this.signDetachedEx(privateKeys, options), this.date);
 };
 
 /**
@@ -86,10 +101,26 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature=null, da
  * @async
  */
 CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date(), userId={}) {
-  const literalDataPacket = new packet.Literal();
+  const literalDataPacket = new packet.Literal(this.date);
   literalDataPacket.setText(this.text);
 
   return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId));
+};
+
+/**
+ * Sign the cleartext message
+ * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} options.signature             (optional) any existing detached signature
+ * @param  {Date} options.date                       (optional) The creation time of the signature that should be created
+ * @param  {Object} options.userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<module:signature.Signature>}      new detached signature of message content
+ * @async
+ */
+CleartextMessage.prototype.signDetachedEx = async function(privateKeys, options={signature:null, date:new Date(), userId:{}}) {
+  const literalDataPacket = new packet.Literal(this.date);
+  literalDataPacket.setText(this.text);
+
+  return new Signature(await createSignaturePacketsEx(literalDataPacket, privateKeys, options));
 };
 
 /**

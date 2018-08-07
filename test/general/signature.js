@@ -585,12 +585,12 @@ describe("Signature", function() {
       `-----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-space: 
+space:
 space and tab: \t
 no trailing space
-  
+
 tab:\t
-tab and space:\t 
+tab and space:\t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 

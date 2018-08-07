@@ -542,7 +542,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   const dataToVerify = { userId: user.userId, key: primaryKey };
   // skip if certificates is invalid, revoked, or expired
   // eslint-disable-next-line no-await-in-loop
-  if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
+  if (!(cert.verified || await cert.verify(primaryKey, dataToVerify, date))) {
     return null;
   }
   // eslint-disable-next-line no-await-in-loop
@@ -897,6 +897,9 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
     throw new Error('Private key is not decrypted.');
   }
   const signaturePacket = new packet.Signature(date);
+  if (signatureProperties.signatureExpirationTime > 0) {
+    signatureProperties.signatureNeverExpires = true;
+  }
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);

@@ -381,13 +381,14 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
 /**
  * Sign the message (the literal data packet of the message)
  * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature          (optional) any existing detached signature to add to the message
- * @param  {Date} date                    (optional) override the creation time of the signature
- * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Signature} options.signature          (optional) any existing detached signature to add to the message
+ * @param  {Date} options.date                    (optional) override the creation time of the signature
+ * @param  {Integer} options.signatureExpirationTime (optional) the expired time(seconds) of the signature
+ * @param  {Object} options.userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
+Message.prototype.signEx = async function(privateKeys=[], options={signature:null, date:new Date(), userId:{}}) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -401,8 +402,8 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
   const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
-  if (signature) {
-    existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+  if (options.signature) {
+    existingSigPacketlist = options.signature.packets.filterByTag(enums.packet.signature);
     for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
       const signaturePacket = existingSigPacketlist[i];
       const onePassSig = new packet.OnePassSignature();
@@ -421,14 +422,14 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.type = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, options.date, options.userId);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
     onePassSig.signingKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -440,9 +441,23 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
   });
 
   packetlist.push(literalDataPacket);
-  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date));
+  packetlist.concat(await createSignaturePacketsEx(literalDataPacket, privateKeys, options));
 
   return new Message(packetlist);
+};
+
+/**
+ * Sign the message (the literal data packet of the message)
+ * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} signature          (optional) any existing detached signature to add to the message
+ * @param  {Date} date                    (optional) override the creation time of the signature
+ * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<Message>}             new message with signed content
+ * @async
+ */
+Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
+  const result = await this.signEx(privateKeys, {signature, date, userId});
+  return result;
 };
 
 /**
@@ -483,6 +498,23 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
 };
 
 /**
+ * Create a detached signature for the message (the literal data packet of the message)
+ * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} options.signature                 (optional) any existing detached signature
+ * @param  {Date} options.date                           (optional) override the creation time of the signature
+ * @param  {Object} options.userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<module:signature.Signature>} new detached signature of message content
+ * @async
+ */
+Message.prototype.signDetachedEx = async function(privateKeys=[], options={signature:null, date:new Date(), userId:{}}) {
+  const literalDataPacket = this.packets.findPacket(enums.packet.literal);
+  if (!literalDataPacket) {
+    throw new Error('No literal data packet to sign.');
+  }
+  return new Signature(await createSignaturePacketsEx(literalDataPacket, privateKeys, options));
+};
+
+/**
  * Create signature packets for the message
  * @param  {module:packet.Literal}             literalDataPacket the literal data packet to sign
  * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
@@ -493,6 +525,22 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @async
  */
 export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}) {
+  const result = await createSignaturePacketsEx(literalDataPacket, privateKeys, {signature, date, userId});
+  return result;
+}
+
+/**
+ * Create signature packets for the message
+ * @param  {module:packet.Literal}             literalDataPacket the literal data packet to sign
+ * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
+ * @param  {Signature} options.signature               (optional) any existing detached signature to append
+ * @param  {Date} options.date                         (optional) override the creationtime of the signature
+ * @param  {Integer} options.signatureExpirationTime      (optional) the expired time(seconds) of the signature
+ * @param  {Object} options.userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<module:packet.List>} list of signature packets
+ * @async
+ */
+export async function createSignaturePacketsEx(literalDataPacket, privateKeys, options={signature:null, date:new Date(), userId:{}}) {
   const packetlist = new packet.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -503,18 +551,19 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId);
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
           privateKey.getKeyId().toHex()}`);
     }
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, {signatureType}, date, userId);
+    options.signatureType = signatureType;
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, options, options.date, options.userId);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
 
-  if (signature) {
-    const existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+  if (options.signature) {
+    const existingSigPacketlist = options.signature.packets.filterByTag(enums.packet.signature);
     packetlist.concat(existingSigPacketlist);
   }
   return packetlist;
@@ -579,7 +628,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
 
     const verifiedSig = {
       keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
+      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0], date) : null
     };
 
     const packetlist = new packet.List();

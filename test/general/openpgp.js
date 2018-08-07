@@ -218,58 +218,25 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
 
 const priv_key_2038_2045 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
-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
-0uyeibPdgJTjARMuQzDFA8bdbM540vBf5Q==
-=WLIN
+xcA8BX/oGU8BAAAARwIAjNgDw0CUQpDCNWOKR8Z6pUrEH/cdJV5U9jtSAC0L
+2OfS+55nlOBlR5hQXXSb9G2anvw+i1QoftPEO08gAp9JpwARAQABAAH/Ypa3
+E475+RqBh4O1AQcTRO7wGHwPH+BHUtE1VkAyAdNCE9Sk+XNIK4S6uzh6gscJ
+tUwFXlk/rLV9PVAb+WgYUQEAzspBgGUzFx3wSUr31mveTE/iqDznilXam2m5
+8TPwY68BAK5cSH26R/Ny+66F43UsrP2l9ckHqszEg6ueTA5QxF+JAP9dwWRa
+wi9iVbBTE7zmxODSsswQZQaz0CuUteVTkHff/lNizQR0ZXN0wpIEEAEIAEYF
+An/oGU8GCwkHCAMCBBUICgIDFgIBAhkBAhsDAh4HIiEFZ4vbFQK+dhO4Mq0r
+CJObHi9GdWx8bzLuYsuBHQd/JUIDIgECAADJPQH9E2r1AXtohOdf3VMzA2/g
+zJZIUGKvu4ccWjX2Wh8bhKepJNpf/AmSplhRar+thOMu8KpiUwZ9uvI0RckN
+3d6x5sfAPAV/6BlPAQAAAEcCAINWcLsIVu4+m7VW4xj7x4xIg8SASq6QJB0G
+ru/EzMJfoJCp/UnfSR/sWwtS/RdtRY1nBTSHnjaUd41zR8n00TMAEQEAAQAB
+/2h2tZ2eKX7AH5th66nwgayr9Nqz7DLihUbtDPG7B95Fg3ARDNneVhqXU9W3
+l2GqicBX2bKpvezQFcndKWNgwqkBAOitvd8/iG3UO8F5wNAvSaKES5QSEPG3
++tsaxWirLqCFAQCQgGiVj9JTh3XkBTrU0gKgnrIg49IPrlIr66s6aOB0VwD/
+WiU+vwxv4q+/5Qlk5TjQN7O/c1fqBsSEshbH4D5IPUBYIsJ4BBgBCAAsBQJ/
+6BlPAhsMIiEFZ4vbFQK+dhO4Mq0rCJObHi9GdWx8bzLuYsuBHQd/JUIAABQp
+Af9CHMI05KPuo8unLj7RpB00In8vfIp3MdckIBLRwEhY3UcXQWYt09IyKYo3
+l3kACyh930t1glZPPiJ8n6rOAiN2
+=GIk2
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const priv_key_expires_1337 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
@@ -284,6 +251,22 @@ BBABCAAvBQIAAAABBQMAAAU5BgsJBwgDAgkQzcF99nGrkAkEFQgKAgMWAgEC
 GQECGwMCHgEAABAlAfwPehmLZs+gOhOTTaSslqQ50bl/REjmv42Nyr1ZBlQS
 DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 =/7PI
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+const priv_key_1337 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVwFAAAAARYAAAAtCSsGAQQB2kcPAQEHQPoOlWx63Q0X/8Fnp/9hBdabLpT9
+NU3VFclbtTA0OQeHAAD/TCg3IheFtfDnOyw5bNmqI0fxEh4MT0OSQCpjV7SN
+5QMNi80EdGVzdMKUBBAWCgBGBQIAAAABBgsJBwgDAgQVCAoCAxYCAQIZAQIb
+AwIeByIhBcSXQKFZWrh2tt8Xmfk1a7IKz2lL1qkhzblQWVP22KPaAyIBAgAA
+XsMA/2HhxX9PUSVaYGOUM6ERE5K+KOIDiQ+7AhkRRpNqcmuAAQC8E9AU/1zB
+uHhbdYWrzNW7YhvpnyIfiH9ryV7I5A2bAsdhBQAAAAESAAAAMgorBgEEAZdV
+AQUBAQdAnoXNRWAAuRNxbnMthP5WAbjhSE72mEKX0dXajdnMjnYDAQgHAAD/
+UEMFmvyW0mXQ7vCAzGjIjs5QAX9yLsnuFzPO1RmDlNASlMJ6BBgWCgAsBQIA
+AAABAhsMIiEFxJdAoVlauHa23xeZ+TVrsgrPaUvWqSHNuVBZU/bYo9oAAGC/
+AQC62tIndYzEFSN9NcPIFF8kxO7O4HY+OONrC4f3N/L5tAD8CCPD0w5FpC2Y
+whhOh8SVcRCaUR8ghroLD7yEOlKKfQo=
+=tiJt
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
@@ -633,7 +616,7 @@ describe('OpenPGP.js public api tests', function() {
       expect(privateKey_2038_2045.keys).to.have.length(1);
       expect(privateKey_2038_2045.err).to.not.exist;
       publicKey_2038_2045 = { keys: [ privateKey_2038_2045.keys[0].toPublic() ] };
-      privateKey_1337 = openpgp.key.readArmored(priv_key_expires_1337);
+      privateKey_1337 = openpgp.key.readArmored(priv_key_1337);
       expect(privateKey_1337.keys).to.have.length(1);
       expect(privateKey_1337.err).to.not.exist;
       publicKey_1337 = { keys: [ privateKey_1337.keys[0].toPublic() ] };
@@ -1161,6 +1144,30 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt/sign and decrypt/verify with signatureExpirationTime', async function () {
+          const encOpt = {
+            signatureExpirationTime: 1,
+            data: plaintext,
+            publicKeys: publicKey.keys,
+            privateKeys: privateKey.keys
+          };
+          const decOpt = {
+            privateKeys: privateKey.keys[0],
+            publicKeys: publicKey.keys
+          };
+
+          const encrypted = await openpgp.encrypt(encOpt);
+          decOpt.message = openpgp.message.readArmored(encrypted.data);
+          expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+          await timeout(1500);
+          const decrypted = await openpgp.decrypt(decOpt);
+          expect(decrypted.data).to.equal(plaintext);
+          expect(decrypted.signatures[0].valid).to.be.false;
+          const signingKey = await privateKey.keys[0].getSigningKey();
+          expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+        });
+
         it('should encrypt/sign and decrypt/verify (no AEAD support)', function () {
           const encOpt = {
             data: plaintext,
@@ -1178,6 +1185,32 @@ describe('OpenPGP.js public api tests', function() {
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures[0].valid).to.be.true;
+            const signingKey = await privateKey.keys[0].getSigningKey();
+            expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+          });
+        });
+
+        it('should encrypt/sign and decrypt/verify (no AEAD support) with signatureExpirationTime', function () {
+          const encOpt = {
+            signatureExpirationTime: 1,
+            data: plaintext,
+            publicKeys: publicKeyNoAEAD.keys,
+            privateKeys: privateKey.keys
+          };
+          const decOpt = {
+            privateKeys: privateKey.keys[0],
+            publicKeys: publicKeyNoAEAD.keys
+          };
+          return openpgp.encrypt(encOpt).then(function (encrypted) {
+            decOpt.message = openpgp.message.readArmored(encrypted.data);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect && openpgp.config.aead_protect_version !== 4);
+            return timeout(1500);
+          }).then(async function () {
+            return openpgp.decrypt(decOpt);
+          }).then(async function (decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures[0].valid).to.be.false;
             const signingKey = await privateKey.keys[0].getSigningKey();
             expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
@@ -1692,6 +1725,7 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify cleartext data with a date in the past', function () {
+            // the privateKey_1337 created date is Date(1000).
             const past = new Date(2000);
             const signOpt = {
                 data: plaintext,
@@ -1729,6 +1763,16 @@ describe('OpenPGP.js public api tests', function() {
         });
 
         it('should sign and verify binary data with a date in the future', function () {
+    // let pubKey = await openpgp.generateKey({
+    //   userIds:[{name:'test'}],
+    //   date: new Date('2038-01-01T00:07:43.000Z'),
+    //   // keyExpirationTime: 1,
+    //   numBits: 512
+    // });
+    // console.log(pubKey.privateKeyArmored);
+    // return;
+    // return console.log(privateKey_2038_2045.keys[0].users[0]);
+
             const future = new Date(2040, 5, 5, 5, 5, 5, 0);
             const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
             const signOpt = {
@@ -2150,3 +2194,7 @@ describe('OpenPGP.js public api tests', function() {
   });
 
 });
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
