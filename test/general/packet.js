@@ -150,7 +150,7 @@ describe("Packet", function() {
     });
   });
 
-  it('Sym. encrypted AEAD protected packet (draft04)', function() {
+  it('Sym. encrypted AEAD protected packet (draft04)', async function() {
     let aead_protectVal = openpgp.config.aead_protect;
     let aead_protect_versionVal = openpgp.config.aead_protect_version;
     openpgp.config.aead_protect = true;
@@ -170,15 +170,15 @@ describe("Packet", function() {
 
     const msg2 = new openpgp.packet.List();
 
-    return enc.encrypt(algo, key).then(async function() {
+    try {
+      await enc.encrypt(algo, key);
       await msg2.read(msg.write());
-      return msg2[0].decrypt(algo, key);
-    }).then(async function() {
+      await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
-    }).finally(function() {
+    } finally {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
-    });
+    }
   });
 
   function cryptStub(webCrypto, method) {
@@ -201,7 +201,7 @@ describe("Packet", function() {
     return cryptStub;
   }
 
-  it('Sym. encrypted AEAD protected packet is encrypted in parallel (GCM, draft04)', function() {
+  it('Sym. encrypted AEAD protected packet is encrypted in parallel (GCM, draft04)', async function() {
     const webCrypto = openpgp.util.getWebCrypto();
     if (!webCrypto) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
@@ -229,23 +229,23 @@ describe("Packet", function() {
 
     const msg2 = new openpgp.packet.List();
 
-    return enc.encrypt(algo, key).then(async function() {
+    try {
+      await enc.encrypt(algo, key);
       await msg2.read(msg.write());
-      return msg2[0].decrypt(algo, key);
-    }).then(async function() {
+      await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
       expect(encryptStub.callCount > 1).to.be.true;
       expect(decryptStub.callCount > 1).to.be.true;
-    }).finally(function() {
+    } finally {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
       encryptStub.restore();
       decryptStub.restore();
-    });
+    }
   });
 
-  it('Sym. encrypted AEAD protected packet test vector (draft04)', function() {
+  it('Sym. encrypted AEAD protected packet test vector (draft04)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
 
     let packetBytes = openpgp.util.hex_to_Uint8Array(`
@@ -281,19 +281,19 @@ describe("Packet", function() {
     let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
     randomBytesStub.returns(resolves(iv));
 
-    return enc.encrypt(algo, key).then(async function() {
+    try {
+      await enc.encrypt(algo, key);
       const data = msg.write();
       expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
       await msg2.read(data);
-      return msg2[0].decrypt(algo, key);
-    }).then(async function() {
+      await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
-    }).finally(function() {
+    } finally {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
       randomBytesStub.restore();
-    });
+    }
   });
 
   it('Sym encrypted session key with a compressed packet', async function() {
@@ -826,7 +826,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     });
   });
 
-  it('Writing and encryption of a secret key packet. (draft04)', function() {
+  it('Writing and encryption of a secret key packet. (draft04)', async function() {
     let aead_protectVal = openpgp.config.aead_protect;
     let aead_protect_versionVal = openpgp.config.aead_protect_version;
     openpgp.config.aead_protect = true;
@@ -838,7 +838,8 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return rsa.generate(keySize, "10001").then(async function(mpiGen) {
+    try {
+      const mpiGen = await rsa.generate(keySize, "10001");
       let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
         return new openpgp.MPI(k);
@@ -855,10 +856,10 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       await key2[0].decrypt('hello');
 
       expect(key[0].params.toString()).to.equal(key2[0].params.toString());
-    }).finally(function() {
+    } finally {
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
-    });
+    }
   });
 
   it('Writing and verification of a signature packet.', function() {

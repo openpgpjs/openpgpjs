@@ -13,6 +13,8 @@ module.exports = function(grunt) {
   };
 
   // Project configuration.
+  const dev = !!grunt.option('dev');
+  const compat = !!grunt.option('compat');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -22,24 +24,48 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
-            fullPaths: grunt.option('dev'),
-            debug: grunt.option('dev'),
+            fullPaths: dev,
+            debug: dev,
             standalone: 'openpgp'
           },
-          cacheFile: 'browserify-cache.json',
+          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'].concat(
+            compat ? [] : [
+              'whatwg-fetch',
+              'core-js/fn/array/fill',
+              'core-js/fn/array/find',
+              'core-js/fn/array/includes',
+              'core-js/fn/array/from',
+              'core-js/fn/promise',
+              'core-js/fn/typed/uint8-array',
+              'core-js/fn/string/repeat',
+              'core-js/fn/symbol',
+              'core-js/fn/object/assign',
+            ]
+          ),
           transform: [
             ["babelify", {
               global: true,
               // Only babelify web-stream-tools, asmcrypto and address-rfc2822 in node_modules
               only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime"],
+              plugins: compat ? [
+                "transform-async-to-generator",
+                "syntax-async-functions",
+                "transform-regenerator",
+                "transform-runtime"
+              ] : [],
               ignore: ['*.min.js'],
-              presets: ["env"]
+              presets: [["env", {
+                targets: {
+                  browsers: compat ? ['defaults'] : [
+                    'Last 2 Chrome versions',
+                    'Last 2 Firefox versions',
+                    'Last 2 Safari versions',
+                    'Last 2 Edge versions'
+                  ]
+                }
+              }]]
             }]
           ],
           plugin: ['browserify-derequire']
