@@ -28,6 +28,7 @@
     "test/crypto"
   ],
   "scripts": {
+    "build": "grunt build --compat copy:openpgp_compat && grunt build",
     "pretest": "grunt",
     "test": "grunt test",
     "lint": "eslint src"

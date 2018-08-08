@@ -197,6 +197,12 @@ module.exports = function(grunt) {
         cwd: 'node_modules/compressjs/bin/',
         src: ['bzip2.build.js'],
         dest: 'src/compression/'
+      },
+      openpgp_compat: {
+        expand: true,
+        cwd: 'dist/',
+        src: ['*.js'],
+        dest: 'dist/compat/'
       }
     },
     clean: ['dist/'],
@@ -295,7 +301,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['clean', 'copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build', ['copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
