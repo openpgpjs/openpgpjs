@@ -50,22 +50,30 @@ async function GCM(cipher, key) {
 
     return {
       encrypt: async function(pt, iv, adata=new Uint8Array()) {
-        if (!pt.length) {
+        if (
+          !pt.length ||
           // iOS does not support GCM-en/decrypting empty messages
           // Also, synchronous en/decryption might be faster in this case.
+          (!adata.length && navigator.userAgent.indexOf('Edge') !== -1)
+          // Edge does not support GCM-en/decrypting without ADATA
+        ) {
           return AES_GCM.encrypt(pt, key, iv, adata);
         }
-        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata }, _key, pt);
+        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, pt);
         return new Uint8Array(ct);
       },
 
       decrypt: async function(ct, iv, adata=new Uint8Array()) {
-        if (ct.length === tagLength) {
+        if (
+          ct.length === tagLength ||
           // iOS does not support GCM-en/decrypting empty messages
           // Also, synchronous en/decryption might be faster in this case.
-         return AES_GCM.decrypt(ct, key, iv, adata);
+          (!adata.length && navigator.userAgent.indexOf('Edge') !== -1)
+          // Edge does not support GCM-en/decrypting without ADATA
+        ) {
+          return AES_GCM.decrypt(ct, key, iv, adata);
         }
-        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata }, _key, ct);
+        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
         return new Uint8Array(pt);
       }
     };
