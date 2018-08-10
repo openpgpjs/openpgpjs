@@ -19,7 +19,9 @@ npm install
 grunt set_version --release=$1
 
 # build and test
-npm test
+rm -rf dist
+npm run build
+grunt test
 
 # Add build files to git
 sed -i "" '/^dist\/$/d' .gitignore
