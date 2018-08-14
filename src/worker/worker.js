@@ -115,10 +115,13 @@ function delegate(id, method, options) {
   }
   // parse cloned packets
   options = openpgp.packet.clone.parseClonedPackets(options, method);
+  // construct ReadableStreams from MessagePorts
+  openpgp.util.restoreStreams(options);
   openpgp[method](options).then(function(data) {
     // clone packets (for web worker structured cloning algorithm)
     response({ id:id, event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
   }).catch(function(e) {
+    openpgp.util.print_debug_error(e);
     response({
       id:id, event:'method-return', err:e.message, stack:e.stack
     });

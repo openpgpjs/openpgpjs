@@ -1,40 +1,56 @@
 /**
  * @fileoverview Provides an interface to hashing functions available in Node.js or external libraries.
- * @see {@link https://github.com/srijs/rusha|Rusha}
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://github.com/indutny/hash.js|hash.js}
- * @requires rusha
  * @requires asmcrypto.js
  * @requires hash.js
+ * @requires web-stream-tools
  * @requires crypto/hash/md5
  * @requires util
  * @module crypto/hash
  */
 
-import Rusha from 'rusha';
-import { SHA256 } from 'asmcrypto.js/src/hash/sha256/exports';
+import { Sha1 } from 'asmcrypto.js/dist_es5/hash/sha1/sha1';
+import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
+import stream from 'web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 
-const rusha = new Rusha();
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 function node_hash(type) {
   return function (data) {
     const shasum = nodeCrypto.createHash(type);
-    shasum.update(new Buffer(data));
-    return new Uint8Array(shasum.digest());
+    return stream.transform(data, value => {
+      shasum.update(new Buffer(value));
+    }, () => new Uint8Array(shasum.digest()));
   };
 }
 
 function hashjs_hash(hash) {
   return function(data) {
-    return util.hex_to_Uint8Array(hash().update(data).digest('hex'));
+    const hashInstance = hash();
+    return stream.transform(data, value => {
+      hashInstance.update(value);
+    }, () => new Uint8Array(hashInstance.digest()));
+  };
+}
+
+function asmcrypto_hash(hash) {
+  return function(data) {
+    if (util.isStream(data)) {
+      const hashInstance = new hash();
+      return stream.transform(data, value => {
+        hashInstance.process(value);
+      }, () => hashInstance.finish().result);
+    } else {
+      return hash.bytes(data);
+    }
   };
 }
 
@@ -52,14 +68,11 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
 } else { // Use JS fallbacks
   hash_fns = {
     md5: md5,
-    sha1: function(data) {
-      return util.hex_to_Uint8Array(rusha.digest(data));
-    },
+    sha1: asmcrypto_hash(Sha1),
     sha224: hashjs_hash(sha224),
-    sha256: SHA256.bytes,
+    sha256: asmcrypto_hash(Sha256),
     sha384: hashjs_hash(sha384),
-    // TODO, benchmark this vs asmCrypto's SHA512
-    sha512: hashjs_hash(sha512),
+    sha512: hashjs_hash(sha512), // asmcrypto sha512 is huge.
     ripemd: hashjs_hash(ripemd160)
   };
 }
@@ -68,7 +81,7 @@ export default {
 
   /** @see module:md5 */
   md5: hash_fns.md5,
-  /** @see rusha */
+  /** @see asmCrypto */
   sha1: hash_fns.sha1,
   /** @see hash.js */
   sha224: hash_fns.sha224,
@@ -76,7 +89,7 @@ export default {
   sha256: hash_fns.sha256,
   /** @see hash.js */
   sha384: hash_fns.sha384,
-  /** @see hash.js */
+  /** @see asmCrypto */
   sha512: hash_fns.sha512,
   /** @see hash.js */
   ripemd: hash_fns.ripemd,

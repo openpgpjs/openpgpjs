@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires encoding/armor
  * @requires type/keyid
  * @requires config
@@ -28,6 +29,7 @@
  * @module message
  */
 
+import stream from 'web-stream-tools';
 import armor from './encoding/armor';
 import type_keyid from './type/keyid';
 import config from './config';
@@ -77,7 +79,7 @@ Message.prototype.getSigningKeyIds = function() {
   // search for one pass signatures
   const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
   onePassSigList.forEach(function(packet) {
-    keyIds.push(packet.signingKeyId);
+    keyIds.push(packet.issuerKeyId);
   });
   // if nothing found look for signature packets
   if (!keyIds.length) {
@@ -94,10 +96,11 @@ Message.prototype.getSigningKeyIds = function() {
  * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
  * @param  {Array<String>} passwords    (optional) passwords used to decrypt
  * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+ * @param  {Boolean} streaming          (optional) whether to process data as a stream
  * @returns {Promise<Message>}             new message with decrypted content
  * @async
  */
-Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) {
+Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, streaming) {
   const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
 
   const symEncryptedPacketlist = this.packets.filterByTag(
@@ -118,13 +121,16 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
     }
 
     try {
-      // eslint-disable-next-line no-await-in-loop
-      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data);
+      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data, streaming);
       break;
     } catch (e) {
+      util.print_debug_error(e);
       exception = e;
     }
   }
+  // We don't await stream.cancel here because it only returns when the other copy is canceled too.
+  stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
+  symEncryptedPacket.encrypted = null;
 
   if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
     throw exception || new Error('Decryption failed.');
@@ -161,6 +167,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           util.print_debug_error(err);
         }
       }));
+      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+      keyPacket.encrypted = null;
     }));
   } else if (privateKeys) {
     const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
@@ -186,6 +194,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           util.print_debug_error(err);
         }
       }));
+      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+      keyPacket.encrypted = null;
     }));
   } else {
     throw new Error('No key or password specified.');
@@ -248,10 +258,11 @@ Message.prototype.getText = function() {
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Boolean} streaming         (optional) whether to process data as a stream
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}, streaming) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -291,7 +302,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
   }
   symEncryptedPacket.packets = this.packets;
 
-  await symEncryptedPacket.encrypt(symAlgo, sessionKey);
+  await symEncryptedPacket.encrypt(symAlgo, sessionKey, streaming);
 
   msg.packets.push(symEncryptedPacket);
   symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
@@ -406,10 +417,10 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
       const signaturePacket = existingSigPacketlist[i];
       const onePassSig = new packet.OnePassSignature();
-      onePassSig.type = signatureType;
+      onePassSig.signatureType = signaturePacket.signatureType;
       onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
       onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
-      onePassSig.signingKeyId = signaturePacket.issuerKeyId;
+      onePassSig.issuerKeyId = signaturePacket.issuerKeyId;
       if (!privateKeys.length && i === 0) {
         onePassSig.flags = 1;
       }
@@ -427,10 +438,10 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
                       privateKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
-    onePassSig.type = signatureType;
+    onePassSig.signatureType = signatureType;
     onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
-    onePassSig.signingKeyId = signingKey.getKeyId();
+    onePassSig.issuerKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
       onePassSig.flags = 1;
     }
@@ -524,16 +535,46 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * Verify message signatures
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+ * @param  {Boolean} streaming (optional) whether to process data as a stream
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verify = function(keys, date=new Date()) {
+Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
+  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
+  if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
+    onePassSigList.forEach(onePassSig => {
+      onePassSig.correspondingSig = new Promise(resolve => {
+        onePassSig.correspondingSigResolve = resolve;
+      });
+      onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
+      onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
+    });
+    const verificationObjects = await createVerificationObjects(onePassSigList, literalDataList, keys, date);
+    msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
+      const writer = stream.getWriter(writable);
+      try {
+        await stream.readToEnd(stream.transform(readable, signature => {
+          onePassSigList.pop().correspondingSigResolve(signature);
+        }));
+        await writer.ready;
+        await writer.close();
+      } catch(e) {
+        onePassSigList.forEach(onePassSig => {
+          onePassSig.correspondingSigResolve({
+            verify: () => undefined
+          });
+        });
+        await writer.abort(e);
+      }
+    });
+    return verificationObjects.reverse();
+  }
   return createVerificationObjects(signatureList, literalDataList, keys, date);
 };
 
@@ -556,6 +597,41 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
 };
 
 /**
+ * Create object containing signer's keyid and validity of signature
+ * @param {module:packet.Signature} signature signature packets
+ * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
+ * @param {Array<module:key.Key>} keys array of keys to verify signatures
+ * @param {Date} date Verify the signature against the given date,
+ *                    i.e. check signature creation time < date < expiration time
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @async
+ */
+async function createVerificationObject(signature, literalDataList, keys, date=new Date()) {
+  let keyPacket = null;
+  await Promise.all(keys.map(async function(key) {
+    // Look for the unique key that matches issuerKeyId of signature
+    const result = await key.getSigningKey(signature.issuerKeyId, date);
+    if (result) {
+      keyPacket = result.keyPacket;
+    }
+  }));
+
+  const verifiedSig = {
+    keyid: signature.issuerKeyId,
+    verified: keyPacket ? signature.verify(keyPacket, literalDataList[0]) : Promise.resolve(null)
+  };
+
+  verifiedSig.signature = Promise.resolve(signature.correspondingSig || signature).then(signature => {
+    const packetlist = new packet.List();
+    packetlist.push(signature);
+    return new Signature(packetlist);
+  });
+
+  return verifiedSig;
+}
+
+/**
  * Create list of objects containing signer's keyid and validity of signature
  * @param {Array<module:packet.Signature>} signatureList array of signature packets
  * @param {Array<module:packet.Literal>} literalDataList array of literal data packets
@@ -568,25 +644,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  */
 export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
   return Promise.all(signatureList.map(async function(signature) {
-    let keyPacket = null;
-    await Promise.all(keys.map(async function(key) {
-      // Look for the unique key that matches issuerKeyId of signature
-      const result = await key.getSigningKey(signature.issuerKeyId, date);
-      if (result) {
-        keyPacket = result.keyPacket;
-      }
-    }));
-
-    const verifiedSig = {
-      keyid: signature.issuerKeyId,
-      valid: keyPacket ? await signature.verify(keyPacket, literalDataList[0]) : null
-    };
-
-    const packetlist = new packet.List();
-    packetlist.push(signature);
-    verifiedSig.signature = new Signature(packetlist);
-
-    return verifiedSig;
+    return createVerificationObject(signature, literalDataList, keys, date);
   }));
 }
 
@@ -606,13 +664,13 @@ Message.prototype.unwrapCompressed = function() {
  * Append signature to unencrypted message object
  * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
  */
-Message.prototype.appendSignature = function(detachedSignature) {
-  this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : armor.decode(detachedSignature).data);
+Message.prototype.appendSignature = async function(detachedSignature) {
+  await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await armor.decode(detachedSignature)).data);
 };
 
 /**
  * Returns ASCII armored text of message
- * @returns {String} ASCII armor
+ * @returns {ReadableStream<String>} ASCII armor
  */
 Message.prototype.armor = function() {
   return armor.encode(enums.armor.message, this.packets.write());
@@ -620,32 +678,45 @@ Message.prototype.armor = function() {
 
 /**
  * reads an OpenPGP armored message and returns a message object
- * @param {String} armoredText text to be parsed
- * @returns {module:message.Message} new message object
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
+ * @returns {Promise<module:message.Message>} new message object
+ * @async
  * @static
  */
-export function readArmored(armoredText) {
+export async function readArmored(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
-  const input = armor.decode(armoredText).data;
-  return read(input);
+  const streamType = util.isStream(armoredText);
+  if (streamType === 'node') {
+    armoredText = stream.nodeToWeb(armoredText);
+  }
+  const input = await armor.decode(armoredText);
+  return read(input.data, streamType);
 }
 
 /**
  * reads an OpenPGP message as byte array and returns a message object
- * @param {Uint8Array} input   binary message
- * @returns {Message}           new message object
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input    binary message
+ * @param {Boolean} fromStream  whether the message was created from a Stream
+ * @returns {Promise<module:message.Message>} new message object
+ * @async
  * @static
  */
-export function read(input) {
+export async function read(input, fromStream=util.isStream(input)) {
+  const streamType = util.isStream(input);
+  if (streamType === 'node') {
+    input = stream.nodeToWeb(input);
+  }
   const packetlist = new packet.List();
-  packetlist.read(input);
-  return new Message(packetlist);
+  await packetlist.read(input);
+  const message = new Message(packetlist);
+  message.fromStream = fromStream;
+  return message;
 }
 
 /**
  * creates new message object from text
- * @param {String} text
+ * @param {String | ReadableStream<String>} text
  * @param {String} filename (optional)
  * @param {Date} date (optional)
  * @param {utf8|binary|text|mime} type (optional) data packet type
@@ -653,6 +724,10 @@ export function read(input) {
  * @static
  */
 export function fromText(text, filename, date=new Date(), type='utf8') {
+  const streamType = util.isStream(text);
+  if (streamType === 'node') {
+    text = stream.nodeToWeb(text);
+  }
   const literalDataPacket = new packet.Literal(date);
   // text will be converted to UTF8
   literalDataPacket.setText(text, type);
@@ -661,12 +736,14 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
   }
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  return new Message(literalDataPacketlist);
+  const message = new Message(literalDataPacketlist);
+  message.fromStream = streamType;
+  return message;
 }
 
 /**
  * creates new message object from binary data
- * @param {Uint8Array} bytes
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
  * @param {String} filename (optional)
  * @param {Date} date (optional)
  * @param {utf8|binary|text|mime} type (optional) data packet type
@@ -674,8 +751,12 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date(), type='binary') {
-  if (!util.isUint8Array(bytes)) {
-    throw new Error('Data must be in the form of a Uint8Array');
+  const streamType = util.isStream(bytes);
+  if (!util.isUint8Array(bytes) && !streamType) {
+    throw new Error('Data must be in the form of a Uint8Array or Stream');
+  }
+  if (streamType === 'node') {
+    bytes = stream.nodeToWeb(bytes);
   }
 
   const literalDataPacket = new packet.Literal(date);
@@ -685,5 +766,7 @@ export function fromBinary(bytes, filename, date=new Date(), type='binary') {
   }
   const literalDataPacketlist = new packet.List();
   literalDataPacketlist.push(literalDataPacket);
-  return new Message(literalDataPacketlist);
+  const message = new Message(literalDataPacketlist);
+  message.fromStream = streamType;
+  return message;
 }

@@ -26,7 +26,8 @@ module.exports = {
     "unescape": true,
     "postMessage": true,
     "resolves": true,
-    "rejects": true
+    "rejects": true,
+    "TransformStream": true
   },
 
   "rules": {
@@ -137,7 +138,6 @@ module.exports = {
     "newline-per-chained-call": "off",
     "no-alert": "error",
     "no-array-constructor": "error",
-    "no-await-in-loop": "error",
     "no-bitwise": "off",
     "no-buffer-constructor": "error",
     "no-caller": "error",
@@ -320,6 +320,7 @@ module.exports = {
     "require-await": 0,
     "no-multi-assign": 0,
     "no-underscore-dangle": 0,
+    "no-await-in-loop": 0,
 
     // Custom errors:
     "no-undef": 2,

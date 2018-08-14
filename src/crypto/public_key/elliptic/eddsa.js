@@ -29,14 +29,15 @@ import Curve from './curves';
  * @param  {module:enums.hash} hash_algo Hash algorithm used to sign
  * @param  {Uint8Array}        m         Message to sign
  * @param  {Uint8Array}        d         Private key used to sign
+ * @param  {Uint8Array}        hashed    The hashed message
  * @returns {{R: Uint8Array,
  *            S: Uint8Array}}            Signature of the message
  * @async
  */
-async function sign(oid, hash_algo, m, d) {
+async function sign(oid, hash_algo, m, d, hashed) {
   const curve = new Curve(oid);
   const key = curve.keyFromSecret(d);
-  const signature = await key.sign(m, hash_algo);
+  const signature = await key.sign(m, hash_algo, hashed);
   // EdDSA signature params are returned in little-endian format
   return { R: new Uint8Array(signature.Rencoded()),
            S: new Uint8Array(signature.Sencoded()) };
@@ -50,13 +51,14 @@ async function sign(oid, hash_algo, m, d) {
              S: Uint8Array}}   signature Signature to verify the message
  * @param  {Uint8Array}        m         Message to verify
  * @param  {Uint8Array}        Q         Public key used to verify the message
+ * @param  {Uint8Array}        hashed    The hashed message
  * @returns {Boolean}
  * @async
  */
-async function verify(oid, hash_algo, signature, m, Q) {
+async function verify(oid, hash_algo, signature, m, Q, hashed) {
   const curve = new Curve(oid);
   const key = curve.keyFromPublic(Q);
-  return key.verify(m, signature, hash_algo);
+  return key.verify(m, signature, hash_algo, hashed);
 }
 
 export default { sign, verify };

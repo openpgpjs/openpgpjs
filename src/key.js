@@ -37,6 +37,11 @@ import util from './util';
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
  * @param  {module:packet.List} packetlist The packets that form this key
+ * @borrows module:packet.PublicKey#getKeyId as Key#getKeyId
+ * @borrows module:packet.PublicKey#getFingerprint as Key#getFingerprint
+ * @borrows module:packet.PublicKey#getAlgorithmInfo as Key#getAlgorithmInfo
+ * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
+ * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
 export function Key(packetlist) {
   if (!(this instanceof Key)) {
@@ -152,10 +157,10 @@ Key.prototype.toPacketlist = function() {
 };
 
 /**
- * Returns packetlist containing all public or private subkey packets matching keyId;
- * If keyId is not present, returns all subkey packets.
+ * Returns an array containing all public or private subkeys matching keyId;
+ * If keyId is not present, returns all subkeys.
  * @param  {type/keyid} keyId
- * @returns {Array<SubKey>}
+ * @returns {Array<module:key~SubKey>}
  */
 Key.prototype.getSubkeys = function(keyId=null) {
   const subKeys = [];
@@ -168,10 +173,10 @@ Key.prototype.getSubkeys = function(keyId=null) {
 };
 
 /**
- * Returns a packetlist containing all public or private key packets matching keyId.
- * If keyId is not present, returns all key packets starting with the primary key.
+ * Returns an array containing all public or private keys matching keyId.
+ * If keyId is not present, returns all keys starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {Array<Key|SubKey>}
+ * @returns {Array<module:key.Key|module:key~SubKey>}
  */
 Key.prototype.getKeys = function(keyId=null) {
   const keys = [];
@@ -182,7 +187,7 @@ Key.prototype.getKeys = function(keyId=null) {
 };
 
 /**
- * Returns key IDs of all key packets
+ * Returns key IDs of all keys
  * @returns {Array<module:type/keyid>}
  */
 Key.prototype.getKeyIds = function() {
@@ -195,7 +200,7 @@ Key.prototype.getKeyIds = function() {
  */
 Key.prototype.getUserIds = function() {
   return this.users.map(user => {
-    return user.userId ? util.encode_utf8(user.userId.userid) : null;
+    return user.userId ? user.userId.userid : null;
   }).filter(userid => userid !== null);
 };
 
@@ -248,7 +253,7 @@ Key.prototype.toPublic = function() {
 
 /**
  * Returns ASCII armored text of key
- * @returns {String} ASCII armor
+ * @returns {ReadableStream<String>} ASCII armor
  */
 Key.prototype.armor = function() {
   const type = this.isPublic() ? enums.armor.public_key : enums.armor.private_key;
@@ -287,7 +292,7 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
- * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
+ * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
  */
 Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
@@ -296,7 +301,6 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
-        // eslint-disable-next-line no-await-in-loop
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
@@ -331,18 +335,16 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
- * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
+ * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption key has been found
  * @async
  */
 Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
-    // V3: keys MUST NOT have subkeys
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
-        // eslint-disable-next-line no-await-in-loop
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
@@ -479,28 +481,23 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
  * @async
  */
 Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
-  if (this.keyPacket.version === 3) {
-    return getExpirationTime(this.keyPacket);
+  const primaryUser = await this.getPrimaryUser(null);
+  if (!primaryUser) {
+    throw new Error('Could not find primary user');
   }
-  if (this.keyPacket.version >= 4) {
-    const primaryUser = await this.getPrimaryUser(null);
-    if (!primaryUser) {
-      throw new Error('Could not find primary user');
-    }
-    const selfCert = primaryUser.selfCertification;
-    const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
-    const sigExpiry = selfCert.getExpirationTime();
-    let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
-    if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-      const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
-      if (encryptExpiry < expiry) expiry = encryptExpiry;
-    }
-    if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-      const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
-      if (signExpiry < expiry) expiry = signExpiry;
-    }
-    return expiry;
+  const selfCert = primaryUser.selfCertification;
+  const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
+  const sigExpiry = selfCert.getExpirationTime();
+  let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
+  if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
+    const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
+    if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
+  if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
+    const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
+    if (signExpiry < expiry) expiry = signExpiry;
+  }
+  return expiry;
 };
 
 /**
@@ -541,11 +538,9 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   const primaryKey = this.keyPacket;
   const dataToVerify = { userId: user.userId, key: primaryKey };
   // skip if certificates is invalid, revoked, or expired
-  // eslint-disable-next-line no-await-in-loop
   if (!(cert.verified || await cert.verify(primaryKey, dataToVerify))) {
     return null;
   }
-  // eslint-disable-next-line no-await-in-loop
   if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
     return null;
   }
@@ -563,6 +558,8 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
  * If the specified key is a private key and the destination key is public,
  * the destination key is transformed to a private key.
  * @param  {module:key.Key} key Source key to merge
+ * @returns {Promise<undefined>}
+ * @async
  */
 Key.prototype.update = async function(key) {
   if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
@@ -654,7 +651,8 @@ async function mergeSignatures(source, dest, attr, checkFn) {
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
- * @return {module:key~Key} new key with revocation signature
+ * @returns {Promise<module:key.Key>} new key with revocation signature
+ * @async
  */
 Key.prototype.revoke = async function({
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
@@ -676,7 +674,7 @@ Key.prototype.revoke = async function({
 /**
  * Get revocation certificate from a revoked key.
  *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
- * @return {String} armored revocation certificate
+ * @returns {String} armored revocation certificate
  */
 Key.prototype.getRevocationCertificate = function() {
   if (this.revocationSignatures.length) {
@@ -691,12 +689,13 @@ Key.prototype.getRevocationCertificate = function() {
  * This adds the first signature packet in the armored text to the key,
  * if it is a valid revocation signature.
  * @param  {String} revocationCertificate armored revocation certificate
- * @return {module:key~Key} new revoked key
+ * @returns {Promise<module:key.Key>} new revoked key
+ * @async
  */
 Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
-  const input = armor.decode(revocationCertificate);
+  const input = await armor.decode(revocationCertificate);
   const packetlist = new packet.List();
-  packetlist.read(input.data);
+  await packetlist.read(input.data);
   const revocationSignature = packetlist.findPacket(enums.packet.signature);
   if (!revocationSignature || revocationSignature.signatureType !== enums.signature.key_revocation) {
     throw new Error('Could not find revocation signature packet');
@@ -890,7 +889,7 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
- * @return {module:packet/signature}         signature packet
+ * @returns {module:packet/signature}         signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
   if (!signingKeyPacket.isDecrypted()) {
@@ -1001,6 +1000,8 @@ User.prototype.verify = async function(primaryKey) {
  * @param  {module:key.User}             user       Source user to merge
  * @param  {module:packet.SecretKey|
  *          module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @returns {Promise<undefined>}
+ * @async
  */
 User.prototype.update = async function(user, primaryKey) {
   const dataToVerify = {
@@ -1023,6 +1024,11 @@ User.prototype.update = async function(user, primaryKey) {
 /**
  * @class
  * @classdesc Class that represents a subkey packet and the relevant signatures.
+ * @borrows module:packet.PublicSubkey#getKeyId as SubKey#getKeyId
+ * @borrows module:packet.PublicSubkey#getFingerprint as SubKey#getFingerprint
+ * @borrows module:packet.PublicSubkey#getAlgorithmInfo as SubKey#getAlgorithmInfo
+ * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
+ * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
  */
 function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
@@ -1079,10 +1085,6 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
 SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
-  // check for V3 expiration time
-  if (this.keyPacket.version === 3 && isDataExpired(this.keyPacket, null, date)) {
-    return enums.keyStatus.expired;
-  }
   // check subkey binding signatures
   const bindingSignature = getLatestSignature(this.bindingSignatures, date);
   // check binding signature is verified
@@ -1114,9 +1116,11 @@ SubKey.prototype.getExpirationTime = function(date=new Date()) {
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key.SubKey}           subKey     Source subkey to merge
+ * @param  {module:key~SubKey}           subKey     Source subkey to merge
  * @param  {module:packet.SecretKey|
             module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @returns {Promise<undefined>}
+ * @async
  */
 SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
@@ -1160,7 +1164,8 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
- * @return {module:key~SubKey} new subkey with revocation signature
+ * @returns {Promise<module:key~SubKey>} new subkey with revocation signature
+ * @async
  */
 SubKey.prototype.revoke = async function(primaryKey, {
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
@@ -1177,6 +1182,8 @@ SubKey.prototype.revoke = async function(primaryKey, {
   return subKey;
 };
 
+/**
+ */
 ['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name] =
@@ -1188,16 +1195,17 @@ SubKey.prototype.revoke = async function(primaryKey, {
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
- * @returns {{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}} result object with key and error arrays
+ * @returns {Promise<{keys: Array<module:key.Key>,
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @async
  * @static
  */
-export function read(data) {
+export async function read(data) {
   const result = {};
   result.keys = [];
   try {
     const packetlist = new packet.List();
-    packetlist.read(data);
+    await packetlist.read(data);
     const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
       throw new Error('No key packet found');
@@ -1221,14 +1229,15 @@ export function read(data) {
 
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
- * @param {String} armoredText text to be parsed
- * @returns {{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}} result object with key and error arrays
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
+ * @returns {Promise<{keys: Array<module:key.Key>,
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @async
  * @static
  */
-export function readArmored(armoredText) {
+export async function readArmored(armoredText) {
   try {
-    const input = armor.decode(armoredText);
+    const input = await armor.decode(armoredText);
     if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
       throw new Error('Armored text not of type key');
     }
@@ -1561,12 +1570,8 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
 
 function getExpirationTime(keyPacket, signature) {
   let expirationTime;
-  // check V3 expiration time
-  if (keyPacket.version === 3 && keyPacket.expirationTimeV3 !== 0) {
-    expirationTime = keyPacket.created.getTime() + keyPacket.expirationTimeV3*24*3600*1000;
-  }
   // check V4 expiration time
-  if (keyPacket.version >= 4 && signature.keyNeverExpires === false) {
+  if (signature.keyNeverExpires === false) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;

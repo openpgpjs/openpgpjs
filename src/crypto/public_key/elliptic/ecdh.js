@@ -67,7 +67,7 @@ function kdf(hash_algo, X, length, param) {
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {{V: BN, C: BN}}                     Returns ephemeral key and encoded session key
+ * @returns {Promise<{V: BN, C: BN}>}            Returns ephemeral key and encoded session key
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
@@ -95,7 +95,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Uint8Array}                         Value derived from session
+ * @returns {Promise<Uint8Array>}                Value derived from session
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {

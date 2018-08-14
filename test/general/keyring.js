@@ -3,9 +3,10 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const chai = require('chai');
 
 const { expect } = chai;
+
 const keyring = new openpgp.Keyring();
 
-describe("Keyring", function() {
+describe("Keyring", async function() {
   const user = 'whiteout.test@t-online.de';
   const passphrase = 'asdf';
   const keySize = 512;
@@ -105,13 +106,14 @@ describe("Keyring", function() {
       '=4jat',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-  it('Import key pair', function() {
+  it('Import key pair', async function() {
+    await keyring.load();
     // clear any keys already in the keychain
     keyring.clear();
-    keyring.store();
-    keyring.publicKeys.importKey(pubkey);
-    keyring.publicKeys.importKey(pubkey2);
-    keyring.privateKeys.importKey(privkey);
+    await keyring.store();
+    await keyring.publicKeys.importKey(pubkey);
+    await keyring.publicKeys.importKey(pubkey2);
+    await keyring.privateKeys.importKey(privkey);
   });
 
   it('getKeysForId() - unknown id', function() {
@@ -202,8 +204,8 @@ describe("Keyring", function() {
     expect(keys).to.exist.and.have.length(1);
   });
 
-  it('publicKeys.getForAddress() - valid address, plain email user id', function() {
-    keyring.publicKeys.importKey(pubkey3);
+  it('publicKeys.getForAddress() - valid address, plain email user id', async function() {
+    await keyring.publicKeys.importKey(pubkey3);
     const keys = keyring.publicKeys.getForAddress(user3);
     keyring.removeKeysForId(keyFingerP3);
     expect(keys).to.exist.and.have.length(1);
@@ -229,12 +231,13 @@ describe("Keyring", function() {
     expect(key).to.exist.and.have.length(1);
   });
 
-  it('store keys in localstorage', function(){
-    keyring.store();
+  it('store keys in localstorage', async function(){
+    await keyring.store();
   });
 
-  it('after loading from localstorage: getKeysForKeyId() - valid id', function() {
+  it('after loading from localstorage: getKeysForKeyId() - valid id', async function() {
     const keyring = new openpgp.Keyring();
+    await keyring.load();
     const keys = keyring.getKeysForId(keyId);
     // we expect public and private key
     expect(keys).to.exist.and.have.length(2);
@@ -265,36 +268,36 @@ describe("Keyring", function() {
     expect(keyring.publicKeys.keys).to.be.empty;
   });
 
-  it('customize localstorage itemname', function() {
+  it('customize localstorage itemname', async function() {
     const localstore1 = new openpgp.Keyring.localstore('my-custom-prefix-');
     const localstore2 = new openpgp.Keyring.localstore('my-custom-prefix-');
     const localstore3 = new openpgp.Keyring.localstore();
-    localstore3.storePublic([]);
-    const key = openpgp.key.readArmored(pubkey).keys[0];
-    localstore1.storePublic([key]);
-    expect(localstore2.loadPublic()[0].getKeyId().equals(key.getKeyId())).to.be.true;
-    expect(localstore3.loadPublic()).to.have.length(0);
+    await localstore3.storePublic([]);
+    const key = (await openpgp.key.readArmored(pubkey)).keys[0];
+    await localstore1.storePublic([key]);
+    expect((await localstore2.loadPublic())[0].getKeyId().equals(key.getKeyId())).to.be.true;
+    expect(await localstore3.loadPublic()).to.have.length(0);
   });
 
-  it('emptying keyring and storing removes keys', function() {
-    const key = openpgp.key.readArmored(pubkey).keys[0];
+  it('emptying keyring and storing removes keys', async function() {
+    const key = (await openpgp.key.readArmored(pubkey)).keys[0];
 
     const localstore = new openpgp.Keyring.localstore('remove-prefix-');
 
-    localstore.storePublic([]);
+    await localstore.storePublic([]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
 
-    localstore.storePublic([key]);
+    await localstore.storePublic([key]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.not.null;
 
-    localstore.storePublic([]);
+    await localstore.storePublic([]);
     expect(localstore.storage.getItem('remove-prefix-public-keys')).to.be.null;
   });
 
-  it('removeKeysForId() - unknown id', function() {
-    keyring.publicKeys.importKey(pubkey);
-    keyring.publicKeys.importKey(pubkey2);
-    keyring.privateKeys.importKey(privkey);
+  it('removeKeysForId() - unknown id', async function() {
+    await keyring.publicKeys.importKey(pubkey);
+    await keyring.publicKeys.importKey(pubkey2);
+    await keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
     const keys = keyring.removeKeysForId('01234567890123456');
@@ -310,10 +313,10 @@ describe("Keyring", function() {
     expect(keyring.privateKeys.keys).to.have.length(0);
   });
 
-  it('removeKeysForId() - unknown fingerprint', function() {
-    keyring.publicKeys.importKey(pubkey);
-    keyring.publicKeys.importKey(pubkey2);
-    keyring.privateKeys.importKey(privkey);
+  it('removeKeysForId() - unknown fingerprint', async function() {
+    await keyring.publicKeys.importKey(pubkey);
+    await keyring.publicKeys.importKey(pubkey2);
+    await keyring.privateKeys.importKey(privkey);
     expect(keyring.publicKeys.keys).to.have.length(2);
     expect(keyring.privateKeys.keys).to.have.length(1);
     const keys = keyring.removeKeysForId('71130e8383bef9526e062600d5e9f93acbbc7275');

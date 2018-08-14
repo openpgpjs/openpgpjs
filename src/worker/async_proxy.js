@@ -143,13 +143,13 @@ AsyncProxy.prototype.delegate = function(method, options) {
     }
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
     this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options));
     this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker
-    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject };
+    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(util.restoreStreams(data), method)), reject };
   });
 };
 

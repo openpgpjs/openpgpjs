@@ -13,6 +13,8 @@ module.exports = function(grunt) {
   };
 
   // Project configuration.
+  const dev = !!grunt.option('dev');
+  const compat = !!grunt.option('compat');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -22,48 +24,48 @@ module.exports = function(grunt) {
         },
         options: {
           browserifyOptions: {
+            fullPaths: dev,
+            debug: dev,
             standalone: 'openpgp'
           },
+          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
           // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
+          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'].concat(
+            compat ? [] : [
+              'whatwg-fetch',
+              'core-js/fn/array/fill',
+              'core-js/fn/array/find',
+              'core-js/fn/array/includes',
+              'core-js/fn/array/from',
+              'core-js/fn/promise',
+              'core-js/fn/typed/uint8-array',
+              'core-js/fn/string/repeat',
+              'core-js/fn/symbol',
+              'core-js/fn/object/assign',
+            ]
+          ),
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto and address-rfc2822 in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime"],
+              // Only babelify web-stream-tools, asmcrypto and address-rfc2822 in node_modules
+              only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|(?!.*\/node_modules\/)).*$/,
+              plugins: compat ? [
+                "transform-async-to-generator",
+                "syntax-async-functions",
+                "transform-regenerator",
+                "transform-runtime"
+              ] : [],
               ignore: ['*.min.js'],
-              presets: ["env"]
-            }]
-          ],
-          plugin: ['browserify-derequire']
-        }
-      },
-      openpgp_debug: {
-        files: {
-          'dist/openpgp_debug.js': ['./src/index.js']
-        },
-        options: {
-          browserifyOptions: {
-            fullPaths: true,
-            debug: true,
-            standalone: 'openpgp'
-          },
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js'],
-          transform: [
-            ["babelify", {
-              global: true,
-              // Only babelify asmcrypto in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime"],
-              ignore: ['*.min.js'],
-              presets: ["env"]
+              presets: [["env", {
+                targets: {
+                  browsers: compat ? ['defaults'] : [
+                    'Last 2 Chrome versions',
+                    'Last 2 Firefox versions',
+                    'Last 2 Safari versions',
+                    'Last 2 Edge versions'
+                  ]
+                }
+              }]]
             }]
           ],
           plugin: ['browserify-derequire']
@@ -72,6 +74,9 @@ module.exports = function(grunt) {
       worker: {
         files: {
           'dist/openpgp.worker.js': ['./src/worker/worker.js']
+        },
+        options: {
+          cacheFile: 'browserify-cache-worker.json'
         }
       },
       unittests: {
@@ -79,6 +84,7 @@ module.exports = function(grunt) {
           'test/lib/unittests-bundle.js': ['./test/unittests.js']
         },
         options: {
+          cacheFile: 'browserify-cache-unittests.json',
           external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp'],
           transform: [
             ["babelify", {
@@ -101,14 +107,6 @@ module.exports = function(grunt) {
       openpgp: {
         src: ['dist/openpgp.js'],
         dest: ['dist/openpgp.js'],
-        replacements: [{
-          from: /OpenPGP.js VERSION/g,
-          to: 'OpenPGP.js v<%= pkg.version %>'
-        }]
-      },
-      openpgp_debug: {
-        src: ['dist/openpgp_debug.js'],
-        dest: ['dist/openpgp_debug.js'],
         replacements: [{
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>'
@@ -199,6 +197,12 @@ module.exports = function(grunt) {
         cwd: 'node_modules/compressjs/bin/',
         src: ['bzip2.build.js'],
         dest: 'src/compression/'
+      },
+      openpgp_compat: {
+        expand: true,
+        cwd: 'dist/',
+        src: ['*.js'],
+        dest: 'dist/compat/'
       }
     },
     clean: ['dist/'],
@@ -222,7 +226,7 @@ module.exports = function(grunt) {
         options: {
           username: 'openpgpjs',
           key: getSauceKey,
-          urls: ['http://127.0.0.1:3000/test/unittests.html'],
+          urls: ['http://localhost:3000/test/unittests.html?saucelabs=true'],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
           browsers: [browser_capabilities],
@@ -295,14 +299,15 @@ module.exports = function(grunt) {
   }
 
   // Build tasks
-  grunt.registerTask('version', ['replace:openpgp', 'replace:openpgp_debug']);
+  grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('default', ['clean', 'copy:bzip2', 'browserify', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build', ['copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
+  grunt.registerTask('default', ['build']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['default', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['default', 'copy:browsertest', 'connect:test', 'watch']);
+  grunt.registerTask('saucelabs', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
+  grunt.registerTask('browsertest', ['build', 'copy:browsertest', 'connect:test', 'watch']);
 
 };
