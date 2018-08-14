@@ -25,7 +25,7 @@ grunt test
 
 # Add build files to git
 sed -i "" '/^dist\/$/d' .gitignore
-git add dist/ *.json
+git add dist/ bower.json npm-shrinkwrap.json package.json
 git commit -m "Release new version"
 git checkout .gitignore
 git tag v$1
