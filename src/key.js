@@ -37,6 +37,11 @@ import util from './util';
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
  * @param  {module:packet.List} packetlist The packets that form this key
+ * @borrows module:packet.PublicKey#getKeyId as Key#getKeyId
+ * @borrows module:packet.PublicKey#getFingerprint as Key#getFingerprint
+ * @borrows module:packet.PublicKey#getAlgorithmInfo as Key#getAlgorithmInfo
+ * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
+ * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
 export function Key(packetlist) {
   if (!(this instanceof Key)) {
@@ -152,10 +157,10 @@ Key.prototype.toPacketlist = function() {
 };
 
 /**
- * Returns packetlist containing all public or private subkey packets matching keyId;
- * If keyId is not present, returns all subkey packets.
+ * Returns an array containing all public or private subkeys matching keyId;
+ * If keyId is not present, returns all subkeys.
  * @param  {type/keyid} keyId
- * @returns {Array<SubKey>}
+ * @returns {Array<module:key~SubKey>}
  */
 Key.prototype.getSubkeys = function(keyId=null) {
   const subKeys = [];
@@ -168,10 +173,10 @@ Key.prototype.getSubkeys = function(keyId=null) {
 };
 
 /**
- * Returns a packetlist containing all public or private key packets matching keyId.
- * If keyId is not present, returns all key packets starting with the primary key.
+ * Returns an array containing all public or private keys matching keyId.
+ * If keyId is not present, returns all keys starting with the primary key.
  * @param  {type/keyid} keyId
- * @returns {Array<Key|SubKey>}
+ * @returns {Array<module:key.Key|module:key~SubKey>}
  */
 Key.prototype.getKeys = function(keyId=null) {
   const keys = [];
@@ -182,7 +187,7 @@ Key.prototype.getKeys = function(keyId=null) {
 };
 
 /**
- * Returns key IDs of all key packets
+ * Returns key IDs of all keys
  * @returns {Array<module:type/keyid>}
  */
 Key.prototype.getKeyIds = function() {
@@ -287,7 +292,7 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
- * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
+ * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
  */
 Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
@@ -330,7 +335,7 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
- * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
+ * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption key has been found
  * @async
  */
 Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}) {
@@ -553,6 +558,8 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
  * If the specified key is a private key and the destination key is public,
  * the destination key is transformed to a private key.
  * @param  {module:key.Key} key Source key to merge
+ * @returns {Promise<undefined>}
+ * @async
  */
 Key.prototype.update = async function(key) {
   if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
@@ -644,7 +651,8 @@ async function mergeSignatures(source, dest, attr, checkFn) {
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
- * @return {module:key~Key} new key with revocation signature
+ * @returns {Promise<module:key.Key>} new key with revocation signature
+ * @async
  */
 Key.prototype.revoke = async function({
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
@@ -666,7 +674,7 @@ Key.prototype.revoke = async function({
 /**
  * Get revocation certificate from a revoked key.
  *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
- * @return {String} armored revocation certificate
+ * @returns {String} armored revocation certificate
  */
 Key.prototype.getRevocationCertificate = function() {
   if (this.revocationSignatures.length) {
@@ -681,7 +689,8 @@ Key.prototype.getRevocationCertificate = function() {
  * This adds the first signature packet in the armored text to the key,
  * if it is a valid revocation signature.
  * @param  {String} revocationCertificate armored revocation certificate
- * @return {module:key~Key} new revoked key
+ * @returns {Promise<module:key.Key>} new revoked key
+ * @async
  */
 Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
   const input = await armor.decode(revocationCertificate);
@@ -880,7 +889,7 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
- * @return {module:packet/signature}         signature packet
+ * @returns {module:packet/signature}         signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
   if (!signingKeyPacket.isDecrypted()) {
@@ -991,6 +1000,8 @@ User.prototype.verify = async function(primaryKey) {
  * @param  {module:key.User}             user       Source user to merge
  * @param  {module:packet.SecretKey|
  *          module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @returns {Promise<undefined>}
+ * @async
  */
 User.prototype.update = async function(user, primaryKey) {
   const dataToVerify = {
@@ -1013,6 +1024,11 @@ User.prototype.update = async function(user, primaryKey) {
 /**
  * @class
  * @classdesc Class that represents a subkey packet and the relevant signatures.
+ * @borrows module:packet.PublicSubkey#getKeyId as SubKey#getKeyId
+ * @borrows module:packet.PublicSubkey#getFingerprint as SubKey#getFingerprint
+ * @borrows module:packet.PublicSubkey#getAlgorithmInfo as SubKey#getAlgorithmInfo
+ * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
+ * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
  */
 function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
@@ -1100,9 +1116,11 @@ SubKey.prototype.getExpirationTime = function(date=new Date()) {
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key.SubKey}           subKey     Source subkey to merge
+ * @param  {module:key~SubKey}           subKey     Source subkey to merge
  * @param  {module:packet.SecretKey|
             module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @returns {Promise<undefined>}
+ * @async
  */
 SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
@@ -1146,7 +1164,8 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
  * @param  {Date} date optional, override the creationtime of the revocation signature
- * @return {module:key~SubKey} new subkey with revocation signature
+ * @returns {Promise<module:key~SubKey>} new subkey with revocation signature
+ * @async
  */
 SubKey.prototype.revoke = async function(primaryKey, {
   flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
@@ -1163,6 +1182,8 @@ SubKey.prototype.revoke = async function(primaryKey, {
   return subKey;
 };
 
+/**
+ */
 ['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name] =
@@ -1174,8 +1195,9 @@ SubKey.prototype.revoke = async function(primaryKey, {
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
- * @returns {{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}} result object with key and error arrays
+ * @returns {Promise<{keys: Array<module:key.Key>,
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @async
  * @static
  */
 export async function read(data) {
@@ -1208,8 +1230,8 @@ export async function read(data) {
 /**
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String | ReadableStream<String>} armoredText text to be parsed
- * @returns {{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}} result object with key and error arrays
+ * @returns {Promise<{keys: Array<module:key.Key>,
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
  * @async
  * @static
  */

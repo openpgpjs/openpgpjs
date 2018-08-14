@@ -233,7 +233,7 @@ PublicKey.prototype.getFingerprint = function () {
 
 /**
  * Returns algorithm information
- * @returns {Promise<Object>} An object of the form {algorithm: String, bits:int, curve:String}
+ * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
   const result = {};

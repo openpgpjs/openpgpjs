@@ -679,7 +679,7 @@ Message.prototype.armor = function() {
 /**
  * reads an OpenPGP armored message and returns a message object
  * @param {String | ReadableStream<String>} armoredText text to be parsed
- * @returns {module:message.Message} new message object
+ * @returns {Promise<module:message.Message>} new message object
  * @async
  * @static
  */
@@ -698,7 +698,7 @@ export async function readArmored(armoredText) {
  * reads an OpenPGP message as byte array and returns a message object
  * @param {Uint8Array | ReadableStream<Uint8Array>} input    binary message
  * @param {Boolean} fromStream  whether the message was created from a Stream
- * @returns {module:message.Message} new message object
+ * @returns {Promise<module:message.Message>} new message object
  * @async
  * @static
  */

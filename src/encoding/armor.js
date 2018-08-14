@@ -196,7 +196,7 @@ function verifyHeaders(headers) {
  * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
- * @returns {Object} An object with attribute "text" containing the message text,
+ * @returns {Promise<Object>} An object with attribute "text" containing the message text,
  * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
  * @async
  * @static

@@ -182,7 +182,7 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
  * @param  {Object} reasonForRevocation (optional) object indicating the reason for revocation
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag (optional) flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string (optional) string explaining the reason for revocation
- * @return {Promise<Object>}         The revoked key object in the form:
+ * @returns {Promise<Object>}         The revoked key object in the form:
  *                                     { privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }
  *                                     (if private key is passed) or { publicKey:Key, publicKeyArmored:String } (otherwise)
  * @static
@@ -281,7 +281,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Object} sessionKey                    (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {module:enums.compression} compression (optional) which compression algorithm to compress the message with, defaults to what is specified in config
  * @param  {Boolean} armor                        (optional) if the return values should be ascii armored or the message/signature objects
- * @param  {'web'|'node'|false} streaming         (optional) whether to return data as a ReadableStream. Defaults to true if data is a Stream.
+ * @param  {'web'|'node'|false} streaming         (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                     (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature                  (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
@@ -289,9 +289,15 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Date} date                            (optional) override the creation date of the message signature
  * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
- * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
- *                                                  {data: ASCII armored message if 'armor' is true,
- *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @returns {Promise<Object>}                     Object containing encrypted (and optionally signed) message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       message: Message, (if `armor` was false)
+ *       signature: String|ReadableStream<String>|NodeStream, (if `detached` was true and `armor` was true)
+ *       signature: Signature (if `detached` was true and `armor` was false)
+ *       sessionKey: { data, algorithm, aeadAlgorithm } (if `returnSessionKey` was true)
+ *     }
  * @async
  * @static
  */
@@ -339,11 +345,23 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param  {Object|Array<Object>} sessionKeys (optional) session keys in the form: { data:Uint8Array, algorithm:String }
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, to verify signatures
  * @param  {String} format                    (optional) return data format either as 'utf8' or 'binary'
- * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a ReadableStream. Defaults to true if message was created from a Stream.
+ * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Signature} signature              (optional) detached signature for verification
  * @param  {Date} date                        (optional) use the given date for verification instead of the current time
- * @returns {Promise<Object>}             decrypted and verified message in the form:
- *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
+ * @returns {Promise<Object>}                 Object containing decrypted and verified message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if format was 'utf8', the default)
+ *       data: Uint8Array|ReadableStream<Uint8Array>|NodeStream, (if format was 'binary')
+ *       filename: String,
+ *       signatures: [
+ *         {
+ *           keyid: module:type/keyid,
+ *           verified: Promise<Boolean>,
+ *           valid: Boolean (if streaming was false)
+ *         }, ...
+ *       ]
+ *     }
  * @async
  * @static
  */
@@ -380,16 +398,26 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 
 /**
  * Signs a cleartext message.
- * @param  {CleartextMessage | Message} message (cleartext) message to be signed
- * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
- * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
- * @param  {'web'|'node'|false} streaming       (optional) whether to return data as a ReadableStream. Defaults to true if data is a Stream.
- * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
- * @param  {Date} date                          (optional) override the creation date of the signature
- * @param  {Object} fromUserId                  (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
- * @returns {Promise<Object>}                    signed cleartext in the form:
- *                                                {data: ASCII armored message if 'armor' is true,
- *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @param  {CleartextMessage|Message} message (cleartext) message to be signed
+ * @param  {Key|Array<Key>} privateKeys       array of keys or single key with decrypted secret key data to sign cleartext
+ * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
+ * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Boolean} detached                 (optional) if the return value should contain a detached signature
+ * @param  {Date} date                        (optional) override the creation date of the signature
+ * @param  {Object} fromUserId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @returns {Promise<Object>}                 Object containing signed message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       message: Message (if `armor` was false)
+ *     }
+ *
+ * Or, if `detached` was true:
+ *
+ *     {
+ *       signature: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       signature: Signature (if `armor` was false)
+ *     }
  * @async
  * @static
  */
@@ -422,13 +450,24 @@ export function sign({ message, privateKeys, armor=true, streaming=message&&mess
 
 /**
  * Verifies signatures of cleartext signed message
- * @param  {Key|Array<Key>} publicKeys    array of publicKeys or single key, to verify signatures
- * @param  {CleartextMessage} message     cleartext message object with signatures
- * @param  {'web'|'node'|false} streaming (optional) whether to return data as a ReadableStream. Defaults to true if message was created from a Stream.
- * @param  {Signature} signature          (optional) detached signature for verification
- * @param  {Date} date                    (optional) use the given date for verification instead of the current time
- * @returns {Promise<Object>}             cleartext with status of verified signatures in the form of:
- *                                        { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ * @param  {Key|Array<Key>} publicKeys         array of publicKeys or single key, to verify signatures
+ * @param  {CleartextMessage|Message} message  (cleartext) message object with signatures
+ * @param  {'web'|'node'|false} streaming      (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Signature} signature               (optional) detached signature for verification
+ * @param  {Date} date                         (optional) use the given date for verification instead of the current time
+ * @returns {Promise<Object>}                  Object containing verified message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `message` was a CleartextMessage)
+ *       data: Uint8Array|ReadableStream<Uint8Array>|NodeStream, (if `message` was a Message)
+ *       signatures: [
+ *         {
+ *           keyid: module:type/keyid,
+ *           verified: Promise<Boolean>,
+ *           valid: Boolean (if `streaming` was false)
+ *         }, ...
+ *       ]
+ *     }
  * @async
  * @static
  */
