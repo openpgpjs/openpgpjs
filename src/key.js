@@ -306,8 +306,9 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
       }
     }
     const primaryUser = await this.getPrimaryUser(date, userId);
+    const noSelfCertOk = !primaryUser.selfCertification && !config.require_uid_self_cert;
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
+        (noSelfCertOk || isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
       return this;
     }
   }
@@ -454,7 +455,10 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
   // check for at least one self signature. Self signature of user ID not mandatory
   // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
   if (!this.users.some(user => user.userId && user.selfCertifications.length)) {
-    return enums.keyStatus.no_self_cert;
+    if(!config.require_uid_self_cert && this.users.some(user => user.userId)) {
+      return enums.keyStatus.valid; // self-cert not required, has userId
+    }
+    return enums.keyStatus.no_self_cert; // default: require self-cert
   }
   // check for valid, unrevoked, unexpired self signature
   const { user, selfCertification } = await this.getPrimaryUser(date, userId) || {};
@@ -488,8 +492,9 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
       throw new Error('Could not find primary user');
     }
     const selfCert = primaryUser.selfCertification;
-    const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
-    const sigExpiry = selfCert.getExpirationTime();
+    const noSelfCertOk = !config.require_uid_self_cert && !selfCert;
+    const keyExpiry = noSelfCertOk ? Infinity : getExpirationTime(this.keyPacket, selfCert);
+    const sigExpiry = noSelfCertOk ? Infinity : selfCert.getExpirationTime();
     let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
       const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
@@ -518,13 +523,17 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
     const selfCertification = getLatestSignature(user.selfCertifications, date);
     return { index, user, selfCertification };
   }).filter(({ user, selfCertification }) => {
-    return user.userId && selfCertification && (
+    return user.userId && (selfCertification || !config.require_uid_self_cert) && (
       (userId.name === undefined || user.userId.name === userId.name) &&
       (userId.email === undefined || user.userId.email === userId.email) &&
       (userId.comment === undefined || user.userId.comment === userId.comment)
     );
   });
-  if (!users.length) {
+  const selfCertUsers = users.filter(({ selfCertification }) => selfCertification);
+  if(!config.require_uid_self_cert && users.length && !selfCertUsers.length) {
+    return users[0]; // self cert not required + no selected user has it
+  }
+  if (!selfCertUsers.length) {
     if (userId.name !== undefined || userId.email !== undefined ||
         userId.comment !== undefined) {
       throw new Error('Could not find user that matches that user ID');
@@ -532,7 +541,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
     return null;
   }
   // sort by primary user flag and signature creation time
-  const primaryUser = users.sort(function(a, b) {
+  const primaryUser = selfCertUsers.sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
     return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
@@ -1623,7 +1632,8 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
-    if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
+    const noSelfCertOk = !config.require_uid_self_cert && primaryUser && !primaryUser.selfCertification;
+    if (!primaryUser || noSelfCertOk || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
     primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
@@ -1659,7 +1669,7 @@ export async function isAeadSupported(keys, date=new Date(), userId={}) {
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
-    if (!primaryUser || !primaryUser.selfCertification.features ||
+    if (!primaryUser || !primaryUser.selfCertification || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
     }

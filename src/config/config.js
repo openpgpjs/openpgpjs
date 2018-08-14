@@ -115,6 +115,11 @@ export default {
    * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
    */
   revocations_expire:       false,
+  /**
+   * @memberof module:config
+   * @property {Boolean} require_uid_self_cert If false, user is valid even without self certification
+   */
+  require_uid_self_cert: true,
 
   /**
    * @memberof module:config
