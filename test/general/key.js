@@ -2305,7 +2305,7 @@ VYGdb3eNlV8CfoEC
   });
 
   it('require_uid_self_cert=true: cannot use pubkey w/o self certs', async function() {
-    let k = openpgp.key.readArmored(no_self_cert.one_user_no_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.one_user_no_self_cert);
     expect(k.users.length).to.equal(1);
     expect(k.users[0].selfCertifications.length).to.equal(0);
     expect(await k.getEncryptionKey()).to.be.null;
@@ -2316,7 +2316,7 @@ VYGdb3eNlV8CfoEC
   });
 
   it('require_uid_self_cert=true: will select uid that does have self cert', async function() {
-    let k = openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
     expect(k.users.length).to.equal(3);
     expect(k.users[0].selfCertifications.length).to.equal(0);
     expect(k.users[1].selfCertifications.length).to.equal(1);
@@ -2329,12 +2329,12 @@ VYGdb3eNlV8CfoEC
     expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
     let [primaryUser] = await k.verifyPrimaryUser();
     expect(primaryUser).to.have.a.property('valid').that.is.true;
-    expect(await openpgp.encrypt({data: 'hello', publicKeys: [k]})).to.not.throw; // rejections would also throw due to await
+    expect(await openpgp.message.fromText('I was encrypted for a key without a self cert').encrypt([k])).to.not.throw;
   });
 
   it('require_uid_self_cert=false: can use pubkey w/ self certs', async function() {
     openpgp.config.require_uid_self_cert = false;
-    let k = openpgp.key.readArmored(no_self_cert.one_user_with_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.one_user_with_self_cert);
     expect(k.users.length).to.equal(1);
     expect(k.users[0].selfCertifications.length).to.equal(1);
     expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
@@ -2345,13 +2345,13 @@ VYGdb3eNlV8CfoEC
     expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
     let [primaryUser] = await k.verifyPrimaryUser();
     expect(primaryUser).to.have.a.property('valid').that.is.true;
-    expect(await openpgp.encrypt({data: 'hello', publicKeys: [k]})).to.not.throw; // rejections would also throw due to await
+    expect(await openpgp.message.fromText('hello there').encrypt([k])).to.not.throw;
     openpgp.config.require_uid_self_cert = true; // back to default
   });
 
   it('require_uid_self_cert=false: can use pubkey w/o self certs', async function() {
     openpgp.config.require_uid_self_cert = false;
-    let k = openpgp.key.readArmored(no_self_cert.one_user_no_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.one_user_no_self_cert);
     expect(k.users.length).to.equal(1);
     expect(k.users[0].selfCertifications.length).to.equal(0);
     expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
@@ -2362,13 +2362,13 @@ VYGdb3eNlV8CfoEC
     expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
     let [primaryUser] = await k.verifyPrimaryUser();
     expect(primaryUser).to.have.a.property('valid').that.is.false;
-    expect(await openpgp.encrypt({data: 'hello', publicKeys: [k]})).to.not.throw; // rejections would also throw due to await
+    expect(await openpgp.message.fromText('I was encrypted for a key without a self cert').encrypt([k])).to.not.throw;
     openpgp.config.require_uid_self_cert = true; // back to default
   });
 
   it('require_uid_self_cert=false: will not use uid w/o self cert if uid w/ self-cert available', async function() {
     openpgp.config.require_uid_self_cert = false;
-    let k = openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
     expect(k.users.length).to.equal(3);
     expect(k.users[0].selfCertifications.length).to.equal(0);
     expect(k.users[1].selfCertifications.length).to.equal(1);
@@ -2381,13 +2381,13 @@ VYGdb3eNlV8CfoEC
     expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
     let [primaryUser] = await k.verifyPrimaryUser();
     expect(primaryUser).to.have.a.property('valid').that.is.true;
-    expect(await openpgp.encrypt({data: 'hello', publicKeys: [k]})).to.not.throw; // rejections would also throw due to await
+    expect(await openpgp.message.fromText('hello there').encrypt([k])).to.not.throw;
     openpgp.config.require_uid_self_cert = true; // back to default
   });
 
   it('require_uid_self_cert=false: will fail if pubkey contains one invalid self cert and other uids w/o self certs', async function() {
     openpgp.config.require_uid_self_cert = false;
-    let k = openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert).keys[0];
+    let {keys: [k]} = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
     expect(k.users.length).to.equal(3);
     expect(k.users[0].selfCertifications.length).to.equal(0);
     expect(k.users[1].selfCertifications.length).to.equal(1);
