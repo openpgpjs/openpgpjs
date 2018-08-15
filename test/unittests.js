@@ -5,6 +5,9 @@ if (typeof Symbol === 'undefined') {
 if (typeof Promise === 'undefined') {
   require('core-js/fn/promise');
 }
+if (typeof TransformStream === 'undefined') {
+  require('@mattiasbuelens/web-streams-polyfill');
+}
 
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
@@ -34,7 +37,8 @@ describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
     afterEach(function () {
-      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100) {
+      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100
+        || openpgp.config.saucelabs) {
         window.scrollTo(0, document.body.scrollHeight);
       }
     });

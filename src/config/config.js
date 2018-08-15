@@ -95,6 +95,11 @@ export default {
   ignore_mdc_error:         false,
   /**
    * @memberof module:config
+   * @property {Boolean} allow_unauthenticated_stream Stream unauthenticated data before integrity has been checked
+   */
+  allow_unauthenticated_stream: false,
+  /**
+   * @memberof module:config
    * @property {Boolean} checksum_required Do not throw error when armor is missing a checksum
    */
   checksum_required:        false,

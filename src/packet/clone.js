@@ -22,6 +22,7 @@
  * @module packet/clone
  */
 
+import stream from 'web-stream-tools';
 import { Key } from '../key';
 import { Message } from '../message';
 import { CleartextMessage } from '../cleartext';
@@ -68,13 +69,25 @@ export function clonePackets(options) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
-    options.signatures = options.signatures.map(sig => verificationObjectToClone(sig));
+    options.signatures.forEach(verificationObjectToClone);
   }
   return options;
 }
 
 function verificationObjectToClone(verObject) {
-  verObject.signature = verObject.signature.packets;
+  const verified = verObject.verified;
+  verObject.verified = stream.fromAsync(() => verified);
+  if (verObject.signature instanceof Promise) {
+    const signature = verObject.signature;
+    verObject.signature = stream.fromAsync(async () => {
+      const packets = (await signature).packets;
+      await verified;
+      delete packets[0].signature;
+      return packets;
+    });
+  } else {
+    verObject.signature = verObject.signature.packets;
+  }
   return verObject;
 }
 
@@ -136,13 +149,17 @@ function packetlistCloneToCleartextMessage(clone) {
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
-  const packetlist = List.fromStructuredClone(clone.signature);
-  clone.signature = new Signature(packetlist);
+  if (util.isStream(clone.signature)) {
+    clone.signature = stream.readToEnd(clone.signature, ([signature]) => new Signature(List.fromStructuredClone(signature)));
+  } else {
+    clone.signature = new Signature(List.fromStructuredClone(clone.signature));
+  }
+  clone.verified = stream.readToEnd(clone.verified, ([verified]) => verified);
   return clone;
 }
 
 function packetlistCloneToSignature(clone) {
-  if (util.isString(clone)) {
+  if (util.isString(clone) || util.isStream(clone)) {
     //signature is armored
     return clone;
   }

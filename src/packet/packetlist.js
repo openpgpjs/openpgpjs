@@ -1,5 +1,6 @@
 /* eslint-disable callback-return */
 /**
+ * @requires web-stream-tools
  * @requires packet/all_packets
  * @requires packet/packet
  * @requires config
@@ -7,6 +8,7 @@
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import * as packets from './all_packets';
 import packetParser from './packet';
 import config from '../config';
@@ -31,35 +33,57 @@ function List() {
 
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
- * @param {Uint8Array} A Uint8Array of bytes.
+ * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
  */
-List.prototype.read = function (bytes) {
-  let i = 0;
-
-  while (i < bytes.length) {
-    const parsed = packetParser.read(bytes, i, bytes.length - i);
-    i = parsed.offset;
-
-    let pushed = false;
+List.prototype.read = async function (bytes) {
+  this.stream = stream.transformPair(bytes, async (readable, writable) => {
+    const writer = stream.getWriter(writable);
     try {
-      const tag = enums.read(enums.packet, parsed.tag);
-      const packet = packets.newPacketFromTag(tag);
-      this.push(packet);
-      pushed = true;
-      packet.read(parsed.packet);
-    } catch (e) {
-      if (!config.tolerant ||
-          parsed.tag === enums.packet.symmetricallyEncrypted ||
-          parsed.tag === enums.packet.literal ||
-          parsed.tag === enums.packet.compressed) {
-        throw e;
+      while (true) {
+        await writer.ready;
+        const done = await packetParser.read(readable, async parsed => {
+          try {
+            const tag = enums.read(enums.packet, parsed.tag);
+            const packet = packets.newPacketFromTag(tag);
+            packet.packets = new List();
+            packet.fromStream = util.isStream(parsed.packet);
+            await packet.read(parsed.packet);
+            await writer.write(packet);
+          } catch (e) {
+            if (!config.tolerant ||
+                parsed.tag === enums.packet.symmetricallyEncrypted ||
+                parsed.tag === enums.packet.literal ||
+                parsed.tag === enums.packet.compressed) {
+              await writer.abort(e);
+            }
+            util.print_debug_error(e);
+          }
+        });
+        if (done) {
+          await writer.ready;
+          await writer.close();
+          return;
+        }
       }
-      util.print_debug_error(e);
-      if (pushed) {
-        this.pop(); // drop unsupported packet
-      }
+    } catch(e) {
+      await writer.abort(e);
+    }
+  });
+
+  // Wait until first few packets have been read
+  const reader = stream.getReader(this.stream);
+  while (true) {
+    const { done, value } = await reader.read();
+    if (!done) {
+      this.push(value);
+    } else {
+      this.stream = null;
+    }
+    if (done || value.fromStream) {
+      break;
     }
   }
+  reader.releaseLock();
 };
 
 /**
@@ -72,11 +96,37 @@ List.prototype.write = function () {
 
   for (let i = 0; i < this.length; i++) {
     const packetbytes = this[i].write();
-    arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
-    arr.push(packetbytes);
+    if (util.isStream(packetbytes) && packetParser.supportsStreaming(this[i].tag)) {
+      let buffer = [];
+      let bufferLength = 0;
+      const minLength = 512;
+      arr.push(packetParser.writeTag(this[i].tag));
+      arr.push(stream.transform(packetbytes, value => {
+        buffer.push(value);
+        bufferLength += value.length;
+        if (bufferLength >= minLength) {
+          const powerOf2 = Math.min(Math.log(bufferLength) / Math.LN2 | 0, 30);
+          const chunkSize = 2 ** powerOf2;
+          const bufferConcat = util.concat([packetParser.writePartialLength(powerOf2)].concat(buffer));
+          buffer = [bufferConcat.subarray(1 + chunkSize)];
+          bufferLength = buffer[0].length;
+          return bufferConcat.subarray(0, 1 + chunkSize);
+        }
+      }, () => util.concat([packetParser.writeSimpleLength(bufferLength)].concat(buffer))));
+    } else {
+      if (util.isStream(packetbytes)) {
+        let length = 0;
+        arr.push(stream.transform(stream.clone(packetbytes), value => {
+          length += value.length;
+        }, () => packetParser.writeHeader(this[i].tag, length)));
+      } else {
+        arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+      }
+      arr.push(packetbytes);
+    }
   }
 
-  return util.concatUint8Array(arr);
+  return util.concat(arr);
 };
 
 /**
@@ -175,7 +225,6 @@ List.prototype.map = function (callback) {
  */
 List.prototype.some = async function (callback) {
   for (let i = 0; i < this.length; i++) {
-    // eslint-disable-next-line no-await-in-loop
     if (await callback(this[i], i, this)) {
       return true;
     }

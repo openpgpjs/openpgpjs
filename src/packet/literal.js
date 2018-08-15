@@ -16,10 +16,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires enums
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 
@@ -45,7 +47,7 @@ function Literal(date=new Date()) {
 /**
  * Set the packet data to a javascript native string, end of line
  * will be normalized to \r\n and by default text is converted to UTF8
- * @param {String} text Any native javascript string
+ * @param {String | ReadableStream<String>} text Any native javascript string
  * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
 Literal.prototype.setText = function(text, format='utf8') {
@@ -57,22 +59,19 @@ Literal.prototype.setText = function(text, format='utf8') {
 /**
  * Returns literal data packets as native JavaScript string
  * with normalized end of line to \n
- * @returns {String} literal data as text
+ * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
+ * @returns {String | ReadableStream<String>} literal data as text
  */
-Literal.prototype.getText = function() {
-  if (this.text !== null) {
-    return this.text;
+Literal.prototype.getText = function(clone=false) {
+  if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
+    this.text = util.nativeEOL(util.decode_utf8(this.getBytes(clone)));
   }
-  // decode UTF8
-  const text = util.decode_utf8(util.Uint8Array_to_str(this.data));
-  // normalize EOL to \n
-  this.text = util.nativeEOL(text);
   return this.text;
 };
 
 /**
  * Set the packet data to value represented by the provided string of bytes.
- * @param {Uint8Array} bytes The string of bytes
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes The string of bytes
  * @param {utf8|binary|text|mime} format The format of the string of bytes
  */
 Literal.prototype.setBytes = function(bytes, format) {
@@ -84,18 +83,16 @@ Literal.prototype.setBytes = function(bytes, format) {
 
 /**
  * Get the byte sequence representing the literal packet data
- * @returns {Uint8Array} A sequence of bytes
+ * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes
  */
-Literal.prototype.getBytes = function(textMode=false) {
-  if (this.data !== null) {
-    return this.data;
+Literal.prototype.getBytes = function(clone=false) {
+  if (this.data === null) {
+    // normalize EOL to \r\n and encode UTF8
+    this.data = util.encode_utf8(util.canonicalizeEOL(this.text));
   }
-
-  if (textMode) {
-    // normalize EOL to \r\n and UTF-8 encode
-    this.data = util.str_to_Uint8Array(util.encode_utf8(util.canonicalizeEOL(this.text)));
-  } else {
-    this.data = util.str_to_Uint8Array(this.text);
+  if (clone) {
+    return stream.passiveClone(this.data);
   }
   return this.data;
 };
@@ -122,37 +119,39 @@ Literal.prototype.getFilename = function() {
 /**
  * Parsing function for a literal data packet (tag 11).
  *
- * @param {Uint8Array} input Payload of a tag 11 packet
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input Payload of a tag 11 packet
  * @returns {module:packet.Literal} object representation
  */
-Literal.prototype.read = function(bytes) {
-  // - A one-octet field that describes how the data is formatted.
-  const format = enums.read(enums.literal, bytes[0]);
+Literal.prototype.read = async function(bytes) {
+  await stream.parse(bytes, async reader => {
+    // - A one-octet field that describes how the data is formatted.
+    const format = enums.read(enums.literal, await reader.readByte());
 
-  const filename_len = bytes[1];
-  this.filename = util.decode_utf8(util.Uint8Array_to_str(bytes.subarray(2, 2 + filename_len)));
+    const filename_len = await reader.readByte();
+    this.filename = util.decode_utf8(await reader.readBytes(filename_len));
 
-  this.date = util.readDate(bytes.subarray(2 + filename_len, 2 + filename_len + 4));
+    this.date = util.readDate(await reader.readBytes(4));
 
-  const data = bytes.subarray(6 + filename_len, bytes.length);
+    const data = reader.remainder();
 
-  this.setBytes(data, format);
+    this.setBytes(data, format);
+  });
 };
 
 /**
  * Creates a string representation of the packet
  *
- * @returns {Uint8Array} Uint8Array representation of the packet
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
  */
 Literal.prototype.write = function() {
-  const filename = util.str_to_Uint8Array(util.encode_utf8(this.filename));
+  const filename = util.encode_utf8(this.filename);
   const filename_length = new Uint8Array([filename.length]);
 
   const format = new Uint8Array([enums.write(enums.literal, this.format)]);
   const date = util.writeDate(this.date);
-  const data = this.getBytes(format !== 'binary');
+  const data = this.getBytes();
 
-  return util.concatUint8Array([format, filename_length, filename, date, data]);
+  return util.concat([format, filename_length, filename, date, data]);
 };
 
 export default Literal;

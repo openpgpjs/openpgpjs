@@ -24,7 +24,7 @@
  * @module crypto/eax
  */
 
-import { AES_CTR } from 'asmcrypto.js/src/aes/ctr/exports';
+import { AES_CTR } from 'asmcrypto.js/dist_es5/aes/ctr';
 import CMAC from './cmac';
 import util from '../util';
 
@@ -49,7 +49,11 @@ async function OMAC(key) {
 }
 
 async function CTR(key) {
-  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+  if (
+    util.getWebCrypto() &&
+    key.length !== 24 && // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    navigator.userAgent.indexOf('Edge') === -1
+  ) {
     key = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
     return async function(pt, iv) {
       const ct = await webCrypto.encrypt({ name: 'AES-CTR', counter: iv, length: blockLength * 8 }, key, pt);

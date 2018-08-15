@@ -129,7 +129,7 @@ CleartextMessage.prototype.getText = function() {
 
 /**
  * Returns ASCII armored text of cleartext signed message
- * @returns {String} ASCII armor
+ * @returns {String | ReadableStream<String>} ASCII armor
  */
 CleartextMessage.prototype.armor = function() {
   let hashes = this.signature.packets.map(function(packet) {
@@ -147,17 +147,18 @@ CleartextMessage.prototype.armor = function() {
 
 /**
  * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
- * @param {String} armoredText text to be parsed
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
  * @returns {module:cleartext.CleartextMessage} new cleartext message object
+ * @async
  * @static
  */
-export function readArmored(armoredText) {
-  const input = armor.decode(armoredText);
+export async function readArmored(armoredText) {
+  const input = await armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
   const packetlist = new packet.List();
-  packetlist.read(input.data);
+  await packetlist.read(input.data);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);
@@ -207,4 +208,13 @@ function verifyHeaders(headers, packetlist) {
   } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
+}
+
+/**
+ * Creates a new CleartextMessage object from text
+ * @param {String} text
+ * @static
+ */
+export function fromText(text) {
+  return new CleartextMessage(text);
 }

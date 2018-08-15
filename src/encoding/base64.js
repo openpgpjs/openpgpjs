@@ -12,17 +12,20 @@
  */
 
 /**
+ * @requires web-stream-tools
  * @module encoding/base64
  */
+
+import stream from 'web-stream-tools';
 
 const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
 const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
 
 /**
  * Convert binary array to radix-64
- * @param {Uint8Array} t Uint8Array to convert
+ * @param {Uint8Array | ReadableStream<Uint8Array>} t Uint8Array to convert
  * @param {bool} u if true, output is URL-safe
- * @returns {string} radix-64 version of input string
+ * @returns {String | ReadableStream<String>} radix-64 version of input string
  * @static
  */
 function s2r(t, u = false) {
@@ -30,86 +33,93 @@ function s2r(t, u = false) {
   const b64 = u ? b64u : b64s;
   let a;
   let c;
-  let n;
-  const r = [];
+
   let l = 0;
   let s = 0;
-  const tl = t.length;
 
-  for (n = 0; n < tl; n++) {
-    c = t[n];
-    if (s === 0) {
-      r.push(b64.charAt((c >> 2) & 63));
-      a = (c & 3) << 4;
-    } else if (s === 1) {
-      r.push(b64.charAt(a | ((c >> 4) & 15)));
-      a = (c & 15) << 2;
-    } else if (s === 2) {
-      r.push(b64.charAt(a | ((c >> 6) & 3)));
+  return stream.transform(t, value => {
+    const r = [];
+    const tl = value.length;
+    for (let n = 0; n < tl; n++) {
+      c = value[n];
+      if (s === 0) {
+        r.push(b64.charAt((c >> 2) & 63));
+        a = (c & 3) << 4;
+      } else if (s === 1) {
+        r.push(b64.charAt(a | ((c >> 4) & 15)));
+        a = (c & 15) << 2;
+      } else if (s === 2) {
+        r.push(b64.charAt(a | ((c >> 6) & 3)));
+        l += 1;
+        if ((l % 60) === 0 && !u) {
+          r.push("\n");
+        }
+        r.push(b64.charAt(c & 63));
+      }
       l += 1;
       if ((l % 60) === 0 && !u) {
         r.push("\n");
       }
-      r.push(b64.charAt(c & 63));
-    }
-    l += 1;
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
-    }
 
-    s += 1;
-    if (s === 3) {
-      s = 0;
+      s += 1;
+      if (s === 3) {
+        s = 0;
+      }
     }
-  }
-  if (s > 0) {
-    r.push(b64.charAt(a));
-    l += 1;
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
-    }
-    if (!u) {
-      r.push('=');
+    return r.join('');
+  }, () => {
+    const r = [];
+    if (s > 0) {
+      r.push(b64.charAt(a));
       l += 1;
+      if ((l % 60) === 0 && !u) {
+        r.push("\n");
+      }
+      if (!u) {
+        r.push('=');
+        l += 1;
+      }
     }
-  }
-  if (s === 1 && !u) {
-    if ((l % 60) === 0 && !u) {
-      r.push("\n");
+    if (s === 1 && !u) {
+      if ((l % 60) === 0 && !u) {
+        r.push("\n");
+      }
+      r.push('=');
     }
-    r.push('=');
-  }
-  return r.join('');
+    return r.join('');
+  });
 }
 
 /**
  * Convert radix-64 to binary array
- * @param {String} t radix-64 string to convert
+ * @param {String | ReadableStream<String>} t radix-64 string to convert
  * @param {bool} u if true, input is interpreted as URL-safe
- * @returns {Uint8Array} binary array version of input string
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
  * @static
  */
 function r2s(t, u) {
   // TODO check atob alternative
   const b64 = u ? b64u : b64s;
   let c;
-  let n;
-  const r = [];
+
   let s = 0;
   let a = 0;
-  const tl = t.length;
 
-  for (n = 0; n < tl; n++) {
-    c = b64.indexOf(t.charAt(n));
-    if (c >= 0) {
-      if (s) {
-        r.push(a | ((c >> (6 - s)) & 255));
+  return stream.transform(t, value => {
+    const r = [];
+    const tl = value.length;
+    for (let n = 0; n < tl; n++) {
+      c = b64.indexOf(value.charAt(n));
+      if (c >= 0) {
+        if (s) {
+          r.push(a | ((c >> (6 - s)) & 255));
+        }
+        s = (s + 2) & 7;
+        a = (c << s) & 255;
       }
-      s = (s + 2) & 7;
-      a = (c << s) & 255;
     }
-  }
-  return new Uint8Array(r);
+    return new Uint8Array(r);
+  });
 }
 
 export default {

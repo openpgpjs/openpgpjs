@@ -9,3 +9,4 @@ dist/*.tgz
 dist/*_debug.js
 openpgp.store/
 doc/
+browserify-cache*.json
