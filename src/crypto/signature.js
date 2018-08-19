@@ -25,10 +25,11 @@ export default {
    * @param {Array<module:type/mpi>} msg_MPIs  Algorithm-specific signature parameters
    * @param {Array<module:type/mpi>} pub_MPIs  Algorithm-specific public key parameters
    * @param {Uint8Array}             data      Data for which the signature was created
+   * @param {Uint8Array}             hashed    The hashed data
    * @returns {Boolean}                        True if signature is valid
    * @async
    */
-  verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data) {
+  verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data, hashed) {
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
@@ -37,7 +38,7 @@ export default {
         const n = pub_MPIs[0].toBN();
         const e = pub_MPIs[1].toBN();
         const EM = await publicKey.rsa.verify(m, n, e);
-        const EM2 = pkcs1.emsa.encode(hash_algo, util.Uint8Array_to_str(data), n.byteLength());
+        const EM2 = await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength());
         return util.Uint8Array_to_hex(EM) === EM2;
       }
       case enums.publicKey.dsa: {
@@ -47,13 +48,13 @@ export default {
         const q = pub_MPIs[1].toBN();
         const g = pub_MPIs[2].toBN();
         const y = pub_MPIs[3].toBN();
-        return publicKey.dsa.verify(hash_algo, r, s, data, g, p, q, y);
+        return publicKey.dsa.verify(hash_algo, r, s, hashed, g, p, q, y);
       }
       case enums.publicKey.ecdsa: {
         const oid = pub_MPIs[0];
         const signature = { r: msg_MPIs[0].toUint8Array(), s: msg_MPIs[1].toUint8Array() };
         const Q = pub_MPIs[1].toUint8Array();
-        return publicKey.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q);
+        return publicKey.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }
       case enums.publicKey.eddsa: {
         const oid = pub_MPIs[0];
@@ -62,7 +63,7 @@ export default {
         const signature = { R: Array.from(msg_MPIs[0].toUint8Array('le', 32)),
                             S: Array.from(msg_MPIs[1].toUint8Array('le', 32)) };
         const Q = Array.from(pub_MPIs[1].toUint8Array('be', 33));
-        return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q);
+        return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }
       default:
         throw new Error('Invalid signature algorithm.');
@@ -78,10 +79,11 @@ export default {
    * @param {module:enums.hash}      hash_algo  Hash algorithm
    * @param {Array<module:type/mpi>} key_params Algorithm-specific public and private key parameters
    * @param {Uint8Array}             data       Data to be signed
+   * @param {Uint8Array}             hashed     The hashed data
    * @returns {Uint8Array}                      Signature
    * @async
    */
-  sign: async function(algo, hash_algo, key_params, data) {
+  sign: async function(algo, hash_algo, key_params, data, hashed) {
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
@@ -89,8 +91,7 @@ export default {
         const n = key_params[0].toBN();
         const e = key_params[1].toBN();
         const d = key_params[2].toBN();
-        data = util.Uint8Array_to_str(data);
-        const m = new BN(pkcs1.emsa.encode(hash_algo, data, n.byteLength()), 16);
+        const m = new BN(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()), 16);
         const signature = await publicKey.rsa.sign(m, n, e, d);
         return util.Uint8Array_to_MPI(signature);
       }
@@ -99,7 +100,7 @@ export default {
         const q = key_params[1].toBN();
         const g = key_params[2].toBN();
         const x = key_params[4].toBN();
-        const signature = await publicKey.dsa.sign(hash_algo, data, g, p, q, x);
+        const signature = await publicKey.dsa.sign(hash_algo, hashed, g, p, q, x);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.r),
           util.Uint8Array_to_MPI(signature.s)
@@ -111,7 +112,7 @@ export default {
       case enums.publicKey.ecdsa: {
         const oid = key_params[0];
         const d = key_params[2].toUint8Array();
-        const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d);
+        const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.r),
           util.Uint8Array_to_MPI(signature.s)
@@ -120,7 +121,7 @@ export default {
       case enums.publicKey.eddsa: {
         const oid = key_params[0];
         const d = Array.from(key_params[2].toUint8Array('be', 32));
-        const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d);
+        const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.R),
           util.Uint8Array_to_MPI(signature.S)

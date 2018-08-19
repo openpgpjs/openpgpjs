@@ -20,17 +20,17 @@
 /**
  * This object contains utility functions
  * @requires address-rfc2822
+ * @requires web-stream-tools
  * @requires config
  * @requires encoding/base64
  * @module util
  */
 
 import rfc2822 from 'address-rfc2822';
+import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
-
-const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
 
 export default {
   isString: function(data) {
@@ -41,41 +41,98 @@ export default {
     return Array.prototype.isPrototypeOf(data);
   },
 
-  isUint8Array: function(data) {
-    return Uint8Array.prototype.isPrototypeOf(data);
-  },
+  isUint8Array: stream.isUint8Array,
+
+  isStream: stream.isStream,
 
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
    *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
+   * Also, convert ReadableStreams to MessagePorts
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
   getTransferables: function(obj) {
-    // Internet Explorer does not support Transferable objects.
-    if (isIE11) {
-      return undefined;
-    }
-    if (config.zero_copy && Object.prototype.isPrototypeOf(obj)) {
-      const transferables = [];
-      util.collectBuffers(obj, transferables);
-      return transferables.length ? transferables : undefined;
-    }
+    const transferables = [];
+    util.collectTransferables(obj, transferables);
+    return transferables.length ? transferables : undefined;
   },
 
-  collectBuffers: function(obj, collection) {
+  collectTransferables: function(obj, collection) {
     if (!obj) {
       return;
     }
+
     if (util.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
-      collection.push(obj.buffer);
+      if (config.zero_copy) {
+        collection.push(obj.buffer);
+      }
       return;
     }
     if (Object.prototype.isPrototypeOf(obj)) {
-      Object.values(obj).forEach(value => { // recursively search all children
-        util.collectBuffers(value, collection);
+      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
+        if (util.isStream(value)) {
+          if (value.locked) {
+            obj[key] = null;
+          } else {
+            const transformed = stream.transformPair(value, async readable => {
+              const reader = stream.getReader(readable);
+              const { port1, port2 } = new MessageChannel();
+              port1.onmessage = async function({ data: { action } }) {
+                if (action === 'read') port1.postMessage(await reader.read());
+                else if (action === 'cancel') port1.postMessage(await transformed.cancel());
+              };
+              obj[key] = port2;
+              collection.push(port2);
+            });
+          }
+          return;
+        }
+        if (typeof MessagePort !== 'undefined' && MessagePort.prototype.isPrototypeOf(value)) {
+          throw new Error("Can't transfer the same stream twice.");
+        }
+        util.collectTransferables(value, collection);
       });
     }
+  },
+
+  /**
+   * Convert MessagePorts back to ReadableStreams
+   * @param  {Object} obj
+   * @returns {Object}
+   */
+  restoreStreams: function(obj) {
+    if (Object.prototype.isPrototypeOf(obj)) {
+      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
+        if (MessagePort.prototype.isPrototypeOf(value)) {
+          obj[key] = new ReadableStream({
+            pull(controller) {
+              return new Promise(resolve => {
+                value.onmessage = evt => {
+                  const { done, value } = evt.data;
+                  if (!done) {
+                    controller.enqueue(value);
+                  } else {
+                    controller.close();
+                  }
+                  resolve();
+                };
+                value.postMessage({ action: 'read' });
+              });
+            },
+            cancel() {
+              return new Promise(resolve => {
+                value.onmessage = resolve;
+                value.postMessage({ action: 'cancel' });
+              });
+            }
+          }, {highWaterMark: 0});
+          return;
+        }
+        util.restoreStreams(value);
+      });
+    }
+    return obj;
   },
 
   readNumber: function (bytes) {
@@ -221,15 +278,17 @@ export default {
    * @returns {Uint8Array} An array of 8-bit integers
    */
   str_to_Uint8Array: function (str) {
-    if (!util.isString(str)) {
-      throw new Error('str_to_Uint8Array: Data must be in the form of a string');
-    }
+    return stream.transform(str, str => {
+      if (!util.isString(str)) {
+        throw new Error('str_to_Uint8Array: Data must be in the form of a string');
+      }
 
-    const result = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      result[i] = str.charCodeAt(i);
-    }
-    return result;
+      const result = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        result[i] = str.charCodeAt(i);
+      }
+      return result;
+    });
   },
 
   /**
@@ -250,69 +309,47 @@ export default {
   },
 
   /**
-   * Convert a native javascript string to a string of utf8 bytes
-   * @param {String} str The string to convert
-   * @returns {String} A valid squence of utf8 bytes
+   * Convert a native javascript string to a Uint8Array of utf8 bytes
+   * @param {String|ReadableStream} str The string to convert
+   * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes
    */
   encode_utf8: function (str) {
-    return unescape(encodeURIComponent(str));
+    const encoder = new TextEncoder('utf-8');
+    // eslint-disable-next-line no-inner-declarations
+    function process(value, lastChunk=false) {
+      return encoder.encode(value, { stream: !lastChunk });
+    }
+    return stream.transform(str, process, () => process('', true));
   },
 
   /**
-   * Convert a string of utf8 bytes to a native javascript string
-   * @param {String} utf8 A valid squence of utf8 bytes
-   * @returns {String} A native javascript string
+   * Convert a Uint8Array of utf8 bytes to a native javascript string
+   * @param {Uint8Array|ReadableStream} utf8 A valid squence of utf8 bytes
+   * @returns {String|ReadableStream} A native javascript string
    */
   decode_utf8: function (utf8) {
-    if (typeof utf8 !== 'string') {
-      throw new Error('Parameter "utf8" is not of type string');
+    const decoder = new TextDecoder('utf-8');
+    // eslint-disable-next-line no-inner-declarations
+    function process(value, lastChunk=false) {
+      return decoder.decode(value, { stream: !lastChunk });
     }
-    try {
-      return decodeURIComponent(escape(utf8));
-    } catch (e) {
-      return utf8;
-    }
+    return stream.transform(utf8, process, () => process(new Uint8Array(), true));
   },
 
   /**
-   * Concat Uint8arrays
+   * Concat a list of Uint8Arrays, Strings or Streams
+   * The caller must not mix Uint8Arrays with Strings, but may mix Streams with non-Streams.
+   * @param {Array<Uint8array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
+   * @returns {Uint8array|String|ReadableStream} Concatenated array
+   */
+  concat: stream.concat,
+
+  /**
+   * Concat Uint8Arrays
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @returns {Uint8array} Concatenated array
    */
-  concatUint8Array: function (arrays) {
-    let totalLength = 0;
-    for (let i = 0; i < arrays.length; i++) {
-      if (!util.isUint8Array(arrays[i])) {
-        throw new Error('concatUint8Array: Data must be in the form of a Uint8Array');
-      }
-
-      totalLength += arrays[i].length;
-    }
-
-    const result = new Uint8Array(totalLength);
-    let pos = 0;
-    arrays.forEach(function (element) {
-      result.set(element, pos);
-      pos += element.length;
-    });
-
-    return result;
-  },
-
-  /**
-   * Deep copy Uint8Array
-   * @param {Uint8Array} Array to copy
-   * @returns {Uint8Array} new Uint8Array
-   */
-  copyUint8Array: function (array) {
-    if (!util.isUint8Array(array)) {
-      throw new Error('Data must be in the form of a Uint8Array');
-    }
-
-    const copy = new Uint8Array(array.length);
-    copy.set(array);
-    return copy;
-  },
+  concatUint8Array: stream.concatUint8Array,
 
   /**
    * Check Uint8Array equality
@@ -407,6 +444,18 @@ export default {
     if (config.debug) {
       console.error(error);
     }
+  },
+
+  /**
+   * Read a stream to the end and print it to the console when it's closed.
+   * @param {String} str String of the debug message
+   * @param {ReadableStream|Uint8array|String} input Stream to print
+   * @param {Function} concat Function to concatenate chunks of the stream (defaults to util.concat).
+   */
+  print_entire_stream: function (str, input, concat) {
+    stream.readToEnd(stream.clone(input), concat).then(result => {
+      console.log(str + ': ', result);
+    });
   },
 
   getLeftNBits: function (array, bitcount) {
@@ -532,16 +581,40 @@ export default {
   },
 
   /**
+   * Get native Node.js module
+   * @param {String}     The module to require
+   * @returns {Object}   The required module or 'undefined'
+   */
+  nodeRequire: function(module) {
+    if (!util.detectNode()) {
+      return;
+    }
+
+    // Requiring the module dynamically allows us to access the native node module.
+    // otherwise, it gets replaced with the browserified version
+    // eslint-disable-next-line import/no-dynamic-require
+    return require(module);
+  },
+
+  /**
    * Get native Node.js crypto api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.use_native
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!util.detectNode() || !config.use_native) {
+    if (!config.use_native) {
       return;
     }
 
-    return require('crypto');
+    return util.nodeRequire('crypto');
+  },
+
+  getNodeZlib: function() {
+    if (!config.use_native) {
+      return;
+    }
+
+    return util.nodeRequire('zlib');
   },
 
   /**
@@ -550,22 +623,20 @@ export default {
    * @returns {Function}   The Buffer constructor or 'undefined'
    */
   getNodeBuffer: function() {
-    if (!util.detectNode()) {
-      return;
-    }
-
-    // This "hack" allows us to access the native node buffer module.
-    // otherwise, it gets replaced with the browserified version
-    // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('buf'+'fer').Buffer;
+    return (util.nodeRequire('buffer') || {}).Buffer;
   },
 
-  getNodeZlib: function() {
-    if (!util.detectNode() || !config.use_native) {
-      return;
+  getNodeStream: function() {
+    return (util.nodeRequire('stream') || {}).Readable;
+  },
+
+  getHardwareConcurrency: function() {
+    if (util.detectNode()) {
+      const os = util.nodeRequire('os');
+      return os.cpus().length;
     }
 
-    return require('zlib');
+    return navigator.hardwareConcurrency || 1;
   },
 
   isEmailAddress: function(data) {
@@ -606,14 +677,24 @@ export default {
    * Normalize line endings to \r\n
    */
   canonicalizeEOL: function(text) {
-    return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+    return stream.transform(util.nativeEOL(text), value => value.replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
   },
 
   /**
    * Convert line endings from canonicalized \r\n to native \n
    */
   nativeEOL: function(text) {
-    return text.replace(/\r\n/g, "\n");
+    let lastChar = '';
+    return stream.transform(text, value => {
+      value = lastChar + value;
+      if (value[value.length - 1] === '\r') {
+        lastChar = '\r';
+        value = value.slice(0, -1);
+      } else {
+        lastChar = '';
+      }
+      return value.replace(/\r\n/g, '\n');
+    }, () => lastChar);
   },
 
   /**

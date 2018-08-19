@@ -143,7 +143,7 @@ S2K.prototype.write = function () {
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
-  passphrase = util.str_to_Uint8Array(util.encode_utf8(passphrase));
+  passphrase = util.encode_utf8(passphrase);
 
   function round(prefix, s2k) {
     const algorithm = enums.write(enums.hash, s2k.algorithm);

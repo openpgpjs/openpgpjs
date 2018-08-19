@@ -153,10 +153,6 @@ describe('Util unit tests', function() {
   });
 
   describe("Misc.", function() {
-    it('util.decode_utf8 throws error if invalid parameter type', function () {
-      const test = openpgp.util.decode_utf8.bind(null, {chameleon: true});
-      expect(test).to.throw(Error, /Parameter "utf8" is not of type string/);
-    });
     it('util.readNumber should not overflow until full range of uint32', function () {
       const ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
       for(let i = 0; i < ints.length; i++) {

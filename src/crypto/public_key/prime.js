@@ -59,7 +59,6 @@ async function randomProbablePrime(bits, e, k) {
           n = n.mod(min.shln(1)).iadd(min);
           i = n.mod(thirty).toNumber();
       }
-      // eslint-disable-next-line no-await-in-loop
   } while (!await isProbablePrime(n, e, k));
   return n;
 }
@@ -248,7 +247,6 @@ async function millerRabin(n, k, rand) {
   const d = n.shrn(s);
 
   for (; k > 0; k--) {
-    // eslint-disable-next-line no-await-in-loop
     const a = rand ? rand() : await random.getRandomBN(new BN(2), n1);
 
     let x = a.toRed(red).redPow(d);

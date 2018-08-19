@@ -43,8 +43,8 @@ Xg==
 describe('Decrypt and decompress message tests', function () {
 
   function runTest(key, test) {
-    it(`Decrypts message compressed with ${key}`, function () {
-      const message = openpgp.message.readArmored(test.input);
+    it(`Decrypts message compressed with ${key}`, async function () {
+      const message = await openpgp.message.readArmored(test.input);
       const options = {
           passwords: password,
           message
