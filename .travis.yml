@@ -55,3 +55,4 @@ before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
 script:
   - $TRAVIS_BUILD_DIR/travis.sh
+install: npm install
