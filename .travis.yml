@@ -11,8 +11,8 @@ matrix:
   include:
     - node_js: "8"
       env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='8'
-    - node_js: "9"
-      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='9'
+    - node_js: "10"
+      env: OPENPGPJSTEST='unit' OPENPGP_NODE_JS='10'
     - node_js: "8"
       env: OPENPGPJSTEST='end2end-0' BROWSER='firefox 38'
     - node_js: "8"
@@ -55,3 +55,4 @@ before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
 script:
   - $TRAVIS_BUILD_DIR/travis.sh
+install: npm install
