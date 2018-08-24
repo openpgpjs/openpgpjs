@@ -76,10 +76,11 @@ const priv_key =
 
 const passphrase = 'hello world';
 
-let plaintext, data, i, canceled, expectedType;
+let plaintext, data, i, canceled, expectedType, dataArrived;
 
 function tests() {
   it('Encrypt small message', async function() {
+    dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
         controller.enqueue(util.str_to_Uint8Array('hello '));
@@ -107,7 +108,7 @@ function tests() {
     });
     const reader = openpgp.stream.getReader(encrypted.data);
     expect(await reader.peekBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
-    if (i > 10) throw new Error('Data did not arrive early.');
+    dataArrived();
     reader.releaseLock();
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted.data);
     const message = await openpgp.message.readArmored(msgAsciiArmored);
@@ -126,7 +127,7 @@ function tests() {
     });
     const reader = openpgp.stream.getReader(encrypted.data);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
-    if (i > 10) throw new Error('Data did not arrive early.');
+    dataArrived();
     reader.releaseLock();
     await openpgp.stream.cancel(encrypted.data);
     expect(canceled).to.be.true;
@@ -142,7 +143,7 @@ function tests() {
     });
     const reader = openpgp.stream.getReader(signed.data);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
-    if (i > 10) throw new Error('Data did not arrive early.');
+    dataArrived();
     reader.releaseLock();
     await openpgp.stream.cancel(signed.data);
     expect(canceled).to.be.true;
@@ -156,6 +157,7 @@ function tests() {
 
     const msgAsciiArmored = encrypted.data;
     const message = await openpgp.message.readArmored(msgAsciiArmored);
+    setTimeout(dataArrived, 3000); // Do not wait until data arrived, but wait a bit to check that it doesn't arrive early.
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message,
@@ -188,7 +190,7 @@ function tests() {
       expect(util.isStream(decrypted.signatures)).to.be.false;
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
@@ -221,7 +223,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
     } finally {
       openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
@@ -253,7 +255,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await expect(reader.readToEnd()).to.be.rejectedWith('Modification detected.');
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
@@ -291,7 +293,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
     } finally {
@@ -328,7 +330,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
       expect(await decrypted.signatures[0].verified).to.be.null;
@@ -364,7 +366,7 @@ function tests() {
       expect(util.isStream(verified.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(verified.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(verified.signatures).to.exist.and.have.length(1);
     } finally {
@@ -393,7 +395,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
@@ -436,7 +438,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect((await reader.peekBytes(plaintext[0].length * 4)).toString('utf8').substr(0, plaintext[0].length)).to.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       expect((await reader.readToEnd()).toString('utf8')).to.equal(util.concat(plaintext));
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
@@ -445,6 +447,7 @@ function tests() {
   });
 
   it('stream.transformPair()', async function() {
+    dataArrived(); // Do not wait until data arrived.
     const transformed = stream.transformPair(stream.slice(data, 0, 5000), async (readable, writable) => {
       const reader = stream.getReader(readable);
       const writer = stream.getWriter(writable);
@@ -488,7 +491,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       reader.releaseLock();
       await openpgp.stream.cancel(decrypted.data, new Error('canceled by test'));
       expect(canceled).to.be.true;
@@ -522,7 +525,7 @@ function tests() {
       expect(util.isStream(verified.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(verified.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       reader.releaseLock();
       await openpgp.stream.cancel(verified.data, new Error('canceled by test'));
       expect(canceled).to.be.true;
@@ -541,7 +544,7 @@ function tests() {
     });
     const reader = openpgp.stream.getReader(encrypted.data);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
-    if (i > 10) throw new Error('Data did not arrive early.');
+    dataArrived();
     await new Promise(resolve => setTimeout(resolve, 3000));
     expect(i).to.be.lessThan(50);
   });
@@ -557,7 +560,7 @@ function tests() {
     });
     const reader = openpgp.stream.getReader(signed.data);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
-    if (i > 10) throw new Error('Data did not arrive early.');
+    dataArrived();
     await new Promise(resolve => setTimeout(resolve, 3000));
     expect(i).to.be.lessThan(50);
   });
@@ -584,7 +587,7 @@ function tests() {
       expect(util.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await new Promise(resolve => setTimeout(resolve, 3000));
       expect(i).to.be.lessThan(50);
     } finally {
@@ -617,7 +620,7 @@ function tests() {
       expect(util.isStream(verified.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(verified.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      if (i > 10) throw new Error('Data did not arrive early.');
+      dataArrived();
       await new Promise(resolve => setTimeout(resolve, 3000));
       expect(i).to.be.lessThan(50);
     } finally {
@@ -630,6 +633,7 @@ function tests() {
     const fs = util.nodeRequire('fs');
 
     it('Node: Encrypt and decrypt binary message roundtrip', async function() {
+      dataArrived(); // Do not wait until data arrived.
       let plaintext = fs.readFileSync(__filename);
       const data = fs.createReadStream(__filename);
       const encrypted = await openpgp.encrypt({
@@ -657,6 +661,9 @@ describe('Streaming', function() {
   beforeEach(function() {
     let test = ++currentTest;
 
+    let dataArrivedPromise = new Promise(resolve => {
+      dataArrived = resolve;
+    });
     plaintext = [];
     i = 0;
     canceled = false;
@@ -664,6 +671,7 @@ describe('Streaming', function() {
       async pull(controller) {
         await new Promise(setTimeout);
         if (test === currentTest && i++ < 10) {
+          if (i === 4) await dataArrivedPromise;
           let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
           plaintext.push(randomBytes);
