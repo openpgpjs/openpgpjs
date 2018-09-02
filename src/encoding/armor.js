@@ -193,6 +193,26 @@ function verifyHeaders(headers) {
 }
 
 /**
+ * Splits a message into two parts, the body and the checksum. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {Object} An object with attribute "body" containing the body
+ * and an attribute "checksum" containing the checksum.
+ */
+function splitChecksum(text) {
+  let body = text;
+  let checksum = "";
+
+  const lastEquals = text.lastIndexOf("=");
+
+  if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
+    body = text.slice(0, lastEquals);
+    checksum = text.slice(lastEquals + 1).substr(0, 4);
+  }
+
+  return { body: body, checksum: checksum };
+}
+
+/**
  * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
@@ -204,7 +224,7 @@ function verifyHeaders(headers) {
 function dearmor(input) {
   return new Promise(async (resolve, reject) => {
     try {
-      const reSplit = /^-----[^-]+-----$/;
+      const reSplit = /^-----[^-]+-----$/m;
       const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
 
       let type;
@@ -213,21 +233,17 @@ function dearmor(input) {
       let headersDone;
       let text = [];
       let textDone;
-      let resolved = false;
       let checksum;
       let data = base64.decode(stream.transformPair(input, async (readable, writable) => {
         const reader = stream.getReader(readable);
-        const writer = stream.getWriter(writable);
-        while (true) {
-          if (resolved) await writer.ready;
-          try {
-            const lineUntrimmed = await reader.readLine();
-            if (lineUntrimmed === undefined) {
+        try {
+          while (true) {
+            let line = await reader.readLine();
+            if (line === undefined) {
               throw new Error('Misformed armored text');
             }
             // remove trailing whitespace at end of lines
-            // remove leading whitespace for compat with older versions of OpenPGP.js
-            const line = lineUntrimmed.trim();
+            line = line.replace(/[\t\r\n ]+$/, '');
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -243,13 +259,13 @@ function dearmor(input) {
                 headersDone = true;
                 if (textDone || type !== 2) {
                   resolve({ text, data, headers, type });
-                  resolved = true;
+                  break;
                 }
               }
             } else if (!textDone && type === 2) {
               if (!reSplit.test(line)) {
                 // Reverse dash-escaping for msg
-                text.push(util.removeTrailingSpaces(lineUntrimmed.replace(/^- /, '').replace(/[\r\n]+$/, '')));
+                text.push(line.replace(/^- /, ''));
               } else {
                 text = text.join('\r\n');
                 textDone = true;
@@ -257,26 +273,40 @@ function dearmor(input) {
                 lastHeaders = [];
                 headersDone = false;
               }
-            } else {
-              if (!reSplit.test(line)) {
-                if (line[0] !== '=') {
-                  await writer.write(line);
-                } else {
-                  checksum = line.substr(1);
-                }
-              } else {
-                await writer.close();
-                break;
-              }
             }
-          } catch(e) {
-            if (resolved) {
-              await writer.abort(e);
-            } else {
-              reject(e);
-            }
-            break;
           }
+        } catch(e) {
+          reject(e);
+          return;
+        }
+        const writer = stream.getWriter(writable);
+        try {
+          while (true) {
+            await writer.ready;
+            const { done, value } = await reader.read();
+            if (done) {
+              throw new Error('Misformed armored text');
+            }
+            const line = value + '';
+            if (line.indexOf('=') === -1 && line.indexOf('-') === -1) {
+              await writer.write(line);
+            } else {
+              let remainder = line + await reader.readToEnd();
+              remainder = remainder.replace(/[\t\r ]+$/mg, '');
+              const parts = remainder.split(reSplit);
+              if (parts.length === 1) {
+                throw new Error('Misformed armored text');
+              }
+              const split = splitChecksum(parts[0].slice(0, -1));
+              checksum = split.checksum;
+              await writer.write(split.body);
+              break;
+            }
+          }
+          await writer.ready;
+          await writer.close();
+        } catch(e) {
+          await writer.abort(e);
         }
       }));
       data = stream.transformPair(data, async (readable, writable) => {

@@ -256,14 +256,13 @@ export default {
         packet = await reader.readBytes(packet_length);
         await callback({ tag, packet });
       }
-      const { done, value } = await reader.read();
-      if (!done) reader.unshift(value);
+      const nextPacket = await reader.peekBytes(2);
       if (writer) {
         await writer.ready;
         await writer.close();
       }
       if (streaming) await callbackReturned;
-      return done || !value || !value.length;
+      return !nextPacket || !nextPacket.length;
     } catch(e) {
       if (writer) {
         await writer.abort(e);

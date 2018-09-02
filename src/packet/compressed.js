@@ -142,8 +142,10 @@ function pako_zlib(constructor, options = {}) {
   return function(data) {
     const obj = new constructor(options);
     return stream.transform(data, value => {
-      obj.push(value, pako.Z_SYNC_FLUSH);
-      return obj.result;
+      if (value.length) {
+        obj.push(value, pako.Z_SYNC_FLUSH);
+        return obj.result;
+      }
     });
   };
 }
