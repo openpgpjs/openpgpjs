@@ -106,19 +106,20 @@ function r2s(t, u) {
   let a = 0;
 
   return stream.transform(t, value => {
-    const r = [];
     const tl = value.length;
+    const r = new Uint8Array(Math.ceil(0.75 * tl));
+    let index = 0;
     for (let n = 0; n < tl; n++) {
       c = b64.indexOf(value.charAt(n));
       if (c >= 0) {
         if (s) {
-          r.push(a | ((c >> (6 - s)) & 255));
+          r[index++] = a | ((c >> (6 - s)) & 255);
         }
         s = (s + 2) & 7;
         a = (c << s) & 255;
       }
     }
-    return new Uint8Array(r);
+    return r.subarray(0, index);
   });
 }
 
