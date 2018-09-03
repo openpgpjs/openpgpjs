@@ -304,7 +304,7 @@ describe("ASCII armor", function() {
 
   it('Accept header with trailing whitespace', async function () {
     const privKey =
-      ['-----BEGIN PGP PRIVATE KEY BLOCK-----\t \r',
+      ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: OpenPGP.js v0.3.0',
       'Comment: https://openpgpjs.org',
       '',
@@ -321,7 +321,8 @@ describe("ASCII armor", function() {
       'ABMFAlLm1+4JEBD8MASZrpALAhsMAAC3IgD8DnLGbMnpLtrX72RCkPW1ffLq',
       '71vlXMJNXvoCeuejiRw=',
       '=wJNM',
-      '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+      '-----END PGP PRIVATE KEY BLOCK-----',
+      ''].join('\t \r\n');
 
     const result = await openpgp.key.readArmored(privKey);
     expect(result.err).to.not.exist;
