@@ -27714,7 +27714,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.1.2",
+  versionstring: "OpenPGP.js v3.1.3",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -38756,7 +38756,7 @@ Key.prototype.verifyPrimaryKey = function () {
  */
 Key.prototype.getExpirationTime = function () {
   var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(capabilities, keyId, userId) {
-    var primaryUser, selfCert, keyExpiry, sigExpiry, expiry, encryptExpiry, signExpiry;
+    var primaryUser, selfCert, keyExpiry, sigExpiry, expiry, encryptKey, encryptExpiry, signKey, signExpiry;
     return _regenerator2.default.wrap(function _callee10$(_context10) {
       while (1) {
         switch (_context10.prev = _context10.next) {
@@ -38770,7 +38770,7 @@ Key.prototype.getExpirationTime = function () {
 
           case 2:
             if (!(this.keyPacket.version >= 4)) {
-              _context10.next = 23;
+              _context10.next = 29;
               break;
             }
 
@@ -38794,7 +38794,7 @@ Key.prototype.getExpirationTime = function () {
             expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
 
             if (!(capabilities === 'encrypt' || capabilities === 'encrypt_sign')) {
-              _context10.next = 17;
+              _context10.next = 20;
               break;
             }
 
@@ -38802,28 +38802,48 @@ Key.prototype.getExpirationTime = function () {
             return this.getEncryptionKey(keyId, null, userId);
 
           case 15:
-            encryptExpiry = _context10.sent.getExpirationTime();
+            encryptKey = _context10.sent;
 
-            if (encryptExpiry < expiry) expiry = encryptExpiry;
-
-          case 17:
-            if (!(capabilities === 'sign' || capabilities === 'encrypt_sign')) {
-              _context10.next = 22;
+            if (encryptKey) {
+              _context10.next = 18;
               break;
             }
 
-            _context10.next = 20;
-            return this.getSigningKey(keyId, null, userId);
+            return _context10.abrupt('return', null);
+
+          case 18:
+            encryptExpiry = encryptKey.getExpirationTime();
+
+            if (encryptExpiry < expiry) expiry = encryptExpiry;
 
           case 20:
-            signExpiry = _context10.sent.getExpirationTime();
+            if (!(capabilities === 'sign' || capabilities === 'encrypt_sign')) {
+              _context10.next = 28;
+              break;
+            }
+
+            _context10.next = 23;
+            return this.getSigningKey(keyId, null, userId);
+
+          case 23:
+            signKey = _context10.sent;
+
+            if (signKey) {
+              _context10.next = 26;
+              break;
+            }
+
+            return _context10.abrupt('return', null);
+
+          case 26:
+            signExpiry = signKey.getExpirationTime();
 
             if (signExpiry < expiry) expiry = signExpiry;
 
-          case 22:
+          case 28:
             return _context10.abrupt('return', expiry);
 
-          case 23:
+          case 29:
           case 'end':
             return _context10.stop();
         }
