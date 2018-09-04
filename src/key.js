@@ -492,11 +492,15 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
     const sigExpiry = selfCert.getExpirationTime();
     let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-      const encryptExpiry = (await this.getEncryptionKey(keyId, null, userId)).getExpirationTime();
+      const encryptKey = await this.getEncryptionKey(keyId, null, userId);
+      if (!encryptKey) return null;
+      const encryptExpiry = encryptKey.getExpirationTime();
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-      const signExpiry = (await this.getSigningKey(keyId, null, userId)).getExpirationTime();
+      const signKey = await this.getSigningKey(keyId, null, userId);
+      if (!signKey) return null;
+      const signExpiry = signKey.getExpirationTime();
       if (signExpiry < expiry) expiry = signExpiry;
     }
     return expiry;
