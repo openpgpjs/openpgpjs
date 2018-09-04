@@ -29617,7 +29617,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.0.0",
+  versionstring: "OpenPGP.js v4.0.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -37553,6 +37553,27 @@ function verifyHeaders(headers) {
 }
 
 /**
+ * Splits a message into two parts, the body and the checksum. This is an internal function
+ * @param {String} text OpenPGP armored message part
+ * @returns {Object} An object with attribute "body" containing the body
+ * and an attribute "checksum" containing the checksum.
+ */
+function splitChecksum(text) {
+  var body = text;
+  var checksum = "";
+
+  var lastEquals = text.lastIndexOf("=");
+
+  if (lastEquals >= 0 && lastEquals !== text.length - 1) {
+    // '=' as the last char means no checksum
+    body = text.slice(0, lastEquals);
+    checksum = text.slice(lastEquals + 1).substr(0, 4);
+  }
+
+  return { body: body, checksum: checksum };
+}
+
+/**
  * DeArmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} text OpenPGP armored message
@@ -37566,13 +37587,13 @@ function dearmor(input) {
 
   return new _promise2.default(function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(resolve, reject) {
-      var reSplit, reEmptyLine, type, headers, lastHeaders, headersDone, text, textDone, resolved, checksum, data;
+      var reSplit, reEmptyLine, type, headers, lastHeaders, headersDone, text, textDone, checksum, data;
       return _regenerator2.default.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
               try {
-                reSplit = /^-----[^-]+-----$/;
+                reSplit = /^-----[^-]+-----$/m;
                 reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
                 type = void 0;
                 headers = [];
@@ -37580,172 +37601,217 @@ function dearmor(input) {
                 headersDone = void 0;
                 text = [];
                 textDone = void 0;
-                resolved = false;
                 checksum = void 0;
                 data = _base2.default.decode(_webStreamTools2.default.transformPair(input, function () {
                   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(readable, writable) {
-                    var reader, writer, lineUntrimmed, line;
+                    var reader, line, writer, _ref3, done, value, _line, remainder, parts, split;
+
                     return _regenerator2.default.wrap(function _callee$(_context) {
                       while (1) {
                         switch (_context.prev = _context.next) {
                           case 0:
                             reader = _webStreamTools2.default.getReader(readable);
-                            writer = _webStreamTools2.default.getWriter(writable);
+                            _context.prev = 1;
 
                           case 2:
                             if (!true) {
-                              _context.next = 51;
+                              _context.next = 29;
                               break;
                             }
 
-                            if (!resolved) {
-                              _context.next = 6;
-                              break;
-                            }
-
-                            _context.next = 6;
-                            return writer.ready;
-
-                          case 6:
-                            _context.prev = 6;
-                            _context.next = 9;
+                            _context.next = 5;
                             return reader.readLine();
 
-                          case 9:
-                            lineUntrimmed = _context.sent;
+                          case 5:
+                            line = _context.sent;
 
-                            if (!(lineUntrimmed === undefined)) {
-                              _context.next = 12;
+                            if (!(line === undefined)) {
+                              _context.next = 8;
                               break;
                             }
 
                             throw new Error('Misformed armored text');
 
-                          case 12:
+                          case 8:
                             // remove trailing whitespace at end of lines
-                            // remove leading whitespace for compat with older versions of OpenPGP.js
-                            line = lineUntrimmed.trim();
+                            line = line.replace(/[\t\r\n ]+$/, '');
 
                             if (type) {
-                              _context.next = 17;
+                              _context.next = 13;
                               break;
                             }
 
                             if (reSplit.test(line)) {
                               type = getType(line);
                             }
-                            _context.next = 38;
+                            _context.next = 27;
                             break;
 
-                          case 17:
+                          case 13:
                             if (headersDone) {
-                              _context.next = 22;
+                              _context.next = 26;
                               break;
                             }
 
                             if (reSplit.test(line)) {
                               reject(new Error('Mandatory blank line missing between armor headers and armor data'));
                             }
-                            if (!reEmptyLine.test(line)) {
-                              lastHeaders.push(line);
-                            } else {
-                              verifyHeaders(lastHeaders);
-                              headersDone = true;
-                              if (textDone || type !== 2) {
-                                resolve({ text: text, data: data, headers: headers, type: type });
-                                resolved = true;
-                              }
-                            }
-                            _context.next = 38;
-                            break;
 
-                          case 22:
-                            if (!(!textDone && type === 2)) {
-                              _context.next = 26;
+                            if (reEmptyLine.test(line)) {
+                              _context.next = 19;
                               break;
                             }
 
-                            if (!reSplit.test(line)) {
-                              // Reverse dash-escaping for msg
-                              text.push(_util2.default.removeTrailingSpaces(lineUntrimmed.replace(/^- /, '').replace(/[\r\n]+$/, '')));
-                            } else {
-                              text = text.join('\r\n');
-                              textDone = true;
-                              verifyHeaders(lastHeaders);
-                              lastHeaders = [];
-                              headersDone = false;
+                            lastHeaders.push(line);
+                            _context.next = 24;
+                            break;
+
+                          case 19:
+                            verifyHeaders(lastHeaders);
+                            headersDone = true;
+
+                            if (!(textDone || type !== 2)) {
+                              _context.next = 24;
+                              break;
                             }
-                            _context.next = 38;
+
+                            resolve({ text: text, data: data, headers: headers, type: type });
+                            return _context.abrupt('break', 29);
+
+                          case 24:
+                            _context.next = 27;
                             break;
 
                           case 26:
-                            if (reSplit.test(line)) {
-                              _context.next = 35;
-                              break;
+                            if (!textDone && type === 2) {
+                              if (!reSplit.test(line)) {
+                                // Reverse dash-escaping for msg
+                                text.push(line.replace(/^- /, ''));
+                              } else {
+                                text = text.join('\r\n');
+                                textDone = true;
+                                verifyHeaders(lastHeaders);
+                                lastHeaders = [];
+                                headersDone = false;
+                              }
                             }
 
-                            if (!(line[0] !== '=')) {
-                              _context.next = 32;
-                              break;
-                            }
-
-                            _context.next = 30;
-                            return writer.write(line);
-
-                          case 30:
-                            _context.next = 33;
+                          case 27:
+                            _context.next = 2;
                             break;
 
-                          case 32:
-                            checksum = line.substr(1);
-
-                          case 33:
-                            _context.next = 38;
+                          case 29:
+                            _context.next = 35;
                             break;
+
+                          case 31:
+                            _context.prev = 31;
+                            _context.t0 = _context['catch'](1);
+
+                            reject(_context.t0);
+                            return _context.abrupt('return');
 
                           case 35:
-                            _context.next = 37;
-                            return writer.close();
+                            writer = _webStreamTools2.default.getWriter(writable);
+                            _context.prev = 36;
 
                           case 37:
-                            return _context.abrupt('break', 51);
+                            if (!true) {
+                              _context.next = 69;
+                              break;
+                            }
 
-                          case 38:
-                            _context.next = 49;
-                            break;
+                            _context.next = 40;
+                            return writer.ready;
 
                           case 40:
-                            _context.prev = 40;
-                            _context.t0 = _context['catch'](6);
+                            _context.next = 42;
+                            return reader.read();
 
-                            if (!resolved) {
+                          case 42:
+                            _ref3 = _context.sent;
+                            done = _ref3.done;
+                            value = _ref3.value;
+
+                            if (!done) {
                               _context.next = 47;
                               break;
                             }
 
-                            _context.next = 45;
-                            return writer.abort(_context.t0);
-
-                          case 45:
-                            _context.next = 48;
-                            break;
+                            throw new Error('Misformed armored text');
 
                           case 47:
-                            reject(_context.t0);
+                            _line = value + '';
 
-                          case 48:
-                            return _context.abrupt('break', 51);
+                            if (!(_line.indexOf('=') === -1 && _line.indexOf('-') === -1)) {
+                              _context.next = 53;
+                              break;
+                            }
 
-                          case 49:
-                            _context.next = 2;
-                            break;
+                            _context.next = 51;
+                            return writer.write(_line);
 
                           case 51:
+                            _context.next = 67;
+                            break;
+
+                          case 53:
+                            _context.t1 = _line;
+                            _context.next = 56;
+                            return reader.readToEnd();
+
+                          case 56:
+                            _context.t2 = _context.sent;
+                            remainder = _context.t1 + _context.t2;
+
+                            remainder = remainder.replace(/[\t\r ]+$/mg, '');
+                            parts = remainder.split(reSplit);
+
+                            if (!(parts.length === 1)) {
+                              _context.next = 62;
+                              break;
+                            }
+
+                            throw new Error('Misformed armored text');
+
+                          case 62:
+                            split = splitChecksum(parts[0].slice(0, -1));
+
+                            checksum = split.checksum;
+                            _context.next = 66;
+                            return writer.write(split.body);
+
+                          case 66:
+                            return _context.abrupt('break', 69);
+
+                          case 67:
+                            _context.next = 37;
+                            break;
+
+                          case 69:
+                            _context.next = 71;
+                            return writer.ready;
+
+                          case 71:
+                            _context.next = 73;
+                            return writer.close();
+
+                          case 73:
+                            _context.next = 79;
+                            break;
+
+                          case 75:
+                            _context.prev = 75;
+                            _context.t3 = _context['catch'](36);
+                            _context.next = 79;
+                            return writer.abort(_context.t3);
+
+                          case 79:
                           case 'end':
                             return _context.stop();
                         }
                       }
-                    }, _callee, _this, [[6, 40]]);
+                    }, _callee, _this, [[1, 31], [36, 75]]);
                   }));
 
                   return function (_x3, _x4) {
@@ -37754,7 +37820,7 @@ function dearmor(input) {
                 }()));
 
                 data = _webStreamTools2.default.transformPair(data, function () {
-                  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(readable, writable) {
+                  var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(readable, writable) {
                     var checksumVerified, writer, checksumVerifiedString;
                     return _regenerator2.default.wrap(function _callee2$(_context2) {
                       while (1) {
@@ -37809,7 +37875,7 @@ function dearmor(input) {
                   }));
 
                   return function (_x5, _x6) {
-                    return _ref3.apply(this, arguments);
+                    return _ref4.apply(this, arguments);
                   };
                 }());
               } catch (e) {
@@ -38034,19 +38100,20 @@ function r2s(t, u) {
   var a = 0;
 
   return _webStreamTools2.default.transform(t, function (value) {
-    var r = [];
     var tl = value.length;
+    var r = new Uint8Array(Math.ceil(0.75 * tl));
+    var index = 0;
     for (var n = 0; n < tl; n++) {
       c = b64.indexOf(value.charAt(n));
       if (c >= 0) {
         if (s) {
-          r.push(a | c >> 6 - s & 255);
+          r[index++] = a | c >> 6 - s & 255;
         }
         s = s + 2 & 7;
         a = c << s & 255;
       }
     }
-    return new Uint8Array(r);
+    return r.subarray(0, index);
   });
 }
 
@@ -41073,7 +41140,7 @@ Key.prototype.verifyPrimaryKey = function () {
  */
 Key.prototype.getExpirationTime = function () {
   var _ref11 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(capabilities, keyId, userId) {
-    var primaryUser, selfCert, keyExpiry, sigExpiry, expiry, encryptExpiry, signExpiry;
+    var primaryUser, selfCert, keyExpiry, sigExpiry, expiry, encryptKey, encryptExpiry, signKey, signExpiry;
     return _regenerator2.default.wrap(function _callee10$(_context10) {
       while (1) {
         switch (_context10.prev = _context10.next) {
@@ -41098,7 +41165,7 @@ Key.prototype.getExpirationTime = function () {
             expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
 
             if (!(capabilities === 'encrypt' || capabilities === 'encrypt_sign')) {
-              _context10.next = 14;
+              _context10.next = 17;
               break;
             }
 
@@ -41106,28 +41173,48 @@ Key.prototype.getExpirationTime = function () {
             return this.getEncryptionKey(keyId, null, userId);
 
           case 12:
-            encryptExpiry = _context10.sent.getExpirationTime();
+            encryptKey = _context10.sent;
 
-            if (encryptExpiry < expiry) expiry = encryptExpiry;
-
-          case 14:
-            if (!(capabilities === 'sign' || capabilities === 'encrypt_sign')) {
-              _context10.next = 19;
+            if (encryptKey) {
+              _context10.next = 15;
               break;
             }
 
-            _context10.next = 17;
-            return this.getSigningKey(keyId, null, userId);
+            return _context10.abrupt('return', null);
+
+          case 15:
+            encryptExpiry = encryptKey.getExpirationTime();
+
+            if (encryptExpiry < expiry) expiry = encryptExpiry;
 
           case 17:
-            signExpiry = _context10.sent.getExpirationTime();
+            if (!(capabilities === 'sign' || capabilities === 'encrypt_sign')) {
+              _context10.next = 25;
+              break;
+            }
+
+            _context10.next = 20;
+            return this.getSigningKey(keyId, null, userId);
+
+          case 20:
+            signKey = _context10.sent;
+
+            if (signKey) {
+              _context10.next = 23;
+              break;
+            }
+
+            return _context10.abrupt('return', null);
+
+          case 23:
+            signExpiry = signKey.getExpirationTime();
 
             if (signExpiry < expiry) expiry = signExpiry;
 
-          case 19:
+          case 25:
             return _context10.abrupt('return', expiry);
 
-          case 20:
+          case 26:
           case 'end':
             return _context10.stop();
         }
@@ -47221,8 +47308,10 @@ function pako_zlib(constructor) {
   return function (data) {
     var obj = new constructor(options);
     return _webStreamTools2.default.transform(data, function (value) {
-      obj.push(value, _pako2.default.Z_SYNC_FLUSH);
-      return obj.result;
+      if (value.length) {
+        obj.push(value, _pako2.default.Z_SYNC_FLUSH);
+        return obj.result;
+      }
     });
   };
 }
@@ -47984,7 +48073,7 @@ exports.default = {
    */
   read: function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(input, callback) {
-      var reader, writer, peekedBytes, headerByte, tag, format, packet_length, packet_length_type, streaming, packet, callbackReturned, transform, wasPartialLength, lengthByte, bytesRead, _ref2, _done, _value, _ref3, done, value;
+      var reader, writer, peekedBytes, headerByte, tag, format, packet_length, packet_length_type, streaming, packet, callbackReturned, transform, wasPartialLength, lengthByte, bytesRead, _ref2, done, value, nextPacket;
 
       return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
@@ -48234,10 +48323,10 @@ exports.default = {
 
             case 112:
               _ref2 = _context.sent;
-              _done = _ref2.done;
-              _value = _ref2.value;
+              done = _ref2.done;
+              value = _ref2.value;
 
-              if (!_done) {
+              if (!done) {
                 _context.next = 119;
                 break;
               }
@@ -48254,17 +48343,17 @@ exports.default = {
 
             case 119:
               _context.next = 121;
-              return writer.write(_value.slice(0, packet_length - bytesRead));
+              return writer.write(value.slice(0, packet_length - bytesRead));
 
             case 121:
-              bytesRead += _value.length;
+              bytesRead += value.length;
 
               if (!(bytesRead >= packet_length)) {
                 _context.next = 125;
                 break;
               }
 
-              reader.unshift(_value.slice(packet_length - bytesRead + _value.length));
+              reader.unshift(value.slice(packet_length - bytesRead + value.length));
               return _context.abrupt('break', 127);
 
             case 125:
@@ -48293,69 +48382,65 @@ exports.default = {
 
             case 134:
               _context.next = 136;
-              return reader.read();
+              return reader.peekBytes(2);
 
             case 136:
-              _ref3 = _context.sent;
-              done = _ref3.done;
-              value = _ref3.value;
-
-              if (!done) reader.unshift(value);
+              nextPacket = _context.sent;
 
               if (!writer) {
+                _context.next = 142;
+                break;
+              }
+
+              _context.next = 140;
+              return writer.ready;
+
+            case 140:
+              _context.next = 142;
+              return writer.close();
+
+            case 142:
+              if (!streaming) {
                 _context.next = 145;
                 break;
               }
 
-              _context.next = 143;
-              return writer.ready;
-
-            case 143:
               _context.next = 145;
-              return writer.close();
-
-            case 145:
-              if (!streaming) {
-                _context.next = 148;
-                break;
-              }
-
-              _context.next = 148;
               return callbackReturned;
 
-            case 148:
-              return _context.abrupt('return', done || !value || !value.length);
+            case 145:
+              return _context.abrupt('return', !nextPacket || !nextPacket.length);
 
-            case 151:
-              _context.prev = 151;
+            case 148:
+              _context.prev = 148;
               _context.t25 = _context['catch'](2);
 
               if (!writer) {
-                _context.next = 159;
+                _context.next = 156;
                 break;
               }
 
-              _context.next = 156;
+              _context.next = 153;
               return writer.abort(_context.t25);
 
-            case 156:
+            case 153:
               return _context.abrupt('return', true);
 
-            case 159:
+            case 156:
               throw _context.t25;
 
-            case 160:
-              _context.prev = 160;
+            case 157:
+              _context.prev = 157;
 
               reader.releaseLock();
-              return _context.finish(160);
+              return _context.finish(157);
 
-            case 163:
+            case 160:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, this, [[2, 151, 160, 163]]);
+      }, _callee, this, [[2, 148, 157, 160]]);
     }));
 
     function read(_x, _x2) {
