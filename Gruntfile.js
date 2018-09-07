@@ -226,13 +226,17 @@ module.exports = function(grunt) {
         options: {
           username: 'openpgpjs',
           key: getSauceKey,
-          urls: ['http://localhost:3000/test/unittests.html?saucelabs=true'],
+          urls: [
+            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 1'),
+            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 2'),
+            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('^(?!.*Sauce Labs Group [1-2])')
+          ],
           build: process.env.TRAVIS_BUILD_ID,
           testname: 'Sauce Unit Test for openpgpjs',
           browsers: [browser_capabilities],
           public: "public",
           maxRetries: 3,
-          throttled: 2,
+          throttled: 3,
           pollInterval: 10000,
           sauceConfig: {maxDuration: 1800, commandTimeout: 600, idleTimeout: 1000},
           statusCheckAttempts: 200
