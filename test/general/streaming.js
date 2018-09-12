@@ -243,7 +243,8 @@ function tests() {
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
         value += '';
         if (value === '\n=' || value.length === 4) return; // Remove checksum
-        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -280,7 +281,8 @@ function tests() {
       const msgAsciiArmored = encrypted.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
         value += '';
-        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -318,7 +320,8 @@ function tests() {
       const msgAsciiArmored = encrypted.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
         value += '';
-        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
       const decrypted = await openpgp.decrypt({
@@ -355,7 +358,8 @@ function tests() {
       const msgAsciiArmored = signed.data;
       const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
         value += '';
-        if (value.length > 1000) return value.slice(0, 499) + (value[499] === 'a' ? 'b' : 'a') + value.slice(500);
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
       const verified = await openpgp.verify({
