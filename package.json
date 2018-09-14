@@ -19,10 +19,7 @@
   },
   "files": [
     "src/",
-    "dist/openpgp.js",
-    "dist/openpgp.worker.js",
-    "dist/openpgp.min.js",
-    "dist/openpgp.worker.min.js",
+    "dist/",
     "test/unittests.js",
     "test/general",
     "test/crypto"
