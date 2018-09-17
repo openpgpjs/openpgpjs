@@ -335,5 +335,73 @@ describe("ASCII armor", function() {
     expect(msg.text).to.equal('\r\nsign this');
   });
 
+  it('Do not add extraneous blank line when base64 ends on line break', async function () {
+    let pubKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xsFNBFuR4MABEACoJ9e8zvhj80mFWJzxDErNnD78taGh7hJTs/H1CIIAykjf
+NEvTWcnnDI2dsK7J+dBQq9R40G5YYDUvA2dMztqq5BuaUlJvdSiQtqMcirhF
+J73brsfpqtiJAGWSfb7znLqPV8mYdx5n12XWy+J6qRnNPJKLYP5XmLVHbICr
+XGoDu5aKE8bOMRItoUcM3SKmES4NJrgdRLriax+OoeX/fd7Fh3tF/+6f6fQZ
+MpvAS9Lb9RA8nZCXOn+cUH3K+HoRu7sc9ORuB0jmC9Pot+IJnyUNNrrDiuts
+85wixSQ+lWfDk1ckliME6MBXbYcjy/ZDiZWcuzyzp77pabfiW+3uN0RdcxeE
+lig37Ab893DtxLSplNV+hgmrVOhQ75Fs3TSX5JMquPfHeqBGWN6AZPqhvKEa
+AGD/v2Hi4UlR11W9Ay4yC8hQPMAZ4rO9WekDMk7pg2vClcuSqFH4IuwnZ7ey
+6F77d2jRJN52QEqMeqDKMO9vhpDis38Beu/qG3dHBvtCG36SrFdLN5eaPIVZ
+SUkexX7HCrSgS94A2cOY7bnIQ+OK9fup7+eFqiulCEKekm+WBvXiKUX5pMP4
+l60Jic6v69mZJ26wjPzhNpY43KhUnA/BNVW8UrN6jmzV3IXyxt8TY8HzijVq
+0fgJ+WjUHSfTm/7RXUOSoAOwRxrfzKgzLkW0eQARAQABzSFNaWNoYWVsIE1h
+cmluaSA8bWFyaW4yOTNAdW1uLmVkdT7CwXUEEAEIACkFAluR4MAGCwkHCAMC
+CRDC00GPww7TMQQVCAoCAxYCAQIZAQIbAwIeAQAAb/UP/2cTAbsNQ4HDhzuO
+nCaqHG88gHFiY1cuZi2zaiTjWkE8ucZ0IwZUqKlYQBmCrZj7u7DiIBdEnzFX
+3v0kWtcGXffqaC0ZZIEDT7rxqHEO6narDfj4rJ9ndHWrVU8CxhMQyeOygFxX
+25ZAJRGPJioBJ32ZLXUJB0aVu2PGEPu3ZFoTKtZJd2JhVNve6a1moy3NqljN
+qs1gaoQD9LQpDVC9bOTEuRikzWhU3B3jU3KlhCu8K4dnbiNDw5VKXcMSy9zv
+mTM/fjwWvaAOhxuN35Q2FwmPfyD1wDQy355EwJ59hQy1jOIKPk0gC8AFhvfs
+Ui2w/+iM3ba3BQyEzCKhT1lj7qE4b6yEDE4KfhilOOrDCsR7N+87zzkCkI6h
+wY6qQ7EhPL9O83or9aFnuZa+L2EpxrFd6fC+ER3y8et3e2BX4pvZb1ahADgg
+lVw79X9Dc/2v9Z/z1L9KN9rUGlYeDapM2Q4UR14u+/OrtSnKY5zP3AxSt8jL
+pdJz5LcGphzVs2y7z3mQgwVDfCPy6FavH3wqUWg12cpg8a+fhRdh9Rx4H8kl
+yL0V53M2TDtfq1dnPGOztprOsSy1fhRcgOhk1hkmTEBhkQU/5gwKTfX00rgC
+FrzNSBVCl5Lmlb6AEQcZYgnsTQVBrmyTeZV9dTnKqubwxb/ekt+jauv08WDk
+ReAj6FsDzsFNBFuR4MABEADGGejO+nZCcW7k6FfjV61HKYaLpmD2qKqkRODw
+cBUM1EXTRn3OjWv/8vAepxSYDncvZHzL3GXoA7Ai0kXsyITVv5PKe7tkvG2w
+48umFyhLf0lv7IS7l3kNhaatZpAvne5C+/ZiMxvDomyJrFlxVP57ouQe9Frj
+w1yuLMtJ7UXogbXOC4DGTyUKLOxh6t0ILevSC9DEiSve8GSmshf4PZEkpE9L
+KInFkEvwMoLjqPO/NNECnKnJo/h5JVQLK79Z2K7saFqaJgp8yfsQx0qE31hC
+aIKLm4Sz3pvqsBAHlUacntlq7YtPah5VdAAxmVC05pALipsgaWNCCqAIh2nS
+qc8C00oC12tyNOrOt6CcMQHz5D9bLK7hP95ku+IPgktVGM2nreW5h4E4i4gL
+5b4BLK5WMBZ1YvCa6qCIRQBKUUaBH9+eZrmddrOKc7vZg7OQHcqpGOaAWJ0a
+m+ORN4aCy+WEuttoY3K8fpZilKAT4TS5JXwLyLwWVls5tj0+YmCcJRrAxW3E
+LBVSOAZ1pr4ZoMkyX9Ruf7WUkxfUQ+FbyNiZZ3RyjrqLPl3MnTm1HwOekJ4z
+2grKjnlI7tS6oAi8WYiuaBIUvb2ESfTgHLWR6njl3SwV5PPVxJ3sqNcPnhCa
+2AygEVywy8yEUS0HZgyV6PstrhRytHpKLit0PEYg/+qR+wARAQABwsFfBBgB
+CAATBQJbkeDACRDC00GPww7TMQIbDAAAn/wP/2t8bB500NWBSqAFefc1NdZG
+X6Gq2GUKB03yjIpkW1HmerK5ubE3VC7jJ20rDO4SQ8N/MCAnferNWYWu+xHb
+xM88GCY2EHLrvo+nJIA12A7BK4C7nE7okOCdk8OGEBfkscgmnXvJ3Z/wrEVu
+1MqBYSZpGGZh3E+lPu/krd63doP584oJ00o2mm6yPfeXibNmcmVIDH1dwgCO
+AlVaObUK77FGkpcWB3gQ9LaKEriNgP6SWA8jM0UopHBKCEkQ5JNZLFX/K2CS
+hcUE62rQNHBLFne8mmUGeXjqFETEl0jwdef+hDuQDqE0y0ISmQRQaffahRkH
+ORnEtK72Qj9CD7Wn3fXgIXbtAhIti4qgmJQJ5FkyJdSpM8ouKEMGGoqO4vHe
+DbDzof7l+RsGNj0KEDlgiIov8DpWc+EFDApn7C4K7c+ojBnzvuwTVymjCA5+
+WIQaz81fLW+ft5d/lHHpyc+Cm+VVn8NbQw5qlmrLOQKHfJPUoYF4izevHXCF
+VWx8AtKEInT8YvN19cS2Jpr81jCN819IqgDr+YQezYMwZMzWISmA3w5Z3UCU
+lO771jlg4fHlWOZ2nJqselFlNc3X/VoZ8swmMkI6KVDV+rKaeyTWe61Up0Jj
+NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
+
+=trqv
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
+    const {keys: [key]} = await openpgp.key.readArmored(pubKey);
+    expect(
+      key.armor()
+        .replace(/^(Version|Comment): .*$\r\n/mg, '')
+    ).to.equal(
+      pubKey
+        .replace('\n=', '=')
+        .replace(/\n/g, '\r\n')
+    );
+  });
+
 });
 

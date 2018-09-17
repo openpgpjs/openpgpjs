@@ -391,7 +391,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push(addheader(customComment));
       result.push(base64.encode(body));
       result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
-      result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n");
+      result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n");
       break;
     case enums.armor.private_key:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
