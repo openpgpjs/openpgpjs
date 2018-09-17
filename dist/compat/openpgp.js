@@ -29617,7 +29617,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.0.1",
+  versionstring: "OpenPGP.js v4.0.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -37953,7 +37953,7 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push(addheader(customComment));
       result.push(_base2.default.encode(body));
       result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
-      result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n\r\n");
+      result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n");
       break;
     case _enums2.default.armor.private_key:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
@@ -38035,6 +38035,9 @@ function s2r(t) {
     var r = [];
     var tl = value.length;
     for (var n = 0; n < tl; n++) {
+      if (l && l % 60 === 0 && !u) {
+        r.push("\r\n");
+      }
       c = value[n];
       if (s === 0) {
         r.push(b64.charAt(c >> 2 & 63));
@@ -38046,15 +38049,11 @@ function s2r(t) {
         r.push(b64.charAt(a | c >> 6 & 3));
         l += 1;
         if (l % 60 === 0 && !u) {
-          r.push("\n");
+          r.push("\r\n");
         }
         r.push(b64.charAt(c & 63));
       }
       l += 1;
-      if (l % 60 === 0 && !u) {
-        r.push("\n");
-      }
-
       s += 1;
       if (s === 3) {
         s = 0;
@@ -38067,7 +38066,7 @@ function s2r(t) {
       r.push(b64.charAt(a));
       l += 1;
       if (l % 60 === 0 && !u) {
-        r.push("\n");
+        r.push("\r\n");
       }
       if (!u) {
         r.push('=');
@@ -38076,7 +38075,7 @@ function s2r(t) {
     }
     if (s === 1 && !u) {
       if (l % 60 === 0 && !u) {
-        r.push("\n");
+        r.push("\r\n");
       }
       r.push('=');
     }
