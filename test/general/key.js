@@ -1389,7 +1389,7 @@ function versionSpecificTests() {
       const actual_delta = (new Date(expiration) - new Date()) / 1000;
       expect(Math.abs(actual_delta - expect_delta)).to.be.below(60);
 
-      const subKeyExpiration = await key.subKeys[0].getExpirationTime();
+      const subKeyExpiration = await key.subKeys[0].getExpirationTime(key.primaryKey);
       expect(subKeyExpiration).to.exist;
 
       const actual_subKeyDelta = (new Date(subKeyExpiration) - new Date()) / 1000;
@@ -1799,7 +1799,7 @@ describe('Key', function() {
     const pubKey = (await openpgp.key.readArmored(twoKeys)).keys[1];
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
-    const expirationTime = await pubKey.subKeys[0].getExpirationTime();
+    const expirationTime = await pubKey.subKeys[0].getExpirationTime(pubKey.primaryKey);
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
 
@@ -1990,7 +1990,7 @@ describe('Key', function() {
 
   it('getRevocationCertificate() should produce the same revocation certificate as GnuPG', async function() {
     const revKey = (await openpgp.key.readArmored(revoked_key_arm4)).keys[0];
-    const revocationCertificate = revKey.getRevocationCertificate();
+    const revocationCertificate = await revKey.getRevocationCertificate();
 
     const input = await openpgp.armor.decode(revocation_certificate_arm4);
     const packetlist = new openpgp.packet.List();
@@ -2002,7 +2002,7 @@ describe('Key', function() {
 
   it('getRevocationCertificate() should have an appropriate comment', async function() {
     const revKey = (await openpgp.key.readArmored(revoked_key_arm4)).keys[0];
-    const revocationCertificate = revKey.getRevocationCertificate();
+    const revocationCertificate = await revKey.getRevocationCertificate();
 
     expect(revocationCertificate).to.match(/Comment: This is a revocation certificate/);
     expect(revKey.armor()).not.to.match(/Comment: This is a revocation certificate/);
@@ -2170,7 +2170,27 @@ VYGdb3eNlV8CfoEC
 
   it('Selects the most recent subkey binding signature', async function() {
     const key = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
-    expect(key.subKeys[0].getExpirationTime().toISOString()).to.equal('2015-10-18T07:41:30.000Z');
+    expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
+  });
+
+  it('Selects the most recent non-expired subkey binding signature', async function() {
+    const key = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
+    key.subKeys[0].bindingSignatures[1].signatureNeverExpires = false;
+    key.subKeys[0].bindingSignatures[1].signatureExpirationTime = 0;
+    expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
+  });
+
+  it('Selects the most recent valid subkey binding signature', async function() {
+    const key = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
+    key.subKeys[0].bindingSignatures[1].signatureData[0]++;
+    expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
+  });
+
+  it('Handles a key with no valid subkey binding signatures gracefully', async function() {
+    const key = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
+    key.subKeys[0].bindingSignatures[0].signatureData[0]++;
+    key.subKeys[0].bindingSignatures[1].signatureData[0]++;
+    expect(await key.subKeys[0].getExpirationTime(key.primaryKey)).to.be.null;
   });
 
   it('Reject encryption with revoked subkey', async function() {

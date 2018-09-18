@@ -124,7 +124,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
   }
 
   return generate(options).then(async key => {
-    const revocationCertificate = key.getRevocationCertificate();
+    const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
     return convertStreams({
@@ -159,8 +159,8 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
 
   options.revoked = options.revocationCertificate;
 
-  return reformat(options).then(key => {
-    const revocationCertificate = key.getRevocationCertificate();
+  return reformat(options).then(async key => {
+    const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
     return {
