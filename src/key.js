@@ -483,11 +483,12 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
 /**
  * Returns the latest date when the key can be used for encrypting, signing, or both, depending on the `capabilities` paramater.
  * When `capabilities` is null, defaults to returning the expiry date of the primary key.
+ * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
  * Returns Infinity if the key doesn't expire.
  * @param  {encrypt|sign|encrypt_sign} capabilities, optional
  * @param  {module:type/keyid} keyId, optional
  * @param  {Object} userId, optional user ID
- * @returns {Promise<Date>}
+ * @returns {Promise<Date | Infinity | null>}
  * @async
  */
 Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
@@ -1116,10 +1117,11 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
 
 /**
  * Returns the expiration time of the subkey or Infinity if key does not expire
+ * Returns null if the subkey is invalid.
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey  The primary key packet
  * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<Date>}
+ * @returns {Promise<Date | Infinity | null>}
  * @async
  */
 SubKey.prototype.getExpirationTime = async function(primaryKey, date=new Date()) {
@@ -1199,8 +1201,6 @@ SubKey.prototype.revoke = async function(primaryKey, {
   return subKey;
 };
 
-/**
- */
 ['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name] =
