@@ -312,6 +312,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('saucelabs', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
-  grunt.registerTask('browsertest', ['build', 'copy:browsertest', 'connect:test', 'watch']);
+  grunt.registerTask('browsertest', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'watch']);
 
 };
