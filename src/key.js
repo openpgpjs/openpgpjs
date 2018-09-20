@@ -1566,8 +1566,19 @@ async function isDataRevoked(primaryKey, dataToVerify, revocations, signature, k
   const normDate = util.normalizeDate(date);
   const revocationKeyIds = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
-    if (!(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
-        (revocationSignature.verified || await revocationSignature.verify(key, dataToVerify))) {
+    if (
+      // Note: a third-party revocation signature could legitimately revoke a
+      // self-signature if the signature has an authorized revocation key.
+      // However, we don't support passing authorized revocation keys, nor
+      // verifying such revocation signatures. Instead, we indicate an error
+      // when parsing a key with an authorized revocation key, and ignore
+      // third-party revocation signatures here. (It could also be revoking a
+      // third-party key certification, which should only affect
+      // `verifyAllCertifications`.)
+      (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
+      !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
+      (revocationSignature.verified || await revocationSignature.verify(key, dataToVerify))
+    ) {
       // TODO get an identifier of the revoked object instead
       revocationKeyIds.push(revocationSignature.issuerKeyId);
       return true;

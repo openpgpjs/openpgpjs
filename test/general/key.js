@@ -1258,6 +1258,76 @@ lbjwPj3QUTbLFvHisYzXEQ==
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const key_with_revoked_third_party_cert = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: GPGTools - https://gpgtools.org
+
+mQENBFS2KSEBCACzz8KtwE5ualmgF+rKo8aPQ9inTQWCNzCuTs3HaSe0D5heGoSh
+mJWl9B5zvXN78L3yzmtWQV92CXOkCRWezIY8y+aN+aJZ6PzPE5Yy74404v3yG9ZK
+jGlAWC7Wgkx+YR2vbzj7hDqi5e6TpDGsFkH3OsI3nY7FIvXWbz9Ih4/s/nBPuF0v
+sBZ0n97ItszhnrXvvrF1fQvEviB0+xF5DfUURWP45EA+NWnBl7HFzY4FeN5ImYZK
+Nt6A88i9SIB3MiwRSUy1UwJjL2L8l+rLbr20JbnIUuJN3h/dY10igxyOh5gsXtr1
+fabsm6s2AacrCjQqLkXSnB8Ucu+Enz5R1s0dABEBAAG0KVBhc3N3b3J0ICDDpMOE
+Pz9eXjEyIDIgwrUgIDxwd2RAdGVzdC5jb20+iFoEMBEKABoFAlYvilYTHSBJY2gg
+d2VpcyBlcyBuaWNodAAKCRDheQpvjBNXTQ5jAKC0AMb5Ivoy0DKNI8Hjus72ob3u
+TACg32AGuCernx1Wt7/5oi4KdjxjjxeJATIEEAEIACYFAlS2KSIGCwkIBwMCCRBj
+ZJ9T2gveXAQVCAIKAxYCAQIbAwIeAQAA/c4H/i/NgI36q/2lwcRkt5rsVBUlx+Ho
++iKIEh1+XKfDq4A8DTjeYCCOg/k3hDm2LpmmclwRc2X9CMwraSoFTEN6Em78Kd5a
+DFaNPbWGP0RCW5zqPGAoZSvOlZYsLMaswFMBD93wf3XwHK8HxTJhTmQC1kGSplO1
+GMWkTh6B3tqiy/Jk7Hp5mPASQBid+E9rjr8CgOPF26hjTw+UUBs2ZWO9U9PyhBYH
+xLIwtUDoZvqhTdXD0aV7vhRQw6p3UEzxa8t/1iGogHe2CfcMgq5jYmHLTZN3VGE3
+djwLQIikRRig7dTBD9BgeG6a+22XRbvpOsHBzsAH4UC97nS+wzkgkyvqfOKIRgQQ
+EQoABgUCVi+JYAAKCRDheQpvjBNXTTNIAJwJacb4mKUPrRnnNcGXC6hjizuJOACg
+zVFVnWA/A+GrHBogUD780vcJwMG5AQ0EVLYpIQEIANNCJ5sUKv6YDWRToF/tG6ik
+LjTAcNelr5LCXLT3Y7CAmk7y88vzCaTLZZUWgwyK8lYGZ3x2icoc4fJeo5BhHNJz
+TSL239cTsAugNoVMJFG2xm1TEzBsBCNPOOVpS5cArt6mmhxozwkafawtgA+5z0zB
+vQm0AHPudSAJp3Gx69meRzAJgdFVgljZVyCUmQizJqJ1dQPPgarpJKJy3f0+g0ec
+yx+gTA4nj+zfqjrXM4O1Ok/Di+8mneA3bhadiYU1VjkqY+1UqkQOU0UFdDlBppRj
+xr6h00xECoayyPXr/U+gFSgZHO1mKk3meCyNVKLGAajQxWVWfBwoPixfqOXlBh0A
+EQEAAYkBHwQYAQgAEwUCVLYpIwkQY2SfU9oL3lwCGwwAAMkDB/9QeLRyEOX2LWdZ
+UkxSldMklAvMBjqY27cC1Qn8wiWzHNJKVEnQ9MiKn0mVRohkRKgsiWfSugDVyVov
+eTM7PSjDlAYALCSxSYStykordUSf/5WYb9Mmea4J/WXBQCvwJKFU47ZDl2Tg+HdS
+SVznLTt/ASxd2Nap2mUveC4ivGdSo1KOq3+t95xGC7dh4U3JwPanBZ6cfBJbnSEs
+QWLUAPnlfn37Ff14haRETX3ND82bkXKEGEk6O5HJ0PWuUtl+TFIkYUGh4zFOZZWq
+VHwaffAHDrmTZt/pOXg9l/VFnzfxrId33Tog3Zvejm2+8d2LhSCtfdrdJ/Dx2CZM
+Yzxp9Mp9
+=uVX6
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
+const certifying_key = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: GPGTools - https://gpgtools.org
+
+mQGiBEOd+/gRBACfqCfgQCmUzOr7iA1CerGVmFm8HcN+NVGSpkwF6pmPJh1XVGEA
+Nz9Aok6Vx4MQ+QCKo9dTXMZWDE4W/vzaKaEmsirsxGgn7JhK0t/9VeXXieWiJirA
+5iTQMsRjfnS6MLLUr56E7HmDZftiOcpJu81S943r+oeINhq37SlJM7Q47wCg8miR
+egss26IZfW3RvBuNW1KEDh0D/195DH6sl+/qmgUAj3M7ai1iKOqkILdNuIkYRc18
+bsBYIAOjY81guhlEabYEqv8FUKPh2A7dAe/4og89HrUsVxOKJ9EGyrcqyJj676gK
+BL383t1dQvyJyWfV5z4umUMaF/xE46go3Trdyu86aJDe57B74RYbWL2aaGLtkPJ2
+rHOnBACG5PmLM6EXWJQSfbRqJHlRysc3MOAXMnxu8DVz+Tm0nPcArUG+Mf3GmxT+
+537nHqF2xEgVvwfkvGB51ideRRQMhHUzy583zkuPYV1cJ6ykfeA6EHzVbT4vRzO8
+AW9ELBKTK9F4N4gGTOdAATcaMC0gwzCz+fofJEJqC/9CS2pYvrQlVGhvbWFzIE9i
+ZXJuZMO2cmZlciA8dG9iZXJuZG9AZ214LmRlPohdBBMRAgAdBQJDnfv4BgsJCAcD
+AgQVAggDBBYCAwECHgECF4AACgkQ4XkKb4wTV02nkACfWvWnRawPI9AmgXpg6jg1
+/22exKkAoMJ+yFhjtuGobOrIAPcEYrwlTQXBiGsEEBECACsFAksJKNQFgwHihQAe
+Gmh0dHA6Ly93d3cuY2FjZXJ0Lm9yZy9jcHMucGhwAAoJENK7DQFl0P1Y4VoAmgMc
+2qWuBtOBb6Uj6DskTtXORlPgAKCB3Hqp8dJ3dbQh5m0Ebf8F3P71WrkCDQRDnfw1
+EAgAkp+0jMpfKKF6Gxy63fP3tCFzn9vq3GBtbNnvp8b0dx6nf+ZxELt/q9K4Yz9g
++sXq0RFQGV+YwS2BGoogzRcT4PHmUBcEAbjZIs9lZdZDEF0/68d+32mHSkLZJxGI
+ezXJK3+MpGPnCMbQ63UYpcY1BvL7Vbj6P4X75dJJReGIHQMBA0FEYB5AVm6HrWU5
+eDvOZ2w8QAAUluFnD9/xNRqBpcwm5uoox7zq60W5coK6p6WX8t5+WMMrRKF2A1Ru
+aTxYQKo3f8XQA4e6tEcdGFlk1K9W8Ov1xVRQa6EqQYZFesbuoo8HHuSNsJ7PQrP+
+vyYcafohlO/q4QtJXoUimsrEywADBQf7BQWrEx9YlNNsUD2yuov8pYCymxfUVTzK
+huxGHmNj1htXfWWScA2uqD97HOdFu5nvoL2tdaO1RQR/OXKRBcUg6FhOQqqxQSxi
+Vcsoy3aofGi3CWVXgn7KlSopkhlb4ELjzt5H+BMneXdgowO4MimXAfivI7OZl2fN
+ut7emyN9qaeY/e25UKmCYhmhE5hM2+lV8wEmmu/qTCPiZ2u0zH/PE9AAwRz/6X+p
+gsW0WIQpI6iQSSq4KyJxebtJFmCSTFawuXB6rCGovDXo/BkRsDEj1rpZnkwKJPa0
+dEhKK4EzNrUzpWHeE3gKPjFXVmcjIPWVAC3BJoJRHOHg8wqLKcX5MYhGBBgRAgAG
+BQJDnfw1AAoJEOF5Cm+ME1dNChoAoMKa/qx/RKlu3iQPtN6p4NlhRA9IAJ94F/7l
+cKFQz1DDfFCfVpSIJRGozQ==
+=EYzO
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -1807,6 +1877,26 @@ describe('Key', function() {
     await expect(pubKey.subKeys[0].verify(
       pubKey.primaryKey
     )).to.eventually.equal(openpgp.enums.keyStatus.revoked);
+  });
+
+  it('Verify status of key with non-self revocation signature', async function() {
+    const { keys: [pubKey] } = await openpgp.key.readArmored(key_with_revoked_third_party_cert);
+    const [selfCertification] = await pubKey.verifyPrimaryUser();
+    const publicSigningKey = await pubKey.getSigningKey();
+    expect(selfCertification.keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
+    expect(selfCertification.valid).to.be.true;
+
+    const { keys: [certifyingKey] } = await openpgp.key.readArmored(certifying_key);
+    const certifyingSigningKey = await certifyingKey.getSigningKey();
+    const signatures = await pubKey.verifyPrimaryUser([certifyingKey]);
+    expect(signatures.length).to.equal(2);
+    expect(signatures[0].keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
+    expect(signatures[0].valid).to.be.null;
+    expect(signatures[1].keyid.toHex()).to.equal(certifyingSigningKey.getKeyId().toHex());
+    expect(signatures[1].valid).to.be.false;
+
+    const { user } = await pubKey.getPrimaryUser();
+    expect(await user.verifyCertificate(pubKey.primaryKey, user.otherCertifications[0], [certifyingKey])).to.equal(openpgp.enums.keyStatus.revoked);
   });
 
   it('Evaluate key flags to find valid encryption key packet', async function() {
