@@ -1223,6 +1223,41 @@ t/ia1kMpSEiOVLlX5dfHZzhR3WNtBqU=
 =C0fJ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const key_with_authorized_revocation_key = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+xsBNBFujnwwBCADK1xX03tSCmktPDS9Ncij3O5wG+F5/5Zm7QJDc39Wt1t/K
+szCSobWtm/UObQVZjsTGwg0ZUPgepgWGGDBL0dlc1NObwUiOhGYnJnd4V25P
+iU5Mg3+DhRq+LzNK+oGlpVPDpwQ48S8HOphbswKUpuaDcEQ2f+NKIc0eXe5m
+ut5x9uoVj8jneUNsHYq6FIlxh4knzpJWFj5+LNi7plMCwKip6srVNf8He/q0
+0xA/4vjSIOfGIE7TCBH33CbHEr98p81Cf4g0E+kswEz5iWE2SDCyYgQkMrkz
+H9mtVqk3nFT8NR0USxKqH9bGhaTx1AWq/HDgsphayPEWQ0usjQDrbQUnABEB
+AAHNDnRlc3QgPGFAYi5jb20+wsCNBBABCABBBQJbo58MBgsJBwgDAhcMgAH0
+cOUNyxrV8eZOCGRKY2E6TW5AlAkQWICi/ReDcrkEFQgKAgMWAgECGQECGwMC
+HgEAADgHB/0WIHh6maX2LZ0u5ujk1tZxWMrCycccopdQNKN0RGD98X4fyY6J
+wfmKb107gcidJBFct0sVWFW8GU42w9pVMU5qWD6kyFkgcmov319UL+7aZ19b
+HOWVKUTb6rFG8/qAbq3BF7YB/cZIBWMFKAS3BRJ4Kz23GheAB2A9oVLmuq5o
+gW5c2R1YC0T0XyXEFiw9uZ+AS6kEZymFPRQfPUIbJs1ct/lAN+mC9Qp0Y6CL
+60Hd6jlKUb6TgljaQ6CtLfT9v72GeKznapKr9IEtsgYv69j0c/MRM2nmu50c
+g+fICiiHrTbNS6jkUz0pZLe7hdhWHeEiqcA9+GC1DxOQCRCS/YNfzsBNBFuj
+nwwBCADK1xX03tSCmktPDS9Ncij3O5wG+F5/5Zm7QJDc39Wt1t/KszCSobWt
+m/UObQVZjsTGwg0ZUPgepgWGGDBL0dlc1NObwUiOhGYnJnd4V25PiU5Mg3+D
+hRq+LzNK+oGlpVPDpwQ48S8HOphbswKUpuaDcEQ2f+NKIc0eXe5mut5x9uoV
+j8jneUNsHYq6FIlxh4knzpJWFj5+LNi7plMCwKip6srVNf8He/q00xA/4vjS
+IOfGIE7TCBH33CbHEr98p81Cf4g0E+kswEz5iWE2SDCyYgQkMrkzH9mtVqk3
+nFT8NR0USxKqH9bGhaTx1AWq/HDgsphayPEWQ0usjQDrbQUnABEBAAHCwF8E
+GAEIABMFAlujnwwJEFiAov0Xg3K5AhsMAACI/QgArvTcutod+7n1D8wCwM50
+jo3x4KPuQw+NwbOnMbFwv0R8i8NqtSFf2bYkkZ7RLViTmphvSon4h2WgfczL
+SBulZ1QZF7zCKXmXDg8/HZgRUflC1XMixpB8Hqouin5AVgMbsbHg30V2uPco
+V3DeFQ8HWxQC9symaMW/20MkqNXgCjM0us7kVwTEJQqZ6KYrFVjKyprSQRyP
+rfckEBuZnj91OS+kAHlZ+ScZIuV4QVF0e2U6oEuB+qFXppR030PJoO6WDOzm
+67hkzfrc3VpKw/I+vVJnZb4GOhNTSpa+p8i4gTyWmrOZ0G85QoldHWlWaRBg
+lbjwPj3QUTbLFvHisYzXEQ==
+=aT8U
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -1686,6 +1721,15 @@ describe('Key', function() {
     expect(pubKeys.keys).to.have.length(2);
     expect(pubKeys.keys[0].getKeyId().toHex()).to.equal('4a63613a4d6e4094');
     expect(pubKeys.keys[1].getKeyId().toHex()).to.equal('dbf223e870534df4');
+  });
+
+  it('Parsing armored key with an authorized revocation key', async function() {
+    const pubKeys = await openpgp.key.readArmored(key_with_authorized_revocation_key);
+    expect(pubKeys).to.exist;
+    expect(pubKeys.err).to.exist.and.have.length(1);
+    expect(pubKeys.err[0].message).to.equal('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+    expect(pubKeys.keys).to.have.length(1);
+    expect(pubKeys.keys[0].getKeyId().toHex()).to.equal('5880a2fd178372b9');
   });
 
   it('Parsing V5 public key packet', async function() {

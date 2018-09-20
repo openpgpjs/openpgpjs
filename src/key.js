@@ -1220,9 +1220,16 @@ SubKey.prototype.revoke = async function(primaryKey, {
 export async function read(data) {
   const result = {};
   result.keys = [];
+  const err = [];
   try {
     const packetlist = new packet.List();
     await packetlist.read(data);
+    if (packetlist.filterByTag(enums.packet.signature).some(
+      signature => signature.revocationKeyClass !== null
+    )) {
+      // Indicate an error, but still parse the key.
+      err.push(new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.'));
+    }
     const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
       throw new Error('No key packet found');
@@ -1233,13 +1240,14 @@ export async function read(data) {
         const newKey = new Key(oneKeyList);
         result.keys.push(newKey);
       } catch (e) {
-        result.err = result.err || [];
-        result.err.push(e);
+        err.push(e);
       }
     }
   } catch (e) {
-    result.err = result.err || [];
-    result.err.push(e);
+    err.push(e);
+  }
+  if (err.length) {
+    result.err = err;
   }
   return result;
 }
