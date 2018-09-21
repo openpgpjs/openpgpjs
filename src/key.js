@@ -283,17 +283,6 @@ async function getLatestValidSignature(signatures, primaryKey, dataToVerify, dat
   return signature;
 }
 
-function isValidSigningKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_encrypt) &&
-         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
-         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
-         (!signature.keyFlags ||
-          (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
-}
-
 /**
  * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
@@ -324,20 +313,18 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
     }
   }
   return null;
-};
 
-function isValidEncryptionKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
+  function isValidSigningKeyPacket(keyPacket, signature) {
+    if (!signature.verified || signature.revoked !== false) { // Sanity check
+      throw new Error('Signature not verified');
+    }
+    return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_encrypt) &&
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
+      (!signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
   }
-  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
-         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
-         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
-         keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.eddsa) &&
-         (!signature.keyFlags ||
-          (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
-          (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0);
-}
+};
 
 /**
  * Returns last created key or key by given keyId that is available for encryption or decryption
@@ -371,6 +358,19 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
     }
   }
   return null;
+
+  function isValidEncryptionKeyPacket(keyPacket, signature) {
+    if (!signature.verified || signature.revoked !== false) { // Sanity check
+      throw new Error('Signature not verified');
+    }
+    return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.eddsa) &&
+      (!signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
+        (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0);
+  }
 };
 
 /**
