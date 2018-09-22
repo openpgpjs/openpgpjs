@@ -21,6 +21,7 @@ import util from '../util';
  * are stored as numerical indices.
  * @memberof module:packet
  * @constructor
+ * @extends Array
  */
 function List() {
   /**
@@ -30,6 +31,8 @@ function List() {
    */
   this.length = 0;
 }
+
+List.prototype = [];
 
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
@@ -146,37 +149,6 @@ List.prototype.push = function (packet) {
 };
 
 /**
- * Remove a packet from the list and return it.
- * @returns {Object}   The packet that was removed
- */
-List.prototype.pop = function() {
-  if (this.length === 0) {
-    return;
-  }
-
-  const packet = this[this.length - 1];
-  delete this[this.length - 1];
-  this.length--;
-
-  return packet;
-};
-
-/**
- * Creates a new PacketList with all packets that pass the test implemented by the provided function.
- */
-List.prototype.filter = function (callback) {
-  const filtered = new List();
-
-  for (let i = 0; i < this.length; i++) {
-    if (callback(this[i], i, this)) {
-      filtered.push(this[i]);
-    }
-  }
-
-  return filtered;
-};
-
-/**
  * Creates a new PacketList with all packets from the given types
  */
 List.prototype.filterByTag = function (...args) {
@@ -191,58 +163,6 @@ List.prototype.filterByTag = function (...args) {
   }
 
   return filtered;
-};
-
-/**
- * Executes the provided callback once for each element
- */
-List.prototype.forEach = function (callback) {
-  for (let i = 0; i < this.length; i++) {
-    callback(this[i], i, this);
-  }
-};
-
-/**
- * Returns an array containing return values of callback
- * on each element
- */
-List.prototype.map = function (callback) {
-  const packetArray = [];
-
-  for (let i = 0; i < this.length; i++) {
-    packetArray.push(callback(this[i], i, this));
-  }
-
-  return packetArray;
-};
-
-/**
- * Executes the callback function once for each element
- * until it finds one where callback returns a truthy value
- * @param  {Function} callback
- * @returns {Promise<Boolean>}
- * @async
- */
-List.prototype.some = async function (callback) {
-  for (let i = 0; i < this.length; i++) {
-    if (await callback(this[i], i, this)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Executes the callback function once for each element,
- * returns true if all callbacks returns a truthy value
- */
-List.prototype.every = function (callback) {
-  for (let i = 0; i < this.length; i++) {
-    if (!callback(this[i], i, this)) {
-      return false;
-    }
-  }
-  return true;
 };
 
 /**
@@ -283,20 +203,6 @@ List.prototype.indexOfTag = function (...args) {
     }
   }
   return tagIndex;
-};
-
-/**
- * Returns slice of packetlist
- */
-List.prototype.slice = function (begin, end) {
-  if (!end) {
-    end = this.length;
-  }
-  const part = new List();
-  for (let i = begin; i < end; i++) {
-    part.push(this[i]);
-  }
-  return part;
 };
 
 /**

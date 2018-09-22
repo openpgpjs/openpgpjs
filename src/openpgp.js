@@ -124,7 +124,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
   }
 
   return generate(options).then(async key => {
-    const revocationCertificate = key.getRevocationCertificate();
+    const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
     return convertStreams({
@@ -159,8 +159,8 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
 
   options.revoked = options.revocationCertificate;
 
-  return reformat(options).then(key => {
-    const revocationCertificate = key.getRevocationCertificate();
+  return reformat(options).then(async key => {
+    const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
     return {
@@ -344,7 +344,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param  {String|Array<String>} passwords   (optional) passwords to decrypt the message
  * @param  {Object|Array<Object>} sessionKeys (optional) session keys in the form: { data:Uint8Array, algorithm:String }
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, to verify signatures
- * @param  {String} format                    (optional) return data format either as 'utf8' or 'binary'
+ * @param  {'utf8'|'binary'} format           (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
  * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Signature} signature              (optional) detached signature for verification
  * @param  {Date} date                        (optional) use the given date for verification instead of the current time

@@ -201,6 +201,12 @@ Signature.prototype.sign = async function (key, data) {
   this.signature = stream.fromAsync(async () => crypto.signature.sign(
     publicKeyAlgorithm, hashAlgorithm, params, toHash, await stream.readToEnd(hash)
   ));
+
+  // Store the fact that this signature is valid, e.g. for when we call `await
+  // getLatestValidSignature(this.revocationSignatures, key, data)` later. Note
+  // that this only holds up if the key and data passed to verify are the same
+  // as the ones passed to sign.
+  this.verified = true;
   return true;
 };
 
