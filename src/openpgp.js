@@ -670,10 +670,10 @@ function linkStreams(result, message, erroringStream) {
  * @param  {Object} signatures              list of signatures
  */
 async function prepareSignatures(signatures) {
-  await Promise.all(signatures.map(async signature => {
+  signatures.forEach(async signature => {
     signature.signature = await signature.signature;
     signature.valid = await signature.verified;
-  }));
+  });
 }
 
 
