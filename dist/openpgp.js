@@ -23337,7 +23337,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.1.0",
+  versionstring: "OpenPGP.js v4.1.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -33247,7 +33247,7 @@ Message.prototype.verify = async function (keys, date = new Date(), streaming) {
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
-  const onePassSigList = msg.packets.filterByTag(_enums2.default.packet.onePassSignature);
+  const onePassSigList = msg.packets.filterByTag(_enums2.default.packet.onePassSignature).reverse();
   const signatureList = msg.packets.filterByTag(_enums2.default.packet.signature);
   if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
     onePassSigList.forEach(onePassSig => {
@@ -33257,25 +33257,31 @@ Message.prototype.verify = async function (keys, date = new Date(), streaming) {
       onePassSig.signatureData = _webStreamTools2.default.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
       onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
     });
-    const verificationObjects = await createVerificationObjects(onePassSigList, literalDataList, keys, date);
     msg.packets.stream = _webStreamTools2.default.transformPair(msg.packets.stream, async (readable, writable) => {
+      const reader = _webStreamTools2.default.getReader(readable);
       const writer = _webStreamTools2.default.getWriter(writable);
       try {
-        await _webStreamTools2.default.readToEnd(_webStreamTools2.default.transform(readable, signature => {
-          onePassSigList.pop().correspondingSigResolve(signature);
-        }));
+        for (let i = 0; i < onePassSigList.length; i++) {
+          var _ref = await reader.read();
+
+          const signature = _ref.value;
+
+          onePassSigList[i].correspondingSigResolve(signature);
+        }
+        await reader.readToEnd();
         await writer.ready;
         await writer.close();
       } catch (e) {
         onePassSigList.forEach(onePassSig => {
           onePassSig.correspondingSigResolve({
+            tag: _enums2.default.packet.signature,
             verify: () => undefined
           });
         });
         await writer.abort(e);
       }
     });
-    return verificationObjects.reverse();
+    return createVerificationObjects(onePassSigList, literalDataList, keys, date);
   }
   return createVerificationObjects(signatureList, literalDataList, keys, date);
 };
@@ -35299,6 +35305,9 @@ OnePassSignature.prototype.calculateTrailer = _signature2.default.prototype.calc
 
 OnePassSignature.prototype.verify = async function () {
   const correspondingSig = await this.correspondingSig;
+  if (!correspondingSig || correspondingSig.tag !== _enums2.default.packet.signature) {
+    throw new Error('Corresponding signature packet missing');
+  }
   correspondingSig.hashed = this.hashed;
   return correspondingSig.verify.apply(correspondingSig, arguments);
 };

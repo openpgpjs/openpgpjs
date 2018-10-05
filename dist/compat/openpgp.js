@@ -29617,7 +29617,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.1.0",
+  versionstring: "OpenPGP.js v4.1.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -44066,7 +44066,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
  * @async
  */
 var createVerificationObject = function () {
-  var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(signature, literalDataList, keys) {
+  var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(signature, literalDataList, keys) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     var keyPacket, verifiedSig;
     return _regenerator2.default.wrap(function _callee21$(_context21) {
@@ -44076,7 +44076,7 @@ var createVerificationObject = function () {
             keyPacket = null;
             _context21.next = 3;
             return _promise2.default.all(keys.map(function () {
-              var _ref21 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(key) {
+              var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(key) {
                 var result;
                 return _regenerator2.default.wrap(function _callee20$(_context20) {
                   while (1) {
@@ -44101,7 +44101,7 @@ var createVerificationObject = function () {
               }));
 
               return function (_x57) {
-                return _ref21.apply(this, arguments);
+                return _ref22.apply(this, arguments);
               };
             }()));
 
@@ -44129,7 +44129,7 @@ var createVerificationObject = function () {
   }));
 
   return function createVerificationObject(_x53, _x54, _x55) {
-    return _ref20.apply(this, arguments);
+    return _ref21.apply(this, arguments);
   };
 }();
 
@@ -44147,14 +44147,14 @@ var createVerificationObject = function () {
 
 
 var createVerificationObjects = exports.createVerificationObjects = function () {
-  var _ref22 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(signatureList, literalDataList, keys) {
+  var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee23(signatureList, literalDataList, keys) {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     return _regenerator2.default.wrap(function _callee23$(_context23) {
       while (1) {
         switch (_context23.prev = _context23.next) {
           case 0:
             return _context23.abrupt('return', _promise2.default.all(signatureList.map(function () {
-              var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(signature) {
+              var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(signature) {
                 return _regenerator2.default.wrap(function _callee22$(_context22) {
                   while (1) {
                     switch (_context22.prev = _context22.next) {
@@ -44170,7 +44170,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
               }));
 
               return function (_x62) {
-                return _ref23.apply(this, arguments);
+                return _ref24.apply(this, arguments);
               };
             }())));
 
@@ -44183,7 +44183,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
   }));
 
   return function createVerificationObjects(_x58, _x59, _x60) {
-    return _ref22.apply(this, arguments);
+    return _ref23.apply(this, arguments);
   };
 }();
 
@@ -44201,7 +44201,7 @@ var createVerificationObjects = exports.createVerificationObjects = function () 
  * @static
  */
 var readArmored = exports.readArmored = function () {
-  var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(armoredText) {
+  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee25(armoredText) {
     var streamType, input;
     return _regenerator2.default.wrap(function _callee25$(_context25) {
       while (1) {
@@ -44230,7 +44230,7 @@ var readArmored = exports.readArmored = function () {
   }));
 
   return function readArmored(_x64) {
-    return _ref25.apply(this, arguments);
+    return _ref26.apply(this, arguments);
   };
 }();
 
@@ -44245,7 +44245,7 @@ var readArmored = exports.readArmored = function () {
 
 
 var read = exports.read = function () {
-  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(input) {
+  var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee26(input) {
     var fromStream = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _util2.default.isStream(input);
     var streamType, packetlist, message;
     return _regenerator2.default.wrap(function _callee26$(_context26) {
@@ -44276,7 +44276,7 @@ var read = exports.read = function () {
   }));
 
   return function read(_x65) {
-    return _ref26.apply(this, arguments);
+    return _ref27.apply(this, arguments);
   };
 }();
 
@@ -45169,7 +45169,7 @@ Message.prototype.signDetached = function () {
 
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var streaming = arguments[2];
-    var msg, literalDataList, onePassSigList, signatureList, verificationObjects;
+    var msg, literalDataList, onePassSigList, signatureList;
     return _regenerator2.default.wrap(function _callee19$(_context19) {
       while (1) {
         switch (_context19.prev = _context19.next) {
@@ -45185,11 +45185,11 @@ Message.prototype.signDetached = function () {
             throw new Error('Can only verify message with one literal data packet.');
 
           case 4:
-            onePassSigList = msg.packets.filterByTag(_enums2.default.packet.onePassSignature);
+            onePassSigList = msg.packets.filterByTag(_enums2.default.packet.onePassSignature).reverse();
             signatureList = msg.packets.filterByTag(_enums2.default.packet.signature);
 
             if (!(onePassSigList.length && !signatureList.length && msg.packets.stream)) {
-              _context19.next = 13;
+              _context19.next = 10;
               break;
             }
 
@@ -45217,70 +45217,88 @@ Message.prototype.signDetached = function () {
               })));
               onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
             });
-            _context19.next = 10;
-            return createVerificationObjects(onePassSigList, literalDataList, keys, date);
-
-          case 10:
-            verificationObjects = _context19.sent;
-
             msg.packets.stream = _webStreamTools2.default.transformPair(msg.packets.stream, function () {
               var _ref19 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(readable, writable) {
-                var writer;
+                var reader, writer, i, _ref20, signature;
+
                 return _regenerator2.default.wrap(function _callee18$(_context18) {
                   while (1) {
                     switch (_context18.prev = _context18.next) {
                       case 0:
+                        reader = _webStreamTools2.default.getReader(readable);
                         writer = _webStreamTools2.default.getWriter(writable);
-                        _context18.prev = 1;
-                        _context18.next = 4;
-                        return _webStreamTools2.default.readToEnd(_webStreamTools2.default.transform(readable, function (signature) {
-                          onePassSigList.pop().correspondingSigResolve(signature);
-                        }));
+                        _context18.prev = 2;
+                        i = 0;
 
                       case 4:
-                        _context18.next = 6;
-                        return writer.ready;
+                        if (!(i < onePassSigList.length)) {
+                          _context18.next = 13;
+                          break;
+                        }
 
-                      case 6:
-                        _context18.next = 8;
-                        return writer.close();
+                        _context18.next = 7;
+                        return reader.read();
 
-                      case 8:
-                        _context18.next = 15;
-                        break;
+                      case 7:
+                        _ref20 = _context18.sent;
+                        signature = _ref20.value;
+
+                        onePassSigList[i].correspondingSigResolve(signature);
 
                       case 10:
-                        _context18.prev = 10;
-                        _context18.t0 = _context18['catch'](1);
+                        i++;
+                        _context18.next = 4;
+                        break;
+
+                      case 13:
+                        _context18.next = 15;
+                        return reader.readToEnd();
+
+                      case 15:
+                        _context18.next = 17;
+                        return writer.ready;
+
+                      case 17:
+                        _context18.next = 19;
+                        return writer.close();
+
+                      case 19:
+                        _context18.next = 26;
+                        break;
+
+                      case 21:
+                        _context18.prev = 21;
+                        _context18.t0 = _context18['catch'](2);
 
                         onePassSigList.forEach(function (onePassSig) {
                           onePassSig.correspondingSigResolve({
+                            tag: _enums2.default.packet.signature,
                             verify: function verify() {
                               return undefined;
                             }
                           });
                         });
-                        _context18.next = 15;
+                        _context18.next = 26;
                         return writer.abort(_context18.t0);
 
-                      case 15:
+                      case 26:
                       case 'end':
                         return _context18.stop();
                     }
                   }
-                }, _callee18, _this2, [[1, 10]]);
+                }, _callee18, _this2, [[2, 21]]);
               }));
 
               return function (_x50, _x51) {
                 return _ref19.apply(this, arguments);
               };
             }());
-            return _context19.abrupt('return', verificationObjects.reverse());
+            return _context19.abrupt('return', createVerificationObjects(onePassSigList, literalDataList, keys, date));
 
-          case 13:
+          case 10:
             return _context19.abrupt('return', createVerificationObjects(signatureList, literalDataList, keys, date));
 
-          case 14:
+          case 11:
           case 'end':
             return _context19.stop();
         }
@@ -45324,7 +45342,7 @@ Message.prototype.verifyDetached = function (signature, keys) {
  * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
  */
 Message.prototype.appendSignature = function () {
-  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(detachedSignature) {
+  var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(detachedSignature) {
     return _regenerator2.default.wrap(function _callee24$(_context24) {
       while (1) {
         switch (_context24.prev = _context24.next) {
@@ -45361,7 +45379,7 @@ Message.prototype.appendSignature = function () {
   }));
 
   return function (_x63) {
-    return _ref24.apply(this, arguments);
+    return _ref25.apply(this, arguments);
   };
 }();
 
@@ -48087,10 +48105,18 @@ OnePassSignature.prototype.verify = (0, _asyncToGenerator3.default)( /*#__PURE__
         case 2:
           correspondingSig = _context.sent;
 
+          if (!(!correspondingSig || correspondingSig.tag !== _enums2.default.packet.signature)) {
+            _context.next = 5;
+            break;
+          }
+
+          throw new Error('Corresponding signature packet missing');
+
+        case 5:
           correspondingSig.hashed = this.hashed;
           return _context.abrupt('return', correspondingSig.verify.apply(correspondingSig, _args));
 
-        case 5:
+        case 7:
         case 'end':
           return _context.stop();
       }
