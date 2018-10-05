@@ -142,6 +142,9 @@ OnePassSignature.prototype.calculateTrailer = Signature.prototype.calculateTrail
 
 OnePassSignature.prototype.verify = async function() {
   const correspondingSig = await this.correspondingSig;
+  if (!correspondingSig || correspondingSig.tag !== enums.packet.signature) {
+    throw new Error('Corresponding signature packet missing');
+  }
   correspondingSig.hashed = this.hashed;
   return correspondingSig.verify.apply(correspondingSig, arguments);
 };

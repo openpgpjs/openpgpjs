@@ -545,7 +545,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
-  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
     onePassSigList.forEach(onePassSig => {
@@ -555,25 +555,28 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
       onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
     });
-    const verificationObjects = await createVerificationObjects(onePassSigList, literalDataList, keys, date);
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
+      const reader = stream.getReader(readable);
       const writer = stream.getWriter(writable);
       try {
-        await stream.readToEnd(stream.transform(readable, signature => {
-          onePassSigList.pop().correspondingSigResolve(signature);
-        }));
+        for (let i = 0; i < onePassSigList.length; i++) {
+          const { value: signature } = await reader.read();
+          onePassSigList[i].correspondingSigResolve(signature);
+        }
+        await reader.readToEnd();
         await writer.ready;
         await writer.close();
       } catch(e) {
         onePassSigList.forEach(onePassSig => {
           onePassSig.correspondingSigResolve({
+            tag: enums.packet.signature,
             verify: () => undefined
           });
         });
         await writer.abort(e);
       }
     });
-    return verificationObjects.reverse();
+    return createVerificationObjects(onePassSigList, literalDataList, keys, date);
   }
   return createVerificationObjects(signatureList, literalDataList, keys, date);
 };
