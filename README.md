@@ -344,6 +344,16 @@ openpgp.generateKey(options).then(function(key) {
 });
 ```
 
+#### Encrypt with multiple public keys
+
+```js
+    publicKeys: [                      // for encryption
+	openpgp.key.readArmored(pubkey1).keys[0],
+	openpgp.key.readArmored(pubkey2).keys[0]  
+	]
+   };
+```
+
 #### Revoke a key
 
 Using a revocation signature:
