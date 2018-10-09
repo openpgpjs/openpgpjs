@@ -201,31 +201,33 @@ encryptDecryptFunction()
 Encrypt with multiple public keys:
 
 ```js
-const pubkey1 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+const pubkeys = [`-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
------END PGP PUBLIC KEY BLOCK-----`
-const pubkey2 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+-----END PGP PUBLIC KEY BLOCK-----`, 
+`-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
 -----END PGP PUBLIC KEY BLOCK-----`
 const privkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 ...
 -----END PGP PRIVATE KEY BLOCK-----` //encrypted private key
 const passphrase = `yourPassphrase` //what the privKey is encrypted with
+const message = 'Hello, World!'    // input as Message object
 
-const encryptWithMultiplePublicKeys = async() => {
+async encryptWithMultiplePublicKeys(pubkeys, privkey, passphrase, message) {
     const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
     await privKeyObj.decrypt(passphrase)
     
+    pubkeys = pubkeys.map(async (key) => {
+    	return (await openpgp.key.readArmored(key)).keys[0]
+    });
+    
     const options = {
-        message: openpgp.message.fromText('Hello, World!'),       // input as Message object
-        publicKeys: [                      // for encryption
-	openpgp.key.readArmored(pubkey1).keys[0],
-	openpgp.key.readArmored(pubkey2).keys[0]  
-	],
+        message: openpgp.message.fromText(message),       
+        publicKeys: pubkeys,           				  // for encryption
         privateKeys: [privKeyObj]                                 // for signing (optional)
     }
     
-    openpgp.encrypt(options).then(ciphertext => {
+    return openpgp.encrypt(options).then(ciphertext => {
         encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
         return encrypted
     })
