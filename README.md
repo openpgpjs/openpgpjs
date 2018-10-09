@@ -198,6 +198,40 @@ const encryptDecryptFunction = async() => {
 encryptDecryptFunction()
 ```
 
+Encrypt with multiple public keys:
+
+```js
+const pubkey1 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`
+const pubkey2 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`
+const privkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----` //encrypted private key
+const passphrase = `yourPassphrase` //what the privKey is encrypted with
+
+const encryptWithMultiplePublicKeys = async() => {
+    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
+    await privKeyObj.decrypt(passphrase)
+    
+    const options = {
+        message: openpgp.message.fromText('Hello, World!'),       // input as Message object
+        publicKeys: [                      // for encryption
+	openpgp.key.readArmored(pubkey1).keys[0],
+	openpgp.key.readArmored(pubkey2).keys[0]  
+	],
+        privateKeys: [privKeyObj]                                 // for signing (optional)
+    }
+    
+    openpgp.encrypt(options).then(ciphertext => {
+        encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+        return encrypted
+    })
+   };
+```
+
 #### Encrypt with compression
 
 By default, `encrypt` will not use any compression. It's possible to override that behavior in two ways:
@@ -342,16 +376,6 @@ openpgp.generateKey(options).then(function(key) {
     var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
     var revocationSignature = key.revocationSignature; // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 });
-```
-
-#### Encrypt with multiple public keys
-
-```js
-    publicKeys: [                      // for encryption
-	openpgp.key.readArmored(pubkey1).keys[0],
-	openpgp.key.readArmored(pubkey2).keys[0]  
-	]
-   };
 ```
 
 #### Revoke a key
