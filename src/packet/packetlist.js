@@ -54,8 +54,9 @@ List.prototype.read = async function (bytes) {
             await writer.write(packet);
           } catch (e) {
             if (!config.tolerant || packetParser.supportsStreaming(parsed.tag)) {
-              // The packets that support streaming also happen to be the same
-              // ones we want to throw on parse errors for.
+              // The packets that support streaming are the ones that contain
+              // message data. Those are also the ones we want to be more strict
+              // about and throw on parse errors for.
               await writer.abort(e);
             }
             util.print_debug_error(e);
