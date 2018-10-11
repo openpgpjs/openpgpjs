@@ -5,7 +5,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 
 [![Saucelabs Test Status](https://saucelabs.com/browser-matrix/openpgpjs.svg)](https://saucelabs.com/u/openpgpjs)
- 
+
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
 **Table of Contents**
 
@@ -124,6 +124,8 @@ openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker 
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
+This is encryption/decryption method will use AES-256 by default.
+
 ```js
 var options, encrypted;
 
@@ -154,7 +156,7 @@ openpgp.decrypt(options).then(function(plaintext) {
 
 ```js
 const openpgp = require('openpgp') // use as CommonJS, AMD, ES6 module or via window.openpgp
- 
+
 openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 
 // put keys in backtick (``) to avoid errors caused by spaces or tabs
@@ -169,13 +171,13 @@ const passphrase = `yourPassphrase` //what the privKey is encrypted with
 const encryptDecryptFunction = async() => {
     const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
     await privKeyObj.decrypt(passphrase)
-    
+
     const options = {
         message: openpgp.message.fromText('Hello, World!'),       // input as Message object
         publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for encryption
         privateKeys: [privKeyObj]                                 // for signing (optional)
     }
-    
+
     openpgp.encrypt(options).then(ciphertext => {
         encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
         return encrypted
@@ -186,12 +188,12 @@ const encryptDecryptFunction = async() => {
             publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for verification (optional)
             privateKeys: [privKeyObj]                                 // for decryption
         }
-         
+
         openpgp.decrypt(options).then(plaintext => {
             console.log(plaintext.data)
             return plaintext.data // 'Hello, World!'
         })
-       
+
     })
 }
 
@@ -203,7 +205,7 @@ Encrypt with multiple public keys:
 ```js
 const pubkeys = [`-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
------END PGP PUBLIC KEY BLOCK-----`, 
+-----END PGP PUBLIC KEY BLOCK-----`,
 `-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
 -----END PGP PUBLIC KEY BLOCK-----`
@@ -216,17 +218,17 @@ const message = 'Hello, World!'    // input as Message object
 async encryptWithMultiplePublicKeys(pubkeys, privkey, passphrase, message) {
     const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
     await privKeyObj.decrypt(passphrase)
-    
+
     pubkeys = pubkeys.map(async (key) => {
     	return (await openpgp.key.readArmored(key)).keys[0]
     });
-    
+
     const options = {
-        message: openpgp.message.fromText(message),       
+        message: openpgp.message.fromText(message),
         publicKeys: pubkeys,           				  // for encryption
         privateKeys: [privKeyObj]                                 // for signing (optional)
     }
-    
+
     return openpgp.encrypt(options).then(ciphertext => {
         encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
         return encrypted
