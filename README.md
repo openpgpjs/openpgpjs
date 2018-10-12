@@ -124,7 +124,7 @@ openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker 
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
-This is encryption/decryption method will use AES-256 by default.
+Encryption will use AES-256 by default. Decryption will use whatever was used when encrypting, as such information is readably stored in the encrypted message.
 
 ```js
 var options, encrypted;
