@@ -102,7 +102,7 @@ export default {
    * @returns {Object}
    */
   restoreStreams: function(obj) {
-    if (Object.prototype.isPrototypeOf(obj)) {
+    if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => { // recursively search all children
         if (MessagePort.prototype.isPrototypeOf(value)) {
           obj[key] = new ReadableStream({
