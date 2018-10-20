@@ -629,7 +629,7 @@ async function convertStream(data, streaming) {
  * @returns {Object}                       the data in the respective format
  */
 async function convertStreams(obj, streaming, keys=[]) {
-  if (Object.prototype.isPrototypeOf(obj)) {
+  if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
     await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
       if (util.isStream(value) || keys.includes(key)) {
         obj[key] = await convertStream(value, streaming);
