@@ -23337,7 +23337,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.1.1",
+  versionstring: "OpenPGP.js v4.1.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -34158,7 +34158,7 @@ async function convertStream(data, streaming) {
  * @returns {Object}                       the data in the respective format
  */
 async function convertStreams(obj, streaming, keys = []) {
-  if (Object.prototype.isPrototypeOf(obj)) {
+  if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
     await Promise.all(Object.entries(obj).map(async ([key, value]) => {
       // recursively search all children
       if (_util2.default.isStream(value) || keys.includes(key)) {
@@ -35692,7 +35692,10 @@ List.prototype.read = async function (bytes) {
             await packet.read(parsed.packet);
             await writer.write(packet);
           } catch (e) {
-            if (!_config2.default.tolerant || parsed.tag === _enums2.default.packet.symmetricallyEncrypted || parsed.tag === _enums2.default.packet.literal || parsed.tag === _enums2.default.packet.compressed) {
+            if (!_config2.default.tolerant || _packet2.default.supportsStreaming(parsed.tag)) {
+              // The packets that support streaming are the ones that contain
+              // message data. Those are also the ones we want to be more strict
+              // about and throw on parse errors for.
               await writer.abort(e);
             }
             _util2.default.print_debug_error(e);
@@ -39749,7 +39752,7 @@ exports.default = {
    * @returns {Object}
    */
   restoreStreams: function restoreStreams(obj) {
-    if (Object.prototype.isPrototypeOf(obj)) {
+    if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => {
         // recursively search all children
         if (MessagePort.prototype.isPrototypeOf(value)) {

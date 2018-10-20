@@ -29617,7 +29617,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.1.1",
+  versionstring: "OpenPGP.js v4.1.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -45534,7 +45534,7 @@ var convertStreams = function () {
       while (1) {
         switch (_context14.prev = _context14.next) {
           case 0:
-            if (!Object.prototype.isPrototypeOf(obj)) {
+            if (!(Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj))) {
               _context14.next = 3;
               break;
             }
@@ -48803,7 +48803,7 @@ List.prototype.read = function () {
                                     _context.prev = 11;
                                     _context.t0 = _context['catch'](0);
 
-                                    if (!(!_config2.default.tolerant || parsed.tag === _enums2.default.packet.symmetricallyEncrypted || parsed.tag === _enums2.default.packet.literal || parsed.tag === _enums2.default.packet.compressed)) {
+                                    if (!(!_config2.default.tolerant || _packet2.default.supportsStreaming(parsed.tag))) {
                                       _context.next = 16;
                                       break;
                                     }
@@ -54111,7 +54111,7 @@ exports.default = {
    * @returns {Object}
    */
   restoreStreams: function restoreStreams(obj) {
-    if (Object.prototype.isPrototypeOf(obj)) {
+    if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
       (0, _entries2.default)(obj).forEach(function (_ref7) {
         var _ref8 = (0, _slicedToArray3.default)(_ref7, 2),
             key = _ref8[0],
