@@ -163,14 +163,14 @@ export function reformatKey({privateKey, userIds=[], passphrase="", keyExpiratio
     const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
-    return {
+    return convertStreams({
 
       key: key,
       privateKeyArmored: key.armor(),
       publicKeyArmored: key.toPublic().armor(),
       revocationCertificate: revocationCertificate
 
-    };
+    });
   }).catch(onError.bind(null, 'Error reformatting keypair'));
 }
 
