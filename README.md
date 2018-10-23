@@ -416,7 +416,7 @@ var options = {
     query: 'alice@example.com'
 };
 
-hkp.lookup(options).then(function(key) {
+hkp.lookup(options).then( async function(key) {
     var pubkey = await openpgp.key.readArmored(key);
 });
 ```
