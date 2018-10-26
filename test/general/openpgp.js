@@ -1668,18 +1668,6 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should decrypt with two passwords message which GPG fails on', async function () {
-
-          const decOpt = {
-            message: await openpgp.message.readArmored(twoPasswordGPGFail),
-            passwords: password2
-          };
-          return openpgp.decrypt(decOpt).then(function (decrypted) {
-            expect(decrypted.data).to.equal('short message\nnext line\n한국어/조선말');
-            expect(decrypted.signatures.length).to.equal(0);
-          });
-        });
-
         it('should encrypt and decrypt with password and not ascii armor', function () {
           const encOpt = {
             message: openpgp.message.fromText(plaintext),
@@ -1776,7 +1764,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
 
     }
 
-    describe('AES / RSA sign, verify', function() {
+    describe('AES / RSA encrypt, decrypt, sign, verify', function() {
       const wrong_pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
         'Version: OpenPGP.js v0.9.0\r\n' +
         'Comment: Hoodiecrow - https://hoodiecrow.com\r\n' +
@@ -2246,6 +2234,25 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
             expect(error.message).to.match(/Could not find valid key packet for encryption/);
           });
         });
+      });
+
+      it('should decrypt with two passwords message which GPG fails on', async function() {
+        const decOpt = {
+          message: await openpgp.message.readArmored(twoPasswordGPGFail),
+          passwords: password2
+        };
+        return openpgp.decrypt(decOpt).then(function(decrypted) {
+          expect(decrypted.data).to.equal('short message\nnext line\n한국어/조선말');
+          expect(decrypted.signatures.length).to.equal(0);
+        });
+      });
+
+      it('should decrypt with three passwords', async function() {
+        const messageBinary = openpgp.util.b64_to_Uint8Array('wy4ECQMIElIx/jiwJV9gp/MZ/ElZwUfHrzOBfOtM8VmgDy76F7eSGWH26tAlx3WI0kMBZv6Tlc1Y6baaZ6MEcOLTG/C7uzHH7KMfuQFd3fcMaVcDawk9EEy/CybiGBE+acT6id2pemHQy6Nk76d9UUTFubcB');
+        const message = await openpgp.message.read(messageBinary);
+        const passwords = ['Test', 'Pinata', 'a'];
+        const decrypted = await openpgp.decrypt({ message, passwords });
+        expect(decrypted.data).to.equal('Hello world');
       });
 
     });

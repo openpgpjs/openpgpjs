@@ -158,8 +158,15 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
     if (!symESKeyPacketlist) {
       throw new Error('No symmetrically encrypted session key packet found.');
     }
-    await Promise.all(symESKeyPacketlist.map(async function(keyPacket) {
-      await Promise.all(passwords.map(async function(password) {
+    await Promise.all(passwords.map(async function(password, i) {
+      let packets;
+      if (i) {
+        packets = new packet.List();
+        await packets.read(symESKeyPacketlist.write());
+      } else {
+        packets = symESKeyPacketlist;
+      }
+      await Promise.all(packets.map(async function(keyPacket) {
         try {
           await keyPacket.decrypt(password);
           keyPackets.push(keyPacket);
@@ -167,8 +174,6 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           util.print_debug_error(err);
         }
       }));
-      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
-      keyPacket.encrypted = null;
     }));
   } else if (privateKeys) {
     const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
