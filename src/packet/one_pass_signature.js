@@ -85,13 +85,13 @@ OnePassSignature.prototype.read = function (bytes) {
 
   // A one-octet signature type.  Signature types are described in
   //   Section 5.2.1.
-  this.signatureType = enums.read(enums.signature, bytes[mypos++]);
+  this.signatureType = bytes[mypos++];
 
   // A one-octet number describing the hash algorithm used.
-  this.hashAlgorithm = enums.read(enums.hash, bytes[mypos++]);
+  this.hashAlgorithm = bytes[mypos++];
 
   // A one-octet number describing the public-key algorithm used.
-  this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[mypos++]);
+  this.publicKeyAlgorithm = bytes[mypos++];
 
   // An eight-octet number holding the Key ID of the signing key.
   this.issuerKeyId = new type_keyid();
@@ -144,6 +144,14 @@ OnePassSignature.prototype.verify = async function() {
   const correspondingSig = await this.correspondingSig;
   if (!correspondingSig || correspondingSig.tag !== enums.packet.signature) {
     throw new Error('Corresponding signature packet missing');
+  }
+  if (
+    correspondingSig.signatureType !== this.signatureType ||
+    correspondingSig.hashAlgorithm !== this.hashAlgorithm ||
+    correspondingSig.publicKeyAlgorithm !== this.publicKeyAlgorithm ||
+    !correspondingSig.issuerKeyId.equals(this.issuerKeyId)
+  ) {
+    throw new Error('Corresponding signature packet does not match one-pass signature packet');
   }
   correspondingSig.hashed = this.hashed;
   return correspondingSig.verify.apply(correspondingSig, arguments);
