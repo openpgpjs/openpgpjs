@@ -109,31 +109,12 @@ Signature.prototype.read = function (bytes) {
     throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
-  const subpackets = bytes => {
-    // Two-octet scalar octet count for following subpacket data.
-    const subpacket_length = util.readNumber(bytes.subarray(0, 2));
-
-    let i = 2;
-
-    // subpacket data set (zero or more subpackets)
-    while (i < 2 + subpacket_length) {
-      const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-      i += len.offset;
-
-      this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-      i += len.len;
-    }
-
-    return i;
-  };
-
   this.signatureType = bytes[i++];
   this.publicKeyAlgorithm = bytes[i++];
   this.hashAlgorithm = bytes[i++];
 
   // hashed subpackets
-  i += subpackets(bytes.subarray(i, bytes.length), true);
+  i += this.read_sub_packets(bytes.subarray(i, bytes.length), true);
 
   // A V4 signature hashes the packet body
   // starting from its first field, the version number, through the end
@@ -145,7 +126,7 @@ Signature.prototype.read = function (bytes) {
   const sigDataLength = i;
 
   // unhashed subpackets
-  i += subpackets(bytes.subarray(i, bytes.length), false);
+  i += this.read_sub_packets(bytes.subarray(i, bytes.length), false);
   this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
   // Two-octet field holding left 16 bits of signed hash value.
@@ -346,7 +327,7 @@ function write_sub_packet(type, data) {
 
 // V4 signature sub packets
 
-Signature.prototype.read_sub_packet = function (bytes) {
+Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
   let mypos = 0;
 
   const read_array = (prop, bytes) => {
@@ -359,6 +340,17 @@ Signature.prototype.read_sub_packet = function (bytes) {
 
   // The leftwost bit denotes a "critical" packet, but we ignore it.
   const type = bytes[mypos++] & 0x7F;
+
+  // GPG puts the Issuer and Signature subpackets in the unhashed area.
+  // Tampering with those invalidates the signature, so we can trust them.
+  // Ignore all other unhashed subpackets.
+  if (!trusted && ![
+    enums.signatureSubpacket.issuer,
+    enums.signatureSubpacket.embedded_signature
+  ].includes(type)) {
+    return;
+  }
+
   let seconds;
 
   // subpacket type
@@ -513,6 +505,25 @@ Signature.prototype.read_sub_packet = function (bytes) {
     default:
       util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
   }
+};
+
+Signature.prototype.read_sub_packets = function(bytes, trusted=true) {
+  // Two-octet scalar octet count for following subpacket data.
+  const subpacket_length = util.readNumber(bytes.subarray(0, 2));
+
+  let i = 2;
+
+  // subpacket data set (zero or more subpackets)
+  while (i < 2 + subpacket_length) {
+    const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+    i += len.offset;
+
+    this.read_sub_packet(bytes.subarray(i, i + len.len), trusted);
+
+    i += len.len;
+  }
+
+  return i;
 };
 
 // Produces data to produce signature on
