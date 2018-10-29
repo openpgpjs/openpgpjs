@@ -534,7 +534,7 @@ function tests() {
       await openpgp.stream.cancel(verified.data, new Error('canceled by test'));
       expect(canceled).to.be.true;
       expect(verified.signatures).to.exist.and.have.length(1);
-      expect(await verified.signatures[0].verified).to.be.undefined;
+      await expect(verified.signatures[0].verified).to.be.rejectedWith('canceled');
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
