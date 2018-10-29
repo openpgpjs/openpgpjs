@@ -338,8 +338,10 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
     }
   };
 
-  // The leftwost bit denotes a "critical" packet, but we ignore it.
-  const type = bytes[mypos++] & 0x7F;
+  // The leftmost bit denotes a "critical" packet
+  const critical = bytes[mypos] & 0x80;
+  const type = bytes[mypos] & 0x7F;
+  mypos++;
 
   // GPG puts the Issuer and Signature subpackets in the unhashed area.
   // Tampering with those invalidates the signature, so we can trust them.
@@ -351,22 +353,21 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
     return;
   }
 
-  let seconds;
-
   // subpacket type
   switch (type) {
     case 2:
       // Signature Creation Time
       this.created = util.readDate(bytes.subarray(mypos, bytes.length));
       break;
-    case 3:
+    case 3: {
       // Signature Expiration Time in seconds
-      seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
+      const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
       this.signatureNeverExpires = seconds === 0;
       this.signatureExpirationTime = seconds;
 
       break;
+    }
     case 4:
       // Exportable Certification
       this.exportable = bytes[mypos++] === 1;
@@ -384,14 +385,15 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
       // Revocable
       this.revocable = bytes[mypos++] === 1;
       break;
-    case 9:
+    case 9: {
       // Key Expiration Time in seconds
-      seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
+      const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
       this.keyExpirationTime = seconds;
       this.keyNeverExpires = seconds === 0;
 
       break;
+    }
     case 11:
       // Preferred Symmetric Algorithms
       read_array('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
@@ -502,8 +504,14 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
       // Preferred AEAD Algorithms
       read_array.call(this, 'preferredAeadAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
-    default:
-      util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
+    default: {
+      const err = new Error("Unknown signature subpacket type " + type + " @:" + mypos);
+      if (critical) {
+        throw err;
+      } else {
+        util.print_debug(err);
+      }
+    }
   }
 };
 
