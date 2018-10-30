@@ -301,7 +301,12 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
           const bindingSignature = await getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, dataToVerify, date);
-          if (bindingSignature && isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature)) {
+          if (
+            bindingSignature &&
+            bindingSignature.embeddedSignature &&
+            isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature) &&
+            await getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, dataToVerify, date)
+          ) {
             return subKeys[i];
           }
         }
@@ -1515,7 +1520,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretSubkeyPacket);
-    subkeySignaturePacket.keyFlags = subkeyOptions.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    if (subkeyOptions.sign) {
+      subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
+      subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, secretSubkeyPacket, {
+        signatureType: enums.signature.key_binding
+      }, subkeyOptions.date);
+    } else {
+      subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    }
     if (subkeyOptions.keyExpirationTime > 0) {
       subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
       subkeySignaturePacket.keyNeverExpires = false;

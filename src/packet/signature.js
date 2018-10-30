@@ -52,7 +52,7 @@ function Signature(date=new Date()) {
   this.publicKeyAlgorithm = null;
 
   this.signatureData = null;
-  this.unhashedSubpackets = null;
+  this.unhashedSubpackets = [];
   this.signedHashValue = null;
 
   this.created = util.normalizeDate(date);
@@ -123,11 +123,9 @@ Signature.prototype.read = function (bytes) {
   // hash algorithm, the hashed subpacket length, and the hashed
   // subpacket body.
   this.signatureData = bytes.subarray(0, i);
-  const sigDataLength = i;
 
   // unhashed subpackets
   i += this.read_sub_packets(bytes.subarray(i, bytes.length), false);
-  this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
   // Two-octet field holding left 16 bits of signed hash value.
   this.signedHashValue = bytes.subarray(i, i + 2);
@@ -139,7 +137,7 @@ Signature.prototype.read = function (bytes) {
 Signature.prototype.write = function () {
   const arr = [];
   arr.push(this.signatureData);
-  arr.push(this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2));
+  arr.push(this.write_unhashed_sub_packets());
   arr.push(this.signedHashValue);
   arr.push(stream.clone(this.signature));
   return util.concat(arr);
@@ -169,7 +167,7 @@ Signature.prototype.sign = async function (key, data) {
   this.issuerKeyId = key.getKeyId();
 
   // Add hashed subpackets
-  arr.push(this.write_all_sub_packets());
+  arr.push(this.write_hashed_sub_packets());
 
   this.signatureData = util.concat(arr);
 
@@ -192,10 +190,10 @@ Signature.prototype.sign = async function (key, data) {
 };
 
 /**
- * Creates string of bytes with all subpacket data
- * @returns {String} a string-representation of a all subpacket data
+ * Creates Uint8Array of bytes of all subpacket data except Issuer and Embedded Signature subpackets
+ * @returns {Uint8Array} subpacket data
  */
-Signature.prototype.write_all_sub_packets = function () {
+Signature.prototype.write_hashed_sub_packets = function () {
   const sub = enums.signatureSubpacket;
   const arr = [];
   let bytes;
@@ -229,11 +227,6 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = new Uint8Array([this.revocationKeyClass, this.revocationKeyAlgorithm]);
     bytes = util.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
-  }
-  if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
-    // If the version of [the] key is greater than 4, this subpacket
-    // MUST NOT be included in the signature.
-    arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
     Object.entries(this.notation).forEach(([name, value]) => {
@@ -289,6 +282,30 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.signature_target, bytes));
   }
+  if (this.preferredAeadAlgorithms !== null) {
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
+    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
+  }
+
+  const result = util.concat(arr);
+  const length = util.writeNumber(result.length, 2);
+
+  return util.concat([length, result]);
+};
+
+/**
+ * Creates Uint8Array of bytes of Issuer and Embedded Signature subpackets
+ * @returns {Uint8Array} subpacket data
+ */
+Signature.prototype.write_unhashed_sub_packets = function() {
+  const sub = enums.signatureSubpacket;
+  const arr = [];
+  let bytes;
+  if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
+    // If the version of [the] key is greater than 4, this subpacket
+    // MUST NOT be included in the signature.
+    arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
+  }
   if (this.embeddedSignature !== null) {
     arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
   }
@@ -297,10 +314,10 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.issuer_fingerprint, bytes));
   }
-  if (this.preferredAeadAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
-  }
+  this.unhashedSubpackets.forEach(data => {
+    arr.push(packet.writeSimpleLength(data.length));
+    arr.push(data);
+  });
 
   const result = util.concat(arr);
   const length = util.writeNumber(result.length, 2);
@@ -341,17 +358,20 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
   // The leftmost bit denotes a "critical" packet
   const critical = bytes[mypos] & 0x80;
   const type = bytes[mypos] & 0x7F;
-  mypos++;
 
   // GPG puts the Issuer and Signature subpackets in the unhashed area.
   // Tampering with those invalidates the signature, so we can trust them.
   // Ignore all other unhashed subpackets.
   if (!trusted && ![
     enums.signatureSubpacket.issuer,
+    enums.signatureSubpacket.issuer_fingerprint,
     enums.signatureSubpacket.embedded_signature
   ].includes(type)) {
+    this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
     return;
   }
+
+  mypos++;
 
   // subpacket type
   switch (type) {
