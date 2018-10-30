@@ -1240,8 +1240,7 @@ export async function read(data) {
     if (packetlist.filterByTag(enums.packet.signature).some(
       signature => signature.revocationKeyClass !== null
     )) {
-      // Indicate an error, but still parse the key.
-      err.push(new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.'));
+      throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
     const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {

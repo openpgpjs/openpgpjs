@@ -1798,8 +1798,7 @@ describe('Key', function() {
     expect(pubKeys).to.exist;
     expect(pubKeys.err).to.exist.and.have.length(1);
     expect(pubKeys.err[0].message).to.equal('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-    expect(pubKeys.keys).to.have.length(1);
-    expect(pubKeys.keys[0].getKeyId().toHex()).to.equal('5880a2fd178372b9');
+    expect(pubKeys.keys).to.have.length(0);
   });
 
   it('Parsing V5 public key packet', async function() {
