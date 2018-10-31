@@ -234,28 +234,28 @@ describe('API functional testing', function() {
   const data = util.str_to_Uint8Array("foobar");
 
   describe('Sign and verify', function () {
-    it('RSA', function () {
+    it('RSA', async function () {
       // FIXME
       //Originally we passed public and secret MPI separately, now they are joined. Is this what we want to do long term?
       // RSA
       return crypto.signature.sign(
-        1, 2, RSApubMPIs.concat(RSAsecMPIs), data, crypto.hash.digest(2, data)
-      ).then(RSAsignedData => {
+        1, 2, RSApubMPIs.concat(RSAsecMPIs), data, await crypto.hash.digest(2, data)
+      ).then(async RSAsignedData => {
         const RSAsignedDataMPI = new openpgp.MPI();
         RSAsignedDataMPI.read(RSAsignedData);
         return crypto.signature.verify(
-          1, 2, [RSAsignedDataMPI], RSApubMPIs, data, crypto.hash.digest(2, data)
+          1, 2, [RSAsignedDataMPI], RSApubMPIs, data, await crypto.hash.digest(2, data)
         ).then(success => {
           return expect(success).to.be.true;
         });
       });
     });
 
-    it('DSA', function () {
+    it('DSA', async function () {
       // DSA
       return crypto.signature.sign(
-        17, 2, DSApubMPIs.concat(DSAsecMPIs), data, crypto.hash.digest(2, data)
-      ).then(DSAsignedData => {
+        17, 2, DSApubMPIs.concat(DSAsecMPIs), data, await crypto.hash.digest(2, data)
+      ).then(async DSAsignedData => {
         DSAsignedData = util.Uint8Array_to_str(DSAsignedData);
         const DSAmsgMPIs = [];
         DSAmsgMPIs[0] = new openpgp.MPI();
@@ -263,7 +263,7 @@ describe('API functional testing', function() {
         DSAmsgMPIs[0].read(DSAsignedData.substring(0,34));
         DSAmsgMPIs[1].read(DSAsignedData.substring(34,68));
         return crypto.signature.verify(
-          17, 2, DSAmsgMPIs, DSApubMPIs, data, crypto.hash.digest(2, data)
+          17, 2, DSAmsgMPIs, DSApubMPIs, data, await crypto.hash.digest(2, data)
         ).then(success => {
           return expect(success).to.be.true;
         });

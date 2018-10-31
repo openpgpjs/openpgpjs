@@ -142,10 +142,10 @@ S2K.prototype.write = function () {
  * @returns {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
-S2K.prototype.produce_key = function (passphrase, numBytes) {
+S2K.prototype.produce_key = async function (passphrase, numBytes) {
   passphrase = util.encode_utf8(passphrase);
 
-  function round(prefix, s2k) {
+  async function round(prefix, s2k) {
     const algorithm = enums.write(enums.hash, s2k.algorithm);
 
     switch (s2k.type) {
@@ -189,7 +189,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
   let i = 0;
   while (rlength < numBytes) {
-    const result = round(prefix.subarray(0, i), this);
+    const result = await round(prefix.subarray(0, i), this);
     arr.push(result);
     rlength += result.length;
     i++;

@@ -553,14 +553,14 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
-    onePassSigList.forEach(onePassSig => {
+    await Promise.all(onePassSigList.map(async onePassSig => {
       onePassSig.correspondingSig = new Promise((resolve, reject) => {
         onePassSig.correspondingSigResolve = resolve;
         onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
-    });
+      onePassSig.hashed = await onePassSig.hash(literalDataList[0], undefined, streaming);
+    }));
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = stream.getReader(readable);
       const writer = stream.getWriter(writable);

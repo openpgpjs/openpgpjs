@@ -6,7 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-describe('Elliptic Curve Cryptography', function () {
+describe('Elliptic Curve Cryptography', async function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const key_data = {
     p256: {
@@ -138,7 +138,7 @@ describe('Elliptic Curve Cryptography', function () {
       ])
     }
   };
-  signature_data.hashed = openpgp.crypto.hash.digest(8, signature_data.message);
+  signature_data.hashed = await openpgp.crypto.hash.digest(8, signature_data.message);
   describe('Basic Operations', function () {
     it('Creating curve from name or oid', function (done) {
       for (let name_or_oid in openpgp.enums.curves) {
@@ -206,7 +206,7 @@ describe('Elliptic Curve Cryptography', function () {
     });
   });
   describe('ECDSA signature', function () {
-    const verify_signature = function (oid, hash, r, s, message, pub) {
+    const verify_signature = async function (oid, hash, r, s, message, pub) {
       if (openpgp.util.isString(message)) {
         message = openpgp.util.str_to_Uint8Array(message);
       } else if (!openpgp.util.isUint8Array(message)) {
@@ -214,7 +214,7 @@ describe('Elliptic Curve Cryptography', function () {
       }
       const ecdsa = elliptic_curves.ecdsa;
       return ecdsa.verify(
-        oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), openpgp.crypto.hash.digest(hash, message)
+        oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), await openpgp.crypto.hash.digest(hash, message)
       );
     };
     const secp256k1_dummy_value = new Uint8Array([
@@ -291,13 +291,13 @@ describe('Elliptic Curve Cryptography', function () {
     });
     it('Sign and verify message', function () {
       const curve = new elliptic_curves.Curve('p521');
-      return curve.genKeyPair().then(keyPair => {
+      return curve.genKeyPair().then(async keyPair => {
         const keyPublic = new Uint8Array(keyPair.getPublic());
         const keyPrivate = new Uint8Array(keyPair.getPrivate());
         const oid = curve.oid;
         const message = p384_message;
-        return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate, openpgp.crypto.hash.digest(10, message)).then(async signature => {
-          await expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic, openpgp.crypto.hash.digest(10, message)))
+        return elliptic_curves.ecdsa.sign(oid, 10, message, keyPrivate, await openpgp.crypto.hash.digest(10, message)).then(async signature => {
+          await expect(elliptic_curves.ecdsa.verify(oid, 10, signature, message, keyPublic, await openpgp.crypto.hash.digest(10, message)))
             .to.eventually.be.true;
         });
       });

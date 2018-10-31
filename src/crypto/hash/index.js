@@ -20,11 +20,12 @@ import stream from 'web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 
+const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 function node_hash(type) {
-  return function (data) {
+  return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return stream.transform(data, value => {
       shasum.update(new Buffer(value));
@@ -32,8 +33,11 @@ function node_hash(type) {
   };
 }
 
-function hashjs_hash(hash) {
-  return function(data) {
+function hashjs_hash(hash, webCryptoHash) {
+  return async function(data) {
+    if (!util.isStream(data) && webCrypto && webCryptoHash) {
+      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
+    }
     const hashInstance = hash();
     return stream.transform(data, value => {
       hashInstance.update(value);
@@ -41,13 +45,15 @@ function hashjs_hash(hash) {
   };
 }
 
-function asmcrypto_hash(hash) {
-  return function(data) {
+function asmcrypto_hash(hash, webCryptoHash) {
+  return async function(data) {
     if (util.isStream(data)) {
       const hashInstance = new hash();
       return stream.transform(data, value => {
         hashInstance.process(value);
       }, () => hashInstance.finish().result);
+    } else if (webCrypto && webCryptoHash) {
+      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     } else {
       return hash.bytes(data);
     }
@@ -68,11 +74,11 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
 } else { // Use JS fallbacks
   hash_fns = {
     md5: md5,
-    sha1: asmcrypto_hash(Sha1),
+    sha1: asmcrypto_hash(Sha1, navigator.userAgent.indexOf('Edge') === -1 && 'SHA-1'),
     sha224: hashjs_hash(sha224),
-    sha256: asmcrypto_hash(Sha256),
-    sha384: hashjs_hash(sha384),
-    sha512: hashjs_hash(sha512), // asmcrypto sha512 is huge.
+    sha256: asmcrypto_hash(Sha256, 'SHA-256'),
+    sha384: hashjs_hash(sha384, 'SHA-384'),
+    sha512: hashjs_hash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
     ripemd: hashjs_hash(ripemd160)
   };
 }

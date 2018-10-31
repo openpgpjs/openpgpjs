@@ -49,12 +49,13 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-function kdf(hash_algo, X, length, param) {
-  return hash.digest(hash_algo, util.concatUint8Array([
+async function kdf(hash_algo, X, length, param) {
+  const digest = await hash.digest(hash_algo, util.concatUint8Array([
     new Uint8Array([0, 0, 0, 1]),
     new Uint8Array(X),
     param
-  ])).subarray(0, length);
+  ]));
+  return digest.subarray(0, length);
 }
 
 
@@ -77,7 +78,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
   const S = v.derive(Q);
-  const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
+  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   const C = aes_kw.wrap(Z, m.toString());
   return {
     V: new BN(v.getPublic()),
@@ -105,7 +106,7 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   V = curve.keyFromPublic(V);
   d = curve.keyFromPrivate(d);
   const S = d.derive(V);
-  const Z = kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
+  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   return new BN(aes_kw.unwrap(Z, C));
 }
 

@@ -43,7 +43,7 @@ function WKD() {
  *            err: (Array<Error>|null)}>}     The public key.
  * @async
  */
-WKD.prototype.lookup = function(options) {
+WKD.prototype.lookup = async function(options) {
   const fetch = this._fetch;
 
   if (!options.email) {
@@ -55,7 +55,7 @@ WKD.prototype.lookup = function(options) {
   }
 
   const [, localPart, domain] = /(.*)@(.*)/.exec(options.email);
-  const localEncoded = util.encodeZBase32(crypto.hash.sha1(util.str_to_Uint8Array(localPart.toLowerCase())));
+  const localEncoded = util.encodeZBase32(await crypto.hash.sha1(util.str_to_Uint8Array(localPart.toLowerCase())));
 
   const url = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
