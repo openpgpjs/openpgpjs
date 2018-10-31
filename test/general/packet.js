@@ -77,12 +77,12 @@ describe("Packet", function() {
 
     await enc.encrypt(algo, key);
 
-    const msg2 = new openpgp.packet.List();
-    await msg2.read(message.write());
-    msg2[0].ignore_mdc_error = true;
-    await msg2[0].decrypt(algo, key);
+    const msg2 = new openpgp.message.Message();
+    await msg2.packets.read(message.write());
+    msg2.packets[0].ignore_mdc_error = true;
+    const dec = await msg2.decrypt(null, null, [{ algorithm: algo, data: key }]);
 
-    expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
+    expect(await stringify(dec.packets[0].data)).to.equal(stringify(literal.data));
   });
 
   it('Symmetrically encrypted packet - MDC error for modern cipher', async function() {
