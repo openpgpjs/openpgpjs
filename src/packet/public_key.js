@@ -229,8 +229,16 @@ PublicKey.prototype.getFingerprintBytes = function () {
  * Calculates the fingerprint of the key
  * @returns {String} A string containing the fingerprint in lowercase hex
  */
-PublicKey.prototype.getFingerprint = function () {
+PublicKey.prototype.getFingerprint = function() {
   return util.Uint8Array_to_hex(this.getFingerprintBytes());
+};
+
+/**
+ * Calculates whether two keys have the same fingerprint without actually calculating the fingerprint
+ * @returns {Boolean} Whether the two keys have the same version and public key data
+ */
+PublicKey.prototype.hasSameFingerprintAs = function(other) {
+  return this.version === other.version && util.equalsUint8Array(this.writePublicKey(), other.writePublicKey());
 };
 
 /**
