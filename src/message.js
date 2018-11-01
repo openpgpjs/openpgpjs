@@ -554,8 +554,9 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
     onePassSigList.forEach(onePassSig => {
-      onePassSig.correspondingSig = new Promise(resolve => {
+      onePassSig.correspondingSig = new Promise((resolve, reject) => {
         onePassSig.correspondingSigResolve = resolve;
+        onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
       onePassSig.hashed = onePassSig.hash(literalDataList[0], undefined, streaming);
@@ -573,10 +574,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
         await writer.close();
       } catch(e) {
         onePassSigList.forEach(onePassSig => {
-          onePassSig.correspondingSigResolve({
-            tag: enums.packet.signature,
-            verify: () => undefined
-          });
+          onePassSig.correspondingSigReject(e);
         });
         await writer.abort(e);
       }
@@ -635,6 +633,13 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
     packetlist.push(signature);
     return new Signature(packetlist);
   });
+
+  // Mark potential promise rejections as "handled". This is needed because in
+  // some cases, we reject them before the user has a reasonable chance to
+  // handle them (e.g. `await readToEnd(result.data); await result.verified` and
+  // the data stream errors).
+  verifiedSig.signature.catch(() => {});
+  verifiedSig.verified.catch(() => {});
 
   return verifiedSig;
 }
