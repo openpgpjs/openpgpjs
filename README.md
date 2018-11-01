@@ -416,9 +416,8 @@ var options = {
     query: 'alice@example.com'
 };
 
-hkp.lookup(options).then(function(key) {
-    var pubkey = await openpgp.key.readArmored(key);
-});
+let armoredPubkey = await hkp.lookup(options);
+var pubkey = await openpgp.key.readArmored(armoredPubkey);
 ```
 
 #### Upload public key to HKP server
