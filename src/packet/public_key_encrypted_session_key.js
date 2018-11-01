@@ -108,8 +108,7 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
   data += util.Uint8Array_to_str(this.sessionKey);
-  const checksum = util.calc_checksum(this.sessionKey);
-  data += util.Uint8Array_to_str(util.writeNumber(checksum, 2));
+  data += util.Uint8Array_to_str(util.write_checksum(this.sessionKey));
 
   let toEncrypt;
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
@@ -142,15 +141,15 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   let decoded;
   if (algo === enums.publicKey.ecdh) {
     decoded = crypto.pkcs5.decode(result.toString());
-    checksum = util.readNumber(util.str_to_Uint8Array(decoded.substr(decoded.length - 2)));
+    checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
   } else {
     decoded = crypto.pkcs1.eme.decode(result.toString());
-    checksum = util.readNumber(result.toUint8Array().slice(result.byteLength() - 2));
+    checksum = result.toUint8Array().slice(result.byteLength() - 2);
   }
 
   key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
-  if (checksum !== util.calc_checksum(key)) {
+  if (!util.equalsUint8Array(checksum, util.write_checksum(key))) {
     throw new Error('Checksum mismatch');
   } else {
     this.sessionKey = key;

@@ -378,20 +378,14 @@ export default {
    * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
    * @param {Uint8Array} Uint8Array to create a sum of
-   * @returns {Integer} An integer containing the sum of all character
-   * codes % 65535
+   * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535
    */
-  calc_checksum: function (text) {
-    const checksum = {
-      s: 0,
-      add: function (sadd) {
-        this.s = (this.s + sadd) % 65536;
-      }
-    };
+  write_checksum: function (text) {
+    let s = 0;
     for (let i = 0; i < text.length; i++) {
-      checksum.add(text[i]);
+      s = (s + text[i]) & 0xFFFF;
     }
-    return checksum.s;
+    return util.writeNumber(s, 2);
   },
 
   /**

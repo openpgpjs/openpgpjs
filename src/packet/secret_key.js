@@ -59,10 +59,6 @@ function SecretKey(date=new Date()) {
 SecretKey.prototype = new publicKey();
 SecretKey.prototype.constructor = SecretKey;
 
-function write_checksum(c) {
-  return util.writeNumber(util.calc_checksum(c), 2);
-}
-
 // Helper function
 
 function parse_cleartext_params(cleartext, algorithm) {
@@ -122,7 +118,7 @@ SecretKey.prototype.read = function (bytes) {
     //   key data.  These algorithm-specific fields are as described
     //   below.
     const cleartext = bytes.subarray(1, -2);
-    if (!util.equalsUint8Array(write_checksum(cleartext), bytes.subarray(-2))) {
+    if (!util.equalsUint8Array(util.write_checksum(cleartext), bytes.subarray(-2))) {
       throw new Error('Key checksum mismatch');
     }
     const privParams = parse_cleartext_params(cleartext, this.algorithm);
@@ -142,7 +138,7 @@ SecretKey.prototype.write = function () {
     arr.push(new Uint8Array([0]));
     const cleartextParams = write_cleartext_params(this.params, this.algorithm);
     arr.push(cleartextParams);
-    arr.push(write_checksum(cleartextParams));
+    arr.push(util.write_checksum(cleartextParams));
   } else {
     arr.push(this.encrypted);
   }
@@ -304,7 +300,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     if (s2k_usage === 255) {
       hashlen = 2;
       cleartext = cleartextWithHash.subarray(0, -hashlen);
-      hash = write_checksum(cleartext);
+      hash = util.write_checksum(cleartext);
     } else {
       hashlen = 20;
       cleartext = cleartextWithHash.subarray(0, -hashlen);
