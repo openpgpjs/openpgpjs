@@ -6,6 +6,7 @@
  * @requires hash.js
  * @requires web-stream-tools
  * @requires crypto/hash/md5
+ * @requires config
  * @requires util
  * @module crypto/hash
  */
@@ -18,6 +19,7 @@ import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
 import stream from 'web-stream-tools';
 import md5 from './md5';
+import config from '../../config';
 import util from '../../util';
 
 const webCrypto = util.getWebCrypto();
@@ -35,7 +37,7 @@ function node_hash(type) {
 
 function hashjs_hash(hash, webCryptoHash) {
   return async function(data) {
-    if (!util.isStream(data) && webCrypto && webCryptoHash) {
+    if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.min_bytes_for_web_crypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     }
     const hashInstance = hash();
@@ -52,7 +54,7 @@ function asmcrypto_hash(hash, webCryptoHash) {
       return stream.transform(data, value => {
         hashInstance.process(value);
       }, () => hashInstance.finish().result);
-    } else if (webCrypto && webCryptoHash) {
+    } else if (webCrypto && webCryptoHash && data.length >= config.min_bytes_for_web_crypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     } else {
       return hash.bytes(data);
