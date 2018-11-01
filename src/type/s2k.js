@@ -161,15 +161,13 @@ S2K.prototype.produce_key = async function (passphrase, numBytes) {
       case 'iterated': {
         const count = s2k.get_count();
         const data = util.concatUint8Array([s2k.salt, passphrase]);
-        let isp = new Array(Math.ceil(count / data.length));
-
-        isp = util.concatUint8Array(isp.fill(data));
-
-        if (isp.length > count) {
-          isp = isp.subarray(0, count);
+        const datalen = data.length;
+        const isp = new Uint8Array(prefix.length + count + datalen);
+        isp.set(prefix);
+        for (let pos = prefix.length; pos < count; pos += datalen) {
+          isp.set(data, pos);
         }
-
-        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix, isp]));
+        return crypto.hash.digest(algorithm, isp.subarray(0, prefix.length + count));
       }
       case 'gnu':
         throw new Error("GNU s2k type not supported.");
