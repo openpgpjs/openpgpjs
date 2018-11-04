@@ -209,14 +209,14 @@ export function revokeKey({
       const publicKey = key.toPublic();
       return {
         privateKey: key,
-        privateKeyArmored: key.armor(),
+        privateKeyArmored: convertStream(key.armor()),
         publicKey: publicKey,
-        publicKeyArmored: publicKey.armor()
+        publicKeyArmored: convertStream(publicKey.armor())
       };
     }
     return {
       publicKey: key,
-      publicKeyArmored: key.armor()
+      publicKeyArmored: convertStream(key.armor())
     };
   }).catch(onError.bind(null, 'Error revoking key'));
 }
