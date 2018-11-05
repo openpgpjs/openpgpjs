@@ -25,11 +25,11 @@
  */
 
 import pako from 'pako';
+import Bunzip from 'seek-bzip';
 import stream from 'web-stream-tools';
 import config from '../config';
 import enums from '../enums';
 import util from '../util';
-import Bzip2 from '../compression/bzip2.build.js';
 
 /**
  * Implementation of the Compressed Data Packet (Tag 8)
@@ -103,7 +103,7 @@ Compressed.prototype.write = function () {
 Compressed.prototype.decompress = async function () {
 
   if (!decompress_fns[this.algorithm]) {
-    throw new Error("Compression algorithm unknown :" + this.algorithm);
+    throw new Error(this.algorithm + ' decompression not supported');
   }
 
   await this.packets.read(decompress_fns[this.algorithm](this.compressed));
@@ -115,7 +115,7 @@ Compressed.prototype.decompress = async function () {
 Compressed.prototype.compress = function () {
 
   if (!compress_fns[this.algorithm]) {
-    throw new Error("Compression algorithm unknown :" + this.algorithm);
+    throw new Error(this.algorithm + ' compression not supported');
   }
 
   this.compressed = compress_fns[this.algorithm](this.packets.write());
@@ -160,30 +160,24 @@ let compress_fns;
 let decompress_fns;
 if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   compress_fns = {
-    // eslint-disable-next-line no-sync
     zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflate_level }),
-    // eslint-disable-next-line no-sync
-    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflate_level }),
-    bzip2: bzip2(Bzip2.compressFile)
+    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflate_level })
   };
 
   decompress_fns = {
-    // eslint-disable-next-line no-sync
     zip: node_zlib(nodeZlib.createInflateRaw),
-    // eslint-disable-next-line no-sync
     zlib: node_zlib(nodeZlib.createInflate),
-    bzip2: bzip2(Bzip2.decompressFile)
+    bzip2: bzip2(Bunzip.decode)
   };
 } else { // Use JS fallbacks
   compress_fns = {
     zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
-    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level }),
-    bzip2: bzip2(Bzip2.compressFile)
+    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level })
   };
 
   decompress_fns = {
     zip: pako_zlib(pako.Inflate, { raw: true }),
     zlib: pako_zlib(pako.Inflate),
-    bzip2: bzip2(Bzip2.decompressFile)
+    bzip2: bzip2(Bunzip.decode)
   };
 }

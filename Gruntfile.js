@@ -192,12 +192,6 @@ module.exports = function(grunt) {
         src: ['mocha/mocha.css', 'mocha/mocha.js'],
         dest: 'test/lib/'
       },
-      bzip2: {
-        expand: true,
-        cwd: 'node_modules/compressjs/bin/',
-        src: ['bzip2.build.js'],
-        dest: 'src/compression/'
-      },
       openpgp_compat: {
         expand: true,
         cwd: 'dist/',
@@ -305,7 +299,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['copy:bzip2', 'browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks

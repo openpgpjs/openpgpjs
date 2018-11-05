@@ -259,13 +259,12 @@ ciphertext = await openpgp.encrypt(options);     // use ciphertext
 Or, override the config to enable compression:
 
 ```js
-openpgp.config.compression = openpgp.enums.compression.zip
+openpgp.config.compression = openpgp.enums.compression.zlib
 ```
 
 Where the value can be any of:
  * `openpgp.enums.compression.zip`
  * `openpgp.enums.compression.zlib`
- * `openpgp.enums.compression.bzip2`
 
 
 #### Streaming encrypt *Uint8Array* data with a password

@@ -309,6 +309,9 @@ function withCompression(tests) {
 
   compressionTypes.forEach(function (compression) {
     const compressionName = openpgp.enums.read(openpgp.enums.compression, compression);
+    if (compressionName === 'bzip2') {
+      return; // bzip2 compression is not supported.
+    }
     const group = `compression - ${compressionName}`;
 
     describe(group, function() {
