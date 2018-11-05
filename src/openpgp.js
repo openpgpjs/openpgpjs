@@ -204,7 +204,8 @@ export function revokeKey({
     } else {
       return key.revoke(reasonForRevocation);
     }
-  }).then(key => {
+  }).then(async key => {
+    await convertStreams(key);
     if (key.isPrivate()) {
       const publicKey = key.toPublic();
       return {
