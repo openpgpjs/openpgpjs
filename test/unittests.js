@@ -36,6 +36,8 @@ if (typeof TransformStream === 'undefined') {
 describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
+    openpgp.config.s2k_iteration_count_byte = 0;
+
     afterEach(function () {
       if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100
         || openpgp.config.saucelabs) {
