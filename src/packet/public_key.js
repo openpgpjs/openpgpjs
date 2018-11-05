@@ -24,6 +24,8 @@
  * @requires util
  */
 
+import { Sha1 } from 'asmcrypto.js/dist_es5/hash/sha1/sha1';
+import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
 import config from '../config';
@@ -215,10 +217,10 @@ PublicKey.prototype.getFingerprintBytes = function () {
   if (this.version === 5) {
     const bytes = this.writePublicKey();
     toHash = util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
-    this.fingerprint = crypto.hash.sha256(toHash);
+    this.fingerprint = Sha256.bytes(toHash);
   } else if (this.version === 4) {
     toHash = this.writeOld();
-    this.fingerprint = crypto.hash.sha1(toHash);
+    this.fingerprint = Sha1.bytes(toHash);
   }
   return this.fingerprint;
 };
@@ -227,8 +229,16 @@ PublicKey.prototype.getFingerprintBytes = function () {
  * Calculates the fingerprint of the key
  * @returns {String} A string containing the fingerprint in lowercase hex
  */
-PublicKey.prototype.getFingerprint = function () {
+PublicKey.prototype.getFingerprint = function() {
   return util.Uint8Array_to_hex(this.getFingerprintBytes());
+};
+
+/**
+ * Calculates whether two keys have the same fingerprint without actually calculating the fingerprint
+ * @returns {Boolean} Whether the two keys have the same version and public key data
+ */
+PublicKey.prototype.hasSameFingerprintAs = function(other) {
+  return this.version === other.version && util.equalsUint8Array(this.writePublicKey(), other.writePublicKey());
 };
 
 /**

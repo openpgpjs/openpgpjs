@@ -142,10 +142,10 @@ S2K.prototype.write = function () {
  * @returns {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
-S2K.prototype.produce_key = function (passphrase, numBytes) {
+S2K.prototype.produce_key = async function (passphrase, numBytes) {
   passphrase = util.encode_utf8(passphrase);
 
-  function round(prefix, s2k) {
+  async function round(prefix, s2k) {
     const algorithm = enums.write(enums.hash, s2k.algorithm);
 
     switch (s2k.type) {
@@ -161,15 +161,13 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
       case 'iterated': {
         const count = s2k.get_count();
         const data = util.concatUint8Array([s2k.salt, passphrase]);
-        let isp = new Array(Math.ceil(count / data.length));
-
-        isp = util.concatUint8Array(isp.fill(data));
-
-        if (isp.length > count) {
-          isp = isp.subarray(0, count);
+        const datalen = data.length;
+        const isp = new Uint8Array(prefix.length + count + datalen);
+        isp.set(prefix);
+        for (let pos = prefix.length; pos < count; pos += datalen) {
+          isp.set(data, pos);
         }
-
-        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix, isp]));
+        return crypto.hash.digest(algorithm, isp.subarray(0, prefix.length + count));
       }
       case 'gnu':
         throw new Error("GNU s2k type not supported.");
@@ -189,7 +187,7 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
   let i = 0;
   while (rlength < numBytes) {
-    const result = round(prefix.subarray(0, i), this);
+    const result = await round(prefix.subarray(0, i), this);
     arr.push(result);
     rlength += result.length;
     i++;

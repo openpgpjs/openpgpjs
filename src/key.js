@@ -39,6 +39,7 @@ import util from './util';
  * @param  {module:packet.List} packetlist The packets that form this key
  * @borrows module:packet.PublicKey#getKeyId as Key#getKeyId
  * @borrows module:packet.PublicKey#getFingerprint as Key#getFingerprint
+ * @borrows module:packet.PublicKey#hasSameFingerprintAs as Key#hasSameFingerprintAs
  * @borrows module:packet.PublicKey#getAlgorithmInfo as Key#getAlgorithmInfo
  * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
  * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
@@ -575,7 +576,7 @@ Key.prototype.update = async function(key) {
   if (await key.verifyPrimaryKey() === enums.keyStatus.invalid) {
     return;
   }
-  if (this.getFingerprint() !== key.getFingerprint()) {
+  if (!this.hasSameFingerprintAs(key)) {
     throw new Error('Key update method: fingerprints of keys not equal');
   }
   if (this.isPublic() && key.isPrivate()) {
@@ -583,7 +584,7 @@ Key.prototype.update = async function(key) {
     const equal = (this.subKeys.length === key.subKeys.length) &&
           (this.subKeys.every(destSubKey => {
             return key.subKeys.some(srcSubKey => {
-              return destSubKey.getFingerprint() === srcSubKey.getFingerprint();
+              return destSubKey.hasSameFingerprintAs(srcSubKey);
             });
           }));
     if (!equal) {
@@ -618,7 +619,7 @@ Key.prototype.update = async function(key) {
   await Promise.all(key.subKeys.map(async srcSubKey => {
     let found = false;
     await Promise.all(this.subKeys.map(async dstSubKey => {
-      if (srcSubKey.getFingerprint() === dstSubKey.getFingerprint()) {
+      if (dstSubKey.hasSameFingerprintAs(srcSubKey)) {
         await dstSubKey.update(srcSubKey, this.keyPacket);
         found = true;
       }
@@ -853,7 +854,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    if (privateKey.getFingerprint() === primaryKey.getFingerprint()) {
+    if (privateKey.hasSameFingerprintAs(primaryKey)) {
       throw new Error('Not implemented for self signing');
     }
     const signingKey = await privateKey.getSigningKey();
@@ -1039,6 +1040,7 @@ User.prototype.update = async function(user, primaryKey) {
  * @classdesc Class that represents a subkey packet and the relevant signatures.
  * @borrows module:packet.PublicSubkey#getKeyId as SubKey#getKeyId
  * @borrows module:packet.PublicSubkey#getFingerprint as SubKey#getFingerprint
+ * @borrows module:packet.PublicSubkey#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
  * @borrows module:packet.PublicSubkey#getAlgorithmInfo as SubKey#getAlgorithmInfo
  * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
  * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
@@ -1145,7 +1147,7 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
   if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
     return;
   }
-  if (this.getFingerprint() !== subKey.getFingerprint()) {
+  if (!this.hasSameFingerprintAs(subKey)) {
     throw new Error('SubKey update method: fingerprints of subkeys not equal');
   }
   // key packet
@@ -1208,6 +1210,12 @@ SubKey.prototype.revoke = async function(primaryKey, {
       return this.keyPacket[name]();
     };
 });
+
+Key.prototype.hasSameFingerprintAs =
+SubKey.prototype.hasSameFingerprintAs =
+  function(other) {
+    return this.keyPacket.hasSameFingerprintAs(other.keyPacket || other);
+  };
 
 /**
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects

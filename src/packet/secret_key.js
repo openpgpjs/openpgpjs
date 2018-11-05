@@ -59,38 +59,9 @@ function SecretKey(date=new Date()) {
 SecretKey.prototype = new publicKey();
 SecretKey.prototype.constructor = SecretKey;
 
-function get_hash_len(hash) {
-  if (hash === 'sha1') {
-    return 20;
-  }
-  return 2;
-}
-
-function get_hash_fn(hash) {
-  if (hash === 'sha1') {
-    return crypto.hash.sha1;
-  }
-  return function(c) {
-    return util.writeNumber(util.calc_checksum(c), 2);
-  };
-}
-
 // Helper function
 
-function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
-  if (hash_algorithm) {
-    const hashlen = get_hash_len(hash_algorithm);
-    const hashfn = get_hash_fn(hash_algorithm);
-
-    const hashtext = util.Uint8Array_to_str(cleartext.subarray(cleartext.length - hashlen, cleartext.length));
-    cleartext = cleartext.subarray(0, cleartext.length - hashlen);
-    const hash = util.Uint8Array_to_str(hashfn(cleartext));
-
-    if (hash !== hashtext) {
-      throw new Error("Incorrect key passphrase");
-    }
-  }
-
+function parse_cleartext_params(cleartext, algorithm) {
   const algo = enums.write(enums.publicKey, algorithm);
   const types = crypto.getPrivKeyParamTypes(algo);
   const params = crypto.constructParams(types);
@@ -106,7 +77,7 @@ function parse_cleartext_params(hash_algorithm, cleartext, algorithm) {
   return params;
 }
 
-function write_cleartext_params(hash_algorithm, algorithm, params) {
+function write_cleartext_params(params, algorithm) {
   const arr = [];
   const algo = enums.write(enums.publicKey, algorithm);
   const numPublicParams = crypto.getPubKeyParamTypes(algo).length;
@@ -115,15 +86,7 @@ function write_cleartext_params(hash_algorithm, algorithm, params) {
     arr.push(params[i].write());
   }
 
-  const bytes = util.concatUint8Array(arr);
-
-  if (hash_algorithm) {
-    const hash = get_hash_fn(hash_algorithm)(bytes);
-
-    return util.concatUint8Array([bytes, hash]);
-  }
-
-  return bytes;
+  return util.concatUint8Array(arr);
 }
 
 
@@ -154,7 +117,11 @@ SecretKey.prototype.read = function (bytes) {
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
-    const privParams = parse_cleartext_params('mod', bytes.subarray(1, bytes.length), this.algorithm);
+    const cleartext = bytes.subarray(1, -2);
+    if (!util.equalsUint8Array(util.write_checksum(cleartext), bytes.subarray(-2))) {
+      throw new Error('Key checksum mismatch');
+    }
+    const privParams = parse_cleartext_params(cleartext, this.algorithm);
     this.params = this.params.concat(privParams);
     this.isEncrypted = false;
   }
@@ -169,7 +136,9 @@ SecretKey.prototype.write = function () {
 
   if (!this.encrypted) {
     arr.push(new Uint8Array([0]));
-    arr.push(write_cleartext_params('mod', this.algorithm, this.params));
+    const cleartextParams = write_cleartext_params(this.params, this.algorithm);
+    arr.push(cleartextParams);
+    arr.push(util.write_checksum(cleartextParams));
   } else {
     arr.push(this.encrypted);
   }
@@ -205,9 +174,8 @@ SecretKey.prototype.encrypt = async function (passphrase) {
   const s2k = new type_s2k();
   s2k.salt = await crypto.random.getRandomBytes(8);
   const symmetric = 'aes256';
-  const hash = this.version === 5 ? null : 'sha1';
-  const cleartext = write_cleartext_params(hash, this.algorithm, this.params);
-  const key = produceEncryptionKey(s2k, passphrase, symmetric);
+  const cleartext = write_cleartext_params(this.params, this.algorithm);
+  const key = await produceEncryptionKey(s2k, passphrase, symmetric);
   const blockLen = crypto.cipher[symmetric].blockSize;
   const iv = await crypto.random.getRandomBytes(blockLen);
 
@@ -227,14 +195,17 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
     arr.push(s2k.write());
     arr.push(iv);
-    arr.push(crypto.cfb.normalEncrypt(symmetric, key, cleartext, iv));
+    arr.push(crypto.cfb.normalEncrypt(symmetric, key, util.concatUint8Array([
+      cleartext,
+      await crypto.hash.sha1(cleartext)
+    ]), iv));
   }
 
   this.encrypted = util.concatUint8Array(arr);
   return true;
 };
 
-function produceEncryptionKey(s2k, passphrase, algorithm) {
+async function produceEncryptionKey(s2k, passphrase, algorithm) {
   return s2k.produce_key(
     passphrase,
     crypto.cipher[algorithm].keySize
@@ -286,11 +257,11 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     const s2k = new type_s2k();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
-    key = produceEncryptionKey(s2k, passphrase, symmetric);
+    key = await produceEncryptionKey(s2k, passphrase, symmetric);
   } else {
     symmetric = s2k_usage;
     symmetric = enums.read(enums.symmetric, symmetric);
-    key = crypto.hash.md5(passphrase);
+    key = await crypto.hash.md5(passphrase);
   }
 
   // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -322,14 +293,26 @@ SecretKey.prototype.decrypt = async function (passphrase) {
       }
     }
   } else {
-    cleartext = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
-  }
-  const hash =
-    s2k_usage === 253 ? null :
-    s2k_usage === 254 ? 'sha1' :
-    'mod';
+    const cleartextWithHash = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
 
-  const privParams = parse_cleartext_params(hash, cleartext, this.algorithm);
+    let hash;
+    let hashlen;
+    if (s2k_usage === 255) {
+      hashlen = 2;
+      cleartext = cleartextWithHash.subarray(0, -hashlen);
+      hash = util.write_checksum(cleartext);
+    } else {
+      hashlen = 20;
+      cleartext = cleartextWithHash.subarray(0, -hashlen);
+      hash = await crypto.hash.sha1(cleartext);
+    }
+
+    if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-hashlen))) {
+      throw new Error('Incorrect key passphrase');
+    }
+  }
+
+  const privParams = parse_cleartext_params(cleartext, this.algorithm);
   this.params = this.params.concat(privParams);
   this.isEncrypted = false;
   this.encrypted = null;

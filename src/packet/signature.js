@@ -193,7 +193,7 @@ Signature.prototype.sign = async function (key, data) {
   this.signatureData = util.concat(arr);
 
   const toHash = this.toHash(data);
-  const hash = this.hash(data, toHash);
+  const hash = await this.hash(data, toHash);
 
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
@@ -606,7 +606,7 @@ Signature.prototype.toHash = function(data) {
   return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
 };
 
-Signature.prototype.hash = function(data, toHash, streaming=true) {
+Signature.prototype.hash = async function(data, toHash, streaming=true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
   if (!toHash) toHash = this.toHash(data);
   if (!streaming && util.isStream(toHash)) {
@@ -634,7 +634,7 @@ Signature.prototype.verify = async function (key, data) {
     hash = this.hashed;
   } else {
     toHash = this.toHash(data);
-    hash = this.hash(data, toHash);
+    hash = await this.hash(data, toHash);
   }
   hash = await stream.readToEnd(hash);
 

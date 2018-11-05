@@ -100,7 +100,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
   let tohash = util.concat([bytes, mdc]);
-  const hash = crypto.hash.sha1(util.concat([prefix, stream.passiveClone(tohash)]));
+  const hash = await crypto.hash.sha1(util.concat([prefix, stream.passiveClone(tohash)]));
   tohash = util.concat([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
@@ -140,7 +140,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   const bytes = stream.slice(decrypted, 0, -20);
   const tohash = util.concat([prefix, stream.passiveClone(bytes)]);
   const verifyHash = Promise.all([
-    stream.readToEnd(crypto.hash.sha1(tohash)),
+    stream.readToEnd(await crypto.hash.sha1(tohash)),
     stream.readToEnd(realHash)
   ]).then(([hash, mdc]) => {
     if (!util.equalsUint8Array(hash, mdc)) {
