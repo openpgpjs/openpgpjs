@@ -301,7 +301,12 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
         if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
           const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
           const bindingSignature = await getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, dataToVerify, date);
-          if (bindingSignature && isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature)) {
+          if (
+            bindingSignature &&
+            bindingSignature.embeddedSignature &&
+            isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature) &&
+            await getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, dataToVerify, date)
+          ) {
             return subKeys[i];
           }
         }
@@ -1235,8 +1240,7 @@ export async function read(data) {
     if (packetlist.filterByTag(enums.packet.signature).some(
       signature => signature.revocationKeyClass !== null
     )) {
-      // Indicate an error, but still parse the key.
-      err.push(new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.'));
+      throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
     const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
     if (keyIndex.length === 0) {
@@ -1515,7 +1519,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
     subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretSubkeyPacket);
-    subkeySignaturePacket.keyFlags = subkeyOptions.sign ? enums.keyFlags.sign_data : [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    if (subkeyOptions.sign) {
+      subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
+      subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, secretSubkeyPacket, {
+        signatureType: enums.signature.key_binding
+      }, subkeyOptions.date);
+    } else {
+      subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    }
     if (subkeyOptions.keyExpirationTime > 0) {
       subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
       subkeySignaturePacket.keyNeverExpires = false;

@@ -392,9 +392,10 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
-    const {keys: [key]} = await openpgp.key.readArmored(pubKey);
+    const { type, data } = await openpgp.armor.decode(pubKey);
+    const armor = await openpgp.stream.readToEnd(openpgp.armor.encode(type, data));
     expect(
-      key.armor()
+      armor
         .replace(/^(Version|Comment): .*$\r\n/mg, '')
     ).to.equal(
       pubKey

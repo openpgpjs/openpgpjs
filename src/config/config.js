@@ -82,7 +82,7 @@ export default {
    * @memberof module:config
    * @property {Integer} s2k_iteration_count_byte
    */
-  s2k_iteration_count_byte: 96,
+  s2k_iteration_count_byte: 224,
   /** Use integrity protection for symmetric encryption
    * @memberof module:config
    * @property {Boolean} integrity_protect

@@ -52,7 +52,7 @@ function Signature(date=new Date()) {
   this.publicKeyAlgorithm = null;
 
   this.signatureData = null;
-  this.unhashedSubpackets = null;
+  this.unhashedSubpackets = [];
   this.signedHashValue = null;
 
   this.created = util.normalizeDate(date);
@@ -109,31 +109,12 @@ Signature.prototype.read = function (bytes) {
     throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
-  const subpackets = bytes => {
-    // Two-octet scalar octet count for following subpacket data.
-    const subpacket_length = util.readNumber(bytes.subarray(0, 2));
-
-    let i = 2;
-
-    // subpacket data set (zero or more subpackets)
-    while (i < 2 + subpacket_length) {
-      const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-      i += len.offset;
-
-      this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-      i += len.len;
-    }
-
-    return i;
-  };
-
   this.signatureType = bytes[i++];
   this.publicKeyAlgorithm = bytes[i++];
   this.hashAlgorithm = bytes[i++];
 
   // hashed subpackets
-  i += subpackets(bytes.subarray(i, bytes.length), true);
+  i += this.read_sub_packets(bytes.subarray(i, bytes.length), true);
 
   // A V4 signature hashes the packet body
   // starting from its first field, the version number, through the end
@@ -142,11 +123,9 @@ Signature.prototype.read = function (bytes) {
   // hash algorithm, the hashed subpacket length, and the hashed
   // subpacket body.
   this.signatureData = bytes.subarray(0, i);
-  const sigDataLength = i;
 
   // unhashed subpackets
-  i += subpackets(bytes.subarray(i, bytes.length), false);
-  this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
+  i += this.read_sub_packets(bytes.subarray(i, bytes.length), false);
 
   // Two-octet field holding left 16 bits of signed hash value.
   this.signedHashValue = bytes.subarray(i, i + 2);
@@ -158,7 +137,7 @@ Signature.prototype.read = function (bytes) {
 Signature.prototype.write = function () {
   const arr = [];
   arr.push(this.signatureData);
-  arr.push(this.unhashedSubpackets ? this.unhashedSubpackets : util.writeNumber(0, 2));
+  arr.push(this.write_unhashed_sub_packets());
   arr.push(this.signedHashValue);
   arr.push(stream.clone(this.signature));
   return util.concat(arr);
@@ -188,7 +167,7 @@ Signature.prototype.sign = async function (key, data) {
   this.issuerKeyId = key.getKeyId();
 
   // Add hashed subpackets
-  arr.push(this.write_all_sub_packets());
+  arr.push(this.write_hashed_sub_packets());
 
   this.signatureData = util.concat(arr);
 
@@ -211,10 +190,10 @@ Signature.prototype.sign = async function (key, data) {
 };
 
 /**
- * Creates string of bytes with all subpacket data
- * @returns {String} a string-representation of a all subpacket data
+ * Creates Uint8Array of bytes of all subpacket data except Issuer and Embedded Signature subpackets
+ * @returns {Uint8Array} subpacket data
  */
-Signature.prototype.write_all_sub_packets = function () {
+Signature.prototype.write_hashed_sub_packets = function () {
   const sub = enums.signatureSubpacket;
   const arr = [];
   let bytes;
@@ -248,11 +227,6 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = new Uint8Array([this.revocationKeyClass, this.revocationKeyAlgorithm]);
     bytes = util.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
-  }
-  if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
-    // If the version of [the] key is greater than 4, this subpacket
-    // MUST NOT be included in the signature.
-    arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.notation !== null) {
     Object.entries(this.notation).forEach(([name, value]) => {
@@ -308,6 +282,30 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.signature_target, bytes));
   }
+  if (this.preferredAeadAlgorithms !== null) {
+    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
+    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
+  }
+
+  const result = util.concat(arr);
+  const length = util.writeNumber(result.length, 2);
+
+  return util.concat([length, result]);
+};
+
+/**
+ * Creates Uint8Array of bytes of Issuer and Embedded Signature subpackets
+ * @returns {Uint8Array} subpacket data
+ */
+Signature.prototype.write_unhashed_sub_packets = function() {
+  const sub = enums.signatureSubpacket;
+  const arr = [];
+  let bytes;
+  if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
+    // If the version of [the] key is greater than 4, this subpacket
+    // MUST NOT be included in the signature.
+    arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
+  }
   if (this.embeddedSignature !== null) {
     arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
   }
@@ -316,10 +314,10 @@ Signature.prototype.write_all_sub_packets = function () {
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.issuer_fingerprint, bytes));
   }
-  if (this.preferredAeadAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
-  }
+  this.unhashedSubpackets.forEach(data => {
+    arr.push(packet.writeSimpleLength(data.length));
+    arr.push(data);
+  });
 
   const result = util.concat(arr);
   const length = util.writeNumber(result.length, 2);
@@ -346,7 +344,7 @@ function write_sub_packet(type, data) {
 
 // V4 signature sub packets
 
-Signature.prototype.read_sub_packet = function (bytes) {
+Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
   let mypos = 0;
 
   const read_array = (prop, bytes) => {
@@ -357,9 +355,23 @@ Signature.prototype.read_sub_packet = function (bytes) {
     }
   };
 
-  // The leftwost bit denotes a "critical" packet, but we ignore it.
-  const type = bytes[mypos++] & 0x7F;
-  let seconds;
+  // The leftmost bit denotes a "critical" packet
+  const critical = bytes[mypos] & 0x80;
+  const type = bytes[mypos] & 0x7F;
+
+  // GPG puts the Issuer and Signature subpackets in the unhashed area.
+  // Tampering with those invalidates the signature, so we can trust them.
+  // Ignore all other unhashed subpackets.
+  if (!trusted && ![
+    enums.signatureSubpacket.issuer,
+    enums.signatureSubpacket.issuer_fingerprint,
+    enums.signatureSubpacket.embedded_signature
+  ].includes(type)) {
+    this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
+    return;
+  }
+
+  mypos++;
 
   // subpacket type
   switch (type) {
@@ -367,14 +379,15 @@ Signature.prototype.read_sub_packet = function (bytes) {
       // Signature Creation Time
       this.created = util.readDate(bytes.subarray(mypos, bytes.length));
       break;
-    case 3:
+    case 3: {
       // Signature Expiration Time in seconds
-      seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
+      const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
       this.signatureNeverExpires = seconds === 0;
       this.signatureExpirationTime = seconds;
 
       break;
+    }
     case 4:
       // Exportable Certification
       this.exportable = bytes[mypos++] === 1;
@@ -392,14 +405,15 @@ Signature.prototype.read_sub_packet = function (bytes) {
       // Revocable
       this.revocable = bytes[mypos++] === 1;
       break;
-    case 9:
+    case 9: {
       // Key Expiration Time in seconds
-      seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
+      const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
       this.keyExpirationTime = seconds;
       this.keyNeverExpires = seconds === 0;
 
       break;
+    }
     case 11:
       // Preferred Symmetric Algorithms
       read_array('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
@@ -510,9 +524,34 @@ Signature.prototype.read_sub_packet = function (bytes) {
       // Preferred AEAD Algorithms
       read_array.call(this, 'preferredAeadAlgorithms', bytes.subarray(mypos, bytes.length));
       break;
-    default:
-      util.print_debug("Unknown signature subpacket type " + type + " @:" + mypos);
+    default: {
+      const err = new Error("Unknown signature subpacket type " + type + " @:" + mypos);
+      if (critical) {
+        throw err;
+      } else {
+        util.print_debug(err);
+      }
+    }
   }
+};
+
+Signature.prototype.read_sub_packets = function(bytes, trusted=true) {
+  // Two-octet scalar octet count for following subpacket data.
+  const subpacket_length = util.readNumber(bytes.subarray(0, 2));
+
+  let i = 2;
+
+  // subpacket data set (zero or more subpackets)
+  while (i < 2 + subpacket_length) {
+    const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+    i += len.offset;
+
+    this.read_sub_packet(bytes.subarray(i, i + len.len), trusted);
+
+    i += len.len;
+  }
+
+  return i;
 };
 
 // Produces data to produce signature on
