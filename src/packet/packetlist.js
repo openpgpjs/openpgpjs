@@ -226,11 +226,15 @@ List.prototype.concat = function (packetlist) {
 List.fromStructuredClone = function(packetlistClone) {
   const packetlist = new List();
   for (let i = 0; i < packetlistClone.length; i++) {
-    packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
-    if (packetlist[i].packets.length !== 0) {
-      packetlist[i].packets = this.fromStructuredClone(packetlist[i].packets);
+    const packet = packets.fromStructuredClone(packetlistClone[i]);
+    packetlist.push(packet);
+    if (packet.embeddedSignature) {
+      packet.embeddedSignature = packets.fromStructuredClone(packet.embeddedSignature);
+    }
+    if (packet.packets.length !== 0) {
+      packet.packets = this.fromStructuredClone(packet.packets);
     } else {
-      packetlist[i].packets = new List();
+      packet.packets = new List();
     }
   }
   return packetlist;
