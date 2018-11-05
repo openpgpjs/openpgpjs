@@ -729,11 +729,13 @@ describe("Packet", function() {
     await key.read((await openpgp.armor.decode(armored_key)).data);
     return Promise.all([
       expect(key[2].verify(key[0],
+        openpgp.enums.signature.cert_generic,
         {
             userId: key[1],
             key: key[0]
         })).to.eventually.be.true,
       expect(key[4].verify(key[0],
+        openpgp.enums.signature.key_binding,
         {
             key: key[0],
             bind: key[3]
@@ -773,7 +775,7 @@ describe("Packet", function() {
 
       await Promise.all([
         expect(payload[2].verify(
-          key[0], payload[1]
+          key[0], openpgp.enums.signature.binary, payload[1]
         )).to.eventually.be.true,
         openpgp.stream.pipe(payload[1].getBytes(), new WritableStream())
       ]);
@@ -900,7 +902,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
           signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
           await Promise.all([
-            expect(signed2[1].verify(key, signed2[0])).to.eventually.be.true,
+            expect(signed2[1].verify(key, openpgp.enums.signature.text, signed2[0])).to.eventually.be.true,
             openpgp.stream.pipe(signed2[0].getBytes(), new WritableStream())
           ]);
         });

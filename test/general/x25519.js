@@ -241,7 +241,7 @@ describe('X25519 Cryptography', function () {
         // Self Certificate is valid
         const user = hi.users[0];
         await expect(user.selfCertifications[0].verify(
-          primaryKey, { userId: user.userId, key: primaryKey }
+          primaryKey, openpgp.enums.signature.cert_generic, { userId: user.userId, key: primaryKey }
         )).to.eventually.be.true;
         await expect(user.verifyCertificate(
           primaryKey, user.selfCertifications[0], [hi.toPublic()]
@@ -261,7 +261,7 @@ describe('X25519 Cryptography', function () {
           // Self Certificate is valid
           const user = bye.users[0];
           await expect(user.selfCertifications[0].verify(
-            bye.primaryKey, { userId: user.userId, key: bye.primaryKey }
+            bye.primaryKey, openpgp.enums.signature.cert_generic, { userId: user.userId, key: bye.primaryKey }
           )).to.eventually.be.true;
           await expect(user.verifyCertificate(
             bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
@@ -271,7 +271,7 @@ describe('X25519 Cryptography', function () {
             // Hi trusts Bye!
             bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
               expect(trustedBye.users[0].otherCertifications[0].verify(
-                primaryKey, { userId: user.userId, key: bye.toPublic().primaryKey }
+                primaryKey, openpgp.enums.signature.cert_generic, { userId: user.userId, key: bye.toPublic().primaryKey }
               )).to.eventually.be.true;
             }),
             // Signing message

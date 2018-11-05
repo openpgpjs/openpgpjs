@@ -839,7 +839,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   it('Verify primary key revocation signatures', async function() {
     const pubKey = (await openpgp.key.readArmored(pub_revoked)).keys[0];
     await expect(pubKey.revocationSignatures[0].verify(
-      pubKey.primaryKey, {key: pubKey.primaryKey}
+      pubKey.primaryKey, openpgp.enums.signature.key_revocation, {key: pubKey.primaryKey}
     )).to.eventually.be.true;
   });
 
@@ -847,7 +847,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   it('Verify subkey revocation signatures', async function() {
     const pubKey = (await openpgp.key.readArmored(pub_revoked)).keys[0];
     await expect(pubKey.subKeys[0].revocationSignatures[0].verify(
-      pubKey.primaryKey, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].keyPacket}
+      pubKey.primaryKey, openpgp.enums.signature.subkey_revocation, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].keyPacket}
     )).to.eventually.be.true;
   });
 
