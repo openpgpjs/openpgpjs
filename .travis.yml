@@ -37,7 +37,16 @@ matrix:
     - node_js: "10"
       env: BROWSER='iPad' VERSION='11.0' OPENPGPJSTEST='saucelabs'
   allow_failures:
-    - env: OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='Firefox' VERSION='61' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='Chrome' VERSION='49' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs' COMPAT=1
+    - env: BROWSER='Chrome' VERSION='68' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='Internet Explorer' VERSION='11.103' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs' COMPAT=1
+    - env: BROWSER='MicrosoftEdge' VERSION='17.17134' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='Safari' VERSION='10' PLATFORM='macOS 10.12' OPENPGPJSTEST='saucelabs' COMPAT=1
+    - env: BROWSER='Safari' VERSION='11' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='Android' VERSION='6.0' OPENPGPJSTEST='saucelabs'
+    - env: BROWSER='iPad' VERSION='10.0' OPENPGPJSTEST='saucelabs' COMPAT=1
+    - env: BROWSER='iPad' VERSION='11.0' OPENPGPJSTEST='saucelabs'
 before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
 script:
