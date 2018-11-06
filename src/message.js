@@ -559,7 +559,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
         onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = await onePassSig.hash(literalDataList[0], undefined, streaming);
+      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, streaming);
     }));
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = stream.getReader(readable);
@@ -625,7 +625,7 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
 
   const verifiedSig = {
     keyid: signature.issuerKeyId,
-    verified: keyPacket ? signature.verify(keyPacket, literalDataList[0]) : Promise.resolve(null)
+    verified: keyPacket ? signature.verify(keyPacket, signature.signatureType, literalDataList[0]) : Promise.resolve(null)
   };
 
   verifiedSig.signature = Promise.resolve(signature.correspondingSig || signature).then(signature => {

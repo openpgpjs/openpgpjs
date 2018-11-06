@@ -171,8 +171,8 @@ Signature.prototype.sign = async function (key, data) {
 
   this.signatureData = util.concat(arr);
 
-  const toHash = this.toHash(data);
-  const hash = await this.hash(data, toHash);
+  const toHash = this.toHash(signatureType, data);
+  const hash = await this.hash(signatureType, data, toHash);
 
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
@@ -637,19 +637,17 @@ Signature.prototype.calculateTrailer = function () {
 };
 
 
-Signature.prototype.toHash = function(data) {
-  const signatureType = enums.write(enums.signature, this.signatureType);
-
+Signature.prototype.toHash = function(signatureType, data) {
   const bytes = this.toSign(signatureType, data);
 
   return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
 };
 
-Signature.prototype.hash = async function(data, toHash, streaming=true) {
+Signature.prototype.hash = async function(signatureType, data, toHash, streaming=true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-  if (!toHash) toHash = this.toHash(data);
+  if (!toHash) toHash = this.toHash(signatureType, data);
   if (!streaming && util.isStream(toHash)) {
-    return stream.fromAsync(async () => this.hash(data, await stream.readToEnd(toHash)));
+    return stream.fromAsync(async () => this.hash(signatureType, data, await stream.readToEnd(toHash)));
   }
   return crypto.hash.digest(hashAlgorithm, toHash);
 };
@@ -657,13 +655,14 @@ Signature.prototype.hash = async function(data, toHash, streaming=true) {
 
 /**
  * verifys the signature packet. Note: not signature types are implemented
- * @param {String|Object} data data which on the signature applies
  * @param {module:packet.PublicSubkey|module:packet.PublicKey|
  *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
+ * @param {module:enums.signature} signatureType expected signature type
+ * @param {String|Object} data data which on the signature applies
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, data) {
+Signature.prototype.verify = async function (key, signatureType, data) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -672,8 +671,8 @@ Signature.prototype.verify = async function (key, data) {
   if (this.hashed) {
     hash = this.hashed;
   } else {
-    toHash = this.toHash(data);
-    hash = await this.hash(data, toHash);
+    toHash = this.toHash(signatureType, data);
+    hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);
 
