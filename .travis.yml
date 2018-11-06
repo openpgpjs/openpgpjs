@@ -14,7 +14,7 @@ matrix:
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
     - node_js: "node"
-      env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
+      env: OPENPGP_NODE_JS='11' OPENPGPJSTEST='unit'
     - node_js: "10"
       env: BROWSER='Firefox' VERSION='61' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
     - node_js: "10"
