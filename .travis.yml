@@ -35,8 +35,6 @@ matrix:
       env: BROWSER='iPad' VERSION='10.0' OPENPGPJSTEST='saucelabs' COMPAT=1
     - node_js: "10"
       env: BROWSER='iPad' VERSION='11.0' OPENPGPJSTEST='saucelabs'
-  allow_failures:
-    - node_js: "10"
 
 before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
