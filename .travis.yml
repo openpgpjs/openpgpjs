@@ -6,6 +6,7 @@ cache:
 addons:
     code_climate:
         repo_token: $CODECLIMATE_REPO_TOKEN
+env: # empty env by default
 matrix:
   fast_finish: true
   include:
