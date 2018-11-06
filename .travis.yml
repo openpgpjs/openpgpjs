@@ -13,28 +13,30 @@ matrix:
       env: OPENPGP_NODE_JS='8' OPENPGPJSTEST='unit'
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
-    - node_js: "9"
+    - node_js: "node"
+      env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
+    - node_js: "10"
       env: BROWSER='Firefox' VERSION='61' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Chrome' VERSION='49' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs' COMPAT=1
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Chrome' VERSION='68' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Internet Explorer' VERSION='11.103' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs' COMPAT=1
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='MicrosoftEdge' VERSION='17.17134' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs'
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Safari' VERSION='10' PLATFORM='macOS 10.12' OPENPGPJSTEST='saucelabs' COMPAT=1
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Safari' VERSION='11' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='Android' VERSION='6.0' OPENPGPJSTEST='saucelabs'
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='iPad' VERSION='10.0' OPENPGPJSTEST='saucelabs' COMPAT=1
-    - node_js: "9"
+    - node_js: "10"
       env: BROWSER='iPad' VERSION='11.0' OPENPGPJSTEST='saucelabs'
   allow_failures:
-    - node_js: "9"
+    - node_js: "10"
 
 before_script:
   - npm install -g grunt-cli codeclimate-test-reporter
