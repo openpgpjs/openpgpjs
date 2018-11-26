@@ -58,7 +58,13 @@ module.exports = function(grunt) {
               ignore: ['*.min.js'],
               presets: [["env", {
                 targets: {
-                  browsers: compat ? ['defaults'] : [
+                  browsers: compat ? [
+                    'IE >= 11',
+                    'Safari >= 9',
+                    'Last 2 Chrome versions',
+                    'Last 2 Firefox versions',
+                    'Last 2 Edge versions'
+                  ] : [
                     'Last 2 Chrome versions',
                     'Last 2 Firefox versions',
                     'Last 2 Safari versions',
