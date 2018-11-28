@@ -55,6 +55,7 @@ export default {
    * @returns {Object}
    */
   tripledes: des.TripleDES,
+  '3des': des.TripleDES,
   /**
    * CAST-128 Block Cipher (ID 3)
    * @function
