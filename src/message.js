@@ -617,7 +617,7 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
   let keyPacket = null;
   await Promise.all(keys.map(async function(key) {
     // Look for the unique key that matches issuerKeyId of signature
-    const result = await key.getSigningKey(signature.issuerKeyId, date);
+    const result = await key.getSigningKey(signature.issuerKeyId, null);
     if (result) {
       keyPacket = result.keyPacket;
     }

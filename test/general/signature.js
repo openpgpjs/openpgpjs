@@ -793,10 +793,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
       expect(verified).to.exist;
       expect(verified.signatures).to.have.length(1);
-      expect(verified.signatures[0].valid).to.not.be.true;
+      expect(verified.signatures[0].valid).to.be.true;
       expect(verified.signatures[0].signature.packets.length).to.equal(1);
     });
-
   });
 
   it('Verify test with expired verification public key and disable expiration checks using null date', async function() {
@@ -808,31 +807,6 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       expect(verified.signatures[0].valid).to.be.true;
       expect(verified.signatures[0].signature.packets.length).to.equal(1);
     });
-
-  });
-
-  it('Verify test with expired verification public key', async function() {
-    const pubKey = (await openpgp.key.readArmored(pub_expired)).keys[0];
-    const message = await openpgp.message.readArmored(msg_sig_expired);
-    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
-      expect(verified).to.exist;
-      expect(verified.signatures).to.have.length(1);
-      expect(verified.signatures[0].valid).to.not.be.true;
-      expect(verified.signatures[0].signature.packets.length).to.equal(1);
-    });
-
-  });
-
-  it('Verify test with expired verification public key and disable expiration checks using null date', async function() {
-    const pubKey = (await openpgp.key.readArmored(pub_expired)).keys[0];
-    const message = await openpgp.message.readArmored(msg_sig_expired);
-    return openpgp.verify({ publicKeys:[pubKey], message:message, date: null }).then(function(verified) {
-      expect(verified).to.exist;
-      expect(verified.signatures).to.have.length(1);
-      expect(verified.signatures[0].valid).to.be.true;
-      expect(verified.signatures[0].signature.packets.length).to.equal(1);
-    });
-
   });
 
   // TODO add test with multiple revocation signatures
