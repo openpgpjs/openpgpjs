@@ -560,7 +560,7 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   const primaryUser = users.sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
-    return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
+    return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
   }).pop();
   const { user, selfCertification: cert } = primaryUser;
   if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
