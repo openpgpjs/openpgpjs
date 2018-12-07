@@ -23782,7 +23782,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.2.1",
+  versionstring: "OpenPGP.js v4.2.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -30219,6 +30219,7 @@ exports.default = {
     plaintext: 0,
     /** Not implemented! */
     idea: 1,
+    '3des': 2,
     tripledes: 2,
     cast5: 3,
     blowfish: 4,
@@ -31140,6 +31141,7 @@ Key.prototype.packetlist2structure = function (packetlist) {
               continue;
             }
             if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
+              checkRevocationKey(packetlist[i], primaryKeyId);
               user.selfCertifications.push(packetlist[i]);
             } else {
               user.otherCertifications.push(packetlist[i]);
@@ -31153,6 +31155,7 @@ Key.prototype.packetlist2structure = function (packetlist) {
             }
             break;
           case _enums2.default.signature.key:
+            checkRevocationKey(packetlist[i], primaryKeyId);
             this.directSignatures.push(packetlist[i]);
             break;
           case _enums2.default.signature.subkey_binding:
@@ -31160,6 +31163,7 @@ Key.prototype.packetlist2structure = function (packetlist) {
               _util2.default.print_debug('Dropping subkey binding signature without preceding subkey packet');
               continue;
             }
+            checkRevocationKey(packetlist[i], primaryKeyId);
             subKey.bindingSignatures.push(packetlist[i]);
             break;
           case _enums2.default.signature.key_revocation:
@@ -32248,9 +32252,6 @@ async function read(data) {
   try {
     const packetlist = new _packet2.default.List();
     await packetlist.read(data);
-    if (packetlist.filterByTag(_enums2.default.packet.signature).some(signature => signature.revocationKeyClass !== null)) {
-      throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-    }
     const keyIndex = packetlist.indexOfTag(_enums2.default.packet.publicKey, _enums2.default.packet.secretKey);
     if (keyIndex.length === 0) {
       throw new Error('No key packet found');
@@ -32638,6 +32639,18 @@ function getExpirationTime(keyPacket, signature) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime * 1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
+}
+
+/**
+ * Check if signature has revocation key sub packet (not supported by OpenPGP.js)
+ * and throw error if found
+ * @param {module:packet.Signature} signature The certificate or signature to check
+ * @param {type/keyid} keyId Check only certificates or signatures from a certain issuer key ID
+ */
+function checkRevocationKey(signature, keyId) {
+  if (signature.revocationKeyClass !== null && signature.issuerKeyId.equals(keyId)) {
+    throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+  }
 }
 
 /**
@@ -35297,6 +35310,9 @@ function pako_zlib(constructor, options = {}) {
         obj.push(value, _pako2.default.Z_SYNC_FLUSH);
         return obj.result;
       }
+    }, () => {
+      obj.push([], _pako2.default.Z_FINISH);
+      return obj.result;
     });
   };
 }
