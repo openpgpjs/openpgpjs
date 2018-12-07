@@ -146,6 +146,9 @@ function pako_zlib(constructor, options = {}) {
         obj.push(value, pako.Z_SYNC_FLUSH);
         return obj.result;
       }
+    }, () => {
+        obj.push([], pako.Z_FINISH);
+        return obj.result;
     });
   };
 }
