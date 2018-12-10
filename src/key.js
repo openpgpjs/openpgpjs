@@ -501,7 +501,7 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
  * @async
  */
 Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
-  const primaryUser = await this.getPrimaryUser(null);
+  const primaryUser = await this.getPrimaryUser(null, userId);
   if (!primaryUser) {
     throw new Error('Could not find primary user');
   }
@@ -556,6 +556,9 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
     }
     return null;
   }
+  await Promise.all(users.map(async function (a) {
+    return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date);
+  }));
   // sort by primary user flag and signature creation time
   const primaryUser = users.sort(function(a, b) {
     const A = a.selfCertification;
