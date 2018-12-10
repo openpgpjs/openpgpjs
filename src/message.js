@@ -614,12 +614,14 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  * @async
  */
 async function createVerificationObject(signature, literalDataList, keys, date=new Date()) {
-  let keyPacket = null;
+  let primaryKey = null;
+  let signingKey = null;
   await Promise.all(keys.map(async function(key) {
     // Look for the unique key that matches issuerKeyId of signature
     const result = await key.getSigningKey(signature.issuerKeyId, null);
     if (result) {
-      keyPacket = result.keyPacket;
+      primaryKey = key;
+      signingKey = result;
     }
   }));
 
@@ -627,13 +629,19 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
   const verifiedSig = {
     keyid: signature.issuerKeyId,
     verified: (async () => {
-      if (!keyPacket) {
+      if (!signingKey) {
         return null;
       }
-      const verified = await signature.verify(keyPacket, signature.signatureType, literalDataList[0]);
+      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0]);
       const sig = await signaturePacket;
-      if (sig.isExpired(date)) {
-        return false;
+      if (sig.isExpired(date) || !(
+        sig.created >= signingKey.getCreationTime() &&
+        sig.created < await (signingKey === primaryKey ?
+          signingKey.getExpirationTime() :
+          signingKey.getExpirationTime(primaryKey, date)
+        )
+      )) {
+        return null;
       }
       return verified;
     })(),
