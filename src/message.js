@@ -623,16 +623,27 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
     }
   }));
 
+  const signaturePacket = signature.correspondingSig || signature;
   const verifiedSig = {
     keyid: signature.issuerKeyId,
-    verified: keyPacket ? signature.verify(keyPacket, signature.signatureType, literalDataList[0]) : Promise.resolve(null)
+    verified: (async () => {
+      if (!keyPacket) {
+        return null;
+      }
+      const verified = await signature.verify(keyPacket, signature.signatureType, literalDataList[0]);
+      const sig = await signaturePacket;
+      if (sig.isExpired(date)) {
+        return false;
+      }
+      return verified;
+    })(),
+    signature: (async () => {
+      const sig = await signaturePacket;
+      const packetlist = new packet.List();
+      packetlist.push(sig);
+      return new Signature(packetlist);
+    })()
   };
-
-  verifiedSig.signature = Promise.resolve(signature.correspondingSig || signature).then(signature => {
-    const packetlist = new packet.List();
-    packetlist.push(signature);
-    return new Signature(packetlist);
-  });
 
   // Mark potential promise rejections as "handled". This is needed because in
   // some cases, we reject them before the user has a reasonable chance to
