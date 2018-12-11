@@ -181,7 +181,7 @@ export default {
     cipherfn = new cipher[cipherfn](key);
     const block_size = cipherfn.blockSize;
 
-    let iblock = new Uint8Array(block_size);
+    const iblock = new Uint8Array(block_size);
     let ablock = new Uint8Array(block_size);
 
     let i;
@@ -189,30 +189,10 @@ export default {
     let n;
     let text = new Uint8Array(ciphertext.length - block_size);
 
-    // initialisation vector
-    for (i = 0; i < block_size; i++) {
-      iblock[i] = 0;
-    }
-
-    iblock = cipherfn.encrypt(iblock);
-    for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext[i];
-      iblock[i] ^= ablock[i];
-    }
-
-    ablock = cipherfn.encrypt(ablock);
-
-    // test check octets
-    if (iblock[block_size - 2] !== (ablock[0] ^ ciphertext[block_size]) ||
-        iblock[block_size - 1] !== (ablock[1] ^ ciphertext[block_size + 1])) {
-      throw new Error('CFB decrypt: invalid key');
-    }
-
     /*  RFC4880: Tag 18 and Resync:
      *  [...] Unlike the Symmetrically Encrypted Data Packet, no
      *  special CFB resynchronization is done after encrypting this prefix
      *  data.  See "OpenPGP CFB Mode" below for more details.
-
      */
 
     j = 0;
