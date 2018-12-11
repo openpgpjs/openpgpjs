@@ -63,6 +63,11 @@ function PublicKey(date=new Date()) {
    */
   this.created = util.normalizeDate(date);
   /**
+   * Public key algorithm.
+   * @type {String}
+   */
+  this.algorithm = null;
+  /**
    * Algorithm specific params
    * @type {Array<Object>}
    */

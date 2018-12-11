@@ -52,7 +52,10 @@ function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
+  this.publicKeyAlgorithm = null;
+
   this.sessionKey = null;
+  this.sessionKeyAlgorithm = null;
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
