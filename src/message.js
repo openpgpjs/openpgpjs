@@ -244,7 +244,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
  * @returns {(Uint8Array|null)} literal body of the message as Uint8Array
  */
 Message.prototype.getLiteralData = function() {
-  const literal = this.packets.findPacket(enums.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(enums.packet.literal);
   return (literal && literal.getBytes()) || null;
 };
 
@@ -253,7 +254,8 @@ Message.prototype.getLiteralData = function() {
  * @returns {(String|null)} filename of literal data packet as string
  */
 Message.prototype.getFilename = function() {
-  const literal = this.packets.findPacket(enums.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(enums.packet.literal);
   return (literal && literal.getFilename()) || null;
 };
 
@@ -262,7 +264,8 @@ Message.prototype.getFilename = function() {
  * @returns {(String|null)} literal body of the message interpreted as text
  */
 Message.prototype.getText = function() {
-  const literal = this.packets.findPacket(enums.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(enums.packet.literal);
   if (literal) {
     return literal.getText();
   }
