@@ -153,6 +153,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, 
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
 
+  let exception;
   if (passwords) {
     const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
     if (!symESKeyPacketlist) {
@@ -181,23 +182,36 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
       throw new Error('No public key encrypted session key packet found.');
     }
     await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
-      const privateKeyPackets = new packet.List();
-      privateKeys.forEach(privateKey => {
-        privateKeyPackets.concat(privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket));
-      });
-      await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
-        if (!privateKeyPacket) {
-         return;
+      await Promise.all(privateKeys.map(async function(privateKey) {
+        const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
+        let algos = [
+          enums.symmetric.aes256, // Old OpenPGP.js default fallback
+          enums.symmetric.aes128, // RFC4880bis fallback
+          enums.symmetric.tripledes // RFC4880 fallback
+        ];
+        if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
+          algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
         }
-        if (!privateKeyPacket.isDecrypted()) {
-          throw new Error('Private key is not decrypted.');
-        }
-        try {
-          await keyPacket.decrypt(privateKeyPacket);
-          keyPackets.push(keyPacket);
-        } catch (err) {
-          util.print_debug_error(err);
-        }
+
+        const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
+        await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
+          if (!privateKeyPacket) {
+            return;
+          }
+          if (!privateKeyPacket.isDecrypted()) {
+            throw new Error('Private key is not decrypted.');
+          }
+          try {
+            await keyPacket.decrypt(privateKeyPacket);
+            if (!algos.includes(enums.write(enums.symmetric, keyPacket.sessionKeyAlgorithm))) {
+              throw new Error('A non-preferred symmetric algorithm was used.');
+            }
+            keyPackets.push(keyPacket);
+          } catch (err) {
+            util.print_debug_error(err);
+            exception = err;
+          }
+        }));
       }));
       stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
       keyPacket.encrypted = null;
@@ -222,7 +236,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
 
     return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
   }
-  throw new Error('Session key decryption failed.');
+  throw exception || new Error('Session key decryption failed.');
 };
 
 /**
