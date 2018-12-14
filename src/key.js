@@ -1684,16 +1684,16 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
  * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Object} userId (optional) user ID
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
+export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
   const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
   const prioMap = {};
-  await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function(key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
@@ -1722,14 +1722,15 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
  * Returns whether aead is supported by all keys in the set
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<Boolean>}
  * @async
  */
-export async function isAeadSupported(keys, date=new Date(), userId={}) {
+export async function isAeadSupported(keys, date=new Date(), userIds=[]) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function(key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
