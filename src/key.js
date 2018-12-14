@@ -290,7 +290,7 @@ async function getLatestValidSignature(signatures, primaryKey, signatureType, da
 /**
  * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
  * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
@@ -528,7 +528,7 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
@@ -739,11 +739,13 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
 /**
  * Signs primary user of key
  * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signPrimaryUser = async function(privateKeys) {
-  const { index, user } = await this.getPrimaryUser() || {};
+Key.prototype.signPrimaryUser = async function(privateKeys, date, userId) {
+  const { index, user } = await this.getPrimaryUser(date, userId) || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
@@ -773,13 +775,15 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
  * @async
  */
-Key.prototype.verifyPrimaryUser = async function(keys) {
+Key.prototype.verifyPrimaryUser = async function(keys, date, userId) {
   const primaryKey = this.keyPacket;
-  const { user } = await this.getPrimaryUser() || {};
+  const { user } = await this.getPrimaryUser(date, userId) || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
