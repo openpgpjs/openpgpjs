@@ -1363,7 +1363,7 @@ function versionSpecificTests() {
     const compressionVal = openpgp.config.compression;
     const aead_modeVal = openpgp.config.aead_mode;
     openpgp.config.encryption_cipher = openpgp.enums.symmetric.aes192;
-    openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha384;
+    openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha224;
     openpgp.config.compression = openpgp.enums.compression.zlib;
     openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
 
@@ -1381,7 +1381,7 @@ function versionSpecificTests() {
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimental_gcm, aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha384, hash.sha256, hash.sha512, hash.sha1]);
+      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
