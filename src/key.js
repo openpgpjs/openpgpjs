@@ -1690,7 +1690,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
  */
 export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
-  const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
+  const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
